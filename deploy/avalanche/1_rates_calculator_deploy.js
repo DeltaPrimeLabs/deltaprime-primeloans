@@ -19,7 +19,8 @@ module.exports = async ({
 
   embedCommitHash('UsdcVariableUtilisationRatesCalculator', './contracts/deployment/avalanche');
 
-  result = await deploy('UsdcVariableUtilisationRatesCalculator', {
+  result = await deploy("UsdcVariableUtilisationRatesCalculator", {
+    contract: "contracts/deployment/avalanche/UsdcVariableUtilisationRatesCalculator.sol:UsdcVariableUtilisationRatesCalculator",
     from: deployer,
     gasLimit: 8000000,
     args: []

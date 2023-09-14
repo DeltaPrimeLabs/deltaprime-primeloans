@@ -15,6 +15,9 @@ const yieldYakConfig = require('./yieldYakApy.json');
 const tokenAddresses = require('./token_addresses.json');
 const lpAssets = require('./lpAssets.json');
 const steakHutApyConfig = require('./steakHutApy.json');
+const traderJoeConfig = require('./traderJoeApy.json');
+const sushiConfig = require('./sushiApy.json');
+const beefyConfig = require('./beefyApy.json');
 
 const serviceAccount = require('./delta-prime-db-firebase-adminsdk-nm0hk-12b5817179.json');
 
@@ -23,11 +26,13 @@ initializeApp({
 });
 
 const factoryAddress = "0x3Ea9D480295A73fd2aF95b4D96c2afF88b21B03D";
+const factoryArbitrumAddress = "0xFf5e3dDaefF411a1dC6CcE00014e4Bca39265c20";
 
 const fs = require("fs");
 
 const config = JSON.parse(fs.readFileSync('config.json', 'utf-8'));
 const jsonRPC = config.jsonRpc;
+const jsonRPCArbitrum = config.jsonRpcArbitrum;
 
 const WrapperBuilder = require('@redstone-finance/evm-connector').WrapperBuilder;
 const FACTORY = require(`./SmartLoansFactory.json`);
@@ -35,7 +40,8 @@ const LOAN = require(`./SmartLoanGigaChadInterface.json`);
 const ethers = require("ethers");
 const CACHE_LAYER_URLS = require('./redstone-cache-layer-urls.json');
 const VECTOR_APY_URL = "https://vector-api-git-overhaul-vectorfinance.vercel.app/api/v1/vtx/apr";
-const YIELDYAK_APY_URL = "https://staging-api.yieldyak.com/apys";
+const YIELDYAK_APY_AVA_URL = "https://staging-api.yieldyak.com/apys";
+const YIELDYAK_APY_ARB_URL = "https://staging-api.yieldyak.com/42161/apys";
 
 const { getLoanStatusAtTimestamp } = require('./loan-history');
 const timestampInterval = 24 * 3600 * 1000;
@@ -48,12 +54,18 @@ const wallet = (new ethers.Wallet("0xca63cb3223cb19b06fa42110c89ad21a17bad22ea06
 
 let factory = new ethers.Contract(factoryAddress, FACTORY.abi, provider);
 
+const providerArbitrum = new ethers.providers.JsonRpcProvider(jsonRPCArbitrum);
+const walletArbitrum = (new ethers.Wallet("0xca63cb3223cb19b06fa42110c89ad21a17bad22ea061e5a2c2487bd37b71e809"))
+  .connect(providerArbitrum);
+
+let factoryArbitrum = new ethers.Contract(factoryArbitrumAddress, FACTORY.abi, providerArbitrum);
+
 const fromWei = val => parseFloat(ethers.utils.formatEther(val));
 
-function wrap(contract) {
+function wrap(contract, network) {
   return WrapperBuilder.wrap(contract).usingDataService(
     {
-      dataServiceId: 'redstone-avalanche-prod',
+      dataServiceId: `redstone-${network}-prod`,
       uniqueSignersCount: 3,
       disablePayloadsDryRun: true
     },
@@ -61,7 +73,7 @@ function wrap(contract) {
   );
 }
 
-exports.scheduledFunction = functions
+exports.scheduledFunctionAvalanche = functions
   .runWith({ timeoutSeconds: 300, memory: "2GB" })
   .pubsub.schedule('*/1 * * * *')
   .onRun(async (context) => {
@@ -72,25 +84,67 @@ exports.scheduledFunction = functions
 
     await Promise.all(
       loanAddresses.map(async (address) => {
-        const loanContract = new ethers.Contract(address, LOAN.abi, wallet);
-        const wrappedContract = wrap(loanContract);
-        const status = await wrappedContract.getFullLoanStatus();
+        try {
+          const loanContract = new ethers.Contract(address, LOAN.abi, wallet);
+          const wrappedContract = wrap(loanContract, 'avalanche');
+          const status = await wrappedContract.getFullLoanStatus();
 
-        const loan = {
-          time: batchTime,
-          address: address,
-          total: fromWei(status[0]),
-          debt: fromWei(status[1]),
-          collateral: fromWei(status[0]) - fromWei(status[1]),
-          health: fromWei(status[3]),
-          solvent: fromWei(status[4]) === 1e-18
-        };
+          const loan = {
+            time: batchTime,
+            address: address,
+            total: fromWei(status[0]),
+            debt: fromWei(status[1]),
+            collateral: fromWei(status[0]) - fromWei(status[1]),
+            health: fromWei(status[3]),
+            solvent: fromWei(status[4]) === 1e-18
+          };
 
-        await db.collection('loans').doc(address).set(loan);
-      })
-    )
+          await db.collection('loans').doc(address).set(loan);
+        } catch(error) {
+          console.log(error);
+        }
+      }),
+    );
 
     functions.logger.info(`Uploaded ${loanAddresses.length} loans.`);
+
+    return null;
+  });
+
+exports.scheduledFunctionArbitrum = functions
+  .runWith({ timeoutSeconds: 300, memory: "2GB" })
+  .pubsub.schedule('*/1 * * * *')
+  .onRun(async (context) => {
+    functions.logger.info("Getting loans");
+
+    const loanAddressesArbitrum = await factoryArbitrum.getAllLoans();
+    const batchTime = new Date().getTime();
+
+    await Promise.all(
+      loanAddressesArbitrum.map(async (address) => {
+        try {
+          const loanContract = new ethers.Contract(address, LOAN.abi, walletArbitrum);
+          const wrappedContract = wrap(loanContract, 'arbitrum');
+          const status = await wrappedContract.getFullLoanStatus();
+
+          const loan = {
+            time: batchTime,
+            address: address,
+            total: fromWei(status[0]),
+            debt: fromWei(status[1]),
+            collateral: fromWei(status[0]) - fromWei(status[1]),
+            health: fromWei(status[3]),
+            solvent: fromWei(status[4]) === 1e-18
+          };
+      
+          await db.collection('loansArbitrum').doc(address).set(loan);
+        } catch(error) {
+          console.log(error);
+        }
+      })
+    );
+
+    functions.logger.info(`Uploaded ${loanAddressesArbitrum.length} loans.`);
 
     return null;
   });
@@ -353,14 +407,14 @@ exports.lpAndFarmApyAggregator = functions
     const apys = {};
     const urls = [
       VECTOR_APY_URL,
-      YIELDYAK_APY_URL
-    ]
+      YIELDYAK_APY_AVA_URL,
+      YIELDYAK_APY_ARB_URL
+    ];
 
     try {
-
       Promise.all(urls.map(url =>
         fetch(url).then(resp => resp.json())
-      )).then(async ([vectorAprs, yieldYakApys]) => {
+      )).then(async ([vectorAprs, yieldYakAvaApys, yieldYakArbApys]) => {
 
         if (!vectorAprs["Staking"]) functions.logger.info('APRs not available from Vector.');
         const stakingAprs = vectorAprs['Staking'];
@@ -382,11 +436,26 @@ exports.lpAndFarmApyAggregator = functions
           }
         }
 
-        // fetching YieldYak APYs
-        for (const [token, farm] of Object.entries(yieldYakConfig)) {
-          if (!yieldYakApys[farm.stakingContractAddress]) continue
+        // fetching YieldYak APYs Avalanche
+        for (const [token, farm] of Object.entries(yieldYakConfig.avalanche)) {
+          if (!yieldYakAvaApys[farm.stakingContractAddress]) continue
 
-          const yieldApy = yieldYakApys[farm.stakingContractAddress].apy / 100;
+          const yieldApy = yieldYakAvaApys[farm.stakingContractAddress].apy / 100;
+
+          if (token in apys) {
+            apys[token][farm.protocolIdentifier] = yieldApy;
+          } else {
+            apys[token] = {
+              [farm.protocolIdentifier]: yieldApy
+            };
+          }
+        }
+
+        // fetching YieldYak APYs Arbitrum
+        for (const [token, farm] of Object.entries(yieldYakConfig.arbitrum)) {
+          if (!yieldYakArbApys[farm.stakingContractAddress]) continue
+
+          const yieldApy = yieldYakArbApys[farm.stakingContractAddress].apy / 100;
 
           if (token in apys) {
             apys[token][farm.protocolIdentifier] = yieldApy;
@@ -490,7 +559,7 @@ const uploadLoanStatusCustom = async () => {
 //       });
 //   });
 
-const uploadLiveLoansStatus = async () => {
+const uploadLiveLoansStatusAvalanche = async () => {
   const loanAddresses = await factory.getAllLoans();
 
   const timestamp = Date.now();
@@ -503,7 +572,7 @@ const uploadLiveLoansStatus = async () => {
         .doc(loanAddress.toLowerCase())
         .collection('loanStatus');
       const loanContract = new ethers.Contract(loanAddress, LOAN.abi, wallet);
-      const wrappedContract = wrap(loanContract);
+      const wrappedContract = wrap(loanContract, 'avalanche');
       const status = await wrappedContract.getFullLoanStatus();
 
       if (status) {
@@ -521,31 +590,75 @@ const uploadLiveLoansStatus = async () => {
   );
 }
 
-exports.saveLiveLoansStatus = functions
+exports.saveLiveLoansStatusAvalanche = functions
   .runWith({ timeoutSeconds: 120, memory: "2GB" })
   .pubsub.schedule('0 5 * * *')
   .onRun(async (context) => {
     functions.logger.info("Getting Loans Status.");
-    return uploadLiveLoansStatus()
+    return uploadLiveLoansStatusAvalanche()
       .then(() => {
-        functions.logger.info("Live Loans Status upload success.");
+        functions.logger.info("Live Loans Status Avalanche upload success.");
       }).catch((err) => {
-        functions.logger.info(`Live Loans Status upload failed. Error: ${err}`);
+        functions.logger.info(`Live Loans Status Avalanche upload failed. Error: ${err}`);
       });
   });
 
-exports.saveLoansStatusFromFile = functions
-    .runWith({ timeoutSeconds: 120, memory: "2GB" })
-    .pubsub.schedule('*/5 * * * *')
-    .onRun(async (context) => {
-      functions.logger.info("Getting Loans Status.");
-      return uploadLoanStatusFromFile()
-          .then(() => {
-            functions.logger.info("Loans Status upload success.");
-          }).catch((err) => {
-            functions.logger.info(`Loans Status upload failed. Error: ${err}`);
-          });
-    });
+const uploadLiveLoansStatusArbitrum = async () => {
+  const loanAddresses = await factoryArbitrum.getAllLoans();
+
+  const timestamp = Date.now();
+
+  await Promise.all(
+    loanAddresses.map(async (loanAddress) => {
+      console.log(loanAddress, timestamp);
+      const loanHistoryRef = db
+        .collection('loansHistoryArbitrum')
+        .doc(loanAddress.toLowerCase())
+        .collection('loanStatus');
+      const loanContract = new ethers.Contract(loanAddress, LOAN.abi, walletArbitrum);
+      const wrappedContract = wrap(loanContract, 'arbitrum');
+      const status = await wrappedContract.getFullLoanStatus();
+
+      if (status) {
+        await loanHistoryRef.doc(timestamp.toString()).set({
+          totalValue: fromWei(status[0]),
+          borrowed: fromWei(status[1]),
+          collateral: fromWei(status[0]) - fromWei(status[1]),
+          twv: fromWei(status[2]),
+          health: fromWei(status[3]),
+          solvent: fromWei(status[4]) === 1e-18,
+          timestamp
+        });
+      }
+    })
+  );
+}
+
+exports.saveLiveLoansStatusArbitrum = functions
+  .runWith({ timeoutSeconds: 120, memory: "2GB" })
+  .pubsub.schedule('0 5 * * *')
+  .onRun(async (context) => {
+    functions.logger.info("Getting Loans Status.");
+    return uploadLiveLoansStatusArbitrum()
+      .then(() => {
+        functions.logger.info("Live Loans Status Arbitrum upload success.");
+      }).catch((err) => {
+        functions.logger.info(`Live Loans Status Arbitrum upload failed. Error: ${err}`);
+      });
+  });
+
+// exports.saveLoansStatusFromFile = functions
+//     .runWith({ timeoutSeconds: 120, memory: "2GB" })
+//     .pubsub.schedule('*/5 * * * *')
+//     .onRun(async (context) => {
+//       functions.logger.info("Getting Loans Status.");
+//       return uploadLoanStatusFromFile()
+//           .then(() => {
+//             functions.logger.info("Loans Status upload success.");
+//           }).catch((err) => {
+//             functions.logger.info(`Loans Status upload failed. Error: ${err}`);
+//           });
+//     });
 
 
 // const getEventsForPeriod = (from, to) => {
@@ -559,6 +672,7 @@ exports.loanhistory = functions
       const address = req.query.address
       const from = req.query.from;
       const to = req.query.to;
+      const network = req.query.network;
       console.log(address, from, to)
 
       if (!address) {
@@ -569,8 +683,20 @@ exports.loanhistory = functions
         })
       }
 
+      let historyCol;
+      if (network === 'avalanche') {
+        historyCol = 'loansHistory';
+      } else if (network === 'arbitrum') {
+        historyCol = 'loansHistoryArbitrum';
+      } else {
+        res.status(400).send({
+          success: false,
+          message: 'wrong network',
+        })
+      }
+
       const loanHistoryRef = db
-        .collection('loansHistory')
+        .collection(historyCol)
         .doc(address.toLowerCase())
         .collection('loanStatus');
       let snapshot;
@@ -682,6 +808,7 @@ const getApysFromSteakHut = async () => {
     // navigate pools page and wait till javascript fully load.
     await page.goto(URL + address, {
       waitUntil: "networkidle0",
+      timeout: 60000
     });
 
     functions.logger.info("parsing APR (7-Day)...");
@@ -705,7 +832,7 @@ const getApysFromSteakHut = async () => {
   await browser.close();
 }
 
-exports.steakhutScrapper = functions
+exports.steakhutScraper = functions
   .runWith({ timeoutSeconds: 300, memory: "2GB" })
   .pubsub.schedule('*/1 * * * *')
   .onRun(async (context) => {
@@ -714,5 +841,155 @@ exports.steakhutScrapper = functions
         functions.logger.info("SteakHut APYs scrapped and updated.");
       }).catch((err) => {
         functions.logger.info(`Scraping APYs from SteakHut failed. Error: ${err}`);
+      });
+  });
+
+const getApysFromTraderJoe = async () => {
+  functions.logger.info("parsing APYs from TraderJoe");
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+
+  // fetch APYs for Avalanche and Arbitrum
+  for (const [network, pools] of Object.entries(traderJoeConfig)) {
+    for (const [pool, poolData] of Object.entries(pools)) {
+      // navigate pools page and wait till javascript fully load.
+      const URL = `https://traderjoexyz.com/${network}/pool/v21/`;
+      await page.goto(URL + `${poolData.assetX}/${poolData.assetY}/${poolData.binStep}`, {
+        waitUntil: "networkidle0",
+        timeout: 60000
+      });
+
+      await page.evaluate(() => {
+        const tabs = document.querySelectorAll(".chakra-tabs__tab");
+        tabs[4].click();
+        return tabs[4].innerText;
+      })
+      await new Promise((resolve, reject) => setTimeout(resolve, 3000));
+
+      const stats = await page.$$(".chakra-stat__number");
+      const apy = (await (await stats[3].getProperty('textContent')).jsonValue()).replace('%', '');
+      console.log(apy);
+
+      if (apy && Number(apy) != 0) {
+        await db.collection('apys').doc(pool).set({
+          lp_apy: apy / 100
+        });
+      }
+    }
+  }
+
+  // close browser
+  await browser.close();
+}
+
+exports.traderJoeScraper = functions
+  .runWith({ timeoutSeconds: 300, memory: "2GB" })
+  .pubsub.schedule('*/1 * * * *')
+  .onRun(async (context) => {
+    return getApysFromTraderJoe()
+      .then(() => {
+        functions.logger.info("TraderJoe APYs scrapped and updated.");
+      }).catch((err) => {
+        functions.logger.info(`Scraping APYs from TraderJoe failed. Error: ${err}`);
+      });
+  });
+
+const getApysFromSushi = async () => {
+  functions.logger.info("parsing APYs from Sushi");
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+
+  // fetch APYs for Avalanche and Arbitrum
+  for (const [network, pools] of Object.entries(sushiConfig)) {
+    for (const [pool, poolData] of Object.entries(pools)) {
+      // navigate pools page and wait till javascript fully load.
+      const URL = "https://www.sushi.com/pool";
+      await page.goto(URL + `/${network}%3A${poolData.address}`, {
+        waitUntil: "networkidle0",
+        timeout: 60000
+      });
+
+      const stats = await page.$$(".decoration-dotted");
+      const apy = (await (await stats[0].getProperty('textContent')).jsonValue()).replace('%', '');
+      console.log(apy);
+
+      if (apy && Number(apy) != 0) {
+        await db.collection('apys').doc(pool).set({
+          lp_apy: apy
+        });
+      }
+    }
+  }
+
+  // close browser
+  await browser.close();
+}
+
+exports.sushiScraper = functions
+  .runWith({ timeoutSeconds: 300, memory: "2GB" })
+  .pubsub.schedule('*/1 * * * *')
+  .onRun(async (context) => {
+    return getApysFromSushi()
+      .then(() => {
+        functions.logger.info("Sushi APYs scrapped and updated.");
+      }).catch((err) => {
+        functions.logger.info(`Scraping APYs from Sushi failed. Error: ${err}`);
+      });
+  });
+
+const getApysFromBeefy = async () => {
+  functions.logger.info("parsing APYs from Beefy");
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+
+  // fetch APYs for Avalanche and Arbitrum
+  for (const [protocol, networks] of Object.entries(beefyConfig)) {
+    for (const [network, pools] of Object.entries(networks)) {
+      for (const [pool, poolData] of Object.entries(pools)) {
+        // navigate pools page and wait till javascript fully load.
+        const URL = `https://app.beefy.com/vault/${protocol}-${network}-${pool}`;
+
+        await page.goto(URL, {
+          waitUntil: "networkidle0",
+          timeout: 60000
+        });
+
+        const apy = await page.evaluate(() => {      
+          const boxes = document.querySelectorAll("div.MuiBox-root");
+          let apy;
+          Array.from(boxes).map(box => {
+            const content = box.innerText.replace(/\s+/g, "").toLowerCase();
+            if (content.startsWith('apy')) {
+              apy = content.replace('apy', '').replace('%', '').trim();
+            }
+          });
+
+          return apy;
+        });
+
+        console.log(apy);
+
+        if (apy && Number(apy) != 0) {
+          await db.collection('apys').doc(poolData.symbol).set({
+            [poolData.protocolIdentifier]: apy / 100
+          });
+        }
+      }
+    }
+  }
+
+  // close browser
+  await browser.close();
+}
+
+exports.beefyScraper = functions
+  .runWith({ timeoutSeconds: 300, memory: "2GB" })
+  .pubsub.schedule('*/1 * * * *')
+  .onRun(async (context) => {
+    return getApysFromBeefy()
+      .then(() => {
+        functions.logger.info("Beefy APYs scrapped and updated.");
+      }).catch((err) => {
+        functions.logger.info(`Scraping APYs from Beefy failed. Error: ${err}`);
       });
   });

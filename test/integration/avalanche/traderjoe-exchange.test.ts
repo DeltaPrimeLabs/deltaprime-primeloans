@@ -19,7 +19,7 @@ import {
     toWei, wavaxAbi
 } from "../../_helpers";
 import {parseUnits} from "ethers/lib/utils";
-import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
+import TOKEN_ADDRESSES from '../../../common/addresses/avalanche/token_addresses.json';
 
 chai.use(solidity);
 
@@ -66,7 +66,7 @@ describe('TraderJoeIntermediary', () => {
 
             let assetsList = ['AVAX', 'USDC'];
 
-            tokensPrices = await getTokensPricesMap(assetsList, getRedstonePrices);
+            tokensPrices = await getTokensPricesMap(assetsList, "avalanche", getRedstonePrices);
             addMissingTokenContracts(tokenContracts, assetsList);
 
             let exchangeFactory = await ethers.getContractFactory("TraderJoeIntermediary");

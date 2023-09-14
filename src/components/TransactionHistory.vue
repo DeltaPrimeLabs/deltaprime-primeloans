@@ -154,10 +154,12 @@ export default {
           return config.LP_ASSETS_CONFIG[parsedTokenSymbol].name;
         } else {
           const protocol = Object.values(config.FARMED_TOKENS_CONFIG).flat().find(protocol => protocol.protocolIdentifier === parsedTokenSymbol);
-          if (!protocol.isTokenLp) {
-            return protocol.token;
-          } else {
-            return config.LP_ASSETS_CONFIG[protocol.token].name;
+          if (protocol) {
+            if (!protocol.isTokenLp) {
+              return protocol.token;
+            } else {
+              return config.LP_ASSETS_CONFIG[protocol.token].name;
+            }
           }
         }
       } else {
@@ -168,9 +170,9 @@ export default {
     parseTokenSymbol(tokenSymol) {
       switch (tokenSymol) {
         case 'USDTE':
-          return 'USDT.e'
+          return 'USDT.e';
         default:
-          return tokenSymol
+          return tokenSymol;
       }
     },
 

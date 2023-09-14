@@ -5,9 +5,6 @@
     class="notifi-modal-component"
   >
     <div class="modal-container">
-      <!-- <div v-if="screenLoading">
-        <VueLoadersBallBeat color="#A6A3FF" scale="1.5"></VueLoadersBallBeat>
-      </div> -->
       <div
         v-if="currentScreen.title && currentScreen.componentName !== 'Login'"
         class="modal-header"
@@ -48,7 +45,6 @@
           v-bind="{...currentScreen, ...notifi}"
           :screenLoading="screenLoading"
           :notification="selectedNotification"
-          :customStyles="customStyles"
           :alertSettings="alertSettings"
           @loginNotifi="handleLogin"
           @createTargets="handleCreateTargets"
@@ -95,7 +91,6 @@ export default {
       currentScreen: null,
       screenLoading: false,
       selectedNotification: null,
-      customStyles: notifiConfig.customStyles,
       alertSettings: null,
       notifiImgSrc: null
     }

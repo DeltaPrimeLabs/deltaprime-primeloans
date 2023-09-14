@@ -96,6 +96,7 @@ export default {
     lpBalances: {},
     concentratedLpAssets: {},
     concentratedLpBalances: {},
+    traderJoeV2LpAssets: {},
     farms: {}
   },
 
@@ -122,24 +123,29 @@ export default {
   computed: {
     calculateMaxRepay() {
       const assetBalance = this.assetBalances[this.asset.symbol];
-      return this.assetDebt > assetBalance ? assetBalance : this.assetDebt;
+      return this.isMaxFromDebt ? this.assetDebt : assetBalance;
+    },
+
+    isMaxFromDebt() {
+      return this.assetDebt < this.assetBalances[this.asset.symbol];
     },
 
     sourceAssetValue() {
+      const nativeSymbol = config.nativeToken;
       const sourceAssetUsdPrice = Number(this.repayValue) * this.asset.price;
-      const avaxUsdPrice = config.ASSETS_CONFIG["AVAX"].price;
+      const nativeUsdPrice = config.ASSETS_CONFIG[nativeSymbol].price;
 
       if (this.valueAsset === "USDC") return `~ $${sourceAssetUsdPrice.toFixed(2)}`;
       // otherwise return amount in AVAX
-      return `~ ${(sourceAssetUsdPrice / avaxUsdPrice).toFixed(2)} AVAX`;
+      return `~ ${(sourceAssetUsdPrice / nativeUsdPrice).toFixed(2)} ${nativeSymbol}`;
     },
   },
 
   methods: {
     submit() {
       this.transactionOngoing = true;
-      const repayValue = this.maxButtonUsed ? this.repayValue * config.MAX_BUTTON_MULTIPLIER : this.repayValue;
-      this.$emit('REPAY', { repayValue: repayValue, isMax: this.maxButtonUsed });
+      const repayValue = (this.maxButtonUsed && this.isMaxFromDebt) ? this.repayValue * config.MAX_BUTTON_MULTIPLIER : this.repayValue;
+      this.$emit('REPAY', { repayValue: repayValue, isMax: this.maxButtonUsed && this.isMaxFromDebt });
     },
 
     repayValueChange(event) {
@@ -184,7 +190,9 @@ export default {
         });
       }
 
-      this.healthAfterTransaction = calculateHealth(tokens);
+      let lbTokens = Object.values(this.traderJoeV2LpAssets);
+
+      this.healthAfterTransaction = calculateHealth(tokens, lbTokens);
     },
 
     setupValidators() {

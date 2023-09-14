@@ -44,7 +44,7 @@
       <Button
         :label="'Next'"
         @click.stop.native="handleClick"
-        :customStyle="customStyles.button"
+        :variant="'medium'"
         :disabled="invalid || !targets.emailAddress && !targets.telegramId"
         :waiting="screenLoading"
         :rightIconSrc="'src/assets/icons/icon_arrow_s_white.svg'"
@@ -58,6 +58,7 @@ import notifiConfig from './notifiConfig';
 import Button from '../Button';
 import InfoIcon from '../InfoIcon.vue';
 import FormInput from '../FormInput.vue';
+import config from '../../config';
 
 export default ({
   name: 'TargetSetup',
@@ -67,7 +68,6 @@ export default ({
     InfoIcon
   },
   props: {
-    customStyles: { type: Object, default: () => {} },
     screenLoading: Boolean
   },
   data() {
@@ -86,7 +86,7 @@ export default ({
       this.emailValidators = [
         {
           validate: (value) => {
-            if (!/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(value)) {
+            if (!config.EMAIL_REGEX.test(value)) {
               return 'Your email address is invalid';
             }
           }

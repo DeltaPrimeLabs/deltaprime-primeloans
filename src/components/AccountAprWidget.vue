@@ -81,19 +81,14 @@ export default {
         {
           text: 'Degen, activated!',
           min: 0.5,
-          max: 1
-        },
-        {
-          text: 'SteakHut Master',
-          min: 1,
-          max: 999999
-        },
+          max: 99999
+        }
       ];
     },
 
     pickComment() {
       let pickedComment;
-      if (this.accountApr) {
+      if (this.accountApr !== null) {
         pickedComment = this.possibleComments.find((comment) => this.accountApr > comment.min && this.accountApr <= comment.max);
       } else {
         if (this.noSmartLoan) {

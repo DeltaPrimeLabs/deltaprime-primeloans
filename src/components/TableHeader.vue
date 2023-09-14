@@ -115,6 +115,10 @@ export default {
       justify-content: flex-end;
     }
 
+    &.unlocked {
+      justify-content: flex-end;
+    }
+
     &.utilisation {
       justify-content: flex-end;
     }

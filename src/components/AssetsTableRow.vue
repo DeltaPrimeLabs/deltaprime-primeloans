@@ -1,5 +1,6 @@
 <template>
-  <div class="fund-table-row-component" :class="{'expanded': rowExpanded}">
+  <div class="fund-table-row-component"
+       :class="{'expanded': rowExpanded, 'expanded--trading-view': selectedChart === 'TradingView'}">
     <div class="table__row" v-if="asset">
       <div class="table__cell asset">
         <img class="asset__icon" :src="getAssetIcon(asset.symbol)">
@@ -86,12 +87,12 @@
                     :icon-src="'src/assets/icons/plus.svg'" :size="26"
                     v-tooltip="{content: 'Deposit collateral', classes: 'button-tooltip'}"
                     v-on:click="actionClick('ADD_FROM_WALLET')">
-          <template v-if="(asset.symbol === 'AVAX' && noSmartLoan)" v-slot:bubble>
-            To create your Prime Account, click on the
+          <template v-if="(asset.symbol === nativeAssetOptions[0] && noSmartLoan)" v-slot:bubble>
+            To create your Prime Account, click one of the
             <DeltaIcon class="icon-button__icon" :icon-src="'src/assets/icons/plus-white.svg'"
                        :size="26"
             ></DeltaIcon>
-            button, and then click &quot;Deposit collateral&quot;
+            buttons.
           </template>
         </IconButton>
         <IconButton :disabled="disableAllButtons || !healthLoaded"
@@ -109,14 +110,22 @@
       </div>
     </div>
 
-    <div class="chart-container" v-if="showChart">
+    <div class="chart-container" v-if="rowExpanded">
       <SmallBlock v-on:close="toggleChart()">
+<!--        <Toggle class="chart-container__toggle" v-if="asset.tradingViewSymbol" v-on:change="onOptionChange" :options="['TradingView', 'Chart']"
+                :initial-option="0"></Toggle>-->
         <Chart :data-points="asset.prices"
                :line-width="3"
                :min-y="asset.minPrice"
                :max-y="asset.maxPrice"
-               :positive-change="todayPriceChange > 0">
+               :positive-change="todayPriceChange > 0"
+               v-if="selectedChart === 'Chart'">
         </Chart>
+<!--        <TradingViewChart :trading-view-symbol="asset.tradingViewSymbol"
+                          :index="index"
+                          v-if="selectedChart === 'TradingView'"
+                          class="trading-view-chart"
+                          :class="{'trading-view-chart&#45;&#45;visible': showTradingViewChart}"></TradingViewChart>-->
       </SmallBlock>
     </div>
 
@@ -137,14 +146,13 @@ import SwapModal from './SwapModal';
 import AddFromWalletModal from './AddFromWalletModal';
 import WithdrawModal from './WithdrawModal';
 import RepayModal from './RepayModal';
-import addresses from '../../common/addresses/avax/token_addresses.json';
+import addresses from '../../common/addresses/avalanche/token_addresses.json';
 import erc20ABI from '../../test/abis/ERC20.json';
 import WrapModal from './WrapModal';
 import YAK_ROUTER_ABI
   from '../../test/abis/YakRouter.json';
 import YAK_WRAP_ROUTER
   from '../../artifacts/contracts/interfaces/IYakWrapRouter.sol/IYakWrapRouter.json';
-import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
 import {formatUnits, parseUnits} from '../utils/calculate';
 import GLP_REWARD_ROUTER
   from '../../artifacts/contracts/interfaces/facets/avalanche/IRewardRouterV2.sol/IRewardRouterV2.json';
@@ -156,24 +164,29 @@ import DeltaIcon from './DeltaIcon.vue';
 import IconButton from './IconButton.vue';
 import {constructSimpleSDK, SwapSide} from '@paraswap/sdk';
 import axios from 'axios';
+import TradingViewChart from "./TradingViewChart.vue";
+import Toggle from "./Toggle.vue";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
-const BORROWABLE_ASSETS = ['AVAX', 'USDC', 'USDT', 'BTC', 'ETH'];
-
 const ethers = require('ethers');
-
+let TOKEN_ADDRESSES;
 
 export default {
   name: 'AssetsTableRow',
   components: {
+    Toggle,
+    TradingViewChart,
     IconButton,
     DeltaIcon, LoadedValue, SmallBlock, Chart, IconButtonMenuBeta, ColoredValueBeta, SmallChartBeta
   },
   props: {
     asset: {},
+    index: null,
   },
-  mounted() {
+  async mounted() {
+    await this.setupFiles();
+    this.setupBorrowable();
     this.setupAvailableFarms();
     this.setupActionsConfiguration();
     this.watchExternalAssetBalanceUpdate();
@@ -190,8 +203,8 @@ export default {
   },
   data() {
     return {
+      borrowable: [],
       moreActionsConfig: null,
-      showChart: false,
       rowExpanded: false,
       isBalanceEstimated: false,
       isDebtEstimated: false,
@@ -200,6 +213,9 @@ export default {
       healthLoaded: false,
       totalStaked: null,
       availableFarms: [],
+      nativeAssetOptions: config.NATIVE_ASSET_TOGGLE_OPTIONS,
+      selectedChart: 'Chart',
+      showTradingViewChart: false,
     };
   },
   computed: {
@@ -214,6 +230,7 @@ export default {
       'concentratedLpAssets',
       'lpBalances',
       'concentratedLpBalances',
+      'traderJoeV2LpAssets',
       'noSmartLoan'
     ]),
     ...mapState('stakeStore', ['farms']),
@@ -244,50 +261,66 @@ export default {
   },
   methods: {
     ...mapActions('fundsStore',
-      [
-        'swap',
-        'paraSwap',
-        'swapDebt',
-        'fund',
-        'borrow',
-        'withdraw',
-        'withdrawNativeToken',
-        'repay',
-        'createAndFundLoan',
-        'createLoanAndDeposit',
-        'fundNativeToken',
-        'wrapNativeToken',
-        'mintAndStakeGlp',
-        'unstakeAndRedeemGlp',
-        'claimGLPRewards'
-      ]),
+        [
+          'swap',
+          'paraSwap',
+          'swapDebt',
+          'fund',
+          'borrow',
+          'withdraw',
+          'withdrawNativeToken',
+          'repay',
+          'createAndFundLoan',
+          'createLoanAndDeposit',
+          'fundNativeToken',
+          'wrapNativeToken',
+          'mintAndStakeGlp',
+          'unstakeAndRedeemGlp',
+          'claimGLPRewards'
+        ]),
     ...mapActions('network', ['updateBalance']),
+    async setupFiles() {
+      TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
+    },
+    setupBorrowable() {
+      this.borrowable = Object.entries(config.POOLS_CONFIG).filter(([asset, info]) => !info.disabled).map(el => el[0]);
+    },
+    onOptionChange(selected) {
+      this.selectedChart = selected
+      if (this.selectedChart === 'TradingView') {
+        setTimeout(() => {
+          this.showTradingViewChart = true
+        }, 300)
+      } else {
+        this.showTradingViewChart = false
+      }
+    },
     setupActionsConfiguration() {
       this.moreActionsConfig = {
         iconSrc: 'src/assets/icons/icon_a_more.svg',
         tooltip: 'More',
         menuOptions: [
-          ...(BORROWABLE_ASSETS.includes(this.asset.symbol) ?
-            [
-              {
-                key: 'BORROW',
-                name: 'Borrow',
-                disabled: this.borrowDisabled(),
-                disabledInfo: 'To borrow, you need to add some funds from you wallet first'
-              },
-              {
-                key: 'REPAY',
-                name: 'Repay',
-              },
-              {
-                key: 'SWAP_DEBT',
-                name: 'Swap debt',
-              }
-            ]
-            : []),
-          this.asset.symbol === 'AVAX' ? {
+          ...(this.borrowable.includes(this.asset.symbol) ?
+              [
+                {
+                  key: 'BORROW',
+                  name: 'Borrow',
+                  disabled: this.borrowDisabled(),
+                  disabledInfo: 'To borrow, you need to add some funds from you wallet first'
+                },
+                {
+                  key: 'REPAY',
+                  name: 'Repay',
+                },
+                {
+                  key: 'SWAP_DEBT',
+                  name: 'Swap debt',
+                }
+              ]
+              : []),
+          this.asset.symbol === this.nativeAssetOptions[0] ? {
             key: 'WRAP',
-            name: 'Wrap native AVAX',
+            name: `Wrap native ${this.nativeAssetOptions[0]}`,
             hidden: true,
           } : null,
           this.asset.symbol === 'GLP' ? {
@@ -305,12 +338,13 @@ export default {
 
     toggleChart() {
       if (this.rowExpanded) {
-        this.showChart = false;
         this.rowExpanded = false;
+        this.showTradingViewChart = false;
+        this.selectedChart = 'TradingView'
       } else {
         this.rowExpanded = true;
         setTimeout(() => {
-          this.showChart = true;
+          this.showTradingViewChart = true;
         }, 200);
       }
     },
@@ -331,16 +365,26 @@ export default {
           const yakRouter = new ethers.Contract(config.yakRouterAddress, YAK_ROUTER_ABI, provider.getSigner());
 
           const maxHops = 3;
-          const gasPrice = ethers.utils.parseUnits('225', 'gwei');
+          const gasPrice = ethers.utils.parseUnits('0.2', 'gwei');
 
           try {
+            console.log(
+                await yakRouter.findBestPathWithGas(
+                    amountIn,
+                    tknFrom,
+                    tknTo,
+                    maxHops,
+                    gasPrice,
+                    {gasLimit: 1e9}
+                )
+            )
             return await yakRouter.findBestPathWithGas(
-              amountIn,
-              tknFrom,
-              tknTo,
-              maxHops,
-              gasPrice,
-              {gasLimit: 1e9}
+                amountIn,
+                tknFrom,
+                tknTo,
+                maxHops,
+                gasPrice,
+                {gasLimit: 1e9}
             );
           } catch (e) {
             this.handleTransactionError(e);
@@ -355,22 +399,22 @@ export default {
           if (targetAsset === 'GLP') {
             try {
               return await yakWrapRouter.findBestPathAndWrap(
-                amountIn,
-                tknFrom,
-                config.yieldYakGlpWrapperAddress,
-                maxHops,
-                gasPrice);
+                  amountIn,
+                  tknFrom,
+                  config.yieldYakGlpWrapperAddress,
+                  maxHops,
+                  gasPrice);
             } catch (e) {
               this.handleTransactionError(e);
             }
           } else {
             try {
               return await yakWrapRouter.unwrapAndFindBestPath(
-                amountIn,
-                tknTo,
-                config.yieldYakGlpWrapperAddress,
-                maxHops,
-                gasPrice);
+                  amountIn,
+                  tknTo,
+                  config.yieldYakGlpWrapperAddress,
+                  maxHops,
+                  gasPrice);
             } catch (e) {
               this.handleTransactionError(e);
             }
@@ -383,14 +427,6 @@ export default {
       return async (sourceAsset, targetAsset, amountIn) => {
         console.warn('PARA SWAP QUERY METHOD');
         const paraSwapSDK = constructSimpleSDK({chainId: config.chainId, axios});
-
-        console.log('sourceAsset', sourceAsset);
-        console.log('targetAsset', targetAsset);
-        console.log('srcToken', TOKEN_ADDRESSES[sourceAsset]);
-        console.log('destToken', TOKEN_ADDRESSES[targetAsset]);
-        console.log('amount', amountIn);
-        console.log('userAddress', this.smartLoanContract.address);
-        console.log('side', SwapSide.SELL);
 
         const swapRate = await paraSwapSDK.swap.getRate({
           srcToken: TOKEN_ADDRESSES[sourceAsset],
@@ -431,12 +467,12 @@ export default {
 
           try {
             return await yakRouter.findBestPathWithGas(
-              amountIn,
-              tknFrom,
-              tknTo,
-              maxHops,
-              gasPrice,
-              {gasLimit: 1e9}
+                amountIn,
+                tknFrom,
+                tknTo,
+                maxHops,
+                gasPrice,
+                {gasLimit: 1e9}
             );
           } catch (e) {
             this.handleTransactionError(e);
@@ -450,22 +486,22 @@ export default {
           if (targetAsset === 'GLP') {
             try {
               return await yakWrapRouter.findBestPathAndWrap(
-                amountIn,
-                tknFrom,
-                config.yieldYakGlpWrapperAddress,
-                maxHops,
-                gasPrice);
+                  amountIn,
+                  tknFrom,
+                  config.yieldYakGlpWrapperAddress,
+                  maxHops,
+                  gasPrice);
             } catch (e) {
               this.handleTransactionError(e);
             }
           } else {
             try {
               return await yakWrapRouter.unwrapAndFindBestPath(
-                amountIn,
-                tknTo,
-                config.yieldYakGlpWrapperAddress,
-                maxHops,
-                gasPrice);
+                  amountIn,
+                  tknTo,
+                  config.yieldYakGlpWrapperAddress,
+                  maxHops,
+                  gasPrice);
             } catch (e) {
               this.handleTransactionError(e);
             }
@@ -527,6 +563,7 @@ export default {
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.lpAssets = this.lpAssets;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
+      modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.farms = this.farms;
@@ -549,8 +586,8 @@ export default {
         }, (error) => {
           this.handleTransactionError(error);
         })
-          .then(() => {
-          });
+            .then(() => {
+            });
       });
     },
 
@@ -571,6 +608,7 @@ export default {
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
+      modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.farms = this.farms;
@@ -603,16 +641,17 @@ export default {
       modalInstance.sourceAssetBalance = this.assetBalances[this.asset.symbol];
       modalInstance.sourceAssetDebt = this.debtsPerAsset[this.asset.symbol].debt;
       modalInstance.assets = this.assets;
-      modalInstance.sourceAssets = BORROWABLE_ASSETS;
-      modalInstance.targetAssets = BORROWABLE_ASSETS;
+      modalInstance.sourceAssets = this.borrowable;
+      modalInstance.targetAssets = this.borrowable;
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
+      modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.farms = this.farms;
-      modalInstance.targetAsset = BORROWABLE_ASSETS.filter(asset => asset !== this.asset.symbol)[0];
+      modalInstance.targetAsset = this.borrowable.filter(asset => asset !== this.asset.symbol)[0];
       modalInstance.debt = this.fullLoanStatus.debt;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
       modalInstance.health = this.fullLoanStatus.health;
@@ -647,6 +686,7 @@ export default {
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
+      modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.farms = this.farms;
       modalInstance.loan = this.fullLoanStatus.debt ? this.fullLoanStatus.debt : 0;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
@@ -666,27 +706,28 @@ export default {
               };
 
               this.handleTransaction(this.createLoanAndDeposit, {request: request}, () => {
-                  this.scheduleHardRefresh();
-                  this.$forceUpdate();
-                },
-                (error) => {
-                  this.handleTransactionError(error);
-                });
+                    this.scheduleHardRefresh();
+                    this.$forceUpdate();
+                  },
+                  (error) => {
+                    this.handleTransactionError(error);
+                  });
             } else {
+              console.log('createAndFundLoan');
               this.handleTransaction(this.createAndFundLoan, {
-                  asset: addFromWalletEvent.asset,
-                  value: value,
-                  isLP: false
-                }, () => {
-                  this.scheduleHardRefresh();
-                  this.$forceUpdate();
-                },
-                (error) => {
-                  this.handleTransactionError(error);
-                });
+                    asset: addFromWalletEvent.asset,
+                    value: value,
+                    isLP: false
+                  }, () => {
+                    this.scheduleHardRefresh();
+                    this.$forceUpdate();
+                  },
+                  (error) => {
+                    this.handleTransactionError(error);
+                  });
             }
           } else {
-            if (addFromWalletEvent.asset === 'AVAX') {
+            if (addFromWalletEvent.asset === this.nativeAssetOptions[0]) {
               this.handleTransaction(this.fundNativeToken, {value: value}, () => {
                 this.$forceUpdate();
               }, (error) => {
@@ -721,6 +762,7 @@ export default {
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
+      modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.farms = this.farms;
@@ -730,7 +772,7 @@ export default {
 
       modalInstance.$on('WITHDRAW', withdrawEvent => {
         const value = Number(withdrawEvent.value).toFixed(config.DECIMALS_PRECISION);
-        if (withdrawEvent.withdrawAsset === 'AVAX') {
+        if (withdrawEvent.withdrawAsset === this.nativeAssetOptions[0]) {
           const withdrawRequest = {
             asset: withdrawEvent.withdrawAsset,
             value: value,
@@ -742,8 +784,8 @@ export default {
           }, (error) => {
             this.handleTransactionError(error);
           })
-            .then(() => {
-            });
+              .then(() => {
+              });
         } else {
           const withdrawRequest = {
             asset: this.asset.symbol,
@@ -756,8 +798,8 @@ export default {
           }, (error) => {
             this.handleTransactionError(error);
           })
-            .then(() => {
-            });
+              .then(() => {
+              });
         }
       });
     },
@@ -781,6 +823,7 @@ export default {
       modalInstance.lpAssets = this.lpAssets;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
+      modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.health = this.fullLoanStatus.health;
@@ -799,8 +842,8 @@ export default {
         }, (error) => {
           this.handleTransactionError(error);
         })
-          .then(() => {
-          });
+            .then(() => {
+            });
       });
     },
 
@@ -848,8 +891,10 @@ export default {
     },
 
     async getWalletAssetBalance() {
-      const tokenContract = new ethers.Contract(addresses[this.asset.symbol], erc20ABI, this.provider.getSigner());
-      return await this.getWalletTokenBalance(this.account, this.asset.symbol, tokenContract, false);
+      const tokenContract = new ethers.Contract(config.ASSETS_CONFIG[this.asset.symbol].address, erc20ABI, this.provider.getSigner());
+      const walletTokenBalance = await this.getWalletTokenBalance(this.account, this.asset.symbol, tokenContract, config.ASSETS_CONFIG[this.asset.symbol].decimals);
+      console.log('walletTokenBalance', this.asset.symbol, walletTokenBalance);
+      return walletTokenBalance;
     },
 
     async getSmartLoanContractNativeTokenBalance() {
@@ -1004,12 +1049,19 @@ export default {
     setupPoolsApy() {
       this.poolService.observePools().subscribe(pools => {
         pools.forEach(pool => {
-          this.borrowApyPerPool[pool.asset.symbol] = pool.borrowingAPY;
+          if (!pool.disabled) {
+            this.borrowApyPerPool[pool.asset.symbol] = pool.borrowingAPY;
+          }
         });
       });
     },
   },
   watch: {
+    asset: function (asset) {
+      if (!asset.tradingViewSymbol) {
+        this.selectedChart = 'Chart'
+      }
+    },
     smartLoanContract: {
       handler(smartLoanContract) {
         if (smartLoanContract) {
@@ -1036,7 +1088,11 @@ export default {
   transition: all 200ms;
 
   &.expanded {
-    height: 433px;
+    height: 477px;
+
+    &.expanded--trading-view {
+      height: 715px;
+    }
   }
 
   .table__row {
@@ -1163,6 +1219,19 @@ export default {
 
     .colored-value {
       font-weight: 500;
+    }
+
+    .chart-container__toggle {
+      margin-bottom: 16px;
+    }
+
+    .trading-view-chart {
+      transition: 200ms opacity ease-in-out;
+      opacity: 0;
+
+      &.trading-view-chart--visible {
+        opacity: 1;
+      }
     }
   }
 }

@@ -63,7 +63,7 @@ export default {
       this.assetFilterGroups = [
         {
           label: 'Filter by assets',
-          options: ['AVAX', 'USDC', 'USDT', 'ETH', 'sAVAX', 'GLP'],
+          options: Object.entries(config.FARMED_TOKENS_CONFIG).filter(([,value]) => !value[0].isTokenLp).map(el => el[0]),
           key: 'asset'
         },
       ];

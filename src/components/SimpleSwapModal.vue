@@ -121,7 +121,7 @@ import config from '../config';
 import {formatUnits, parseUnits} from '../utils/calculate';
 import {BigNumber} from 'ethers';
 import SimpleInput from './SimpleInput';
-import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
+import TOKEN_ADDRESSES from '../../common/addresses/avalanche/token_addresses.json';
 import DeltaIcon from './DeltaIcon.vue';
 import InfoIcon from './InfoIcon.vue';
 
@@ -288,7 +288,9 @@ export default {
 
     setupSourceAssetOptions() {
       this.sourceAssetOptions = [];
+      console.log('this.sourceAssets', this.sourceAssets);
       this.sourceAssets.forEach(assetSymbol => {
+        console.log(assetSymbol);
         const asset = config.ASSETS_CONFIG[assetSymbol];
         const assetOption = {
           symbol: assetSymbol,
@@ -506,53 +508,6 @@ export default {
 .target-asset-info {
   display: flex;
   justify-content: flex-end;
-}
-
-.slippage-bar {
-  border-top: var(--swap-modal__slippage-bar-border);
-  border-bottom: var(--swap-modal__slippage-bar-border);
-  margin-top: 26px;
-  height: 42px;
-  font-family: Montserrat;
-  font-size: 16px;
-  color: var(--swap-modal__slippage-bar-color);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-left: 15px;
-  padding-right: 15px;
-
-  .info__icon {
-    transform: translateY(-1px);
-  }
-
-  .percent {
-    font-weight: 600;
-  }
-
-  .slippage-info {
-    display: flex;
-    align-items: center;
-
-    .percent {
-      margin-left: 6px;
-    }
-
-    .slippage-label {
-      margin-right: 6px;
-    }
-  }
-
-  .deviation-value {
-    font-weight: 600;
-  }
-
-  .slippage__divider {
-    width: 2px;
-    height: 17px;
-    background-color: var(--swap-modal__slippage-divider-color);
-    margin: 0 10px;
-  }
 }
 
 .bar-gauge-tall-wrapper {

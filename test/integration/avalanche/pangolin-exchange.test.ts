@@ -20,7 +20,7 @@ import {
     wavaxAbi
 } from "../../_helpers";
 import {parseUnits} from "ethers/lib/utils";
-import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
+import TOKEN_ADDRESSES from '../../../common/addresses/avalanche/token_addresses.json';
 
 chai.use(solidity);
 
@@ -180,7 +180,7 @@ describe('PangolinIntermediary', () => {
             let exchangeFactory = await ethers.getContractFactory("PangolinIntermediary");
             sut = (await exchangeFactory.deploy()).connect(owner) as PangolinIntermediary;
 
-            let tokensPrices = await getTokensPricesMap(['AVAX', 'USDC'], getRedstonePrices, []);
+            let tokensPrices = await getTokensPricesMap(['AVAX', 'USDC'], "avalanche", getRedstonePrices, []);
             AVAX_PRICE = tokensPrices.get('AVAX')!;
             USD_PRICE = tokensPrices.get('USDC')!;
 

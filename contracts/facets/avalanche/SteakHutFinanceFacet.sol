@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: ;
+// Last deployed from commit: 2fb058fa4d8089fcdc61eecc5d098914722a8f02;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -15,20 +15,8 @@ import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
 import "../../lib/local/DeploymentConstants.sol";
 
 contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
-    modifier onlyWhitelistedAccounts {
-        if(
-            msg.sender == 0x0E5Bad4108a6A5a8b06820f98026a7f3A77466b2 ||
-            msg.sender == 0x2fFA7E9624B923fA811d9B9995Aa34b715Db1945 ||
-            msg.sender == 0x0d7137feA34BC97819f05544Ec7DE5c98617989C ||
-            msg.sender == 0xC6ba6BB819f1Be84EFeB2E3f2697AD9818151e5D ||
-            msg.sender == 0x14f69F9C351b798dF31fC53E33c09dD29bFAb547
+    using TransferHelper for address;
 
-        ){
-            _;
-        } else {
-            revert("Not whitelisted");
-        }
-    }
     /**
      * Stakes in SteakHut JOE/AVAX balanced-wide pool
      * @param amount0Desired amount of JOE to be staked
@@ -215,7 +203,7 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * Stakes {stakingDetails.token0Address}, {stakingDetails.token1Address} token in the SteakHut pool
      * @param stakingDetails ISteakHutPool.StakingDetails staking details
      **/
-    function _stakeTokenSteakHut(ISteakHutPool.StakingDetails memory stakingDetails) private onlyWhitelistedAccounts nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent {
+    function _stakeTokenSteakHut(ISteakHutPool.StakingDetails memory stakingDetails) private nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         address vaultAddress = tokenManager.getAssetAddress(stakingDetails.vaultTokenSymbol, false);
         IERC20 vaultToken = IERC20(vaultAddress);
@@ -228,8 +216,10 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         stakingDetails.amount1Desired = Math.min(token1.balanceOf(address(this)), stakingDetails.amount1Desired);
         require(stakingDetails.amount0Desired > 0 && stakingDetails.amount1Desired > 0, "Cannot stake 0 tokens");
 
-        token0.approve(vaultAddress, stakingDetails.amount0Desired);
-        token1.approve(vaultAddress, stakingDetails.amount1Desired);
+        address(token0).safeApprove(vaultAddress, 0);
+        address(token0).safeApprove(vaultAddress, stakingDetails.amount0Desired);
+        address(token1).safeApprove(vaultAddress, 0);
+        address(token1).safeApprove(vaultAddress, stakingDetails.amount1Desired);
         (, uint256 amount0Actual, uint256 amount1Actual) = ISteakHutPool(vaultAddress).deposit(stakingDetails.amount0Desired, stakingDetails.amount1Desired, stakingDetails.amount0Min, stakingDetails.amount1Min);
 
         // Add/remove owned tokens
@@ -257,7 +247,7 @@ contract SteakHutFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * Unstakes {UnstakingDetails.token0Address}, {UnstakingDetails.token1Address} token from the SteakHut pool
      * @param unstakingDetails ISteakHutPool.UnstakingDetails unstaking details
      **/
-    function _unstakeTokenSteakHut(ISteakHutPool.UnstakingDetails memory unstakingDetails) private onlyWhitelistedAccounts nonReentrant onlyOwnerOrInsolvent recalculateAssetsExposure {
+    function _unstakeTokenSteakHut(ISteakHutPool.UnstakingDetails memory unstakingDetails) private nonReentrant onlyOwnerOrInsolvent recalculateAssetsExposure {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         address vaultAddress = tokenManager.getAssetAddress(unstakingDetails.vaultTokenSymbol, true);
         uint256 vaultTokenBalance = IERC20(vaultAddress).balanceOf(address(this));

@@ -6,7 +6,9 @@
           <div class="close-button-container">
             <DeltaIcon class="close-button-container__icon" :icon-src="'src/assets/icons/cross.svg'" :size="21" v-on:click.native="close()"></DeltaIcon>
           </div>
-          <slot></slot>
+          <div class="modal-scroll">
+            <slot></slot>
+          </div>
         </div>
       </div>
     </div>
@@ -61,7 +63,7 @@ export default {
         width: 750px;
         border-radius: 21px;
         background-color: var(--modal__background-color);
-        padding: 60px 100px;
+        padding: 60px 0;
 
         &::after {
           position: absolute;
@@ -89,6 +91,29 @@ export default {
         .close-button-container__icon {
           background: var(--modal__close-button-container-color);
           cursor: pointer;
+        }
+      }
+
+      .modal-scroll {
+        max-height: 75vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 0 100px;
+        line-height: normal;
+
+        &::-webkit-scrollbar {
+          width: 12px;
+        }
+
+        &::-webkit-scrollbar-thumb {
+          border: 4px solid transparent;
+          background-clip: padding-box;
+          background-color: var(--modal__scroll-bar-background);
+          border-radius: 999px;
+
+          &:hover {
+            background-color: var(--modal__scroll-bar-hover-background);
+          }
         }
       }
     }

@@ -1,0 +1,46 @@
+{
+  "avalanche": {
+    "TJLB_AVAX-USDC": {
+      "assetX": "AVAX",
+      "assetY": "0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e",
+      "binStep": 20
+    },
+    "TJLB_ETH-AVAX": {
+      "assetX": "0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab",
+      "assetY": "AVAX",
+      "binStep": 10
+    }
+  },
+  "arbitrum": {
+    "TJLB_ETH_USDT": {
+      "assetX": "ETH",
+      "assetY": "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
+      "binStep": 15
+    },
+    "TJLB_GMX_ETH": {
+      "assetX": "0xfc5a1a6eb076a2c7ad06ed22c90d7e710e35ad0a",
+      "assetY": "ETH",
+      "binStep": 20
+    },
+    "TJLB_DAI_USDCe": {
+      "assetX": "0xda10009cbd5d07dd0cecc66161fc93d7c9000da1",
+      "assetY": "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8",
+      "binStep": 1
+    },
+    "TJLB_ETH_USDCe": {
+      "assetX": "ETH",
+      "assetY": "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8",
+      "binStep": 15
+    },
+    "TJLB_BTC_ETH": {
+      "assetX": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
+      "assetY": "ETH",
+      "binStep": 10
+    },
+    "TJLB_JOE_ETH": {
+      "assetX": "0x371c7ec6d8039ff7933a2aa28eb827ffe1f52f07",
+      "assetY": "ETH",
+      "binStep": 20
+    }
+  }
+}

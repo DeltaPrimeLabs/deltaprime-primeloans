@@ -15,6 +15,7 @@ import "../../interfaces/IVectorFinanceMainStaking.sol";
 import "../../lib/local/DeploymentConstants.sol";
 
 contract VectorFinanceFacetMock is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
+    using TransferHelper for address;
 
     // CONSTANTS
 
@@ -116,7 +117,8 @@ contract VectorFinanceFacetMock is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         amount = Math.min(stakedToken.balanceOf(address(this)), amount);
         require(amount > 0, "Cannot stake 0 tokens");
 
-        stakedToken.approve(VectorMainStaking, amount);
+        address(stakedToken).safeApprove(VectorMainStaking, 0);
+        address(stakedToken).safeApprove(VectorMainStaking, amount);
 
         poolHelper.deposit(amount);
 

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 9f1e1bba11316303810f35a4440e20bc5ad0ef86;
+// Last deployed from commit: d7393e77677f3d42a46dce346d75a831a380100e;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
@@ -42,6 +42,9 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
     VestingDistributor public vestingDistributor;
 
+    uint8 internal _decimals;
+
+
     function initialize(IRatesCalculator ratesCalculator_, IBorrowersRegistry borrowersRegistry_, IIndex depositIndex_, IIndex borrowIndex_, address payable tokenAddress_, IPoolRewarder poolRewarder_, uint256 _totalSupplyCap) public initializer {
         require(AddressUpgradeable.isContract(address(ratesCalculator_))
             && AddressUpgradeable.isContract(address(borrowersRegistry_))
@@ -56,6 +59,8 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         poolRewarder = poolRewarder_;
         tokenAddress = tokenAddress_;
         totalSupplyCap = _totalSupplyCap;
+
+        _decimals = IERC20Metadata(tokenAddress_).decimals();
 
         __Ownable_init();
         __ReentrancyGuard_init();
@@ -130,18 +135,22 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     }
 
     /* ========== MUTATIVE FUNCTIONS ========== */
-    function transfer(address recipient, uint256 amount) external override returns (bool) {
+    function transfer(address recipient, uint256 amount) external override nonReentrant returns (bool) {
         if(recipient == address(0)) revert TransferToZeroAddress();
 
         if(recipient == address(this)) revert TransferToPoolAddress();
 
-        _accumulateDepositInterest(msg.sender);
+        address account = msg.sender;
+        _accumulateDepositInterest(account);
 
-        if(_deposited[msg.sender] < amount) revert TransferAmountExceedsBalance(amount, _deposited[msg.sender]);
+        (uint256 lockedAmount, uint256 transferrableAmount) = _getAmounts(account);
+        if(amount > transferrableAmount) revert TransferAmountExceedsBalance(amount, transferrableAmount);
+
+        _updateWithdrawn(account, amount, lockedAmount);
 
         // (this is verified in "require" above)
         unchecked {
-            _deposited[msg.sender] -= amount;
+            _deposited[account] -= amount;
         }
 
         _accumulateDepositInterest(recipient);
@@ -149,13 +158,13 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
         // Handle rewards
         if(address(poolRewarder) != address(0) && amount != 0){
-            uint256 unstaked = poolRewarder.withdrawFor(amount, msg.sender);
+            uint256 unstaked = poolRewarder.withdrawFor(amount, account);
             if(unstaked > 0) {
                 poolRewarder.stakeFor(unstaked, recipient);
             }
         }
 
-        emit Transfer(msg.sender, recipient, amount);
+        emit Transfer(account, recipient, amount);
 
         return true;
     }
@@ -194,7 +203,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         return true;
     }
 
-    function transferFrom(address sender, address recipient, uint256 amount) external override returns (bool) {
+    function transferFrom(address sender, address recipient, uint256 amount) external override nonReentrant returns (bool) {
         if(_allowed[sender][msg.sender] < amount) revert InsufficientAllowance(amount, _allowed[sender][msg.sender]);
 
         if(recipient == address(0)) revert TransferToZeroAddress();
@@ -203,8 +212,10 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
         _accumulateDepositInterest(sender);
 
-        if(_deposited[sender] < amount) revert TransferAmountExceedsBalance(amount, _deposited[sender]);
+        (uint256 lockedAmount, uint256 transferrableAmount) = _getAmounts(sender);
+        if(amount > transferrableAmount) revert TransferAmountExceedsBalance(amount, transferrableAmount);
 
+        _updateWithdrawn(sender, amount, lockedAmount);
 
         _deposited[sender] -= amount;
         _allowed[sender][msg.sender] -= amount;
@@ -230,7 +241,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      * Deposits the amount
      * It updates user deposited balance, total deposited and rates
      **/
-    function deposit(uint256 _amount) public virtual  {
+    function deposit(uint256 _amount) public virtual {
         depositOnBehalf(_amount, msg.sender);
     }
 
@@ -288,9 +299,9 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         }
         _burn(msg.sender, _amount);
 
-        _transferFromPool(msg.sender, _amount);
-
         _updateRates();
+
+        _transferFromPool(msg.sender, _amount);
 
         if (address(poolRewarder) != address(0)) {
             poolRewarder.withdrawFor(_amount, msg.sender);
@@ -359,8 +370,8 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         _symbol = "";
     }
 
-    function decimals() public virtual pure returns(uint8 decimals){
-        decimals = 0;
+    function decimals() public virtual view returns(uint8){
+        return _decimals;
     }
 
     function totalSupply() public view override returns (uint256) {
@@ -448,12 +459,10 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
     function _burn(address account, uint256 amount) internal {
         if(amount > _deposited[account]) revert BurnAmountExceedsBalance();
-        if(amount > _deposited[account] - (vestingDistributor.locked(account) - vestingDistributor.availableToWithdraw(account))) revert BurnAmountExceedsAvailableForUser();
+        (uint256 lockedAmount, uint256 transferrableAmount) = _getAmounts(account);
+        if(amount > transferrableAmount) revert BurnAmountExceedsAvailableForUser();
 
-        uint256 availableUnvested = _deposited[account] - vestingDistributor.locked(account);
-        if (amount > availableUnvested) {
-            vestingDistributor.updateWithdrawn(account, amount - availableUnvested);
-        }
+        _updateWithdrawn(account, amount, lockedAmount);
 
         // verified in "require" above
         unchecked {
@@ -461,6 +470,22 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         }
 
         emit Transfer(account, address(0), amount);
+    }
+
+    function _getAmounts(address account) internal view returns (uint256 lockedAmount, uint256 transferrableAmount) {
+        if (address(vestingDistributor) != address(0)) {
+            lockedAmount = vestingDistributor.locked(account);
+            transferrableAmount = _deposited[account] - (lockedAmount - vestingDistributor.availableToWithdraw(account));
+        } else {
+            transferrableAmount = _deposited[account];
+        }
+    }
+
+    function _updateWithdrawn(address account, uint256 amount, uint256 lockedAmount) internal {
+        uint256 availableUnvested = _deposited[account] - lockedAmount;
+        if (amount > availableUnvested && address(vestingDistributor) != address(0)) {
+            vestingDistributor.updateWithdrawn(account, amount - availableUnvested);
+        }
     }
 
     function _updateRates() internal {

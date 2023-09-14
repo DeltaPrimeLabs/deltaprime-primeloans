@@ -5,6 +5,14 @@ pragma solidity 0.8.17;
 interface IVectorFinanceCompounder {
     function balanceOf(address account) external view returns (uint256);
 
+    function transfer(address recipient, uint256 amount) external returns (bool);
+
+    function transferFrom(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) external returns (bool);
+
     function decimals() external view returns (uint256);
 
     function withdraw(uint256 amount, uint256 minAmount) external;
@@ -16,6 +24,8 @@ interface IVectorFinanceCompounder {
     function depositTracking(address) external view returns (uint256);
 
     function migrateAllUserDepositsFromManual() external;
+
+    function getDepositTokensForShares(uint256 amount) external view returns (uint256);
 
     function userDepositToken(address user) external view returns (uint256);
 }

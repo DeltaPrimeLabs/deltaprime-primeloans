@@ -3,6 +3,7 @@ import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json';
+import AddressProviderArtifact from '../../../artifacts/contracts/AddressProvider.sol/AddressProvider.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import {
@@ -24,6 +25,7 @@ import {
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {
+    AddressProvider,
     TraderJoeIntermediary,
     SmartLoansFactory,
     LiquidationFlashloan, MockTokenManager, PangolinIntermediary
@@ -34,7 +36,7 @@ import {parseUnits} from "ethers/lib/utils";
 import fs from "fs";
 import path from "path";
 import CACHE_LAYER_URLS from '../../../common/redstone-cache-layer-urls.json';
-import TOKEN_ADDRESSES from "../../../common/addresses/avax/token_addresses.json";
+import TOKEN_ADDRESSES from "../../../common/addresses/avalanche/token_addresses.json";
 
 const {deployDiamond, replaceFacet} = require('../../../tools/diamond/deploy-diamond');
 
@@ -87,7 +89,7 @@ describe('Test liquidator with a flashloan', () => {
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
-            tokensPrices = await getTokensPricesMap(assetsList, getRedstonePrices, []);
+            tokensPrices = await getTokensPricesMap(assetsList, "avalanche", getRedstonePrices, []);
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
             addMissingTokenContracts(tokenContracts, assetsList);
@@ -106,11 +108,18 @@ describe('Test liquidator with a flashloan', () => {
             await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
             await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
+            let addressProvider = await deployContract(
+                owner,
+                AddressProviderArtifact,
+                []
+            ) as AddressProvider;
+
             await recompileConstantsFile(
                 'local',
                 "DeploymentConstants",
                 [],
                 tokenManager.address,
+                addressProvider.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -130,6 +139,7 @@ describe('Test liquidator with a flashloan', () => {
                     }
                 ],
                 tokenManager.address,
+                addressProvider.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -214,7 +224,7 @@ describe('Test liquidator with a flashloan', () => {
 
         it("replace facet", async () => {
             await diamondCut.pause();
-            await replaceFacet('SolvencyFacetProd', diamondAddress, ['isSolvent']);
+            await replaceFacet('SolvencyFacetProdAvalanche', diamondAddress, ['isSolvent']);
             await diamondCut.unpause();
 
             expect(await wrappedLoan.isSolvent()).to.be.false;
@@ -258,7 +268,7 @@ describe('Test liquidator with a flashloan', () => {
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
-            tokensPrices = await getTokensPricesMap(assetsList, getRedstonePrices, []);
+            tokensPrices = await getTokensPricesMap(assetsList, "avalanche", getRedstonePrices, []);
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
             addMissingTokenContracts(tokenContracts, assetsList);
@@ -277,11 +287,18 @@ describe('Test liquidator with a flashloan', () => {
             await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
             await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
+            let addressProvider = await deployContract(
+                owner,
+                AddressProviderArtifact,
+                []
+            ) as AddressProvider;
+
             await recompileConstantsFile(
                 'local',
                 "DeploymentConstants",
                 [],
                 tokenManager.address,
+                addressProvider.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -301,6 +318,7 @@ describe('Test liquidator with a flashloan', () => {
                     }
                 ],
                 tokenManager.address,
+                addressProvider.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -372,7 +390,7 @@ describe('Test liquidator with a flashloan', () => {
 
         it("replace facet", async () => {
             await diamondCut.pause();
-            await replaceFacet('SolvencyFacetProd', diamondAddress, ['isSolvent']);
+            await replaceFacet('SolvencyFacetProdAvalanche', diamondAddress, ['isSolvent']);
             await diamondCut.unpause();
 
             expect(await wrappedLoan.isSolvent()).to.be.false;
@@ -416,7 +434,7 @@ describe('Test liquidator with a flashloan', () => {
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
-            tokensPrices = await getTokensPricesMap(assetsList, getRedstonePrices, []);
+            tokensPrices = await getTokensPricesMap(assetsList, "avalanche", getRedstonePrices, []);
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
             addMissingTokenContracts(tokenContracts, assetsList);
@@ -435,11 +453,18 @@ describe('Test liquidator with a flashloan', () => {
             await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
             await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
+            let addressProvider = await deployContract(
+                owner,
+                AddressProviderArtifact,
+                []
+            ) as AddressProvider;
+
             await recompileConstantsFile(
                 'local',
                 "DeploymentConstants",
                 [],
                 tokenManager.address,
+                addressProvider.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -459,6 +484,7 @@ describe('Test liquidator with a flashloan', () => {
                     }
                 ],
                 tokenManager.address,
+                addressProvider.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -541,7 +567,7 @@ describe('Test liquidator with a flashloan', () => {
 
         it("replace facet", async () => {
             await diamondCut.pause();
-            await replaceFacet('SolvencyFacetProd', diamondAddress, ['isSolvent']);
+            await replaceFacet('SolvencyFacetProdAvalanche', diamondAddress, ['isSolvent']);
             await diamondCut.unpause();
 
             expect(await wrappedLoan.isSolvent()).to.be.false;
@@ -585,7 +611,7 @@ describe('Test liquidator with a flashloan', () => {
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
-            tokensPrices = await getTokensPricesMap(assetsList, getRedstonePrices, []);
+            tokensPrices = await getTokensPricesMap(assetsList, "avalanche", getRedstonePrices, []);
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
             addMissingTokenContracts(tokenContracts, assetsList);
@@ -604,11 +630,18 @@ describe('Test liquidator with a flashloan', () => {
             await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
             await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
+            let addressProvider = await deployContract(
+                owner,
+                AddressProviderArtifact,
+                []
+            ) as AddressProvider;
+
             await recompileConstantsFile(
                 'local',
                 "DeploymentConstants",
                 [],
                 tokenManager.address,
+                addressProvider.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -628,6 +661,7 @@ describe('Test liquidator with a flashloan', () => {
                     }
                 ],
                 tokenManager.address,
+                addressProvider.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -715,7 +749,7 @@ describe('Test liquidator with a flashloan', () => {
 
         it("replace facet", async () => {
             await diamondCut.pause();
-            await replaceFacet('SolvencyFacetProd', diamondAddress, ['isSolvent']);
+            await replaceFacet('SolvencyFacetProdAvalanche', diamondAddress, ['isSolvent']);
             await diamondCut.unpause();
 
             expect(await wrappedLoan.isSolvent()).to.be.false;
@@ -776,7 +810,7 @@ describe('Test liquidator with a flashloan', () => {
 
             exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, tokenManager.address, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
 
-            tokensPrices = await getTokensPricesMap(assetsList, getRedstonePrices, []);
+            tokensPrices = await getTokensPricesMap(assetsList, "avalanche", getRedstonePrices, []);
             AVAX_PRICE = tokensPrices.get('AVAX')!;
             ETH_PRICE = tokensPrices.get('ETH')!;
             BTC_PRICE = tokensPrices.get('BTC')!;
@@ -805,6 +839,12 @@ describe('Test liquidator with a flashloan', () => {
             await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
             await smartLoansFactory.initialize(diamondAddress);
 
+            let addressProvider = await deployContract(
+                owner,
+                AddressProviderArtifact,
+                []
+            ) as AddressProvider;
+
             await recompileConstantsFile(
                 'local',
                 "DeploymentConstants",
@@ -815,6 +855,7 @@ describe('Test liquidator with a flashloan', () => {
                     }
                 ],
                 tokenManager.address,
+                addressProvider.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -891,7 +932,7 @@ describe('Test liquidator with a flashloan', () => {
 
         it("replace facet", async () => {
             await diamondCut.pause();
-            await replaceFacet('SolvencyFacetProd', diamondAddress, ['isSolvent']);
+            await replaceFacet('SolvencyFacetProdAvalanche', diamondAddress, ['isSolvent']);
             await diamondCut.unpause();
 
             expect(await wrappedLoan.isSolvent()).to.be.false;
@@ -954,7 +995,7 @@ describe('Test liquidator with a flashloan', () => {
             exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, tokenManager.address, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
             exchangePNG = await deployAndInitExchangeContract(owner, pangolinRouterAddress, tokenManager.address, supportedAssets, "PangolinIntermediary") as PangolinIntermediary;
 
-            tokensPrices = await getTokensPricesMap(assetsList, getRedstonePrices, []);
+            tokensPrices = await getTokensPricesMap(assetsList, "avalanche", getRedstonePrices, []);
             AVAX_PRICE = tokensPrices.get('AVAX')!;
             ETH_PRICE = tokensPrices.get('ETH')!;
             BTC_PRICE = tokensPrices.get('BTC')!;
@@ -985,6 +1026,12 @@ describe('Test liquidator with a flashloan', () => {
 
             await smartLoansFactory.initialize(diamondAddress);
 
+            let addressProvider = await deployContract(
+                owner,
+                AddressProviderArtifact,
+                []
+            ) as AddressProvider;
+
             await recompileConstantsFile(
                 'local',
                 "DeploymentConstants",
@@ -999,6 +1046,7 @@ describe('Test liquidator with a flashloan', () => {
                     }
                 ],
                 tokenManager.address,
+                addressProvider.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -1078,7 +1126,7 @@ describe('Test liquidator with a flashloan', () => {
 
         it("replace facet", async () => {
             await diamondCut.pause();
-            await replaceFacet('SolvencyFacetProd', diamondAddress, ['isSolvent']);
+            await replaceFacet('SolvencyFacetProdAvalanche', diamondAddress, ['isSolvent']);
             await diamondCut.unpause();
 
             expect(await wrappedLoan.isSolvent()).to.be.false;
@@ -1124,7 +1172,7 @@ describe('Test liquidator with a flashloan', () => {
             ];
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
 
-            tokensPrices = await getTokensPricesMap(assetsList, getRedstonePrices, []);
+            tokensPrices = await getTokensPricesMap(assetsList, "avalanche", getRedstonePrices, []);
             AVAX_PRICE = tokensPrices.get('AVAX')!;
             ETH_PRICE = tokensPrices.get('ETH')!;
             BTC_PRICE = tokensPrices.get('BTC')!;
@@ -1165,11 +1213,18 @@ describe('Test liquidator with a flashloan', () => {
 
             diamondAddress = await deployDiamond();
 
+            let addressProvider = await deployContract(
+                owner,
+                AddressProviderArtifact,
+                []
+            ) as AddressProvider;
+
             await recompileConstantsFile(
                 'local',
                 "DeploymentConstants",
                 [],
                 tokenManager.address,
+                addressProvider.address,
                 diamondAddress,
                 ethers.constants.AddressZero,
                 'lib'
@@ -1187,6 +1242,7 @@ describe('Test liquidator with a flashloan', () => {
                     }
                 ],
                 tokenManager.address,
+                addressProvider.address,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -1250,7 +1306,7 @@ describe('Test liquidator with a flashloan', () => {
 
         it("replace facet", async () => {
             await diamondCut.pause();
-            await replaceFacet('SolvencyFacetProd', diamondAddress, ['isSolvent']);
+            await replaceFacet('SolvencyFacetProdAvalanche', diamondAddress, ['isSolvent']);
             await diamondCut.unpause();
 
             expect(await wrappedLoan.isSolvent()).to.be.false;

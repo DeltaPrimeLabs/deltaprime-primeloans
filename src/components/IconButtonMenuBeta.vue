@@ -1,5 +1,5 @@
 <template>
-  <div id="icon-button-menu-component" class="icon-button-menu-component"
+  <div id="icon-button-menu-component" class="icon-button-menu-component" v-if="config"
        v-tooltip="!menuOpen && config.tooltip ? {content: config.tooltip, classes: 'button-tooltip'} : null">
     <Bubble v-if="$slots.bubble">
       <slot name="bubble"></slot>
@@ -140,9 +140,8 @@ export default {
   }
 
   .menu {
-    position: absolute;
-    top: 40px;
-    right: -8px;
+    position: fixed;
+    transform: translate(calc(-100% + 34px), 14px);
     z-index: 1;
     display: flex;
     flex-direction: column;

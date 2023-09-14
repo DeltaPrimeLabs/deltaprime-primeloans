@@ -9,6 +9,10 @@
   --app-page-content__background--opacity: 1;
   // endregion
 
+  // region labels
+  --label-color: #{$storm-blue};
+  // endregion
+
   // region AccountAprWidget
   --account-apr-widget-component__background: #{$space}80;
   --account-apr-widget-component__box-shadow: 7px 7px 30px 0 #{$dark-space}66;
@@ -137,6 +141,8 @@
   --modal__backdrop-backdrop-filter: blur(45px);
   --modal__backdrop-background: #{$dark-space}4c;
   --modal__pool-name-color: #{$mist-blue};
+  --modal__scroll-bar-background: #{$pale-space};
+  --modal__scroll-bar-hover-background: #{$dark-space};
   // endregion
 
   // region CurrencyInput
@@ -462,5 +468,77 @@
   // region BridgeModal
   --bridge-modal__slippage-bar-border: solid 2px #{$mist-space};
   --bridge-modal__slippage-bar-color: #{$storm-blue};
+  // endregion
+
+  // region NetworkSelect
+  --network-select__indicator-network-color: #{$storm-blue};
+  --network-select__chevron-color: #{$pale-lilac};
+  --network-select__dropdown-header-color: #{$washed-blue};
+  --network-select__dropdown-background: #{$space};
+  --network-select__dropdown-border-color: #{$washed-space};
+  --network-select__dropdown-shadow: 2px 2px 8px 0 #{$dark-space}7F;
+  --network-select__option-background--selected: #{$light-fuchsia};
+  --network-select__option-border--hover: #{$mist-navy};
+  --network-select__option-name-color: #{$washed-blue};
+  --network-select__option-name-color--selected: #{$mist-blue};
+  // endregion
+
+  // region TraderJoeAddLiquidityModal
+  --traderjoe-add-liquidity-modal__liquidity-shape-border: solid 2px #{$mist-space};
+  --traderjoe-add-liquidity-modal__liquidity-shape-border-active: solid 2px #{$light-navy};
+  --traderjoe-add-liquidity-modal__liquidity-shape-border-hover: #{$light-navy};
+  --traderjoe-add-liquidity-modal__liquidity-shape-box-shadow: 2px 2px 4px 0 #{$dark-space}80;
+  --traderjoe-add-liquidity-modal__liquidity-shape-background: #{$shallow-space};
+  --traderjoe-add-liquidity-modal__price-slider-input-color: #{$storm-blue};
+  --traderjoe-add-liquidity-modal__label-with-separator: #{$washed-blue};
+  --traderjoe-add-liquidity-modal__label-with-separator-background: #{$mist-space};
+  // endregion
+
+  // region TraderJoeRemoveLiquidityModal
+  --traderjoe-remove-liquidity-modal__liquidity-shape-border: solid 2px #{$mist-space};
+  --traderjoe-remove-liquidity-modal__liquidity-shape-border-active: solid 2px #{$light-navy};
+  --traderjoe-remove-liquidity-modal__liquidity-shape-border-hover: #{$light-navy};
+  --traderjoe-remove-liquidity-modal__liquidity-shape-box-shadow: 2px 2px 4px 0 #{$dark-space}80;
+  --traderjoe-remove-liquidity-modal__liquidity-shape-background: #{$shallow-space};
+  --traderjoe-remove-liquidity-modal__price-slider-input-color: #{$storm-blue};
+  --traderjoe-remove-liquidity-modal__label-with-separator: #{$washed-blue};
+  --traderjoe-remove-liquidity-modal__label-with-separator-background: #{$mist-space};
+  // endregion
+
+  // region RangeSlider
+  --range-slider__container-box-shadow: inset 0 1px 3px 0 #{$dark-space}b3;
+  --range-slider__container-box-background: #{$dark-space}33;
+  --range-slider__slider-track: #{$dark-lilac};
+  --range-slider__slider-thumb-box-shadow: -1px 1px 4px 0 #{$light-purple}80;
+  --range-slider__slider-thumb-border: solid 3px #{$dark-lilac};
+  --range-slider__slider-thumb-background: #{$space};
+  // endregion
+
+  // region Zaps
+  --zaps__header-color: #{$storm-blue};
+  // endregion
+
+  // region ZapLong
+  --zap-long__label-background-color: #{$shallow-space}77;
+  --zap-long__header-color: #{$white};
+  --zap-long__more-label-color: #{$white};
+  --zap-long__zap-tile-shadow: 7px 17px 55px 0 #{$washed-raspberry}77;
+  --zap-long__zap-tile-shadow--hover: 7px 17px 55px 0 #{$raspberry}77;
+  // endregion
+
+  // region LiquidityChart
+  --liquidity-chart__main-token-color: #{$awesome-lilac};
+  --liquidity-chart__main-token-color--hover: #{$pale-lilac};
+  --liquidity-chart__secondary-token-color: #{$bright-teal};
+  --liquidity-chart__secondary-token-color--hover: #{$off-white-teal};
+  --liquidity-chart__tooltip-background-color: #{$pale-fuchsia};
+  --liquidity-chart__tooltip-color: #{$mist-blue};
+  --liquidity-chart__tooltip-box-shadow: 2px 2px 4px 0 #{$dark-space}cc;
+  --liquidity-chart__axis-label-color: #{$washed-blue};
+  --liquidity-chart__boundary-color: #{$washed-space};
+  // endregion
+
+  // region CurrencyComboInput
+  --checkbox: #{$storm-blue};
   // endregion
 }

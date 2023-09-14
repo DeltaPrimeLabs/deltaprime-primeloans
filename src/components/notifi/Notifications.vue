@@ -77,7 +77,6 @@ export default ({
   mounted() {
     this.watchHistory();
     this.watchThemeChange();
-    console.log(this.notifications);
   },
   methods: {
     watchHistory() {

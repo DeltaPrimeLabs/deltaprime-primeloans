@@ -1,7 +1,7 @@
 <template>
   <button class="btn" :class="[disabled ? 'disabled': '', waiting ? 'disabled waiting': '', 'purple']"
           @click="clicked()"
-          :style="customStyle">
+          :style="variant && variants[variant]">
     <div class="btn-label">
       <img
         v-if="leftIconSrc"
@@ -16,7 +16,7 @@
         :size="16"
       ></DeltaIcon>
     </div>
-    <vue-loaders-ball-beat :style="customStyle ? { marginTop: '1px', marginBottom: '1px' } : ''" color="#FFFFFF" scale="0.5"></vue-loaders-ball-beat>
+    <vue-loaders-ball-beat :style="variant ? { marginTop: '1px', marginBottom: '1px' } : ''" color="#FFFFFF" scale="0.5"></vue-loaders-ball-beat>
   </button>
 </template>
 
@@ -29,12 +29,26 @@ export default {
     DeltaIcon
   },
   props: {
+    variant: null,
     disabled: false,
     waiting: false,
     label: '',
-    customStyle: { type: Object, default: null },
     leftIconSrc: { type: String, default: null },
     rightIconSrc: { type: String, default: null }
+  },
+  data() {
+    return {
+      variants: {
+        medium: {
+          fontSize: "14px",
+          padding: "9px 16px"
+        },
+        slim: {
+          fontSize: "15px",
+          padding: "7px 8px"
+        }
+      }
+    }
   },
   methods: {
     clicked() {

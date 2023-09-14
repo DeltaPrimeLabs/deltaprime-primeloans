@@ -20,11 +20,13 @@ library DeploymentConstants {
 
     address private constant _NATIVE_ADDRESS = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
 
-    address private constant _DIAMOND_BEACON_ADDRESS = 0x02df3a3F960393F5B349E40A599FEda91a7cc1A7;
+    address private constant _DIAMOND_BEACON_ADDRESS = 0x8A93d247134d91e0de6f96547cB0204e5BE8e5D8;
 
-    address private constant _SMART_LOANS_FACTORY_ADDRESS = 0x8F4ec854Dd12F1fe79500a1f53D0cbB30f9b6134;
+    address private constant _SMART_LOANS_FACTORY_ADDRESS = 0xCA8c8688914e0F7096c920146cd0Ad85cD7Ae8b9;
 
-    address private constant _TOKEN_MANAGER_ADDRESS = 0xdFdE6B33f13de2CA1A75A6F7169f50541B14f75b;
+    address private constant _TOKEN_MANAGER_ADDRESS = 0x4bf010f1b9beDA5450a8dD702ED602A104ff65EE;
+
+    address private constant _ADDRESS_PROVIDER = 0x986aaa537b8cc170761FDAC6aC4fc7F9d8a20A8C;
 
     //implementation-specific
 
@@ -54,6 +56,10 @@ library DeploymentConstants {
 
     function getTokenManager() internal pure returns (ITokenManager) {
         return ITokenManager(_TOKEN_MANAGER_ADDRESS);
+    }
+
+    function getAddressProvider() internal pure returns (address) {
+        return _ADDRESS_PROVIDER;
     }
 
     /**

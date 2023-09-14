@@ -1,7 +1,7 @@
 import TOKEN_MANAGER from '../../artifacts/contracts/TokenManager.sol/TokenManager.json';
 import LIQUIDATION_FLASHLOAN from '../../artifacts/contracts/LiquidationFlashloan.sol/LiquidationFlashloan.json';
-import addresses from '../../common/addresses/avax/token_addresses.json';
-import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
+import addresses from '../../common/addresses/avalanche/token_addresses.json';
+import TOKEN_ADDRESSES from '../../common/addresses/avalanche/token_addresses.json';
 import {
     fromBytes32,
     getLiquidationAmounts,
@@ -84,7 +84,7 @@ export async function liquidateLoan(loanAddress, flashLoanAddress, tokenManagerA
 
 
         let pricesArg = {}
-        let tokensPrices = await getTokensPricesMap(Object.keys(TOKEN_ADDRESSES), getRedstonePrices, []);
+        let tokensPrices = await getTokensPricesMap(Object.keys(TOKEN_ADDRESSES), "avalanche", getRedstonePrices, []);
         for (const asset of await tokenManager.getAllPoolAssets()) {
             pricesArg[fromBytes32(asset)] = tokensPrices.get(fromBytes32(asset));
         }

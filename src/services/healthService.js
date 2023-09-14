@@ -1,5 +1,6 @@
 import {Subject} from 'rxjs';
 import {calculateHealth} from '../utils/calculate';
+import config from '../config';
 
 export default class HealthService {
   refreshHealth$ = new Subject();
@@ -17,10 +18,14 @@ export default class HealthService {
     return this.health$.asObservable();
   }
 
-  async calculateHealth(noSmartLoan, debtsPerAsset, assets, assetBalances, lpAssets, lpBalances, concentratedLpAssets, concentratedLpBalances, stakeStoreFarms) {
-    if (noSmartLoan) return 1;
+  async calculateHealth(noSmartLoan, debtsPerAsset, assets, assetBalances, lpAssets, lpBalances, concentratedLpAssets, concentratedLpBalances, traderJoeV2LpAssets, stakeStoreFarms) {
+    console.log('healthService.calculateHealth()');
+    if (noSmartLoan) {
+      console.log('healthService - noSmartLoan');
+      return 1;
+    }
 
-    const redstonePriceDataRequest = await fetch('https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-avalanche-prod');
+    const redstonePriceDataRequest = await fetch(config.redstoneFeedUrl);
     const redstonePriceData = await redstonePriceDataRequest.json();
 
     if (debtsPerAsset && assets && assetBalances && lpAssets && lpBalances && stakeStoreFarms) {
@@ -72,8 +77,11 @@ export default class HealthService {
         });
       }
 
-      const health = calculateHealth(tokens);
+      let lbTokens = Object.values(traderJoeV2LpAssets);
+
+      const health = calculateHealth(tokens, lbTokens);
       this.health$.next(health >= 0 ? health : 0);
+      console.warn('EMITTING HEALTH: ', health);
       return health >= 0 ? health : 0;
     }
 

@@ -93,14 +93,10 @@ export default class notifiService {
     let data = {};
     let history = {};
 
-    console.log('notifi authenticated:', authenticated);
     if (authenticated) {
       // get user's targets and alerts configured
       data = await client.fetchData();
       history = await this.getNotifications(client);
-      console.log("alerts", data.alert);
-      // console.log("targetGroups", data.targetGroup);
-      // console.log("history", history);
     }
 
     const notifi = {
@@ -130,7 +126,6 @@ export default class notifiService {
     });
 
     // client should be authenticated now
-    console.log('logging in notifi success. loginResult', loginResult);
   }
 
   async createTargetGroups(client, targetPayload) {
@@ -150,7 +145,6 @@ export default class notifiService {
       this.deleteAlert(payload.client, alert.alertId);
     } else {
       const alertRes = await this[this.alertSettings[alert.alertType].createMethod](payload);
-      console.log(alertRes);
 
       if (!alertRes.id) return;
 
@@ -318,6 +312,5 @@ export default class notifiService {
 
   async deleteAlert(client, alertId) {
     await client.deleteAlert({ id: alertId });
-    console.log('alert deleted', alertId);
   }
 }

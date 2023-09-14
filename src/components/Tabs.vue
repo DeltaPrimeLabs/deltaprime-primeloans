@@ -57,7 +57,6 @@ export default {
     this.tabs = Object.values(this.$scopedSlots.default()[0].context.$refs)
     this.selectTab(this.openTabIndex)
     setTimeout(() => {
-      this.moveHighlightToSelectedTab();
       this.setupResizeObserver();
     });
   },
@@ -71,8 +70,10 @@ export default {
         this.tabHeight = tabRect.height;
         this.$emit('tabChange', this.selectedIndex);
         this.tabs[this.selectedIndex].$el.style.height = 'fit-content';
+        this.tabs[this.selectedIndex].$el.style.overflow = 'visible';
         this.tabs.filter((_, index) => index !== this.selectedIndex).forEach(tab => {
-          tab.$el.style.height = `${tabRect.height}px`;
+          tab.$el.style.height = `0px`;
+          tab.$el.style.overflow = 'hidden';
         })
       });
 
@@ -85,6 +86,7 @@ export default {
 
     setupResizeObserver() {
       const assetsComponent = document.getElementsByClassName('funds-beta-component')[0]
+      const lpTabComponent = document.getElementsByClassName('lp-tab')[0]
       const farmsComponent = document.getElementsByClassName('stake-beta-component')[0]
       const statsComponent = document.getElementsByClassName('stats-container')[0]
 
@@ -98,17 +100,28 @@ export default {
         }
       });
 
-      resizeObserver.observe(farmsComponent);
-      resizeObserver.observe(statsComponent);
+      if (assetsComponent) {
+        resizeObserver.observe(assetsComponent);
+      }
+      if (lpTabComponent) {
+        resizeObserver.observe(lpTabComponent);
+      }
+      if (farmsComponent) {
+        resizeObserver.observe(farmsComponent);
+      }
+      if (statsComponent) {
+        resizeObserver.observe(statsComponent);
+      }
     },
   },
   watch: {
     selectedIndex: function (value) {
-      this.selectTab(value)
       this.$emit('tabChange', value);
     },
     openTabIndex: function (value) {
-      this.selectedIndex = value;
+      if (value !== this.selectedIndex) {
+        this.selectTab(value);
+      }
     },
   }
 };

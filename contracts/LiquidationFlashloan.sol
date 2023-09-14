@@ -9,14 +9,12 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "./interfaces/IWrappedNativeToken.sol";
-import "./interfaces/facets/avalanche/IYieldYakRouter.sol";
+import "./interfaces/facets/IYieldYakRouter.sol";
 
 contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
   using TransferHelper for address payable;
   using TransferHelper for address;
 
-  address private constant YY_ROUTER =
-    0xC4729E56b831d74bBc18797e0e17A295fA77488c;
   address wrappedNativeToken;
   SmartLoanLiquidationFacet whitelistedLiquidatorsContract;
 
@@ -106,6 +104,8 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
     address,
     bytes calldata _params
   ) public override returns (bool) {
+    require(msg.sender == address(POOL), "msg.sender != POOL");
+
     LiqEnrichedParams memory lep = getLiqEnrichedParams(_params);
 
     // Use calldata instead of memory in order to avoid the "Stack Too deep" CompileError
@@ -114,8 +114,8 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
     uint256[] calldata premiums = getPremiums();
 
     for (uint32 i = 0; i < assets.length; i++) {
-      IERC20(assets[i]).approve(lep.loan, 0);
-      IERC20(assets[i]).approve(lep.loan, amounts[i]);
+      assets[i].safeApprove(lep.loan, 0);
+      assets[i].safeApprove(lep.loan, amounts[i]);
     }
 
     (
@@ -128,15 +128,17 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
       if (assetDeficit[i].amount != 0) {
         for (uint32 j = 0; j < assetSurplus.length; j++) {
           if (assetSurplus[j].amount != 0) {
+            bool shouldBreak;
             for (uint32 k = 0; k < lep.offers.length; ++k) {
               IYieldYakRouter.FormattedOffer memory offer = lep.offers[k];
               if (
                 offer.path[0] == assetSurplus[j].asset &&
                 offer.path[offer.path.length - 1] == assetDeficit[i].asset
               ) {
+                uint256 remainDeficitAmount;
                 (
-                  bool shouldBreak,
-                  uint256 remainDeficitAmount
+                  shouldBreak,
+                  remainDeficitAmount
                 ) = swapToNegateDeficits(
                     assetDeficit[i],
                     assetSurplus[j],
@@ -150,6 +152,9 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
                   break;
                 }
               }
+            }
+            if (shouldBreak) {
+              break;
             }
           }
         }
@@ -168,8 +173,8 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
 
     // Approve AAVE POOL
     for (uint32 i = 0; i < assets.length; i++) {
-      IERC20(assets[i]).approve(address(POOL), 0);
-      IERC20(assets[i]).approve(address(POOL), amounts[i] + premiums[i]);
+      assets[i].safeApprove(address(POOL), 0);
+      assets[i].safeApprove(address(POOL), amounts[i] + premiums[i]);
     }
 
     return true;
@@ -314,8 +319,8 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
     uint256 amountIn = expectedBuyTokenReturned > _deficit.amount
       ? (_surplus.amount * _deficit.amount) / expectedBuyTokenReturned
       : _surplus.amount;
-    address(_surplus.asset).safeApprove(YY_ROUTER, 0);
-    address(_surplus.asset).safeApprove(YY_ROUTER, amountIn);
+    address(_surplus.asset).safeApprove(YY_ROUTER(), 0);
+    address(_surplus.asset).safeApprove(YY_ROUTER(), amountIn);
 
     uint256 beforeDeficitAmount = IERC20(_deficit.asset).balanceOf(
       address(this)
@@ -328,7 +333,7 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
       adapters: _offer.adapters
     });
 
-    IYieldYakRouter router = IYieldYakRouter(YY_ROUTER);
+    IYieldYakRouter router = IYieldYakRouter(YY_ROUTER());
     router.swapNoSplit(trade, address(this), 0);
 
     uint256 swapAmount = IERC20(_deficit.asset).balanceOf(address(this)) -
@@ -360,6 +365,10 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
     }
 
     return index;
+  }
+
+  function YY_ROUTER() internal virtual pure returns (address) {
+    return 0xC4729E56b831d74bBc18797e0e17A295fA77488c;
   }
 
   modifier onlyWhitelistedLiquidators() {

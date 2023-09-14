@@ -13,7 +13,7 @@
       </div>
       <div v-if="index !== assetFilterGroups.length - 1" class="filter__separator"></div>
     </div>
-    <div class="filter__clear" v-if="!allSelected">
+    <div class="filter__clear" v-if="!allSelected && showClearButton">
       <button class="clear__button" type="button" v-on:click="resetAll()">
         <DeltaIcon class="clear__icon" :size="14" :icon-src="'src/assets/icons/cross.svg'"></DeltaIcon>
         <span class="clear__text">Clear all filters</span>
@@ -24,7 +24,7 @@
 
 <script>
 import config from '../config';
-import DeltaIcon from "./DeltaIcon.vue";
+import DeltaIcon from './DeltaIcon.vue';
 
 export default {
   name: 'AssetFilter',
@@ -32,6 +32,9 @@ export default {
   props: {
     assetOptions: null,
     assetFilterGroups: null,
+    showClearButton: true,
+    singleSelectMode: false,
+    firstOneAsDefault: false
   },
 
   data() {
@@ -47,33 +50,43 @@ export default {
       this.filterValue = {};
       this.assetFilterGroups.forEach((group, index) => {
         this.filterValue[group.key] = {};
-        group.options.forEach(option => {
-          this.filterValue[group.key][option] = {asset: option, active: true};
+        group.options.forEach((option, i) => {
+          this.filterValue[group.key][option] = {asset: option, active: this.firstOneAsDefault ? i === 0 : true};
         });
       });
     },
 
     selectOption(group, option) {
-      const allSelected = Object.values(this.filterValue[group.key]).map(option => option.active).every(o => o);
-      if (allSelected) {
+      if (!this.singleSelectMode) {
+        const allSelected = Object.values(this.filterValue[group.key]).map(option => option.active).every(o => o);
+        if (allSelected) {
+          Object.keys(this.filterValue[group.key]).forEach(o => {
+            this.filterValue[group.key][o].active = false;
+            this.checkResetButton();
+            this.$forceUpdate();
+          });
+          this.filterValue[group.key][option].active = true;
+          this.checkResetButton();
+          this.$forceUpdate();
+        } else {
+          this.filterValue[group.key][option].active = !this.filterValue[group.key][option].active;
+          this.$forceUpdate();
+          this.checkResetButton();
+          const noneSelected = Object.values(this.filterValue[group.key]).map(option => option.active).every(o => !o);
+          if (noneSelected) {
+            this.resetGroup(group);
+          }
+        }
+        this.emitFilterValue();
+      } else {
         Object.keys(this.filterValue[group.key]).forEach(o => {
           this.filterValue[group.key][o].active = false;
           this.checkResetButton();
           this.$forceUpdate();
         });
         this.filterValue[group.key][option].active = true;
-        this.checkResetButton();
-        this.$forceUpdate();
-      } else {
-        this.filterValue[group.key][option].active = !this.filterValue[group.key][option].active;
-        this.$forceUpdate();
-        this.checkResetButton();
-        const noneSelected = Object.values(this.filterValue[group.key]).map(option => option.active).every(o => !o);
-        if (noneSelected) {
-          this.resetGroup(group);
-        }
+        this.emitFilterValue();
       }
-      this.emitFilterValue();
     },
 
     resetGroup(group) {

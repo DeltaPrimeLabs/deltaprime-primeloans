@@ -61,15 +61,17 @@
       <div class="table__cell"></div>
 
       <div class="table__cell actions">
-        <DeltaIcon class="action-button"
-                   v-bind:class="{'action-button--disabled': disableAllButtons || !healthLoaded || !lpTokenBalances}"
-                   :icon-src="'src/assets/icons/plus.svg'" :size="26"
-                   v-tooltip="{content: 'Deposit', classes: 'button-tooltip'}"
-                   v-on:click.native="actionClick('ADD_FROM_WALLET')"></DeltaIcon>
         <IconButtonMenuBeta
-            v-if="moreActionsConfig"
             class="actions__icon-button"
-            :config="moreActionsConfig"
+            :config="addActionsConfig"
+            v-if="addActionsConfig"
+            v-on:iconButtonClick="actionClick"
+            :disabled="disableAllButtons || !healthLoaded">
+        </IconButtonMenuBeta>
+        <IconButtonMenuBeta
+            class="actions__icon-button last"
+            :config="removeActionsConfig"
+            v-if="removeActionsConfig"
             v-on:iconButtonClick="actionClick"
             :disabled="disableAllButtons || !healthLoaded">
         </IconButtonMenuBeta>
@@ -106,7 +108,7 @@ import WithdrawModal from './WithdrawModal';
 const ethers = require('ethers');
 import erc20ABI from '../../test/abis/ERC20.json';
 import {calculateMaxApy, fromWei} from '../utils/calculate';
-import addresses from '../../common/addresses/avax/token_addresses.json';
+import addresses from '../../common/addresses/avalanche/token_addresses.json';
 import {formatUnits, parseUnits} from 'ethers/lib/utils';
 import DeltaIcon from "./DeltaIcon.vue";
 
@@ -130,7 +132,8 @@ export default {
 
   async mounted() {
     this.setupAvailableFarms();
-    this.setupActionsConfiguration();
+    this.setupAddActionsConfiguration();
+    this.setupRemoveActionsConfiguration();
     this.watchAssetBalancesDataRefreshEvent();
     this.watchHardRefreshScheduledEvent();
     this.watchHealth();
@@ -144,7 +147,8 @@ export default {
 
   data() {
     return {
-      moreActionsConfig: null,
+      addActionsConfig: null,
+      removeActionsConfig: null,
       showChart: false,
       rowExpanded: false,
       poolBalance: 0,
@@ -169,7 +173,8 @@ export default {
       'assets',
       'debtsPerAsset',
       'lpAssets',
-      'lpBalances'
+      'lpBalances',
+      'traderJoeV2LpAssets'
     ]),
     ...mapState('stakeStore', ['farms']),
     ...mapState('poolStore', ['pools']),
@@ -197,7 +202,8 @@ export default {
     smartLoanContract: {
       handler(smartLoanContract) {
         if (smartLoanContract) {
-          this.setupActionsConfiguration();
+          this.setupAddActionsConfiguration();
+          this.setupRemoveActionsConfiguration();
         }
       },
     },
@@ -228,21 +234,35 @@ export default {
 
   methods: {
     ...mapActions('fundsStore', ['fund', 'withdraw', 'provideLiquidity', 'removeLiquidity']),
-    setupActionsConfiguration() {
-      this.moreActionsConfig =
+    setupAddActionsConfiguration() {
+      this.addActionsConfig =
           {
-            iconSrc: 'src/assets/icons/icon_a_more.svg',
-            tooltip: 'More',
+            iconSrc: 'src/assets/icons/plus.svg',
+            tooltip: 'Add',
             menuOptions: [
+              {
+                key: 'ADD_FROM_WALLET',
+                name: 'Add LP token from wallet'
+              },
               {
                 key: 'PROVIDE_LIQUIDITY',
                 name: 'Create LP token',
                 disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
                 disabledInfo: 'To create LP token, you need to add some funds from you wallet first'
-              },
+              }
+            ]
+          }
+    },
+
+    setupRemoveActionsConfiguration() {
+      this.removeActionsConfig =
+          {
+            iconSrc: 'src/assets/icons/minus.svg',
+            tooltip: 'Remove',
+            menuOptions: [
               {
                 key: 'WITHDRAW',
-                name: 'Withdraw collateral',
+                name: 'Withdraw LP token to wallet',
                 disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
               },
               {
@@ -299,6 +319,7 @@ export default {
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.lpAssets = this.lpAssets;
       modalInstance.lpBalances = this.lpBalances;
+      modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.farms = this.farms;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.loan = this.debt;
@@ -332,6 +353,7 @@ export default {
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.lpAssets = this.lpAssets;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
+      modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
@@ -431,7 +453,7 @@ export default {
 
     async getWalletLpTokenBalance() {
       const tokenContract = new ethers.Contract(this.lpToken.address, erc20ABI, this.provider.getSigner());
-      return await this.getWalletTokenBalance(this.account, this.lpToken.symbol, tokenContract, "LP");
+      return await this.getWalletTokenBalance(this.account, this.lpToken.symbol, tokenContract, this.lpToken.decimals);
     },
 
     watchAssetBalancesDataRefreshEvent() {

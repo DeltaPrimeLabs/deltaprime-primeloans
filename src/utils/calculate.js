@@ -7,11 +7,13 @@ import IVectorRewarder
   from '../../artifacts/contracts/interfaces/IVectorRewarder.sol/IVectorRewarder.json';
 import IYieldYak
   from '../../artifacts/contracts/interfaces/facets/avalanche/IYieldYak.sol/IYieldYak.json';
+import IBeefyFinance
+  from '../../artifacts/contracts/interfaces/facets/IBeefyFinance.sol/IBeefyFinance.json';
 import IVectorFinanceCompounder from '../../artifacts/contracts/interfaces/IVectorFinanceCompounder.sol/IVectorFinanceCompounder.json';
 import {BigNumber} from "ethers";
 import ApolloClient from "apollo-boost";
 import gql from "graphql-tag";
-import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
+import TOKEN_ADDRESSES from '../../common/addresses/avalanche/token_addresses.json';
 import redstone from 'redstone-api';
 import erc20ABI from '../../test/abis/ERC20.json';
 import {TransactionParams} from '@paraswap/sdk';
@@ -20,9 +22,29 @@ export function minAvaxToBeBought(amount, currentSlippage) {
   return amount / (1 + (currentSlippage ? currentSlippage : 0));
 }
 
-export function calculateHealth(tokens) {
+export function calculateHealth(tokens, lbTokens) {
+  let weightedCollateralFromLBs = 0;
 
-  let weightedCollateral = tokens.reduce((acc, token) => acc + token.price * (token.balance - token.borrowed) * token.debtCoverage, 0);
+  if (lbTokens) {
+    for (let lbToken of lbTokens) {
+      lbToken.binIds.forEach(
+          (binId, i) => {
+            let balancePrimary = parseFloat(lbToken.binBalancePrimary[i]);
+            let balanceSecondary = parseFloat(lbToken.binBalanceSecondary[i])
+            let liquidity = lbToken.binPrices[i] * balancePrimary + balanceSecondary
+            let debtCoveragePrimary = config.ASSETS_CONFIG[lbToken.primary].debtCoverage;
+            let debtCoverageSecondary = config.ASSETS_CONFIG[lbToken.secondary].debtCoverage;
+
+            weightedCollateralFromLBs += Math.min(
+                debtCoveragePrimary * liquidity * config.ASSETS_CONFIG[lbToken.primary].price / lbToken.binPrices[i],
+                debtCoverageSecondary * liquidity * config.ASSETS_CONFIG[lbToken.secondary].price
+            ) * lbToken.accountBalances[i] / lbToken.binTotalSupply[i];
+          }
+      );
+    }
+  }
+
+  let weightedCollateral = weightedCollateralFromLBs + tokens.reduce((acc, token) => acc + token.price * (token.balance - token.borrowed) * token.debtCoverage, 0);
   let weightedBorrowed = tokens.reduce((acc, token) => acc + token.price * token.borrowed * token.debtCoverage, 0);
   let borrowed = tokens.reduce((acc, token) => acc + token.price * token.borrowed, 0);
 
@@ -104,13 +126,13 @@ export async function yieldYakRewards(stakingContractAddress, address) {
   return stakedYrt * yrtToAvaxConversionRate - stakedYrt;
 }
 
-export async function yieldYakBalance(stakingContractAddress, address) {
+export async function yieldYakBalance(stakingContractAddress, address, decimals = 18) {
   try {
     console.log('try yieldYakBalance')
     const tokenContract = new ethers.Contract(stakingContractAddress, erc20ABI, provider.getSigner());
     const stakedYrtWei = await tokenContract.balanceOf(address);
 
-    return formatUnits(stakedYrtWei, 18);
+    return formatUnits(stakedYrtWei, decimals);
   } catch (e) {
     console.log('yieldYakBalance error')
     return 0;
@@ -167,7 +189,7 @@ export async function vectorFinanceRewards(stakingContractAddress, loanAddress) 
   let iterate = true;
 
   //TODO: get prices from store
-  const redstonePriceDataRequest = await fetch('https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-avalanche-prod');
+  const redstonePriceDataRequest = await fetch(config.redstoneFeedUrl);
   const redstonePriceData = await redstonePriceDataRequest.json();
 
   while (iterate) {
@@ -192,16 +214,32 @@ export async function vectorFinanceRewards(stakingContractAddress, loanAddress) 
   return totalEarned;
 }
 
-export async function yieldYakMaxUnstaked(stakingContractAddress, loanAddress) {
+export async function yieldYakMaxUnstaked(stakingContractAddress, loanAddress, decimals = 18) {
   try {
     const stakingContract = new ethers.Contract(stakingContractAddress, IYieldYak.abi, provider.getSigner());
-    const loanBalance = formatUnits(await stakingContract.balanceOf(loanAddress), BigNumber.from('18'));
-    const totalDeposits = formatUnits(await stakingContract.totalDeposits(), BigNumber.from('18'));
-    const totalSupply = formatUnits(await stakingContract.totalSupply(), BigNumber.from('18'));
+    const loanBalance = formatUnits(await stakingContract.balanceOf(loanAddress), BigNumber.from(decimals));
+    const totalDeposits = formatUnits(await stakingContract.totalDeposits(), BigNumber.from(decimals));
+    const totalSupply = formatUnits(await stakingContract.totalSupply(), BigNumber.from(decimals));
 
     return loanBalance / totalSupply * totalDeposits;
   } catch (e) {
     console.log('yieldYakMaxUnstaked error');
+    return 0;
+  }
+
+
+}
+
+export async function beefyMaxUnstaked(stakingContractAddress, loanAddress, decimals = 18) {
+  try {
+    const stakingContract = new ethers.Contract(stakingContractAddress, IBeefyFinance.abi, provider.getSigner());
+    const loanBalance = formatUnits(await stakingContract.balanceOf(loanAddress), BigNumber.from(decimals));
+    const balance = formatUnits(await stakingContract.balance(), BigNumber.from(decimals));
+    const totalSupply = formatUnits(await stakingContract.totalSupply(), BigNumber.from(decimals));
+
+    return loanBalance / totalSupply * balance;
+  } catch (e) {
+    console.log('beefyMaxUnstaked error');
     return 0;
   }
 
@@ -215,6 +253,7 @@ export async function vectorFinanceMaxUnstaked(assetSymbol, stakingContractAddre
   try {
     stakedBalance = formatUnits(await stakingContract.userDepositToken(loanAddress), BigNumber.from(assetDecimals));
   } catch (e) {
+    console.log(e)
 
   }
 
@@ -334,6 +373,11 @@ export const paraSwapRouteToSimpleData = (txParams) => {
     uuid: decoded[14],
   };
 };
+
+export function getBinPrice(binId, binStep, firstDecimals, secondDecimals) {
+  const binPrice = (1 + binStep / 10000) ** (binId - 8388608) * 10 ** (firstDecimals - secondDecimals);
+  return binPrice.toFixed(5);
+}
 
 export const fromWei = val => parseFloat(ethers.utils.formatEther(val));
 export const toWei = ethers.utils.parseEther;

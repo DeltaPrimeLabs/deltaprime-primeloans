@@ -45,14 +45,16 @@ const fetchHistoricalPrices = async (timestamp) => {
 
   const feeds = await queryHistoricalFeeds(approxTimestamp, [nodeAddress1, nodeAddress2, nodeAddress3]);
 
-  for (let obj of feeds) {
+  if (feeds && feeds.length > 0) {
+    for (let obj of feeds) {
 
-      let txId = obj.node.id;
-      let url = `https://arweave.net/${txId}`;
+        let txId = obj.node.id;
+        let url = `https://arweave.net/${txId}`;
 
-      const response = await fetch(url);
+        const response = await fetch(url);
 
-      json.push(await response.json());
+        json.push(await response.json());
+    }
   }
 
   // console.log(json)
@@ -104,18 +106,20 @@ async function getData(loanAddress, timestamp) {
     return status;
   } catch (e) {
     console.log('-----------------getLoanStatusAtTimestamp------------------------')
+    console.log('loanAddress: ', loanAddress)
     console.log(e)
-    const file = fs.readFileSync("./failed-loans.json", "utf-8");
-    let data = JSON.parse(file);
+    throw e;
+    // const file = fs.readFileSync("./failed-loans.json", "utf-8");
+    // let data = JSON.parse(file);
 
-    if (!data.failed[loanAddress]) data.failed[loanAddress] = [];
+    // if (!data.failed[loanAddress]) data.failed[loanAddress] = [];
 
-    data.failed[loanAddress].push(timestamp);
-    data.failed[loanAddress] = [...new Set(data.failed[loanAddress])]; //removing duplicates
+    // data.failed[loanAddress].push(timestamp);
+    // data.failed[loanAddress] = [...new Set(data.failed[loanAddress])]; //removing duplicates
 
-    data = JSON.stringify(data);
+    // data = JSON.stringify(data);
 
-    fs.writeFileSync("./failed-loans.json", data);
+    // fs.writeFileSync("./failed-loans.json", data);
   }
 }
 

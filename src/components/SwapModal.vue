@@ -38,7 +38,6 @@
                           :validators="sourceValidators"
                           :disabled="checkingPrices"
                           :max="maxSourceValue"
-                          :info="() => sourceAssetValue"
                           :typingTimeout="2000"
                           v-on:valueChange="sourceInputChange"
                           v-on:ongoingTyping="ongoingTyping"
@@ -53,7 +52,6 @@
                           :asset-options="targetAssetOptions"
                           :default-asset="targetAsset"
                           v-on:valueChange="targetInputChange"
-                          :info="() => targetAssetValue"
                           :disabled="true"
                           info-icon-message="Minimum received amount"
                           :validators="targetValidators">
@@ -74,7 +72,8 @@
           <span class="percent">%</span>
         </div>
         <div class="slippage__divider"></div>
-        DEX slippage: <span class="deviation-value">{{ marketDeviation }}<span class="percent">%</span></span>
+        <span class="slippage-label">DEX slippage:</span>
+         <span class="deviation-value">{{ marketDeviation }}<span class="percent">%</span></span>
         <div class="info__icon__wrapper">
           <InfoIcon
               class="info__icon"
@@ -180,7 +179,7 @@ import config from '../config';
 import {calculateHealth, formatUnits, parseUnits} from '../utils/calculate';
 import {BigNumber} from 'ethers';
 import SimpleInput from './SimpleInput';
-import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
+import TOKEN_ADDRESSES from '../../common/addresses/avalanche/token_addresses.json';
 import DeltaIcon from "./DeltaIcon.vue";
 import InfoIcon from "./InfoIcon.vue";
 import Toggle from './Toggle.vue';
@@ -242,6 +241,7 @@ export default {
       lpBalances: {},
       concentratedLpAssets: {},
       concentratedLpBalances: {},
+      traderJoeV2LpAssets: {},
       transactionOngoing: false,
       debt: 0,
       thresholdWeightedValue: 0,
@@ -275,24 +275,6 @@ export default {
   },
 
   computed: {
-    sourceAssetValue() {
-      const sourceAssetUsdPrice = Number(this.sourceAssetAmount) * this.sourceAssetData.price;
-      const avaxUsdPrice = config.ASSETS_CONFIG["AVAX"].price;
-
-      if (this.valueAsset === "USDC") return `~ $${sourceAssetUsdPrice.toFixed(2)}`;
-      // otherwise return amount in AVAX 
-      return `~ ${(sourceAssetUsdPrice / avaxUsdPrice).toFixed(2)} AVAX`;
-    },
-
-    targetAssetValue() {
-      const targetAssetUsdPrice = Number(this.targetAssetAmount) * this.targetAssetData.price;
-      const avaxUsdPrice = config.ASSETS_CONFIG["AVAX"].price;
-
-      if (this.valueAsset === "USDC") return `~ $${targetAssetUsdPrice.toFixed(2)}`;
-      // otherwise return amount in AVAX 
-      return `~ ${(targetAssetUsdPrice / avaxUsdPrice).toFixed(2)} AVAX`;
-    },
-
     maxSourceValue() {
       if (this.swapDex === 'ParaSwap') {
         return null;
@@ -323,9 +305,7 @@ export default {
     },
 
     swapDexChange(dex) {
-      console.log(this.currentSourceInputChangeEvent);
       this.swapDex = dex;
-      console.log(this.swapDex);
       this.setupSourceAssetOptions();
       this.setupTargetAssetOptions();
       if (this.currentSourceInputChangeEvent.value) {
@@ -353,8 +333,6 @@ export default {
       let amountInWei = parseUnits(this.sourceAssetAmount.toFixed(decimals), BigNumber.from(decimals));
 
       const queryResponse = await this.query(this.sourceAsset, this.targetAsset, amountInWei);
-      console.warn('QUERY RESPONSE YAK SWAP');
-      console.log(queryResponse);
 
       let estimated;
       if (queryResponse) {
@@ -395,7 +373,6 @@ export default {
 
       let slippageMargin = this.swapDebtMode ? 0.2 : 0.1;
 
-      console.log(this.dex);
       if (this.swapDebtMode) {
         slippageMargin = 0.2
       } else {
@@ -405,8 +382,6 @@ export default {
           slippageMargin = 0.1
         }
       }
-
-      console.log('slippageMargin', slippageMargin);
 
       this.marketDeviation = parseFloat((100 * dexSlippage).toFixed(3));
 
@@ -469,7 +444,6 @@ export default {
     },
 
     async sourceInputChange(changeEvent) {
-      console.log(changeEvent);
       this.currentSourceInputChangeEvent = changeEvent;
       this.maxButtonUsed = changeEvent.maxButtonUsed;
       this.checkingPrices = true;
@@ -528,7 +502,6 @@ export default {
     },
 
     ongoingTyping(event) {
-      console.log('TYPING EVENT', event);
       this.isTyping = event.typing;
     },
 
@@ -663,7 +636,9 @@ export default {
         });
       }
 
-      this.healthAfterTransaction = calculateHealth(tokens);
+      let lbTokens = Object.values(this.traderJoeV2LpAssets);
+
+      this.healthAfterTransaction = calculateHealth(tokens, lbTokens);
     },
   }
 };
@@ -740,53 +715,6 @@ export default {
 .target-asset-info {
   display: flex;
   justify-content: flex-end;
-}
-
-.slippage-bar {
-  border-top: var(--swap-modal__slippage-bar-border);
-  border-bottom: var(--swap-modal__slippage-bar-border);
-  margin-top: 26px;
-  height: 42px;
-  font-family: Montserrat;
-  font-size: 16px;
-  color: var(--swap-modal__slippage-bar-color);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-left: 15px;
-  padding-right: 15px;
-
-  .info__icon {
-    transform: translateY(-1px);
-  }
-
-  .percent {
-    font-weight: 600;
-  }
-
-  .slippage-info {
-    display: flex;
-    align-items: center;
-
-    .percent {
-      margin-left: 6px;
-    }
-
-    .slippage-label {
-      margin-right: 6px;
-    }
-  }
-
-  .deviation-value {
-    font-weight: 600;
-  }
-
-  .slippage__divider {
-    width: 2px;
-    height: 17px;
-    background-color: var(--swap-modal__slippage-divider-color);
-    margin: 0 10px;
-  }
 }
 
 .bar-gauge-tall-wrapper {

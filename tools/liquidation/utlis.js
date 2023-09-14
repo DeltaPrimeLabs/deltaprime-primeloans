@@ -1,9 +1,9 @@
 import {ethers} from "hardhat";
 
 import CACHE_LAYER_URLS from '../../common/redstone-cache-layer-urls.json';
-import {supportedAssetsAvax} from "../../common/addresses/avax/avalanche_supported_assets";
+import {supportedAssetsAvax} from "../../common/addresses/avalanche/avalanche_supported_assets";
 import {erc20ABI, formatUnits, fromBytes32, fromWei, StakedPosition, toBytes32, toWei} from "../../test/_helpers";
-import TOKEN_ADDRESSES from "../../common/addresses/avax/token_addresses.json";
+import TOKEN_ADDRESSES from "../../common/addresses/avalanche/token_addresses.json";
 import IYieldYak from "../../artifacts/contracts/interfaces/facets/avalanche/IYieldYak.sol/IYieldYak.json";
 
 const path = require("path");

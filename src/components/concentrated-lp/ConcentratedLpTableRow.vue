@@ -93,7 +93,7 @@ import WithdrawModal from '../WithdrawModal.vue';
 const ethers = require('ethers');
 import erc20ABI from '../../../test/abis/ERC20.json';
 import {calculateMaxApy, fromWei} from '../../utils/calculate';
-import addresses from '../../../common/addresses/avax/token_addresses.json';
+import addresses from '../../../common/addresses/avalanche/token_addresses.json';
 import {formatUnits, parseUnits} from 'ethers/lib/utils';
 import ApolloClient from "apollo-boost";
 import gql from "graphql-tag";
@@ -160,6 +160,7 @@ export default {
       'debtsPerAsset',
       'lpAssets',
       'concentratedLpAssets',
+      'traderJoeV2LpAssets',
       'lpBalances',
       'concentratedLpBalances',
     ]),
@@ -336,6 +337,7 @@ export default {
       modalInstance.lpAssets = this.lpAssets;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.concentratedLpTokenBalances = this.concentratedLpTokenBalances;
+      modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.farms = this.farms;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.loan = this.debt;
@@ -369,6 +371,7 @@ export default {
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.lpAssets = this.lpAssets;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
+      modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpTokenBalances;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
@@ -456,7 +459,7 @@ export default {
 
     async getWalletLpTokenBalance() {
       const tokenContract = new ethers.Contract(this.lpToken.address, erc20ABI, this.provider.getSigner());
-      return await this.getWalletTokenBalance(this.account, this.lpToken.symbol, tokenContract, 'CONCENTRATED_LP');
+      return await this.getWalletTokenBalance(this.account, this.lpToken.symbol, tokenContract, this.lpToken.decimals);
     },
 
     watchAssetBalancesDataRefreshEvent() {

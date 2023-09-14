@@ -1,8 +1,9 @@
-import { awaitConfirmation, getLog, wrapContract } from '../utils/blockchain';
+import {awaitConfirmation, getLog, wrapContract} from '../utils/blockchain';
 import config from '../config';
-import { formatUnits, parseUnits } from 'ethers/lib/utils';
-import { BigNumber } from 'ethers';
+import {formatUnits, parseUnits} from 'ethers/lib/utils';
+import {BigNumber} from 'ethers';
 import {
+  beefyMaxUnstaked,
   fromWei,
   mergeArrays,
   vectorFinanceMaxUnstaked,
@@ -12,14 +13,19 @@ import {
 } from '../utils/calculate';
 import SMART_LOAN from '@artifacts/contracts/interfaces/SmartLoanGigaChadInterface.sol/SmartLoanGigaChadInterface.json';
 import {combineLatest, map, of, tap, from} from 'rxjs';
+import erc20ABI from "../../test/abis/ERC20.json";
 
-const fromBytes32 = require('ethers').utils.parseBytes32String;
+const ethers = require('ethers');
+const fromBytes32 = ethers.utils.parseBytes32String;
+const toBytes32 = ethers.utils.formatBytes32String;
 const SUCCESS_DELAY_AFTER_TRANSACTION = 1000;
+
+let TOKEN_ADDRESSES;
 
 export default {
   namespaced: true,
   state: {
-    farms: config.FARMED_TOKENS_CONFIG,
+    farms: null,
   },
   mutations: {
     setFarms(state, farms) {
@@ -37,9 +43,160 @@ export default {
     },
   },
   actions: {
+    async stakeStoreSetup({rootState, dispatch}) {
+      if (!rootState.network.provider) return;
+      await dispatch('loadDeployments');
+    },
+    async loadDeployments() {
+      TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
+    },
+    async fund({state, rootState, dispatch, commit}, {fundRequest}) {
+      const provider = rootState.network.provider;
+      const smartLoanContract = rootState.fundsStore.smartLoanContract;
+      const amountInWei = parseUnits(fundRequest.value.toString(), fundRequest.farmDecimals);
+
+      let assets = [
+        (await smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG)
+      ];
+
+      const loanAssets = mergeArrays(assets);
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      const fundToken = new ethers.Contract(fundRequest.receiptTokenAddress, erc20ABI, provider.getSigner());
+
+      const allowance = formatUnits(await fundToken.allowance(rootState.network.account, rootState.fundsStore.smartLoanContract.address), fundRequest.farmDecimals);
+
+      if (parseFloat(allowance) < parseFloat(fundRequest.value)) {
+        const approveTransaction = await fundToken.connect(provider.getSigner()).approve(rootState.fundsStore.smartLoanContract.address, amountInWei, {gasLimit: 100000});
+        await awaitConfirmation(approveTransaction, provider, 'approve');
+      }
+
+      const fundTransaction = await (await wrapContract(smartLoanContract, loanAssets)).fund
+      (
+          toBytes32(fundRequest.farmSymbol),
+          amountInWei,
+          {gasLimit: fundRequest.gas ? fundRequest.gas : 8000000}
+      );
+
+      let tx = await awaitConfirmation(fundTransaction, provider, 'fund');
+      //TODO: update after rebase
+      const depositTokenAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Funded').args.amount, fundRequest.farmDecimals);
+
+      const farm = state.farms[fundRequest.assetSymbol].find(farm => farm.protocolIdentifier === fundRequest.protocolIdentifier);
+
+      const totalStakedAfterTransaction = Number(farm.totalStaked) + Number(depositTokenAmount);
+      await commit('setStakedBalanceInFarm', {
+        assetSymbol: fundRequest.assetSymbol,
+        protocolIdentifier: fundRequest.protocolIdentifier,
+        totalStaked: totalStakedAfterTransaction
+      });
+      const totalBalanceAfterTransaction = Number(farm.totalBalance) + Number(depositTokenAmount);
+      await commit('setReceiptTokenBalanceInFarm', {
+        assetSymbol: fundRequest.assetSymbol,
+        protocolIdentifier: fundRequest.protocolIdentifier,
+        totalBalance: totalBalanceAfterTransaction
+      });
+
+      rootState.serviceRegistry.stakedExternalUpdateService
+          .emitExternalStakedBalancesPerFarmUpdate(fundRequest.assetSymbol, fundRequest.protocolIdentifier, totalStakedAfterTransaction, totalBalanceAfterTransaction);
+
+      const assetBalanceBeforeStaking =
+          fundRequest.isLP ? rootState.fundsStore.lpBalances[fundRequest.assetSymbol] : rootState.fundsStore.assetBalances[fundRequest.assetSymbol];
+      const assetBalanceAfterStaking = Number(assetBalanceBeforeStaking) - Number(depositTokenAmount);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate(fundRequest.assetSymbol, assetBalanceAfterStaking, fundRequest.isLP, true);
+
+      rootState.serviceRegistry.stakedExternalUpdateService
+          .emitExternalTotalStakedUpdate(fundRequest.assetSymbol, depositTokenAmount, 'STAKE', true);
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      rootState.serviceRegistry.farmService.emitRefreshFarm();
+
+      setTimeout(async () => {
+        await dispatch('fundsStore/updateFunds', {}, {root: true});
+      }, fundRequest.refreshDelay);
+    },
+
+    async withdraw({state, rootState, dispatch, commit}, {withdrawRequest}) {
+      const smartLoanContract = rootState.fundsStore.smartLoanContract;
+
+      const amountInWei = parseUnits(withdrawRequest.value.toString(), withdrawRequest.farmDecimals);
+
+      const loanAssets = mergeArrays([(
+          await smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        withdrawRequest.rewardTokens,
+        withdrawRequest.assetSymbol,
+        Object.keys(config.POOLS_CONFIG)
+      ]);
+
+      const withdrawTransaction = await (await wrapContract(smartLoanContract, loanAssets)).withdraw
+      (
+          toBytes32(withdrawRequest.farmSymbol),
+          amountInWei,
+          {gasLimit: withdrawRequest.gas ? withdrawRequest.gas : 8000000}
+      );
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      let tx = await awaitConfirmation(withdrawTransaction, provider, 'withdraw');
+      const unstakedTokenAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Withdrawn').args.amount, withdrawRequest.decimals);
+      //TODO: this is simplificaton, unstaked amount is actually different
+      const unstakedReceiptTokenAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Withdrawn').args.amount, 18);
+
+      const farm = state.farms[withdrawRequest.assetSymbol].find(farm => farm.protocolIdentifier === withdrawRequest.protocolIdentifier);
+
+      const totalStakedAfterTransaction = withdrawRequest.isMax ? 0 : Number(farm.totalStaked) - Number(unstakedTokenAmount);
+      await commit('setStakedBalanceInFarm', {
+        assetSymbol: withdrawRequest.assetSymbol,
+        protocolIdentifier: withdrawRequest.protocolIdentifier,
+        totalStaked: totalStakedAfterTransaction
+      });
+      const totalBalanceAfterTransaction = withdrawRequest.isMax ? 0 : Number(farm.totalBalance) - Number(unstakedReceiptTokenAmount);
+      await commit('setReceiptTokenBalanceInFarm', {
+        assetSymbol: withdrawRequest.assetSymbol,
+        protocolIdentifier: withdrawRequest.protocolIdentifier,
+        totalBalance: totalBalanceAfterTransaction
+      });
+
+      rootState.serviceRegistry.stakedExternalUpdateService
+          .emitExternalStakedBalancesPerFarmUpdate(withdrawRequest.assetSymbol, withdrawRequest.protocolIdentifier, totalStakedAfterTransaction, totalBalanceAfterTransaction);
+
+      const assetBalanceBeforeUnstaking =
+          withdrawRequest.isLP ? rootState.fundsStore.lpBalances[withdrawRequest.assetSymbol] : rootState.fundsStore.assetBalances[withdrawRequest.assetSymbol];
+
+      const assetBalanceAfterUnstaking = Number(assetBalanceBeforeUnstaking) + Number(unstakedTokenAmount);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate(withdrawRequest.assetSymbol, assetBalanceAfterUnstaking, withdrawRequest.isLP, true);
+
+      rootState.serviceRegistry.stakedExternalUpdateService
+          .emitExternalTotalStakedUpdate(withdrawRequest.assetSymbol, unstakedTokenAmount, 'WITHDRAW', true);
+
+
+      //TODO: LeChiffre please check
+      rootState.serviceRegistry.farmService.emitRefreshFarm();
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('fundsStore/updateFunds', {}, {root: true});
+      }, withdrawRequest.refreshDelay);
+    },
 
     //TODO: stakeRequest
-    async stake({ state, rootState, dispatch, commit }, { stakeRequest }) {
+    async stake({state, rootState, dispatch, commit}, {stakeRequest}) {
 
       const provider = rootState.network.provider;
       const smartLoanContract = rootState.fundsStore.smartLoanContract;
@@ -55,11 +212,11 @@ export default {
       const loanAssets = mergeArrays(assets);
 
       const stakeTransaction = await (await wrapContract(smartLoanContract, loanAssets))[stakeRequest.method]
-        (
-          parseUnits(String(stakeRequest.amount),
-            BigNumber.from(stakeRequest.decimals.toString())),
-          { gasLimit: stakeRequest.gas ? stakeRequest.gas : 8000000 }
-        );
+      (
+        parseUnits(String(stakeRequest.amount),
+          BigNumber.from(stakeRequest.decimals.toString())),
+        {gasLimit: stakeRequest.gas ? stakeRequest.gas : 8000000}
+      );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
@@ -89,6 +246,8 @@ export default {
 
       const assetBalanceBeforeStaking =
         stakeRequest.isLP ? rootState.fundsStore.lpBalances[stakeRequest.assetSymbol] : rootState.fundsStore.assetBalances[stakeRequest.assetSymbol];
+
+      //TODO: not depositTokenAmount but the underlying token amount
       const assetBalanceAfterStaking = Number(assetBalanceBeforeStaking) - Number(depositTokenAmount);
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate(stakeRequest.assetSymbol, assetBalanceAfterStaking, stakeRequest.isLP, true);
@@ -105,30 +264,30 @@ export default {
       rootState.serviceRegistry.farmService.emitRefreshFarm();
 
       setTimeout(async () => {
-        await dispatch('fundsStore/updateFunds', {}, { root: true });
+        await dispatch('fundsStore/updateFunds', {}, {root: true});
       }, stakeRequest.refreshDelay);
     },
 
-    async unstake({ state, rootState, dispatch, commit }, { unstakeRequest }) {
+    async unstake({state, rootState, dispatch, commit}, {unstakeRequest}) {
       const smartLoanContract = rootState.fundsStore.smartLoanContract;
 
       const loanAssets = mergeArrays([(
         await smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-      (await smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
-      unstakeRequest.rewardTokens,
-      unstakeRequest.assetSymbol,
-      Object.keys(config.POOLS_CONFIG)
+        (await smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        unstakeRequest.rewardTokens,
+        unstakeRequest.assetSymbol,
+        Object.keys(config.POOLS_CONFIG)
       ]);
 
       const unstakeTransaction = unstakeRequest.minReceiptTokenUnstaked ?
         await (await wrapContract(smartLoanContract, loanAssets))[unstakeRequest.method](
           parseUnits(parseFloat(unstakeRequest.receiptTokenUnstaked).toFixed(unstakeRequest.decimals), BigNumber.from(unstakeRequest.decimals.toString())),
           parseUnits(parseFloat(unstakeRequest.minReceiptTokenUnstaked).toFixed(unstakeRequest.decimals), BigNumber.from(unstakeRequest.decimals.toString())),
-          { gasLimit: unstakeRequest.gas ? unstakeRequest.gas : 8000000 })
+          {gasLimit: unstakeRequest.gas ? unstakeRequest.gas : 8000000})
         :
         await (await wrapContract(smartLoanContract, loanAssets))[unstakeRequest.method](
           parseUnits(parseFloat(unstakeRequest.receiptTokenUnstaked).toFixed(unstakeRequest.decimals), BigNumber.from(unstakeRequest.decimals.toString())),
-          { gasLimit: unstakeRequest.gas ? unstakeRequest.gas : 8000000 });
+          {gasLimit: unstakeRequest.gas ? unstakeRequest.gas : 8000000});
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
@@ -175,16 +334,16 @@ export default {
       }, SUCCESS_DELAY_AFTER_TRANSACTION);
 
       setTimeout(async () => {
-        await dispatch('fundsStore/updateFunds', {}, { root: true });
+        await dispatch('fundsStore/updateFunds', {}, {root: true});
       }, unstakeRequest.refreshDelay);
     },
 
-    async migrateToAutoCompoundingPool({ rootState, state, commit }, { migrateRequest }) {
+    async migrateToAutoCompoundingPool({rootState, state, commit}, {migrateRequest}) {
       const smartLoanContract = rootState.fundsStore.smartLoanContract;
       const loanAssets = mergeArrays([(
         await smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-      (await smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
-      Object.keys(config.POOLS_CONFIG)
+        (await smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG)
       ]);
 
       const migrateTransaction = await (await wrapContract(smartLoanContract, loanAssets))[migrateRequest.migrateMethod]();
@@ -254,11 +413,16 @@ export default {
         );
     },
 
-    async updateStakedBalances({ rootState, state, commit }) {
+    async updateStakedBalances({rootState, state, commit}) {
       const smartLoanContract = rootState.fundsStore.smartLoanContract;
 
       const farmService = rootState.serviceRegistry.farmService;
-      let farms = state.farms;
+      let farms;
+      if (!state.farms) {
+        farms = config.FARMED_TOKENS_CONFIG;
+      } else {
+        farms = state.farms;
+      }
 
       const apys = rootState.fundsStore.apys;
 
@@ -271,65 +435,74 @@ export default {
       const wrappedSmartLoanContract = await wrapContract(smartLoanContract, loanAssets);
       const smartLoanContractAddress = rootState.fundsStore.smartLoanContract.address;
 
-      combineLatest(
-        Object.values(config.FARMED_TOKENS_CONFIG).map(tokenFarms => {
-          return combineLatest(tokenFarms.map(farm => {
-            const assetDecimals = config.ASSETS_CONFIG[farm.token] ? config.ASSETS_CONFIG[farm.token].decimals : 18;
-            return combineLatest([
-              of(farm.token),
-              of(farm.protocolIdentifier),
-              of(farm.protocol),
-              farm.balanceMethod ? from(wrappedSmartLoanContract[farm.balanceMethod]())
-                .pipe(map(balanceWei => formatUnits(balanceWei, assetDecimals))): farm.balance(smartLoanContractAddress),
-              of(apys[farm.token][farm.protocolIdentifier]),
-              farm.protocol === 'YIELD_YAK' ? yieldYakMaxUnstaked(farm.stakingContractAddress, smartLoanContractAddress) :
-                farm.autoCompounding ? vectorFinanceMaxUnstaked(farm.token, farm.stakingContractAddress, smartLoanContractAddress) :
-                  vectorFinanceRewards(farm.stakingContractAddress, smartLoanContractAddress)
-            ])
-          }))
-        })
-      ).subscribe(farmsDataPerToken => {
-        const farmsDataPerFarm = farmsDataPerToken.flat();
-        
-        Object.values(config.FARMED_TOKENS_CONFIG).forEach(tokenFarms => {
-          tokenFarms.forEach(farm => {
-            const farmData = farmsDataPerFarm.find(data => data[1] === farm.protocolIdentifier);
-            farm.totalBalance = farmData[3];
-            farm.currentApy = farmData[4];
-
-            if (farm.protocol === 'YIELD_YAK') {
-              farm.totalStaked = farmData[5];
-            } else if (farm.protocol === 'VECTOR_FINANCE') {
-              if (farm.autoCompounding) {
-                farm.totalStaked = farmData[5];
-
-                if (farm.protocolIdentifier === 'VF_SAVAX_MAIN_AUTO') {
-                  farm.totalBalance = farm.totalStaked;
-                }
-
-              } else {
-                farm.rewards = farmData[5];
-                farm.totalStaked = farm.totalBalance;
-              }
-            }
-          })
-        })
-        farmService.emitRefreshFarm();
-        commit('setFarms', farms);
-        farmService.emitRefreshFarm();
-        farmService.emitFarms(farms);
+      if (Object.values(config.FARMED_TOKENS_CONFIG).length == 0) {
         rootState.serviceRegistry.healthService.emitRefreshHealth();
-      })
+        farmService.emitRefreshFarm();
+      } else {
+        combineLatest(
+          Object.values(config.FARMED_TOKENS_CONFIG).map(tokenFarms => {
+            return combineLatest(tokenFarms.map(farm => {
+              const assetDecimals = config.ASSETS_CONFIG[farm.token] ? config.ASSETS_CONFIG[farm.token].decimals : 18;
+              return combineLatest([
+                of(farm.token),
+                of(farm.protocolIdentifier),
+                of(farm.protocol),
+                farm.balanceMethod ? from(wrappedSmartLoanContract[farm.balanceMethod]())
+                  .pipe(map(balanceWei => formatUnits(balanceWei, assetDecimals))) : farm.balance(smartLoanContractAddress),
+                of(apys[farm.token] ? apys[farm.token][farm.protocolIdentifier] : 0),
+                farm.protocol === 'YIELD_YAK' ? yieldYakMaxUnstaked(farm.stakingContractAddress, smartLoanContractAddress, assetDecimals) :
+                farm.protocol === 'BEEFY_FINANCE' ? beefyMaxUnstaked(farm.stakingContractAddress, smartLoanContractAddress, assetDecimals) :
+                  farm.autoCompounding ? vectorFinanceMaxUnstaked(farm.token, farm.stakingContractAddress, smartLoanContractAddress) :
+                    vectorFinanceRewards(farm.stakingContractAddress, smartLoanContractAddress)
+              ]);
+            }));
+          })
+        ).subscribe(farmsDataPerToken => {
+          const farmsDataPerFarm = farmsDataPerToken.flat();
 
+          Object.values(config.FARMED_TOKENS_CONFIG).forEach(tokenFarms => {
+            tokenFarms.forEach(farm => {
+              const farmData = farmsDataPerFarm.find(data => data[1] === farm.protocolIdentifier);
+              farm.totalBalance = farmData[3];
+              farm.currentApy = farmData[4];
 
+              if (['YIELD_YAK','BEEFY_FINANCE'].includes(farm.protocol)) {
+                farm.totalStaked = farmData[5];
+              } else if (farm.protocol === 'VECTOR_FINANCE') {
+                if (farm.autoCompounding) {
+                  farm.totalStaked = farmData[5];
+
+                  if (farm.protocolIdentifier === 'VF_SAVAX_MAIN_AUTO') {
+                    farm.totalBalance = farm.totalStaked;
+                  }
+
+                } else {
+                  farm.rewards = farmData[5];
+                  farm.totalStaked = farm.totalBalance;
+                }
+              }
+            });
+          });
+          farmService.emitRefreshFarm();
+          commit('setFarms', farms);
+          farmService.emitRefreshFarm();
+          farmService.emitFarms(farms);
+          rootState.serviceRegistry.healthService.emitRefreshHealth();
+        });
+      }
     },
 
-    async updateStakedPrices({ state, rootState, commit }) {
+    async updateStakedPrices({state, rootState, commit}) {
       //TODO: optimize, it's used in other place as well
-      const redstonePriceDataRequest = await fetch('https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-avalanche-prod');
+      const redstonePriceDataRequest = await fetch(config.redstoneFeedUrl);
       const redstonePriceData = await redstonePriceDataRequest.json();
 
-      let farms = state.farms;
+      let farms;
+      if (!state.farms) {
+        farms = config.FARMED_TOKENS_CONFIG;
+      } else {
+        farms = state.farms;
+      }
       for (const [symbol, tokenFarms] of Object.entries(farms)) {
         const asset = rootState.fundsStore.assets[symbol] ?
           rootState.fundsStore.assets[symbol]
@@ -342,8 +515,8 @@ export default {
               let feedSymbol = farm.feedSymbol ? farm.feedSymbol : symbol;
 
               farm.price = redstonePriceData[feedSymbol][0].dataPoints[0].value;
-            } catch (e){
-              console.log('farm price error')
+            } catch (e) {
+              console.log('farm price error');
             }
 
           }

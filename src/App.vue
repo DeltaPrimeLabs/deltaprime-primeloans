@@ -2,7 +2,7 @@
   <div class="page-content">
     <!--    <button v-on:click="testClick()">test</button>-->
     <Banner v-if="showNetworkBanner">
-      You are connected to a wrong network. Please change to Avalanche C-Chain.
+      You are connected to a wrong network. Please change to Avalanche or Arbitrum.
     </Banner>
     <Banner v-if="showConnectBanner">
       You are not connected to Metamask. <a class="banner-link" @click="initNetwork"><b>Click here</b></a> to connect.
@@ -19,7 +19,7 @@
       The protocol is paused because of an upgrade.
     </Banner>
     <Banner v-if="oracleError">
-      The protocol detected unusual market behavior. Some functions might be not available.
+      Data feeds error. Some functions might be not available.
     </Banner>
     <Banner v-if="false" background="green-accent" :closable="true">
       DeltaPrime is unaffected by the recent Curve exploit, as Curve is not integrated in the platform.
@@ -114,6 +114,7 @@ export default {
   },
 
   mounted() {
+    window.testProperty = 'test value'
     document.addEventListener('keyup', (event) => {
       if (event.key === 'Escape') {
         this.closeModal();
@@ -133,6 +134,7 @@ export default {
 
       ethereum.on('chainChanged', async () => {
         const chainId = await ethereum.request({method: 'eth_chainId'});
+        location.reload();
 
         if (chainId == this.toHex(config.chainId)) {
           this.showNetworkBanner = false;

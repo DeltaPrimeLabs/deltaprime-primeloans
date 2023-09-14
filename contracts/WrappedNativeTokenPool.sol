@@ -57,10 +57,10 @@ contract WrappedNativeTokenPool is Pool {
         }
         _burn(msg.sender, _amount);
 
+        _updateRates();
+
         IWrappedNativeToken(tokenAddress).withdraw(_amount);
         payable(msg.sender).safeTransferETH(_amount);
-
-        _updateRates();
 
         if (address(poolRewarder) != address(0)) {
             poolRewarder.withdrawFor(_amount, msg.sender);

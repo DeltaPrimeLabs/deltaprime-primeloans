@@ -25,20 +25,41 @@
       <div class="main-content">
         <Block :bordered="true">
           <Tabs v-on:tabChange="tabChange" :open-tab-index="selectedTabIndex" :arrow="true">
+            <Tab ref="tab-0" :title="'Zaps'"
+                 :tab-icon="'src/assets/icons/zaps-icon.svg'"
+                 :tab-icon-slim="'src/assets/icons/zaps-icon-slim.svg'"
+                 :disabled="primeAccountsBlocked"
+            >
+              <Zaps></Zaps>
+            </Tab>
             <Tab ref="tab-1" :title="'Assets'"
                  :tab-icon="'src/assets/icons/assets_on-icon.svg'"
                  :tab-icon-slim="'src/assets/icons/assets-slim.svg'"
+                 :disabled="primeAccountsBlocked"
             >
               <Assets></Assets>
             </Tab>
-            <Tab ref="tab-2" :title="'Farms'"
+            <Tab ref="tab-2" :title="'LP'"
+                 :tab-icon="'src/assets/icons/lp-icon.svg'"
+                 :tab-icon-slim="'src/assets/icons/lp-icon-slim.svg'"
+                 v-if="showLPTab"
+                 :disabled="primeAccountsBlocked"
+            >
+              <LPTab></LPTab>
+            </Tab>
+            <Tab ref="tab-3" :title="'Farms'"
                  :tab-icon="'src/assets/icons/plant_on-icon.svg'"
-                 :tab-icon-slim="'src/assets/icons/plant-slim.svg'">
+                 :tab-icon-slim="'src/assets/icons/plant-slim.svg'"
+                 v-if="showFarmsTab"
+                 :disabled="primeAccountsBlocked"
+            >
               <Farm></Farm>
             </Tab>
-            <Tab ref="tab-3" :title="'Stats'"
+            <Tab ref="tab-4" :title="'Stats'"
                  :tab-icon="'src/assets/icons/stats-icon.svg'"
-                 :tab-icon-slim="'src/assets/icons/stats-icon-slim.svg'">
+                 :tab-icon-slim="'src/assets/icons/stats-icon-slim.svg'"
+                 :disabled="primeAccountsBlocked"
+            >
               <Stats></Stats>
             </Tab>
           </Tabs>
@@ -70,16 +91,26 @@ import AccountAprWidget from './AccountAprWidget';
 import config from '../config';
 import redstone from 'redstone-api';
 import {formatUnits} from 'ethers/lib/utils';
-import {combineLatest} from 'rxjs';
+import {combineLatest, map} from 'rxjs';
 import {fetchLiquidatedEvents} from '../utils/graph';
 import InfoBubble from './InfoBubble.vue';
 import TransactionHistory from './TransactionHistory';
 import Stats from './stats/Stats.vue';
+import LPTab from "./LPTab.vue";
+import Zaps from "./Zaps.vue";
 
 const TABS = [
   {
+    path: 'zaps',
+    pathName: 'Prime Account Zaps'
+  },
+  {
     path: 'assets',
     pathName: 'Prime Account Assets'
+  },
+  {
+    path: 'lp',
+    pathName: 'Prime Account LP'
   },
   {
     path: 'farms',
@@ -96,6 +127,8 @@ const TUTORIAL_VIDEO_CLOSED_LOCALSTORAGE_KEY = 'TUTORIAL_VIDEO_CLOSED';
 export default {
   name: 'SmartLoanBeta',
   components: {
+    Zaps,
+    LPTab,
     TransactionHistory,
     Stats,
     InfoBubble,
@@ -117,6 +150,7 @@ export default {
       'lpBalances',
       'concentratedLpAssets',
       'concentratedLpBalances',
+      'traderJoeV2LpAssets',
       'fullLoanStatus',
       'noSmartLoan',
       'smartLoanContract',
@@ -136,6 +170,9 @@ export default {
       'debtService'
     ]),
     ...mapState('network', ['account']),
+    primeAccountsBlocked() {
+      return config.primeAccountsBlocked;
+    }
   },
   watch: {
     assetBalances: {
@@ -175,12 +212,15 @@ export default {
       totalValue: 0,
       health: 0,
       noSmartLoanInternal: null,
-      selectedTabIndex: 0,
+      selectedTabIndex: undefined,
       videoVisible: true,
       apr: null,
       healthLoading: false,
       liquidationTimestamps: [],
       collateral: null,
+      showLPTab: Object.keys(config.TRADERJOEV2_LP_ASSETS_CONFIG).length || Object.keys(config.CONCENTRATED_LP_ASSETS_CONFIG).length || Object.keys(config.LP_ASSETS_CONFIG).length,
+      showFarmsTab: Object.keys(config.FARMED_TOKENS_CONFIG).length,
+      tabsRefs: [],
     };
   },
 
@@ -196,14 +236,16 @@ export default {
   },
   methods: {
     ...mapActions('fundsStore', ['fundsStoreSetup', 'getAccountApr']),
+    ...mapActions('stakeStore', ['stakeStoreSetup']),
     ...mapActions('poolStore', ['poolStoreSetup']),
 
     initStoresWhenProviderAndAccountCreated() {
       combineLatest([this.providerService.observeProviderCreated(), this.accountService.observeAccountLoaded()])
-        .subscribe(async ([provider, account]) => {
-          await this.poolStoreSetup();
-          await this.fundsStoreSetup();
-        });
+          .subscribe(async ([provider, account]) => {
+            await this.poolStoreSetup();
+            await this.fundsStoreSetup();
+            await this.stakeStoreSetup();
+          });
     },
 
     initAccountApr() {
@@ -215,9 +257,9 @@ export default {
         this.dataRefreshEventService.observeFullLoanStatusRefresh(),
         this.dataRefreshEventService.observeAssetApysDataRefresh(),
       ])
-        .subscribe(async ([provider, account]) => {
-          await this.getAccountApr();
-        });
+          .subscribe(async ([provider, account]) => {
+            await this.getAccountApr();
+          });
     },
 
     async assetBalancesChange(balances) {
@@ -227,7 +269,7 @@ export default {
         const assets = config.ASSETS_CONFIG;
         const assetSymbols = Object.keys(assets);
 
-        const redstonePriceDataRequest = await fetch('https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-avalanche-prod');
+        const redstonePriceDataRequest = await fetch(config.redstoneFeedUrl);
         const redstonePriceData = await redstonePriceDataRequest.json();
 
         const yesterdayPrices = await redstone.getHistoricalPrice(assetSymbols, {date: Date.now() - 1000 * 3600 * 24});
@@ -257,7 +299,10 @@ export default {
       if (!TABS.some(tab => tab.path === lastUrlPart)) {
         this.$router.push({name: TABS[0].pathName, query: this.extractQueryParams(url)});
       } else {
-        this.selectedTabIndex = TABS.findIndex(tab => tab.path === lastUrlPart);
+        const pathIndexFromRoute = TABS.findIndex(tab => tab.path === lastUrlPart)
+        let tabIndex = Object.keys(this.$refs).findIndex(key => key === `tab-${pathIndexFromRoute}`)
+        tabIndex = Math.max(0, tabIndex)
+        this.selectedTabIndex = tabIndex
       }
     },
 
@@ -274,31 +319,36 @@ export default {
 
     getLiquidatedEvents() {
       fetchLiquidatedEvents(this.smartLoanContract.address).then(
-        events => {
-          this.liquidationTimestamps = events.map(event => event.timestamp);
-        }
+          events => {
+            this.liquidationTimestamps = events.map(event => event.timestamp);
+          }
       );
     },
 
     tabChange(tabIndex) {
       const url = document.location.href;
-      this.$router.push({name: TABS[tabIndex].pathName, query: this.extractQueryParams(url)});
+      const pathIndex = Number(Object.entries(this.$refs)[tabIndex][0].replace('tab-', ''))
+      this.$router.push({name: TABS[pathIndex].pathName, query: this.extractQueryParams(url)});
     },
 
     watchHealthRefresh() {
       this.healthService.observeRefreshHealth().subscribe(async () => {
         this.healthLoading = true;
+        console.log('watchHealthRefresh')
+
         const healthCalculatedDirectly = await this.healthService.calculateHealth(
-          this.noSmartLoanInternal,
-          this.debtsPerAsset,
-          this.assets,
-          this.assetBalances,
-          this.lpAssets,
-          this.lpBalances,
-          this.concentratedLpAssets,
-          this.concentratedLpBalances,
-          this.farms
+            this.noSmartLoanInternal,
+            this.debtsPerAsset,
+            this.assets,
+            this.assetBalances,
+            this.lpAssets,
+            this.lpBalances,
+            this.concentratedLpAssets,
+            this.concentratedLpBalances,
+            this.traderJoeV2LpAssets,
+            this.farms,
         );
+        console.log('healthCalculatedDirectly', healthCalculatedDirectly);
         this.health = healthCalculatedDirectly;
         this.healthLoading = false;
       });

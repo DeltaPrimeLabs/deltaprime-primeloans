@@ -18,7 +18,7 @@
         class="close-icon"
         :icon-src="'src/assets/icons/cross.svg'"
         :size="17"
-        @click.stop.native="addWindow = false"
+        @click.stop.native="closeAndReset"
       ></DeltaIcon>
       <div>
         <div class="borrow-rate-edit">
@@ -47,7 +47,7 @@
               :label="'Save'"
               :disabled="!poolAddress || !thresholdDirection || !threshold"
               @click.stop.native="handleSave"
-              :customStyle="buttonStyles"
+              :variant="'slim'"
               :waiting="saving"
             ></Button>
           </div>
@@ -63,8 +63,8 @@ import Dropdown from './Dropdown.vue';
 import RoundToggle from './RoundToggle.vue';
 import ApyInput from './ApyInput.vue';
 import Button from '../../Button.vue';
-import notifiConfig from '../notifiConfig';
 import { mapState } from 'vuex';
+import config from '@/config';
 
 export default ({
   name: 'AddInterestRate',
@@ -85,19 +85,23 @@ export default ({
   data() {
     return {
       addWindow: false,
-      pools: notifiConfig.POOLS_CONFIG.map(pool => ({
+      // TODO possible to simplify
+      pools: Object.values(config.POOLS_CONFIG).map((pool, index) => ({
+        name: Object.keys(config.POOLS_CONFIG)[index],
+        address: pool.address
+      })).map(pool => ({
         name: pool.name,
         value: pool.address
       })),
       poolAddress: null,
       thresholdDirection: 'above',
-      threshold: null,
+      threshold: 0,
       saving: false,
       buttonStyles: {
-        fontSize: "15px",
-        padding: "7px 8px"
+        fontSize: '15px',
+        padding: '7px 8px'
       }
-    }
+    };
   },
   methods: {
     handleDropdownOption(option) {
@@ -126,10 +130,16 @@ export default ({
       };
 
       await this.notifiService.handleCreateAlert(alert, payload);
-
       this.saving = false;
-      this.addWindow = false;
+      this.closeAndReset();
     },
+
+    closeAndReset() {
+      this.addWindow = false;
+      this.poolAddress = null;
+      this.threshold = 0;
+      this.thresholdDirection = 'above';
+    }
   }
 })
 </script>

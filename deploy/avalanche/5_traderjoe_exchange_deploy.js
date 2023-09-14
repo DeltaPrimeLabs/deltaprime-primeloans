@@ -1,4 +1,4 @@
-import {traderJoeAssets} from "../../common/addresses/avax/traderjoe_supported_assets";
+import {traderJoeAssets} from "../../common/addresses/avalanche/traderjoe_supported_assets";
 import TraderJoeIntermediaryArtifact
     from "../../artifacts/contracts/integrations/avalanche/TraderJoeIntermediary.sol/TraderJoeIntermediary.json";
 

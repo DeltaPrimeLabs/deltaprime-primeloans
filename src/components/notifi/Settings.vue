@@ -92,13 +92,14 @@
 </template>
 
 <script>
-import { mapState, mapActions } from 'vuex';
+import { mapState } from 'vuex';
 import EditContact from './settings/EditContact.vue';
 import HealthRateButton from './settings/HealthRateButton.vue';
 import InfoIcon from '../InfoIcon.vue';
 import ToggleButton from './settings/ToggleButton.vue';
 import AddInterestRate from './settings/AddInterestRate.vue';
 import notifiConfig from './notifiConfig';
+import config from '@/config';
 
 export default ({
   name: 'Settings',
@@ -127,7 +128,10 @@ export default ({
       healthRates: null,
       selectedHealthRate: null,
       healthRateToggle: null,
-      pools: notifiConfig.POOLS_CONFIG,
+      pools: Object.values(config.POOLS_CONFIG).map((pool, index) => ({
+        name: Object.keys(config.POOLS_CONFIG)[index],
+        address: pool.address
+      })),
     }
   },
   computed: {
@@ -135,7 +139,6 @@ export default ({
     ...mapState('serviceRegistry', ['notifiService'])
   },
   mounted() {
-    console.log(this.alertSettings);
     if (this.$route.name === 'Pools') return;
 
     const currentHealthRate = this.alertSettings['DELTA_PRIME_LENDING_HEALTH_EVENTS'];

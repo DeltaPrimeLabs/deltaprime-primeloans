@@ -42,7 +42,7 @@ export default ({
     detailMessage() {
       return this.notification.category === "CREATOR_MESSAGE"
             ? this.notification.detail.message
-            : this.notification.detail.genericMessage
+            : this.notification.detail.genericMessage.replace('Loan Health score', 'Health');
     }
   },
   methods: {}

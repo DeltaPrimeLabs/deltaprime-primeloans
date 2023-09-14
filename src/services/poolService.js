@@ -12,7 +12,6 @@ export default class PoolService {
   pools = [];
 
   emitPools(pools) {
-    console.log('emitting pools', pools);
     this.pools = pools;
     this.pools$.next(pools);
   }
@@ -39,18 +38,22 @@ export default class PoolService {
           const apy = fromWei(poolDetails[2]);
           const totalBorrowed = formatUnits(String(poolDetails[4]), config.ASSETS_CONFIG[poolAsset].decimals);
           const tvl = formatUnits(String(poolDetails[0]), config.ASSETS_CONFIG[poolAsset].decimals);
+          const isPoolDisabled = config.POOLS_CONFIG[poolAsset].disabled;
+
           const pool = {
             asset: config.ASSETS_CONFIG[poolAsset],
             assetPrice: redstonePriceData[poolAsset][0].dataPoints[0].value,
             contract: poolContract,
-            tvl: tvl,
+            tvl: isPoolDisabled ? 0 : tvl,
             deposit: deposit,
-            apy: apy,
-            borrowingAPY: fromWei(poolDetails[3]),
-            totalBorrowed: totalBorrowed,
-            interest: deposit * apy / 365,
-            maxUtilisation: fromWei(poolDetails[5]),
-            utilisation: totalBorrowed / tvl,
+            apy: isPoolDisabled ? 0 : apy,
+            borrowingAPY: isPoolDisabled ? 0 : fromWei(poolDetails[3]),
+            totalBorrowed: isPoolDisabled ? 0 : totalBorrowed,
+            interest: isPoolDisabled ? 0 : deposit * apy / 365,
+            maxUtilisation: isPoolDisabled ? 0 : fromWei(poolDetails[5]),
+            utilisation: isPoolDisabled ? 0 : totalBorrowed / tvl,
+            disabled: config.POOLS_CONFIG[poolAsset].disabled,
+            poolsUnlocking: config.poolsUnlocking
           };
           return pool;
         }))
@@ -59,7 +62,6 @@ export default class PoolService {
   }
 
   emitPoolDepositChange(amount, poolAssetSymbol, operation) {
-    console.log(`emitting ${poolAssetSymbol} deposit change: ${amount}, ${operation}`);
     const pool = this.pools.find(pool => pool.asset.symbol === poolAssetSymbol);
     if (operation === 'DEPOSIT') {
       pool.deposit = Number(pool.deposit) + Number(amount);
