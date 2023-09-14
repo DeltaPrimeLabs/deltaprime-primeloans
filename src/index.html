@@ -44,7 +44,13 @@
                     window.chain = 'arbitrum';
                     break;
                 }
+                default: {
+                    console.log('chain not supported defaulting to avalanche');
+                    window.chain = 'avalanche';
+                }
             }
+
+            console.log(window.chain);
         });
     </script>
 </head>
