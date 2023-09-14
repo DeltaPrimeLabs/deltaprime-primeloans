@@ -56,7 +56,7 @@ export default {
         {
           chainId: this.toHex(43114),
           chainName: 'Avalanche',
-          rpcUrls: ['https://rpc.ankr.com/avalanche'],
+          rpcUrls: ['https://rpc.vnet.tenderly.co/devnet/avalanchemainnetpublicparaswap/8bcdb366-02f4-461a-b545-0513f9790ae7'],
           nativeCurrency: {
             name: 'AVAX',
             symbol: 'AVAX',
