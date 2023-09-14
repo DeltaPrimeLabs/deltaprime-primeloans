@@ -52,6 +52,7 @@ describe('Smart loan', () => {
             loan: SmartLoanGigaChadInterface,
             initialTv: any,
             initialHr: any,
+            assetsList: [],
             wrappedLoan: any,
             nonOwnerWrappedLoan: any,
             poolContracts: Map<string, Contract> = new Map(),
@@ -67,7 +68,7 @@ describe('Smart loan', () => {
 
         before("deploy factory and pool", async () => {
             [owner, nonOwner, depositor] = await getFixedGasSigners(10000000);
-            let assetsList = ['AVAX', 'USDC', 'ETH'];
+            assetsList = ['AVAX', 'USDC', 'ETH'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'AVAX', airdropList: [depositor]}
             ];
@@ -177,31 +178,6 @@ describe('Smart loan', () => {
             initialHr = fromWei(await wrappedLoan.getHealthRatio());
             initialTv = fromWei(await wrappedLoan.getTotalValue());
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(15 * tokensPrices.get('AVAX')!, 3);
-        });
-        //
-        // it("should fail to add LB as a non-owner", async () => {
-        //     const addedAvax = toWei('1');
-        //     const addedUSDC = parseUnits('10', BigNumber.from('6'));
-        //
-        //     await expect(nonOwnerWrappedLoan.addLiquidityUniswapV3(
-        //         [
-        //             "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
-        //             "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
-        //             3000,
-        //             47640,
-        //             61500,
-        //             addedAvax,
-        //             addedUSDC,
-        //             0,
-        //             0,
-        //             "0xc79890C726fF34e43E16afA736847900e4fc9c37", //can be anything, it's overwritten on the contract level
-        //             Math.ceil((new Date().getTime() / 1000) + 100)
-        //         ]
-        //     )).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-        // });
-
-        it("should fail to unstake as a non-owner", async () => {
-            //TODO:
         });
 
         it("should mint AVAX/USDC UniswapV3 liquidity for a narrow range (9-11$)", async () => {
@@ -479,6 +455,134 @@ describe('Smart loan', () => {
 
             await expect(wrappedLoan.burnLiquidityUniswapV3(id)).not.to.be.reverted;
             await expect((await wrappedLoan.getOwnedUniswapV3TokenIds()).length).to.be.equal(6);
+        });
+
+        it("should not perform actions if price oracle price differs from Uniswap price", async () => {
+            let addedAvax = toWei('1');
+            let addedUSDC = parseUnits((10).toFixed(6), BigNumber.from('6'));
+
+            let newAvaxPrice = tokensPrices.get("AVAX")! * 1.06;
+
+            tokensPrices = await getTokensPricesMap(
+                assetsList,
+                "avalanche",
+                getRedstonePrices,
+                [
+                    {symbol: 'AVAX', value: newAvaxPrice},
+                ]
+            );
+
+
+
+            const NEW_MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
+
+            const newPricesWrappedLoan = WrapperBuilder
+                // @ts-ignore
+                .wrap(loan)
+                .usingSimpleNumericMock({
+                    mockSignersCount: 10,
+                    dataPoints: NEW_MOCK_PRICES,
+                });
+
+            await expect(newPricesWrappedLoan.mintLiquidityUniswapV3(
+                [
+                    "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
+                    "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
+                    500,
+                    -254350,
+                    -252340,
+                    addedAvax,
+                    addedUSDC,
+                    0,
+                    0,
+                    "0xc79890C726fF34e43E16afA736847900e4fc9c37", //can be anything, it's overwritten on the contract level
+                    Math.ceil((new Date().getTime() / 1000) + 1000)
+                ]
+            )).to.be.reverted;
+
+            addedAvax = toWei('0.5');
+            addedUSDC = parseUnits('5', BigNumber.from('6'));
+
+            let id = (await wrappedLoan.getOwnedUniswapV3TokenIds())[0];
+
+            await expect(newPricesWrappedLoan.increaseLiquidityUniswapV3(
+                [
+                    id,
+                    addedAvax,
+                    addedUSDC,
+                    0,
+                    0,
+                    Math.ceil((new Date().getTime() / 1000) + 100)
+                ]
+            )).to.be.reverted;
+
+            const manager = await ethers.getContractAt("INonfungiblePositionManager", NONFUNGIBLE_POSITION_MANAGER_ADDRESS, owner);
+
+            const liquidityBefore = (await manager.positions(id)).liquidity;
+            const decreasedLiquidity = liquidityBefore.div(3);
+
+            await expect(newPricesWrappedLoan.decreaseLiquidityUniswapV3(
+                [
+                    id,
+                    decreasedLiquidity,
+                    0,
+                    0,
+                    Math.ceil((new Date().getTime() / 1000) + 100)
+                ]
+            )).to.be.reverted;
+        });
+
+        it("should not perform actions if non-owner", async () => {
+            let addedAvax = toWei('1');
+            let addedUSDC = parseUnits((10).toFixed(6), BigNumber.from('6'));
+
+
+            await expect(nonOwnerWrappedLoan.mintLiquidityUniswapV3(
+                [
+                    "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
+                    "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
+                    500,
+                    -254350,
+                    -252340,
+                    addedAvax,
+                    addedUSDC,
+                    0,
+                    0,
+                    "0xc79890C726fF34e43E16afA736847900e4fc9c37", //can be anything, it's overwritten on the contract level
+                    Math.ceil((new Date().getTime() / 1000) + 1000)
+                ]
+            )).to.be.reverted;
+
+            addedAvax = toWei('0.5');
+            addedUSDC = parseUnits('5', BigNumber.from('6'));
+
+            let id = (await wrappedLoan.getOwnedUniswapV3TokenIds())[0];
+
+            await expect(nonOwnerWrappedLoan.increaseLiquidityUniswapV3(
+                [
+                    id,
+                    addedAvax,
+                    addedUSDC,
+                    0,
+                    0,
+                    Math.ceil((new Date().getTime() / 1000) + 100)
+                ]
+            )).to.be.reverted;
+
+            const manager = await ethers.getContractAt("INonfungiblePositionManager", NONFUNGIBLE_POSITION_MANAGER_ADDRESS, owner);
+
+            const liquidityBefore = (await manager.positions(id)).liquidity;
+            const decreasedLiquidity = liquidityBefore.div(3);
+
+            await expect(nonOwnerWrappedLoan.decreaseLiquidityUniswapV3(
+                [
+                    id,
+                    decreasedLiquidity,
+                    0,
+                    0,
+                    Math.ceil((new Date().getTime() / 1000) + 100)
+                ]
+            )).to.be.reverted;
         });
     });
 });
