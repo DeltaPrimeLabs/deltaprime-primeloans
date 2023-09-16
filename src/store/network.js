@@ -13,6 +13,7 @@ export default {
   },
   mutations: {
     setProvider(state, provider) {
+      console.log(provider);
       state.provider = provider;
     },
     setAccount(state, account) {
@@ -36,6 +37,10 @@ export default {
       await ethereum.request({ method: 'eth_requestAccounts' });
       const provider = new ethers.providers.Web3Provider(window.ethereum, 'any');
       window.provider = provider;
+      console.log('PROVIDER');
+      console.log(provider);
+      console.log('provider.provider.isMetaMask', provider.provider.isMetaMask);
+      console.log('provider.provider.isRabby', provider.provider.isRabby);
 
       await commit('setProvider', provider);
       rootState.serviceRegistry.providerService.emitProviderCreated();

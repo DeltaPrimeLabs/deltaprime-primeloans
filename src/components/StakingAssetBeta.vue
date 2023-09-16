@@ -204,8 +204,6 @@ export default {
       if (this.availableFarms) {
         let heightOfRows = 0;
         Object.values(this.availableFarms).forEach(farm => {
-          console.log(farm);
-          console.log(farm.protocolIdentifier);
           if (farm.protocol === 'VECTOR_FINANCE' && this.asset.symbol === 'USDC') {
             heightOfRows += 26;
           }

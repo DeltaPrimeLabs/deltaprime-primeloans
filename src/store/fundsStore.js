@@ -477,6 +477,10 @@ export default {
     },
 
     async createAndFundLoan({state, rootState, commit, dispatch}, {asset, value, isLP}) {
+      console.log('create and fund loan');
+      console.log(asset);
+      console.log(value);
+      console.log(isLP);
       const provider = rootState.network.provider;
       const nativeAssetOptions = config.NATIVE_ASSET_TOGGLE_OPTIONS;
 
