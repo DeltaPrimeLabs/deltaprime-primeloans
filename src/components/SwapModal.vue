@@ -8,14 +8,14 @@
         Swap debt
       </div>
 
-      <div class="modal-top-desc" v-if="swapDex === 'ParaSwap'">
+      <div class="modal-top-desc" v-if="swapDex === 'ParaSwap' && showParaSwapWarning">
         <div>
           <b>Caution: Paraswap slippage vastly exceeds YakSwap. Use with caution.</b>
         </div>
       </div>
 
-      <div class="dex-toggle" v-if="!swapDebtMode">
-        <Toggle v-on:change="swapDexChange" :options="['YakSwap', 'ParaSwap']"></Toggle>
+      <div class="dex-toggle" v-if="!swapDebtMode && dexOptions">
+        <Toggle v-on:change="swapDexChange" :options="dexOptions"></Toggle>
       </div>
 
       <div class="asset-info" v-if="!swapDebtMode">
@@ -254,8 +254,10 @@ export default {
       maxButtonUsed: false,
       valueAsset: "USDC",
       paraSwapRate: {},
-      swapDex: 'YakSwap',
+      dexOptions: null,
+      swapDex: Object.keys(config.AVAILABLE_ASSETS_PER_DEX)[0],
       currentSourceInputChangeEvent: {},
+      showParaSwapWarning: config.showParaSwapWarning
     };
   },
 
@@ -264,6 +266,7 @@ export default {
       if (this.swapDebtMode) {
         this.swapDex = 'YakSwap'
       }
+      this.setupDexOptions();
       this.setupSourceAssetOptions();
       this.setupTargetAssetOptions();
       this.setupSourceAsset();
@@ -302,6 +305,13 @@ export default {
         paraSwapRate: this.paraSwapRate,
         swapDex: this.swapDex
       });
+    },
+
+    setupDexOptions() {
+      console.log('setupDexOptions')
+      console.log(config)
+      this.dexOptions = Object.keys(config.AVAILABLE_ASSETS_PER_DEX);
+      console.log(config.dexOptions)
     },
 
     swapDexChange(dex) {

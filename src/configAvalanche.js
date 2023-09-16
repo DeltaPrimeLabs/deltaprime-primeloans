@@ -42,6 +42,7 @@ export default {
         YakSwap: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'USDT.e', 'EUROC', 'GLP', 'sAVAX', 'GMX', 'JOE', 'QI', 'PNG', 'PTP'],
         ParaSwap: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'USDT.e', 'sAVAX', 'QI', 'PNG', 'PTP']
     },
+    showParaSwapWarning: true,
     ASSET_FILTER_TOKENS_OPTIONS: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'sAVAX'],
     ASSET_FILTER_DEXES_OPTIONS: ['Pangolin', 'TraderJoe'],
     NATIVE_ASSET_TOGGLE_OPTIONS: ['AVAX', 'WAVAX'],
