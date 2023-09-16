@@ -5,7 +5,8 @@
       <div class="separator"></div>
       <img class="logo" src="src/assets/logo/deltaprime.svg"/>
       <div class="account"  v-tooltip="{content: 'Your Prime Account address', classes: 'info-tooltip long'}">
-        <a :href="`https://snowtrace.io/address/${smartLoanContract.address}`" target="_blank">{{ smartLoanContract.address | tx(true) }}</a></div>
+        <a :href="getPrimeAccountExplorerUrl" target="_blank">{{ smartLoanContract.address | tx(true) }}</a>
+      </div>
     </div>
     <div class="separator"></div>
     <img class="logo" src="src/assets/logo/metamask.svg"/>
@@ -61,11 +62,24 @@
       network() {
         return 'Avalanche';
       },
+
       hasSmartLoanContract() {
         return this.smartLoanContract && this.smartLoanContract.address !== NULL_ADDRESS;
       },
+
       isNotifiEnabled() {
         return config.notifiEnabled;
+      },
+
+      getPrimeAccountExplorerUrl() {
+        switch (window.chain) {
+          case 'avalanche': {
+            return `https://snowtrace.io/address/${this.smartLoanContract.address}`
+          }
+          case 'arbitrum': {
+            return `https://arbiscan.io/address/${this.smartLoanContract.address}`
+          }
+        }
       },
     },
     data() {

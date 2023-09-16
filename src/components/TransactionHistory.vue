@@ -12,9 +12,9 @@
           <div class="transaction-row" v-for="transaction of transactionHistory">
             <div class="transaction-cell date" v-if="transaction.date">{{ transaction.date | timeAgo }}</div>
             <div class="transaction-cell id" v-if="transaction.date">
-              <img class="icon" src="src/assets/logo/snowtrace.png"/>
+              <img class="icon" :src="getExplorerIcon"/>
               <div class="transaction-id-wrapper">
-                <a class="transaction-id" :href="`https://snowtrace.io/tx/${transaction.id}`" target="_blank">
+                <a class="transaction-id" :href="`${getExplorerTxUrl}${transaction.id}`" target="_blank">
                   {{ transaction.id | tx(true) }}
                 </a>
               </div>
@@ -90,6 +90,28 @@ export default {
     ...mapState('fundsStore', [
       'smartLoanContract',
     ]),
+
+    getExplorerIcon() {
+      switch (window.chain) {
+        case 'avalanche': {
+          return 'src/assets/logo/snowtrace.png'
+        }
+        case 'arbitrum': {
+          return 'src/assets/logo/arb.png'
+        }
+      }
+    },
+
+    getExplorerTxUrl() {
+      switch (window.chain) {
+        case 'avalanche': {
+          return 'https://snowtrace.io/tx/'
+        }
+        case 'arbitrum': {
+          return 'https://arbiscan.io/tx/'
+        }
+      }
+    },
   },
 
   async mounted() {
