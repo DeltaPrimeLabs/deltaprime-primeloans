@@ -138,9 +138,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['USDC.e'],
                 strategy: 'USDC.e',
-                refreshDelay: 60000,
-                gasStake: 10000000,
-                gasUnstake: 10000000
+                refreshDelay: 60000
             }
         ],
         "USDT": [
@@ -162,9 +160,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['USDT'],
                 strategy: 'USDT',
-                refreshDelay: 60000,
-                gasStake: 10000000,
-                gasUnstake: 10000000
+                refreshDelay: 60000
             }
         ],
         "DAI": [
@@ -186,9 +182,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['DAI'],
                 strategy: 'DAI',
-                refreshDelay: 60000,
-                gasStake: 15000000,
-                gasUnstake: 15000000
+                refreshDelay: 60000
             }
         ],
         "GMX": [
@@ -210,9 +204,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['GMX'],
                 strategy: 'GMX',
-                refreshDelay: 60000,
-                gasStake: 15000000,
-                gasUnstake: 15000000
+                refreshDelay: 60000
             }
         ],
         "GLP": [
@@ -234,9 +226,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['GLP'],
                 strategy: 'GLP',
-                refreshDelay: 60000,
-                gasStake: 10000000,
-                gasUnstake: 10000000
+                refreshDelay: 60000
             }
         ],
     },
