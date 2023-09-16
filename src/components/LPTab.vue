@@ -1,20 +1,20 @@
 <template>
   <div class="lp-tab">
-<!--    <div class="lp-tokens">
+  <div class="lp-tokens">
       <div class="lp-table" v-if="traderJoeLpTokens">
         <TableHeader :config="traderJoeLpTableHeaderConfig"></TableHeader>
         <TraderJoeLpTableRow v-for="(lpToken, index) in traderJoeLpTokens" v-bind:key="index" :index="index" :lp-token="lpToken"></TraderJoeLpTableRow>
       </div>
-    </div>-->
+    </div>
     <div class="lp-tokens">
       <div class="lp-table" v-if="Object.keys(concentratedLpTokens).length">
         <TableHeader :config="concentratedLpTableHeaderConfig"></TableHeader>
         <ConcentratedLpTableRow v-for="(lpToken, index) in concentratedLpTokens" v-bind:key="index" :lp-token="lpToken">
           {{ lpToken }}
         </ConcentratedLpTableRow>
-        <!--        <div class="paginator-container">-->
-        <!--          <Paginator :total-elements="50" :page-size="6"></Paginator>-->
-        <!--        </div>-->
+          <div class="paginator-container">
+            <Paginator :total-elements="50" :page-size="6"></Paginator>
+          </div>
       </div>
     </div>
     <div class="lp-tokens">
@@ -27,9 +27,9 @@
         <LpTableRow v-for="(lpToken, index) in filteredLpTokens" v-bind:key="index" :lp-token="lpToken"
                     showFarmed="false">{{ lpToken }}
         </LpTableRow>
-        <!--        <div class="paginator-container">-->
-        <!--          <Paginator :total-elements="50" :page-size="6"></Paginator>-->
-        <!--        </div>-->
+          <div class="paginator-container">
+            <Paginator :total-elements="50" :page-size="6"></Paginator>
+          </div>
       </div>
     </div>
   </div>
