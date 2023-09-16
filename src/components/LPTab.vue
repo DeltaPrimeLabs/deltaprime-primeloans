@@ -1,31 +1,31 @@
 <template>
   <div class="lp-tab">
-<!--    <div class="lp-tokens">
-      <div class="lp-table" v-if="traderJoeLpTokens">
-        <TableHeader :config="traderJoeLpTableHeaderConfig"></TableHeader>
-        <TraderJoeLpTableRow v-for="(lpToken, index) in traderJoeLpTokens" v-bind:key="index" :index="index" :lp-token="lpToken"></TraderJoeLpTableRow>
-      </div>
-    </div>-->
-    <div class="lp-tokens">
-      <div class="lp-table" v-if="Object.keys(concentratedLpTokens).length">
+    <!--    <div class="lp-tokens">
+          <div class="lp-table" v-if="traderJoeLpTokens">
+            <TableHeader :config="traderJoeLpTableHeaderConfig"></TableHeader>
+            <TraderJoeLpTableRow v-for="(lpToken, index) in traderJoeLpTokens" v-bind:key="index" :index="index" :lp-token="lpToken"></TraderJoeLpTableRow>
+          </div>
+        </div>-->
+    <div class="lp-tokens" v-if="Object.keys(concentratedLpTokens).length">
+      <div class="lp-table">
         <TableHeader :config="concentratedLpTableHeaderConfig"></TableHeader>
         <ConcentratedLpTableRow v-for="(lpToken, index) in concentratedLpTokens" v-bind:key="index" :lp-token="lpToken">
-          {{ lpToken }}
+          {{lpToken}}
         </ConcentratedLpTableRow>
         <!--        <div class="paginator-container">-->
         <!--          <Paginator :total-elements="50" :page-size="6"></Paginator>-->
         <!--        </div>-->
       </div>
     </div>
-    <div class="lp-tokens">
-      <div class="filters" v-if="Object.keys(lpTokens).length && filteredLpTokens && assetFilterGroups">
+    <div class="lp-tokens" v-if="Object.keys(lpTokens).length && filteredLpTokens && assetFilterGroups">
+      <div class="filters">
         <AssetFilter ref="assetFilter" :asset-filter-groups="assetFilterGroups"
                      v-on:filterChange="setLpFilter"></AssetFilter>
       </div>
       <div class="lp-table" v-if="Object.keys(lpTokens).length && filteredLpTokens">
         <TableHeader :config="lpTableHeaderConfig"></TableHeader>
         <LpTableRow v-for="(lpToken, index) in filteredLpTokens" v-bind:key="index" :lp-token="lpToken"
-                    showFarmed="false">{{ lpToken }}
+                    showFarmed="false">{{lpToken}}
         </LpTableRow>
         <!--        <div class="paginator-container">-->
         <!--          <Paginator :total-elements="50" :page-size="6"></Paginator>-->
@@ -36,16 +36,16 @@
 </template>
 
 <script>
-import TableHeader from "./TableHeader.vue";
-import ConcentratedLpTableRow from "./concentrated-lp/ConcentratedLpTableRow.vue";
-import AssetFilter from "./AssetFilter.vue";
-import LpTableRow from "./LpTableRow.vue";
-import config from "../config";
-import TraderJoeLpTableRow from "./TraderJoeLpTableRow.vue";
-import {mapState} from "vuex";
+import TableHeader from './TableHeader.vue';
+import ConcentratedLpTableRow from './concentrated-lp/ConcentratedLpTableRow.vue';
+import AssetFilter from './AssetFilter.vue';
+import LpTableRow from './LpTableRow.vue';
+import config from '../config';
+import TraderJoeLpTableRow from './TraderJoeLpTableRow.vue';
+import {mapState} from 'vuex';
 
 export default {
-  name: "LPTab",
+  name: 'LPTab',
   components: {TraderJoeLpTableRow, LpTableRow, AssetFilter, ConcentratedLpTableRow, TableHeader},
   data() {
     return {
@@ -58,7 +58,7 @@ export default {
       traderJoeLpTableHeaderConfig: null,
       selectedLpTokens: [] = [],
       assets: null
-    }
+    };
   },
   mounted() {
     this.watchAssetPricesUpdate();
@@ -74,8 +74,8 @@ export default {
     ]),
     filteredLpTokens() {
       return Object.values(this.lpTokens).filter(token =>
-          (this.selectedLpTokens.includes(token.primary) || this.selectedLpTokens.includes(token.secondary))
-          && this.selectedDexes.includes(token.dex)
+        (this.selectedLpTokens.includes(token.primary) || this.selectedLpTokens.includes(token.secondary))
+        && this.selectedDexes.includes(token.dex)
       );
     },
   },
@@ -241,22 +241,22 @@ export default {
     },
     async updateLpPriceData() {
       //TODO: we have to make sure somehow that it's called in a right moment ->when assets have prices already
-      console.log('updateLpPriceData')
-      console.log(this.assets)
-      console.log(this.lpTokens)
+      console.log('updateLpPriceData');
+      console.log(this.assets);
+      console.log(this.lpTokens);
       if (this.assets) {
         Object.keys(this.lpTokens).forEach(
-            key => {
-              const lpToken = this.lpTokens[key];
-              console.log('updateLpPriceData')
-              console.log(this.assets)
-              console.log(lpToken.primary)
-              console.log(lpToken.secondary)
-              console.log(this.assets[lpToken.primary].price)
-              console.log(this.assets[lpToken.secondary].price)
-              lpToken.firstPrice = this.assets[lpToken.primary].price;
-              lpToken.secondPrice = this.assets[lpToken.secondary].price;
-            }
+          key => {
+            const lpToken = this.lpTokens[key];
+            console.log('updateLpPriceData');
+            console.log(this.assets);
+            console.log(lpToken.primary);
+            console.log(lpToken.secondary);
+            console.log(this.assets[lpToken.primary].price);
+            console.log(this.assets[lpToken.secondary].price);
+            lpToken.firstPrice = this.assets[lpToken.primary].price;
+            lpToken.secondPrice = this.assets[lpToken.secondary].price;
+          }
         );
       }
     },
@@ -329,22 +329,27 @@ export default {
       });
     }
   }
-}
+};
 </script>
 
 <style scoped>
-.lp-tokens {
-  display: flex;
-  flex-direction: column;
-  margin-top: 68px;
 
-  .lp-table {
+.lp-tab {
+  width: 100%;
 
-    .paginator-container {
-      display: flex;
-      flex-direction: row;
-      justify-content: flex-end;
-      margin-top: 12px;
+  .lp-tokens {
+    display: flex;
+    flex-direction: column;
+    margin-top: 68px;
+    width: 100%;
+
+    .lp-table {
+      .paginator-container {
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-end;
+        margin-top: 12px;
+      }
     }
   }
 }
