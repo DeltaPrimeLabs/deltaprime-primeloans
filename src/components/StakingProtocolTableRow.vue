@@ -543,10 +543,13 @@ export default {
 @import "~@/styles/variables";
 
 .staking-farm-table-row-component {
-  border-style: solid;
-  border-width: 2px 0 0 0;
-  border-image-source: var(--staking-protocol-table-row__border);
-  border-image-slice: 1;
+
+  &:not(:first-child) {
+    border-style: solid;
+    border-width: 2px 0 0 0;
+    border-image-source: var(--staking-protocol-table-row__border);
+    border-image-slice: 1;
+  }
 
   .protocol-banner {
     color: $orange;

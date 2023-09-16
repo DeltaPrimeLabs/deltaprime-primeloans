@@ -92,6 +92,7 @@
           </div>
 
           <div class="table__body">
+            <div></div>
             <StakingProtocolTableRow v-for="(farm, index) in autoCompoundingFarms"
                                      v-bind:key="index"
                                      :farm="farm"
@@ -108,27 +109,27 @@
           <InfoIcon :tooltip="{content: 'These farms require manual claiming of rewards by (un)staking part of the farmed assets.', classes: 'info-tooltip long', placement: 'top'}"></InfoIcon>
         </div>
 
-<!--        <div class="protocols__table">-->
-<!--          <div class="table__header">-->
-<!--            <div class="table__header__cell asset">Asset & protocol</div>-->
-<!--            <div class="table__header__cell">Staked&nbsp;-->
-<!--              <div class="info__icon__wrapper">-->
-<!--                <InfoIcon :tooltip="{content: 'How many tokens you are currently staking.', classes: 'info-tooltip long', placement: 'top'}"></InfoIcon>-->
-<!--              </div>-->
-<!--            </div>-->
-<!--            <div class="table__header__cell">Rewards</div>-->
-<!--            <div class="table__header__cell">Min. APY-->
-<!--              <div class="info__icon__wrapper">-->
-<!--                <InfoIcon :tooltip="{content: minApyTooltip, classes: 'info-tooltip long', placement: 'top'}"></InfoIcon>-->
-<!--              </div>-->
-<!--            </div>-->
-<!--            <div class="table__header__cell">Max. APY-->
-<!--              <div class="info__icon__wrapper">-->
-<!--                <InfoIcon :tooltip="{content: maxApyTooltip, classes: 'info-tooltip long', placement: 'top'}"></InfoIcon>-->
-<!--              </div>-->
-<!--            </div>-->
-<!--            <div class="table__header__cell">Actions</div>-->
-<!--          </div>-->
+        <div class="protocols__table protocol__table--no-header">
+<!--          <div class="table__header">
+            <div class="table__header__cell asset">Asset & protocol</div>
+            <div class="table__header__cell">Staked&nbsp;
+              <div class="info__icon__wrapper">
+                <InfoIcon :tooltip="{content: 'How many tokens you are currently staking.', classes: 'info-tooltip long', placement: 'top'}"></InfoIcon>
+              </div>
+            </div>
+            <div class="table__header__cell">Rewards</div>
+            <div class="table__header__cell">Min. APY
+              <div class="info__icon__wrapper">
+                <InfoIcon :tooltip="{content: minApyTooltip, classes: 'info-tooltip long', placement: 'top'}"></InfoIcon>
+              </div>
+            </div>
+            <div class="table__header__cell">Max. APY
+              <div class="info__icon__wrapper">
+                <InfoIcon :tooltip="{content: maxApyTooltip, classes: 'info-tooltip long', placement: 'top'}"></InfoIcon>
+              </div>
+            </div>
+            <div class="table__header__cell">Actions</div>
+          </div>-->
 
           <div class="table__body">
             <StakingProtocolTableRow v-for="(farm, index) in normalFarms"
@@ -197,19 +198,26 @@ export default {
       return config.ASSETS_CONFIG[this.assetSymbol] ? config.ASSETS_CONFIG[this.assetSymbol] : config.LP_ASSETS_CONFIG[this.assetSymbol];
     },
     calculateStakingProtocolsHeight() {
-      const simpleProtocolsWithBanner = ['YY_PNG_AVAX_USDC_LP', 'YY_PNG_AVAX_ETH_LP', 'YY_TJ_AVAX_sAVAX_LP']
-      // const headerHeight = this.asset.symbol === 'TJ_AVAX_sAVAX_LP' ? 63 : 53;
+      const simpleProtocolsWithBanner = ['YY_PNG_AVAX_USDC_LP', 'YY_PNG_AVAX_ETH_LP', 'YY_TJ_AVAX_sAVAX_LP'];
+      const tokensWithSplitCompoundingFarms = ['AVAX', 'sAVAX', 'USDC'];
       const headerHeight = 53;
       if (this.availableFarms) {
-        const numberOfProtocols = Object.keys(this.availableFarms).length;
         let heightOfRows = 0;
         Object.values(this.availableFarms).forEach(farm => {
+          console.log(farm);
+          console.log(farm.protocolIdentifier);
           if (farm.protocol === 'VECTOR_FINANCE' && this.asset.symbol === 'USDC') {
             heightOfRows += 26;
           }
+
           if (simpleProtocolsWithBanner.includes(farm.protocolIdentifier)) {
             heightOfRows += 10;
           }
+
+          if (tokensWithSplitCompoundingFarms.includes(farm.token) && !farm.autoCompounding) {
+            heightOfRows -= 58;
+          }
+
           heightOfRows += 102;
         });
 
@@ -508,6 +516,10 @@ export default {
 
       .protocols__table {
         padding: 24px 20px 0 20px;
+
+        &.protocol__table--no-header {
+          padding-top: 0;
+        }
 
         .table__header {
           display: grid;
