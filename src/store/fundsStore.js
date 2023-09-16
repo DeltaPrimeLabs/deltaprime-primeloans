@@ -500,13 +500,13 @@ export default {
       const allowance = formatUnits(await fundTokenContract.allowance(rootState.network.account, state.smartLoanFactoryContract.address), decimals);
 
       if (parseFloat(allowance) < parseFloat(value)) {
-        const approveTransaction = await fundTokenContract.approve(state.smartLoanFactoryContract.address, amount, {gasLimit: 10000000});
+        const approveTransaction = await fundTokenContract.approve(state.smartLoanFactoryContract.address, amount);
         await awaitConfirmation(approveTransaction, provider, 'approve');
       }
 
       const wrappedSmartLoanFactoryContract = await wrapContract(state.smartLoanFactoryContract);
 
-      const transaction = await wrappedSmartLoanFactoryContract.createAndFundLoan(toBytes32(asset.symbol), fundTokenContract.address, amount, {gasLimit: 100000000});
+      const transaction = await wrappedSmartLoanFactoryContract.createAndFundLoan(toBytes32(asset.symbol), fundTokenContract.address, amount);
 
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
