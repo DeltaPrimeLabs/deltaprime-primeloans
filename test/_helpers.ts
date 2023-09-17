@@ -687,6 +687,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         ],
         hardhatConfig
     )
+
     if(mock) {
         await deployFacet("SolvencyFacetMock", diamondAddress, [
                 'canRepayDebtFully',
@@ -760,7 +761,6 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         await deployFacet("PangolinDEXFacet", diamondAddress, ['swapPangolin', 'addLiquidityPangolin', 'removeLiquidityPangolin'], hardhatConfig)
         await deployFacet("TraderJoeDEXFacet", diamondAddress, ['swapTraderJoe', 'addLiquidityTraderJoe', 'removeLiquidityTraderJoe'], hardhatConfig)
         await deployFacet("TraderJoeV2Facet", diamondAddress, ['addLiquidityTraderJoeV2', 'removeLiquidityTraderJoeV2', 'getOwnedTraderJoeV2Bins', 'fundLiquidityTraderJoeV2', 'withdrawLiquidityTraderJoeV2'], hardhatConfig)
-        await deployFacet("UniswapV3Facet", diamondAddress, ['mintLiquidityUniswapV3', 'increaseLiquidityUniswapV3', 'decreaseLiquidityUniswapV3', 'burnLiquidityUniswapV3', 'getOwnedUniswapV3TokenIds'], hardhatConfig)
         await deployFacet("YieldYakFacet", diamondAddress, [
             'stakeAVAXYak',
             'unstakeAVAXYak',
@@ -846,7 +846,13 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             'stakeTraderJoeV2AutopoolAVAXUSDC',
             'unstakeTraderJoeV2AutopoolAVAXUSDC'
         ],
-        hardhatConfig)
+        hardhatConfig);
+
+        if (mock) {
+            await deployFacet("UniswapV3FacetMock", diamondAddress, ['mintLiquidityUniswapV3', 'increaseLiquidityUniswapV3', 'decreaseLiquidityUniswapV3', 'burnLiquidityUniswapV3', 'getOwnedUniswapV3TokenIds'], hardhatConfig)
+        } else {
+            await deployFacet("UniswapV3Facet", diamondAddress, ['mintLiquidityUniswapV3', 'increaseLiquidityUniswapV3', 'decreaseLiquidityUniswapV3', 'burnLiquidityUniswapV3', 'getOwnedUniswapV3TokenIds'], hardhatConfig)
+        }
     }
     if (chain == 'ARBITRUM') {
         await deployFacet("SmartLoanWrappedNativeTokenFacet", diamondAddress, ['depositNativeToken', 'wrapNativeToken', 'unwrapAndWithdraw'], hardhatConfig)

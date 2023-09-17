@@ -60,6 +60,7 @@
     "graphql": "^16.3.0",
     "graphql-request": "^6.0.0",
     "hardhat-deploy": "^0.10.5",
+    "hardhat-deploy-ethers": "^0.4.1",
     "hardhat-interface-generator": "^0.0.6",
     "https-browserify": "^1.0.0",
     "javascript-time-ago": "^2.3.9",
@@ -96,8 +97,7 @@
     "web3-eth-abi": "^1.7.0"
   },
   "devDependencies": {
-    "@nomiclabs/hardhat-ethers": "npm:hardhat-deploy-ethers",
-    "@nomiclabs/hardhat-waffle": "^2.0.1",
+    "@nomiclabs/hardhat-waffle": "^2.0.6",
     "@nomiclabs/hardhat-web3": "^2.0.0",
     "@openzeppelin/test-helpers": "^0.5.11",
     "@typechain/ethers-v5": "^7.0.1",
@@ -122,7 +122,7 @@
     "cssnano": "^3.10.0",
     "es6-promisify": "6.0.2",
     "esm": "^3.2.25",
-    "ethereum-waffle": "^3.4.0",
+    "ethereum-waffle": "^4.0.10",
     "eventsource-polyfill": "^0.9.6",
     "extract-text-webpack-plugin": "^2.0.0",
     "friendly-errors-webpack-plugin": "^1.1.3",

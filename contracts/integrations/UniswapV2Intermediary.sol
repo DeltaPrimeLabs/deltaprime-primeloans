@@ -74,9 +74,7 @@ contract UniswapV2Intermediary is TokenListOwnableUpgreadable, IAssetsExchange, 
         require(amountAMin > 0, "amountAMin has to be greater than 0");
         require(amountBMin > 0, "amountBMin has to be greater than 0");
 
-        tokenA.safeApprove(address(router), 0);
         tokenA.safeApprove(address(router), amountA);
-        tokenB.safeApprove(address(router), 0);
         tokenB.safeApprove(address(router), amountB);
 
         address lpTokenAddress = getPair(tokenA, tokenB);
@@ -96,6 +94,8 @@ contract UniswapV2Intermediary is TokenListOwnableUpgreadable, IAssetsExchange, 
         if ( IERC20Metadata(tokenB).balanceOf(address(this)) > 0) {
             tokenB.safeTransfer(msg.sender, IERC20Metadata(tokenB).balanceOf(address(this)));
         }
+        tokenA.safeApprove(address(router), 0);
+        tokenB.safeApprove(address(router), 0);
 
         return (lpTokenAddress, amountA, amountB, liquidity);
     }

@@ -76,7 +76,6 @@ describe('Smart loan', () => {
 
             doubleMethodTxContract = await deployContract(admin, DoubleMethodTxArtifact) as DoubleBorrowExecInSingleTx;
             smartLoansFactory = await deployContract(admin, SmartLoansFactoryArtifact) as SmartLoansFactory;
-            await smartLoansFactory.initialize(diamondAddress);
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, admin, depositor);
             tokensPrices = await getTokensPricesMap(assetsList.filter(el => el !== 'MCKUSD'), "avalanche", getRedstonePrices, [{symbol: 'MCKUSD', value: 1}]);
@@ -92,6 +91,8 @@ describe('Smart loan', () => {
 
             await tokenManager.connect(admin).initialize(supportedAssets, lendingPools);
             await tokenManager.connect(admin).setFactoryAddress(smartLoansFactory.address);
+
+            await smartLoansFactory.initialize(diamondAddress, tokenManager.address);
 
             let addressProvider = await deployContract(
                 admin,

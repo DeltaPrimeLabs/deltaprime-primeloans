@@ -64,7 +64,6 @@ describe('Smart loan', () => {
             let diamondAddress = await deployDiamond();
 
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
-            await smartLoansFactory.initialize(diamondAddress);
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
             tokensPrices = await getTokensPricesMap(assetsList.filter(el => el !== 'MCKUSD'), "avalanche", getRedstonePrices, [{symbol: 'MCKUSD', value: 1}]);
@@ -80,6 +79,8 @@ describe('Smart loan', () => {
 
             await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
             await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
+
+            await smartLoansFactory.initialize(diamondAddress, tokenManager.address);
 
             let addressProvider = await deployContract(
                 owner,
@@ -159,6 +160,119 @@ describe('Smart loan', () => {
 
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(0.999667, 0.000001);
             expect(fromWei(await wrappedLoan.getHealthMeter())).to.be.eq(0);
+        });
+    });
+
+    describe('A loan with non-borrowable asset', () => {
+        let smartLoansFactory: SmartLoansFactory,
+            loan: SmartLoanGigaChadInterface,
+            wrappedLoan: any,
+            owner: SignerWithAddress,
+            depositor: SignerWithAddress,
+            MOCK_PRICES: any,
+            poolContracts: Map<string, Contract> = new Map(),
+            tokenContracts: Map<string, Contract> = new Map(),
+            lendingPools: Array<PoolAsset> = [],
+            supportedAssets: Array<Asset>,
+            tokensPrices: Map<string, number>;
+
+        before("deploy factory, exchange, wrapped native token pool and USD pool", async () => {
+            [owner, depositor] = await getFixedGasSigners(10000000);
+            let assetsList = ['AVAX', 'ETH', 'YY_AAVE_AVAX'];
+            let poolNameAirdropList: Array<PoolInitializationObject> = [
+                {name: 'AVAX', airdropList: [depositor]},
+            ];
+
+            let diamondAddress = await deployDiamond();
+
+            smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+
+            await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
+            tokensPrices = await getTokensPricesMap(assetsList, getRedstonePrices, []);
+            MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
+            supportedAssets = convertAssetsListToSupportedAssets(assetsList);
+            addMissingTokenContracts(tokenContracts, assetsList);
+
+            let tokenManager = await deployContract(
+                owner,
+                MockTokenManagerArtifact,
+                []
+            ) as MockTokenManager;
+
+            await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
+            await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
+
+            await smartLoansFactory.initialize(diamondAddress, tokenManager.address);
+
+            let addressProvider = await deployContract(
+                owner,
+                AddressProviderArtifact,
+                []
+            ) as AddressProvider;
+
+            await recompileConstantsFile(
+                'local',
+                "DeploymentConstants",
+                [],
+                tokenManager.address,
+                addressProvider.address,
+                diamondAddress,
+                smartLoansFactory.address,
+                'lib',
+                5020
+            );
+
+            await deployAllFacets(diamondAddress);
+            const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress, owner);
+            await diamondCut.pause();
+            await replaceFacet('MockSolvencyFacetAlwaysSolvent', diamondAddress, ['isSolvent']);
+            await diamondCut.unpause();
+        });
+
+        it("should deploy a smart loan", async () => {
+            await smartLoansFactory.connect(owner).createLoan();
+
+            const loanAddress = await smartLoansFactory.getLoanForOwner(owner.address);
+            loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loanAddress, owner);
+
+            wrappedLoan = WrapperBuilder
+                // @ts-ignore
+                .wrap(loan)
+                .usingSimpleNumericMock({
+                    mockSignersCount: 10,
+                    dataPoints: MOCK_PRICES,
+                });
+        });
+
+        it("should check debt equal to 0", async () => {
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1.157920892373162e+59);
+            expect(fromWei(await wrappedLoan.getHealthMeter())).to.be.eq(100);
+            expect(await wrappedLoan.isSolvent()).to.be.true;
+
+            await tokenContracts.get('AVAX')!.connect(owner).deposit({value: toWei("100")});
+            await tokenContracts.get('AVAX')!.connect(owner).approve(wrappedLoan.address, toWei("100"));
+            await wrappedLoan.fund(toBytes32("AVAX"), toWei("100"));
+
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1.157920892373162e+59);
+            expect(fromWei(await wrappedLoan.getHealthMeter())).to.be.eq(100);
+        });
+
+        it("should check debt greater than 0 and lesser than totalValue", async () => {
+            await wrappedLoan.borrow(toBytes32("AVAX"), toWei("25"));
+
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(4.1666667, 0.000001);
+            expect(fromWei(await wrappedLoan.getHealthMeter())).to.be.eq(95);
+        });
+
+        it("should check health ratio above 1", async () => {
+            const stakedAvaxAmount = 50;
+
+            await wrappedLoan.stakeAVAXYak(
+                toWei(stakedAvaxAmount.toString())
+            );
+
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(4.1666667, 0.001);
+            expect(fromWei(await wrappedLoan.getHealthMeter())).to.be.closeTo(95, 0.001);
         });
     });
 
@@ -250,7 +364,7 @@ describe('Smart loan', () => {
                     "TraderJoeIntermediary"
                 )) as TraderJoeIntermediary;
 
-                await smartLoansFactory.initialize(diamondAddress);
+                await smartLoansFactory.initialize(diamondAddress, tokenManager.address);
 
                 await recompileConstantsFile(
                     "local",

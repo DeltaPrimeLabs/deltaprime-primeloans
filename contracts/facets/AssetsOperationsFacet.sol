@@ -98,7 +98,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         }
 
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        tokenManager.decreaseProtocolExposure("GLP", _amount * 1e18 / 10 ** token.decimals());
+        tokenManager.decreaseProtocolExposure("GLP", _amount);
 
         emit Withdrawn(msg.sender, "GLP", _amount, block.timestamp);
     }
@@ -141,6 +141,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
         Pool pool = Pool(DeploymentConstants.getTokenManager().getPoolAddress(_asset));
 
+        _amount = Math.min(_amount, token.balanceOf(address(this)));
         _amount = Math.min(_amount, pool.getBorrowed(address(this)));
         require(token.balanceOf(address(this)) >= _amount, "There is not enough funds to repay");
 

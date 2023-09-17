@@ -63,7 +63,6 @@ describe('Smart loan', () => {
             diamondAddress = await deployDiamond();
 
             smartLoansFactory = await deployContract(owner1, SmartLoansFactoryArtifact) as SmartLoansFactory;
-            await smartLoansFactory.initialize(diamondAddress);
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner1, depositor);
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
@@ -76,6 +75,8 @@ describe('Smart loan', () => {
 
             await tokenManager.connect(owner1).initialize(supportedAssets, lendingPools);
             await tokenManager.connect(owner1).setFactoryAddress(smartLoansFactory.address);
+
+            await smartLoansFactory.initialize(diamondAddress, tokenManager.address);
 
             let addressProvider = await deployContract(
                 owner1,
