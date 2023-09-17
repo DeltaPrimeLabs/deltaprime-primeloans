@@ -92,7 +92,7 @@
             <DeltaIcon class="icon-button__icon" :icon-src="'src/assets/icons/plus-white.svg'"
                        :size="26"
             ></DeltaIcon>
-            buttons.
+            buttons and deposit collateral.
           </template>
         </IconButton>
         <IconButton :disabled="disableAllButtons || !healthLoaded"
