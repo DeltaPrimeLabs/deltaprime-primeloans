@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 8c36e18a206b9e6649c00da51c54b92171ce3413;
+// Last deployed from commit: 13429640b51ff66a13747e7a4a2e106d57c9b831;
 pragma solidity 0.8.17;
 
 import "@redstone-finance/evm-connector/contracts/core/ProxyConnector.sol";
@@ -41,6 +41,28 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
 
     ITokenManager public tokenManager;
 
+    modifier onlyWhitelistedAccounts {
+        if(
+            msg.sender == 0x0E5Bad4108a6A5a8b06820f98026a7f3A77466b2 ||
+            msg.sender == 0x2fFA7E9624B923fA811d9B9995Aa34b715Db1945 ||
+            msg.sender == 0x0d7137feA34BC97819f05544Ec7DE5c98617989C ||
+            msg.sender == 0xC6ba6BB819f1Be84EFeB2E3f2697AD9818151e5D ||
+            msg.sender == 0x14f69F9C351b798dF31fC53E33c09dD29bFAb547 ||
+            msg.sender == 0x5C23Bd1BD272D22766eB3708B8f874CB93B75248 ||
+            msg.sender == 0x000000F406CA147030BE7069149e4a7423E3A264 ||
+            msg.sender == 0x5D80a1c0a5084163F1D2620c1B1F43209cd4dB12 ||
+            msg.sender == 0x6C21A841d6f029243AF87EF01f6772F05832144b ||
+            msg.sender == 0xC29ee4509F01e3534307645Fc62F30Da3Ec65751 ||
+            msg.sender == 0x40E4Ff9e018462Ce71Fa34aBdFA27B8C5e2B1AfB ||
+            msg.sender == 0xeC2BB9e05c0FF597fA1c4aDc8BC11ef79BAb7D29 ||
+            msg.sender == 0x1884fa898A26D0e080d047533B1c1E495d958b1D
+        ){
+            _;
+        } else {
+            revert("Not whitelisted");
+        }
+    }
+
     function _hasLoan(address user) internal view returns (bool) {
         return ownersToLoans[user] != address(0);
     }
@@ -63,7 +85,11 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
         __Ownable_init();
     }
 
-    function createLoan() public virtual hasNoLoan returns (SmartLoanDiamondBeacon) {
+    function setTokenManager(address _tokenManager) external onlyOwner {
+        tokenManager = ITokenManager(_tokenManager);
+    }
+
+    function createLoan() public virtual hasNoLoan onlyWhitelistedAccounts returns (SmartLoanDiamondBeacon) {
         SmartLoanDiamondProxy beaconProxy = new SmartLoanDiamondProxy(
             payable(address(smartLoanDiamond)),
         // Setting SLFactory as the initial owner and then using .transferOwnership to change the owner to msg.sender
@@ -79,7 +105,7 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
         return smartLoan;
     }
 
-    function createAndFundLoan(bytes32 _fundedAsset, uint256 _amount) public virtual hasNoLoan returns (SmartLoanDiamondBeacon) {
+    function createAndFundLoan(bytes32 _fundedAsset, uint256 _amount) public virtual hasNoLoan onlyWhitelistedAccounts returns (SmartLoanDiamondBeacon) {
         address asset = tokenManager.getAssetAddress(_fundedAsset, false);
         SmartLoanDiamondProxy beaconProxy = new SmartLoanDiamondProxy(payable(address(smartLoanDiamond)),
             abi.encodeWithSelector(SmartLoanViewFacet.initialize.selector, msg.sender)
