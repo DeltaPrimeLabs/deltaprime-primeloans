@@ -102,7 +102,7 @@ contract TokenManager is OwnableUpgradeable {
             if(exposure.max != 0){
                 exposure.current += exposureIncrease;
                 require(exposure.current <= exposure.max, "Max asset exposure breached");
-                emit ProtocolExposureChanged(msg.sender, group, exposureIncrease, block.timestamp);
+                emit ProtocolExposureChanged(msg.sender, group, exposure.current, block.timestamp);
             }
         }
     }
@@ -113,7 +113,7 @@ contract TokenManager is OwnableUpgradeable {
             Exposure storage exposure = groupToExposure[group];
             if(exposure.max != 0){
                 exposure.current = exposure.current <= exposureDecrease ? 0 : exposure.current - exposureDecrease;
-                emit ProtocolExposureChanged(msg.sender, group, exposureDecrease, block.timestamp);
+                emit ProtocolExposureChanged(msg.sender, group, exposure.current, block.timestamp);
             }
         }
     }
@@ -213,6 +213,7 @@ contract TokenManager is OwnableUpgradeable {
         // Move last address token to the `tokenToRemoveIndex` position (index of an asset that is being removed) in the address[] supportedTokensList
         // and update map(address=>uint256) tokenPostitionInList if the token is not already the last element
         uint256 tokenToRemoveIndex = tokenPositionInList[tokenToRemove];
+        require(tokenToRemoveIndex < supportedTokensList.length, "Index out of range");
         if (tokenToRemoveIndex != (supportedTokensList.length - 1)) {
             address currentLastToken = supportedTokensList[supportedTokensList.length - 1];
             tokenPositionInList[currentLastToken] = tokenToRemoveIndex;

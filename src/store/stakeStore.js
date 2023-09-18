@@ -71,15 +71,14 @@ export default {
       const allowance = formatUnits(await fundToken.allowance(rootState.network.account, rootState.fundsStore.smartLoanContract.address), fundRequest.farmDecimals);
 
       if (parseFloat(allowance) < parseFloat(fundRequest.value)) {
-        const approveTransaction = await fundToken.connect(provider.getSigner()).approve(rootState.fundsStore.smartLoanContract.address, amountInWei, {gasLimit: 100000});
+        const approveTransaction = await fundToken.connect(provider.getSigner()).approve(rootState.fundsStore.smartLoanContract.address, amountInWei);
         await awaitConfirmation(approveTransaction, provider, 'approve');
       }
 
       const fundTransaction = await (await wrapContract(smartLoanContract, loanAssets)).fund
       (
           toBytes32(fundRequest.farmSymbol),
-          amountInWei,
-          {gasLimit: fundRequest.gas ? fundRequest.gas : 8000000}
+          amountInWei
       );
 
       let tx = await awaitConfirmation(fundTransaction, provider, 'fund');
@@ -141,8 +140,7 @@ export default {
       const withdrawTransaction = await (await wrapContract(smartLoanContract, loanAssets)).withdraw
       (
           toBytes32(withdrawRequest.farmSymbol),
-          amountInWei,
-          {gasLimit: withdrawRequest.gas ? withdrawRequest.gas : 8000000}
+          amountInWei
       );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
@@ -214,8 +212,7 @@ export default {
       const stakeTransaction = await (await wrapContract(smartLoanContract, loanAssets))[stakeRequest.method]
       (
         parseUnits(String(stakeRequest.amount),
-          BigNumber.from(stakeRequest.decimals.toString())),
-        {gasLimit: stakeRequest.gas ? stakeRequest.gas : 8000000}
+          BigNumber.from(stakeRequest.decimals.toString()))
       );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
@@ -282,12 +279,10 @@ export default {
       const unstakeTransaction = unstakeRequest.minReceiptTokenUnstaked ?
         await (await wrapContract(smartLoanContract, loanAssets))[unstakeRequest.method](
           parseUnits(parseFloat(unstakeRequest.receiptTokenUnstaked).toFixed(unstakeRequest.decimals), BigNumber.from(unstakeRequest.decimals.toString())),
-          parseUnits(parseFloat(unstakeRequest.minReceiptTokenUnstaked).toFixed(unstakeRequest.decimals), BigNumber.from(unstakeRequest.decimals.toString())),
-          {gasLimit: unstakeRequest.gas ? unstakeRequest.gas : 8000000})
+          parseUnits(parseFloat(unstakeRequest.minReceiptTokenUnstaked).toFixed(unstakeRequest.decimals), BigNumber.from(unstakeRequest.decimals.toString())))
         :
         await (await wrapContract(smartLoanContract, loanAssets))[unstakeRequest.method](
-          parseUnits(parseFloat(unstakeRequest.receiptTokenUnstaked).toFixed(unstakeRequest.decimals), BigNumber.from(unstakeRequest.decimals.toString())),
-          {gasLimit: unstakeRequest.gas ? unstakeRequest.gas : 8000000});
+          parseUnits(parseFloat(unstakeRequest.receiptTokenUnstaked).toFixed(unstakeRequest.decimals), BigNumber.from(unstakeRequest.decimals.toString())));
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();

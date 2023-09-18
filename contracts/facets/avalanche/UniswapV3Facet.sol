@@ -7,21 +7,22 @@ import "../../interfaces/joe-v2/ILBRouter.sol";
 import "../../interfaces/joe-v2/ILBFactory.sol";
 import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
 import "../../lib/uniswap-v3/UniswapV3IntegrationHelper.sol";
+import "@redstone-finance/evm-connector/contracts/data-services/AvalancheDataServiceConsumerBase.sol";
 
 //This path is updated during deployment
 import "../../lib/local/DeploymentConstants.sol";
 import "../../interfaces/uniswap-v3-periphery/INonfungiblePositionManager.sol";
 
-contract UniswapV3Facet is IUniswapV3Facet, ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
+contract UniswapV3Facet is IUniswapV3Facet, AvalancheDataServiceConsumerBase, ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
     address private constant NONFUNGIBLE_POSITION_MANAGER_ADDRESS = 0x655C406EBFa14EE2006250925e54ec43AD184f8B;
     address private constant UNISWAP_V3_FACTORY_ADDRESS = 0x740b1c1de25031C31FF4fC9A62f554A55cdC1baD;
+    uint256 public constant ACCEPTED_UNISWAP_SLIPPAGE = 0.05e18;
 
     using TransferHelper for address;
 
-    uint256 constant MAX_OWNED_UNISWAP_V3_POSITIONS = 10; //TODO: dummy number, update after running gas tests
+    uint256 constant MAX_OWNED_UNISWAP_V3_POSITIONS = 100; //TODO: dummy number, update after running gas tests
 
-    //TODO: kamilovsky please look into that if that is a good solution for storage
     function getTokenIds() internal returns (uint256[] storage result){
         return DiamondStorageLib.getUV3OwnedTokenIds();
     }
@@ -30,15 +31,16 @@ contract UniswapV3Facet is IUniswapV3Facet, ReentrancyGuardKeccak, OnlyOwnerOrIn
         return DiamondStorageLib.getUV3OwnedTokenIdsView();
     }
 
-    function getWhitelistedUniswapV3Pools() internal view returns (IUniswapV3Pool[1] memory pools){
+    function getWhitelistedUniswapV3Pools() internal view returns (IUniswapV3Pool[2] memory pools){
         return [
-            IUniswapV3Pool(0x0E663593657B064e1baE76d28625Df5D0eBd4421)
+            IUniswapV3Pool(0xfAe3f424a0a47706811521E3ee268f00cFb5c45E),
+            IUniswapV3Pool(0x7b602f98D71715916E7c963f51bfEbC754aDE2d0)
         ];
     }
 
     //TODO: optimize it (mapping?)
     function isPoolWhitelisted(address pool) internal view returns (bool){
-        IUniswapV3Pool[1] memory pools = getWhitelistedUniswapV3Pools();
+        IUniswapV3Pool[2] memory pools = getWhitelistedUniswapV3Pools();
 
         for (uint i; i < pools.length; ++i) {
             if (pool == address(pools[i])) return true;
@@ -59,23 +61,39 @@ contract UniswapV3Facet is IUniswapV3Facet, ReentrancyGuardKeccak, OnlyOwnerOrIn
         params.recipient = address(this);
 
         {
-            //TODO: finish
-            //checking the price against the oracle value
+            //TODO: write tests for that
+
             (uint160 poolSqrtPrice,,,,,,) = IUniswapV3Pool(poolAddress).slot0();
-            uint256 poolPrice = UniswapV3IntegrationHelper.sqrtPriceX96ToSqrtUint(poolSqrtPrice, IERC20Metadata(params.token0).decimals());
+            uint256 sqrtPoolPrice = UniswapV3IntegrationHelper.sqrtPriceX96ToSqrtUint(poolSqrtPrice, IERC20Metadata(params.token0).decimals());
+
+            bytes32[] memory symbols = new bytes32[](2);
+
+            symbols[0] = token0;
+            symbols[1] = token1;
+
+            uint256[] memory prices = getOracleNumericValuesFromTxMsg(symbols);
+
+            uint256 oraclePrice = prices[0] * 1e18 / prices[1];
+            uint256 poolPrice = sqrtPoolPrice * sqrtPoolPrice / 10 ** IERC20Metadata(params.token1).decimals();
+
+            if (oraclePrice > poolPrice) {
+                if ((oraclePrice - poolPrice) * 1e18 / oraclePrice > ACCEPTED_UNISWAP_SLIPPAGE) revert SlippageTooHigh();
+            } else {
+                if ((poolPrice - oraclePrice) * 1e18 / oraclePrice > ACCEPTED_UNISWAP_SLIPPAGE) revert SlippageTooHigh();
+            }
         }
 
-        //TODO: check for max and min ticks
         address(params.token0).safeApprove(address(NONFUNGIBLE_POSITION_MANAGER_ADDRESS), 0);
         address(params.token1).safeApprove(address(NONFUNGIBLE_POSITION_MANAGER_ADDRESS), 0);
 
         address(params.token0).safeApprove(address(NONFUNGIBLE_POSITION_MANAGER_ADDRESS), params.amount0Desired);
         address(params.token1).safeApprove(address(NONFUNGIBLE_POSITION_MANAGER_ADDRESS), params.amount1Desired);
 
-        (uint256 tokenId,
-        uint128 liquidity,
-        uint256 amount0,
-        uint256 amount1
+        (
+            uint256 tokenId,
+            uint128 liquidity,
+            uint256 amount0,
+            uint256 amount1
         ) = INonfungiblePositionManager(NONFUNGIBLE_POSITION_MANAGER_ADDRESS).mint(params);
 
         {
@@ -112,6 +130,27 @@ contract UniswapV3Facet is IUniswapV3Facet, ReentrancyGuardKeccak, OnlyOwnerOrIn
         address poolAddress = PoolAddress.computeAddress(UNISWAP_V3_FACTORY_ADDRESS, PoolAddress.getPoolKey(token0Address, token1Address, fee));
 
         if (!isPoolWhitelisted(poolAddress)) revert UniswapV3PoolNotWhitelisted();
+
+        {
+            (uint160 poolSqrtPrice,,,,,,) = IUniswapV3Pool(poolAddress).slot0();
+            uint256 sqrtPoolPrice = UniswapV3IntegrationHelper.sqrtPriceX96ToSqrtUint(poolSqrtPrice, IERC20Metadata(token0Address).decimals());
+
+            bytes32[] memory symbols = new bytes32[](2);
+
+            symbols[0] = token0;
+            symbols[1] = token1;
+
+            uint256[] memory prices = getOracleNumericValuesFromTxMsg(symbols);
+
+            uint256 oraclePrice = prices[0] * 1e18 / prices[1];
+            uint256 poolPrice = sqrtPoolPrice * sqrtPoolPrice / 10 ** IERC20Metadata(token1Address).decimals();
+
+            if (oraclePrice > poolPrice) {
+                if ((oraclePrice - poolPrice) * 1e18 / oraclePrice > ACCEPTED_UNISWAP_SLIPPAGE) revert SlippageTooHigh();
+            } else {
+                if ((poolPrice - oraclePrice) * 1e18 / oraclePrice > ACCEPTED_UNISWAP_SLIPPAGE) revert SlippageTooHigh();
+            }
+        }
 
         token0Address.safeApprove(address(NONFUNGIBLE_POSITION_MANAGER_ADDRESS), 0);
         token1Address.safeApprove(address(NONFUNGIBLE_POSITION_MANAGER_ADDRESS), 0);
@@ -150,6 +189,27 @@ contract UniswapV3Facet is IUniswapV3Facet, ReentrancyGuardKeccak, OnlyOwnerOrIn
 
         bytes32 token0 = tokenManager.tokenAddressToSymbol(token0Address);
         bytes32 token1 = tokenManager.tokenAddressToSymbol(token1Address);
+
+        {
+            (uint160 poolSqrtPrice,,,,,,) = IUniswapV3Pool(poolAddress).slot0();
+            uint256 sqrtPoolPrice = UniswapV3IntegrationHelper.sqrtPriceX96ToSqrtUint(poolSqrtPrice, IERC20Metadata(token0Address).decimals());
+
+            bytes32[] memory symbols = new bytes32[](2);
+
+            symbols[0] = token0;
+            symbols[1] = token1;
+
+            uint256[] memory prices = getOracleNumericValuesFromTxMsg(symbols);
+
+            uint256 oraclePrice = prices[0] * 1e18 / prices[1];
+            uint256 poolPrice = sqrtPoolPrice * sqrtPoolPrice / 10 ** IERC20Metadata(token1Address).decimals();
+
+            if (oraclePrice > poolPrice) {
+                if ((oraclePrice - poolPrice) * 1e18 / oraclePrice > ACCEPTED_UNISWAP_SLIPPAGE) revert SlippageTooHigh();
+            } else {
+                if ((poolPrice - oraclePrice) * 1e18 / oraclePrice > ACCEPTED_UNISWAP_SLIPPAGE) revert SlippageTooHigh();
+            }
+        }
 
         (
             uint256 amount0,
@@ -195,6 +255,8 @@ contract UniswapV3Facet is IUniswapV3Facet, ReentrancyGuardKeccak, OnlyOwnerOrIn
     error UniswapV3PoolNotWhitelisted();
 
     error TooManyUniswapV3Positions();
+
+    error SlippageTooHigh();
 
     /**
      * @dev emitted after minting liquidity

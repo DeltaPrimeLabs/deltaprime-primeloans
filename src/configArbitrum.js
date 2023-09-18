@@ -35,8 +35,8 @@ export default {
       "wstETH": {name: "wstETH", symbol: "wstETH", logoExt: "png", decimals: 18, address: addresses.wstETH, debtCoverage: 0.83333333333, tradingViewSymbol: "UNISWAP3ETH:WSTETHUSDC"},
     },
     AVAILABLE_ASSETS_PER_DEX: {
-        YakSwap: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'GLP', 'DAI', 'FRAX', 'LINK', 'UNI', 'DPX', 'wstETH'],
-        ParaSwap: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'GLP', 'DAI', 'FRAX', 'LINK', 'UNI', 'DPX', 'wstETH']
+        ParaSwap: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'GLP', 'DAI', 'FRAX', 'LINK', 'UNI', 'DPX', 'wstETH'],
+        YakSwap: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'GLP', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH']
     },
     ASSET_FILTER_TOKENS_OPTIONS: ['ETH', 'DPX',],
     ASSET_FILTER_DEXES_OPTIONS: ['Sushi'],
@@ -138,9 +138,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['USDC.e'],
                 strategy: 'USDC.e',
-                refreshDelay: 60000,
-                gasStake: 10000000,
-                gasUnstake: 10000000
+                refreshDelay: 60000
             }
         ],
         "USDT": [
@@ -162,9 +160,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['USDT'],
                 strategy: 'USDT',
-                refreshDelay: 60000,
-                gasStake: 10000000,
-                gasUnstake: 10000000
+                refreshDelay: 60000
             }
         ],
         "DAI": [
@@ -186,9 +182,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['DAI'],
                 strategy: 'DAI',
-                refreshDelay: 60000,
-                gasStake: 15000000,
-                gasUnstake: 15000000
+                refreshDelay: 60000
             }
         ],
         "GMX": [
@@ -210,9 +204,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['GMX'],
                 strategy: 'GMX',
-                refreshDelay: 60000,
-                gasStake: 15000000,
-                gasUnstake: 15000000
+                refreshDelay: 60000
             }
         ],
         "GLP": [
@@ -234,9 +226,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['GLP'],
                 strategy: 'GLP',
-                refreshDelay: 60000,
-                gasStake: 10000000,
-                gasUnstake: 10000000
+                refreshDelay: 60000
             }
         ],
     },

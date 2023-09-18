@@ -10,10 +10,10 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
     embedCommitHash("Pool", "./contracts");
 
-    embedCommitHash("EthPool", "./contracts/deployment/arbitrum");
+    embedCommitHash("WethPool", "./contracts/deployment/arbitrum");
     embedCommitHash("UsdcPool", "./contracts/deployment/arbitrum");
 
-    const ethPool = await deploy("WethPool", {
+    const wethPool = await deploy("WethPool", {
         contract: "contracts/deployment/arbitrum/WethPool.sol:WethPool",
         from: deployer,
         gasLimit: 20000000,
@@ -21,12 +21,12 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     });
 
     console.log(
-        `Deployed WethPool at address: ${ethPool.address}`
+        `Deployed WethPool at address: ${wethPool.address}`
     );
 
     await verifyContract(hre,
         {
-            address: ethPool.address,
+            address: wethPool.address,
             contract: `contracts/deployment/arbitrum/WethPool.sol:WethPool`,
             constructorArguments: []
         });
@@ -51,11 +51,11 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         });
     console.log(`Verified UsdcPool`);
 
-    const ethPoolTUP = await ethers.getContract("WethPoolTUP", admin);
+    const wethPoolTUP = await ethers.getContract("WethPoolTUP", admin);
     const usdcPoolTUP = await ethers.getContract("UsdcPoolTUP", admin);
 
-    await ethPoolTUP.upgradeTo(ethPool.address);
-    await usdcPoolTUP.upgradeTo("0xEaf5a4259D8c9828c46Eb87b4801D7caDcEF340f");
+    await wethPoolTUP.upgradeTo(wethPool.address);
+    await usdcPoolTUP.upgradeTo(usdcPool.address);
 };
 
 

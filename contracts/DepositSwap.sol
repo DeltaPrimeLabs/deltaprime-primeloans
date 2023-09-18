@@ -3,11 +3,14 @@
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./interfaces/facets/IYieldYakRouter.sol";
 import "./Pool.sol";
 
 contract DepositSwap {
+    using SafeERC20 for IERC20;
+
     address public constant WAVAX_POOL_TUP = 0xD26E504fc642B96751fD55D3E68AF295806542f5;
     address public constant USDC_POOL_TUP = 0x2323dAC85C6Ab9bd6a8B5Fb75B0581E31232d12b;
     address public constant USDT_POOL_TUP = 0xd222e10D7Fe6B7f9608F14A8B5Cf703c74eFBcA1;
@@ -50,41 +53,45 @@ contract DepositSwap {
 
     function _withdrawFromPool(Pool pool, IERC20 token, uint256 amount, address user) private {
         uint256 userInitialFromTokenDepositBalance = pool.balanceOf(user);
+        uint256 poolInitialBalance = pool.balanceOf(address(this));
 
         require(userInitialFromTokenDepositBalance >= amount, "Insufficient fromToken deposit balance");
-        require(pool.balanceOf(address(this)) == 0, "Contract initial deposit balance should be 0");
-        require(token.balanceOf(address(this)) == 0, "Contract initial fromToken balance must be 0");
 
         pool.transferFrom(user, address(this), amount);
-        require(pool.balanceOf(address(this)) == amount, "amountFromToken and post-transfer contract balance mismatch");
+        require(pool.balanceOf(address(this)) - poolInitialBalance == amount, "amountFromToken and post-transfer contract balance mismatch");
         require(pool.balanceOf(user) == userInitialFromTokenDepositBalance - amount, "user post-transfer balance is incorrect");
+
+        uint256 poolInitialTokenBalance = token.balanceOf(address(this));
 
         pool.withdraw(amount);
 
-        require(pool.balanceOf(address(this)) == 0, "Post-withdrawal contract deposit balance must be 0");
-        require(token.balanceOf(address(this)) == amount, "Post-withdrawal contract fromToken balance is incorrect");
+        require(pool.balanceOf(address(this)) == poolInitialBalance, "Post-withdrawal contract deposit balance must be 0");
+        require(token.balanceOf(address(this)) == poolInitialTokenBalance + amount, "Post-withdrawal contract fromToken balance is incorrect");
     }
 
     function _depositToPool(Pool pool, IERC20 token, uint256 amount, address user) private {
         uint256 contractInitialToTokenBalance = token.balanceOf(address(this));
         uint256 userInitialToTokenDepositBalance = pool.balanceOf(user);
+        uint256 poolInitialBalance = pool.balanceOf(address(this));
 
         require(contractInitialToTokenBalance >= amount, "Insufficient contract toToken balance");
 
-        token.approve(address(pool), amount);
+        token.safeApprove(address(pool), 0);
+        token.safeApprove(address(pool), amount);
         pool.deposit(amount);
 
-        require(token.balanceOf(address(this)) == 0, "Post-deposit contract toToken balance must be 0");
-        require(pool.balanceOf(address(this)) == amount, "Post-deposit contract deposit balance is incorrect");
+        require(token.balanceOf(address(this)) == contractInitialToTokenBalance - amount, "Post-deposit contract toToken balance must be 0");
+        require(pool.balanceOf(address(this)) == poolInitialBalance + amount, "Post-deposit contract deposit balance is incorrect");
 
         pool.transfer(user, amount);
 
-        require(token.balanceOf(address(this)) == 0, "Post-transfer contract deposit balance must be 0");
+        require(token.balanceOf(address(this)) == contractInitialToTokenBalance - amount, "Post-transfer contract deposit balance must be 0");
         require(pool.balanceOf(user) == userInitialToTokenDepositBalance + amount, "Post-transfer user deposit balance is incorrect");
     }
 
     function _yakSwap(address[] calldata path, address[] calldata adapters, uint256 amountIn, uint256 amountOut) private {
-        IERC20(path[0]).approve(YY_ROUTER(), amountIn);
+        IERC20(path[0]).safeApprove(YY_ROUTER(), 0);
+        IERC20(path[0]).safeApprove(YY_ROUTER(), amountIn);
 
         IYieldYakRouter router = IYieldYakRouter(YY_ROUTER());
 

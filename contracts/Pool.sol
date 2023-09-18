@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: d7393e77677f3d42a46dce346d75a831a380100e;
+// Last deployed from commit: 16e2b34c1e27f64494655479ab269f0147cada9d;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
@@ -288,9 +288,10 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      * @dev _amount the amount to be withdrawn
      **/
     function withdraw(uint256 _amount) external nonReentrant {
-        if(_amount > IERC20(tokenAddress).balanceOf(address(this))) revert InsufficientPoolFunds();
-
         _accumulateDepositInterest(msg.sender);
+        _amount = Math.min(_amount, _deposited[msg.sender]);
+
+        if(_amount > IERC20(tokenAddress).balanceOf(address(this))) revert InsufficientPoolFunds();
 
         if(_amount > _deposited[address(this)]) revert BurnAmountExceedsBalance();
         // verified in "require" above
@@ -475,7 +476,11 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     function _getAmounts(address account) internal view returns (uint256 lockedAmount, uint256 transferrableAmount) {
         if (address(vestingDistributor) != address(0)) {
             lockedAmount = vestingDistributor.locked(account);
-            transferrableAmount = _deposited[account] - (lockedAmount - vestingDistributor.availableToWithdraw(account));
+            if (lockedAmount > 0) {
+                transferrableAmount = _deposited[account] - (lockedAmount - vestingDistributor.availableToWithdraw(account));
+            } else {
+                transferrableAmount = _deposited[account];
+            }
         } else {
             transferrableAmount = _deposited[account];
         }

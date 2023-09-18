@@ -126,10 +126,7 @@ contract RecoveryFacet is ReentrancyGuardKeccak, SolvencyMethods {
         }
 
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        tokenManager.decreaseProtocolExposure(
-            "GLP",
-            (_amount * 1e18) / 10 ** token.decimals()
-        );
+        tokenManager.decreaseProtocolExposure("GLP", _amount);
 
         emit EmergencyWithdrawn("GLP", _amount, block.timestamp);
     }

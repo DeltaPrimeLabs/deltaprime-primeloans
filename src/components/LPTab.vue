@@ -12,9 +12,9 @@
         <ConcentratedLpTableRow v-for="(lpToken, index) in concentratedLpTokens" v-bind:key="index" :lp-token="lpToken">
           {{lpToken}}
         </ConcentratedLpTableRow>
-        <!--        <div class="paginator-container">-->
-        <!--          <Paginator :total-elements="50" :page-size="6"></Paginator>-->
-        <!--        </div>-->
+          <div class="paginator-container">
+            <Paginator :total-elements="50" :page-size="6"></Paginator>
+          </div>
       </div>
     </div>
     <div class="lp-tokens" v-if="Object.keys(lpTokens).length && filteredLpTokens && assetFilterGroups">
@@ -27,9 +27,9 @@
         <LpTableRow v-for="(lpToken, index) in filteredLpTokens" v-bind:key="index" :lp-token="lpToken"
                     showFarmed="false">{{lpToken}}
         </LpTableRow>
-        <!--        <div class="paginator-container">-->
-        <!--          <Paginator :total-elements="50" :page-size="6"></Paginator>-->
-        <!--        </div>-->
+          <div class="paginator-container">
+            <Paginator :total-elements="50" :page-size="6"></Paginator>
+          </div>
       </div>
     </div>
   </div>
@@ -212,7 +212,7 @@ export default {
                       <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/pools#tvl' target='_blank'>More information</a>.`
           },
           {
-            label: 'Min. APR',
+            label: 'APR (7D)',
             sortable: false,
             class: 'apr',
             id: 'APR',

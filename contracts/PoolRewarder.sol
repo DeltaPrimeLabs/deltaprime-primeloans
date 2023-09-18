@@ -2,10 +2,13 @@
 // Last deployed from commit: ;
 pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./interfaces/IPoolRewarder.sol";
 
 contract PoolRewarder is IPoolRewarder {
-//    IERC20 public immutable stakingToken;
+    using SafeERC20 for IERC20;
+
+    // IERC20 public immutable stakingToken;
     IERC20 public immutable rewardsToken;
 
     address public owner;
@@ -108,7 +111,7 @@ contract PoolRewarder is IPoolRewarder {
         uint reward = rewards[_user];
         if (reward > 0) {
             rewards[_user] = 0;
-            rewardsToken.transfer(_user, reward);
+            rewardsToken.safeTransfer(_user, reward);
         }
     }
 

@@ -271,7 +271,7 @@ export default {
     },
 
     setupStableCoinAmount() {
-      this.stableCoinAmount = (1 - this.userSlippage / 100) * this.longAssetAmount * this.assets[this.selectedLongAsset].price;
+      this.stableCoinAmount = (1 + this.userSlippage / 100) * this.longAssetAmount * this.assets[this.selectedLongAsset].price;
     },
 
     async userSlippageChange(changeEvent) {

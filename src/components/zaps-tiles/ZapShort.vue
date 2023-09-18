@@ -1,27 +1,26 @@
 <template>
-  <div class="zap-tile" @click="onTileClick()" :class="{'disabled': !hasSmartLoanContract}">
-    <div class="label">
+  <ZapTile v-on:tileClick="onTileClick()" :disabled="!hasSmartLoanContract" :img-src="'src/assets/icons/chart-down.png'" :dark-img-src="'src/assets/icons/chart-down--dark.png'" :header="'Short'">
+    <template #label>
       up to <b>5x</b>
-    </div>
-    <div class="header">Short</div>
-    <div class="icons">
-      <img class="icon" v-for="icon in tokenIcons" :src="icon">
-    </div>
-    <img class="image" src="src/assets/icons/chart-down.png">
-  </div>
+    </template>
+    <template #default>
+      <div class="icons">
+        <img class="icon" v-for="icon in tokenIcons" :src="icon">
+      </div>
+    </template>
+  </ZapTile>
 </template>
 
 <script>
-import ZapLongModal from '../zaps-modals/ZapLongModal.vue';
 import {mapActions, mapState} from 'vuex';
 import config from '../../config';
 import erc20ABI from '../../../test/abis/ERC20.json';
 import {combineLatest} from 'rxjs';
 import YAK_ROUTER_ABI from '../../../test/abis/YakRouter.json';
-import YAK_WRAP_ROUTER from '../../../artifacts/contracts/interfaces/IYakWrapRouter.sol/IYakWrapRouter.json';
 import {parseUnits} from '../../utils/calculate';
 import {BigNumber} from 'ethers';
 import ZapShortModal from '../zaps-modals/ZapShortModal.vue';
+import ZapTile from "./ZapTile.vue";
 
 const ethers = require('ethers');
 
@@ -32,6 +31,7 @@ const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 export default {
   name: 'ZapShort',
+  components: {ZapTile},
   data() {
     return {
       tokenIcons: []
@@ -202,68 +202,19 @@ export default {
 </script>
 
 <style scoped>
-.zap-tile {
-    box-shadow: var(--zap-long__zap-tile-shadow);
-    border-radius: 16px;
-    padding: 48px 64px 32px 64px;
-    position: relative;
-    cursor: pointer;
-    transition: box-shadow 200ms ease-in-out;
-
-    &:hover &:not(.disabled){
-      box-shadow: var(--zap-long__zap-tile-shadow--hover);
-    }
-
-    &.disabled {
-      cursor: default;
-      opacity: 30%;
-    }
-}
-
-.label {
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    border-radius: 0 0 8px 8px;
-    background: var(--zap-long__label-background-color);
-    color: var(--zap-long__label-color);
-    padding: 4px;
-}
-
-.header {
-    text-align: center;
-    font-size: 18px;
-    color: var(--zap-long__header-color);
-    font-weight: 700;
-    margin-bottom: 16px;
-}
-
 .icons {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     grid-template-rows: repeat(2, 1fr);
-    grid-column-gap: 16px;
-    grid-row-gap: 16px;
-    width: 116px;
-    height: 72px;
-    margin-bottom: 8px;
+    grid-column-gap: 12px;
+    grid-row-gap: 12px;
+    width: 102px;
+    height: 64px;
+    margin-bottom: 32px;
     user-select: none;
 }
 
 .icon {
     height: 100%;
 }
-
-.more-label {
-    text-align: center;
-}
-
-.image {
-    width: 118px;
-    height: 118px;
-    margin-top: 52px;
-    user-select: none;
-}
-
 </style>

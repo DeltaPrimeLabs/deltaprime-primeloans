@@ -42,6 +42,7 @@ export default {
         YakSwap: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'USDT.e', 'EUROC', 'GLP', 'sAVAX', 'GMX', 'JOE', 'QI', 'PNG', 'PTP'],
         ParaSwap: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'USDT.e', 'sAVAX', 'QI', 'PNG', 'PTP']
     },
+    showParaSwapWarning: true,
     ASSET_FILTER_TOKENS_OPTIONS: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'sAVAX'],
     ASSET_FILTER_DEXES_OPTIONS: ['Pangolin', 'TraderJoe'],
     NATIVE_ASSET_TOGGLE_OPTIONS: ['AVAX', 'WAVAX'],
@@ -136,9 +137,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['AVAX'],
                 strategy: 'AAVE',
-                refreshDelay: 60000,
-                gasStake: 4000000,
-                gasUnstake: 4000000
+                refreshDelay: 60000
             },
             {
                 protocol: 'VECTOR_FINANCE',
@@ -159,9 +158,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['PTP', 'QI'],
                 strategy: 'Platypus',
-                refreshDelay: 60000,
-                gasStake: 8000000,
-                gasUnstake: 8000000,
+                refreshDelay: 60000
             },
             {
                 protocol: 'VECTOR_FINANCE',
@@ -180,9 +177,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['PTP', 'QI'],
                 strategy: 'Platypus',
-                refreshDelay: 60000,
-                gasStake: 8000000,
-                gasUnstake: 8000000
+                refreshDelay: 60000
             }
         ],
         sAVAX: [
@@ -204,9 +199,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['sAVAX'],
                 strategy: 'Platypus',
-                refreshDelay: 60000,
-                gasStake: 6000000,
-                gasUnstake: 8000000
+                refreshDelay: 60000
             },
             {
                 protocol: 'VECTOR_FINANCE',
@@ -227,9 +220,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['PTP', 'QI'],
                 strategy: 'Platypus',
-                refreshDelay: 60000,
-                gasStake: 8000000,
-                gasUnstake: 8000000,
+                refreshDelay: 60000
             },
             {
                 protocol: 'VECTOR_FINANCE',
@@ -247,9 +238,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['PTP', 'QI'],
                 strategy: 'Platypus',
-                refreshDelay: 60000,
-                gasStake: 8000000,
-                gasUnstake: 8000000
+                refreshDelay: 60000
             }
         ],
         USDC: [
@@ -270,9 +259,7 @@ export default {
                 debtCoverage: 0,
                 rewardTokens: ['PTP'],
                 strategy: 'Platypus',
-                refreshDelay: 60000,
-                gasStake: 8000000,
-                gasUnstake: 8000000
+                refreshDelay: 60000
             },
             {
                 protocol: 'VECTOR_FINANCE',
@@ -290,9 +277,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['PTP'],
                 strategy: 'Platypus',
-                refreshDelay: 60000,
-                gasStake: 8000000,
-                gasUnstake: 8000000
+                refreshDelay: 60000
             },
         ],
         USDT: [
@@ -311,9 +296,7 @@ export default {
                 isTokenLp: false,
                 debtCoverage: 0.83333333333,
                 strategy: 'Platypus',
-                refreshDelay: 60000,
-                gasStake: 8000000,
-                gasUnstake: 8000000
+                refreshDelay: 60000
             },
         ],
         GLP: [
@@ -334,9 +317,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 strategy: 'GMX',
                 rewardTokens: ['GLP'],
-                refreshDelay: 60000,
-                gasStake: 8000000,
-                gasUnstake: 8000000
+                refreshDelay: 60000
             },
         ],
         PNG_AVAX_USDC_LP: [
@@ -356,9 +337,7 @@ export default {
                 isTokenLp: true,
                 debtCoverage: 0.83333333333,
                 strategy: 'Pangolin',
-                refreshDelay: 60000,
-                gasStake: 4000000,
-                gasUnstake: 4000000
+                refreshDelay: 60000
             }
         ],
         PNG_AVAX_ETH_LP: [
@@ -378,9 +357,7 @@ export default {
                 isTokenLp: true,
                 debtCoverage: 0.83333333333,
                 strategy: 'Pangolin',
-                refreshDelay: 60000,
-                gasStake: 4000000,
-                gasUnstake: 4000000
+                refreshDelay: 60000
             }
         ],
         TJ_AVAX_USDC_LP: [
@@ -400,9 +377,7 @@ export default {
                 isTokenLp: true,
                 debtCoverage: 0.83333333333,
                 strategy: 'TraderJoe',
-                refreshDelay: 60000,
-                gasStake: 8000000,
-                gasUnstake: 8000000
+                refreshDelay: 60000
             }
         ],
         TJ_AVAX_ETH_LP: [
@@ -422,9 +397,7 @@ export default {
                 isTokenLp: true,
                 debtCoverage: 0.83333333333,
                 strategy: 'TraderJoe',
-                refreshDelay: 60000,
-                gasStake: 8000000,
-                gasUnstake: 8000000
+                refreshDelay: 60000
             }
         ],
         TJ_AVAX_sAVAX_LP: [
@@ -444,9 +417,7 @@ export default {
                 isTokenLp: true,
                 debtCoverage: 0.83333333333,
                 strategy: 'TraderJoe',
-                refreshDelay: 60000,
-                gasStake: 8000000,
-                gasUnstake: 8000000
+                refreshDelay: 60000
             }
         ],
     },

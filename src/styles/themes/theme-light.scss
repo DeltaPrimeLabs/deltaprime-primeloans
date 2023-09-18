@@ -5,6 +5,9 @@
   --default-text-color: #{$black};
   --default-input-placeholder-color: #{$steel-gray};
 
+  --show-dark-opacity: 0;
+  --show-light-opacity: 1;
+
   // region App
   --app-page-content__background: linear-gradient(152deg, #{$steel-blue} 23%, #{$tiger-orange} 65%, #{$raspberry} 96%);
   --app-page-content__background--opacity: 0.08;
@@ -519,13 +522,18 @@
   --zaps__header-color: #{$dark-gray};
   // endregion
 
-  // region ZapLong
-  --zap-long__label-color: #{$dark-gray};
-  --zap-long__label-background-color: #{$washed-raspberry}77;
-  --zap-long__header-color: #{$dark-gray};
-  --zap-long__more-label-color: #{$dark-gray};
-  --zap-long__zap-tile-shadow: 7px 17px 55px 0 #{$washed-raspberry}77;
-  --zap-long__zap-tile-shadow--hover: 7px 17px 55px 0 #{$raspberry}77;
+  // region ZapTile
+  --zap-tile__background-color: #{$white}66;
+  --zap-tile__background-color--hover: #{$white};
+  --zap-tile__border--hover: linear-gradient(148deg, #{$off-white-raspberry} 11%, #{$pearl-orange} 108%);
+  --zap-tile__border-background--hover: linear-gradient(to bottom, #{$white}, #{$white}), linear-gradient(148deg, #{$off-white-raspberry} 11%, #{$pearl-orange} 108%);
+  --zap-tile__label-color: #{$black};
+  --zap-tile__label-background-color: linear-gradient(263deg, #{$off-white-orange} 66%, #{$bright-raspberry} 1%);;
+  --zap-tile__header-color: #{$deeper-gray};
+  --zap-tile__header-color--hover: #{$black};
+  --zap-tile__more-label-color: #{$black};
+  --zap-tile__zap-tile-shadow: 4px 4px 14px 0 #{$pearl-raspberry}72;
+  --zap-tile__zap-tile-shadow--hover: 4px 4px 25px 0 #{$pearl-raspberry}8c;
   // endregion
 
   // region LiquidityChart
