@@ -152,6 +152,11 @@ export async function signMessage(provider, message, wallet, depositor = false) 
     throw Error;
   }
 
+  const el = ''
+  console.log('message')
+  const mes2 = message;
+  console.log(mes2)
+
   let signingWallet = ethers.utils.verifyMessage(message, signedMessage);
 
   if (signingWallet !== wallet) {
@@ -165,6 +170,7 @@ export async function signMessage(provider, message, wallet, depositor = false) 
 
   if (!result || !result.ok || result.status === 0) throw Error;
 
+  return true;
 }
 
 export async function signMessageForNotifi(provider, message, wallet, depositor = false) {
@@ -187,6 +193,4 @@ tokens or virtual assets are prohibited [full text available at https://arweave.
 
 export const depositTermsToSign =
 `By entering DeltaPrime I agree to be bound by the DeltaPrime "TERMS OF USE" and herby further represent and warrant that:
-I am not a citizen of, natural and legal person, having habitual residence, location or their seat of incorporation
-in the country or territory where transactions with digital tokens or virtual assets are prohibited [full text available
-at https://arweave.net/9dc5BuzFYefZrL7ciUnxyeRUFh52U3UKju7AD6InsJ8].`;
+I am not a citizen of, natural and legal person, having habitual residence, location or their seat of incorporation in the country or territory where transactions with digital tokens or virtual assets are prohibited [full text available at https://arweave.net/9dc5BuzFYefZrL7ciUnxyeRUFh52U3UKju7AD6InsJ8].`;
