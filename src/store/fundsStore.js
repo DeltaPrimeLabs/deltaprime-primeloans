@@ -504,7 +504,9 @@ export default {
 
       const wrappedSmartLoanFactoryContract = await wrapContract(state.smartLoanFactoryContract);
 
-      const transaction = await wrappedSmartLoanFactoryContract.createAndFundLoan(toBytes32(asset.symbol), amount);
+      const transaction = config.chainId === 43114 ?
+          await wrappedSmartLoanFactoryContract.createAndFundLoan(toBytes32(asset.symbol), fundTokenContract.address, amount)
+          : await wrappedSmartLoanFactoryContract.createAndFundLoan(toBytes32(asset.symbol), amount);
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
