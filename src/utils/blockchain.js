@@ -152,21 +152,13 @@ export async function signMessage(provider, message, wallet, depositor = false) 
     throw Error;
   }
 
-  const el = ''
-  console.log('message')
-  const mes2 = message;
-  console.log(mes2)
-
   let signingWallet = ethers.utils.verifyMessage(message, signedMessage);
 
   if (signingWallet !== wallet) {
     throw Error;
   }
 
-  let result = await fetch(`https://vercel-api.deltaprime.io/api/terms?wallet=${wallet}&version=${depositor ? 'depositor' : 'loan'}&signedMessage=${signedMessage}`, {
-    method: 'GET',
-    mode: 'no-cors'
-  });
+  let result = await fetch(`https://vercel-api.deltaprime.io/api/terms?wallet=${wallet}&version=${depositor ? 'depositor' : 'loan'}&signedMessage=${signedMessage}`);
 
   if (!result || !result.ok || result.status === 0) throw Error;
 
