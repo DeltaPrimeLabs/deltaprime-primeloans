@@ -144,20 +144,27 @@ export function isOracleError(e) {
 
 export async function signMessage(provider, message, wallet, depositor = false) {
   const signer = provider.getSigner();
-  let signedMessage = await signer.signMessage(message);
+  let signedMessage;
+
+  try {
+    signedMessage = await signer.signMessage(message);
+  } catch (e) {
+    throw Error;
+  }
 
   let signingWallet = ethers.utils.verifyMessage(message, signedMessage);
 
-  await fetch(`https://vercel-api.deltaprime.io/api/terms?wallet=${wallet}&version=${depositor ? 'depositor' : 'loan'}&signedMessage=${signedMessage}`, {
+  if (signingWallet !== wallet) {
+    throw Error;
+  }
+
+  let result = await fetch(`https://vercel-api.deltaprime.io/api/terms?wallet=${wallet}&version=${depositor ? 'depositor' : 'loan'}&signedMessage=${signedMessage}`, {
     method: 'GET',
     mode: 'no-cors'
   });
 
-  if (signingWallet !== wallet) {
-    Vue.$toast.error(`Wrong signing wallet. Please do not change your Metamask wallet during the procedure.`);
-    return false;
-  }
-  return true;
+  if (!result || !result.ok || result.status === 0) throw Error;
+
 }
 
 export async function signMessageForNotifi(provider, message, wallet, depositor = false) {
@@ -174,16 +181,12 @@ export async function signMessageForNotifi(provider, message, wallet, depositor 
 }
 
 export const loanTermsToSign =
-  `
-By entering DeltaPrime I agree to be bound by the DeltaPrime "TERMS OF USE" and herby further represent and warrant that:
+`By entering DeltaPrime I agree to be bound by the DeltaPrime "TERMS OF USE" and herby further represent and warrant that:
 I am not a citizen of, natural and legal person, having habitual residence, location or their seat of incorporation in the country or territory where transactions with digital
-tokens or virtual assets are prohibited [full text available at https://arweave.net/Py7QApLEFqocjTg_rRWUsgjSdq6MT3AJf8lwmunkio4.
-`;
+tokens or virtual assets are prohibited [full text available at https://arweave.net/yJYGxmLhSccPc3NSRGpgzolKi1YeGiVFteLeWbhPnxw].`;
 
 export const depositTermsToSign =
-  `
-By entering DeltaPrime I agree to be bound by the DeltaPrime "TERMS OF USE" and herby further represent and warrant that:
+`By entering DeltaPrime I agree to be bound by the DeltaPrime "TERMS OF USE" and herby further represent and warrant that:
 I am not a citizen of, natural and legal person, having habitual residence, location or their seat of incorporation
 in the country or territory where transactions with digital tokens or virtual assets are prohibited [full text available
-at https://arweave.net/9dc5BuzFYefZrL7ciUnxyeRUFh52U3UKju7AD6InsJ8
-`;
+at https://arweave.net/9dc5BuzFYefZrL7ciUnxyeRUFh52U3UKju7AD6InsJ8].`;
