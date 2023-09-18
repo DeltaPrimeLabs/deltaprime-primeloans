@@ -1,5 +1,7 @@
 <template>
   <div class="zaps">
+    <img src="src/assets/images/zaps-background-gradient.png" class="zaps__gradient">
+    <img src="src/assets/images/zaps-background-gradient--dark.png" class="zaps__gradient zaps__gradient--dark">
     <div class="zaps__header">
       Choose your strategy:
     </div>
@@ -21,7 +23,7 @@ export default {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 
 .zaps {
   width: 100%;
@@ -36,11 +38,26 @@ export default {
 }
 
 .zaps__tiles {
-  width: 100%;
+  position: relative;
+  width: 870px;
+  margin: 0 auto;
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 16px;
+  gap: 30px;
+}
+
+.zaps__gradient {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  user-select: none;
+  pointer-events: none;
+  opacity: var(--show-light-opacity);
+
+  &.zaps__gradient--dark {
+    opacity: var(--show-dark-opacity);
+  }
 }
 </style>
