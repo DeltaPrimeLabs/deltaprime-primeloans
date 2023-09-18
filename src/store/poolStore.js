@@ -108,7 +108,7 @@ export default {
       if (withdrawRequest.withdrawNativeToken) {
         withdrawTransaction = await pool.contract.connect(provider.getSigner())
           .withdrawNativeToken(
-            parseUnits(String(withdrawRequest.amount), config.ASSETS_CONFIG[withdrawRequest.assetSymbol].decimals), {gasLimit: 300000});
+            parseUnits(String(withdrawRequest.amount), config.ASSETS_CONFIG[withdrawRequest.assetSymbol].decimals));
 
         rootState.serviceRegistry.progressBarService.requestProgressBar();
         rootState.serviceRegistry.modalService.closeModal();
@@ -148,7 +148,7 @@ export default {
 
       const approveTransaction = await swapDepositRequest.sourcePoolContract
         .connect(provider.getSigner())
-        .approve(DEPOSIT_SWAP_CONTRACT_ADDRESS, sourceAmountInWei, {gasLimit: 100000});
+        .approve(DEPOSIT_SWAP_CONTRACT_ADDRESS, sourceAmountInWei);
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
