@@ -29,6 +29,17 @@
         </b>
       </a>
     </Banner>
+    <Banner v-if="showArbitrumPrimeAccountBanner" background="green-accent" :closable="true">
+      You are early! Come back on Wednesday 16:00 CEST to get access to all the gud stuff"
+    </Banner>
+    <Banner v-if="showAvalanchePrimeAccountBanner" background="green-accent" :closable="true">
+      Notice: USDT.e loses its borrowing power on Monday 25th Sep. To prevent liquidation:
+      <a class="banner-link" href="https://discordapp.com/channels/889510301421166643/912702114252329060/1151901665012752414" target="_blank">
+        <b>
+          Read more.
+        </b>
+      </a>
+    </Banner>
     <div class="content">
       <div class="top-bar">
         <div class="top-bar__left-part">
@@ -81,6 +92,8 @@ export default {
       showDepositBanner: false,
       showPrimeAccountBanner: false,
       showArbitrumDepositorBanner: false,
+      showArbitrumPrimeAccountBanner: false,
+      showAvalanchePrimeAccountBanner: false,
       darkMode: false,
     };
   },
@@ -118,8 +131,21 @@ export default {
       this.showPrimeAccountBanner = true;
     }
 
-    if (window.location.href.includes('pools') && config.chainId === 42161) {
-      this.showArbitrumDepositorBanner = true;
+    if (config.chainId === 42161) {
+      if (window.location.href.includes('pools')) {
+        this.showArbitrumDepositorBanner = true;
+      }
+      if (window.location.href.includes('prime-account')) {
+        this.showArbitrumPrimeAccountBanner = true;
+      }
+    }
+
+    if (config.chainId === 43114) {
+      if (window.location.href.includes('pools')) {
+      }
+      if (window.location.href.includes('prime-account')) {
+        this.showAvalanchePrimeAccountBanner = true;
+      }
     }
   },
 

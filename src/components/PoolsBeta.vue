@@ -223,7 +223,7 @@ export default {
                 class: 'unlocked',
                 id: 'UNLOCKED',
                 tooltip: `When $1M is hit, a new pool will be unlocked.
-                <a href='https://medium.com/@Delta_Prime/two-days-until-deltaprimes-first-liquidity-mining-program-b17f12fbb23b' target='_blank'>More information</a>.`
+                <a href='https://medium.com/@Delta_Prime/relaunching-deltaprime-on-arbitrum-ac43bdd91ed5' target='_blank'>More information</a>.`
               },
               {
                 label: 'Utilisation',
