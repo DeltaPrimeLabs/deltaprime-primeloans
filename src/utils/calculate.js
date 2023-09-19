@@ -26,8 +26,10 @@ export function calculateHealth(tokens, lbTokens) {
   let weightedCollateralFromLBs = 0;
 
   if (lbTokens) {
-    for (let lbToken of lbTokens) {
-      lbToken.binIds.forEach(
+    lbTokens
+      .filter(lbToken => lbToken.binIds)
+      .forEach(lbToken => {
+        lbToken.binIds.forEach(
           (binId, i) => {
             let balancePrimary = parseFloat(lbToken.binBalancePrimary[i]);
             let balanceSecondary = parseFloat(lbToken.binBalanceSecondary[i])
@@ -36,12 +38,12 @@ export function calculateHealth(tokens, lbTokens) {
             let debtCoverageSecondary = config.ASSETS_CONFIG[lbToken.secondary].debtCoverage;
 
             weightedCollateralFromLBs += Math.min(
-                debtCoveragePrimary * liquidity * config.ASSETS_CONFIG[lbToken.primary].price / lbToken.binPrices[i],
-                debtCoverageSecondary * liquidity * config.ASSETS_CONFIG[lbToken.secondary].price
+              debtCoveragePrimary * liquidity * config.ASSETS_CONFIG[lbToken.primary].price / lbToken.binPrices[i],
+              debtCoverageSecondary * liquidity * config.ASSETS_CONFIG[lbToken.secondary].price
             ) * lbToken.accountBalances[i] / lbToken.binTotalSupply[i];
           }
-      );
-    }
+        );
+      })
   }
 
   let weightedCollateral = weightedCollateralFromLBs + tokens.reduce((acc, token) => acc + token.price * (token.balance - token.borrowed) * token.debtCoverage, 0);
