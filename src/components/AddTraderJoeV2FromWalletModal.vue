@@ -7,8 +7,6 @@
       <div class="modal-top-desc">
         <div v-if="userBalances && userBalances.length > 0">
           This action will transfer your <a :href="lpToken.link" target="_blank"><b>{{ lpToken.name}} LB tokens</b></a> to your Prime Account.
-          <br>
-          Refresh the site after transaction to see the transferred tokens.
         </div>
         <div v-else>
           Currently you have no LB tokens in your wallet. <br> To create a new position, use the <b>Add liquidity</b> action.

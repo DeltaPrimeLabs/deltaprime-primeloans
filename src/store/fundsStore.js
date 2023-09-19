@@ -1433,18 +1433,22 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'deposit TraderJoe V2 LP token');
 
-      const { tokenXAmount, tokenYAmount } = await dispatch("fetchTraderJoeV2LpUnderlyingBalances", {
+      const { cumulativeTokenXAmount, cumulativeTokenYAmount } = await dispatch("fetchTraderJoeV2LpUnderlyingBalances", {
         lbPairAddress: fundLiquidityRequest.pair,
         binIds: fundLiquidityRequest.ids,
         lpToken: fundLiquidityRequest.lpToken
       });
-      const firstAssetBalanceAfterTransaction = Number(state.assetBalances[fundLiquidityRequest.firstAsset]) + Number(formatUnits(tokenXAmount, state.assets[fundLiquidityRequest.firstAsset].decimals));
-      const secondAssetBalanceAfterTransaction = Number(state.assetBalances[fundLiquidityRequest.secondAsset]) + Number(formatUnits(tokenYAmount, state.assets[fundLiquidityRequest.secondAsset].decimals));
+
+      const firstAssetBalanceAfterTransaction = Number(state.assetBalances[fundLiquidityRequest.firstAsset]) - Number(formatUnits(cumulativeTokenXAmount, state.assets[fundLiquidityRequest.firstAsset].decimals));
+      const secondAssetBalanceAfterTransaction = Number(state.assetBalances[fundLiquidityRequest.secondAsset]) - Number(formatUnits(cumulativeTokenYAmount, state.assets[fundLiquidityRequest.secondAsset].decimals));
 
       rootState.serviceRegistry.assetBalancesExternalUpdateService
           .emitExternalAssetBalanceUpdate(fundLiquidityRequest.firstAsset, firstAssetBalanceAfterTransaction, false, true);
       rootState.serviceRegistry.assetBalancesExternalUpdateService
           .emitExternalAssetBalanceUpdate(fundLiquidityRequest.secondAsset, secondAssetBalanceAfterTransaction, false, true);
+
+      const lpAsset = state.traderJoeV2LpAssets[fundLiquidityRequest.lpToken.symbol];
+      await dispatch("refreshTraderJoeV2LpUnderlyingBalancesAndLiquidity", {lpAsset});
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {
