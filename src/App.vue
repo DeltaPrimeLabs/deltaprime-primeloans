@@ -21,8 +21,8 @@
     <Banner v-if="oracleError">
       Data feeds error. Some functions might be not available.
     </Banner>
-    <Banner v-if="false" background="green-accent" :closable="true">
-      DeltaPrime is unaffected by the recent Curve exploit, as Curve is not integrated in the platform.
+    <Banner v-if="showArbitrumDepositorBanner" background="green-accent" :closable="true">
+      Updated Liquidity Mining Program has just started!
     </Banner>
     <div class="content">
       <div class="top-bar">
@@ -75,6 +75,7 @@ export default {
       showGlpBanner: false,
       showDepositBanner: false,
       showPrimeAccountBanner: false,
+      showArbitrumDepositorBanner: false,
       darkMode: false,
     };
   },
@@ -110,6 +111,10 @@ export default {
 
     if (window.location.href.includes('prime-account')) {
       this.showPrimeAccountBanner = true;
+    }
+
+    if (window.location.href.includes('pools') && config.chainId === 42161) {
+      this.showArbitrumDepositorBanner = true;
     }
   },
 
