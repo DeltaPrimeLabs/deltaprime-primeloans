@@ -4,7 +4,7 @@
       <div class="table__cell asset">
         <DoubleAssetIcon :primary="lpToken.primary" :secondary="lpToken.secondary"></DoubleAssetIcon>
         <div class="asset__info">
-          <div class="asset__name">{{ lpToken.primary }} - {{ lpToken.secondary }}</div>
+          <a class="asset__name" :href="lpToken.link" target=”_blank”>{{ lpToken.primary }} - {{ lpToken.secondary }}</a>
           <div class="asset__dex">
             by {{ lpToken.dex }}
           </div>
@@ -602,6 +602,10 @@ export default {
           margin-left: 8px;
           font-weight: 500;
           width: 135px;
+        }
+
+        .asset__name {
+          color: var(--default-text-color);
         }
 
         .asset__dex {
