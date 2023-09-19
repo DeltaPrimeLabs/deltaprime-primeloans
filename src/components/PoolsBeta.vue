@@ -3,7 +3,7 @@
     <div class="container">
       <div class="main-content">
         <Block :bordered="true">
-          <div class="title">Deposit</div>
+          <div class="title">Savings</div>
           <NameValueBadgeBeta :name="'Your deposits'">{{ totalDeposit | usd }}</NameValueBadgeBeta>
           <div class="pools">
             <div class="pools-table">
