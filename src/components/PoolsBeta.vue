@@ -205,7 +205,7 @@ export default {
                 id: 'DEPOSIT',
               },
               {
-                label: 'APY',
+                label: window.chain === 'arbitrum' ? 'APR' : 'APY',
                 sortable: false,
                 class: 'apy',
                 id: 'APY',
