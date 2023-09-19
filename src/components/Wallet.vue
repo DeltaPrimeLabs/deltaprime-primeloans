@@ -84,12 +84,14 @@ export default {
     },
 
     getWalletIcon() {
-      if (this.provider.provider.isRabby) {
-        return 'src/assets/logo/rabby.png';
-      }
+      if (this.provider && this.provider.provider) {
+        if (this.provider.provider.isRabby) {
+          return 'src/assets/logo/rabby.png';
+        }
 
-      if (this.provider.provider.isMetaMask) {
-        return 'src/assets/logo/metamask.svg';
+        if (this.provider.provider.isMetaMask) {
+          return 'src/assets/logo/metamask.svg';
+        }
       }
     },
   },

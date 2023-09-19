@@ -63,7 +63,11 @@
       </div>
 
       <div class="button-wrapper">
-        <Button :label="'Deposit'" v-on:click="submit()" :waiting="transactionOngoing"></Button>
+        <Button :label="'Deposit'"
+                v-on:click="submit()"
+                :waiting="transactionOngoing"
+                :disabled="inputValidationError">
+        </Button>
       </div>
     </Modal>
   </div>
@@ -105,6 +109,7 @@ export default {
       selectedDepositAsset: config.nativeToken,
       validators: [],
       transactionOngoing: false,
+      inputValidationError: false,
     };
   },
 
@@ -121,7 +126,9 @@ export default {
     },
 
     miningApy() {
-      return this.pool ? Math.max((1 - this.pool.tvl * this.pool.assetPrice / 4000000) * 0.1, 0) : 0;
+      const miningApy = this.pool ? Math.max((1 - this.pool.tvl * this.pool.assetPrice / 4000000) * 0.1, 0) : 0;
+      console.log(miningApy);
+      return miningApy;
     },
 
     getModalHeight() {
@@ -149,7 +156,9 @@ export default {
     },
 
     depositValueChange(event) {
+      console.log(event);
       this.depositValue = event.value;
+      this.inputValidationError = event.error;
     },
 
     assetToggleChange(asset) {

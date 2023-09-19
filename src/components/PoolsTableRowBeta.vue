@@ -86,9 +86,6 @@ import BarGaugeBeta from "./BarGaugeBeta.vue";
 import InfoIcon from "./InfoIcon.vue";
 
 let TOKEN_ADDRESSES;
-(async () => {
-  TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
-})();
 
 export default {
   name: 'PoolsTableRowBeta',
@@ -97,7 +94,8 @@ export default {
     pool: {},
   },
 
-  mounted() {
+  async mounted() {
+    await this.setupFiles();
     this.setupActionsConfiguration();
     this.setupWalletAssetBalances();
     this.setupPoolsAssetsData();
@@ -135,6 +133,11 @@ export default {
 
   methods: {
     ...mapActions('poolStore', ['deposit', 'withdraw', 'swapDeposit']),
+
+    async setupFiles() {
+      TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
+    },
+
     setupActionsConfiguration() {
       this.actionsConfig = [
         {
@@ -172,6 +175,7 @@ export default {
 
     setupWalletAssetBalances() {
       this.walletAssetBalancesService.observeWalletAssetBalances().subscribe(balances => {
+        console.log(balances);
         this.walletAssetBalances = balances;
       });
     },
@@ -230,6 +234,8 @@ export default {
     },
 
     async openDepositModal() {
+      console.log(this.pool.apy);
+      console.log(this.pool);
       const modalInstance = this.openModal(DepositModal);
       modalInstance.pool = this.pool;
       modalInstance.apy = this.pool.apy;
@@ -291,7 +297,10 @@ export default {
     },
 
     openWithdrawModal() {
+      console.log(this.pool.apy);
       const modalInstance = this.openModal(PoolWithdrawModal);
+      modalInstance.pool = this.pool;
+      console.log(modalInstance.pool);
       modalInstance.apy = this.pool.apy;
       modalInstance.available = this.pool.asset.balance;
       modalInstance.deposit = this.pool.deposit;

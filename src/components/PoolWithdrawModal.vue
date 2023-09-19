@@ -7,13 +7,17 @@
 
       <div class="modal-top-info">
         <div class="top-info__label">APY:</div>
-        <div class="top-info__value">{{ apy | percent }}</div>
+        <div class="top-info__value">{{ apy + miningApy | percent }}</div>
         <div class="top-info__divider"></div>
         <div class="top-info__label">Deposit:</div>
         <div class="top-info__value">{{ deposit | smartRound }}<span class="top-info__currency">{{ assetSymbol }}</span></div>
       </div>
 
-      <CurrencyInput :symbol="assetSymbol" v-on:newValue="withdrawValueChange" ></CurrencyInput>
+      <CurrencyInput :symbol="assetSymbol"
+                     v-on:newValue="withdrawValueChange"
+                     :validators="validators"
+                     :max="deposit">
+      </CurrencyInput>
 
       <div class="transaction-summary-wrapper">
         <TransactionResultSummaryBeta>
@@ -53,7 +57,11 @@
       </div>
 
       <div class="button-wrapper">
-        <Button :label="'Withdraw'" v-on:click="submit()" :waiting="transactionOngoing"></Button>
+        <Button :label="'Withdraw'"
+                v-on:click="submit()"
+                :waiting="transactionOngoing"
+                :disabled="inputValidationError">
+        </Button>
       </div>
     </Modal>
   </div>
@@ -78,6 +86,7 @@ export default {
   },
 
   props: {
+    pool: null,
     apy: null,
     available: null,
     deposit: null,
@@ -89,18 +98,21 @@ export default {
       withdrawValue: 0,
       selectedWithdrawAsset: 'AVAX',
       transactionOngoing: false,
+      inputValidationError: false,
+      validators: [],
     }
   },
 
   mounted() {
-    this.selectedWithdrawAsset = 'AVAX'
+    this.selectedWithdrawAsset = 'AVAX';
+    this.setupValidators();
   },
 
   computed: {
     calculateDailyInterest() {
       const value = this.deposit - this.withdrawValue;
       if (value > 0) {
-        return this.apy / 365 * value;
+        return (this.apy + this.miningApy) / 365 * (Number(this.deposit) + this.depositValue);
       } else {
         return 0;
       }
@@ -108,6 +120,10 @@ export default {
 
     getModalHeight() {
       return this.assetSymbol === 'AVAX' ? '561px' : null;
+    },
+
+    miningApy() {
+      return this.pool ? Math.max((1 - this.pool.tvl * this.pool.assetPrice / 4000000) * 0.1, 0) : 0;
     },
   },
 
@@ -124,10 +140,23 @@ export default {
 
     withdrawValueChange(event) {
       this.withdrawValue = event.value;
+      this.inputValidationError = event.error;
     },
 
     assetToggleChange(asset) {
       this.selectedWithdrawAsset = asset;
+    },
+
+    setupValidators() {
+      this.validators = [
+        {
+          validate: (value) => {
+            if (value > Number(this.deposit)) {
+              return 'Withdraw amount exceeds balance';
+            }
+          }
+        }
+      ];
     },
   }
 };
