@@ -188,7 +188,7 @@ export default {
       this.poolsTableHeaderConfig =
         config.poolsUnlocking ?
           {
-            gridTemplateColumns: 'repeat(3, 1fr) 140px 140px 140px 90px 90px 22px',
+            gridTemplateColumns: 'repeat(3, 1fr) 140px 140px 140px 140px 90px 90px 22px',
             cells: [
               {
                 label: 'Asset',
@@ -205,7 +205,13 @@ export default {
                 id: 'DEPOSIT',
               },
               {
-                label: window.chain === 'arbitrum' ? 'APR' : 'APY',
+                label: '$sPRIME',
+                sortable: false,
+                class: 'sprime',
+                id: 'SPRIME',
+              },
+              {
+                label: 'APR',
                 sortable: false,
                 class: 'apy',
                 id: 'APY',
