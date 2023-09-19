@@ -279,7 +279,7 @@ export default {
             );
 
             if (!canRepayAllDebts) {
-              return 'Not all \'borrowed\' is covered by its \'balance\'. Update missing balance(s) to withdraw. <a target="_blank" style="color: var(--currency-input__error-color)" href="https://docs.deltaprime.io/protocol/safety#withdrawal-guard">Read more</a>.'
+              return 'Not all \'borrowed\' is covered by its \'balance\'. Update missing balance(s) to withdraw. <a target="_blank" style="color: var(--currency-input__error-color)" href="https://docs.deltaprime.io/protocol/security/withdrawal-guard">Read more</a>.'
             }
           }
         }

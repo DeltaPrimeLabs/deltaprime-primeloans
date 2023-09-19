@@ -6,7 +6,8 @@
       </div>
       <div class="modal-top-desc">
         <div v-if="lpToken.binIds && lpToken.binIds.length > 0 && lpToken.accountBalances && lpToken.accountBalances.length > 0">
-          This action will transfer your {{ lpToken.name}} LB tokens from your Prime Account to your wallet.
+          <span v-if="canRepayAllDebts">This action will transfer your {{ lpToken.name}} LB tokens from your Prime Account to your wallet.</span>
+          <span v-else>To withdraw from your Prime Account, all borrowed amounts need to be covered with balances. <a target="_blank" style="color: var(--currency-input__error-color)" href="https://docs.deltaprime.io/protocol/security/withdrawal-guard">Read more</a></span>
         </div>
         <div v-else>
           Currently you have no LB tokens in your account.
@@ -15,7 +16,7 @@
       <div class="button-wrapper">
         <Button :label="'Withdraw LB tokens'"
                 v-on:click="submit()"
-                :disabled="!(lpToken.binIds && lpToken.binIds.length > 0 && lpToken.accountBalances && lpToken.accountBalances.length > 0)"
+                :disabled="!(lpToken.binIds && lpToken.binIds.length > 0 && lpToken.accountBalances && lpToken.accountBalances.length > 0) || !canRepayAllDebts"
                 :waiting="transactionOngoing">
         </Button>
       </div>
@@ -38,7 +39,8 @@ export default {
   components: {Button, BarGaugeBeta, TransactionResultSummaryBeta, Modal, LoadedValue, CurrencyInput, Toggle, DeltaIcon},
   props: {
     lpToken: {},
-    transactionOngoing: false
+    transactionOngoing: false,
+    canRepayAllDebts: false
   },
   methods: {
     close() {

@@ -142,6 +142,7 @@ export default {
     this.watchAssetApysRefresh();
     this.watchHardRefreshScheduledEvent();
     this.watchAssetPricesUpdate();
+    this.watchDebtsPerAssetDataRefreshEvent();
     this.initAccount();
   },
 
@@ -175,6 +176,7 @@ export default {
       'health',
       'assetBalances',
       'smartLoanContract',
+      'debtsPerAsset'
     ]),
     ...mapState('stakeStore', ['farms']),
     ...mapState('poolStore', ['pools']),
@@ -341,12 +343,14 @@ export default {
     async openWithdrawTraderJoeV2Modal() {
       const modalInstance = this.openModal(WithdrawTraderJoeV2Modal);
       modalInstance.lpToken = this.lpToken;
+      modalInstance.canRepayAllDebts = this.canRepayAllDebts;
 
       modalInstance.$on('WITHDRAW', addFromWalletEvent => {
         const withdrawLiquidityRequest = {
           ids: this.lpToken.binIds,
           amounts: this.lpToken.accountBalances,
-          pair: this.lpToken.address
+          pair: this.lpToken.address,
+          lpToken: this.lpToken
         };
 
         this.handleTransaction(this.withdrawLiquidityTraderJoeV2Pool, {withdrawLiquidityRequest: withdrawLiquidityRequest}, () => {
@@ -477,6 +481,19 @@ export default {
     watchAssetPricesUpdate() {
       this.priceService.observeRefreshPrices().subscribe((updateEvent) => {
         this.calculateUserValue();
+      });
+    },
+
+    watchDebtsPerAssetDataRefreshEvent() {
+      this.dataRefreshEventService.debtsPerAssetDataRefreshEvent$.subscribe(() => {
+        this.canRepayAllDebts = Object.values(this.debtsPerAsset).every(
+            debt => {
+              let balance = parseFloat(this.assetBalances[debt.asset]);
+
+              return parseFloat(debt.debt) <= balance;
+            }
+        );
+        this.$forceUpdate();
       });
     },
 
