@@ -30,7 +30,7 @@
       </a>
     </Banner>
     <Banner v-if="showArbitrumPrimeAccountBanner" background="green-accent" :closable="true">
-      You are early! Come back on Wednesday 16:00 CEST to get access to all the gud stuff"
+      You are early! Come back on Wednesday 16:00 CEST to get access to all the gud stuff
     </Banner>
     <Banner v-if="showAvalanchePrimeAccountBanner" background="green-accent" :closable="true">
       Notice: USDT.e loses its borrowing power on Monday 25th Sep. To prevent liquidation:

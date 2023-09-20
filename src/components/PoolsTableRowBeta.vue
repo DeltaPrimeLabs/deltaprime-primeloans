@@ -46,7 +46,7 @@
       </div>
 
       <div class="table__cell unlocked" v-if="poolsUnlocking">
-        <bar-gauge-beta :min="0" :max="1" :value="Math.min(pool.tvl * pool.assetPrice / 1000000, 1)"></bar-gauge-beta>
+        <bar-gauge-beta :min="0" :max="1" :width="80" :value="Math.min(pool.tvl * pool.assetPrice / 1000000, 1)"></bar-gauge-beta>
       </div>
 
       <div class="table__cell utilisation">
