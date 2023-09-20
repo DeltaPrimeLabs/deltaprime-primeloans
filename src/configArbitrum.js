@@ -31,7 +31,7 @@ export default {
       "ARB": {name: "ARB", symbol: "ARB", logoExt: "png", decimals: 18, address: addresses.ARB, debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:ARBUSDT"},
       "GMX": {name: "GMX", symbol: "GMX", logoExt: "png", decimals: 18, address: addresses.GMX, debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:GMXUSDT"},
       "GLP": {name: "GLP", symbol: "GLP", logoExt: "png", decimals: 18, address: addresses.GLP, debtCoverage: 0.83333333333, tradingViewSymbol: ""},
-      // "DPX": {name: "DPX", symbol: "DPX", logoExt: "png", decimals: 18, address: addresses.DPX, debtCoverage: 0.83333333333, tradingViewSymbol: "BYBIT:DPXUSDT"},
+      "DPX": {name: "DPX", symbol: "DPX", logoExt: "png", decimals: 18, address: addresses.DPX, debtCoverage: 0.83333333333, tradingViewSymbol: "BYBIT:DPXUSDT"},
       "wstETH": {name: "wstETH", symbol: "wstETH", logoExt: "png", decimals: 18, address: addresses.wstETH, debtCoverage: 0.83333333333, tradingViewSymbol: "UNISWAP3ETH:WSTETHUSDC"},
     },
     AVAILABLE_ASSETS_PER_DEX: {
@@ -88,16 +88,16 @@ export default {
         'TJLB_BTC_ETH': { primary: 'BTC', secondary: 'ETH', name: 'BTC-ETH', dex: 'TraderJoe', symbol: 'TJLB_BTC_ETH', decimals: 18, baseFee: '0.001', address: addresses['TJLB_BTC_ETH'], binStep: 10, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2', link: "https://traderjoexyz.com/arbitrum/pool/v21/0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f/ETH/10"},
     },
     LP_ASSETS_CONFIG: {
-        // "SUSHI_DPX_ETH_LP": {
-        //     primary: 'DPX',
-        //     secondary: 'ETH',
-        //     name: "DPX-ETH",
-        //     dex: 'Sushi',
-        //     symbol: 'SUSHI_DPX_ETH_LP',
-        //     decimals: 18,
-        //     address: addresses.SUSHI_DPX_ETH_LP,
-        //     debtCoverage: 0.83333333333
-        // },
+        "SUSHI_DPX_ETH_LP": {
+            primary: 'DPX',
+            secondary: 'ETH',
+            name: "DPX-ETH",
+            dex: 'Sushi',
+            symbol: 'SUSHI_DPX_ETH_LP',
+            decimals: 18,
+            address: addresses.SUSHI_DPX_ETH_LP,
+            debtCoverage: 0.83333333333
+        },
     },
     CONCENTRATED_LP_ASSETS_CONFIG: {},
     DEX_CONFIG: {
