@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 13429640b51ff66a13747e7a4a2e106d57c9b831;
+// Last deployed from commit: 6217731809d313bdbc046e80ffdbc6c67dbb02da;
 pragma solidity 0.8.17;
 
 import "@redstone-finance/evm-connector/contracts/core/ProxyConnector.sol";
@@ -55,7 +55,9 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
             msg.sender == 0xC29ee4509F01e3534307645Fc62F30Da3Ec65751 ||
             msg.sender == 0x40E4Ff9e018462Ce71Fa34aBdFA27B8C5e2B1AfB ||
             msg.sender == 0xeC2BB9e05c0FF597fA1c4aDc8BC11ef79BAb7D29 ||
-            msg.sender == 0x1884fa898A26D0e080d047533B1c1E495d958b1D
+            msg.sender == 0x1884fa898A26D0e080d047533B1c1E495d958b1D ||
+            msg.sender == 0x4423C62F7a2F114e8d6F91DEA196baf5A0AFA8d6 ||
+            msg.sender == 0xec5A44cEe773D04D0EFF4092B86838d5Cd77eC4E
         ){
             _;
         } else {
