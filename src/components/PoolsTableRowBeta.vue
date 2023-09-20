@@ -257,7 +257,7 @@ export default {
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error, true);
-        }).then(() => {
+        }).finally(() => {
           this.closeModal();
         });
       });
