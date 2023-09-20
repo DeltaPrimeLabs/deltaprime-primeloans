@@ -33,12 +33,13 @@
       Welcome to DeltaPrime Blue! In the coming weeks this page will significantly expand with partner protocols. Stay tuned!
     </Banner>
     <Banner v-if="showAvalanchePrimeAccountBanner" background="green-accent" :closable="true">
-      Notice: USDT.e loses its borrowing power on Monday 25th Sep. To prevent liquidation:
-      <a class="banner-link" href="https://discordapp.com/channels/889510301421166643/912702114252329060/1151901665012752414" target="_blank">
-        <b>
-          Read more.
-        </b>
-      </a>
+<!--      Notice: USDT.e loses its borrowing power on Monday 25th Sep. To prevent liquidation:-->
+<!--      <a class="banner-link" href="https://discordapp.com/channels/889510301421166643/912702114252329060/1151901665012752414" target="_blank">-->
+<!--        <b>-->
+<!--          Read more.-->
+<!--        </b>-->
+<!--      </a>-->
+      Liquidity Books incoming! It is currently Live on Arbitrum and will be live here shortly.
     </Banner>
     <div class="content">
       <div class="top-bar">
