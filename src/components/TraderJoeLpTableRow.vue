@@ -231,11 +231,11 @@ export default {
         menuOptions: [
           {
             key: 'ADD_FROM_WALLET',
-            name: 'Add LB tokens from wallet'
+            name: 'Import existing LB position'
           },
           {
             key: 'ADD_LIQUIDITY',
-            name: 'Add liquidity',
+            name: 'Create LB position',
             disabled: !this.hasSmartLoanContract || this.inProcess,
             disabledInfo: 'To create LP token, you need to add some funds from you wallet first'
           },
@@ -249,13 +249,13 @@ export default {
         menuOptions: [
           {
             key: 'WITHDRAW',
-            name: 'Withdraw LB tokens to wallet',
+            name: 'Export LB position',
             disabled: !this.hasSmartLoanContract || !this.hasBinsInPool,
             disabledInfo: 'No LB tokens in Prime Account'
           },
           {
             key: 'REMOVE_LIQUIDITY',
-            name: 'Remove Liquidity',
+            name: 'Remove LB position',
             disabled: !this.hasSmartLoanContract || this.inProcess || !this.hasBinsInPool,
             disabledInfo: 'No LB tokens in Prime Account'
           },

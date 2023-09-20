@@ -242,11 +242,11 @@ export default {
             menuOptions: [
               {
                 key: 'ADD_FROM_WALLET',
-                name: 'Add LP token from wallet'
+                name: 'Import existing LP position'
               },
               {
                 key: 'PROVIDE_LIQUIDITY',
-                name: 'Create LP token',
+                name: 'Create LP position',
                 disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
                 disabledInfo: 'To create LP token, you need to add some funds from you wallet first'
               }
@@ -262,12 +262,12 @@ export default {
             menuOptions: [
               {
                 key: 'WITHDRAW',
-                name: 'Withdraw LP token to wallet',
+                name: 'Export LP position',
                 disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
               },
               {
                 key: 'REMOVE_LIQUIDITY',
-                name: 'Unwind LP token',
+                name: 'Remove LP position',
                 disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
               }
             ]
