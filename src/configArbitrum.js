@@ -38,6 +38,7 @@ export default {
         YakSwap: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'GLP', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH'],
         ParaSwap: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'DAI', 'FRAX', 'LINK', 'UNI', 'DPX', 'wstETH']
     },
+    paraSwapDefaultSlippage: 0.02,
     showYakSwapWarning: true,
     ASSET_FILTER_TOKENS_OPTIONS: ['ETH', 'DPX',],
     ASSET_FILTER_DEXES_OPTIONS: ['Sushi'],
@@ -250,7 +251,7 @@ export default {
     },
     yakRouterAddress: '0xb32C79a25291265eF240Eb32E9faBbc6DcEE3cE3',
     yakWrapRouterAddress: '0x16f90031000d48ce2bc6577788282c232060c547',
-    yieldYakGlpWrapperAddress: '0x5190B15497e5EC8Fb94eFac4ebd8B089645F68c2',
+    yieldYakGlpWrapperAddress: '0x80F2d9652Ed7F5306dB095882FA9Ff882003F6D1',
     glpRewardsRouterAddress: '0xA906F338CB21815cBc4Bc87ace9e68c87eF8d8F1', //TODO: needs testing
     nativeToken: "ETH",
     SLIPPAGE_TOLERANCE: 0.03,

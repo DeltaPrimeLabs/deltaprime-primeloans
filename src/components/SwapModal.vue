@@ -392,7 +392,7 @@ export default {
         slippageMargin = 0.2
       } else {
         if (this.swapDex === 'ParaSwap') {
-          slippageMargin = 1;
+          slippageMargin = config.paraSwapDefaultSlippage;
         } else {
           slippageMargin = 0.1
         }
@@ -667,6 +667,10 @@ export default {
 
   .modal__title {
     margin-bottom: 53px;
+  }
+
+  .modal-top-desc {
+    margin-bottom: 20px;
   }
 
   .asset-info {
