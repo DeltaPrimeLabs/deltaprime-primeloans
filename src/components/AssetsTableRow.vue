@@ -112,8 +112,8 @@
 
     <div class="chart-container" v-if="rowExpanded">
       <SmallBlock v-on:close="toggleChart()">
-<!--        <Toggle class="chart-container__toggle" v-if="asset.tradingViewSymbol" v-on:change="onOptionChange" :options="['TradingView', 'Chart']"
-                :initial-option="0"></Toggle>-->
+        <Toggle class="chart-container__toggle" v-if="asset.tradingViewSymbol" v-on:change="onOptionChange" :options="['TradingView', 'Chart']"
+                :initial-option="0"></Toggle>
         <Chart :data-points="asset.prices"
                :line-width="3"
                :min-y="asset.minPrice"
@@ -121,11 +121,11 @@
                :positive-change="todayPriceChange > 0"
                v-if="selectedChart === 'Chart'">
         </Chart>
-<!--        <TradingViewChart :trading-view-symbol="asset.tradingViewSymbol"
+        <TradingViewChart :trading-view-symbol="asset.tradingViewSymbol"
                           :index="index"
                           v-if="selectedChart === 'TradingView'"
                           class="trading-view-chart"
-                          :class="{'trading-view-chart&#45;&#45;visible': showTradingViewChart}"></TradingViewChart>-->
+                          :class="{'trading-view-chart--visible': showTradingViewChart}"></TradingViewChart>
       </SmallBlock>
     </div>
 
@@ -214,7 +214,7 @@ export default {
       totalStaked: null,
       availableFarms: [],
       nativeAssetOptions: config.NATIVE_ASSET_TOGGLE_OPTIONS,
-      selectedChart: 'Chart',
+      selectedChart: 'TradingView',
       showTradingViewChart: false,
     };
   },
