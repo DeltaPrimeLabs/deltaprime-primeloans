@@ -20,7 +20,7 @@
 
       <div class="modal-top-desc" v-if="swapDex === 'YakSwap' && showYakSwapWarning">
         <div>
-          <b>Transactions of more than $50k and low liquidity tokens need increased max. slippage.</b>
+          <b>We recommend using Paraswap for swaps of $50K+.</b>
         </div>
       </div>
 
