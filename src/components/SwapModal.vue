@@ -14,7 +14,7 @@
         </div>
       </div>
 
-      <div class="dex-toggle" v-if="!swapDebtMode && dexOptions">
+      <div class="dex-toggle" v-if="!swapDebtMode && dexOptions && dexOptions.length > 1">
         <Toggle v-on:change="swapDexChange" :options="dexOptions"></Toggle>
       </div>
 
@@ -255,7 +255,7 @@ export default {
       valueAsset: "USDC",
       paraSwapRate: {},
       dexOptions: null,
-      swapDex: Object.keys(config.AVAILABLE_ASSETS_PER_DEX)[0],
+      swapDex: null,
       currentSourceInputChangeEvent: {},
       showParaSwapWarning: config.showParaSwapWarning
     };
@@ -308,10 +308,8 @@ export default {
     },
 
     setupDexOptions() {
-      console.log('setupDexOptions')
-      console.log(config)
-      this.dexOptions = Object.keys(config.AVAILABLE_ASSETS_PER_DEX);
-      console.log(config.dexOptions)
+      this.dexOptions = Object.entries(config.AVAILABLE_ASSETS_PER_DEX).filter(([k, v]) => v.includes(this.sourceAsset)).map(([k, v]) => k);
+      this.swapDex = this.dexOptions[0];
     },
 
     swapDexChange(dex) {
