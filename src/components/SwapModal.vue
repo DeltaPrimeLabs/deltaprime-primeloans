@@ -8,14 +8,20 @@
         Swap debt
       </div>
 
+      <div class="dex-toggle" v-if="!swapDebtMode && dexOptions && dexOptions.length > 1">
+        <Toggle v-on:change="swapDexChange" :options="dexOptions"></Toggle>
+      </div>
+
       <div class="modal-top-desc" v-if="swapDex === 'ParaSwap' && showParaSwapWarning">
         <div>
           <b>Caution: Paraswap slippage vastly exceeds YakSwap. Use with caution.</b>
         </div>
       </div>
 
-      <div class="dex-toggle" v-if="!swapDebtMode && dexOptions && dexOptions.length > 1">
-        <Toggle v-on:change="swapDexChange" :options="dexOptions"></Toggle>
+      <div class="modal-top-desc" v-if="swapDex === 'YakSwap' && showYakSwapWarning">
+        <div>
+          <b>Transactions of more than $50k and low liquidity tokens need increased max. slippage.</b>
+        </div>
       </div>
 
       <div class="asset-info" v-if="!swapDebtMode">
@@ -257,7 +263,8 @@ export default {
       dexOptions: null,
       swapDex: null,
       currentSourceInputChangeEvent: {},
-      showParaSwapWarning: config.showParaSwapWarning
+      showParaSwapWarning: config.showParaSwapWarning,
+      showYakSwapWarning: config.showYakSwapWarning
     };
   },
 

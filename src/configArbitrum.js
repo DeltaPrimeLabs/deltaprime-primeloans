@@ -38,6 +38,7 @@ export default {
         ParaSwap: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'DAI', 'FRAX', 'LINK', 'UNI', 'DPX', 'wstETH'],
         YakSwap: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'GLP', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH']
     },
+    showYakSwapWarning: true,
     ASSET_FILTER_TOKENS_OPTIONS: ['ETH', 'DPX',],
     ASSET_FILTER_DEXES_OPTIONS: ['Sushi'],
     NATIVE_ASSET_TOGGLE_OPTIONS: ['ETH', 'WETH'],
