@@ -30,7 +30,7 @@
       </a>
     </Banner>
     <Banner v-if="showArbitrumPrimeAccountBanner" background="green-accent" :closable="true">
-      You are early! Come back in {{ remainingTime }} to access all the gud stuff.
+      Welcome to DeltaPrime Blue! In the coming weeks this page will significantly expand with partner protocols. Stay tuned!
     </Banner>
     <Banner v-if="showAvalanchePrimeAccountBanner" background="green-accent" :closable="true">
       Notice: USDT.e loses its borrowing power on Monday 25th Sep. To prevent liquidation:
