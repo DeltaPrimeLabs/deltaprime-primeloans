@@ -43,10 +43,11 @@ import LpTableRow from './LpTableRow.vue';
 import config from '../config';
 import TraderJoeLpTableRow from './TraderJoeLpTableRow.vue';
 import {mapState} from 'vuex';
+import Paginator from "./Paginator.vue";
 
 export default {
   name: 'LPTab',
-  components: {TraderJoeLpTableRow, LpTableRow, AssetFilter, ConcentratedLpTableRow, TableHeader},
+  components: {Paginator, TraderJoeLpTableRow, LpTableRow, AssetFilter, ConcentratedLpTableRow, TableHeader},
   data() {
     return {
       concentratedLpTokens: config.CONCENTRATED_LP_ASSETS_CONFIG,

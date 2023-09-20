@@ -161,10 +161,12 @@ export default {
 
     async getTransactionHistory(accountAddress, page, pageSize) {
       const response = await this.statsService.getUserTransactionHistory(accountAddress, page, pageSize);
-      this.transactionHistory = response.data.user.transactions;
-      this.totalTransactions = response.data.user.numTransactions;
-      this.$forceUpdate();
-      this.transactionHistory = this.transactionHistory.map(transaction => this.parseTransactionData(transaction));
+      if (response.data.user) {
+        this.transactionHistory = response.data.user.transactions;
+        this.totalTransactions = response.data.user.numTransactions;
+        this.$forceUpdate();
+        this.transactionHistory = this.transactionHistory.map(transaction => this.parseTransactionData(transaction));
+      }
     },
 
     parseToken: function (transactionAsset) {
