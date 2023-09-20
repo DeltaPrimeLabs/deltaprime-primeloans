@@ -22,7 +22,7 @@
       Data feeds error. Some functions might be not available.
     </Banner>
     <Banner v-if="showArbitrumDepositorBanner" background="green-accent" :closable="true">
-      Liquidity mining event is updated! When a pool hits $1M the next pool opens up.
+      Liquidity mining event is updated! Shortly after a pool hits $1M the next pool opens up.
       <a class="banner-link" href="https://medium.com/@Delta_Prime/relaunching-deltaprime-on-arbitrum-ac43bdd91ed5" target="_blank">
         <b>
           Read more.
@@ -30,7 +30,7 @@
       </a>
     </Banner>
     <Banner v-if="showArbitrumPrimeAccountBanner" background="green-accent" :closable="true">
-      You are early! Come back on Wednesday 16:00 CEST to get access to all the gud stuff
+      You are early! Come back in {{ remainingTime }} to access all the gud stuff.
     </Banner>
     <Banner v-if="showAvalanchePrimeAccountBanner" background="green-accent" :closable="true">
       Notice: USDT.e loses its borrowing power on Monday 25th Sep. To prevent liquidation:
@@ -71,6 +71,7 @@ import Vue from 'vue';
 import Button from './components/Button';
 import ProgressBar from './components/ProgressBar';
 import ThemeToggle from "./components/ThemeToggle.vue";
+import {getCountdownString} from "./utils/calculate";
 
 export default {
   components: {
@@ -94,6 +95,7 @@ export default {
       showArbitrumDepositorBanner: false,
       showArbitrumPrimeAccountBanner: false,
       showAvalanchePrimeAccountBanner: false,
+      remainingTime: "",
       darkMode: false,
     };
   },
@@ -136,6 +138,7 @@ export default {
         this.showArbitrumDepositorBanner = true;
       }
       if (window.location.href.includes('prime-account')) {
+        this.remainingTime = getCountdownString(1695218400000);
         this.showArbitrumPrimeAccountBanner = true;
       }
     }
