@@ -91,7 +91,7 @@
             </div>
           </div>
           <LiquidityChart :tokens-data="chartData" :primary="lpToken.primary"
-                          :secondary="lpToken.secondary" :index="index"></LiquidityChart>
+                          :secondary="lpToken.secondary" :index="index" :current-price-index="currentPriceIndex" :current-price="currentPrice"></LiquidityChart>
         </div>
       </SmallBlock>
     </div>
@@ -165,7 +165,9 @@ export default {
       hasBinsInPool: false,
       account: null,
       chartData: [],
-      userValue: 0
+      userValue: 0,
+      currentPriceIndex: 0,
+      currentPrice: 0,
     };
   },
 
@@ -554,6 +556,12 @@ export default {
           price: ((1 + this.lpToken.binStep / 10000) ** (binId - 8388608) * 10 ** (this.firstAsset.decimals - this.secondAsset.decimals)).toFixed(5),
           value: this.lpToken.accountBalancesPrimary[index] * this.firstAsset.price + this.lpToken.accountBalancesSecondary[index] * this.secondAsset.price
         }))
+
+        this.currentPrice = this.firstAsset.price / this.secondAsset.price
+        console.error(this.currentPrice);
+        this.currentPriceIndex = this.chartData.findIndex((value, index) => {
+          return index > 0 && (value.price > this.currentPrice) && this.chartData[index - 1].price < this.currentPrice
+        })
       }
     }
   },
