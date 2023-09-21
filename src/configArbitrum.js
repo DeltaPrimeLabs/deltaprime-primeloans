@@ -97,7 +97,7 @@ export default {
         //     decimals: 18,
         //     address: addresses.SUSHI_DPX_ETH_LP,
         //     debtCoverage: 0.83333333333
-        },
+        // },
     },
     CONCENTRATED_LP_ASSETS_CONFIG: {},
     DEX_CONFIG: {
