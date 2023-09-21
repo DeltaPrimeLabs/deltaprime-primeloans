@@ -17,7 +17,8 @@
                      v-on:inputChange="firstInputChange"
                      :defaultValue="firstAmount"
                      :disabled="maxBelowActive"
-                     :validators="firstInputValidators">
+                     :validators="firstInputValidators"
+                     :max="firstAssetBalance">
       </CurrencyInput>
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>
@@ -31,7 +32,8 @@
                      v-on:inputChange="secondInputChange"
                      :defaultValue="secondAmount"
                      :disabled="minAboveActive"
-                     :validators="secondInputValidators">
+                     :validators="secondInputValidators"
+                     :max="secondAssetBalance">
       </CurrencyInput>
 
       <div class="liquidity-option shape">

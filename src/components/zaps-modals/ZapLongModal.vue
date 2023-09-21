@@ -131,7 +131,7 @@ export default {
       availableAssetAmount: 0,
       includeBalanceFromWallet: false,
       validators: [],
-      userSlippage: 2,
+      userSlippage: 3,
       stableCoinAmount: 0,
       extraDepositRequired: 0,
       selectedLongAsset: null,

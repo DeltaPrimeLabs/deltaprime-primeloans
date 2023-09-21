@@ -1,11 +1,11 @@
 <template>
   <div class="lp-tab">
-    <!--    <div class="lp-tokens">
+    <div class="lp-tokens">
           <div class="lp-table" v-if="traderJoeLpTokens">
             <TableHeader :config="traderJoeLpTableHeaderConfig"></TableHeader>
             <TraderJoeLpTableRow v-for="(lpToken, index) in traderJoeLpTokens" v-bind:key="index" :index="index" :lp-token="lpToken"></TraderJoeLpTableRow>
           </div>
-        </div>-->
+        </div>
     <div class="lp-tokens" v-if="Object.keys(concentratedLpTokens).length">
       <div class="lp-table">
         <TableHeader :config="concentratedLpTableHeaderConfig"></TableHeader>
@@ -43,10 +43,11 @@ import LpTableRow from './LpTableRow.vue';
 import config from '../config';
 import TraderJoeLpTableRow from './TraderJoeLpTableRow.vue';
 import {mapState} from 'vuex';
+import Paginator from "./Paginator.vue";
 
 export default {
   name: 'LPTab',
-  components: {TraderJoeLpTableRow, LpTableRow, AssetFilter, ConcentratedLpTableRow, TableHeader},
+  components: {Paginator, TraderJoeLpTableRow, LpTableRow, AssetFilter, ConcentratedLpTableRow, TableHeader},
   data() {
     return {
       concentratedLpTokens: config.CONCENTRATED_LP_ASSETS_CONFIG,

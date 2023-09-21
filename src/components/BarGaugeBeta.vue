@@ -31,6 +31,10 @@ export default {
       type: Number,
       required: true,
     },
+    width: {
+      type: Number,
+      required: false,
+    },
     slim: {
       type: Boolean,
       default: false,
@@ -42,7 +46,7 @@ export default {
   },
   computed: {
     barGaugeElementWidth() {
-      return this.slim ? SLIM_BAR_GAUGE_WIDTH : BAR_GAUGE_WIDTH;
+      return this.width ? this.width : this.slim ? SLIM_BAR_GAUGE_WIDTH : BAR_GAUGE_WIDTH;
     },
     barGaugeValueWidth() {
       if (this.value < this.min) {

@@ -8,14 +8,20 @@
         Swap debt
       </div>
 
+      <div class="dex-toggle" v-if="!swapDebtMode && dexOptions && dexOptions.length > 1">
+        <Toggle v-on:change="swapDexChange" :options="dexOptions"></Toggle>
+      </div>
+
       <div class="modal-top-desc" v-if="swapDex === 'ParaSwap' && showParaSwapWarning">
         <div>
           <b>Caution: Paraswap slippage vastly exceeds YakSwap. Use with caution.</b>
         </div>
       </div>
 
-      <div class="dex-toggle" v-if="!swapDebtMode && dexOptions">
-        <Toggle v-on:change="swapDexChange" :options="dexOptions"></Toggle>
+      <div class="modal-top-desc" v-if="swapDex === 'YakSwap' && showYakSwapWarning">
+        <div>
+          <b>We recommend using Paraswap for swaps of $50K+.</b>
+        </div>
       </div>
 
       <div class="asset-info" v-if="!swapDebtMode">
@@ -255,9 +261,10 @@ export default {
       valueAsset: "USDC",
       paraSwapRate: {},
       dexOptions: null,
-      swapDex: Object.keys(config.AVAILABLE_ASSETS_PER_DEX)[0],
+      swapDex: null,
       currentSourceInputChangeEvent: {},
-      showParaSwapWarning: config.showParaSwapWarning
+      showParaSwapWarning: config.showParaSwapWarning,
+      showYakSwapWarning: config.showYakSwapWarning
     };
   },
 
@@ -308,10 +315,8 @@ export default {
     },
 
     setupDexOptions() {
-      console.log('setupDexOptions')
-      console.log(config)
-      this.dexOptions = Object.keys(config.AVAILABLE_ASSETS_PER_DEX);
-      console.log(config.dexOptions)
+      this.dexOptions = Object.entries(config.AVAILABLE_ASSETS_PER_DEX).filter(([k, v]) => v.includes(this.sourceAsset)).map(([k, v]) => k);
+      this.swapDex = this.dexOptions[0];
     },
 
     swapDexChange(dex) {
@@ -387,7 +392,7 @@ export default {
         slippageMargin = 0.2
       } else {
         if (this.swapDex === 'ParaSwap') {
-          slippageMargin = 1;
+          slippageMargin = config.paraSwapDefaultSlippage;
         } else {
           slippageMargin = 0.1
         }
@@ -662,6 +667,10 @@ export default {
 
   .modal__title {
     margin-bottom: 53px;
+  }
+
+  .modal-top-desc {
+    margin-bottom: 20px;
   }
 
   .asset-info {

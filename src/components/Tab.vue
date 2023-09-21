@@ -1,6 +1,6 @@
 <template>
   <div class='tab'>
-    <div v-if="disabled" class="overlay"></div>
+<!--    <div v-if="disabled" class="overlay"></div>-->
     <slot></slot>
   </div>
 </template>

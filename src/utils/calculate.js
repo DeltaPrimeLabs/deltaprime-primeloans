@@ -26,8 +26,10 @@ export function calculateHealth(tokens, lbTokens) {
   let weightedCollateralFromLBs = 0;
 
   if (lbTokens) {
-    for (let lbToken of lbTokens) {
-      lbToken.binIds.forEach(
+    lbTokens
+      .filter(lbToken => lbToken.binIds)
+      .forEach(lbToken => {
+        lbToken.binIds.forEach(
           (binId, i) => {
             let balancePrimary = parseFloat(lbToken.binBalancePrimary[i]);
             let balanceSecondary = parseFloat(lbToken.binBalanceSecondary[i])
@@ -36,12 +38,12 @@ export function calculateHealth(tokens, lbTokens) {
             let debtCoverageSecondary = config.ASSETS_CONFIG[lbToken.secondary].debtCoverage;
 
             weightedCollateralFromLBs += Math.min(
-                debtCoveragePrimary * liquidity * config.ASSETS_CONFIG[lbToken.primary].price / lbToken.binPrices[i],
-                debtCoverageSecondary * liquidity * config.ASSETS_CONFIG[lbToken.secondary].price
+              debtCoveragePrimary * liquidity * config.ASSETS_CONFIG[lbToken.primary].price / lbToken.binPrices[i],
+              debtCoverageSecondary * liquidity * config.ASSETS_CONFIG[lbToken.secondary].price
             ) * lbToken.accountBalances[i] / lbToken.binTotalSupply[i];
           }
-      );
-    }
+        );
+      })
   }
 
   let weightedCollateral = weightedCollateralFromLBs + tokens.reduce((acc, token) => acc + token.price * (token.balance - token.borrowed) * token.debtCoverage, 0);
@@ -377,6 +379,23 @@ export const paraSwapRouteToSimpleData = (txParams) => {
 export function getBinPrice(binId, binStep, firstDecimals, secondDecimals) {
   const binPrice = (1 + binStep / 10000) ** (binId - 8388608) * 10 ** (firstDecimals - secondDecimals);
   return binPrice.toFixed(5);
+}
+
+export function getCountdownString(countDownDate) {
+  let now = new Date().getTime();
+
+  // Find the distance between now and the count down date
+  let distance = countDownDate - now;
+
+  // Time calculations for days, hours, minutes and seconds
+  let days = Math.floor(distance / (1000 * 60 * 60 * 24));
+  let hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  let minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+  let seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+  // Display the result in the element with id="demo"
+  return hours + "h "
+      + minutes + "min";
 }
 
 export const fromWei = val => parseFloat(ethers.utils.formatEther(val));
