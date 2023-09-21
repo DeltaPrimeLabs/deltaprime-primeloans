@@ -13,9 +13,12 @@
              v-tooltip="{content: 'Bin step', classes: 'info-tooltip'}">
         {{lpToken.binStep}}</div>
       </div>
-
       <!-- To-do: Show price graph or similar one on click -->
       <div class="table__cell liquidity">
+        <div v-if="lpToken.binIds && lpToken.binIds.length" class="active-indicator">
+          <img v-if="lpToken.binIds.includes(activeId)" width="16px" src="src/assets/icons/check.png" v-tooltip="{content: 'The active bin is in your range.', classes: 'info-tooltip long'}"/>
+          <img v-else src="src/assets/icons/error.svg" v-tooltip="{content: 'Your position does not include the active bin.', classes: 'info-tooltip long'}"/>
+        </div>
         <FlatButton :active="lpToken.binIds && lpToken.binIds.length" v-on:buttonClick="toggleLiquidityChart()">
           {{ rowExpanded ? 'Hide' : 'Show' }}
         </FlatButton>
@@ -640,8 +643,17 @@ export default {
       &.liquidity {
         align-items: center;
         justify-content: end;
+
+        .active-indicator {
+          margin-right: 5px;
+
+          img {
+            transform: translateY(-1px);
+          }
+        }
+
         .flat-button-component {
-          transform: translateX(31px);
+          margin: 0;
         }
       }
 
