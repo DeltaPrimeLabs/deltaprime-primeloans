@@ -105,7 +105,6 @@
   --chart__tooltip-color: #{$mist-blue};
   --chart__grid-lines-color: #{$washed-space};
   --chart__scales-ticks-color: #{$washed-blue};
-  --chart__active-point-label-color: #{$washed-blue};
   --chart__active-point-line-color: #{$light-navy};
   --chart__active-point-point-color: #{$pale-fuchsia};
   // endregion
@@ -538,8 +537,6 @@
   // endregion
 
   // region LiquidityChart
-  --liquidity-chart__active-price-bar-color: #{$pale-green--accent};
-  --liquidity-chart__active-price-bar-color--hover: #{$pale-green};
   --liquidity-chart__main-token-color: #{$awesome-lilac};
   --liquidity-chart__main-token-color--hover: #{$pale-lilac};
   --liquidity-chart__secondary-token-color: #{$bright-teal};
