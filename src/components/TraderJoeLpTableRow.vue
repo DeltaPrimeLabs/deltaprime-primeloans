@@ -281,7 +281,8 @@ export default {
       result = await result.text();
       if (/^[0-9\[\]\,]*$/.test(result)) {
         this.userBins = JSON.parse(result);
-        const lbToken = new ethers.Contract(this.lpToken.address, LB_TOKEN.abi, provider.getSigner());
+        let readProvider = new ethers.providers.JsonRpcProvider(config.readRpcUrl);
+        const lbToken = new ethers.Contract(this.lpToken.address, LB_TOKEN.abi, readProvider);
 
         this.userBalances = [];
         await Promise.all(

@@ -410,6 +410,7 @@ export default {
 
     async updateStakedBalances({rootState, state, commit}) {
       const smartLoanContract = rootState.fundsStore.smartLoanContract;
+      const readSmartLoanContract = rootState.fundsStore.readSmartLoanContract;
 
       const farmService = rootState.serviceRegistry.farmService;
       let farms;
@@ -422,8 +423,8 @@ export default {
       const apys = rootState.fundsStore.apys;
 
       const loanAssets = mergeArrays([(
-        await smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-        (await smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        await readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
         Object.keys(config.POOLS_CONFIG)
       ]);
 

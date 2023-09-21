@@ -66,7 +66,7 @@ export default {
         {
           chainId: this.toHex(42161),
           chainName: 'Arbitrum',
-          rpcUrls: ['https://arb1.arbitrum.io/rpc'],
+          rpcUrls: ['https://nd-762-566-527.p2pify.com/4514bd12de6723b94346752e90e95cf4'],
           nativeCurrency: {
             name: 'ETH',
             symbol: 'ETH',
