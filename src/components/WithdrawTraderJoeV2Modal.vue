@@ -2,7 +2,7 @@
   <div v-if="lpToken" id="modal" class="add-from-wallet-modal-component modal-component">
     <Modal>
       <div class="modal__title">
-        Withdraw LB tokens to wallet
+        Remove LB position
       </div>
       <div class="modal-top-desc">
         <div v-if="lpToken.binIds && lpToken.binIds.length > 0 && lpToken.accountBalances && lpToken.accountBalances.length > 0">

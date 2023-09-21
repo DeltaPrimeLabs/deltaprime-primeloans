@@ -2,7 +2,7 @@
   <div v-if="lpToken" id="modal" class="add-from-wallet-modal-component modal-component">
     <Modal>
       <div class="modal__title">
-        Add LB tokens from wallet
+        Import existing LB position
       </div>
       <div class="modal-top-desc">
         <div v-if="userBalances && userBalances.length > 0">

@@ -11,7 +11,7 @@
     <div class="separator"></div>
     <img class="logo" :src="getWalletIcon"/>
     <div class="account" v-tooltip="{content: 'Your wallet address', classes: 'info-tooltip long'}">
-      <a :href='`https://snowtrace.io/address/${account}`' target="_blank">{{account | tx(true)}}</a>
+      <a :href='getWalletExplorerUrl' target="_blank">{{account | tx(true)}}</a>
     </div>
     <div class="balance">{{accountBalance | avax}}</div>
     <img class="logo" :src="tokenLogos[nativeToken]"/>
@@ -79,6 +79,17 @@ export default {
         }
         case 'arbitrum': {
           return `https://arbiscan.io/address/${this.smartLoanContract.address}`;
+        }
+      }
+    },
+
+    getWalletExplorerUrl() {
+      switch (window.chain) {
+        case 'avalanche': {
+          return `https://snowtrace.io/address/${this.account}`;
+        }
+        case 'arbitrum': {
+          return `https://arbiscan.io/address/${this.account}`;
         }
       }
     },

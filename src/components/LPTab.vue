@@ -27,9 +27,9 @@
         <LpTableRow v-for="(lpToken, index) in filteredLpTokens" v-bind:key="index" :lp-token="lpToken"
                     showFarmed="false">{{lpToken}}
         </LpTableRow>
-          <div class="paginator-container">
-            <Paginator :total-elements="50" :page-size="6"></Paginator>
-          </div>
+<!--          <div class="paginator-container">-->
+<!--            <Paginator :total-elements="50" :page-size="6"></Paginator>-->
+<!--          </div>-->
       </div>
     </div>
   </div>
