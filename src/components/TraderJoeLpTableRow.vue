@@ -20,7 +20,6 @@
           {{ rowExpanded ? 'Hide' : 'Show' }}
         </FlatButton>
       </div>
-
       <div class="table__cell liquidity">
         <FlatButton :active="false" >
           {{ 'SHOW' }}
@@ -105,7 +104,7 @@ import config from '../config';
 import {mapActions, mapState} from 'vuex';
 import TraderJoeAddLiquidityModal from './TraderJoeAddLiquidityModal.vue';
 import TraderJoeRemoveLiquidityModal from './TraderJoeRemoveLiquidityModal.vue';
-import {calculateMaxApy, formatUnits, parseUnits} from '../utils/calculate';
+import {calculateMaxApy, formatUnits, getBinPrice, parseUnits} from '../utils/calculate';
 import DeltaIcon from './DeltaIcon.vue';
 import {ethers} from 'ethers';
 import AddTraderJoeV2FromWalletModal from "./AddTraderJoeV2FromWalletModal.vue";
@@ -162,6 +161,7 @@ export default {
       healthLoaded: false,
       feesClaimable: 0,
       activeId: null,
+      activePrice: null,
       hasBinsInPool: false,
       account: null,
       chartData: [],
@@ -371,6 +371,7 @@ export default {
       modalInstance.firstAssetBalance = this.assetBalances[this.lpToken.primary];
       modalInstance.secondAssetBalance = this.assetBalances[this.lpToken.secondary];
       modalInstance.activeId = this.activeId;
+      modalInstance.activePrice = this.activePrice;
       modalInstance.binStep = this.lpToken.binStep;
       modalInstance.$on('ADD_LIQUIDITY', addLiquidityEvent => {
         if (this.smartLoanContract) {
@@ -513,6 +514,7 @@ export default {
 
       this.lpToken.tvl = tokenXTVL + tokenYTVL;
       this.activeId = activeId;
+      this.activePrice = getBinPrice(activeId, this.lpToken.binStep, this.firstAsset.decimals, this.secondAsset.decimals);
       this.hasBinsInPool = this.lpToken.binIds && this.lpToken.binIds.length > 0;
     },
 

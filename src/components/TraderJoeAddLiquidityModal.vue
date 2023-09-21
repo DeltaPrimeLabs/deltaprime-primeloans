@@ -2,7 +2,7 @@
   <div id="modal" v-if="lpToken" class="add-liquidity-modal-component modal-component">
     <Modal>
       <div class="modal__title">
-        Add liquidity
+        Create LB position
       </div>
 
       <div class="modal-top-info">
@@ -63,6 +63,7 @@
         <div class="label-with-separator">
           Price range
         </div>
+        <div class="active-price">Current price: 1 {{firstAsset.symbol}} = {{activePrice}} {{secondAsset.symbol}}</div>
         <div class="liquidity-option__content price-slider-wrapper">
           <RangeSlider
             :min="activeId - maxPriceRadius"
@@ -185,6 +186,7 @@ export default {
     firstAssetBalance: Number,
     secondAssetBalance: Number,
     activeId: null,
+    activePrice: null,
     binStep: null
   },
 
@@ -344,6 +346,11 @@ export default {
       .label__info-icon {
         margin-left: 8px;;
       }
+    }
+    .active-price {
+      margin-top: 10px;
+      font-size: 14px;
+      color: var(--traderjoe-add-liquidity-modal__price-slider-input-color);
     }
     .liquidity-option__content {
       width: 100%;
