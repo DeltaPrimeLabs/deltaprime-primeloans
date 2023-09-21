@@ -25,7 +25,7 @@
 
       <div class="table__cell sprime">
         <div>
-          <LoadedValue :check="() => true">{{ 5.8782 | usd}}</LoadedValue>
+          <LoadedValue :check="() => pool.sPrime !== null" :value="pool.sPrime | usd"></LoadedValue>
         </div>
       </div>
 
@@ -474,6 +474,7 @@ export default {
         flex-direction: column;
         justify-content: center;
         align-items: flex-end;
+        font-weight: 600;
       }
 
       &.apy {
