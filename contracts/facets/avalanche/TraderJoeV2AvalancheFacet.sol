@@ -10,10 +10,13 @@ import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
 //This path is updated during deployment
 import "../../lib/local/DeploymentConstants.sol";
 
-contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
+contract TraderJoeV2AvalancheFacet is ITraderJoeV2Facet, ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
     using TransferHelper for address;
 
+    function maxBinsPerPrimeAccount() public view virtual returns (uint256){
+        return 20;
+    }
 
     function getJoeV2RouterAddress() public view virtual returns (address){
         return 0xb4315e873dBcf96Ffd0acd8EA43f689D8c20fB30;
@@ -67,6 +70,8 @@ contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, OnlyOwner
                 getOwnedTraderJoeV2BinsStorage().push(TraderJoeV2Bin(pair, uint24(ids[i])));
             }
         }
+
+        if (maxBinsPerPrimeAccount() > 0 && getOwnedTraderJoeV2BinsStorage().length > maxBinsPerPrimeAccount()) revert TooManyBins();
 
         emit FundedLiquidityTraderJoeV2(msg.sender, address(pair), ids, amounts, block.timestamp);
     }
@@ -144,10 +149,12 @@ contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, OnlyOwner
             DiamondStorageLib.removeOwnedAsset(tokenY);
         }
 
+        if (maxBinsPerPrimeAccount() > 0 && getOwnedTraderJoeV2BinsStorage().length > maxBinsPerPrimeAccount()) revert TooManyBins();
+
         emit AddLiquidityTraderJoeV2(msg.sender, address(pairInfo.LBPair), depositIds, liquidityMinted, tokenX, tokenY, amountXAdded, amountYAdded, block.timestamp);
     }
 
-    function removeLiquidityTraderJoeV2(RemoveLiquidityParameters memory parameters) external nonReentrant onlyOwnerOrInsolvent noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent {
+    function removeLiquidityTraderJoeV2(RemoveLiquidityParameters memory parameters) external nonReentrant onlyOwnerOrInsolvent noBorrowInTheSameBlock recalculateAssetsExposure {
         ILBRouter traderJoeV2Router = ILBRouter(getJoeV2RouterAddress());
 
         ILBPair(traderJoeV2Router.getFactory().getLBPairInformation(parameters.tokenX, parameters.tokenY, parameters.binStep).LBPair).approveForAll(address(traderJoeV2Router), true);
@@ -245,4 +252,6 @@ contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, OnlyOwner
     event WithdrawnLiquidityTraderJoeV2(address indexed user, address indexed pair, uint256[] binIds, uint[] amounts, uint256 timestamp);
 
     error TraderJoeV2PoolNotWhitelisted();
+
+    error TooManyBins();
 }
