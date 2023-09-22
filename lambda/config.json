@@ -1,0 +1,4 @@
+{
+  "jsonRpc": "https://avax.nirvanalabs.xyz/archiveAvaxMain/ext/bc/C/rpc?apikey=d63168833894bb0dd6677607e358e11c7547",
+  "jsonRpcArb": "https://arb.nirvanalabs.xyz/arbitrumOneMainnet?apikey=d63168833894bb0dd6677607e358e11c7547"
+}
