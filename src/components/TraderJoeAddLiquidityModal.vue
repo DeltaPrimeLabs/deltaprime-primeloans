@@ -77,6 +77,7 @@
               <FormInput
                 :default-value="binRange && getBinPrice(binRange[0])"
                 :fontSize="18"
+                :disabled="true"
               ></FormInput>
             </div>
             <div class="price__input">
@@ -84,6 +85,7 @@
               <FormInput
                 :default-value="binRange && getBinPrice(binRange[1])"
                 :fontSize="18"
+                :disabled="true"
               ></FormInput>
             </div>
           </div>
