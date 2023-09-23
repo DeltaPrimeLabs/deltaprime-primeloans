@@ -31,6 +31,8 @@ const sPrimeCalculator = async (event) => {
   const pools = await fetchPools();
   const sPrimeValue = {};
 
+  let totalTime = 0;
+
   await Promise.all(
     pools.map(async (pool) => {
       const poolTransfers = await fetchTransfersForPool(pool.id);
@@ -43,8 +45,8 @@ const sPrimeCalculator = async (event) => {
         // pool APR for previous timestamp
         let prevApr;
 
-        if (transfer.timestamp > 1695211200) { // after 20th Sep, 2pm CEST
-          prevApr = 1000 * 365 / poolAssets.length / (tokenPrice * transfer.curPoolTvl);
+        if (transfer.timestamp > 1695124800) { // after 19th Sep, 2pm CEST
+          prevApr = 1000 * 365 / poolAssets.length / (tokenPrice * transfer.curPoolTvl / 10 ** Number(pool.decimals));
         } else {
           prevApr = Math.max((1 - prevTvlInUsd / tvlThreshold) * 0.1, 0);
         }
@@ -61,16 +63,27 @@ const sPrimeCalculator = async (event) => {
           };
         }
 
-        sPrimeValue[transfer.depositor.id][transfer.tokenSymbol].total += Number(formatUnits(transfer.amount, Number(pool.decimals)));
-        const userDepositInUsd = tokenPrice * sPrimeValue[transfer.depositor.id][transfer.tokenSymbol].total;
         const timeInterval = transfer.timestamp - (i > 0 ? poolTransfers[i - 1].timestamp : 1693756800);
-        const newValue = (timeInterval < 0 ? 0 : timeInterval) / 31536000 * (100 * prevApr * userDepositInUsd);
-        if (transfer.depositor.id == "0x12b26dd6a01d0de420ba2ef485e4152c9b16d603") {
-          console.log(100 * prevApr, userDepositInUsd, timeInterval, newValue);
-        }
+        totalTime += timeInterval;
 
-        sPrimeValue[transfer.depositor.id][transfer.tokenSymbol].sPrime += newValue;
-      };
+        Object.keys(sPrimeValue).forEach(
+          depositor => {
+            if (!sPrimeValue[depositor][transfer.tokenSymbol]) {
+              sPrimeValue[depositor][transfer.tokenSymbol] = {
+                sPrime: 0,
+                total: 0
+              };
+            }
+
+            const userDepositInUsd = tokenPrice * sPrimeValue[depositor][transfer.tokenSymbol].total;
+            const newValue = (timeInterval < 0 ? 0 : timeInterval) / 31536000 * (prevApr * userDepositInUsd);
+
+            sPrimeValue[depositor][transfer.tokenSymbol].sPrime += newValue;
+          }
+        );
+
+        sPrimeValue[transfer.depositor.id][transfer.tokenSymbol].total += Number(formatUnits(transfer.amount, Number(pool.decimals)));
+        sPrimeValue[transfer.depositor.id][transfer.tokenSymbol].total = Math.max(sPrimeValue[transfer.depositor.id][transfer.tokenSymbol].total, 0);      };
     })
   );
 
