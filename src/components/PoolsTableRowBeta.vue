@@ -167,11 +167,11 @@ export default {
           tooltip: 'Withdraw',
           iconButtonActionKey: 'WITHDRAW'
         },
-        {
-          iconSrc: 'src/assets/icons/swap.svg',
-          tooltip: 'Swap',
-          iconButtonActionKey: 'SWAP_DEPOSIT'
-        },
+        // {
+        //   iconSrc: 'src/assets/icons/swap.svg',
+        //   tooltip: 'Swap',
+        //   iconButtonActionKey: 'SWAP_DEPOSIT'
+        // },
       ];
     },
 
