@@ -4,7 +4,10 @@
       <div class="modal__title">
         Create LB position
       </div>
-
+      <div class="modal-top-desc">
+        Open bins increase the gas consumption of Prime Account actions. <br><br>Open up multiple Prime Accounts or consider opening a reduced number of bins to prevent high gas fees.
+        <br>
+      </div>
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>
         <div class="top-info__value"> {{firstAssetBalance | smartRound(10, true)}}</div>
@@ -316,6 +319,9 @@ export default {
   }
   .modal-top-info {
     margin-top: 5px;
+  }
+  .modal-top-desc {
+    text-align: center;
   }
   .liquidity-option {
     display: flex;
