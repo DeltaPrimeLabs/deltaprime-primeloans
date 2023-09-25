@@ -2,6 +2,8 @@ const AWS = require('aws-sdk');
 const fetch = require('node-fetch');
 const fs = require('fs');
 const ethers = require('ethers');
+const redstone = require('redstone-api');
+const fromBytes32 = ethers.utils.parseBytes32String;
 
 const {
   fetchPools,
@@ -12,23 +14,30 @@ const { formatUnits } = require('./utils/helpers');
 AWS.config.setPromisesDependency(require('bluebird'));
 
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
-const redstoneFeedUrl = 'https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-arbitrum-prod';
+
 const tvlThreshold = 4000000;
 
 const config = JSON.parse(fs.readFileSync('config.json', 'utf-8'));
 const jsonRpcArb = config.jsonRpcArb;
 const providerArb = new ethers.providers.JsonRpcProvider(jsonRpcArb);
 
-const tokenManagerAbi = ['function getAllPoolAssets() public view returns (bytes32[])'];
+const tokenManagerAbi = [
+    'function getAllPoolAssets() public view returns (bytes32[])',
+    'function getPoolAddress(bytes32) public view returns (address)'
+];
 const tokenManagerAddress = '0x0a0d954d4b0f0b47a5990c0abd179a90ff74e255';
 const tokenManagerContract = new ethers.Contract(tokenManagerAddress, tokenManagerAbi, providerArb);
 
 const sPrimeCalculator = async (event) => {
-  const redstonePriceDataRequest = await fetch(redstoneFeedUrl);
-  const redstonePriceData = await redstonePriceDataRequest.json();
   const poolAssets = await tokenManagerContract.getAllPoolAssets();
+  const poolContracts = [];
 
-  const pools = await fetchPools();
+  for (let asset of poolAssets) {
+    poolContracts.push((await tokenManagerContract.getPoolAddress(asset)).toLowerCase());
+  }
+
+  let pools = (await fetchPools()).filter(pool => poolContracts.indexOf(pool.id.toLowerCase()) !== -1);
+
   const sPrimeValue = {};
 
   let totalTime = 0;
@@ -51,7 +60,13 @@ const sPrimeCalculator = async (event) => {
 
       for (let i = 0; i < poolTransfers.length; i++) {
         const transfer = poolTransfers[i];
-        const tokenPrice = redstonePriceData[transfer.tokenSymbol][0].dataPoints[0].value;
+
+        let resp = await redstone.getHistoricalPrice([transfer.tokenSymbol], {
+          date: transfer.timestamp * 1000,
+        });
+
+        const tokenPrice = resp[transfer.tokenSymbol].value;
+
         const prevTvlInUsd = i > 0 ? tokenPrice * formatUnits(poolTransfers[i - 1].curPoolTvl, Number(pool.decimals)) : 0;
 
         // pool APR for previous timestamp
