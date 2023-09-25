@@ -2,9 +2,12 @@
   <div id="modal" v-if="lpToken" class="add-liquidity-modal-component modal-component">
     <Modal>
       <div class="modal__title">
-        Add liquidity
+        Create LB position
       </div>
-
+      <div class="modal-top-desc">
+        Open bins increase the gas consumption of Prime Account actions. <br><br>Open up multiple Prime Accounts or consider opening a reduced number of bins to prevent high gas fees.
+        <br>
+      </div>
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>
         <div class="top-info__value"> {{firstAssetBalance | smartRound(10, true)}}</div>
@@ -63,6 +66,7 @@
         <div class="label-with-separator">
           Price range
         </div>
+        <div class="active-price">Current price: 1 {{firstAsset.symbol}} = {{activePrice}} {{secondAsset.symbol}}</div>
         <div class="liquidity-option__content price-slider-wrapper">
           <RangeSlider
             :min="activeId - maxPriceRadius"
@@ -185,6 +189,7 @@ export default {
     firstAssetBalance: Number,
     secondAssetBalance: Number,
     activeId: null,
+    activePrice: null,
     binStep: null
   },
 
@@ -201,7 +206,7 @@ export default {
       firstInputError: false,
       secondInputError: false,
       priceRadius: 5,
-      maxPriceRadius: 29,
+      maxPriceRadius: config.chainSlug === 'arbitrum' ? 60 : 20,
       minAboveActive: false,
       maxBelowActive: false,
       priceSlippage: 0.5,
@@ -315,6 +320,9 @@ export default {
   .modal-top-info {
     margin-top: 5px;
   }
+  .modal-top-desc {
+    text-align: center;
+  }
   .liquidity-option {
     display: flex;
     flex-direction: column;
@@ -344,6 +352,11 @@ export default {
       .label__info-icon {
         margin-left: 8px;;
       }
+    }
+    .active-price {
+      margin-top: 10px;
+      font-size: 14px;
+      color: var(--traderjoe-add-liquidity-modal__price-slider-input-color);
     }
     .liquidity-option__content {
       width: 100%;

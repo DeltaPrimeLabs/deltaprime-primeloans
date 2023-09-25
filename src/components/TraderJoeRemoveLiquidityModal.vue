@@ -2,7 +2,7 @@
   <div id="modal" v-if="lpToken" class="remove-liquidity-modal-component modal-component">
     <Modal>
       <div class="modal__title">
-        Remove liquidity
+        Export LB position
       </div>
 
       <div class="liquidity-option">

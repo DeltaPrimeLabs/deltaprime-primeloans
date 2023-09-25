@@ -48,6 +48,7 @@ export default {
     traderJoeV2LpAssets: null,
     supportedAssets: null,
     provider: null,
+    readSmartLoanContract: null,
     smartLoanContract: null,
     smartLoanFactoryContract: null,
     wrappedTokenContract: null,
@@ -70,6 +71,10 @@ export default {
   mutations: {
     setSmartLoanContract(state, smartLoanContract) {
       state.smartLoanContract = smartLoanContract;
+    },
+
+    setReadSmartLoanContract(state, smartLoanContract) {
+      state.readSmartLoanContract = smartLoanContract;
     },
 
     setApys(state, apys) {
@@ -405,6 +410,10 @@ export default {
 
       const smartLoanContract = new ethers.Contract(smartLoanAddress, SMART_LOAN.abi, provider.getSigner());
 
+      let readProvider = new ethers.providers.JsonRpcProvider(config.readRpcUrl);
+      const readSmartLoanContract = new ethers.Contract(smartLoanAddress, SMART_LOAN.abi, readProvider);
+
+      commit('setReadSmartLoanContract', readSmartLoanContract);
       commit('setSmartLoanContract', smartLoanContract);
     },
 
@@ -545,7 +554,7 @@ export default {
       const balances = {};
       const lpBalances = {};
       const concentratedLpBalances = {};
-      const assetBalances = await state.smartLoanContract.getAllAssetsBalances();
+      const assetBalances = await state.readSmartLoanContract.getAllAssetsBalances();
       assetBalances.forEach(
         asset => {
           let symbol = fromBytes32(asset.name);
@@ -649,7 +658,7 @@ export default {
     },
 
     async refreshTraderJoeV2LpUnderlyingBalancesAndLiquidity({state, dispatch, rootState}, {lpAsset}) {
-      const loanAllBins = await state.smartLoanContract.getOwnedTraderJoeV2Bins();
+      const loanAllBins = await state.readSmartLoanContract.getOwnedTraderJoeV2Bins();
       const loanBinsForPair = loanAllBins.filter(bin =>
         bin.pair.toLowerCase() === lpAsset.address.toLowerCase()
       );
@@ -759,7 +768,7 @@ export default {
     async getDebtsPerAsset({state, commit, rootState}) {
       const dataRefreshNotificationService = rootState.serviceRegistry.dataRefreshEventService;
       const debtsPerAsset = {};
-      const debts = await state.smartLoanContract.getDebts();
+      const debts = await state.readSmartLoanContract.getDebts();
       debts.forEach(debt => {
         const asset = fromBytes32(debt.name);
         if (config.ASSETS_CONFIG[asset]) {
@@ -773,19 +782,25 @@ export default {
     },
 
     async getFullLoanStatus({state, rootState, commit}) {
+      console.log('getFullLoanStatus')
       const loanAssets = mergeArrays([
-        (await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        (await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
         Object.keys(config.POOLS_CONFIG)
       ]);
 
-      const fullLoanStatusResponse = await (await wrapContract(state.smartLoanContract, loanAssets)).getFullLoanStatus();
+      console.log('1')
+
+      const fullLoanStatusResponse = await (await wrapContract(state.readSmartLoanContract, loanAssets)).getFullLoanStatus();
+      console.log(2)
       const fullLoanStatus = {
         totalValue: fromWei(fullLoanStatusResponse[0]),
         debt: fromWei(fullLoanStatusResponse[1]),
         thresholdWeightedValue: fromWei(fullLoanStatusResponse[2]),
         health: fromWei(fullLoanStatusResponse[3]),
       };
+
+      console.log(fullLoanStatus)
 
       const collateral = fullLoanStatus.totalValue - fullLoanStatus.debt;
 
@@ -922,8 +937,8 @@ export default {
       }
 
       const loanAssets = mergeArrays([(
-        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
         Object.keys(config.POOLS_CONFIG),
         [fundRequest.asset]
       ]);
@@ -1007,8 +1022,8 @@ export default {
       const nativeAssetOptions = config.NATIVE_ASSET_TOGGLE_OPTIONS;
 
       const loanAssets = mergeArrays([(
-        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
         Object.keys(config.POOLS_CONFIG),
         [config.nativeToken]
       ]);
@@ -1056,13 +1071,13 @@ export default {
       const provider = rootState.network.provider;
 
       const loanAssets = mergeArrays([
-        (await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        (await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
         Object.keys(config.POOLS_CONFIG)
       ]);
 
-      const allOwnedAssets = (await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el))
-      const allStakedPositions = (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol))
+      const allOwnedAssets = (await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el))
+      const allStakedPositions = (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol))
       const poolKeys = Object.keys(config.POOLS_CONFIG);
 
       console.log('allOwnedAssets', allOwnedAssets);
@@ -1145,8 +1160,8 @@ export default {
       const nativeAssetOptions = config.NATIVE_ASSET_TOGGLE_OPTIONS;
 
       const loanAssets = mergeArrays([(
-        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
         Object.keys(config.POOLS_CONFIG)
       ]);
 
@@ -1193,8 +1208,8 @@ export default {
       let minAmount = 0.9;
 
       const loanAssets = mergeArrays([(
-        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
         Object.keys(config.POOLS_CONFIG),
         [provideLiquidityRequest.symbol]
       ]);
@@ -1248,8 +1263,8 @@ export default {
       const lpTokenDecimals = config.LP_ASSETS_CONFIG[removeLiquidityRequest.symbol].decimals;
 
       const loanAssets = mergeArrays([(
-        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
         Object.keys(config.POOLS_CONFIG),
         [removeLiquidityRequest.firstAsset, removeLiquidityRequest.secondAsset]
       ]);
@@ -1303,8 +1318,8 @@ export default {
       let minAmount = 0;
 
       const loanAssets = mergeArrays([(
-        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
         Object.keys(config.POOLS_CONFIG),
         [provideLiquidityRequest.symbol]
       ]);
@@ -1358,8 +1373,8 @@ export default {
       const lpTokenDecimals = config.CONCENTRATED_LP_ASSETS_CONFIG[removeLiquidityRequest.symbol].decimals;
 
       const loanAssets = mergeArrays([(
-        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
         Object.keys(config.POOLS_CONFIG),
         [removeLiquidityRequest.firstAsset, removeLiquidityRequest.secondAsset]
       ]);
@@ -1405,8 +1420,8 @@ export default {
       const provider = rootState.network.provider;
 
       const loanAssets = mergeArrays([(
-          await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+          await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
         Object.keys(config.POOLS_CONFIG)
       ]);
 
@@ -1465,8 +1480,8 @@ export default {
       const provider = rootState.network.provider;
 
       const loanAssets = mergeArrays([(
-          await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+          await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
         Object.keys(config.POOLS_CONFIG)
       ]);
 
@@ -1501,8 +1516,8 @@ export default {
       const provider = rootState.network.provider;
 
       const loanAssets = mergeArrays([(
-          await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+          await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
         Object.keys(config.POOLS_CONFIG),
         [addLiquidityRequest.symbol]
       ]);
@@ -1544,13 +1559,16 @@ export default {
       const provider = rootState.network.provider;
 
       const loanAssets = mergeArrays([(
-        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
         Object.keys(config.POOLS_CONFIG),
         [removeLiquidityRequest.firstAsset, removeLiquidityRequest.secondAsset]
       ]);
 
       const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
+
+      console.log('removeLiquidityRequest.removeLiquidityInput')
+      console.log(removeLiquidityRequest.removeLiquidityInput)
 
       const transaction = await wrappedContract[removeLiquidityRequest.method](
         removeLiquidityRequest.removeLiquidityInput
@@ -1592,8 +1610,8 @@ export default {
       const provider = rootState.network.provider;
 
       const loanAssets = mergeArrays([(
-        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
         Object.keys(config.POOLS_CONFIG),
         [borrowRequest.asset]
       ]);
@@ -1638,8 +1656,8 @@ export default {
       const provider = rootState.network.provider;
 
       const loanAssets = mergeArrays([(
-        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
         Object.keys(config.POOLS_CONFIG)
       ]);
 
@@ -1687,8 +1705,8 @@ export default {
       const provider = rootState.network.provider;
 
       const loanAssets = mergeArrays([(
-        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
         Object.keys(config.POOLS_CONFIG),
         [swapRequest.targetAsset]
       ]);
@@ -1742,8 +1760,8 @@ export default {
       console.log(swapRequest);
 
       const loanAssets = mergeArrays([(
-        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
         Object.keys(config.POOLS_CONFIG),
         [swapRequest.targetAsset]
       ]);
@@ -1811,8 +1829,8 @@ export default {
       console.log('swapDebtRequest', swapDebtRequest);
 
       const loanAssets = mergeArrays([(
-        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
         Object.keys(config.POOLS_CONFIG),
         [swapDebtRequest.targetAsset]
       ]);
@@ -1871,8 +1889,8 @@ export default {
       const provider = rootState.network.provider;
 
       const loanAssets = mergeArrays([(
-        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
         Object.keys(config.POOLS_CONFIG),
         ['GLP']
       ]);
@@ -1920,8 +1938,8 @@ export default {
       const provider = rootState.network.provider;
 
       const loanAssets = mergeArrays([(
-        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
         Object.keys(config.POOLS_CONFIG),
         [unstakeAndRedeemGlpRequest.targetAsset]
       ]);
@@ -1988,8 +2006,8 @@ export default {
       const provider = rootState.network.provider;
 
       const loanAssets = mergeArrays([(
-        await state.smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-        (await state.smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
         Object.keys(config.POOLS_CONFIG)
       ]);
 

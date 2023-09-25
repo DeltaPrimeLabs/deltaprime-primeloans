@@ -2,16 +2,16 @@
 // Last deployed from commit: 67471c167ea4dcee4590ca5d8289a47373be90e3;
 pragma solidity 0.8.17;
 
-import "./LinkPool.sol";
+import "./ArbPool.sol";
 
 
 /**
  * @title PoolFactory
  * @dev Contract factory allowing anyone to deploy a pool contract
  */
-contract LinkPoolFactory {
+contract ArbPoolFactory {
     function deployPool() public {
-        LinkPool pool = new LinkPool();
+        ArbPool pool = new ArbPool();
         emit PoolDeployed(msg.sender, address(pool), block.timestamp);
     }
 

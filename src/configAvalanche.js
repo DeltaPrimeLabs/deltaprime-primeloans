@@ -448,5 +448,6 @@ export default {
     dataProviderId: "redstone-avalanche-prod",
     dataProviderHistoricalPrices: "redstone-avalanche",
     redstoneFeedUrl: "https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-avalanche-prod",
-    subgraph: "https://api.thegraph.com/subgraphs/name/mbare0/deltaprime"
+    subgraph: "https://api.thegraph.com/subgraphs/name/mbare0/deltaprime",
+    readRpcUrl: "https://rpc.ankr.com/avalanche"
 }

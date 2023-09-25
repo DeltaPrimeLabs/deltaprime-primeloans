@@ -20,28 +20,28 @@
       <div class="select" v-bind:class="{'expanded': expanded, 'has-background': hasBackground }">
         <div v-if="selectedAsset" class="selected-asset">
           <img class="selected-asset__icon" :src="selectedAsset.logo ? selectedAsset.logo : selectedAsset.logoURI">
-          <div class="selected-asset__symbol">{{ selectedAsset.symbol }}</div>
+          <div class="selected-asset__symbol">{{selectedAsset.symbol}}</div>
         </div>
         <div v-if="isBridge && !selectedAsset" class="placeholder">Select chain and token</div>
         <DeltaIcon class="chevron"
                    :icon-src="'src/assets/icons/chevron-down.svg'"
                    :size="21"
                    v-on:click.native="toggleSelect()"
-                   v-if="displayedOptions && displayedOptions.length > 1">
+                   v-if="displayedOptions && displayedOptions.length > 0">
         </DeltaIcon>
         <div class="dropdown-panel" v-if="expanded" v-on:click="dropdownPanelClick()"></div>
         <div
-          class="select-dropdown"
-          :style="{'width': isBridge ? '430px' : '', 'height': isBridge && expanded ? '400px' : ''}"
+            class="select-dropdown"
+            :style="{'width': isBridge ? '430px' : '', 'height': isBridge && expanded ? '400px' : ''}"
         >
           <div v-if="isBridge" class="select-title">Select chain</div>
           <div v-if="isBridge" class="available-chains">
             <div
-              v-for="chain of availableChains"
-              v-bind:key="chain.id"
-              :class="['chain', { active: selectedChain == chain }]"
-              v-on:click="selectChain(chain)"
-              v-tooltip="{content: chain.name, classes: 'info-tooltip'}"
+                v-for="chain of availableChains"
+                v-bind:key="chain.id"
+                :class="['chain', { active: selectedChain == chain }]"
+                v-on:click="selectChain(chain)"
+                v-tooltip="{content: chain.name, classes: 'info-tooltip'}"
             >
               <img :src="chain.logoURI" class="chain-logo">
             </div>
@@ -54,38 +54,41 @@
                  v-bind:key="assetOption.symbol + key"
                  v-on:click="selectOption(assetOption)">
               <img
-                v-if="assetOption.logo || assetOption.logoURI"
-                class="option__icon"
-                :src="assetOption.logo ? assetOption.logo : assetOption.logoURI"
+                  v-if="assetOption.logo || assetOption.logoURI"
+                  class="option__icon"
+                  :src="assetOption.logo ? assetOption.logo : assetOption.logoURI"
               >
               <div
-                v-if="!assetOption.logo && !assetOption.logoURI"
-                class="option__icon option__alt-icon"
-              >{{ assetOption.name.charAt(0) }}</div>
-              <div class="option__symbol">{{ assetOption.symbol }}</div>
-              <div class="option__name">{{ assetOption.name }}</div>
+                  v-if="!assetOption.logo && !assetOption.logoURI"
+                  class="option__icon option__alt-icon"
+              >{{assetOption.name.charAt(0)}}
+              </div>
+              <div class="option__symbol">{{assetOption.symbol}}</div>
+              <div class="option__name">{{assetOption.name}}</div>
               <ContentLoader
-                v-if="isBridge && (!assetsBalances[selectedChain.id] || assetsBalances[selectedChain.id].length !== displayedOptions.length)"
-                class="content-loader"
-                :width="40"
-                :height="8"
-                :primaryColor="'#9eacdf'"
-                :secondaryColor="'#9eacdf'"
-                :primaryOpacity="0.4"
-                :secondaryOpacity="0.2"
+                  v-if="isBridge && (!assetsBalances[selectedChain.id] || assetsBalances[selectedChain.id].length !== displayedOptions.length)"
+                  class="content-loader"
+                  :width="40"
+                  :height="8"
+                  :primaryColor="'#9eacdf'"
+                  :secondaryColor="'#9eacdf'"
+                  :primaryOpacity="0.4"
+                  :secondaryOpacity="0.2"
               ></ContentLoader>
               <div
-                v-if="isBridge && assetsBalances[selectedChain.id] && assetsBalances[selectedChain.id].length === displayedOptions.length"
-                class="option__balance"
+                  v-if="isBridge && assetsBalances[selectedChain.id] && assetsBalances[selectedChain.id].length === displayedOptions.length"
+                  class="option__balance"
               >
                 <div
-                  v-if="Number(assetsBalances[selectedChain.id][key].amount) > 0"
-                  class="balance__amount"
-                >{{ assetsBalances[selectedChain.id][key].amount|smartRound(4) }}</div>
+                    v-if="Number(assetsBalances[selectedChain.id][key].amount) > 0"
+                    class="balance__amount"
+                >{{assetsBalances[selectedChain.id][key].amount|smartRound(4)}}
+                </div>
                 <div
-                  v-if="Number(assetsBalances[selectedChain.id][key].amount) > 0"
-                  class="balance__usd"
-                >{{ assetsBalances[selectedChain.id][key].amount * assetsBalances[selectedChain.id][key].priceUSD|usd }}</div>
+                    v-if="Number(assetsBalances[selectedChain.id][key].amount) > 0"
+                    class="balance__usd"
+                >{{assetsBalances[selectedChain.id][key].amount * assetsBalances[selectedChain.id][key].priceUSD|usd}}
+                </div>
               </div>
             </div>
           </div>
@@ -99,8 +102,8 @@
 <script>
 import CurrencyInput from './CurrencyInput';
 import config from '../config';
-import DeltaIcon from "./DeltaIcon.vue";
-import { ContentLoader } from 'vue-content-loader'
+import DeltaIcon from './DeltaIcon.vue';
+import {ContentLoader} from 'vue-content-loader';
 
 export default {
   name: 'CurrencyComboInput',
@@ -118,7 +121,8 @@ export default {
     },
     assetOptions: {},
     assetsBalances: {
-      type: Object, default: () => {}
+      type: Object, default: () => {
+      }
     },
     defaultAsset: null,
     max: {},
@@ -151,14 +155,18 @@ export default {
       maxButtonUsed: false
     };
   },
-  mounted() {},
+  mounted() {
+  },
   methods: {
     toggleSelect() {
-      if (this.expanded) {
-        this.closeDropdown();
-      } else {
-        this.openDropdown();
-      }
+      setTimeout(() => {
+        console.log('toggle select');
+        if (this.expanded) {
+          this.closeDropdown();
+        } else {
+          this.openDropdown();
+        }
+      });
     },
 
     closeDropdown() {
@@ -186,7 +194,7 @@ export default {
         this.displayedOptions = JSON.parse(JSON.stringify(assetOptions));
 
         if (this.selectedChain) {
-          this.$emit("chainChange", {
+          this.$emit('chainChange', {
             chainId: this.selectedChain.id,
             tokens: assetOptions
           });
@@ -344,7 +352,7 @@ export default {
         display: flex;
         flex-direction: row;
         align-items: center;
-        min-width: 105px;
+        min-width: 115px;
 
         .selected-asset__icon {
           width: 34px;
@@ -405,7 +413,7 @@ export default {
         }
 
         .available-chains {
-          border-top: var(--currency-combo-input__select-dropdown-chains-border);            
+          border-top: var(--currency-combo-input__select-dropdown-chains-border);
           border-bottom: var(--currency-combo-input__select-dropdown-chains-border);
           padding: 10px 16px;
           display: grid;

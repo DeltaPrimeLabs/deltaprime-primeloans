@@ -1,16 +1,50 @@
 <script>
-import {Bar} from 'vue-chartjs'
+import {generateChart} from 'vue-chartjs'
 import {mapState} from "vuex";
 import {getThemeVariable} from "../utils/style-themes";
+import Chart from "chart.js";
+
+Chart.defaults.LiquidityBarChart = Chart.defaults.bar;
+Chart.controllers.LiquidityBarChart = Chart.controllers.bar.extend({
+  draw: function (ease) {
+    Chart.controllers.bar.prototype.draw.call(this, ease);
+    const activeLineX = this.chart.scales['x-axis-0'].getPixelForValue(this.chart.config.data.datasets[0].data[this.chart.config.options.currentPriceIndex].x)
+
+    const ctx = this.chart.ctx;
+    const topY = this.chart.scales['y-axis-0'].top;
+    const bottomY = this.chart.scales['y-axis-0'].bottom;
+
+    console.error(this.chart.config.options.currentPrice);
+
+    // draw line
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(activeLineX, topY + 24);
+    ctx.lineTo(activeLineX, bottomY);
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = getThemeVariable('--chart__active-point-line-color');
+    ctx.stroke();
+
+    ctx.moveTo(activeLineX, topY)
+    ctx.font = '14px Montserrat'
+    ctx.textAlign = "center";
+    ctx.fillStyle = getThemeVariable('--chart__active-point-label-color');
+    ctx.fillText(`Active (${this.chart.config.options.currentPrice.toFixed(2)})`, activeLineX, topY + 16)
+  }
+})
+
+const LiquidityBarChart = generateChart('liquidity-bar', 'LiquidityBarChart')
 
 export default {
   name: "LiquidityChart",
-  extends: Bar,
+  extends: LiquidityBarChart,
   props: {
     tokensData: null,
     primary: null,
     secondary: null,
     index: null,
+    currentPriceIndex: null,
+    currentPrice: null,
   },
   mounted() {
     this.rerender();
@@ -26,7 +60,7 @@ export default {
       const newBackgroundColors = []
       const newHoverColors = []
       const newLabels = []
-      this.tokensData.forEach(data => {
+      this.tokensData.forEach((data, index) => {
         const isPrimaryData = data.primaryTokenBalance > data.secondaryTokenBalance
         newLabels.push(data.price)
         newData.push({
@@ -34,8 +68,8 @@ export default {
           y: data.value,
           token: data,
         })
-        newBackgroundColors.push(isPrimaryData ? getThemeVariable('--liquidity-chart__main-token-color') : getThemeVariable('--liquidity-chart__secondary-token-color'))
-        newHoverColors.push(isPrimaryData ? getThemeVariable('--liquidity-chart__main-token-color--hover') : getThemeVariable('--liquidity-chart__secondary-token-color--hover'))
+        newBackgroundColors.push(index === this.currentPriceIndex ? getThemeVariable('--liquidity-chart__active-price-bar-color') : isPrimaryData ? getThemeVariable('--liquidity-chart__main-token-color') : getThemeVariable('--liquidity-chart__secondary-token-color'))
+        newHoverColors.push(index === this.currentPriceIndex ? getThemeVariable('--liquidity-chart__active-price-bar-color--hover') : isPrimaryData ? getThemeVariable('--liquidity-chart__main-token-color--hover') : getThemeVariable('--liquidity-chart__secondary-token-color--hover'))
       })
       this.chartData.datasets = [{
         data: newData,
@@ -63,6 +97,8 @@ export default {
         labels: []
       },
       chartOptions: {
+        currentPriceIndex: this.currentPriceIndex,
+        currentPrice: this.currentPrice,
         height: 256,
         width: 960,
         responsive: true,
@@ -78,9 +114,13 @@ export default {
             ticks: {
               maxTicksLimit: 1,
               fontColor: getThemeVariable('--chart__scales-ticks-color'),
+              fontFamily: 'Montserrat',
+              maxRotation: 0,
+              minRotation: 0,
             },
             gridLines: {
               color: "rgba(0, 0, 0, 0)",
+              drawBorder: false
             }
           }],
           yAxes: [{
@@ -88,6 +128,11 @@ export default {
               fontColor: getThemeVariable('--chart__scales-ticks-color'),
               maxTicksLimit: 1,
               display: false,
+              fontFamily: 'Montserrat',
+            },
+            gridLines: {
+              drawTicks: false,
+              drawBorder: false
             }
           }]
         },

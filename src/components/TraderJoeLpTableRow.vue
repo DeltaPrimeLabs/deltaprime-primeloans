@@ -13,14 +13,16 @@
              v-tooltip="{content: 'Bin step', classes: 'info-tooltip'}">
         {{lpToken.binStep}}</div>
       </div>
-
       <!-- To-do: Show price graph or similar one on click -->
       <div class="table__cell liquidity">
+        <div v-if="lpToken.binIds && lpToken.binIds.length" class="active-indicator">
+          <img v-if="lpToken.binIds.includes(activeId)" width="16px" src="src/assets/icons/check.png" v-tooltip="{content: 'The active bin is in your range.', classes: 'info-tooltip long'}"/>
+          <img v-else src="src/assets/icons/error.svg" v-tooltip="{content: 'Your position does not include the active bin.', classes: 'info-tooltip long'}"/>
+        </div>
         <FlatButton :active="lpToken.binIds && lpToken.binIds.length" v-on:buttonClick="toggleLiquidityChart()">
           {{ rowExpanded ? 'Hide' : 'Show' }}
         </FlatButton>
       </div>
-
       <div class="table__cell liquidity">
         <FlatButton :active="false" >
           {{ 'SHOW' }}
@@ -91,7 +93,7 @@
             </div>
           </div>
           <LiquidityChart :tokens-data="chartData" :primary="lpToken.primary"
-                          :secondary="lpToken.secondary" :index="index"></LiquidityChart>
+                          :secondary="lpToken.secondary" :index="index" :current-price-index="currentPriceIndex" :current-price="currentPrice"></LiquidityChart>
         </div>
       </SmallBlock>
     </div>
@@ -105,7 +107,7 @@ import config from '../config';
 import {mapActions, mapState} from 'vuex';
 import TraderJoeAddLiquidityModal from './TraderJoeAddLiquidityModal.vue';
 import TraderJoeRemoveLiquidityModal from './TraderJoeRemoveLiquidityModal.vue';
-import {calculateMaxApy, formatUnits, parseUnits} from '../utils/calculate';
+import {calculateMaxApy, formatUnits, getBinPrice, parseUnits} from '../utils/calculate';
 import DeltaIcon from './DeltaIcon.vue';
 import {ethers} from 'ethers';
 import AddTraderJoeV2FromWalletModal from "./AddTraderJoeV2FromWalletModal.vue";
@@ -162,10 +164,13 @@ export default {
       healthLoaded: false,
       feesClaimable: 0,
       activeId: null,
+      activePrice: null,
       hasBinsInPool: false,
       account: null,
       chartData: [],
-      userValue: 0
+      userValue: 0,
+      currentPriceIndex: 0,
+      currentPrice: 0,
     };
   },
 
@@ -276,7 +281,8 @@ export default {
       result = await result.text();
       if (/^[0-9\[\]\,]*$/.test(result)) {
         this.userBins = JSON.parse(result);
-        const lbToken = new ethers.Contract(this.lpToken.address, LB_TOKEN.abi, provider.getSigner());
+        let readProvider = new ethers.providers.JsonRpcProvider(config.readRpcUrl);
+        const lbToken = new ethers.Contract(this.lpToken.address, LB_TOKEN.abi, readProvider);
 
         this.userBalances = [];
         await Promise.all(
@@ -371,6 +377,7 @@ export default {
       modalInstance.firstAssetBalance = this.assetBalances[this.lpToken.primary];
       modalInstance.secondAssetBalance = this.assetBalances[this.lpToken.secondary];
       modalInstance.activeId = this.activeId;
+      modalInstance.activePrice = this.activePrice;
       modalInstance.binStep = this.lpToken.binStep;
       modalInstance.$on('ADD_LIQUIDITY', addLiquidityEvent => {
         if (this.smartLoanContract) {
@@ -513,6 +520,7 @@ export default {
 
       this.lpToken.tvl = tokenXTVL + tokenYTVL;
       this.activeId = activeId;
+      this.activePrice = getBinPrice(activeId, this.lpToken.binStep, this.firstAsset.decimals, this.secondAsset.decimals);
       this.hasBinsInPool = this.lpToken.binIds && this.lpToken.binIds.length > 0;
     },
 
@@ -554,6 +562,12 @@ export default {
           price: ((1 + this.lpToken.binStep / 10000) ** (binId - 8388608) * 10 ** (this.firstAsset.decimals - this.secondAsset.decimals)).toFixed(5),
           value: this.lpToken.accountBalancesPrimary[index] * this.firstAsset.price + this.lpToken.accountBalancesSecondary[index] * this.secondAsset.price
         }))
+
+        this.currentPrice = this.firstAsset.price / this.secondAsset.price
+        console.error(this.currentPrice);
+        this.currentPriceIndex = this.chartData.findIndex((value, index) => {
+          return index > 0 && (value.price > this.currentPrice) && this.chartData[index - 1].price < this.currentPrice
+        })
       }
     }
   },
@@ -638,8 +652,17 @@ export default {
       &.liquidity {
         align-items: center;
         justify-content: end;
+
+        .active-indicator {
+          margin-right: 5px;
+
+          img {
+            transform: translateY(-1px);
+          }
+        }
+
         .flat-button-component {
-          transform: translateX(31px);
+          margin: 0;
         }
       }
 

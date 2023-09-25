@@ -134,7 +134,7 @@ export default {
     ...mapState('serviceRegistry', ['poolService', 'walletAssetBalancesService', 'lifiService', 'progressBarService']),
     miningApy() {
       if (this.pool.tvl === 0) return 0;
-      return (config.chainId === 42161) ?  1000 * 365 / 2 / (this.pool.tvl * this.pool.assetPrice)
+      return (config.chainId === 42161) ?  1000 * 365 / 3 / (this.pool.tvl * this.pool.assetPrice)
       : Math.max((1 - this.pool.tvl * this.pool.assetPrice / 4000000) * 0.1, 0);
     }
   },
@@ -173,11 +173,11 @@ export default {
           tooltip: 'Withdraw',
           iconButtonActionKey: 'WITHDRAW'
         },
-        {
-          iconSrc: 'src/assets/icons/swap.svg',
-          tooltip: 'Swap',
-          iconButtonActionKey: 'SWAP_DEPOSIT'
-        },
+        // {
+        //   iconSrc: 'src/assets/icons/swap.svg',
+        //   tooltip: 'Swap',
+        //   iconButtonActionKey: 'SWAP_DEPOSIT'
+        // },
       ];
     },
 
