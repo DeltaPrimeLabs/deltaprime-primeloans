@@ -960,6 +960,40 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             ],
             hardhatConfig
         )
+        await deployFacet(
+            "LevelFinanceFacet",
+            diamondAddress,
+            [
+                'levelStakeEthSnr',
+                'levelStakeEthMze',
+                'levelStakeEthJnr',
+                'levelStakeBtcSnr',
+                'levelStakeBtcMze',
+                'levelStakeBtcJnr',
+                'levelStakeUsdtSnr',
+                'levelStakeUsdtMze',
+                'levelStakeUsdtJnr',
+                'levelStakeUsdcSnr',
+                'levelStakeUsdcMze',
+                'levelStakeUsdcJnr',
+                'levelUnstakeEthSnr',
+                'levelUnstakeEthMze',
+                'levelUnstakeEthJnr',
+                'levelUnstakeBtcSnr',
+                'levelUnstakeBtcMze',
+                'levelUnstakeBtcJnr',
+                'levelUnstakeUsdtSnr',
+                'levelUnstakeUsdtMze',
+                'levelUnstakeUsdtJnr',
+                'levelUnstakeUsdcSnr',
+                'levelUnstakeUsdcMze',
+                'levelUnstakeUsdcJnr',
+                'levelSnrBalance',
+                'levelMzeBalance',
+                'levelJnrBalance',
+            ],
+            hardhatConfig
+        )
     }
     if (chain == 'ETHEREUM') {
         console.log('here')
@@ -1308,7 +1342,7 @@ export class StakedPosition {
 }
 
 export const paraSwapRouteToSimpleData = (txParams: TransactionParams) => {
-    const data = "0x" + txParams.data.substr(10);
+    const data = "0x" + txParams.data.slice(10);
     const [
         decoded,
     ] = ethers.utils.defaultAbiCoder.decode(

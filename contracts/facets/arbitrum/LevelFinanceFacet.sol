@@ -776,8 +776,6 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         uint256 pid,
         IStakingPositions.StakedPosition memory position
     ) private {
-        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-
         if (asset == address(0)) {
             amount = Math.min(
                 IWrappedNativeToken(ETH_TOKEN).balanceOf(address(this)),
@@ -788,9 +786,6 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             amount = Math.min(IERC20(asset).balanceOf(address(this)), amount);
         }
         require(amount > 0, "Cannot stake 0 tokens");
-
-        // _ACTIVE = 2
-        require(tokenManager.tokenToStatus(asset) == 2, "Token not supported");
 
         if (asset != address(0)) {
             asset.safeApprove(LEVEL_FARMING, 0);
