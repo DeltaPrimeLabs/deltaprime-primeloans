@@ -23,6 +23,12 @@
         </template>
       </div>
 
+      <div class="table__cell sprime">
+        <div>
+          <LoadedValue :check="() => pool.sPrime !== null" :value="pool.sPrime | usd"></LoadedValue>
+        </div>
+      </div>
+
       <div class="table__cell table__cell--double-value apy">
         <template>
           <div class="double-value__pieces">
@@ -195,6 +201,7 @@ export default {
         this.poolDepositBalances = poolDepositBalances;
         this.poolAssetsPrices = poolAssetsPrices;
         this.poolContracts = poolContracts;
+        this.$forceUpdate();
       })
     },
 
@@ -420,7 +427,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: repeat(2, 1fr) 175px 150px 150px 90px 110px 22px;
+    grid-template-columns: repeat(2, 1fr) 175px  140px 140px 140px 140px 90px 90px 22px;
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;
@@ -435,7 +442,7 @@ export default {
     }
 
     &.unlocking {
-      grid-template-columns: repeat(3, 1fr) 140px 140px 140px 90px 90px 22px;
+      grid-template-columns: repeat(3, 1fr) 140px 140px 140px 140px 90px 90px 22px;
     }
 
     .table__cell {
@@ -462,6 +469,13 @@ export default {
 
       &.deposit {
         align-items: flex-end;
+      }
+
+      &.sprime {
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-end;
+        font-weight: 600;
       }
 
       &.apy {

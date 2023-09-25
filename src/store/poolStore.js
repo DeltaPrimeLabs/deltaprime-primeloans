@@ -29,7 +29,7 @@ export default {
       await dispatch('setupPools');
     },
 
-    async setupPools({rootState, commit}) {
+    async setupPools({rootState, commit, dispatch}) {
       const poolService = rootState.serviceRegistry.poolService;
 
       const redstonePriceDataRequest = await fetch(config.redstoneFeedUrl);
@@ -39,7 +39,24 @@ export default {
         .subscribe(pools => {
           poolService.emitPools(pools);
           commit('setPools', pools);
+          dispatch('setupsPrime');
         });
+    },
+
+    async setupsPrime({rootState, commit, state}) {
+      const poolService = rootState.serviceRegistry.poolService;
+      let resp = await (await fetch(`https://jqaeurqbo4.execute-api.us-east-1.amazonaws.com/sprime/${rootState.network.account.toLowerCase()}?network=${config.chainSlug}`)).json();
+
+      let pools = state.pools;
+
+      for (let pool of pools) {
+        pool.sPrime = resp[pool.asset.symbol] ? resp[pool.asset.symbol].sPrime : 0;
+      }
+
+      console.log(resp)
+
+      commit('setPools', pools);
+      poolService.emitPools(pools);
     },
 
     async deposit({state, rootState, commit, dispatch}, {depositRequest}) {
