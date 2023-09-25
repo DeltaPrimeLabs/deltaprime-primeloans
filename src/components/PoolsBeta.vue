@@ -209,6 +209,9 @@ export default {
                 sortable: false,
                 class: 'sprime',
                 id: 'SPRIME',
+                tooltip: `Your collected sPRIME will be unlocked over a vesting period post TGE.
+                <a href='https://medium.com/@Delta_Prime/two-days-until-deltaprimes-first-liquidity-mining-program-b17f12fbb23b' target='_blank'>Read more</a>.
+                `
               },
               {
                 label: 'APR',
