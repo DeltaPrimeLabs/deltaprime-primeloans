@@ -73,7 +73,8 @@ const sPrimeCalculator = async (event) => {
         let prevApr;
 
         if (transfer.timestamp > 1695124800) { // after 19th Sep, 2pm CEST
-          prevApr = 1000 * 365 / poolAssets.length / (tokenPrice * transfer.curPoolTvl / 10 ** Number(pool.decimals));
+          let openPools = transfer.timestamp > 1695484800 ? 3 : 2;
+          prevApr = 1000 * 365 / openPools / (tokenPrice * transfer.curPoolTvl / 10 ** Number(pool.decimals));
         } else {
           prevApr = Math.max((1 - prevTvlInUsd / tvlThreshold) * 0.1, 0);
         }
