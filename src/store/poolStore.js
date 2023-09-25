@@ -46,7 +46,7 @@ export default {
 
     async setupsPrime({rootState, commit, state}) {
       const poolService = rootState.serviceRegistry.poolService;
-      let resp = await fetch(`https://e3uavgehff.execute-api.us-east-1.amazonaws.com/sprime/${rootState.network.account.toLowerCase()}?network=${config.chainSlug}`)
+      let resp = await (await fetch(`https://q1s5a7gb84.execute-api.us-east-1.amazonaws.com/sprime/${rootState.network.account.toLowerCase()}?network=${config.chainSlug}`)).json();
 
       let pools = state.pools;
 
@@ -54,8 +54,8 @@ export default {
         pool.sPrime = resp[pool.asset.symbol] ? resp[pool.asset.symbol].sPrime : 0;
       }
 
-      poolService.emitPools(pools);
       commit('setPools', pools);
+      poolService.emitPools(pools);
     },
 
     async deposit({state, rootState, commit, dispatch}, {depositRequest}) {

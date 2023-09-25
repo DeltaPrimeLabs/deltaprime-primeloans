@@ -201,6 +201,7 @@ export default {
         this.poolDepositBalances = poolDepositBalances;
         this.poolAssetsPrices = poolAssetsPrices;
         this.poolContracts = poolContracts;
+        this.$forceUpdate();
       })
     },
 
