@@ -167,11 +167,11 @@ export default {
           tooltip: 'Withdraw',
           iconButtonActionKey: 'WITHDRAW'
         },
-        // {
-        //   iconSrc: 'src/assets/icons/swap.svg',
-        //   tooltip: 'Swap',
-        //   iconButtonActionKey: 'SWAP_DEPOSIT'
-        // },
+        {
+          iconSrc: 'src/assets/icons/swap.svg',
+          tooltip: 'Swap',
+          iconButtonActionKey: 'SWAP_DEPOSIT'
+        },
       ];
     },
 
@@ -324,7 +324,7 @@ export default {
     },
 
     openSwapDepositModal() {
-      const depositAssets = Object.keys(config.POOLS_CONFIG);
+      const depositAssets = Object.entries(config.POOLS_CONFIG).filter(([symbol, data]) => !data.disabled).map(entry => entry[0]);
       const modalInstance = this.openModal(SimpleSwapModal);
       modalInstance.sourceAsset = this.pool.asset.symbol;
       modalInstance.sourceAssetBalance = this.pool.deposit;

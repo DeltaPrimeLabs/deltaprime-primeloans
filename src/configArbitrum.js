@@ -258,6 +258,7 @@ export default {
     yakWrapRouterAddress: '0x16f90031000d48ce2bc6577788282c232060c547',
     yieldYakGlpWrapperAddress: '0x80F2d9652Ed7F5306dB095882FA9Ff882003F6D1',
     glpRewardsRouterAddress: '0xA906F338CB21815cBc4Bc87ace9e68c87eF8d8F1', //TODO: needs testing
+    depositSwapAddress: "0x889Cfe41a376CFeF8F28E48A848728D5377552b9",
     nativeToken: "ETH",
     SLIPPAGE_TOLERANCE: 0.03,
     dataProviderId: "redstone-arbitrum-prod",
