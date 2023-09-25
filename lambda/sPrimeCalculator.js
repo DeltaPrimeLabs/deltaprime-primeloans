@@ -118,24 +118,24 @@ const sPrimeCalculator = async (event) => {
   );
 
   // save/update sPRIME values to DB
-  // for (const [userId, values] of Object.entries(sPrimeValue)) {
-  //   const data = {
-  //     id: userId,
-  //     ...values
-  //   };
+  for (const [userId, values] of Object.entries(sPrimeValue)) {
+    const data = {
+      id: userId,
+      ...values
+    };
 
-  //   const userInfo = {
-  //     TableName: process.env.SPRIME_TABLE,
-  //     Item: data
-  //   };
-  //   dynamoDb.put(userInfo).promise()
-  //     .then(res => data);
-  // }
+    const userInfo = {
+      TableName: process.env.SPRIME_TABLE,
+      Item: data
+    };
+    dynamoDb.put(userInfo).promise()
+      .then(res => data);
+  }
 
-  // console.log("sPRIME values successfully updated.")
+  console.log("sPRIME values successfully updated.")
 
-  // return event;
+  return event;
 };
 
-// module.exports.handler = sPrimeCalculator;
-sPrimeCalculator();
+module.exports.handler = sPrimeCalculator;
+// sPrimeCalculator();

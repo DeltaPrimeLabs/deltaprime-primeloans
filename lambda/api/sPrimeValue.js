@@ -4,7 +4,7 @@ const dynamoDb = new AWS.DynamoDB.DocumentClient();
 
 module.exports.handler = (event, context, callback) => {
   const params = {
-    TableName: process.env.SPRIME_TABLE,
+    TableName: event.queryStringParameters.network === 'arbitrum' ? process.env.SPRIME_TABLE : process.env.SPRIME_TABLE,
     Key: {
       id: event.pathParameters.id
     }
