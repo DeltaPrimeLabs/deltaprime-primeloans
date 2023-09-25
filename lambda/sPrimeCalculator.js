@@ -37,6 +37,18 @@ const sPrimeCalculator = async (event) => {
     pools.map(async (pool) => {
       const poolTransfers = await fetchTransfersForPool(pool.id);
 
+      //add last mock transfer (for the current timestamp)
+      if (poolTransfers.length > 0) {
+        let currentMockTransfer = {
+          curPoolTvl: poolTransfers.length > 0 ? poolTransfers[poolTransfers.length - 1].curPoolTvl : 0,
+          timestamp: Math.floor(Date.now() / 1000),
+          tokenSymbol: poolTransfers[poolTransfers.length - 1].tokenSymbol,
+          depositor: { id: 'mock' }
+        }
+
+        poolTransfers.push(currentMockTransfer);
+      }
+
       for (let i = 0; i < poolTransfers.length; i++) {
         const transfer = poolTransfers[i];
         const tokenPrice = redstonePriceData[transfer.tokenSymbol][0].dataPoints[0].value;
@@ -82,8 +94,11 @@ const sPrimeCalculator = async (event) => {
           }
         );
 
-        sPrimeValue[transfer.depositor.id][transfer.tokenSymbol].total += Number(formatUnits(transfer.amount, Number(pool.decimals)));
-        sPrimeValue[transfer.depositor.id][transfer.tokenSymbol].total = Math.max(sPrimeValue[transfer.depositor.id][transfer.tokenSymbol].total, 0);      };
+        if (transfer.depositor.id !== 'mock') {
+          sPrimeValue[transfer.depositor.id][transfer.tokenSymbol].total += Number(formatUnits(transfer.amount, Number(pool.decimals)));
+          sPrimeValue[transfer.depositor.id][transfer.tokenSymbol].total = Math.max(sPrimeValue[transfer.depositor.id][transfer.tokenSymbol].total, 0);
+        }
+      };
     })
   );
 
