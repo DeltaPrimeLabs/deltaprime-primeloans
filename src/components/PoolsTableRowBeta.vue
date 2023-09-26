@@ -23,7 +23,7 @@
         </template>
       </div>
 
-      <div class="table__cell sprime" v-if="poolsUnlocking">
+      <div class="table__cell sprime">
         <div>
           <LoadedValue :check="() => pool.sPrime !== null" :value="pool.sPrime | usd"></LoadedValue>
         </div>
@@ -427,7 +427,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: repeat(2, 1fr) 175px 150px 150px 90px 110px 22px;
+    grid-template-columns: repeat(3, 1fr) 175px 150px 150px 90px 110px 22px;
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;

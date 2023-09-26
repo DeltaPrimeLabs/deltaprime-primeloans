@@ -45,8 +45,7 @@ export default {
 
     async setupsPrime({rootState, commit, state}) {
       const poolService = rootState.serviceRegistry.poolService;
-      let resp = await (await fetch(`https://jqaeurqbo4.execute-api.us-east-1.amazonaws.com/sprime/${rootState.network.account.toLowerCase()}?network=${config.chainSlug}`)).json();
-
+      let resp = await (await fetch(`https://fd3get6d31.execute-api.us-east-1.amazonaws.com/sprime/${rootState.network.account.toLowerCase()}?network=${config.chainSlug}`)).json();
       let pools = state.pools;
 
       for (let pool of pools) {
