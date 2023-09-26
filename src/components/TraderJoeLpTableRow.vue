@@ -132,6 +132,7 @@ export default {
   },
   props: {
     lpToken: null,
+    lpTokens: null,
     index: null,
   },
 
@@ -379,6 +380,7 @@ export default {
       modalInstance.activeId = this.activeId;
       modalInstance.activePrice = this.activePrice;
       modalInstance.binStep = this.lpToken.binStep;
+      modalInstance.lpTokens = this.lpTokens;
       modalInstance.$on('ADD_LIQUIDITY', addLiquidityEvent => {
         if (this.smartLoanContract) {
           const addLiquidityInput = this.traderJoeService.getAddLiquidityParameters(
