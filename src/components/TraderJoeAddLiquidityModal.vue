@@ -146,7 +146,7 @@
                 :waiting="transactionOngoing"
                 :disabled="firstInputError || secondInputError || sliderError">
         </Button>
-      </div>
+      </div>{{firstInputError}} {{secondInputError}} {{sliderError}}
     </Modal>
   </div>
 </template>
@@ -223,6 +223,8 @@ export default {
     setTimeout(() => {
       this.setupValidators();
       this.setupSlider();
+      this.firstInputChange(0);
+      this.secondInputChange(0);
     });
   },
 
@@ -238,6 +240,7 @@ export default {
 
     submit() {
       this.transactionOngoing = true;
+
       const addLiquidityEvent = {
         firstAsset: this.firstAsset,
         secondAsset: this.secondAsset,
@@ -248,6 +251,8 @@ export default {
         priceSlippage: this.priceSlippage,
         amountsSlippage: this.amountsSlippage
       };
+      console.log(addLiquidityEvent)
+
       this.$emit('ADD_LIQUIDITY', addLiquidityEvent);
     },
 
@@ -261,7 +266,7 @@ export default {
       this.secondInputError = await this.$refs.secondInput.forceValidationCheck();
     },
 
-    updateBinRange({value, error}) {
+    async updateBinRange({value, error}) {
       let newRange = value;
       this.error = error;
       this.binRange = newRange;
@@ -278,6 +283,9 @@ export default {
       }
 
       this.sliderError = this.$refs.slider.error;
+
+      this.firstInputError = await this.$refs.firstInput.forceValidationCheck();
+      this.secondInputError = await this.$refs.secondInput.forceValidationCheck();
     },
 
     handleShapeClick(key) {
@@ -313,7 +321,7 @@ export default {
               newBins.push(i);
             }
 
-            const noOfBins = this.lpToken.binIds.concat(newBins).length;
+            const noOfBins = [...new Set([...this.lpToken.binIds ,...newBins])].length;
 
             let otherBins = Object.entries(this.lpTokens).filter(([,v]) => v.address !== this.lpToken.address).map(([,v]) => v).reduce((a, b) => a + b.binIds.length, 0);
 

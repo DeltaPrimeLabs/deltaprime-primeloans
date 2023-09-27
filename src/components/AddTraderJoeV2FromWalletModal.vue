@@ -17,7 +17,7 @@
       <div class="button-wrapper">
         <Button :label="'Add LB tokens'"
                 v-on:click="submit()"
-                :disabled="!userBalances || userBalances.length === 0"
+                :disabled="!userBalances || userBalances.length === 0 || tooManyBins"
                 :waiting="transactionOngoing">
         </Button>
       </div>
@@ -38,7 +38,16 @@ import config from "../config";
 
 export default {
   name: 'AddTraderJoeV2FromWalletModal',
-  components: {Button, BarGaugeBeta, TransactionResultSummaryBeta, Modal, LoadedValue, CurrencyInput, Toggle, DeltaIcon},
+  components: {
+    Button,
+    BarGaugeBeta,
+    TransactionResultSummaryBeta,
+    Modal,
+    LoadedValue,
+    CurrencyInput,
+    Toggle,
+    DeltaIcon
+  },
   props: {
     lpToken: {},
     lpTokens: {},
@@ -47,29 +56,31 @@ export default {
     transactionOngoing: false,
     tooManyBins: {}
   },
-  mounted() {
-    this.validateNoOfBins();
-  },
   methods: {
     close() {
       this.closeModal();
     },
     submit() {
       this.transactionOngoing = true;
-        this.$emit('ADD_FROM_WALLET');
-      }
+      this.$emit('ADD_FROM_WALLET');
     },
-    validateNoOfBins() {
-      const noOfBins = this.userBins.length;
+    validateBins() {
+      const noOfBins = this.lpToken.binIds.concat(this.userBins).length;
 
-      let otherBins = Object.entries(this.lpTokens).filter(([,v]) => v.address !== this.lpToken.address).map(([,v]) => v).reduce((a, b) => a + b.binIds.length, 0);
+      let otherBins = Object.entries(this.lpTokens).filter(([, v]) => v.address !== this.lpToken.address).map(([, v]) => v).reduce((a, b) => a + b.binIds.length, 0);
 
       let binsTotal = noOfBins + otherBins;
 
-      if (config.maxTraderJoeV2Bins && binsTotal > config.maxTraderJoeV2Bins) {
-        return `Max. number of bins in a Prime Account: ${config.maxTraderJoeV2Bins}. Current number: ${binsTotal}`;
-      }
+      this.tooManyBins = config.maxTraderJoeV2Bins && binsTotal > config.maxTraderJoeV2Bins;
     }
+  },
+  watch: {
+    lpTokens: {
+      handler() {
+        this.validateBins();
+      }
+    },
+  }
 };
 </script>
 
