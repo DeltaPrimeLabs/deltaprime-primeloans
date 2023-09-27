@@ -326,6 +326,7 @@ export default {
       modalInstance.userBins = this.userBins;
       modalInstance.userBalances = this.userBalances;
       modalInstance.lpToken = this.lpToken;
+      modalInstance.lpTokens = this.lpTokens;
 
       modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
         const fundLiquidityRequest = {
