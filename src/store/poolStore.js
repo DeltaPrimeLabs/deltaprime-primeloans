@@ -49,7 +49,7 @@ export default {
       let pools = state.pools;
 
       for (let pool of pools) {
-        pool.sPrime = resp[pool.asset.symbol] ? resp[pool.asset.symbol].sPrime : 0;
+        pool.sPrime = resp[pool.asset.symbol] ? resp[pool.asset.symbol].sPrime : null;
       }
 
       console.log(resp)
