@@ -1,9 +1,7 @@
 const AWS = require('aws-sdk');
-const fetch = require('node-fetch');
 const fs = require('fs');
 const ethers = require('ethers');
 const redstone = require('redstone-api');
-const fromBytes32 = ethers.utils.parseBytes32String;
 
 const {
   fetchPools,
@@ -18,25 +16,35 @@ const dynamoDb = new AWS.DynamoDB.DocumentClient();
 const tvlThreshold = 4000000;
 
 const config = JSON.parse(fs.readFileSync('config.json', 'utf-8'));
-const jsonRpcArb = config.jsonRpcArb;
-const providerArb = new ethers.providers.JsonRpcProvider(jsonRpcArb);
+const jsonRpc = config.jsonRpcArb;
+const provider = new ethers.providers.JsonRpcProvider(jsonRpc);
 
+const networkConfig = {
+  tokenManagerAddress: '0x0a0d954d4b0f0b47a5990c0abd179a90ff74e255',
+  provider: provider,
+  database: process.env.SPRIME_ARB_TABLE,
+  poolsUnlocked: false
+}
 const tokenManagerAbi = [
-    'function getAllPoolAssets() public view returns (bytes32[])',
-    'function getPoolAddress(bytes32) public view returns (address)'
+  'function getAllPoolAssets() public view returns (bytes32[])',
+  'function getPoolAddress(bytes32) public view returns (address)'
 ];
-const tokenManagerAddress = '0x0a0d954d4b0f0b47a5990c0abd179a90ff74e255';
-const tokenManagerContract = new ethers.Contract(tokenManagerAddress, tokenManagerAbi, providerArb);
+const network = 'arbitrum';
 
-const sPrimeCalculator = async (event) => {
+const sPrimeCalculator = async (event) => {  
+  const tokenManagerContract = new ethers.Contract(
+    networkConfig.tokenManagerAddress,
+    tokenManagerAbi,
+    networkConfig.provider
+  );
   const poolAssets = await tokenManagerContract.getAllPoolAssets();
-  const poolContracts = [];
+  const poolAddresses = [];
 
   for (let asset of poolAssets) {
-    poolContracts.push((await tokenManagerContract.getPoolAddress(asset)).toLowerCase());
+    poolAddresses.push((await tokenManagerContract.getPoolAddress(asset)).toLowerCase());
   }
 
-  let pools = (await fetchPools()).filter(pool => poolContracts.indexOf(pool.id.toLowerCase()) !== -1);
+  let pools = (await fetchPools(network)).filter(pool => poolAddresses.indexOf(pool.id.toLowerCase()) !== -1);
 
   const sPrimeValue = {};
 
@@ -44,7 +52,10 @@ const sPrimeCalculator = async (event) => {
 
   await Promise.all(
     pools.map(async (pool) => {
-      const poolTransfers = await fetchTransfersForPool(pool.id);
+      const poolTransfers = await fetchTransfersForPool(network, pool.id);
+      const poolAbi = ['function decimals() public view returns(uint8)'];
+      const poolContract = new ethers.Contract(pool.id, poolAbi, networkConfig.provider);
+      const decimals = await poolContract.decimals();
 
       //add last mock transfer (for the current timestamp)
       if (poolTransfers.length > 0) {
@@ -67,14 +78,14 @@ const sPrimeCalculator = async (event) => {
 
         const tokenPrice = resp[transfer.tokenSymbol].value;
 
-        const prevTvlInUsd = i > 0 ? tokenPrice * formatUnits(poolTransfers[i - 1].curPoolTvl, Number(pool.decimals)) : 0;
+        const prevTvlInUsd = i > 0 ? tokenPrice * formatUnits(poolTransfers[i - 1].curPoolTvl, Number(decimals)) : 0;
 
         // pool APR for previous timestamp
         let prevApr;
 
-        if (transfer.timestamp > 1695124800) { // after 19th Sep, 2pm CEST
+        if (!networkConfig.poolsUnlocked && transfer.timestamp > 1695124800) { // after 19th Sep, 2pm CEST
           let openPools = transfer.timestamp > 1695484800 ? 3 : 2;
-          prevApr = 1000 * 365 / openPools / (tokenPrice * transfer.curPoolTvl / 10 ** Number(pool.decimals));
+          prevApr = 1000 * 365 / openPools / (tokenPrice * transfer.curPoolTvl / 10 ** Number(decimals));
         } else {
           prevApr = Math.max((1 - prevTvlInUsd / tvlThreshold) * 0.1, 0);
         }
@@ -111,7 +122,7 @@ const sPrimeCalculator = async (event) => {
         );
 
         if (transfer.depositor.id !== 'mock') {
-          sPrimeValue[transfer.depositor.id][transfer.tokenSymbol].total += Number(formatUnits(transfer.amount, Number(pool.decimals)));
+          sPrimeValue[transfer.depositor.id][transfer.tokenSymbol].total += Number(formatUnits(transfer.amount, Number(decimals)));
           sPrimeValue[transfer.depositor.id][transfer.tokenSymbol].total = Math.max(sPrimeValue[transfer.depositor.id][transfer.tokenSymbol].total, 0);
         }
       };
@@ -126,7 +137,7 @@ const sPrimeCalculator = async (event) => {
     };
 
     const userInfo = {
-      TableName: process.env.SPRIME_TABLE,
+      TableName: networkConfig.database,
       Item: data
     };
     dynamoDb.put(userInfo).promise()

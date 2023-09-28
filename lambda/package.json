@@ -20,7 +20,8 @@
     "ethers": "^5.5.4",
     "graphql-request": "^6.1.0",
     "graphql-tag": "^2.12.6",
-    "node-fetch": "^2.7.0"
+    "node-fetch": "^2.7.0",
+    "redstone-api": "^0.4.11"
   },
   "private": true
 }
