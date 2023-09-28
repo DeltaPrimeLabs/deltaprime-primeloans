@@ -64,7 +64,7 @@ const sPrimeCalculator = async (event) => {
   ]);
 
   const availablePools = pools.filter(pool => poolAddresses.indexOf(pool.id.toLowerCase()) !== -1);
-  const sPrimeValue = {};
+  let sPrimeValue = {};
   let totalTime = 0;
 
   sPrimeValueArray.map((sPrime) => {
@@ -73,6 +73,10 @@ const sPrimeCalculator = async (event) => {
       if (key != 'id') sPrimeValue[sPrime.id][key] = value;
     }
   })
+
+  if (sPrimeValueArray.length == 0) {
+    sPrimeValue = JSON.parse(fs.readFileSync('sPrimeValue.json', 'utf-8'));
+  }
 
   await Promise.all(
     availablePools.map(async (pool) => {

@@ -22,13 +22,13 @@ const poolQuery = (limit = 1000, page = 0) => {
   `);
 }
 
-const transferQuery = (poolId, limit = 1000, page = 0) => {
+const transferQuery = (poolId, limit = 1000, page = 0, lm_start_date = 0) => {
   return gql(`
   {
     transfers(
       first: ${limit}
       skip: ${page * limit}
-      where: {pool: "${poolId}"}
+      where: {pool: "${poolId}", timestamp_gte: "${lm_start_date}"}
       orderBy: timestamp
       orderDirection: asc
     ) {
@@ -83,8 +83,9 @@ const fetchTransfersForPool = async (network, poolId, page = 0) => {
   // let transfers = [];
   // let page = 0;
   let limit = 120;
+  let lm_start_date = 1695124800; // LM start date: 19th Sep, 2pm CEST
 
-  let response = await client.request(transferQuery(poolId, limit, page));
+  let response = await client.request(transferQuery(poolId, limit, page, lm_start_date));
 
   // while (response.transfers.length > 0) {
   //   transfers = transfers.concat(response.transfers);
