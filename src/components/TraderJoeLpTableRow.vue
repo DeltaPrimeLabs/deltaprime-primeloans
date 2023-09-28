@@ -567,7 +567,6 @@ export default {
         }))
 
         this.currentPrice = this.firstAsset.price / this.secondAsset.price
-        console.error(this.currentPrice);
         this.currentPriceIndex = this.chartData.findIndex((value, index) => {
           return index > 0 && (value.price > this.currentPrice) && this.chartData[index - 1].price < this.currentPrice
         })
