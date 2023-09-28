@@ -50,10 +50,10 @@ export default class PoolService {
             borrowingAPY: isPoolDisabled ? 0 : fromWei(poolDetails[3]),
             totalBorrowed: isPoolDisabled ? 0 : totalBorrowed,
             interest: isPoolDisabled ? 0 : deposit * apy / 365,
-            maxUtilisation: isPoolDisabled ? 0 : fromWei(poolDetails[5]),
+            maxUtilisation: isPoolDisabled ? '0' : fromWei(poolDetails[5]),
             utilisation: isPoolDisabled ? 0 : totalBorrowed / tvl,
             disabled: config.POOLS_CONFIG[poolAsset].disabled,
-            poolsUnlocking: config.poolsUnlocking
+            poolsUnlocking: config.poolsUnlocking,
           };
           return pool;
         }))
