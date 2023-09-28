@@ -154,7 +154,7 @@ const sPrimeCalculator = async (event) => {
 
             if (transfer.timestamp > 1693756800) {
               const newValue = (timeInterval < 0 ? 0 : timeInterval) / 31536000 * (prevApr * userDepositInUsd);
-              sPrimeValue[depositor.id][transfer.tokenSymbol].sPrime += newValue;
+              sPrimeValue[depositor.id][transfer.tokenSymbol].sPrime = Number(sPrimeValue[depositor.id][transfer.tokenSymbol].sPrime) + newValue;
             }
             sPrimeValue[depositor.id][transfer.tokenSymbol]['timestamp'] = transfer.timestamp;
             sPrimeValue[depositor.id][transfer.tokenSymbol]['startPage'] = startPage + 1;
@@ -162,7 +162,8 @@ const sPrimeCalculator = async (event) => {
         );
 
         if (transfer.depositor.id !== 'mock') {
-          sPrimeValue[transfer.depositor.id][transfer.tokenSymbol].total += Number(formatUnits(transfer.amount, Number(decimals)));
+          sPrimeValue[transfer.depositor.id][transfer.tokenSymbol].total = Number(sPrimeValue[transfer.depositor.id][transfer.tokenSymbol].total) +
+                                                                            Number(formatUnits(transfer.amount, Number(decimals)));
           sPrimeValue[transfer.depositor.id][transfer.tokenSymbol].total = Math.max(sPrimeValue[transfer.depositor.id][transfer.tokenSymbol].total, 0);
         }
       };
