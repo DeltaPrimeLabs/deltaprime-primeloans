@@ -95,20 +95,20 @@ functions:
       - httpApi:
           method: get
           path: /sprime/{id}
-  loanAggregatorAva:
-    handler: aggregators/loan.loanAggregatorAva
-    memorySize: 1024
-    timeout: 600
-    description: upload loan addresses on Avalanche
-    events:
-      - schedule: rate(5 minutes)
-  loanAggregatorArb:
-    handler: aggregators/loan.loanAggregatorArb
-    memorySize: 1024
-    timeout: 600
-    description: upload loan addresses on Arbitrum
-    events:
-      - schedule: rate(5 minutes)
+  # loanAggregatorAva:
+  #   handler: aggregators/loan.loanAggregatorAva
+  #   memorySize: 1024
+  #   timeout: 600
+  #   description: upload loan addresses on Avalanche
+  #   events:
+  #     - schedule: rate(5 minutes)
+  # loanAggregatorArb:
+  #   handler: aggregators/loan.loanAggregatorArb
+  #   memorySize: 1024
+  #   timeout: 600
+  #   description: upload loan addresses on Arbitrum
+  #   events:
+  #     - schedule: rate(5 minutes)
 
 resources:
   Resources:
