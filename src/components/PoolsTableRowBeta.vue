@@ -56,7 +56,7 @@
       </div>
 
       <div class="table__cell utilisation">
-        <LoadedValue :check="() => pool.utilisation != null && !poolsUnlocking" :value="pool.utilisation || 0 | percent"></LoadedValue>
+        <LoadedValue :check="() => pool.utilisation != null" :value="pool.utilisation | percent"></LoadedValue>
       </div>
 
       <div></div>
