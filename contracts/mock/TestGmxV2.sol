@@ -10,11 +10,11 @@ contract TestGmxV2 is IOrderCallbackReceiver {
 
     address GMX_V2_ROUTER = 0x7452c558d45f8afC8c83dAe62C3f8A5BE19c71f6;
     address GMX_V2_DEPOSIT_VAULT = 0x2069309427e27b018222f9D298371358959EFFB3;
-    address GM_ETH_USDC = 0x70d95587d40a2caf56bd97485ab3eec10bee6336;
-    address ETH = 0x82af49447d8a07e3bd95bd0d56f35241523fbab1;
+    address GM_ETH_USDC = 0x70d95587d40A2caf56bd97485aB3Eec10Bee6336;
+    address ETH = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
     address USDC = 0xaf88d065e77c8cC2239327C5EDb3A432268e5831;
 
-    function getSelector(string calldata _func) internal pure returns (bytes4) {
+    function getSelector(string memory _func) internal pure returns (bytes4) {
         return bytes4(keccak256(bytes(_func)));
     }
 
@@ -23,14 +23,15 @@ contract TestGmxV2 is IOrderCallbackReceiver {
 
         IERC20(depositedToken).approve(GMX_V2_ROUTER, tokenAmount);
 
-        bytes[] memory data = [
-            abi.encodeWithSelector(
+        bytes[] memory data = new bytes[](2);
+
+        data[0] = abi.encodeWithSelector(
                 getSelector("sendTokens"),
                 depositedToken,
                 GMX_V2_DEPOSIT_VAULT,
                 tokenAmount
-            ),
-            abi.encodeWithSelector(
+            );
+        data[1] = abi.encodeWithSelector(
                 getSelector("createDeposit"),
                 address(this), //receiver
                 address(this), //callbackContract
@@ -44,8 +45,7 @@ contract TestGmxV2 is IOrderCallbackReceiver {
                 executionFee, //executionFee
                 0, //callbackGasLimit
                 address(0) //uiFeeReceiver
-            )
-        ];
+            );
 
         bytes[] memory results = BasicMulticall(GMX_V2_ROUTER).multicall(data);
 
