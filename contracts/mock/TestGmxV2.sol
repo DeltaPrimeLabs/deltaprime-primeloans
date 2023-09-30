@@ -39,18 +39,20 @@ contract TestGmxV2 is IOrderCallbackReceiver {
         );
         data[2] = abi.encodeWithSelector(
             Deposit.createDeposit.selector,
-            address(this), //receiver
-            address(this), //callbackContract
-            GM_ETH_USDC, //market
-            ETH, //initialLongToken
-            USDC, //initialShortToken
-            new address[](0), //longTokenSwapPath
-            new address[](0), //shortTokenSwapPath
-            minGmAmount, //minMarketTokens
-            false, //shouldUnwrapNativeToken
-            executionFee, //executionFee
-            0, //callbackGasLimit
-            address(0) //uiFeeReceiver
+            Deposit.CreateDepositParams({
+            receiver: address(this), //receiver
+            callbackContract: address(this), //callbackContract
+            uiFeeReceiver: address(0), //uiFeeReceiver
+            market: GM_ETH_USDC, //market
+            initialLongToken: ETH, //initialLongToken
+            initialShortToken: USDC, //initialShortToken
+            longTokenSwapPath: new address[](0), //longTokenSwapPath
+            shortTokenSwapPath: new address[](0), //shortTokenSwapPath
+            minMarketTokens: minGmAmount, //minMarketTokens
+            shouldUnwrapNativeToken: false, //shouldUnwrapNativeToken
+            executionFee: executionFee, //executionFee
+            callbackGasLimit: 0 //callbackGasLimit
+        })
         );
 
         bytes[] memory results = BasicMulticall(GMX_V2_EXCHANGE_ROUTER).multicall{ value: msg.value }(data);
