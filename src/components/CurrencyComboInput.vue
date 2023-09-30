@@ -27,7 +27,7 @@
                    :icon-src="'src/assets/icons/chevron-down.svg'"
                    :size="21"
                    v-on:click.native="toggleSelect()"
-                   v-if="displayedOptions && displayedOptions.length > 0">
+                   v-if="displayedOptions && displayedOptions.length > 1">
         </DeltaIcon>
         <div class="dropdown-panel" v-if="expanded" v-on:click="dropdownPanelClick()"></div>
         <div
@@ -352,7 +352,7 @@ export default {
         display: flex;
         flex-direction: row;
         align-items: center;
-        min-width: 115px;
+        min-width: 105px;
 
         .selected-asset__icon {
           width: 34px;

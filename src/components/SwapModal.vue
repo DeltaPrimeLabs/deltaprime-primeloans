@@ -2,7 +2,7 @@
   <div id="modal" class="swap-modal-component modal-component">
     <Modal>
       <div class="modal__title" v-if="!swapDebtMode">
-        Swap
+        {{ title }}
       </div>
       <div class="modal__title" v-if="swapDebtMode">
         Swap debt
@@ -245,6 +245,7 @@ export default {
       debtsPerAsset: {},
       lpAssets: {},
       lpBalances: {},
+      farms: {},
       concentratedLpAssets: {},
       concentratedLpBalances: {},
       traderJoeV2LpAssets: {},
@@ -262,26 +263,13 @@ export default {
       paraSwapRate: {},
       dexOptions: null,
       swapDex: null,
+      title: 'Swap',
       currentSourceInputChangeEvent: {},
       showParaSwapWarning: config.showParaSwapWarning,
-      showYakSwapWarning: config.showYakSwapWarning
+      showYakSwapWarning: config.showYakSwapWarning,
+      sourceAssetsConfig: config.ASSETS_CONFIG,
+      targetAssetsConfig: config.ASSETS_CONFIG
     };
-  },
-
-  mounted() {
-    setTimeout(() => {
-      if (this.swapDebtMode) {
-        this.swapDex = 'YakSwap'
-      }
-      this.setupDexOptions();
-      this.setupSourceAssetOptions();
-      this.setupTargetAssetOptions();
-      this.setupSourceAsset();
-      this.setupTargetAsset();
-      this.setupValidators();
-      this.setupWarnings();
-      this.calculateHealthAfterTransaction();
-    });
   },
 
   computed: {
@@ -299,6 +287,19 @@ export default {
   },
 
   methods: {
+    initiate() {
+      if (this.swapDebtMode && !this.swapDex) {
+        this.swapDex = 'YakSwap'
+      }
+      this.setupSourceAssetOptions();
+      this.setupTargetAssetOptions();
+      this.setupSourceAsset();
+      this.setupTargetAsset();
+      this.setupValidators();
+      this.setupWarnings();
+      this.calculateHealthAfterTransaction();
+    },
+
     submit() {
       this.transactionOngoing = true;
       const sourceAssetAmount = this.maxButtonUsed ? this.sourceAssetAmount * config.MAX_BUTTON_MULTIPLIER : this.sourceAssetAmount;
@@ -312,11 +313,6 @@ export default {
         paraSwapRate: this.paraSwapRate,
         swapDex: this.swapDex
       });
-    },
-
-    setupDexOptions() {
-      this.dexOptions = Object.entries(config.AVAILABLE_ASSETS_PER_DEX).filter(([k, v]) => v.includes(this.sourceAsset)).map(([k, v]) => k);
-      this.swapDex = this.dexOptions[0];
     },
 
     swapDexChange(dex) {
@@ -422,7 +418,7 @@ export default {
       this.sourceAssetOptions = [];
       const sourceAssets = this.swapDebtMode ? this.sourceAssets : this.sourceAssets[this.swapDex];
       sourceAssets.forEach(assetSymbol => {
-        const asset = config.ASSETS_CONFIG[assetSymbol];
+        const asset = this.sourceAssetsConfig[assetSymbol];
         const assetOption = {
           symbol: assetSymbol,
           name: asset.name,
@@ -434,9 +430,10 @@ export default {
 
     setupTargetAssetOptions() {
       this.targetAssetOptions = [];
+
       const targetAssets = this.swapDebtMode ? this.targetAssets : this.targetAssets[this.swapDex];
       targetAssets.forEach(assetSymbol => {
-        const asset = config.ASSETS_CONFIG[assetSymbol];
+        const asset = this.targetAssetsConfig[assetSymbol];
         const assetOption = {
           symbol: assetSymbol,
           name: asset.name,
@@ -449,12 +446,12 @@ export default {
     },
 
     setupSourceAsset() {
-      this.sourceAssetData = config.ASSETS_CONFIG[this.sourceAsset];
+      this.sourceAssetData = this.sourceAssetsConfig[this.sourceAsset];
     },
 
     setupTargetAsset() {
       if (this.targetAsset) {
-        this.targetAssetData = config.ASSETS_CONFIG[this.targetAsset];
+        this.targetAssetData = this.targetAssetsConfig[this.targetAsset];
       }
     },
 
@@ -469,7 +466,7 @@ export default {
         if (this.sourceAsset !== changeEvent.asset) {
           this.sourceAsset = changeEvent.asset;
           this.calculateSourceAssetBalance();
-          this.sourceAssetData = config.ASSETS_CONFIG[this.sourceAsset];
+          this.sourceAssetData = this.sourceAssetsConfig[this.sourceAsset];
           await this.chooseBestTrade(false);
         } else {
           let value = Number.isNaN(changeEvent.value) ? 0 : changeEvent.value;
@@ -501,7 +498,7 @@ export default {
       } else {
         if (this.targetAsset !== changeEvent.asset) {
           this.targetAsset = changeEvent.asset;
-          this.targetAssetData = config.ASSETS_CONFIG[this.targetAsset];
+          this.targetAssetData = this.targetAssetsConfig[this.targetAsset];
           await this.chooseBestTrade(true);
         } else {
           this.targetAssetAmount = changeEvent.value;
@@ -537,8 +534,8 @@ export default {
 
     reverseSwap() {
       const tempSource = this.sourceAsset;
-      this.sourceAssetData = config.ASSETS_CONFIG[this.targetAsset];
-      this.targetAssetData = config.ASSETS_CONFIG[this.sourceAsset];
+      this.sourceAssetData = this.sourceAssetsConfig[this.targetAsset];
+      this.targetAssetData = this.targetAssetsConfig[this.sourceAsset];
       this.sourceAsset = this.targetAsset;
       this.targetAsset = tempSource;
 
@@ -581,7 +578,7 @@ export default {
         },
         {
           validate: async (value) => {
-            const allowed = this.assets[this.targetAsset].maxExposure - this.assets[this.targetAsset].currentExposure;
+            const allowed = this.targetAssetsConfig[this.targetAsset].maxExposure - this.assets[this.targetAsset].currentExposure;
 
             if (value > allowed) {
               return `Max. allowed ${this.targetAsset} amount is ${allowed.toFixed(0)}.`;

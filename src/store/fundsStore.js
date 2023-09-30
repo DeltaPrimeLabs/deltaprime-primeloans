@@ -56,6 +56,7 @@ export default {
     assetBalances: null,
     lpBalances: null,
     concentratedLpBalances: null,
+    levelLpBalances: null,
     accountApr: null,
     debt: null,
     totalValue: null,
@@ -131,6 +132,10 @@ export default {
 
     setConcentratedLpBalances(state, lpBalances) {
       state.concentratedLpBalances = lpBalances;
+    },
+
+    setLevelLpBalances(state, lpBalances) {
+      state.levelLpBalances = lpBalances;
     },
 
     setFullLoanStatus(state, status) {
@@ -554,6 +559,7 @@ export default {
       const balances = {};
       const lpBalances = {};
       const concentratedLpBalances = {};
+      const levelLpBalances = {};
       const assetBalances = await state.readSmartLoanContract.getAllAssetsBalances();
       assetBalances.forEach(
         asset => {
@@ -567,6 +573,9 @@ export default {
           if (config.CONCENTRATED_LP_ASSETS_CONFIG[symbol]) {
             concentratedLpBalances[symbol] = formatUnits(asset.balance.toString(), config.CONCENTRATED_LP_ASSETS_CONFIG[symbol].decimals);
           }
+          if (config.LEVEL_LP_ASSETS_CONFIG[symbol]) {
+            levelLpBalances[symbol] = formatUnits(asset.balance.toString(), config.LEVEL_LP_ASSETS_CONFIG[symbol].decimals);
+          }
           // To-do: get balances of TraderJoeV2 LP tokens
         }
       );
@@ -575,6 +584,7 @@ export default {
       await commit('setLpBalances', lpBalances);
       await commit('setConcentratedLpBalances', concentratedLpBalances);
       await dispatch('setupConcentratedLpUnderlyingBalances');
+      await dispatch('setLevelLpBalances', levelLpBalances);
       await dispatch('setupTraderJoeV2LpUnderlyingBalancesAndLiquidity');
       const refreshEvent = {assetBalances: balances, lpBalances: lpBalances};
       dataRefreshNotificationService.emitAssetBalancesDataRefresh();

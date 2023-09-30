@@ -595,8 +595,9 @@ export default {
         YakSwap: this.swap,
         ParaSwap: this.paraSwap
       };
-      console.log(this.assetBalances);
       const modalInstance = this.openModal(SwapModal);
+      modalInstance.dexOptions = Object.entries(config.AVAILABLE_ASSETS_PER_DEX).filter(([k, v]) => v.includes(this.asset.symbol)).map(([k, v]) => k);
+      modalInstance.swapDex = Object.keys(config.AVAILABLE_ASSETS_PER_DEX)[0];
       modalInstance.swapDebtMode = false;
       modalInstance.sourceAsset = this.asset.symbol;
       modalInstance.sourceAssetBalance = this.assetBalances[this.asset.symbol];
@@ -631,10 +632,14 @@ export default {
         }).then(() => {
         });
       });
+
+      modalInstance.initiate();
     },
 
     openDebtSwapModal() {
       const modalInstance = this.openModal(SwapModal);
+      modalInstance.dexOptions = Object.entries(config.AVAILABLE_ASSETS_PER_DEX).filter(([k, v]) => v.includes(this.asset.symbol)).map(([k, v]) => k);
+      modalInstance.swapDex = Object.keys(config.AVAILABLE_ASSETS_PER_DEX)[0];
       modalInstance.swapDebtMode = true;
       modalInstance.sourceAsset = this.asset.symbol;
       modalInstance.sourceAssetBalance = this.assetBalances[this.asset.symbol];
@@ -667,6 +672,8 @@ export default {
         }).then(() => {
         });
       });
+
+      modalInstance.initiate();
     },
 
     async openAddFromWalletModal() {
