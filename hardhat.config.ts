@@ -48,7 +48,7 @@ export default {
     },
     arbitrum_devnet: {
       timeout: 1800000,
-      url: 'https://rpc.vnet.tenderly.co/devnet/arbi-mainnet/4b9a3889-7e26-4e5c-b84f-9016e7caefc4',
+      url: 'https://rpc.vnet.tenderly.co/devnet/arbi-mainnet/ece5d91f-fe1e-4565-8caf-aac8760f710f',
       chainId: 42161,
       accounts: [getKey('arbitrum', 'deployer'), getKey('arbitrum', 'admin')]
     },

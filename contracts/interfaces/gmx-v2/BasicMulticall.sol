@@ -11,7 +11,7 @@ abstract contract BasicMulticall {
     /**
      * @dev Receives and executes a batch of function calls on this contract.
      */
-    function multicall(bytes[] calldata data) external virtual returns (bytes[] memory results) {
+    function multicall(bytes[] calldata data) external virtual payable returns  (bytes[] memory results) {
         results = new bytes[](data.length);
 
         for (uint256 i; i < data.length; i++) {
