@@ -198,19 +198,21 @@ export default class TraderJoeService {
         lbPairContract.totalSupply(binId)
       ]);
 
-      ids.push(binId);
-      amounts.push(lbTokenAmount);
+      if (lbTokenAmount != BigInt(0)) {
+        ids.push(binId);
+        amounts.push(lbTokenAmount);
 
-      totalXBalanceWithdrawn = totalXBalanceWithdrawn
-          .add(BigNumber.from(lbTokenAmount)
-              .mul(BigNumber.from(binReserves[0]))
-              .div(BigNumber.from(totalSupply))
-          );
-      totalYBalanceWithdrawn = totalYBalanceWithdrawn
-          .add(BigNumber.from(lbTokenAmount)
-              .mul(BigNumber.from(binReserves[1]))
-              .div(BigNumber.from(totalSupply))
-          );
+        totalXBalanceWithdrawn = totalXBalanceWithdrawn
+            .add(BigNumber.from(lbTokenAmount)
+                .mul(BigNumber.from(binReserves[0]))
+                .div(BigNumber.from(totalSupply))
+            );
+        totalYBalanceWithdrawn = totalYBalanceWithdrawn
+            .add(BigNumber.from(lbTokenAmount)
+                .mul(BigNumber.from(binReserves[1]))
+                .div(BigNumber.from(totalSupply))
+            );
+      }
     }
 
     // To-do: set the dynamic amount slippage tolerance. for now we set it to 0.5%
