@@ -28,7 +28,7 @@ export default {
       "BTC": {name: "BTC", symbol: "BTC", decimals: 8, address: addresses.BTC, debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:BTCUSDT"},
       "ETH": {name: "ETH", symbol: "ETH", decimals: 18, address: addresses.ETH, debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:ETHUSDT"},
       "USDT": {name: "USDT", symbol: "USDT", decimals: 6, address: addresses.USDT, isStableCoin: true, debtCoverage: 0.83333333333, tradingViewSymbol: "COINBASE:USDTUSD"},
-      "USDT.e": {name: "USDT.e", symbol: "USDT.e", decimals: 6, address: addresses['USDT.e'], inactive: true, isStableCoin: true, debtCoverage: 0.83333333333, tradingViewSymbol: "TRADERJOE:USDTEUSDT_74B651"},
+      "USDT.e": {inactive: true, name: "USDT.e", symbol: "USDT.e", decimals: 6, address: addresses['USDT.e'],  isStableCoin: true, debtCoverage: 0.83333333333, tradingViewSymbol: "TRADERJOE:USDTEUSDT_74B651"},
       "EUROC": {name: "EUROC", symbol: "EUROC", logoExt: "png", decimals: 6, address: addresses.EUROC, debtCoverage: 0.83333333333, groupIdentifier: "EUROC_GROUP", tradingViewSymbol: "COINBASE:EUROCUSD"},
       "GLP": {name: "GLP", symbol: "GLP", logoExt: "png", decimals: 18, address: addresses.GLP, debtCoverage: 0.83333333333, swappableAssets: ['BTC', 'ETH', 'USDC'], tradingViewSymbol: ""},
       "sAVAX": {name: "sAVAX", symbol: "sAVAX", decimals: 18, address: addresses.sAVAX, debtCoverage: 0.83333333333, apy: 6.06, tradingViewSymbol: "TRADERJOE:SAVAXWAVAX_4B946C.USD"},
@@ -83,7 +83,7 @@ export default {
     CONCENTRATED_LP_ASSETS_CONFIG: {
         "SHLB_AVAX-USDC_B": { primary: 'AVAX', secondary: 'USDC', name: "AVAX-USDC", dex: 'SteakHut',  symbol: 'SHLB_AVAX-USDC_B', addMethod: 'stakeSteakHutAVAXUSDC', removeMethod: 'unstakeSteakHutAVAXUSDC', decimals: 18, address: addresses["SHLB_AVAX-USDC_B"], tvl: 180000, debtCoverage: 0.83333333333},
         "SHLB_BTC.b-AVAX_B": { primary: 'BTC', secondary: 'AVAX', name: "BTC.b-AVAX", dex: 'SteakHut',  symbol: 'SHLB_BTC.b-AVAX_B', addMethod: 'stakeSteakHutBTCAVAX', removeMethod: 'unstakeSteakHutBTCAVAX', decimals: 18, address: addresses["SHLB_BTC.b-AVAX_B"], tvl: 44000, debtCoverage: 0.83333333333},
-        "SHLB_USDT.e-USDt_C": { primary: 'USDT.e', secondary: 'USDT', name: "USDT.e-USDT", dex: 'SteakHut',  symbol: 'SHLB_USDT.e-USDt_C', addMethod: 'stakeSteakHutUSDTeUSDT', removeMethod: 'unstakeSteakHutUSDTeUSDT', decimals: 18, address: addresses["SHLB_USDT.e-USDt_C"], tvl: 513000, debtCoverage: 0.83333333333},
+        "SHLB_USDT.e-USDt_C": { inactive: true, primary: 'USDT.e', secondary: 'USDT', name: "USDT.e-USDT", dex: 'SteakHut',  symbol: 'SHLB_USDT.e-USDt_C', addMethod: 'stakeSteakHutUSDTeUSDT', removeMethod: 'unstakeSteakHutUSDTeUSDT', decimals: 18, address: addresses["SHLB_USDT.e-USDt_C"], tvl: 513000, debtCoverage: 0.83333333333},
         "SHLB_EUROC-USDC_V2_1_B": { primary: 'EUROC', secondary: 'USDC', name: "EUROC-USDC", dex: 'SteakHut',  symbol: 'SHLB_EUROC-USDC_V2_1_B', addMethod: 'stakeSteakHutEUROCUSDC', removeMethod: 'unstakeSteakHutEUROCUSDC', decimals: 18, address: addresses["SHLB_EUROC-USDC_V2_1_B"], tvl: 1985000, debtCoverage: 0.83333333333},
     },
     TRADERJOEV2_LP_ASSETS_CONFIG: {
