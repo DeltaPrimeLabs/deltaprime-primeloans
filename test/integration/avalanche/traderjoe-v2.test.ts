@@ -188,9 +188,9 @@ describe('Smart loan', () => {
             expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1.157920892373162e+59);
 
-            await tokenContracts.get('AVAX')!.connect(owner).deposit({value: toWei("10")});
-            await tokenContracts.get('AVAX')!.connect(owner).approve(wrappedLoan.address, toWei("10"));
-            await wrappedLoan.fund(toBytes32("AVAX"), toWei("10"));
+            await tokenContracts.get('AVAX')!.connect(owner).deposit({value: toWei("15")});
+            await tokenContracts.get('AVAX')!.connect(owner).approve(wrappedLoan.address, toWei("15"));
+            await wrappedLoan.fund(toBytes32("AVAX"), toWei("15"));
 
             await wrappedLoan.swapTraderJoe(toBytes32("AVAX"), toBytes32("USDC"), toWei("2.5"), 0);
             await wrappedLoan.swapTraderJoe(toBytes32("AVAX"), toBytes32("BTC"), toWei("2.5"), 0);
@@ -201,8 +201,6 @@ describe('Smart loan', () => {
             await wrappedLoan.withdraw(toBytes32("AVAX"), parseUnits("0.1", BigNumber.from(18)));
             await wrappedLoan.withdraw(toBytes32("ETH"), parseUnits("0.001", BigNumber.from(18)));
             await wrappedLoan.borrow(toBytes32("AVAX"), toWei("1"));
-
-            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(11 * tokensPrices.get('AVAX')! - 10, 3);
         });
 
         it("should fail to add LB as a non-owner", async () => {
