@@ -190,8 +190,8 @@ export default class TraderJoeService {
     const ids = [];
     let totalXBalanceWithdrawn = BigNumber.from(0);
     let totalYBalanceWithdrawn = BigNumber.from(0);
-    
-    binIdsToRemove.map(async (binId) => {
+
+    for (let binId of binIdsToRemove) {
       const [lbTokenAmount, binReserves, totalSupply] = await Promise.all([
         lbPairContract.balanceOf(smartLoanAddress, binId),
         lbPairContract.getBin(binId),
@@ -202,10 +202,10 @@ export default class TraderJoeService {
       amounts.push(lbTokenAmount);
 
       totalXBalanceWithdrawn = totalXBalanceWithdrawn
-        .add(BigNumber.from(lbTokenAmount)
-            .mul(BigNumber.from(binReserves[0]))
-            .div(BigNumber.from(totalSupply))
-        );
+          .add(BigNumber.from(lbTokenAmount)
+              .mul(BigNumber.from(binReserves[0]))
+              .div(BigNumber.from(totalSupply))
+          );
       totalYBalanceWithdrawn = totalYBalanceWithdrawn
         .add(BigNumber.from(lbTokenAmount)
             .mul(BigNumber.from(binReserves[1]))
