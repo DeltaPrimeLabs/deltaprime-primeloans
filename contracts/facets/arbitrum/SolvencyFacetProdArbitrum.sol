@@ -39,6 +39,13 @@ contract SolvencyFacetProdArbitrum is ArbitrumProdDataServiceConsumerBase, Diamo
         AssetPrice[] assetsToRepayPrices;
     }
 
+    struct PriceInfo {
+        address tokenX;
+        address tokenY;
+        uint256 priceX;
+        uint256 priceY;
+    }
+
     /**
       * Checks if the loan is solvent.
       * It means that the Health Ratio is greater than 1e18.
@@ -461,7 +468,7 @@ contract SolvencyFacetProdArbitrum is ArbitrumProdDataServiceConsumerBase, Diamo
 
         ITraderJoeV2Facet.TraderJoeV2Bin[] memory ownedTraderJoeV2Bins = DiamondStorageLib.getTjV2OwnedBinsView();
 
-        uint256[] memory prices = new uint256[](2);
+        PriceInfo memory priceInfo;
 
         if (ownedTraderJoeV2Bins.length > 0) {
             for (uint256 i; i < ownedTraderJoeV2Bins.length; i++) {
@@ -471,12 +478,19 @@ contract SolvencyFacetProdArbitrum is ArbitrumProdDataServiceConsumerBase, Diamo
                 uint256 liquidity;
 
                 {
-                    bytes32[] memory symbols = new bytes32[](2);
+                    address tokenXAddress = address(binInfo.pair.getTokenX());
+                    address tokenYAddress = address(binInfo.pair.getTokenY());
 
-                    symbols[0] = DeploymentConstants.getTokenManager().tokenAddressToSymbol(address(binInfo.pair.getTokenX()));
-                    symbols[1] = DeploymentConstants.getTokenManager().tokenAddressToSymbol(address(binInfo.pair.getTokenY()));
+                    if (priceInfo.tokenX != tokenXAddress || priceInfo.tokenY != tokenYAddress) {
+                        bytes32[] memory symbols = new bytes32[](2);
 
-                    prices = getOracleNumericValuesFromTxMsg(symbols);
+
+                        symbols[0] = DeploymentConstants.getTokenManager().tokenAddressToSymbol(tokenXAddress);
+                        symbols[1] = DeploymentConstants.getTokenManager().tokenAddressToSymbol(tokenYAddress);
+
+                        uint256[] memory prices = getOracleNumericValuesFromTxMsg(symbols);
+                        priceInfo = PriceInfo(tokenXAddress, tokenYAddress, prices[0], prices[1]);
+                    }
                 }
 
                 {
@@ -496,8 +510,8 @@ contract SolvencyFacetProdArbitrum is ArbitrumProdDataServiceConsumerBase, Diamo
 
                     total = total +
                     Math.min(
-                        debtCoverageX * liquidity * prices[0] / (price * 10 ** 8),
-                        debtCoverageY * liquidity / 10 ** IERC20Metadata(address(binInfo.pair.getTokenY())).decimals() * prices[1] / 10 ** 8
+                        debtCoverageX * liquidity * priceInfo.priceX / (price * 10 ** 8),
+                        debtCoverageY * liquidity / 10 ** IERC20Metadata(address(binInfo.pair.getTokenY())).decimals() * priceInfo.priceY / 10 ** 8
                     )
                     .mulDivRoundDown(binInfo.pair.balanceOf(address(this), binInfo.id), 1e18)
                     .mulDivRoundDown(1e18, binInfo.pair.totalSupply(binInfo.id));
