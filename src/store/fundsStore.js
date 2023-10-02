@@ -281,9 +281,7 @@ export default {
 
       Object.values(config.ASSETS_CONFIG).forEach(
         asset => {
-          if (state.supportedAssets.includes(asset.symbol)) {
-            assets[asset.symbol] = asset;
-          }
+          assets[asset.symbol] = asset;
         }
       );
 
