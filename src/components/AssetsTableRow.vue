@@ -1,8 +1,8 @@
 <template>
   <div class="fund-table-row-component"
        :class="{'expanded': rowExpanded, 'expanded--trading-view': selectedChart === 'TradingView'}">
-    <div class="table__row" v-if="asset">
-      <div class="table__cell asset">
+    <div class="table__row" v-if="asset" :class="{'inactive': asset.inactive}">
+      <div class="table__cell asset" >
         <img class="asset__icon" :src="getAssetIcon(asset.symbol)">
         <div class="asset__info">
           <div class="asset__name">{{ asset.symbol }}</div>
@@ -83,7 +83,7 @@
 
       <div class="table__cell actions">
         <IconButton class="action-button"
-                    :disabled="(disableAllButtons || !healthLoaded) && (!(asset.debtCoverage > 0 && noSmartLoan))"
+                    :disabled="((disableAllButtons || !healthLoaded) && (!(asset.debtCoverage > 0 && noSmartLoan)) || asset.inactive)"
                     :icon-src="'src/assets/icons/plus.svg'" :size="26"
                     v-tooltip="{content: 'Deposit collateral', classes: 'button-tooltip'}"
                     v-on:click="actionClick('ADD_FROM_WALLET')">
@@ -95,7 +95,7 @@
             buttons and deposit collateral.
           </template>
         </IconButton>
-        <IconButton :disabled="disableAllButtons || !healthLoaded"
+        <IconButton :disabled="disableAllButtons || !healthLoaded || asset.inactive"
                     class="action-button"
                     :icon-src="'src/assets/icons/swap.svg'" :size="26"
                     v-tooltip="{content: 'Swap', classes: 'button-tooltip'}"
@@ -1103,6 +1103,12 @@ export default {
     border-image-source: var(--asset-table-row__border);
     border-image-slice: 1;
     padding-left: 6px;
+
+    &.inactive {
+      .table__cell {
+        color: var(--asset-table-row__double-value-color);
+      }
+    }
 
     .table__cell {
       display: flex;
