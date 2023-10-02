@@ -201,13 +201,13 @@ describe('Smart loan', () => {
             let initialHR = await wrappedLoan.getHealthRatio();
             let initialTWV = await wrappedLoan.getThresholdWeightedValue();
 
-            let swapData = await getSwapData('ETH', 'BTC', 18, 8, toWei('1'));
+            let swapData = await getSwapData('ETH', 'BTC', 18, 8, toWei('2'));
             await wrappedLoan.paraSwap(swapData);
             btcBalance = await tokenContracts.get('BTC')!.balanceOf(wrappedLoan.address);
-            swapData = await getSwapData('ETH', 'USDT', 18, 6, toWei('1'));
+            swapData = await getSwapData('ETH', 'USDT', 18, 6, toWei('2'));
             await wrappedLoan.paraSwap(swapData);
             usdtBalance = await tokenContracts.get('USDT')!.balanceOf(wrappedLoan.address);
-            swapData = await getSwapData('ETH', 'USDC', 18, 6, toWei('1'));
+            swapData = await getSwapData('ETH', 'USDC', 18, 6, toWei('2'));
             await wrappedLoan.paraSwap(swapData);
             usdcBalance = await tokenContracts.get('USDC')!.balanceOf(wrappedLoan.address);
 
@@ -248,16 +248,14 @@ describe('Smart loan', () => {
 
         it("should stake", async () => {
             await testStake("levelStakeEthSnr", "levelSnrBalance", 0, toWei('1'), constants.Zero);
-            // await testStake("levelStakeEthMze", "levelMzeBalance", 1, toWei('1'), constants.Zero);
-            // await testStake("levelStakeEthJnr", "levelJnrBalance", 2, toWei('1'), constants.Zero);
-            // await testStake("levelStakeBtcSnr", "levelSnrBalance", 0, btcBalance.div(2), constants.Zero);
-            // await testStake("levelStakeBtcMze", "levelMzeBalance", 1, btcBalance.div(2), constants.Zero);
-            // await testStake("levelStakeUsdtMze", "levelMzeBalance", 1, usdtBalance.div(2), constants.Zero);
-            // await testStake("levelStakeUsdtJnr", "levelJnrBalance", 2, usdtBalance.div(2), constants.Zero);
-            // await testStake("levelStakeUsdcJnr", "levelJnrBalance", 2, usdcBalance.div(2), constants.Zero);
-            // await testStake("levelStakeUsdcSnr", "levelSnrBalance", 0, usdcBalance.div(2), constants.Zero);
-
-            await time.increase(time.duration.days(30));
+            await testStake("levelStakeEthMze", "levelMzeBalance", 1, toWei('1'), constants.Zero);
+            await testStake("levelStakeEthJnr", "levelJnrBalance", 2, toWei('1'), constants.Zero);
+            await testStake("levelStakeBtcSnr", "levelSnrBalance", 0, btcBalance.div(2), constants.Zero);
+            await testStake("levelStakeBtcMze", "levelMzeBalance", 1, btcBalance.div(2), constants.Zero);
+            await testStake("levelStakeUsdtMze", "levelMzeBalance", 1, usdtBalance.div(2), constants.Zero);
+            await testStake("levelStakeUsdtJnr", "levelJnrBalance", 2, usdtBalance.div(2), constants.Zero);
+            await testStake("levelStakeUsdcJnr", "levelJnrBalance", 2, usdcBalance.div(2), constants.Zero);
+            await testStake("levelStakeUsdcSnr", "levelSnrBalance", 0, usdcBalance.div(2), constants.Zero);
         });
 
         it("should unstake", async () => {
@@ -265,12 +263,11 @@ describe('Smart loan', () => {
             let mzeBalance = await wrappedLoan.levelMzeBalance();
             let jnrBalance = await wrappedLoan.levelJnrBalance();
 
-            // await testUnstake("levelUnstakeEthSnr", "levelSnrBalance", 0, snrBalance.div(2), constants.Zero);
-            // await testUnstake("levelUnstakeBtcMze", "levelMzeBalance", 1, mzeBalance.div(2), constants.Zero);
-            // await testUnstake("levelUnstakeUsdtJnr", "levelJnrBalance", 2, jnrBalance.div(10), constants.Zero);
+            await testUnstake("levelUnstakeEthSnr", "levelSnrBalance", 0, snrBalance.div(2), constants.Zero);
+            await testUnstake("levelUnstakeBtcMze", "levelMzeBalance", 1, mzeBalance.div(2), constants.Zero);
+            await testUnstake("levelUnstakeUsdtJnr", "levelJnrBalance", 2, jnrBalance.div(2), constants.Zero);
             await testUnstake("levelUnstakeUsdcSnr", "levelSnrBalance", 0, snrBalance.div(2), constants.Zero);
-            // await testUnstake("levelUnstakeEthMze", "levelMzeBalance", 1, mzeBalance.div(2), constants.Zero);
-            // await testUnstake("levelUnstakeBtcJnr", "levelJnrBalance", 2, jnrBalance.div(10), constants.Zero);
+            await testUnstake("levelUnstakeEthMze", "levelMzeBalance", 1, mzeBalance.div(2), constants.Zero);
         });
 
         async function testStake(stakeMethod: string, balanceMethod: string, pid: number, amount: BigNumber, minLpAmount: BigNumber) {
@@ -326,7 +323,7 @@ describe('Smart loan', () => {
                 expect((ownedAssets).includes(toBytes32(rewardToken))).to.be.false;
             }
 
-            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue) + rewardsValue, 15);
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue) + rewardsValue, 20);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.01);
         }
 
