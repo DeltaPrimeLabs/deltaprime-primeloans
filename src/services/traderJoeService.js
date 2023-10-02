@@ -207,11 +207,11 @@ export default class TraderJoeService {
               .div(BigNumber.from(totalSupply))
           );
       totalYBalanceWithdrawn = totalYBalanceWithdrawn
-        .add(BigNumber.from(lbTokenAmount)
-            .mul(BigNumber.from(binReserves[1]))
-            .div(BigNumber.from(totalSupply))
-        );
-    });
+          .add(BigNumber.from(lbTokenAmount)
+              .mul(BigNumber.from(binReserves[1]))
+              .div(BigNumber.from(totalSupply))
+          );
+    }
 
     // To-do: set the dynamic amount slippage tolerance. for now we set it to 0.5%
     const allowedAmountsSlippage = 50;
