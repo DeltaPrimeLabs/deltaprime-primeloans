@@ -188,7 +188,7 @@ export default {
       this.poolsTableHeaderConfig =
         config.poolsUnlocking ?
           {
-            gridTemplateColumns: 'repeat(3, 1fr) 140px 140px 140px 90px 90px 22px',
+            gridTemplateColumns: 'repeat(3, 1fr) 140px 140px 140px 140px 90px 90px 22px',
             cells: [
               {
                 label: 'Asset',
@@ -205,7 +205,16 @@ export default {
                 id: 'DEPOSIT',
               },
               {
-                label: window.chain === 'arbitrum' ? 'APR' : 'APY',
+                label: '$sPRIME',
+                sortable: false,
+                class: 'sprime',
+                id: 'SPRIME',
+                tooltip: `Your collected sPRIME will be unlocked over a vesting period post TGE.
+                <a href='https://medium.com/@Delta_Prime/two-days-until-deltaprimes-first-liquidity-mining-program-b17f12fbb23b' target='_blank'>Read more</a>.
+                `
+              },
+              {
+                label: 'APR',
                 sortable: false,
                 class: 'apy',
                 id: 'APY',
@@ -244,7 +253,7 @@ export default {
           }
           :
           {
-            gridTemplateColumns: 'repeat(2, 1fr) 175px 150px 150px 90px 110px 22px',
+            gridTemplateColumns: 'repeat(3, 1fr) 175px 150px 150px 90px 110px 22px',
             cells: [
               {
                 label: 'Asset',
@@ -261,7 +270,16 @@ export default {
                 id: 'DEPOSIT',
               },
               {
-                label: 'APY',
+                label: '$sPRIME',
+                sortable: false,
+                class: 'sprime',
+                id: 'SPRIME',
+                tooltip: `Your collected sPRIME will be unlocked over a vesting period post TGE.
+                <a href='https://medium.com/@Delta_Prime/two-days-until-deltaprimes-first-liquidity-mining-program-b17f12fbb23b' target='_blank'>Read more</a>.
+                `
+              },
+              {
+                label: 'APR',
                 sortable: false,
                 class: 'apy',
                 id: 'APY',

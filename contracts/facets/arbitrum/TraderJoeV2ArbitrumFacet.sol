@@ -32,7 +32,7 @@ contract TraderJoeV2ArbitrumFacet is ITraderJoeV2Facet, ReentrancyGuardKeccak, O
             ILBPair(0x500173F418137090dad96421811147b63b448A0f),
             ILBPair(0xd387c40a72703B38A5181573724bcaF2Ce6038a5),
             ILBPair(0x94d53BE52706a155d27440C4a2434BEa772a6f7C),
-            ILBPair(0x60563686ca7b668e4a2d7D31448e5F10456ecaF8),
+            ILBPair(0x0Be4aC7dA6cd4bAD60d96FbC6d091e1098aFA358),
             ILBPair(0xcfA09B20c85933B197e8901226ad0D6dACa7f114)
         ];
     }
@@ -74,7 +74,7 @@ contract TraderJoeV2ArbitrumFacet is ITraderJoeV2Facet, ReentrancyGuardKeccak, O
     }
 
 
-    function withdrawLiquidityTraderJoeV2(ILBPair pair, uint256[] memory ids, uint256[] memory amounts) external nonReentrant onlyOwnerOrInsolvent noBorrowInTheSameBlock remainsSolvent {
+    function withdrawLiquidityTraderJoeV2(ILBPair pair, uint256[] memory ids, uint256[] memory amounts) external nonReentrant onlyOwner canRepayDebtFully noBorrowInTheSameBlock remainsSolvent {
         if (!isPairWhitelisted(address(pair))) revert TraderJoeV2PoolNotWhitelisted();
 
         pair.batchTransferFrom(address(this), msg.sender, ids, amounts);

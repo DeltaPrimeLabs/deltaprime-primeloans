@@ -6,7 +6,6 @@ import config from '@/config';
 
 
 const ethers = require('ethers');
-const DEPOSIT_SWAP_CONTRACT_ADDRESS = '0x74B5C3499AbDe6D85B6287617195813455051713';
 const SUCCESS_DELAY_AFTER_TRANSACTION = 1000;
 
 export default {
@@ -30,7 +29,7 @@ export default {
       await dispatch('setupPools');
     },
 
-    async setupPools({rootState, commit}) {
+    async setupPools({rootState, commit, dispatch}) {
       const poolService = rootState.serviceRegistry.poolService;
 
       const redstonePriceDataRequest = await fetch(config.redstoneFeedUrl);
@@ -40,7 +39,23 @@ export default {
         .subscribe(pools => {
           poolService.emitPools(pools);
           commit('setPools', pools);
+          dispatch('setupsPrime');
         });
+    },
+
+    async setupsPrime({rootState, commit, state}) {
+      const poolService = rootState.serviceRegistry.poolService;
+      let resp = await (await fetch(`https://uophm6e26f.execute-api.us-east-1.amazonaws.com/sprime/${rootState.network.account.toLowerCase()}?network=${config.chainSlug}`)).json();
+      let pools = state.pools;
+
+      for (let pool of pools) {
+        pool.sPrime = resp[pool.asset.symbol] ? resp[pool.asset.symbol].sPrime : '0';
+      }
+
+      console.log(resp)
+
+      commit('setPools', pools);
+      poolService.emitPools(pools);
     },
 
     async deposit({state, rootState, commit, dispatch}, {depositRequest}) {
@@ -142,13 +157,13 @@ export default {
     async swapDeposit({state, rootState, dispatch}, {swapDepositRequest}) {
       const provider = rootState.network.provider;
 
-      const depositSwapContract = new ethers.Contract(DEPOSIT_SWAP_CONTRACT_ADDRESS, DEPOSIT_SWAP.abi, provider.getSigner());
+      const depositSwapContract = new ethers.Contract(config.depositSwapAddress, DEPOSIT_SWAP.abi, provider.getSigner());
       const sourceAmountInWei = parseUnits(swapDepositRequest.sourceAmount, config.ASSETS_CONFIG[swapDepositRequest.sourceAsset].decimals);
       const targetAmountInWei = parseUnits(swapDepositRequest.targetAmount, config.ASSETS_CONFIG[swapDepositRequest.targetAsset].decimals);
 
       const approveTransaction = await swapDepositRequest.sourcePoolContract
         .connect(provider.getSigner())
-        .approve(DEPOSIT_SWAP_CONTRACT_ADDRESS, sourceAmountInWei);
+        .approve(config.depositSwapAddress, sourceAmountInWei);
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();

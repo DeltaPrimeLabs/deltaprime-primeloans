@@ -1567,6 +1567,9 @@ export default {
 
       const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
 
+      console.log('removeLiquidityRequest.removeLiquidityInput')
+      console.log(removeLiquidityRequest.removeLiquidityInput)
+
       const transaction = await wrappedContract[removeLiquidityRequest.method](
         removeLiquidityRequest.removeLiquidityInput
       );

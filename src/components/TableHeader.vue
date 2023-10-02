@@ -90,6 +90,7 @@ export default {
       justify-content: center;
     }
 
+    //TODO: just make a flex-end class
     &.price {
       justify-content: flex-end;
     }
@@ -99,6 +100,10 @@ export default {
     }
 
     &.deposit {
+      justify-content: flex-end;
+    }
+
+    &.sprime {
       justify-content: flex-end;
     }
 
