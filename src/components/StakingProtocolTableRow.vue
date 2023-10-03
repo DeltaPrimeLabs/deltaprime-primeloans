@@ -483,7 +483,7 @@ export default {
           },
           {
             key: 'STAKE',
-            name: 'Stake into vault',
+            name: 'Deposit into vault',
           },
         ]
       }
