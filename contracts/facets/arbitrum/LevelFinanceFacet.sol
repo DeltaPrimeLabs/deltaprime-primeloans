@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 45f08bc19838959bd87aa0b1a083ddbe9bc5e5b2;
+// Last deployed from commit: f8db734489c31b73bdfe1c19f5e9f19b30a217c1;
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -18,6 +18,25 @@ import "../../lib/local/DeploymentConstants.sol";
 contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     using TransferHelper for address payable;
     using TransferHelper for address;
+
+    modifier onlyWhitelistedAccounts {
+        if(
+            msg.sender == 0x0E5Bad4108a6A5a8b06820f98026a7f3A77466b2 ||
+            msg.sender == 0x2fFA7E9624B923fA811d9B9995Aa34b715Db1945 ||
+            msg.sender == 0x0d7137feA34BC97819f05544Ec7DE5c98617989C ||
+            msg.sender == 0xC6ba6BB819f1Be84EFeB2E3f2697AD9818151e5D ||
+            msg.sender == 0x14f69F9C351b798dF31fC53E33c09dD29bFAb547 ||
+            msg.sender == 0x5C23Bd1BD272D22766eB3708B8f874CB93B75248 ||
+            msg.sender == 0x000000F406CA147030BE7069149e4a7423E3A264 ||
+            msg.sender == 0x5D80a1c0a5084163F1D2620c1B1F43209cd4dB12 ||
+            msg.sender == 0x6C21A841d6f029243AF87EF01f6772F05832144b
+
+        ){
+            _;
+        } else {
+            revert("Not whitelisted");
+        }
+    }
 
     address private constant ETH_TOKEN =
         0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
@@ -775,7 +794,7 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         uint256 minLpAmount,
         uint256 pid,
         IStakingPositions.StakedPosition memory position
-    ) private {
+    ) private onlyWhitelistedAccounts {
         if (asset == address(0)) {
             amount = Math.min(
                 IWrappedNativeToken(ETH_TOKEN).balanceOf(address(this)),
@@ -847,7 +866,7 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         uint256 minAmount,
         uint256 pid,
         IStakingPositions.StakedPosition memory position
-    ) private {
+    ) private onlyWhitelistedAccounts {
         ILevelFinance farmingContract = ILevelFinance(LEVEL_FARMING);
         IERC20Metadata unstakedToken = getERC20TokenInstance(symbol, false);
         uint256 initialReceiptTokenBalance = farmingContract
