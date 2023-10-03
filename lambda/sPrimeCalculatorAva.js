@@ -89,7 +89,7 @@ const sPrimeCalculator = async (event) => {
       const decimals = await poolContract.decimals();
 
       // add last mock transfer (for the current timestamp)
-      if (poolTransfers.length > 0) {
+      if (poolTransfers.length < 120) { // should be equal to limit param in query
         let currentMockTransfer = {
           curPoolTvl: poolTransfers.length > 0 ? poolTransfers[poolTransfers.length - 1].curPoolTvl : 0,
           timestamp: Math.floor(Date.now() / 1000),
@@ -117,11 +117,10 @@ const sPrimeCalculator = async (event) => {
           prevApr = Math.max((1 - prevTvlInUsd / tvlThreshold) * 0.1, 0);
         }
 
+        // initialize sPRIME value of depositor for the pool
         if (!sPrimeValue[transfer.depositor.id]) {
           sPrimeValue[transfer.depositor.id] = {};
         }
-
-        // initialize sPRIME value of depositor for the pool
         if (!sPrimeValue[transfer.depositor.id][transfer.tokenSymbol]) {
           sPrimeValue[transfer.depositor.id][transfer.tokenSymbol] = {
             sPrime: 0,
