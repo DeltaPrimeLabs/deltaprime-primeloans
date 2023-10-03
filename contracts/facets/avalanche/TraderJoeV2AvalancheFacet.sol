@@ -15,7 +15,7 @@ contract TraderJoeV2AvalancheFacet is ITraderJoeV2Facet, ReentrancyGuardKeccak, 
     using TransferHelper for address;
 
     function maxBinsPerPrimeAccount() public view virtual returns (uint256){
-        return 30;
+        return 80;
     }
 
     function getJoeV2RouterAddress() public view virtual returns (address){
