@@ -434,6 +434,7 @@ export default {
               this.tokenX,
               this.tokenY,
               this.lpToken.binStep,
+              removeLiquidityEvent.allowedAmountsSlippage * 100,
               removeLiquidityEvent.binIdsToRemove
           );
           const removeLiquidityRequest = {

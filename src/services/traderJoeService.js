@@ -183,6 +183,7 @@ export default class TraderJoeService {
     tokenX,
     tokenY,
     binStep,
+    allowedAmountsSlippage,
     binIdsToRemove
   ) {
     const lbPairContract = new ethers.Contract(lbPairAddress, LBPairABI, provider);
@@ -216,7 +217,7 @@ export default class TraderJoeService {
     }
 
     // To-do: set the dynamic amount slippage tolerance. for now we set it to 0.5%
-    const allowedAmountsSlippage = 50;
+    console.log('allowedAmountsSlippage: ', allowedAmountsSlippage)
     const minTokenXAmount = totalXBalanceWithdrawn
       .mul(BigNumber.from(10000 - allowedAmountsSlippage))
       .div(BigNumber.from(10000));
