@@ -275,7 +275,7 @@ contract SolvencyFacetProdArbitrum is ArbitrumProdDataServiceConsumerBase, Diamo
 
             for (uint256 i = 0; i < ownedAssetsPrices.length; i++) {
                 IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(ownedAssetsPrices[i].asset, true));
-                weightedValueOfTokens = weightedValueOfTokens + (ownedAssetsPrices[i].price * token.balanceOf(address(this)) * tokenManager.debtCoverage(address(token)) / (10 ** token.decimals() * 1e8));
+                weightedValueOfTokens = weightedValueOfTokens + (ownedAssetsPrices[i].price * convertBalance(token.balanceOf(address(this)), address(token)) * tokenManager.debtCoverage(address(token)) / (10 ** token.decimals() * 1e8));
             }
         }
         return weightedValueOfTokens;
