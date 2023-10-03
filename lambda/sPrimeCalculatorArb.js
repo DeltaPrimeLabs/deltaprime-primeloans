@@ -1,5 +1,3 @@
-const AWS = require('aws-sdk');
-const fs = require('fs');
 const ethers = require('ethers');
 const redstone = require('redstone-api');
 
@@ -7,21 +5,13 @@ const {
   fetchPools,
   fetchTransfersForPool
 } = require('./utils/graphql');
-const { formatUnits } = require('./utils/helpers');
-
-AWS.config.setPromisesDependency(require('bluebird'));
-
-const dynamoDb = new AWS.DynamoDB.DocumentClient();
+const { formatUnits, arbitrumProvider, dynamoDb } = require('./utils/helpers');
 
 const tvlThreshold = 4000000;
 
-const config = JSON.parse(fs.readFileSync('config.json', 'utf-8'));
-const jsonRpc = config.jsonRpcArb;
-const provider = new ethers.providers.JsonRpcProvider(jsonRpc);
-
 const networkConfig = {
   tokenManagerAddress: '0x0a0d954d4b0f0b47a5990c0abd179a90ff74e255',
-  provider: provider,
+  provider: arbitrumProvider,
   database: process.env.SPRIME_ARB_TABLE,
   poolsUnlocked: false
 }
@@ -136,11 +126,11 @@ const sPrimeCalculator = async (event) => {
       ...values
     };
 
-    const userInfo = {
+    const params = {
       TableName: networkConfig.database,
       Item: data
     };
-    dynamoDb.put(userInfo).promise()
+    dynamoDb.put(params).promise()
       .then(res => data);
   }
 

@@ -1,28 +1,24 @@
-const AWS = require('aws-sdk');
-const fs = require('fs');
 const ethers = require('ethers');
+const fs = require('fs');
 
 const {
   fetchPools,
   fetchTransfersForPool,
   fetchAllDepositors
 } = require('./utils/graphql');
-const { formatUnits, getHistoricalTokenPrice, getSymbolFromPoolAddress } = require('./utils/helpers');
-
-// AWS.config.update({region:'us-east-1'});
-AWS.config.setPromisesDependency(require('bluebird'));
-
-const dynamoDb = new AWS.DynamoDB.DocumentClient();
+const {
+  formatUnits,
+  getHistoricalTokenPrice,
+  getSymbolFromPoolAddress,
+  dynamoDb,
+  avalancheProvider
+} = require('./utils/helpers');
 
 const tvlThreshold = 4000000;
 
-const config = JSON.parse(fs.readFileSync('config.json', 'utf-8'));
-const jsonRpc = config.jsonRpcAva;
-const provider = new ethers.providers.JsonRpcProvider(jsonRpc);
-
 const networkConfig = {
   tokenManagerAddress: '0xF3978209B7cfF2b90100C6F87CEC77dE928Ed58e',
-  provider: provider,
+  provider: avalancheProvider,
   database: process.env.SPRIME_AVA_TABLE,
   poolsUnlocked: true
 };
@@ -92,17 +88,17 @@ const sPrimeCalculator = async (event) => {
       const poolContract = new ethers.Contract(pool.id, poolAbi, networkConfig.provider);
       const decimals = await poolContract.decimals();
 
-      //add last mock transfer (for the current timestamp)
-      // if (poolTransfers.length > 0) {
-      //   let currentMockTransfer = {
-      //     curPoolTvl: poolTransfers.length > 0 ? poolTransfers[poolTransfers.length - 1].curPoolTvl : 0,
-      //     timestamp: Math.floor(Date.now() / 1000),
-      //     tokenSymbol: poolTransfers[poolTransfers.length - 1].tokenSymbol,
-      //     depositor: { id: 'mock' }
-      //   }
+      // add last mock transfer (for the current timestamp)
+      if (poolTransfers.length > 0) {
+        let currentMockTransfer = {
+          curPoolTvl: poolTransfers.length > 0 ? poolTransfers[poolTransfers.length - 1].curPoolTvl : 0,
+          timestamp: Math.floor(Date.now() / 1000),
+          tokenSymbol: poolTransfers[poolTransfers.length - 1].tokenSymbol,
+          depositor: { id: 'mock' }
+        }
 
-      //   poolTransfers.push(currentMockTransfer);
-      // }
+        poolTransfers.push(currentMockTransfer);
+      }
 
       for (let i = 0; i < poolTransfers.length; i++) {
         const transfer = poolTransfers[i];
@@ -180,11 +176,11 @@ const sPrimeCalculator = async (event) => {
       };
       // console.log(data);
 
-      const userInfo = {
+      const params = {
         TableName: networkConfig.database,
         Item: data
       };
-      await dynamoDb.put(userInfo).promise();
+      await dynamoDb.put(params).promise();
     })
   );
 

@@ -6,7 +6,8 @@
       "0xd222e10d7fe6b7f9608f14a8b5cf703c74efbca1": "USDT",
       "0x475589b0ed87591a893df42ec6076d2499bb63d0": "BTC",
       "0xd7feb276ba254cd9b34804a986ce9a8c3e359148": "ETH"
-    }
+    },
+    "factory": "0x3Ea9D480295A73fd2aF95b4D96c2afF88b21B03D"
   },
   "arbitrum": {
     "pools": {
@@ -18,6 +19,7 @@
       "0x5fae0ebe49a920fa8350c0396683244824eece74": "USDT",
       "0x431290df15777d46174b83c9e01f87d7b70d3073": "FRAX",
       "0x2d99ee2fed53b0ec85fe32abb8135df44ff42a03": "LINK"
-    }
+    },
+    "factory": "0xFf5e3dDaefF411a1dC6CcE00014e4Bca39265c20"
   }
 }
