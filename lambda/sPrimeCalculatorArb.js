@@ -18,7 +18,7 @@ const tvlThreshold = 4000000;
 const networkConfig = {
   tokenManagerAddress: '0x0a0d954d4b0f0b47a5990c0abd179a90ff74e255',
   provider: arbitrumProvider,
-  database: process.env.SPRIME_ARB_TABLE,
+  database: 'sprime-arb-prod',//process.env.SPRIME_ARB_TABLE,
   poolsUnlocked: false
 }
 const tokenManagerAbi = [
@@ -72,23 +72,28 @@ const sPrimeCalculator = async (event) => {
   await Promise.all(
     availablePools.map(async (pool) => {
       const tokenSymbol = getSymbolFromPoolAddress(network, pool.id);
-      let startPage = 0;
+      let offset = 0;
 
-      if (sPrimeValueArray.length > 0 && sPrimeValueArray[0][tokenSymbol] && sPrimeValueArray[0][tokenSymbol].startPage) {
-        startPage = sPrimeValueArray[0][tokenSymbol].startPage;
+      if (sPrimeValueArray.length > 0 && sPrimeValueArray[0][tokenSymbol] && sPrimeValueArray[0][tokenSymbol].offset) {
+        offset = sPrimeValueArray[0][tokenSymbol].offset;
       }
 
-      const poolTransfers = await fetchTransfersForPool(network, pool.id, startPage);
-      const poolAbi = ['function decimals() public view returns(uint8)'];
+      const poolTransfers = await fetchTransfersForPool(network, pool.id, offset);
+      const poolTransfersLen = poolTransfers.length;
+      const poolAbi = [
+        'function decimals() public view returns(uint8)',
+        'function totalSupply() public view returns(uint256)'
+      ];
       const poolContract = new ethers.Contract(pool.id, poolAbi, networkConfig.provider);
       const decimals = await poolContract.decimals();
+      const poolTvl = await poolContract.totalSupply();
 
       // add last mock transfer (for the current timestamp)
-      if (poolTransfers.length < 120) { // should be equal to limit param in query
+      if (poolTransfersLen < 120) { // should be equal to limit param in query
         let currentMockTransfer = {
-          curPoolTvl: poolTransfers.length > 0 ? poolTransfers[poolTransfers.length - 1].curPoolTvl : 0,
+          curPoolTvl: poolTvl.toString(),
           timestamp: Math.floor(Date.now() / 1000),
-          tokenSymbol: poolTransfers[poolTransfers.length - 1].tokenSymbol,
+          tokenSymbol: tokenSymbol,
           depositor: { id: 'mock' }
         }
 
@@ -147,7 +152,7 @@ const sPrimeCalculator = async (event) => {
               sPrimeValue[depositor.id][transfer.tokenSymbol].sPrime = Number(sPrimeValue[depositor.id][transfer.tokenSymbol].sPrime) + newValue;
             }
             sPrimeValue[depositor.id][transfer.tokenSymbol]['timestamp'] = transfer.timestamp;
-            sPrimeValue[depositor.id][transfer.tokenSymbol]['startPage'] = startPage + 1;
+            sPrimeValue[depositor.id][transfer.tokenSymbol]['offset'] = offset + poolTransfersLen;
           }
         );
 

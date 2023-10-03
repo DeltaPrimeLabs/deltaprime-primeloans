@@ -22,12 +22,12 @@ const poolQuery = (limit = 1000, page = 0) => {
   `);
 }
 
-const transferQuery = (poolId, limit = 1000, page = 0, lm_start_date = 0) => {
+const transferQuery = (poolId, limit = 1000, offset = 0, lm_start_date = 0) => {
   return gql(`
   {
     transfers(
       first: ${limit}
-      skip: ${page * limit}
+      skip: ${offset}
       where: {pool: "${poolId}", timestamp_gte: "${lm_start_date}"}
       orderBy: timestamp
       orderDirection: asc
@@ -77,7 +77,7 @@ const fetchPools = async (network) => {
   return pools;
 }
 
-const fetchTransfersForPool = async (network, poolId, page = 0) => {
+const fetchTransfersForPool = async (network, poolId, offset = 0) => {
   const client = new GraphQLClient(GRAPH_API[network]);
 
   // let transfers = [];
@@ -85,7 +85,7 @@ const fetchTransfersForPool = async (network, poolId, page = 0) => {
   let limit = 120;
   let lm_start_date = 1693756800; // LM start date: 3th Sep, 6pm CEST
 
-  let response = await client.request(transferQuery(poolId, limit, page, lm_start_date));
+  let response = await client.request(transferQuery(poolId, limit, offset, lm_start_date));
 
   // while (response.transfers.length > 0) {
   //   transfers = transfers.concat(response.transfers);
