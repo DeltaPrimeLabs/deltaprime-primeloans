@@ -78,9 +78,14 @@ const sPrimeCalculator = async (event) => {
     availablePools.map(async (pool) => {
       const tokenSymbol = getSymbolFromPoolAddress(network, pool.id);
       let offset = 0;
+      let lastTimestamp;
 
-      if (sPrimeValueArray.length > 0 && sPrimeValueArray[0][tokenSymbol] && sPrimeValueArray[0][tokenSymbol].offset) {
+      if (sPrimeValueArray.length > 0 &&
+          sPrimeValueArray[0][tokenSymbol] &&
+          sPrimeValueArray[0][tokenSymbol].offset &&
+          sPrimeValueArray[0][tokenSymbol].timestamp) {
         offset = sPrimeValueArray[0][tokenSymbol].offset;
+        lastTimestamp = sPrimeValueArray[0][tokenSymbol].timestamp;
       }
 
       const poolTransfers = await fetchTransfersForPool(network, pool.id, offset);
@@ -133,7 +138,10 @@ const sPrimeCalculator = async (event) => {
           };
         }
 
-        const timeInterval = i > 0 ? transfer.timestamp - poolTransfers[i - 1].timestamp : 0;
+        let timeInterval = i > 0 ? transfer.timestamp - poolTransfers[i - 1].timestamp : 0;
+        if (poolTransfersLen == 0) {
+          timeInterval = transfer.timestamp - lastTimestamp;
+        }
         totalTime += timeInterval;
 
         // update sPRIME values for all depositors
