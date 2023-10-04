@@ -286,9 +286,7 @@ export default {
 
       Object.values(config.ASSETS_CONFIG).forEach(
         asset => {
-          if (state.supportedAssets.includes(asset.symbol)) {
-            assets[asset.symbol] = asset;
-          }
+          assets[asset.symbol] = asset;
         }
       );
 
@@ -296,7 +294,7 @@ export default {
       const redstonePriceData = await redstonePriceDataRequest.json();
 
       Object.keys(assets).forEach(assetSymbol => {
-        assets[assetSymbol].price = redstonePriceData[assetSymbol][0].dataPoints[0].value;
+        assets[assetSymbol].price = redstonePriceData[assetSymbol] ? redstonePriceData[assetSymbol][0].dataPoints[0].value : 0;
       });
       commit('setAssets', assets);
 
@@ -339,7 +337,7 @@ export default {
       const redstonePriceData = await redstonePriceDataRequest.json();
 
       Object.keys(lpTokens).forEach(async assetSymbol => {
-        lpTokens[assetSymbol].price = redstonePriceData[assetSymbol][0].dataPoints[0].value;
+        lpTokens[assetSymbol].price = redstonePriceData[assetSymbol] ? redstonePriceData[assetSymbol][0].dataPoints[0].value : 0;
         lpService.emitRefreshLp();
       });
 
@@ -362,7 +360,7 @@ export default {
       const redstonePriceData = await redstonePriceDataRequest.json();
 
       Object.keys(lpTokens).forEach(async assetSymbol => {
-        lpTokens[assetSymbol].price = redstonePriceData[assetSymbol][0].dataPoints[0].value;
+        lpTokens[assetSymbol].price = redstonePriceData[assetSymbol] ? redstonePriceData[assetSymbol][0].dataPoints[0].value : 0;
         lpService.emitRefreshLp();
       });
 
@@ -918,6 +916,9 @@ export default {
         }
 
         const collateral = getters.getCollateral;
+
+        console.log('yearlyAssetInterest: ', yearlyAssetInterest)
+        console.log('yearlyLpInterest: ', yearlyLpInterest)
 
         if (collateral) {
           apr = (yearlyAssetInterest + yearlyLpInterest + yearlyFarmInterest + yearlyTraderJoeV2Interest - yearlyDebtInterest) / collateral;

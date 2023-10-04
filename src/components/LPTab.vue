@@ -1,11 +1,11 @@
 <template>
   <div class="lp-tab">
     <div class="lp-tokens">
-      <div class="lp-table" v-if="traderJoeLpTokens">
-        <TableHeader :config="traderJoeLpTableHeaderConfig"></TableHeader>
-        <TraderJoeLpTableRow v-for="(lpToken, index) in traderJoeLpTokens" v-bind:key="index" :index="index" :lp-token="lpToken"></TraderJoeLpTableRow>
-      </div>
-    </div>
+          <div class="lp-table" v-if="traderJoeLpTokens">
+            <TableHeader :config="traderJoeLpTableHeaderConfig"></TableHeader>
+            <TraderJoeLpTableRow v-for="(lpToken, index) in traderJoeLpTokens" v-bind:key="index" :index="index" :lp-token="lpToken" :lp-tokens="traderJoeLpTokens"></TraderJoeLpTableRow>
+          </div>
+        </div>
     <div class="lp-tokens">
       <div class="lp-table" v-if="levelLpTokens">
         <TableHeader :config="levelLpTableHeaderConfig"></TableHeader>
@@ -18,9 +18,6 @@
         <ConcentratedLpTableRow v-for="(lpToken, index) in concentratedLpTokens" v-bind:key="index" :lp-token="lpToken">
           {{lpToken}}
         </ConcentratedLpTableRow>
-          <div class="paginator-container">
-            <Paginator :total-elements="50" :page-size="6"></Paginator>
-          </div>
       </div>
     </div>
     <div class="lp-tokens" v-if="Object.keys(lpTokens).length && filteredLpTokens && assetFilterGroups">
@@ -84,6 +81,9 @@ export default {
   computed: {
     ...mapState('serviceRegistry', [
       'priceService'
+    ]),
+    ...mapState('fundsStore', [
+      'concentratedLpBalances',
     ]),
     filteredLpTokens() {
       return Object.values(this.lpTokens).filter(token =>
@@ -254,19 +254,10 @@ export default {
     },
     async updateLpPriceData() {
       //TODO: we have to make sure somehow that it's called in a right moment ->when assets have prices already
-      console.log('updateLpPriceData');
-      console.log(this.assets);
-      console.log(this.lpTokens);
       if (this.assets) {
         Object.keys(this.lpTokens).forEach(
           key => {
             const lpToken = this.lpTokens[key];
-            console.log('updateLpPriceData');
-            console.log(this.assets);
-            console.log(lpToken.primary);
-            console.log(lpToken.secondary);
-            console.log(this.assets[lpToken.primary].price);
-            console.log(this.assets[lpToken.secondary].price);
             lpToken.firstPrice = this.assets[lpToken.primary].price;
             lpToken.secondPrice = this.assets[lpToken.secondary].price;
           }
@@ -394,6 +385,9 @@ export default {
       this.priceService.observeRefreshPrices().subscribe((updateEvent) => {
         this.assets = config.ASSETS_CONFIG;
         this.updateLpPriceData();
+        if (this.concentratedLpBalances) {
+          Object.entries(this.concentratedLpTokens).forEach(([k, v]) => { {  if (v.inactive && (this.concentratedLpBalances && Number(this.concentratedLpBalances[k]) === 0)) delete this.concentratedLpTokens[k] }})
+        }
       });
     }
   }

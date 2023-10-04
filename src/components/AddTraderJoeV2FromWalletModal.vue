@@ -6,9 +6,10 @@
       </div>
       <div class="modal-top-desc">
         <div v-if="userBalances && userBalances.length > 0">
-          This action will transfer your <a :href="lpToken.link" target="_blank"><b>{{ lpToken.name}} LB tokens</b></a> to your Prime Account.
+          <span v-if="!tooManyBins">This action will transfer your <a :href="lpToken.link" target="_blank"><b>{{ lpToken.name}} LB tokens</b></a> to your Prime Account.</span>
+          <span v-else>That action would result in too many bins in your account. Max. amount is 20. Consider opening a new Prime Account.</span>
         </div>
-        <div v-else>
+        <div v-if="!userBalances || userBalances.length == 0">
           Currently you have no LB tokens in your wallet. <br> To create a new position, use the <b>Add liquidity</b> action.
         </div>
       </div>
@@ -16,7 +17,7 @@
       <div class="button-wrapper">
         <Button :label="'Add LB tokens'"
                 v-on:click="submit()"
-                :disabled="!userBalances || userBalances.length === 0"
+                :disabled="!userBalances || userBalances.length === 0 || tooManyBins"
                 :waiting="transactionOngoing">
         </Button>
       </div>
@@ -33,15 +34,27 @@ import Modal from "./Modal.vue";
 import TransactionResultSummaryBeta from "./TransactionResultSummaryBeta.vue";
 import BarGaugeBeta from "./BarGaugeBeta.vue";
 import Button from "./Button.vue";
+import config from "../config";
 
 export default {
   name: 'AddTraderJoeV2FromWalletModal',
-  components: {Button, BarGaugeBeta, TransactionResultSummaryBeta, Modal, LoadedValue, CurrencyInput, Toggle, DeltaIcon},
+  components: {
+    Button,
+    BarGaugeBeta,
+    TransactionResultSummaryBeta,
+    Modal,
+    LoadedValue,
+    CurrencyInput,
+    Toggle,
+    DeltaIcon
+  },
   props: {
     lpToken: {},
+    lpTokens: {},
     userBins: [],
     userBalances: [],
-    transactionOngoing: false
+    transactionOngoing: false,
+    tooManyBins: {}
   },
   methods: {
     close() {
@@ -49,9 +62,25 @@ export default {
     },
     submit() {
       this.transactionOngoing = true;
-        this.$emit('ADD_FROM_WALLET');
-      }
+      this.$emit('ADD_FROM_WALLET');
+    },
+    validateBins() {
+      const noOfBins = this.lpToken.binIds.concat(this.userBins).length;
+
+      let otherBins = Object.entries(this.lpTokens).filter(([, v]) => v.address !== this.lpToken.address).map(([, v]) => v).reduce((a, b) => a + b.binIds.length, 0);
+
+      let binsTotal = noOfBins + otherBins;
+
+      this.tooManyBins = config.maxTraderJoeV2Bins && binsTotal > config.maxTraderJoeV2Bins;
     }
+  },
+  watch: {
+    lpTokens: {
+      handler() {
+        this.validateBins();
+      }
+    },
+  }
 };
 </script>
 

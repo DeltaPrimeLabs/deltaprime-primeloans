@@ -41,6 +41,15 @@
         Liquidity not found in the range
       </Alert>
 
+      <div class="slippage-bar">
+        <div class="slippage__divider"></div>
+        <div class="slippage-info">
+          <span class="slippage-label">Max. amounts slippage:</span>
+          <SimpleInput :percent="true" :default-value="amountsSlippage" v-on:newValue="amountsSlippageChange"></SimpleInput>
+          <span class="percent">%</span>
+        </div>
+      </div>
+
       <div class="button-wrapper">
         <Button :label="'Remove Liquidity'"
                 v-on:click="submit()"
@@ -63,10 +72,13 @@ import InfoIcon from './InfoIcon.vue';
 import RangeSlider from './RangeSlider';
 import FormInput from './FormInput';
 import Alert from './Alert.vue';
+import SimpleInput from "./SimpleInput.vue";
+import {getBinPrice} from "../utils/calculate";
 
 export default {
   name: 'RemoveLiquidityModal',
   components: {
+    SimpleInput,
     Button,
     CurrencyInput,
     TransactionResultSummaryBeta,
@@ -99,7 +111,8 @@ export default {
       maxPriceRadius: 29,
       minAboveActive: false,
       maxBelowActive: false,
-      hasLiquidityInRange: false
+      hasLiquidityInRange: false,
+      amountsSlippage: 0.5
     };
   },
 
@@ -140,13 +153,15 @@ export default {
 
       const removeLiquidityEvent = {
         binIdsToRemove: selectedBinIds.filter(binId => this.binIds.indexOf(binId) !== -1),
-        remainingBinIds: this.binIds.filter((binId) => binId < this.selectedRange[0] || binId > this.selectedRange[1])
+        remainingBinIds: this.binIds.filter((binId) => binId < this.selectedRange[0] || binId > this.selectedRange[1]),
+        allowedAmountsSlippage: this.amountsSlippage
       };
 
       this.$emit('REMOVE_LIQUIDITY', removeLiquidityEvent);
     },
 
-    updateBinRange(newRange) {
+    updateBinRange(event) {
+      let newRange = event.value;
       this.selectedRange = newRange;
       if (this.activeId < newRange[0] && this.minAboveActive === false) {
         this.minAboveActive = true;
@@ -157,8 +172,12 @@ export default {
       if(newRange[1] < this.activeId && this.maxBelowActive === false) {
         this.maxBelowActive = true;
       } else if (newRange[1] >= this.activeId && this.maxBelowActive === true) {
-        this.maxBelowActive = false; 
+        this.maxBelowActive = false;
       }
+    },
+
+    async amountsSlippageChange(changeEvent) {
+      this.amountsSlippage = changeEvent.value ? changeEvent.value : 0;
     },
   }
 };
@@ -272,6 +291,10 @@ export default {
         }
       }
     }
+  }
+  .slippage-bar {
+    margin-top: 5px;
+    margin-bottom: 40px;
   }
   .button-wrapper {
     margin-top: 20px;

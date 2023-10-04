@@ -39,6 +39,8 @@ import Paginator from './Paginator';
 import Checkbox from './Checkbox';
 import DexFilter from './DexFilter';
 
+const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
+
 export default {
   name: 'Assets',
   components: {
@@ -58,11 +60,24 @@ export default {
   },
   computed: {
     ...mapState('fundsStore', ['assets', 'fullLoanStatus', 'lpAssets', 'assetBalances', 'smartLoanContract', 'noSmartLoan']),
+
+    hasSmartLoanContract() {
+      return this.smartLoanContract && this.smartLoanContract.address !== NULL_ADDRESS;
+    },
   },
   watch: {
     assets: {
       handler(updatedAssets) {
-        this.updateAssetsData(updatedAssets);
+        if (this.funds) {
+          Object.entries(this.funds)
+            .forEach(([key, asset]) => {
+              {
+                if (asset.inactive && (!this.hasSmartLoanContract || (this.assetBalances && this.assetBalances[key] === 0)))
+                  delete this.funds[key];
+              }
+            });
+          this.updateAssetsData(updatedAssets);
+        }
       },
       immediate: true
     },
