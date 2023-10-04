@@ -62,11 +62,11 @@ module.exports.loanAggregatorAva = async (event) => {
 module.exports.loanAggregatorArb = async (event) => {
   console.log("fetching loans on Arbitrum");
 
-  const loanAddressesArbitrum = await factoryArbitrum.getAllLoans();
+  const loanAddresses = await factoryArbitrum.getAllLoans();
   const batchTime = new Date().getTime();
 
   await Promise.all(
-    loanAddressesArbitrum.map(async (address) => {
+    loanAddresses.map(async (address) => {
       try {
         const loanContract = new ethers.Contract(address, LOAN.abi, walletArbitrum);
         const wrappedContract = wrap(loanContract, 'arbitrum');
