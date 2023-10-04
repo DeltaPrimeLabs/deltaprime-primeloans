@@ -136,6 +136,7 @@ export default {
   computed: {
     ...mapState('fundsStore', [
       'health',
+      'levelLpBalances',
       'lpBalances',
       'smartLoanContract',
       'fullLoanStatus',
@@ -342,10 +343,8 @@ export default {
       modalInstance.assets = this.assets;
       modalInstance.sourceAssets = { Level: [...this.lpToken.underlyingAssets] };
       modalInstance.targetAssetsConfig = config.LEVEL_LP_ASSETS_CONFIG;
-      console.log('modalInstance.sourceAssets')
-      console.log(modalInstance.sourceAssets)
       modalInstance.targetAssets = { Level: [this.lpToken.symbol] };
-      modalInstance.assetBalances = this.assetBalances;
+      modalInstance.assetBalances = { ...this.assetBalances, ...this.levelLpBalances };
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
@@ -363,11 +362,15 @@ export default {
       };
 
       modalInstance.$on('SWAP', swapEvent => {
-        const swapRequest = {
-          ...swapEvent,
-          sourceAmount: swapEvent.sourceAmount.toString()
+        const addLiquidityRequest = {
+          sourceAsset: swapEvent.sourceAsset,
+          sourceAmount: swapEvent.sourceAmount.toString(),
+          targetAsset: swapEvent.targetAsset,
+          targetAmount: swapEvent.targetAssetAmount,
+          method: `levelStake${swapEvent.sourceAsset.charAt(0).toUpperCase() + swapEvent.sourceAsset.slice(1)}${this.lpToken.short}`
         };
-        this.handleTransaction('addLevelFinance????', {swapRequest: swapRequest}, () => {
+
+        this.handleTransaction('addLiquidityLevelFinance', {addLiquidityRequest: addLiquidityRequest}, () => {
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
@@ -389,7 +392,7 @@ export default {
       modalInstance.assets = this.assets;
       modalInstance.sourceAssets = { Level: [this.lpToken.symbol]} ;
       modalInstance.targetAssets = { Level: [...this.lpToken.underlyingAssets] };
-      modalInstance.assetBalances = this.assetBalances;
+      modalInstance.assetBalances = { ...this.assetBalances, ...this.levelLpBalances };
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
@@ -406,11 +409,15 @@ export default {
       };
       modalInstance.swapDex = 'Level';
       modalInstance.$on('SWAP', swapEvent => {
-        const swapRequest = {
-          ...swapEvent,
-          sourceAmount: swapEvent.sourceAmount.toString()
+        const removeLiquidityRequest = {
+          sourceAsset: swapEvent.sourceAsset,
+          sourceAmount: swapEvent.sourceAmount.toString(),
+          targetAsset: swapEvent.targetAsset,
+          targetAmount: swapEvent.targetAssetAmount,
+          method: `levelUnstake${swapEvent.sourceAsset.charAt(0).toUpperCase() + swapEvent.sourceAsset.slice(1)}${this.lpToken.short}`
         };
-        this.handleTransaction('addLevelFinance????', {swapRequest: swapRequest}, () => {
+
+        this.handleTransaction('removeLiquidityLevelFinance', {removeLiquidityRequest: removeLiquidityRequest}, () => {
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
@@ -565,6 +572,10 @@ export default {
       }
 
       &.balance {
+        align-items: flex-end;
+      }
+
+      &.apr {
         align-items: flex-end;
       }
 

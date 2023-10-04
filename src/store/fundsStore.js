@@ -576,15 +576,17 @@ export default {
           if (config.LEVEL_LP_ASSETS_CONFIG[symbol]) {
             levelLpBalances[symbol] = formatUnits(asset.balance.toString(), config.LEVEL_LP_ASSETS_CONFIG[symbol].decimals);
           }
-          // To-do: get balances of TraderJoeV2 LP tokens
         }
       );
+
+      console.log('levelLpBalances here')
+      console.log(levelLpBalances)
 
       await commit('setAssetBalances', balances);
       await commit('setLpBalances', lpBalances);
       await commit('setConcentratedLpBalances', concentratedLpBalances);
+      await commit('setLevelLpBalances', levelLpBalances);
       await dispatch('setupConcentratedLpUnderlyingBalances');
-      await dispatch('setLevelLpBalances', levelLpBalances);
       await dispatch('setupTraderJoeV2LpUnderlyingBalancesAndLiquidity');
       const refreshEvent = {assetBalances: balances, lpBalances: lpBalances};
       dataRefreshNotificationService.emitAssetBalancesDataRefresh();
@@ -1601,6 +1603,91 @@ export default {
           .emitExternalAssetBalanceUpdate(removeLiquidityRequest.firstAsset, firstAssetBalanceAfterTransaction, false, true);
       rootState.serviceRegistry.assetBalancesExternalUpdateService
           .emitExternalAssetBalanceUpdate(removeLiquidityRequest.secondAsset, secondAssetBalanceAfterTransaction, false, true);
+
+      const lpAsset = state.traderJoeV2LpAssets[removeLiquidityRequest.symbol];
+      await dispatch("refreshTraderJoeV2LpUnderlyingBalancesAndLiquidity", {lpAsset});
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, HARD_REFRESH_DELAY);
+    },
+
+    async addLiquidityLevelFinance({state, rootState, commit, dispatch}, {addLiquidityRequest}) {
+      const provider = rootState.network.provider;
+
+      const loanAssets = mergeArrays([(
+          await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+        [addLiquidityRequest.sourceAsset, addLiquidityRequest.targetAsset]
+      ]);
+
+      const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
+
+      const transaction = await wrappedContract[addLiquidityRequest.method](
+          addLiquidityRequest.sourceAssetAmount,
+          addLiquidityRequest.targetAssetAmount,
+      );
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      let tx = await awaitConfirmation(transaction, provider, 'create Level LLP token');
+
+      // const firstAssetBalanceAfterTransaction = Number(state.assetBalances[addLiquidityRequest.firstAsset]) - Number(addLiquidityRequest.firstAmount);
+      //
+      // rootState.serviceRegistry.assetBalancesExternalUpdateService
+      //     .emitExternalAssetBalanceUpdate(addLiquidityRequest.asset, firstAssetBalanceAfterTransaction, false, true);
+      //
+      // // update underlying assets' balances
+      // const lpAsset = state.traderJoeV2LpAssets[addLiquidityRequest.symbol];
+      // await dispatch("refreshTraderJoeV2LpUnderlyingBalancesAndLiquidity", {lpAsset});
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, HARD_REFRESH_DELAY);
+    },
+
+    async removeLiquidityLevelFinance({state, rootState, dispatch}, {removeLiquidityRequest}) {
+      const provider = rootState.network.provider;
+
+      const loanAssets = mergeArrays([(
+          await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+        [removeLiquidityRequest.sourceAsset, removeLiquidityRequest.targetAsset]
+      ]);
+
+      const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
+
+
+      const transaction = await wrappedContract[removeLiquidityRequest.method](
+          removeLiquidityRequest.sourceAssetAmount,
+          removeLiquidityRequest.targetAssetAmount,
+      );
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      let tx = await awaitConfirmation(transaction, provider, 'remove liquidity from LLp');
+
+      // const firstAssetBalanceAfterTransaction = Number(state.assetBalances[removeLiquidityRequest.firstAsset]) + Number(formatUnits(cumulativeTokenXAmount, state.assets[removeLiquidityRequest.firstAsset].decimals));
+      // const secondAssetBalanceAfterTransaction = Number(state.assetBalances[removeLiquidityRequest.secondAsset]) + Number(formatUnits(cumulativeTokenYAmount, state.assets[removeLiquidityRequest.secondAsset].decimals));
+
+      // rootState.serviceRegistry.assetBalancesExternalUpdateService
+      //     .emitExternalAssetBalanceUpdate(removeLiquidityRequest.firstAsset, firstAssetBalanceAfterTransaction, false, true);
+      // rootState.serviceRegistry.assetBalancesExternalUpdateService
+      //     .emitExternalAssetBalanceUpdate(removeLiquidityRequest.secondAsset, secondAssetBalanceAfterTransaction, false, true);
 
       const lpAsset = state.traderJoeV2LpAssets[removeLiquidityRequest.symbol];
       await dispatch("refreshTraderJoeV2LpUnderlyingBalancesAndLiquidity", {lpAsset});
