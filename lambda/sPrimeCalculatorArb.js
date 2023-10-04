@@ -18,7 +18,7 @@ const tvlThreshold = 4000000;
 const networkConfig = {
   tokenManagerAddress: '0x0a0d954d4b0f0b47a5990c0abd179a90ff74e255',
   provider: arbitrumProvider,
-  database: 'sprime-arb-prod',//process.env.SPRIME_ARB_TABLE,
+  database: process.env.SPRIME_ARB_TABLE,
   poolsUnlocked: false
 }
 const tokenManagerAbi = [
