@@ -1640,14 +1640,13 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'create Level LLP token');
 
-      // const firstAssetBalanceAfterTransaction = Number(state.assetBalances[addLiquidityRequest.firstAsset]) - Number(addLiquidityRequest.firstAmount);
-      //
-      // rootState.serviceRegistry.assetBalancesExternalUpdateService
-      //     .emitExternalAssetBalanceUpdate(addLiquidityRequest.asset, firstAssetBalanceAfterTransaction, false, true);
-      //
-      // // update underlying assets' balances
-      // const lpAsset = state.traderJoeV2LpAssets[addLiquidityRequest.symbol];
-      // await dispatch("refreshTraderJoeV2LpUnderlyingBalancesAndLiquidity", {lpAsset});
+      const firstAssetBalanceAfterTransaction = Number(state.assetBalances[addLiquidityRequest.firstAsset]) - Number(addLiquidityRequest.firstAmount);
+      const secondAssetBalanceAfterTransaction = Number(state.levelLpBalances[addLiquidityRequest.secondAsset]) - Number(addLiquidityRequest.secondAmount);
+
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate(addLiquidityRequest.firstAsset, firstAssetBalanceAfterTransaction, false, true);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate(addLiquidityRequest.secondAsset, secondAssetBalanceAfterTransaction, true, true);
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {
@@ -1682,13 +1681,13 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'remove liquidity from LLp');
 
-      // const firstAssetBalanceAfterTransaction = Number(state.assetBalances[removeLiquidityRequest.firstAsset]) + Number(formatUnits(cumulativeTokenXAmount, state.assets[removeLiquidityRequest.firstAsset].decimals));
-      // const secondAssetBalanceAfterTransaction = Number(state.assetBalances[removeLiquidityRequest.secondAsset]) + Number(formatUnits(cumulativeTokenYAmount, state.assets[removeLiquidityRequest.secondAsset].decimals));
+      const firstAssetBalanceAfterTransaction = Number(state.levelLpBalances[removeLiquidityRequest.firstAsset]) + Number(formatUnits(removeLiquidityRequest.sourceAssetAmount, state.assets[removeLiquidityRequest.firstAsset].decimals));
+      const secondAssetBalanceAfterTransaction = Number(state.assetBalances[removeLiquidityRequest.secondAsset]) + Number(formatUnits(removeLiquidityRequest.targetAssetAmount, state.assets[removeLiquidityRequest.secondAsset].decimals));
 
-      // rootState.serviceRegistry.assetBalancesExternalUpdateService
-      //     .emitExternalAssetBalanceUpdate(removeLiquidityRequest.firstAsset, firstAssetBalanceAfterTransaction, false, true);
-      // rootState.serviceRegistry.assetBalancesExternalUpdateService
-      //     .emitExternalAssetBalanceUpdate(removeLiquidityRequest.secondAsset, secondAssetBalanceAfterTransaction, false, true);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate(removeLiquidityRequest.firstAsset, firstAssetBalanceAfterTransaction, true, true);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate(removeLiquidityRequest.secondAsset, secondAssetBalanceAfterTransaction, false, true);
 
       const lpAsset = state.traderJoeV2LpAssets[removeLiquidityRequest.symbol];
       await dispatch("refreshTraderJoeV2LpUnderlyingBalancesAndLiquidity", {lpAsset});
