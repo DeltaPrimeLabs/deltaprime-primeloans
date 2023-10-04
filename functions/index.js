@@ -18,6 +18,7 @@ const steakHutApyConfig = require('./steakHutApy.json');
 const traderJoeConfig = require('./traderJoeApy.json');
 const sushiConfig = require('./sushiApy.json');
 const beefyConfig = require('./beefyApy.json');
+const levelConfig = require('./levelApy.json');
 
 const serviceAccount = require('./delta-prime-db-firebase-adminsdk-nm0hk-12b5817179.json');
 
@@ -991,5 +992,60 @@ exports.beefyScraper = functions
         functions.logger.info("Beefy APYs scrapped and updated.");
       }).catch((err) => {
         functions.logger.info(`Scraping APYs from Beefy failed. Error: ${err}`);
+      });
+  });
+
+const getApysFromLevel = async () => {
+  functions.logger.info("parsing APYs from Level");
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+
+  // fetch APYs from Level on Arbitrum
+  for (const [network, pools] of Object.entries(levelConfig)) {
+    for (const [pool, poolData] of Object.entries(pools)) {
+      // navigate pools page and wait till javascript fully load.
+      const URL = `https://app.level.finance/liquidity/${pool}`;
+
+      await page.goto(URL, {
+        waitUntil: "networkidle0",
+        timeout: 60000
+      });
+
+      const apy = await page.evaluate(() => {      
+        const boxes = document.querySelectorAll("span.text-green");
+        let apy;
+        Array.from(boxes).map(box => {
+          const content = box.innerText.replace(/\s+/g, "").toLowerCase();
+          if (content.includes('%')) {
+            apy = content.replace('%', '').trim();
+          }
+        });
+
+        return apy / 7.0 * 365;
+      });
+
+      console.log(apy);
+
+      if (apy && Number(apy) != 0) {
+        await db.collection('apys').doc(poolData.symbol).set({
+          [poolData.protocolIdentifier]: apy
+        });
+      }
+    }
+  }
+
+  // close browser
+  await browser.close();
+}
+
+exports.levelScraper = functions
+  .runWith({ timeoutSeconds: 300, memory: "2GB" })
+  .pubsub.schedule('*/1 * * * *')
+  .onRun(async (context) => {
+    return getApysFromLevel()
+      .then(() => {
+        functions.logger.info("Level APYs scrapped and updated.");
+      }).catch((err) => {
+        functions.logger.info(`Scraping APYs from Level failed. Error: ${err}`);
       });
   });

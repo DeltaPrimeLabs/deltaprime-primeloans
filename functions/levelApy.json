@@ -1,0 +1,16 @@
+{
+  "arbitrum": {
+    "junior-tranche": {
+      "symbol": "arbJnrLLP",
+      "protocolIdentifier": "arbJnrLLP"
+    },
+    "mezzanine-tranche": {
+      "symbol": "arbMzeLLP",
+      "protocolIdentifier": "arbMzeLLP"
+    },
+    "senior-tranche": {
+      "symbol": "arbSnrLLP",
+      "protocolIdentifier": "arbSnrLLP"
+    }
+  }
+}

@@ -209,7 +209,7 @@ export async function vectorFinanceRewards(stakingContractAddress, loanAddress) 
 
       let token = Object.entries(TOKEN_ADDRESSES).find(([, address]) => address.toLowerCase() === tokenAddress.toLowerCase());
       
-      let price = redstonePriceData[token[0]][0].dataPoints[0].value;
+      let price = redstonePriceData[token[0]] ? redstonePriceData[token[0]][0].dataPoints[0].value : 0;
 
       totalEarned += price * earned;
     } catch (e) {

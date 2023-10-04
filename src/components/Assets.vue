@@ -68,8 +68,16 @@ export default {
   watch: {
     assets: {
       handler(updatedAssets) {
-        Object.entries(this.funds).forEach(([k, v]) => { { if (v.inactive && (!this.hasSmartLoanContract || (this.assetBalances && this.assetBalances[k] === 0))) delete this.funds[k] }})
-        this.updateAssetsData(updatedAssets);
+        if (this.funds) {
+          Object.entries(this.funds)
+            .forEach(([key, asset]) => {
+              {
+                if (asset.inactive && (!this.hasSmartLoanContract || (this.assetBalances && this.assetBalances[key] === 0)))
+                  delete this.funds[key];
+              }
+            });
+          this.updateAssetsData(updatedAssets);
+        }
       },
       immediate: true
     },

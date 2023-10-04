@@ -510,7 +510,7 @@ export default {
             try {
               let feedSymbol = farm.feedSymbol ? farm.feedSymbol : symbol;
 
-              farm.price = redstonePriceData[feedSymbol][0].dataPoints[0].value;
+              farm.price = redstonePriceData[feedSymbol] ? redstonePriceData[feedSymbol][0].dataPoints[0].value : 0;
             } catch (e) {
               console.log('farm price error');
             }
