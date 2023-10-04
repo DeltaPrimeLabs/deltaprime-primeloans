@@ -73,6 +73,7 @@ import RangeSlider from './RangeSlider';
 import FormInput from './FormInput';
 import Alert from './Alert.vue';
 import SimpleInput from "./SimpleInput.vue";
+import {getBinPrice} from "../utils/calculate";
 
 export default {
   name: 'RemoveLiquidityModal',
@@ -159,7 +160,8 @@ export default {
       this.$emit('REMOVE_LIQUIDITY', removeLiquidityEvent);
     },
 
-    updateBinRange(newRange) {
+    updateBinRange(event) {
+      let newRange = event.value;
       this.selectedRange = newRange;
       if (this.activeId < newRange[0] && this.minAboveActive === false) {
         this.minAboveActive = true;
@@ -170,7 +172,7 @@ export default {
       if(newRange[1] < this.activeId && this.maxBelowActive === false) {
         this.maxBelowActive = true;
       } else if (newRange[1] >= this.activeId && this.maxBelowActive === true) {
-        this.maxBelowActive = false; 
+        this.maxBelowActive = false;
       }
     },
 

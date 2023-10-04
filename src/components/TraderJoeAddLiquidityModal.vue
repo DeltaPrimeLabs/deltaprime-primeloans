@@ -69,9 +69,11 @@
         <div class="active-price">Current price: 1 {{firstAsset.symbol}} = {{activePrice}} {{secondAsset.symbol}}</div>
         <div class="liquidity-option__content price-slider-wrapper">
           <RangeSlider
+            ref="slider"
             :min="activeId - maxPriceRadius"
             :max="activeId + maxPriceRadius"
             :value="binRange"
+            :validators="sliderValidators"
             @input="updateBinRange"
           ></RangeSlider>
           <div class="price-range-inputs">
@@ -142,9 +144,9 @@
         <Button :label="'Add Liquidity'"
                 v-on:click="submit()"
                 :waiting="transactionOngoing"
-                :disabled="firstInputError || secondInputError">
+                :disabled="firstInputError || secondInputError || sliderError">
         </Button>
-      </div>
+      </div>{{firstInputError}} {{secondInputError}} {{sliderError}}
     </Modal>
   </div>
 </template>
@@ -184,6 +186,7 @@ export default {
 
   props: {
     lpToken: {},
+    lpTokens: {},
     firstAsset: null,
     secondAsset: null,
     firstAssetBalance: Number,
@@ -199,12 +202,14 @@ export default {
       secondAmount: null,
       firstInputValidators: [],
       secondInputValidators: [],
+      sliderValidators: [],
       liquidityShapes: config.liquidityShapes,
       selectedShape: Object.keys(config.liquidityShapes)[0],
       binRange: [],
       transactionOngoing: false,
       firstInputError: false,
       secondInputError: false,
+      sliderError: false,
       priceRadius: 5,
       maxPriceRadius: config.chainSlug === 'arbitrum' ? 60 : 20,
       minAboveActive: false,
@@ -218,11 +223,13 @@ export default {
     setTimeout(() => {
       this.setupValidators();
       this.setupSlider();
+      this.firstInputChange(0);
+      this.secondInputChange(0);
     });
   },
 
   methods: {
-    setupSlider() {
+    async setupSlider() {
       this.binRange = [this.activeId - this.priceRadius, this.activeId + this.priceRadius];
     },
 
@@ -233,6 +240,7 @@ export default {
 
     submit() {
       this.transactionOngoing = true;
+
       const addLiquidityEvent = {
         firstAsset: this.firstAsset,
         secondAsset: this.secondAsset,
@@ -243,6 +251,8 @@ export default {
         priceSlippage: this.priceSlippage,
         amountsSlippage: this.amountsSlippage
       };
+      console.log(addLiquidityEvent)
+
       this.$emit('ADD_LIQUIDITY', addLiquidityEvent);
     },
 
@@ -256,7 +266,9 @@ export default {
       this.secondInputError = await this.$refs.secondInput.forceValidationCheck();
     },
 
-    updateBinRange(newRange) {
+    async updateBinRange({value, error}) {
+      let newRange = value;
+      this.error = error;
       this.binRange = newRange;
       if (this.activeId < newRange[0] && this.minAboveActive === false) {
         this.minAboveActive = true;
@@ -269,6 +281,11 @@ export default {
       } else if (newRange[1] >= this.activeId && this.maxBelowActive === true) {
         this.maxBelowActive = false; 
       }
+
+      this.sliderError = this.$refs.slider.error;
+
+      this.firstInputError = await this.$refs.firstInput.forceValidationCheck();
+      this.secondInputError = await this.$refs.secondInput.forceValidationCheck();
     },
 
     handleShapeClick(key) {
@@ -291,6 +308,27 @@ export default {
           validate: (value) => {
             if (value > this.secondAssetBalance) {
               return `Exceeds ${this.secondAsset.symbol} balance`;
+            }
+          }
+        }
+      ];
+
+      this.sliderValidators = [
+        {
+          validate: (addedRange) => {
+            let newBins = [];
+            for (let i = addedRange[0]; i <= addedRange[1]; i++) {
+              newBins.push(i);
+            }
+
+            const noOfBins = [...new Set([...this.lpToken.binIds ,...newBins])].length;
+
+            let otherBins = Object.entries(this.lpTokens).filter(([,v]) => v.address !== this.lpToken.address).map(([,v]) => v).reduce((a, b) => a + b.binIds.length, 0);
+
+            let binsTotal = noOfBins + otherBins;
+
+            if (config.maxTraderJoeV2Bins && binsTotal > config.maxTraderJoeV2Bins) {
+              return `Max. number of bins in a Prime Account: ${config.maxTraderJoeV2Bins}. Current number: ${binsTotal}`;
             }
           }
         }

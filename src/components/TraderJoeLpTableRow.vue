@@ -132,6 +132,7 @@ export default {
   },
   props: {
     lpToken: null,
+    lpTokens: null,
     index: null,
   },
 
@@ -325,6 +326,7 @@ export default {
       modalInstance.userBins = this.userBins;
       modalInstance.userBalances = this.userBalances;
       modalInstance.lpToken = this.lpToken;
+      modalInstance.lpTokens = this.lpTokens;
 
       modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
         const fundLiquidityRequest = {
@@ -379,14 +381,15 @@ export default {
       modalInstance.activeId = this.activeId;
       modalInstance.activePrice = this.activePrice;
       modalInstance.binStep = this.lpToken.binStep;
+      modalInstance.lpTokens = this.lpTokens;
       modalInstance.$on('ADD_LIQUIDITY', addLiquidityEvent => {
         if (this.smartLoanContract) {
           const addLiquidityInput = this.traderJoeService.getAddLiquidityParameters(
               this.account,
               this.tokenX,
               this.tokenY,
-              parseUnits(addLiquidityEvent.tokenXAmount.toString(), this.firstAsset.decimals).toString(),
-              parseUnits(addLiquidityEvent.tokenYAmount.toString(), this.secondAsset.decimals).toString(),
+              parseUnits(Number(addLiquidityEvent.tokenXAmount).toFixed(this.firstAsset.decimals), this.firstAsset.decimals).toString(),
+              parseUnits(Number(addLiquidityEvent.tokenYAmount).toFixed(this.secondAsset.decimals), this.secondAsset.decimals).toString(),
               addLiquidityEvent.distributionMethod,
               this.lpToken.binStep,
               this.activeId,
@@ -565,7 +568,6 @@ export default {
         }))
 
         this.currentPrice = this.firstAsset.price / this.secondAsset.price
-        console.error(this.currentPrice);
         this.currentPriceIndex = this.chartData.findIndex((value, index) => {
           return index > 0 && (value.price > this.currentPrice) && this.chartData[index - 1].price < this.currentPrice
         })
