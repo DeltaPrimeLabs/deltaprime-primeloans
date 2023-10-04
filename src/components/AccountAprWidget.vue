@@ -81,7 +81,7 @@ export default {
         {
           text: 'Degen, activated!',
           min: 0.5,
-          max: 99999
+          max: 9999999999
         }
       ];
     },
@@ -89,6 +89,8 @@ export default {
     pickComment() {
       let pickedComment;
       if (this.accountApr !== null) {
+        console.log('this.accountApr: ', this.accountApr)
+        console.log(this.possibleComments)
         pickedComment = this.possibleComments.find((comment) => this.accountApr > comment.min && this.accountApr <= comment.max);
       } else {
         if (this.noSmartLoan) {

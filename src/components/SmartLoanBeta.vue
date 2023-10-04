@@ -276,7 +276,7 @@ export default {
         assetSymbols.forEach((symbol, index) => {
           if (balances[index]) {
             const balance = formatUnits(balances[index].balance, config.ASSETS_CONFIG[symbol].decimals);
-            todayValue += balance * redstonePriceData[symbol][0].dataPoints[0].value;
+            todayValue += balance * (redstonePriceData[symbol] ? redstonePriceData[symbol][0].dataPoints[0].value : 0);
             yesterdayValue += balance * yesterdayPrices[symbol].value;
           }
         });
