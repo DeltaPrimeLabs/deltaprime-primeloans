@@ -234,9 +234,8 @@ describe('Smart loan', () => {
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(maxDebt / debt, 0.1);
         });
 
-
         it("should prevent borrowing too much", async () => {
-            await expect(wrappedLoan.borrow(toBytes32("AVAX"), toWei("900"))).to.be.revertedWith("The action may cause an account to become insolvent");
+            await expect(wrappedLoan.borrow(toBytes32("AVAX"), toWei("500"))).to.be.revertedWith("The action may cause an account to become insolvent");
             expect(fromWei(await tokenContracts.get('AVAX')!.connect(borrower).balanceOf(wrappedLoan.address))).to.be.equal(0.5);
         });
 
