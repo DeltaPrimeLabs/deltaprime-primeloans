@@ -18,6 +18,7 @@ const steakHutApyConfig = require('./steakHutApy.json');
 const traderJoeConfig = require('./traderJoeApy.json');
 const sushiConfig = require('./sushiApy.json');
 const beefyConfig = require('./beefyApy.json');
+const levelConfig = require('./levelApy.json');
 
 const serviceAccount = require('./delta-prime-db-firebase-adminsdk-nm0hk-12b5817179.json');
 
@@ -61,6 +62,7 @@ const walletArbitrum = (new ethers.Wallet("0xca63cb3223cb19b06fa42110c89ad21a17b
 let factoryArbitrum = new ethers.Contract(factoryArbitrumAddress, FACTORY.abi, providerArbitrum);
 
 const fromWei = val => parseFloat(ethers.utils.formatEther(val));
+const formatUnits = (val, decimals) => parseFloat(ethers.utils.formatUnits(val, decimals));
 
 function wrap(contract, network) {
   return WrapperBuilder.wrap(contract).usingDataService(
@@ -991,5 +993,58 @@ exports.beefyScraper = functions
         functions.logger.info("Beefy APYs scrapped and updated.");
       }).catch((err) => {
         functions.logger.info(`Scraping APYs from Beefy failed. Error: ${err}`);
+      });
+  });
+
+const getApysFromLevel = async () => {
+  functions.logger.info("parsing APYs from Level");
+  const levelApiUrl = "https://api.level.finance/v2/stats/liquidity-performance";
+  const redstoneFeedUrl = "https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-arbitrum-prod";
+
+  const redstonePriceDataRequest = await fetch(redstoneFeedUrl);
+  const redstonePriceData = await redstonePriceDataRequest.json();
+
+  // fetch APYs from Level on Arbitrum
+  const resp = await fetch(levelApiUrl);
+  const liquidityPerformance = await resp.json();
+
+  const arbLP = liquidityPerformance.find(item => item.chainId == 42161);
+  for (const lpInfo of arbLP.lpInfos) {
+    const liquidityInUsd = formatUnits(lpInfo.totalSupply, 18) * formatUnits(lpInfo.price, 12);
+
+    let tradingFees = 0;
+
+    for (const [address, fees] of Object.entries(lpInfo.feeDetailsPerWeek)) {
+      Object.values(fees).forEach(fee => {
+        tradingFees += formatUnits(fee, levelConfig.lpSymbols[address].decimals) * redstonePriceData[levelConfig.lpSymbols[address].symbol][0].dataPoints[0].value;
+      });
+    }
+
+    const profit =
+      (formatUnits(lpInfo.lvlRewards, 18) * formatUnits(lpInfo.lvlPrice, 12)) +
+      formatUnits(lpInfo.mintingFee, 6) +
+      formatUnits(lpInfo.pnlVsTrader, 30) +
+      tradingFees;
+
+    const apy = profit / liquidityInUsd / 7 * 365 * 100;
+    console.log(apy);
+
+    if (apy && Number(apy) != 0) {
+      await db.collection('apys').doc(levelConfig[lpInfo.name].symbol).set({
+        [levelConfig[lpInfo.name].protocolIdentifier]: apy
+      });
+    }
+  }
+}
+
+exports.levelScraper = functions
+  .runWith({ timeoutSeconds: 300, memory: "2GB" })
+  .pubsub.schedule('*/1 * * * *')
+  .onRun(async (context) => {
+    return getApysFromLevel()
+      .then(() => {
+        functions.logger.info("Level APYs scrapped and updated.");
+      }).catch((err) => {
+        functions.logger.info(`Scraping APYs from Level failed. Error: ${err}`);
       });
   });
