@@ -93,9 +93,9 @@ export default {
         'TJLB_BTC_ETH': { primary: 'BTC', secondary: 'ETH', name: 'BTC-ETH', dex: 'TraderJoe', symbol: 'TJLB_BTC_ETH', decimals: 18, baseFee: '0.001', address: addresses['TJLB_BTC_ETH'], binStep: 10, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2', link: "https://traderjoexyz.com/arbitrum/pool/v21/0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f/ETH/10"},
     },
     LEVEL_LP_ASSETS_CONFIG: {
-        "arbJnrLLP": {name: "Junior Tranche", symbol: "arbJnrLLP", short: "Jnr", logoExt: "png", decimals: 18, address: addresses.arbJnrLLP, debtCoverage: 0.83333333333, tradingViewSymbol: "", underlyingAssets: ['BTC', 'ETH', 'ARB', 'USDT', 'USDC']},
-        "arbMzeLLP": {name: "Mezzanine Tranche", symbol: "arbMzeLLP", short: "Mze", logoExt: "png", decimals: 18, address: addresses.arbMzeLLP, debtCoverage: 0.83333333333, tradingViewSymbol: "", underlyingAssets: ['BTC', 'ETH', 'USDT', 'USDC']},
-        "arbSnrLLP": {name: "Senior Tranche", symbol: "arbSnrLLP", short: "Snr", logoExt: "png", decimals: 18, address: addresses.arbSnrLLP, debtCoverage: 0.83333333333, tradingViewSymbol: "", underlyingAssets: ['BTC', 'ETH', 'USDT', 'USDC']},
+        "arbJnrLLP": {name: "Junior Tranche", symbol: "arbJnrLLP", short: "Jnr", logoExt: "png", decimals: 18, address: addresses.arbJnrLLP, debtCoverage: 0.83333333333, balanceMethod: "levelJnrBalance", underlyingAssets: ['BTC', 'ETH', 'ARB', 'USDT', 'USDC']},
+        "arbMzeLLP": {name: "Mezzanine Tranche", symbol: "arbMzeLLP", short: "Mze", logoExt: "png", decimals: 18, address: addresses.arbMzeLLP, debtCoverage: 0.83333333333, balanceMethod: "levelMzeBalance", underlyingAssets: ['BTC', 'ETH', 'USDT', 'USDC']},
+        "arbSnrLLP": {name: "Senior Tranche", symbol: "arbSnrLLP", short: "Snr", logoExt: "png", decimals: 18, address: addresses.arbSnrLLP, debtCoverage: 0.83333333333, balanceMethod: "levelSnrBalance", underlyingAssets: ['BTC', 'ETH', 'USDT', 'USDC']},
     },
     LP_ASSETS_CONFIG: {
         // "SUSHI_DPX_ETH_LP": {
@@ -264,6 +264,7 @@ export default {
     yieldYakGlpWrapperAddress: '0x80F2d9652Ed7F5306dB095882FA9Ff882003F6D1',
     glpRewardsRouterAddress: '0xA906F338CB21815cBc4Bc87ace9e68c87eF8d8F1', //TODO: needs testing
     depositSwapAddress: "0x889Cfe41a376CFeF8F28E48A848728D5377552b9",
+    levelLiquidityCalculatorAddress: "0xf1e5D6c0ce39fDBb9682F1A3385f0d2067740C61",
     nativeToken: "ETH",
     SLIPPAGE_TOLERANCE: 0.03,
     dataProviderId: "redstone-arbitrum-prod",

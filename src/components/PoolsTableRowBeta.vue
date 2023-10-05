@@ -243,8 +243,6 @@ export default {
     },
 
     async openDepositModal() {
-      console.log(this.pool.apy);
-      console.log(this.pool);
       const modalInstance = this.openModal(DepositModal);
       modalInstance.pool = this.pool;
       modalInstance.apy = this.pool.apy;

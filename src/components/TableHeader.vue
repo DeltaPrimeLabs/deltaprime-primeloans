@@ -90,6 +90,10 @@ export default {
       justify-content: center;
     }
 
+    &.trend-level {
+      justify-content: flex-end;
+    }
+
     //TODO: just make a flex-end class
     &.price {
       justify-content: flex-end;

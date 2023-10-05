@@ -18,7 +18,7 @@ export default class HealthService {
     return this.health$.asObservable();
   }
 
-  async calculateHealth(noSmartLoan, debtsPerAsset, assets, assetBalances, lpAssets, lpBalances, concentratedLpAssets, concentratedLpBalances, traderJoeV2LpAssets, stakeStoreFarms) {
+  async calculateHealth(noSmartLoan, debtsPerAsset, assets, assetBalances, lpAssets, lpBalances, concentratedLpAssets, concentratedLpBalances, levelAssets, levelBalances, traderJoeV2LpAssets, stakeStoreFarms) {
     console.log('healthService.calculateHealth()');
     if (noSmartLoan) {
       console.log('healthService - noSmartLoan');
@@ -28,7 +28,7 @@ export default class HealthService {
     const redstonePriceDataRequest = await fetch(config.redstoneFeedUrl);
     const redstonePriceData = await redstonePriceDataRequest.json();
 
-    if (debtsPerAsset && assets && assetBalances && lpAssets && lpBalances && stakeStoreFarms) {
+    if (debtsPerAsset && assets && assetBalances && lpAssets && lpBalances && levelAssets && levelBalances && stakeStoreFarms) {
       let tokens = [];
       for (const [symbol, data] of Object.entries(assets)) {
         let borrowed = debtsPerAsset[symbol] ? parseFloat(debtsPerAsset[symbol].debt) : 0;
@@ -57,6 +57,16 @@ export default class HealthService {
         tokens.push({
           price: redstonePriceData[symbol] ? redstonePriceData[symbol][0].dataPoints[0].value : 0,
           balance: parseFloat(concentratedLpBalances[symbol]),
+          borrowed: 0,
+          debtCoverage: data.debtCoverage,
+          symbol: symbol
+        });
+      }
+
+      for (const [symbol, data] of Object.entries(levelAssets)) {
+        tokens.push({
+          price: redstonePriceData[symbol] ? redstonePriceData[symbol][0].dataPoints[0].value : 0,
+          balance: parseFloat(levelBalances[symbol]),
           borrowed: 0,
           debtCoverage: data.debtCoverage,
           symbol: symbol

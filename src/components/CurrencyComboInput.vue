@@ -20,7 +20,7 @@
       <div class="select" v-bind:class="{'expanded': expanded, 'has-background': hasBackground }">
         <div v-if="selectedAsset" class="selected-asset">
           <img class="selected-asset__icon" :src="selectedAsset.logo ? selectedAsset.logo : selectedAsset.logoURI">
-          <div class="selected-asset__symbol">{{selectedAsset.symbol}}</div>
+          <div class="selected-asset__symbol">{{selectedAsset.short ? selectedAsset.short : selectedAsset.symbol}}</div>
         </div>
         <div v-if="isBridge && !selectedAsset" class="placeholder">Select chain and token</div>
         <DeltaIcon class="chevron"
@@ -63,7 +63,7 @@
                   class="option__icon option__alt-icon"
               >{{assetOption.name.charAt(0)}}
               </div>
-              <div class="option__symbol">{{assetOption.symbol}}</div>
+              <div class="option__symbol">{{assetOption.short ? assetOption.short : assetOption.symbol}}</div>
               <div class="option__name">{{assetOption.name}}</div>
               <ContentLoader
                   v-if="isBridge && (!assetsBalances[selectedChain.id] || assetsBalances[selectedChain.id].length !== displayedOptions.length)"

@@ -52,8 +52,6 @@ export default {
         pool.sPrime = resp[pool.asset.symbol] ? resp[pool.asset.symbol].sPrime : '0';
       }
 
-      console.log(resp)
-
       commit('setPools', pools);
       poolService.emitPools(pools);
     },
@@ -72,7 +70,6 @@ export default {
 
       let depositTransaction;
       if (depositRequest.depositNativeToken) {
-        console.log('deposit native token');
         depositTransaction = await poolContract
           .connect(provider.getSigner())
           .depositNativeToken({value: parseUnits(String(depositRequest.amount), decimals)});

@@ -150,6 +150,8 @@ export default {
       'lpBalances',
       'concentratedLpAssets',
       'concentratedLpBalances',
+      'levelLpAssets',
+      'levelLpBalances',
       'traderJoeV2LpAssets',
       'fullLoanStatus',
       'noSmartLoan',
@@ -345,6 +347,8 @@ export default {
             this.lpBalances,
             this.concentratedLpAssets,
             this.concentratedLpBalances,
+            this.levelLpAssets,
+            this.levelLpBalances,
             this.traderJoeV2LpAssets,
             this.farms,
         );

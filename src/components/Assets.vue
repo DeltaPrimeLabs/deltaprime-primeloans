@@ -31,7 +31,7 @@ import {mapActions, mapState} from 'vuex';
 import redstone from 'redstone-api';
 import Vue from 'vue';
 import Loader from './Loader';
-import {formatUnits} from '../utils/calculate';
+import {chartPoints, formatUnits} from '../utils/calculate';
 import TableHeader from './TableHeader';
 import AssetFilter from './AssetFilter';
 import DoubleAssetIcon from './DoubleAssetIcon';
@@ -105,30 +105,6 @@ export default {
       Vue.set(this.funds[symbol], key, value);
     },
 
-    chartPoints(points) {
-      if (points == null || points.length === 0) {
-        return [];
-      }
-
-      let maxValue = 0;
-      let minValue = points[0].value;
-
-      let dataPoints = points.map(
-        item => {
-          if (item.value > maxValue) maxValue = item.value;
-
-          if (item.value < minValue) minValue = item.value;
-
-          return {
-            x: item.timestamp,
-            y: item.value
-          };
-        }
-      );
-
-      return [dataPoints, minValue, maxValue];
-    },
-
     async updateAssetsData(funds) {
       this.funds = funds;
 
@@ -142,7 +118,7 @@ export default {
           }).then(
             (response) => {
 
-              const [prices, minPrice, maxPrice] = this.chartPoints(
+              const [prices, minPrice, maxPrice] = chartPoints(
                 response
               );
 

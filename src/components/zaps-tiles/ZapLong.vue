@@ -52,6 +52,8 @@ export default {
       'traderJoeV2LpAssets',
       'lpBalances',
       'concentratedLpBalances',
+      'levelLpAssets',
+      'levelLpBalances',
       'fullLoanStatus'
     ]),
     ...mapState('stakeStore', ['farms']),

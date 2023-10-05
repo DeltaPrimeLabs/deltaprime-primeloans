@@ -1,11 +1,9 @@
 <template>
   <div id="modal" class="swap-modal-component modal-component">
     <Modal>
-      <div class="modal__title" v-if="!swapDebtMode">
+      <div class="modal__title">
+        <span></span>
         {{ title }}
-      </div>
-      <div class="modal__title" v-if="swapDebtMode">
-        Swap debt
       </div>
 
       <div class="dex-toggle" v-if="!swapDebtMode && dexOptions && dexOptions.length > 1">
@@ -248,6 +246,8 @@ export default {
       farms: {},
       concentratedLpAssets: {},
       concentratedLpBalances: {},
+      levelLpAssets: {},
+      levelLpBalances: {},
       traderJoeV2LpAssets: {},
       transactionOngoing: false,
       debt: 0,
@@ -350,7 +350,7 @@ export default {
         if (queryResponse.dex === 'PARA_SWAP') {
           estimated = queryResponse.amounts[queryResponse.amounts.length - 1];
           this.paraSwapRate = queryResponse.swapRate;
-        } else {
+        } else if (queryResponse.dex === 'YAK_SWAP') {
           if (queryResponse instanceof BigNumber) {
             estimated = queryResponse;
           } else {
@@ -358,6 +358,8 @@ export default {
             this.adapters = queryResponse.adapters;
             estimated = queryResponse.amounts[queryResponse.amounts.length - 1];
           }
+        } else {
+          estimated = queryResponse;
         }
 
         this.estimatedReceivedTokens = parseFloat(formatUnits(estimated, BigNumber.from(this.targetAssetData.decimals)));
@@ -421,6 +423,7 @@ export default {
         const asset = this.sourceAssetsConfig[assetSymbol];
         const assetOption = {
           symbol: assetSymbol,
+          short: asset.short,
           name: asset.name,
           logo: `src/assets/logo/${assetSymbol.toLowerCase()}.${asset.logoExt ? asset.logoExt : 'svg'}`
         };
@@ -436,6 +439,7 @@ export default {
         const asset = this.targetAssetsConfig[assetSymbol];
         const assetOption = {
           symbol: assetSymbol,
+          short: asset.short,
           name: asset.name,
           logo: `src/assets/logo/${assetSymbol.toLowerCase()}.${asset.logoExt ? asset.logoExt : 'svg'}`
         };
@@ -524,6 +528,9 @@ export default {
     },
 
     calculateSourceAssetBalance() {
+      console.log('calculateSourceAssetBalance')
+      console.log(this.assetBalances)
+      console.log(this.sourceAsset)
       const sourceAssetBalance = this.assetBalances[this.sourceAsset];
       this.sourceAssetBalance = sourceAssetBalance;
     },
@@ -578,7 +585,7 @@ export default {
         },
         {
           validate: async (value) => {
-            const allowed = this.targetAssetsConfig[this.targetAsset].maxExposure - this.assets[this.targetAsset].currentExposure;
+            const allowed = this.targetAssetsConfig[this.targetAsset].maxExposure - this.targetAssetsConfig[this.targetAsset].currentExposure;
 
             if (value > allowed) {
               return `Max. allowed ${this.targetAsset} amount is ${allowed.toFixed(0)}.`;
@@ -649,6 +656,9 @@ export default {
       }
 
       let lbTokens = Object.values(this.traderJoeV2LpAssets);
+
+      console.log('tokens')
+      console.log(tokens)
 
       this.healthAfterTransaction = calculateHealth(tokens, lbTokens);
     },

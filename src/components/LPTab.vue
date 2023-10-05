@@ -7,7 +7,7 @@
           </div>
         </div>
     <div class="lp-tokens">
-      <div class="lp-table" v-if="levelLpTokens">
+      <div class="lp-table level" v-if="levelLpTokens">
         <TableHeader :config="levelLpTableHeaderConfig"></TableHeader>
         <LevelLpTableRow v-for="(lpToken, index) in levelLpTokens" v-bind:key="index" :index="index" :lp-token="lpToken"></LevelLpTableRow>
       </div>
@@ -328,7 +328,7 @@ export default {
     },
     setupLevelLpTableHeaderConfig() {
       this.levelLpTableHeaderConfig = {
-        gridTemplateColumns: 'repeat(3, 1fr) 12% 135px 60px 80px 22px',
+        gridTemplateColumns: 'repeat(4, 1fr) 12% 135px 60px 80px 22px',
         cells: [
           {
             label: 'Level LLP Token',
@@ -344,6 +344,13 @@ export default {
             class: 'balance',
             id: 'BALANCE',
             tooltip: `The number and value of unstaked assets in your Prime Account.`
+          },
+          {
+            label: 'Trend (7D)',
+            sortable: false,
+            class: 'trend-level',
+            id: 'TREND',
+            tooltip: `7D price change of an underlying LLP token.`
           },
           {
             label: 'TVL',

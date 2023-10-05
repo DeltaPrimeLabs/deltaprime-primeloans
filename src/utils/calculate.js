@@ -383,11 +383,6 @@ export const paraSwapRouteToSimpleData = (txParams) => {
 };
 
 export function getBinPrice(binId, binStep, firstDecimals, secondDecimals) {
-  console.log('getBinPrice')
-  console.log(binId)
-  console.log(binStep)
-  console.log(firstDecimals)
-  console.log(secondDecimals)
   const binPrice = (1 + binStep / 10000) ** (binId - 8388608) * 10 ** (firstDecimals - secondDecimals);
   return binPrice.toFixed(5);
 }
@@ -407,6 +402,30 @@ export function getCountdownString(countDownDate) {
   // Display the result in the element with id="demo"
   return hours + "h "
       + minutes + "min";
+}
+
+export function chartPoints(points) {
+  if (points == null || points.length === 0) {
+    return [];
+  }
+
+  let maxValue = 0;
+  let minValue = points[0].value;
+
+  let dataPoints = points.map(
+      item => {
+        if (item.value > maxValue) maxValue = item.value;
+
+        if (item.value < minValue) minValue = item.value;
+
+        return {
+          x: item.timestamp,
+          y: item.value
+        };
+      }
+  );
+
+  return [dataPoints, minValue, maxValue];
 }
 
 export const fromWei = val => parseFloat(ethers.utils.formatEther(val));
