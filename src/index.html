@@ -31,27 +31,34 @@
     </script>
 
     <script>
-        window.ethereum.request({method: 'eth_chainId'}).then((id) => {
-            const chainId = parseInt(id, 16);
-            window.chainId = chainId
+        if (window.ethereum) {
+            window.ethereum.request({method: 'eth_chainId'}).then((id) => {
+                const chainId = parseInt(id, 16);
+                window.chainId = chainId
 
-            switch (chainId) {
-                case 43114: {
-                    window.chain = 'avalanche';
-                    break;
+                switch (chainId) {
+                    case 43114: {
+                        window.chain = 'avalanche';
+                        break;
+                    }
+                    case 42161: {
+                        window.chain = 'arbitrum';
+                        break;
+                    }
+                    default: {
+                        console.log('chain not supported defaulting to avalanche');
+                        window.chain = 'avalanche';
+                    }
                 }
-                case 42161: {
-                    window.chain = 'arbitrum';
-                    break;
-                }
-                default: {
-                    console.log('chain not supported defaulting to avalanche');
-                    window.chain = 'avalanche';
-                }
-            }
 
-            console.log(window.chain);
-        });
+                console.log(window.chain);
+            });
+        } else {
+            console.error('No wallet installed');
+            window.chain = 'avalanche';
+            window.chainId = 43114;
+            window.noWalletInstalled = true;
+        }
     </script>
 </head>
 
