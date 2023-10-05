@@ -183,6 +183,7 @@ export default class TraderJoeService {
     tokenX,
     tokenY,
     binStep,
+    allowedAmountsSlippage,
     binIdsToRemove
   ) {
     const lbPairContract = new ethers.Contract(lbPairAddress, LBPairABI, provider);
@@ -190,31 +191,33 @@ export default class TraderJoeService {
     const ids = [];
     let totalXBalanceWithdrawn = BigNumber.from(0);
     let totalYBalanceWithdrawn = BigNumber.from(0);
-    
-    binIdsToRemove.map(async (binId) => {
+
+    for (let binId of binIdsToRemove) {
       const [lbTokenAmount, binReserves, totalSupply] = await Promise.all([
         lbPairContract.balanceOf(smartLoanAddress, binId),
         lbPairContract.getBin(binId),
         lbPairContract.totalSupply(binId)
       ]);
 
-      ids.push(binId);
-      amounts.push(lbTokenAmount);
+      if (lbTokenAmount != BigInt(0)) {
+        ids.push(binId);
+        amounts.push(lbTokenAmount);
 
-      totalXBalanceWithdrawn = totalXBalanceWithdrawn
-        .add(BigNumber.from(lbTokenAmount)
-            .mul(BigNumber.from(binReserves[0]))
-            .div(BigNumber.from(totalSupply))
-        );
-      totalYBalanceWithdrawn = totalYBalanceWithdrawn
-        .add(BigNumber.from(lbTokenAmount)
-            .mul(BigNumber.from(binReserves[1]))
-            .div(BigNumber.from(totalSupply))
-        );
-    });
+        totalXBalanceWithdrawn = totalXBalanceWithdrawn
+            .add(BigNumber.from(lbTokenAmount)
+                .mul(BigNumber.from(binReserves[0]))
+                .div(BigNumber.from(totalSupply))
+            );
+        totalYBalanceWithdrawn = totalYBalanceWithdrawn
+            .add(BigNumber.from(lbTokenAmount)
+                .mul(BigNumber.from(binReserves[1]))
+                .div(BigNumber.from(totalSupply))
+            );
+      }
+    }
 
     // To-do: set the dynamic amount slippage tolerance. for now we set it to 0.5%
-    const allowedAmountsSlippage = 50;
+    console.log('allowedAmountsSlippage: ', allowedAmountsSlippage)
     const minTokenXAmount = totalXBalanceWithdrawn
       .mul(BigNumber.from(10000 - allowedAmountsSlippage))
       .div(BigNumber.from(10000));

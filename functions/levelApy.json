@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "Junior": {
     "slug": "junior-tranche",
     "symbol": "arbJnrLLP",
@@ -34,6 +35,20 @@
     "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9": {
       "decimals": 6,
       "symbol": "USDT"
+=======
+  "arbitrum": {
+    "junior-tranche": {
+      "symbol": "arbJnrLLP",
+      "protocolIdentifier": "arbJnrLLP"
+    },
+    "mezzanine-tranche": {
+      "symbol": "arbMzeLLP",
+      "protocolIdentifier": "arbMzeLLP"
+    },
+    "senior-tranche": {
+      "symbol": "arbSnrLLP",
+      "protocolIdentifier": "arbSnrLLP"
+>>>>>>> e6e66c262c89e78ec8d172c68dbaeda415251a44
     }
   }
 }

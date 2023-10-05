@@ -9,6 +9,11 @@
       "assetX": "0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab",
       "assetY": "AVAX",
       "binStep": 10
+    },
+    "TJLB_BTCB-AVAX": {
+      "assetX": "0x152b9d0fdc40c096757f570a51e494bd4b943e50",
+      "assetY": "AVAX",
+      "binStep": 10
     }
   },
   "arbitrum": {

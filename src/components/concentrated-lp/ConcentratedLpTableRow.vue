@@ -1,6 +1,6 @@
 <template>
   <div class="concentrated-lp-table-row-component" :class="{'expanded': rowExpanded}">
-    <div class="table__row" v-if="lpToken">
+    <div class="table__row" v-if="lpToken" :class="{'inactive': lpToken.inactive}">
       <div class="table__cell asset">
         <DoubleAssetIcon :primary="lpToken.primary" :secondary="lpToken.secondary"></DoubleAssetIcon>
         <div class="asset__info">
@@ -49,7 +49,7 @@
 
       <div class="table__cell actions">
         <DeltaIcon class="action-button"
-                   v-bind:class="{'action-button--disabled': disableAllButtons || !healthLoaded || !lpTokenBalances}"
+                   v-bind:class="{'action-button--disabled': disableAllButtons || !healthLoaded || !lpTokenBalances || lpToken.inactive}"
                    :icon-src="'src/assets/icons/plus.svg'" :size="26"
                    v-tooltip="{content: 'Add LP from wallet', classes: 'button-tooltip'}"
                    v-on:click.native="actionClick('ADD_FROM_WALLET')"></DeltaIcon>
@@ -230,13 +230,13 @@ export default {
             {
               key: 'PROVIDE_LIQUIDITY',
               name: 'Create Concentrated LP token',
-              disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
+              disabled: !this.hasSmartLoanContract || !this.lpTokenBalances || this.lpToken.inactive,
               disabledInfo: 'To create LP token, you need to add some funds from you wallet first'
             },
             {
               key: 'REMOVE_LIQUIDITY',
               name: 'Unwind Concentrated LP token',
-              disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
+              disabled: !this.hasSmartLoanContract || !this.lpTokenBalances || this.lpToken.inactive,
             },
             {
               key: 'WITHDRAW',
@@ -565,6 +565,12 @@ export default {
     border-image-source: var(--asset-table-row__border);
     border-image-slice: 1;
     padding-left: 6px;
+
+    &.inactive {
+      .table__cell {
+        color: var(--asset-table-row__double-value-color);
+      }
+    }
 
     .table__cell {
       display: flex;

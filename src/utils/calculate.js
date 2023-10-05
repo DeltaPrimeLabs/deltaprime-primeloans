@@ -209,7 +209,7 @@ export async function vectorFinanceRewards(stakingContractAddress, loanAddress) 
 
       let token = Object.entries(TOKEN_ADDRESSES).find(([, address]) => address.toLowerCase() === tokenAddress.toLowerCase());
       
-      let price = redstonePriceData[token[0]][0].dataPoints[0].value;
+      let price = redstonePriceData[token[0]] ? redstonePriceData[token[0]][0].dataPoints[0].value : 0;
 
       totalEarned += price * earned;
     } catch (e) {
@@ -383,6 +383,11 @@ export const paraSwapRouteToSimpleData = (txParams) => {
 };
 
 export function getBinPrice(binId, binStep, firstDecimals, secondDecimals) {
+  console.log('getBinPrice')
+  console.log(binId)
+  console.log(binStep)
+  console.log(firstDecimals)
+  console.log(secondDecimals)
   const binPrice = (1 + binStep / 10000) ** (binId - 8388608) * 10 ** (firstDecimals - secondDecimals);
   return binPrice.toFixed(5);
 }

@@ -8,28 +8,27 @@ Chart.defaults.LiquidityBarChart = Chart.defaults.bar;
 Chart.controllers.LiquidityBarChart = Chart.controllers.bar.extend({
   draw: function (ease) {
     Chart.controllers.bar.prototype.draw.call(this, ease);
-    const activeLineX = this.chart.scales['x-axis-0'].getPixelForValue(this.chart.config.data.datasets[0].data[this.chart.config.options.currentPriceIndex].x)
+    if (this.chart.config.options.currentPriceIndex >= 0) {
+      const activeLineX = this.chart.scales['x-axis-0'].getPixelForValue(this.chart.config.data.datasets[0].data[this.chart.config.options.currentPriceIndex].x)
 
-    const ctx = this.chart.ctx;
-    const topY = this.chart.scales['y-axis-0'].top;
-    const bottomY = this.chart.scales['y-axis-0'].bottom;
+      const ctx = this.chart.ctx;
+      const topY = this.chart.scales['y-axis-0'].top;
+      const bottomY = this.chart.scales['y-axis-0'].bottom;
 
-    console.error(this.chart.config.options.currentPrice);
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(activeLineX, topY + 24);
+      ctx.lineTo(activeLineX, bottomY);
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = getThemeVariable('--chart__active-point-line-color');
+      ctx.stroke();
 
-    // draw line
-    ctx.save();
-    ctx.beginPath();
-    ctx.moveTo(activeLineX, topY + 24);
-    ctx.lineTo(activeLineX, bottomY);
-    ctx.lineWidth = 1.5;
-    ctx.strokeStyle = getThemeVariable('--chart__active-point-line-color');
-    ctx.stroke();
-
-    ctx.moveTo(activeLineX, topY)
-    ctx.font = '14px Montserrat'
-    ctx.textAlign = "center";
-    ctx.fillStyle = getThemeVariable('--chart__active-point-label-color');
-    ctx.fillText(`Active (${this.chart.config.options.currentPrice.toFixed(2)})`, activeLineX, topY + 16)
+      ctx.moveTo(activeLineX, topY)
+      ctx.font = '14px Montserrat'
+      ctx.textAlign = "center";
+      ctx.fillStyle = getThemeVariable('--chart__active-point-label-color');
+      ctx.fillText(`Active (${this.chart.config.options.currentPrice.toFixed(2)})`, activeLineX, topY + 16)
+    }
   }
 })
 

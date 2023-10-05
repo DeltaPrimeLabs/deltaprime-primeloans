@@ -1,5 +1,6 @@
 import addresses from '../common/addresses/arbitrum/token_addresses.json';
 import USDC_POOL_TUP from '/deployments/arbitrum/UsdcPoolTUP.json';
+import ARB_POOL_TUP from '/deployments/arbitrum/ArbPoolTUP.json';
 import USDT_POOL_TUP from '/deployments/arbitrum/UsdtPoolTUP.json';
 import BTC_POOL_TUP from '/deployments/arbitrum/BtcPoolTUP.json';
 import WETH_POOL_TUP from '/deployments/arbitrum/WethPoolTUP.json';
@@ -21,6 +22,7 @@ export default {
     ASSETS_CONFIG: {
       "ETH": {name: "ETH", symbol: "ETH", decimals: 18, address: addresses.ETH, debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:ETHUSDT"},
       "USDC": {name: "USDC", symbol: "USDC", decimals: 6, address: addresses.USDC, isStableCoin: true, debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:USDCUSDT"},
+      "ARB": {name: "ARB", symbol: "ARB", logoExt: "png", decimals: 18, address: addresses.ARB, debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:ARBUSDT"},
       "BTC": {name: "BTC", symbol: "BTC", decimals: 8, address: addresses.BTC, debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:BTCUSDT"},
       "USDT": {name: "USDT", symbol: "USDT", decimals: 6, address: addresses.USDT, isStableCoin: true, debtCoverage: 0.83333333333, tradingViewSymbol: "COINBASE:USDTUSD"},
       "DAI": {name: "DAI", symbol: "DAI", logoExt: "png", decimals: 18, isStableCoin: true, address: addresses.DAI, debtCoverage: 0.83333333333, tradingViewSymbol: "KRAKEN:DAIUSDT"},
@@ -28,7 +30,6 @@ export default {
       "USDC.e": {name: "USDC.e", symbol: "USDC.e", decimals: 6, address: addresses["USDC.e"], isStableCoin: true, debtCoverage: 0.83333333333, tradingViewSymbol: "TRADERJOE:USDTEUSDT_74B651"},
       "UNI": {name: "UNI", symbol: "UNI", logoExt: "png", decimals: 18, address: addresses.UNI, debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:UNIUSDT"},
       "LINK": {name: "LINK", symbol: "LINK", decimals: 18, address: addresses.LINK, debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:LINKUSDT"},
-      "ARB": {name: "ARB", symbol: "ARB", logoExt: "png", decimals: 18, address: addresses.ARB, debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:ARBUSDT"},
       "GMX": {name: "GMX", symbol: "GMX", logoExt: "png", decimals: 18, address: addresses.GMX, debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:GMXUSDT"},
       "GLP": {name: "GLP", symbol: "GLP", logoExt: "png", decimals: 18, address: addresses.GLP, debtCoverage: 0.83333333333, tradingViewSymbol: ""},
       // "DPX": {name: "DPX", symbol: "DPX", logoExt: "png", decimals: 18, address: addresses.DPX, debtCoverage: 0.83333333333, tradingViewSymbol: "BYBIT:DPXUSDT"},
@@ -52,6 +53,10 @@ export default {
         ETH: {
             address: WETH_POOL_TUP.address,
             tokenAddress: addresses.ETH
+        },
+        ARB: {
+            address: ARB_POOL_TUP.address,
+            tokenAddress: addresses.ARB
         },
         BTC: {
             address: BTC_POOL_TUP.address,
@@ -253,6 +258,7 @@ export default {
     yakWrapRouterAddress: '0x16f90031000d48ce2bc6577788282c232060c547',
     yieldYakGlpWrapperAddress: '0x80F2d9652Ed7F5306dB095882FA9Ff882003F6D1',
     glpRewardsRouterAddress: '0xA906F338CB21815cBc4Bc87ace9e68c87eF8d8F1', //TODO: needs testing
+    depositSwapAddress: "0x889Cfe41a376CFeF8F28E48A848728D5377552b9",
     nativeToken: "ETH",
     SLIPPAGE_TOLERANCE: 0.03,
     dataProviderId: "redstone-arbitrum-prod",

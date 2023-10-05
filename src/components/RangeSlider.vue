@@ -3,12 +3,19 @@
     <div class="slider-container">
       <div class="slider-track" :style="trackStyle"></div>
       <div
+        ref="slider"
         class="slider-thumb"
         v-for="(thumb, index) in thumbs"
         :key="index"
         :style="thumbStyle(index)"
         @mousedown="startDrag(index)"
       ></div>
+    </div>
+    <div class="error">
+        <span v-if="error">
+          <img src="src/assets/icons/error.svg"/>
+          {{ error }}
+        </span>
     </div>
   </div>
 </template>
@@ -29,11 +36,15 @@ export default {
       type: Array,
       default: [10, 40]
     },
+    validators: {
+      type: Array, default: () => []
+    },
   },
   data() {
     return {
       dragging: false,
       thumbs: [0, 1], // Number of thumbs in the slider
+      error: ''
     };
   },
   computed: {
@@ -51,7 +62,7 @@ export default {
       const range = this.max - this.min;
       return ((this.value[index] - this.min) / range) * 100;
     },
-    updateValue(index, newValue) {
+    async updateValue(index, newValue) {
       const range = this.max - this.min;
       const percentage = Math.max(0, Math.min(100, (newValue / this.$el.offsetWidth) * 100));
       const newValueInRange = this.min + (range * percentage) / 100;
@@ -61,7 +72,23 @@ export default {
       if (index === 1 && newValueRounded < this.value[0]) return;
 
       this.$set(this.value, index, newValueRounded);
-      this.$emit("input", this.value);
+    },
+
+    async forceValidationCheck() {
+      return this.checkErrors(this.value);
+    },
+
+    async checkErrors(newValue) {
+      this.error = '';
+
+      for (const validator of [...this.validators]) {
+        let validatorResult = await validator.validate(newValue);
+        if (validatorResult) {
+          this.error = validatorResult;
+        }
+      }
+
+      return this.error.length > 0;
     },
     thumbStyle(index) {
       return {
@@ -84,6 +111,15 @@ export default {
       window.removeEventListener("mouseup", this.endDrag);
     },
   },
+  watch: {
+    value: {
+      async handler(value) {
+        const hasError = await this.checkErrors(value);
+        this.$emit("input", { value: value, error: hasError } );
+      },
+      immediate: true
+    },
+  }
 };
 </script>
 
@@ -91,6 +127,7 @@ export default {
 
 .range-slider {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   width: 100%;
@@ -137,6 +174,12 @@ export default {
         background-color: var(--range-slider__slider-thumb-background);
       }
     }
+  }
+
+  .error {
+    margin-top: 10px;
+    align-self: flex-start;
+    color: var(--currency-input__error-color);
   }
 }
 </style>

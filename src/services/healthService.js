@@ -34,7 +34,7 @@ export default class HealthService {
         let borrowed = debtsPerAsset[symbol] ? parseFloat(debtsPerAsset[symbol].debt) : 0;
 
         tokens.push({
-          price: redstonePriceData[symbol][0].dataPoints[0].value,
+          price: redstonePriceData[symbol] ? redstonePriceData[symbol][0].dataPoints[0].value : 0,
           balance: parseFloat(assetBalances[symbol]),
           borrowed: borrowed,
           debtCoverage: data.debtCoverage,
@@ -44,7 +44,7 @@ export default class HealthService {
 
       for (const [symbol, data] of Object.entries(lpAssets)) {
         tokens.push({
-          price: redstonePriceData[symbol][0].dataPoints[0].value,
+          price: redstonePriceData[symbol] ? redstonePriceData[symbol][0].dataPoints[0].value : 0,
           balance: parseFloat(lpBalances[symbol]),
           borrowed: 0,
           debtCoverage: data.debtCoverage,
@@ -55,7 +55,7 @@ export default class HealthService {
 
       for (const [symbol, data] of Object.entries(concentratedLpAssets)) {
         tokens.push({
-          price: redstonePriceData[symbol][0].dataPoints[0].value,
+          price: redstonePriceData[symbol] ? redstonePriceData[symbol][0].dataPoints[0].value : 0,
           balance: parseFloat(concentratedLpBalances[symbol]),
           borrowed: 0,
           debtCoverage: data.debtCoverage,
