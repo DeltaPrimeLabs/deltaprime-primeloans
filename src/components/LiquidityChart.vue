@@ -127,6 +127,7 @@ export default {
               maxTicksLimit: 1,
               display: false,
               fontFamily: 'Montserrat',
+              beginAtZero: true,
             },
             gridLines: {
               drawTicks: false,
