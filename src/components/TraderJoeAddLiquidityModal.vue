@@ -211,7 +211,7 @@ export default {
       secondInputError: false,
       sliderError: false,
       priceRadius: 5,
-      maxPriceRadius: config.chainSlug === 'arbitrum' ? 60 : 20,
+      maxPriceRadius: config.chainSlug === 'arbitrum' ? 60 : 50,
       minAboveActive: false,
       maxBelowActive: false,
       priceSlippage: 0.5,
