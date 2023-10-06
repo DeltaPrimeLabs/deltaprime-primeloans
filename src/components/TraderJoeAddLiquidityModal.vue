@@ -146,7 +146,7 @@
                 :waiting="transactionOngoing"
                 :disabled="firstInputError || secondInputError || sliderError">
         </Button>
-      </div>{{firstInputError}} {{secondInputError}} {{sliderError}}
+      </div>
     </Modal>
   </div>
 </template>
