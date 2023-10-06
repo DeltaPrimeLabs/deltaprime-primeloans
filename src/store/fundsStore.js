@@ -1533,7 +1533,7 @@ export default {
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
 
-      let tx = await awaitConfirmation(transaction, provider, 'create traderjoe v2 LP token');
+      let tx = await awaitConfirmation(transaction, provider, 'create TraderJoe v2 LP token');
 
       const firstAssetBalanceAfterTransaction = Number(state.assetBalances[addLiquidityRequest.firstAsset]) - Number(addLiquidityRequest.firstAmount);
       const secondAssetBalanceAfterTransaction = Number(state.assetBalances[addLiquidityRequest.secondAsset]) - Number(addLiquidityRequest.secondAmount);
