@@ -22,8 +22,6 @@
         </div>
       </stats-bar-element-beta>
 
-      <vue-loaders-ball-beat v-if="health == null" color="#A6A3FF" scale="1"></vue-loaders-ball-beat>
-
       <div class="stats-bar__divider"></div>
 
       <stats-bar-element-beta

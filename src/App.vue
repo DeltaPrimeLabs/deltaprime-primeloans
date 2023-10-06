@@ -6,11 +6,17 @@
     </Banner>
     <Banner v-if="showNoWalletBanner">
       You have no wallet installed. Please download and activate
-      <a class="banner-link" href="https://chrome.google.com/webstore/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn" target="_blank">
+      <a class="banner-link" href="https://chrome.google.com/webstore/detail/rabby-wallet/acmacodkjbdgmoleebolmdjonilkdbch" target="_blank">
         <b>
-          Metamask plugin
+          Rabby
         </b>
       </a>
+      or
+      <a class="banner-link" href="https://chrome.google.com/webstore/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn" target="_blank">
+        <b>
+          Metamask
+        </b>
+      </a>.
     </Banner>
     <Banner v-if="showConnectBanner">
       You are not connected to Metamask. <a class="banner-link" @click="initNetwork"><b>Click here</b></a> to connect.
