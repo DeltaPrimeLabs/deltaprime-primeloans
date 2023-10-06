@@ -402,8 +402,8 @@ export default {
             method: this.lpToken.addMethod,
             firstAsset: this.lpToken.primary,
             secondAsset: this.lpToken.secondary,
-            firstAmount: addLiquidityEvent.tokenXAmount.toFixed(this.firstAsset.decimals),
-            secondAmount: addLiquidityEvent.tokenYAmount.toFixed(this.secondAsset.decimals),
+            firstAmount: Number(addLiquidityEvent.tokenXAmount).toFixed(this.firstAsset.decimals),
+            secondAmount: Number(addLiquidityEvent.tokenYAmount).toFixed(this.secondAsset.decimals),
             addLiquidityInput,
           };
 
