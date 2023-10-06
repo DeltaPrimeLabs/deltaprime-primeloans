@@ -256,8 +256,8 @@ export default {
       this.selectedShortAsset = changeEvent.asset;
       this.shortAssetAmount = changeEvent.value;
       this.$refs.shortAssetInput.forceValidationCheck();
-      this.calculateHealthAfterTransaction();
       this.setupStableCoinAmount();
+      this.calculateHealthAfterTransaction();
     },
 
     async userSlippageChange(changeEvent) {

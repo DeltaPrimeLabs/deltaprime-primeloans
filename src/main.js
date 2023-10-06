@@ -17,22 +17,32 @@ import config from './config';
 import configAvalanche from './configAvalanche';
 import ConfigArbitrum from './configArbitrum';
 
-window.ethereum.request({method: 'eth_chainId'}).then((id) => {
-  const chainId = parseInt(id, 16);
-
-  switch (chainId) {
-    case 43114: {
-      window.chain = 'avalanche';
-      Object.assign(config, configAvalanche);
-      break;
+if (window.ethereum) {
+  window.ethereum.request({method: 'eth_chainId'}).then((id) => {
+    const chainId = parseInt(id, 16);
+    switch (chainId) {
+      case 43114: {
+        window.chain = 'avalanche';
+        Object.assign(config, configAvalanche);
+        break;
+      }
+      case 42161: {
+        window.chain = 'arbitrum';
+        Object.assign(config, ConfigArbitrum);
+        break;
+      }
     }
-    case 42161: {
-      window.chain = 'arbitrum';
-      Object.assign(config, ConfigArbitrum);
-      break;
-    }
-  }
 
+    setupApp();
+  })
+} else {
+  console.error('No wallet installed');
+  window.chain = 'avalanche';
+  window.noWalletInstalled = true;
+  setupApp();
+}
+
+function setupApp() {
   Vue.config.productionTip = false;
 
   Vue.use(Vue2Filters);
@@ -86,5 +96,4 @@ window.ethereum.request({method: 'eth_chainId'}).then((id) => {
     template: '<App/>',
     components: {App}
   });
-})
-
+}
