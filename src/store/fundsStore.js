@@ -727,14 +727,6 @@ export default {
 
       let concentratedLpAssets = state.concentratedLpAssets;
 
-      //TODO: update once the symbols match
-      // for (let [symbol, lpAsset] of Object.entries(this.concentratedLpAssets)) {
-      //     // we don't use getApy method anymore, but fetch APYs from db
-      //     if (apys[symbol] && apys[symbol].apy) {
-      //         lpAssets[symbol].apy = apys[symbol].apy;
-      //     }
-      // }
-
       //TODO: replace with for logic
       try {
         concentratedLpAssets['SHLB_AVAX-USDC_B'].apy = apys['AVAX_USDC'].apy * 100;
@@ -752,11 +744,20 @@ export default {
       if (Object.keys(traderJoeV2LpAssets).length !== 0) {
         for (let [symbol, traderJoeV2LpAsset] of Object.entries(traderJoeV2LpAssets)) {
           // we don't use getApy method anymore, but fetch APYs from db
+
+          console.log('symbol: ', symbol)
+          console.log(traderJoeV2LpAsset)
+          console.log(apys[symbol])
           if (apys[symbol] && apys[symbol].lp_apy) {
             traderJoeV2LpAssets[symbol].apy = apys[symbol].lp_apy * 100;
           }
         }
       }
+
+
+
+      console.log('apys')
+      console.log(apys)
 
       commit('setTraderJoeV2LpAssets', traderJoeV2LpAssets);
 
