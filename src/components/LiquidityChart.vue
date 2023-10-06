@@ -105,7 +105,6 @@ export default {
         scales: {
           y: {
             display: false,
-            beginAtZero: false,
           },
           xAxes: [{
             categoryPercentage: 1.0,
