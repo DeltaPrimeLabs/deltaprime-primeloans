@@ -433,12 +433,14 @@ export default {
         curve: {
             name: "Curve",
             imgSrc: "src/assets/icons/liquidity_shape_curve_on.svg",
-            distributionMethod: "getCurveDistributionFromBinRange"
+            distributionMethod: "getCurveDistributionFromBinRange",
+            disabled: true
         },
         bidAsk: {
             name: "Bid-Ask",
             imgSrc: "src/assets/icons/liquidity_shape_bid-ask_on.svg",
-            distributionMethod: "getBidAskDistributionFromBinRange"
+            distributionMethod: "getBidAskDistributionFromBinRange",
+            disabled: true
         },
     },
     yakRouterAddress: '0xC4729E56b831d74bBc18797e0e17A295fA77488c',
