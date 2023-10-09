@@ -73,6 +73,7 @@ import TransactionResultSummaryBeta from './TransactionResultSummaryBeta';
 import CurrencyInput from './CurrencyInput';
 import Button from './Button';
 import Toggle from './Toggle';
+import config from "../config";
 
 
 export default {
@@ -123,7 +124,9 @@ export default {
     },
 
     miningApy() {
-      return this.pool ? Math.max((1 - this.pool.tvl * this.pool.assetPrice / 4000000) * 0.1, 0) : 0;
+      if (!this.pool || this.pool.tvl === 0) return 0;
+      return (config.chainId === 42161) ?  1000 * 365 / 4 / (this.pool.tvl * this.pool.assetPrice)
+          : Math.max((1 - this.pool.tvl * this.pool.assetPrice / 4000000) * 0.1, 0);
     },
   },
 

@@ -60,8 +60,7 @@ export default {
         },
         BTC: {
             address: BTC_POOL_TUP.address,
-            tokenAddress: addresses.BTC,
-            disabled: true
+            tokenAddress: addresses.BTC
         },
         DAI: {
             address: DAI_POOL_TUP.address,
