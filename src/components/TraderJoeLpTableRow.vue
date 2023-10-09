@@ -574,7 +574,7 @@ export default {
           isPrimary: this.lpToken.accountBalancesPrimary[index] > this.lpToken.accountBalancesSecondary[index],
           primaryTokenBalance: this.lpToken.accountBalancesPrimary[index],
           secondaryTokenBalance: this.lpToken.accountBalancesSecondary[index],
-          price: ((1 + this.lpToken.binStep / 10000) ** (binId - 8388608) * 10 ** (this.firstAsset.decimals - this.secondAsset.decimals)).toFixed(5),
+          price: (1 + this.lpToken.binStep / 10000) ** (binId - 8388608) * 10 ** (this.firstAsset.decimals - this.secondAsset.decimals),
           value: this.lpToken.accountBalancesPrimary[index] * this.firstAsset.price + this.lpToken.accountBalancesSecondary[index] * this.secondAsset.price
         }))
 
