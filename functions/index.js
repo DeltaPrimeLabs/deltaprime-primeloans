@@ -75,81 +75,81 @@ function wrap(contract, network) {
   );
 }
 
-exports.scheduledFunctionAvalanche = functions
-  .runWith({ timeoutSeconds: 300, memory: "2GB" })
-  .pubsub.schedule('*/1 * * * *')
-  .onRun(async (context) => {
-    functions.logger.info("Getting loans");
+// exports.scheduledFunctionAvalanche = functions
+//   .runWith({ timeoutSeconds: 300, memory: "2GB" })
+//   .pubsub.schedule('*/1 * * * *')
+//   .onRun(async (context) => {
+//     functions.logger.info("Getting loans");
 
-    const loanAddresses = await factory.getAllLoans();
-    const batchTime = new Date().getTime();
+//     const loanAddresses = await factory.getAllLoans();
+//     const batchTime = new Date().getTime();
 
-    await Promise.all(
-      loanAddresses.map(async (address) => {
-        try {
-          const loanContract = new ethers.Contract(address, LOAN.abi, wallet);
-          const wrappedContract = wrap(loanContract, 'avalanche');
-          const status = await wrappedContract.getFullLoanStatus();
+//     await Promise.all(
+//       loanAddresses.map(async (address) => {
+//         try {
+//           const loanContract = new ethers.Contract(address, LOAN.abi, wallet);
+//           const wrappedContract = wrap(loanContract, 'avalanche');
+//           const status = await wrappedContract.getFullLoanStatus();
 
-          const loan = {
-            time: batchTime,
-            address: address,
-            total: fromWei(status[0]),
-            debt: fromWei(status[1]),
-            collateral: fromWei(status[0]) - fromWei(status[1]),
-            health: fromWei(status[3]),
-            solvent: fromWei(status[4]) === 1e-18
-          };
+//           const loan = {
+//             time: batchTime,
+//             address: address,
+//             total: fromWei(status[0]),
+//             debt: fromWei(status[1]),
+//             collateral: fromWei(status[0]) - fromWei(status[1]),
+//             health: fromWei(status[3]),
+//             solvent: fromWei(status[4]) === 1e-18
+//           };
 
-          await db.collection('loans').doc(address).set(loan);
-        } catch(error) {
-          console.log(error);
-        }
-      }),
-    );
+//           await db.collection('loans').doc(address).set(loan);
+//         } catch(error) {
+//           console.log(error);
+//         }
+//       }),
+//     );
 
-    functions.logger.info(`Uploaded ${loanAddresses.length} loans.`);
+//     functions.logger.info(`Uploaded ${loanAddresses.length} loans.`);
 
-    return null;
-  });
+//     return null;
+//   });
 
-exports.scheduledFunctionArbitrum = functions
-  .runWith({ timeoutSeconds: 300, memory: "2GB" })
-  .pubsub.schedule('*/1 * * * *')
-  .onRun(async (context) => {
-    functions.logger.info("Getting loans");
+// exports.scheduledFunctionArbitrum = functions
+//   .runWith({ timeoutSeconds: 300, memory: "2GB" })
+//   .pubsub.schedule('*/1 * * * *')
+//   .onRun(async (context) => {
+//     functions.logger.info("Getting loans");
 
-    const loanAddressesArbitrum = await factoryArbitrum.getAllLoans();
-    const batchTime = new Date().getTime();
+//     const loanAddressesArbitrum = await factoryArbitrum.getAllLoans();
+//     const batchTime = new Date().getTime();
 
-    await Promise.all(
-      loanAddressesArbitrum.map(async (address) => {
-        try {
-          const loanContract = new ethers.Contract(address, LOAN.abi, walletArbitrum);
-          const wrappedContract = wrap(loanContract, 'arbitrum');
-          const status = await wrappedContract.getFullLoanStatus();
+//     await Promise.all(
+//       loanAddressesArbitrum.map(async (address) => {
+//         try {
+//           const loanContract = new ethers.Contract(address, LOAN.abi, walletArbitrum);
+//           const wrappedContract = wrap(loanContract, 'arbitrum');
+//           const status = await wrappedContract.getFullLoanStatus();
 
-          const loan = {
-            time: batchTime,
-            address: address,
-            total: fromWei(status[0]),
-            debt: fromWei(status[1]),
-            collateral: fromWei(status[0]) - fromWei(status[1]),
-            health: fromWei(status[3]),
-            solvent: fromWei(status[4]) === 1e-18
-          };
+//           const loan = {
+//             time: batchTime,
+//             address: address,
+//             total: fromWei(status[0]),
+//             debt: fromWei(status[1]),
+//             collateral: fromWei(status[0]) - fromWei(status[1]),
+//             health: fromWei(status[3]),
+//             solvent: fromWei(status[4]) === 1e-18
+//           };
       
-          await db.collection('loansArbitrum').doc(address).set(loan);
-        } catch(error) {
-          console.log(error);
-        }
-      })
-    );
+//           await db.collection('loansArbitrum').doc(address).set(loan);
+//         } catch(error) {
+//           console.log(error);
+//         }
+//       })
+//     );
 
-    functions.logger.info(`Uploaded ${loanAddressesArbitrum.length} loans.`);
+//     functions.logger.info(`Uploaded ${loanAddressesArbitrum.length} loans.`);
 
-    return null;
-  });
+//     return null;
+//   });
 
 const getGlpApr = async () => {
   functions.logger.info("parsing APR from GMX website");
@@ -486,114 +486,131 @@ exports.lpAndFarmApyAggregator = functions
 
 const uploadLoanStatusCustom = async () => {
   const loanAddresses = await factory.getAllLoans();
-  const timestamps = [1687262400000, 1687348800000, 1687435200000, 1687550400000, 1687636800000];
+  const totalLoans = loanAddresses.length;
+  const batchSize = 150;
 
-  await Promise.all(
-    loanAddresses.map(async loanAddress => {
-      // const defaultTimestamp = Date.now() - 30 * timestampInterval; // from 30 days ago by default
-      const loanHistoryRef = db
-        .collection('loansHistory')
-        .doc(loanAddress.toLowerCase())
-        .collection('loanStatus');
-      // const loanHistorySnap = await loanHistoryRef.get();
-      // const loanHistory = {};
+  const timestamps = [];
 
-      // loanHistorySnap.forEach(doc => {
-      //   loanHistory[doc.id] = doc.data();
-      // });
+  for (let i = 0; i < 1; i++) {
+    timestamps[i] = 1696564800000 - i * 86400000;
+  }
 
-      // const timestamps = [];
-      // let timestamp;
+  for (let i = 0; i < Math.ceil(totalLoans/batchSize); i++) {
+    console.log(`processing ${i * batchSize} - ${(i + 1) * batchSize > totalLoans ? totalLoans : (i + 1) * batchSize} loans`);
+    const batchLoanAddresses = loanAddresses.slice(i * batchSize, (i + 1) * batchSize);
 
-      // if (Object.keys(loanHistory).length === 0) {
-      //   // loan's single history is not saved yet, we create from 30 days ago
-      //   timestamp = defaultTimestamp;
-      // } else {
-      //   // we add new history after the latest timestamp
-      //   timestamp = Math.max(Math.min(...Object.keys(loanHistory).map(Number)), defaultTimestamp)
-      //             + timestampInterval; // next timestamp where we get loan status
-      // }
+    await Promise.all(
+      batchLoanAddresses.map(async loanAddress => {
+        // const defaultTimestamp = Date.now() - 30 * timestampInterval; // from 30 days ago by default
+        const loanHistoryRef = db
+          .collection('loansHistory')
+          .doc(loanAddress.toLowerCase())
+          .collection('loanStatus');
+        // const loanHistorySnap = await loanHistoryRef.get();
+        // const loanHistory = {};
 
-      // // const limitTimestamp = timestamp + 30 * timestampInterval;
+        // loanHistorySnap.forEach(doc => {
+        //   loanHistory[doc.id] = doc.data();
+        // });
 
-      // // get timestamps
-      // while (timestamp < Date.now()) {
-      //   timestamps.push(timestamp);
-      //   timestamp += timestampInterval;
-      // }
-      // console.log(timestamps);
+        // const timestamps = [];
+        // let timestamp;
 
-      if (timestamps.length > 0) {
-        await Promise.all(
-          timestamps.map(async (timestamp) => {
-            const status = await loanHistoryRef.doc(timestamp.toString()).get();
+        // if (Object.keys(loanHistory).length === 0) {
+        //   // loan's single history is not saved yet, we create from 30 days ago
+        //   timestamp = defaultTimestamp;
+        // } else {
+        //   // we add new history after the latest timestamp
+        //   timestamp = Math.max(Math.min(...Object.keys(loanHistory).map(Number)), defaultTimestamp)
+        //             + timestampInterval; // next timestamp where we get loan status
+        // }
 
-            if (!status.exists) {
-              const loanStatus = await getLoanStatusAtTimestamp(loanAddress, timestamp);
+        // // const limitTimestamp = timestamp + 30 * timestampInterval;
 
-              await loanHistoryRef.doc(timestamp.toString()).set({
-                totalValue: loanStatus.totalValue,
-                borrowed: loanStatus.borrowed,
-                collateral: loanStatus.totalValue - loanStatus.borrowed,
-                twv: loanStatus.twv,
-                health: loanStatus.health,
-                solvent: loanStatus.solvent === 1e-18,
-                timestamp: timestamp
-              });
-            }
-          })
-        );
-      }
-    })
-  );
+        // // get timestamps
+        // while (timestamp < Date.now()) {
+        //   timestamps.push(timestamp);
+        //   timestamp += timestampInterval;
+        // }
+        // console.log(timestamps);
+
+        if (timestamps.length > 0) {
+          await Promise.all(
+            timestamps.map(async (timestamp) => {
+              const status = await loanHistoryRef.doc(timestamp.toString()).get();
+
+              if (!status.exists) {
+                try {
+                  const loanStatus = await getLoanStatusAtTimestamp(loanAddress, timestamp);
+
+                  await loanHistoryRef.doc(timestamp.toString()).set({
+                    totalValue: loanStatus.totalValue,
+                    borrowed: loanStatus.borrowed,
+                    collateral: loanStatus.totalValue - loanStatus.borrowed,
+                    twv: loanStatus.twv,
+                    health: loanStatus.health,
+                    solvent: loanStatus.solvent === 1e-18,
+                    timestamp: timestamp
+                  });
+                } catch (error) {
+                  console.log(`fetching for ${loanAddress} at ${timestamp} failed.`);
+                }
+              }
+            })
+          );
+        }
+      })
+    );
+    console.log('---------------------- one batch completed ------------------------------------');
+  }
 }
 
-// exports.saveLoansStatusCustom = functions
-//   .runWith({ timeoutSeconds: 120, memory: "2GB" })
-//   .pubsub.schedule('*/5 * * * *')
-//   .onRun(async (context) => {
-//     functions.logger.info("Getting Loans Status.");
-//     return uploadLoanStatusCustom()
-//       .then(() => {
-//         functions.logger.info("Loans Status upload success.");
-//       }).catch((err) => {
-//         functions.logger.info(`Loans Status upload failed. Error: ${err}`);
-//       });
-//   });
+const getWrappedContracts = (addresses, network) => {
+  return addresses.map(address => {
+    const loanContract = new ethers.Contract(address, LOAN.abi, network == "avalanche" ? wallet : walletArbitrum);
+    const wrappedContract = wrap(loanContract, network);
+
+    return wrappedContract;
+  });
+}
 
 const uploadLiveLoansStatusAvalanche = async () => {
   const loanAddresses = await factory.getAllLoans();
+  const totalLoans = loanAddresses.length;
+  const batchSize = 50;
 
-  const timestamp = Date.now();
+  for (let i = 0; i < Math.ceil(totalLoans/batchSize); i++) {
+    console.log(`processing ${i * batchSize} - ${(i + 1) * batchSize > totalLoans ? totalLoans : (i + 1) * batchSize} loans`);
+    const batchLoanAddresses = loanAddresses.slice(i * batchSize, (i + 1) * batchSize);
+    const wrappedContracts = getWrappedContracts(batchLoanAddresses, 'avalanche');
 
-  await Promise.all(
-    loanAddresses.map(async (loanAddress) => {
-      console.log(loanAddress, timestamp);
-      const loanHistoryRef = db
-        .collection('loansHistory')
-        .doc(loanAddress.toLowerCase())
-        .collection('loanStatus');
-      const loanContract = new ethers.Contract(loanAddress, LOAN.abi, wallet);
-      const wrappedContract = wrap(loanContract, 'avalanche');
-      const status = await wrappedContract.getFullLoanStatus();
+    const loanStatusResults = await Promise.all(wrappedContracts.map(contract => contract.getFullLoanStatus()));
 
-      if (status) {
-        await loanHistoryRef.doc(timestamp.toString()).set({
-          totalValue: fromWei(status[0]),
-          borrowed: fromWei(status[1]),
-          collateral: fromWei(status[0]) - fromWei(status[1]),
-          twv: fromWei(status[2]),
-          health: fromWei(status[3]),
-          solvent: fromWei(status[4]) === 1e-18,
-          timestamp
-        });
-      }
-    })
-  );
+    if (loanStatusResults.length > 0) {
+      const timestamp = Date.now();
+      await Promise.all(
+        loanStatusResults.map(async (status, id) => {
+          const loanHistoryRef = db
+            .collection('loansHistory')
+            .doc(batchLoanAddresses[id].toLowerCase())
+            .collection('loanStatus');
+          await loanHistoryRef.doc(timestamp.toString()).set({
+            totalValue: fromWei(status[0]),
+            borrowed: fromWei(status[1]),
+            collateral: fromWei(status[0]) - fromWei(status[1]),
+            twv: fromWei(status[2]),
+            health: fromWei(status[3]),
+            solvent: fromWei(status[4]) === 1e-18,
+            timestamp
+          });
+        })
+      );
+    }
+  }
 }
 
 exports.saveLiveLoansStatusAvalanche = functions
-  .runWith({ timeoutSeconds: 120, memory: "2GB" })
+  .runWith({ timeoutSeconds: 500, memory: "2GB" })
   .pubsub.schedule('0 5 * * *')
   .onRun(async (context) => {
     functions.logger.info("Getting Loans Status.");
@@ -607,33 +624,37 @@ exports.saveLiveLoansStatusAvalanche = functions
 
 const uploadLiveLoansStatusArbitrum = async () => {
   const loanAddresses = await factoryArbitrum.getAllLoans();
+  const totalLoans = loanAddresses.length;
+  const batchSize = 50;
 
-  const timestamp = Date.now();
+  for (let i = 0; i < Math.ceil(totalLoans/batchSize); i++) {
+    console.log(`processing ${i * batchSize} - ${(i + 1) * batchSize > totalLoans ? totalLoans : (i + 1) * batchSize} loans`);
+    const batchLoanAddresses = loanAddresses.slice(i * batchSize, (i + 1) * batchSize);
+    const wrappedContracts = getWrappedContracts(batchLoanAddresses, 'arbitrum');
 
-  await Promise.all(
-    loanAddresses.map(async (loanAddress) => {
-      console.log(loanAddress, timestamp);
-      const loanHistoryRef = db
-        .collection('loansHistoryArbitrum')
-        .doc(loanAddress.toLowerCase())
-        .collection('loanStatus');
-      const loanContract = new ethers.Contract(loanAddress, LOAN.abi, walletArbitrum);
-      const wrappedContract = wrap(loanContract, 'arbitrum');
-      const status = await wrappedContract.getFullLoanStatus();
+    const loanStatusResults = await Promise.all(wrappedContracts.map(contract => contract.getFullLoanStatus()));
 
-      if (status) {
-        await loanHistoryRef.doc(timestamp.toString()).set({
-          totalValue: fromWei(status[0]),
-          borrowed: fromWei(status[1]),
-          collateral: fromWei(status[0]) - fromWei(status[1]),
-          twv: fromWei(status[2]),
-          health: fromWei(status[3]),
-          solvent: fromWei(status[4]) === 1e-18,
-          timestamp
-        });
-      }
-    })
-  );
+    if (loanStatusResults.length > 0) {
+      const timestamp = Date.now();
+      await Promise.all(
+        loanStatusResults.map(async (status, id) => {
+          const loanHistoryRef = db
+            .collection('loansHistoryArbitrum')
+            .doc(batchLoanAddresses[id].toLowerCase())
+            .collection('loanStatus');
+          await loanHistoryRef.doc(timestamp.toString()).set({
+            totalValue: fromWei(status[0]),
+            borrowed: fromWei(status[1]),
+            collateral: fromWei(status[0]) - fromWei(status[1]),
+            twv: fromWei(status[2]),
+            health: fromWei(status[3]),
+            solvent: fromWei(status[4]) === 1e-18,
+            timestamp
+          });
+        })
+      );
+    }
+  }
 }
 
 exports.saveLiveLoansStatusArbitrum = functions
