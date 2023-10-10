@@ -65,7 +65,7 @@
       <div class="target-asset-info">
         <div class="usd-info">
           Price:&nbsp;<span
-          class="price-info__value">1 {{
+            class="price-info__value">1 {{
             targetAsset
           }} = {{ estimatedNeededTokens / estimatedReceivedTokens | smartRound }} {{ sourceAsset }}</span>
         </div>
@@ -79,7 +79,7 @@
         </div>
         <div class="slippage__divider"></div>
         <span class="slippage-label">DEX slippage:</span>
-         <span class="deviation-value">{{ marketDeviation }}<span class="percent">%</span></span>
+        <span class="deviation-value">{{ marketDeviation }}<span class="percent">%</span></span>
         <div class="info__icon__wrapper">
           <InfoIcon
               class="info__icon"
@@ -286,14 +286,10 @@ export default {
 
   computed: {
     maxSourceValue() {
-      if (this.swapDex === 'ParaSwap') {
-        return null;
+      if (this.swapDebtMode) {
+        return this.sourceAssetDebt;
       } else {
-        if (this.swapDebtMode) {
-          return this.sourceAssetDebt;
-        } else {
-          return this.sourceAssetBalance;
-        }
+        return this.sourceAssetBalance;
       }
     },
   },
@@ -423,6 +419,7 @@ export default {
       const sourceAssets = this.swapDebtMode ? this.sourceAssets : this.sourceAssets[this.swapDex];
       sourceAssets.forEach(assetSymbol => {
         const asset = config.ASSETS_CONFIG[assetSymbol];
+        console.log(asset);
         const assetOption = {
           symbol: assetSymbol,
           name: asset.name,
