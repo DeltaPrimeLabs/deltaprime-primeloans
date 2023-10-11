@@ -345,7 +345,7 @@ export default {
         }, (error) => {
           this.handleTransactionError(error);
         }).then(() => {
-          this.closeModal();
+          this.closeTraderJoeLpModal();
         });
       });
     },
@@ -368,7 +368,7 @@ export default {
         }, (error) => {
           this.handleTransactionError(error);
         }).then(() => {
-          this.closeModal();
+          this.closeTraderJoeLpModal();
         });
       });
     },
@@ -423,7 +423,7 @@ export default {
           }, (error) => {
             this.handleTransactionError(error);
           }).then(() => {
-            this.closeModal();
+            this.closeTraderJoeLpModal();
           });
         }
       });
@@ -467,10 +467,17 @@ export default {
           }, (error) => {
             this.handleTransactionError(error);
           }).then(() => {
-            this.closeModal();
+            this.closeTraderJoeLpModal();
           });
         }
       });
+    },
+
+    closeTraderJoeLpModal() {
+      this.closeModal();
+      setTimeout(() => {
+        this.calculateChartData();
+      })
     },
 
     watchAssetBalancesDataRefreshEvent() {
@@ -550,7 +557,7 @@ export default {
       } else {
         this.progressBarService.emitProgressBarErrorState();
       }
-      this.closeModal();
+      this.closeTraderJoeLpModal();
       this.inProcess = false;
       this.isBalanceEstimated = false;
     },
@@ -578,10 +585,8 @@ export default {
           value: this.lpToken.accountBalancesPrimary[index] * this.firstAsset.price + this.lpToken.accountBalancesSecondary[index] * this.secondAsset.price
         }))
 
-        this.currentPrice = this.firstAsset.price / this.secondAsset.price
-        this.currentPriceIndex = this.chartData.findIndex((value, index) => {
-          return index > 0 && (value.price > this.currentPrice) && this.chartData[index - 1].price < this.currentPrice
-        })
+        this.currentPrice = (1 + this.lpToken.binStep / 10000) ** (this.activeId - 8388608) * 10 ** (this.firstAsset.decimals - this.secondAsset.decimals)
+        this.currentPriceIndex = this.lpToken.binIds.findIndex(binId => binId === this.activeId)
       }
     }
   },

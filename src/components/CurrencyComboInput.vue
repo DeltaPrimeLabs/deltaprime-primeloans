@@ -334,7 +334,7 @@ export default {
     }
 
     .divider {
-      width: 2px;
+      min-width: 2px;
       height: 34px;
       background-color: var(--currency-combo-input__divider-color);
     }

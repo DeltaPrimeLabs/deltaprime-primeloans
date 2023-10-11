@@ -1051,6 +1051,8 @@ export default {
           this.progressBarService.emitProgressBarErrorState('Insufficient slippage.');
         } else if (error.data.message.includes('execution reverted: Received amount of tokens are less then expected')) {
           this.progressBarService.emitProgressBarErrorState('Max acceptable slippage exceeded. Please try again.')
+        } else if (error.data && error.data.code === -32000) {
+          this.progressBarService.emitProgressBarErrorState('The selected aggregator could not find a route. Please switch aggregator, or try again later.')
         } else {
           this.progressBarService.emitProgressBarCancelledState();
         }
