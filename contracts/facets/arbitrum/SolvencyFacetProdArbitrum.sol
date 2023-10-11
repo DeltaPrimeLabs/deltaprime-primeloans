@@ -275,7 +275,7 @@ contract SolvencyFacetProdArbitrum is ArbitrumProdDataServiceConsumerBase, Diamo
 
             for (uint256 i = 0; i < ownedAssetsPrices.length; i++) {
                 IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(ownedAssetsPrices[i].asset, true));
-                weightedValueOfTokens = weightedValueOfTokens + (ownedAssetsPrices[i].price * convertBalance(token.balanceOf(address(this)), address(token)) * tokenManager.debtCoverage(address(token)) / (10 ** token.decimals() * 1e8));
+                weightedValueOfTokens = weightedValueOfTokens + (ownedAssetsPrices[i].price * token.balanceOf(address(this)) * tokenManager.debtCoverage(address(token)) / (10 ** token.decimals() * 1e8));
             }
         }
         return weightedValueOfTokens;
@@ -382,7 +382,6 @@ contract SolvencyFacetProdArbitrum is ArbitrumProdDataServiceConsumerBase, Diamo
             for (uint256 i = 0; i < ownedAssetsPrices.length; i++) {
                 IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(ownedAssetsPrices[i].asset, true));
                 uint256 assetBalance = token.balanceOf(address(this));
-                assetBalance = convertBalance(assetBalance, address(token));
 
                 total = total + (ownedAssetsPrices[i].price * 10 ** 10 * assetBalance / (10 ** token.decimals()));
             }
@@ -390,16 +389,6 @@ contract SolvencyFacetProdArbitrum is ArbitrumProdDataServiceConsumerBase, Diamo
         } else {
             return 0;
         }
-    }
-
-    function convertBalance(uint256 _balance, address _asset) private pure returns (uint256){
-        uint256 balance = _balance;
-        if(_asset == 0x8Bc6968b7A9Eed1DD0A259eFa85dc2325B923dd2){ // YY_WOMBEX_USDT
-            balance = balance * 1e12;
-        } else if(_asset == 0x4649c7c3316B27C4A3DB5f3B47f87C687776Eb8C){ // YY_WOMBEX_USDC.e
-            balance = balance * 1e12;
-        }
-        return balance;
     }
 
     /**
