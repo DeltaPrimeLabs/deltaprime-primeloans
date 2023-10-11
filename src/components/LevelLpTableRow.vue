@@ -45,7 +45,7 @@
       </div>
 
       <div class="table__cell table__cell--double-value tvl">
-        {{ tvl | usd }}
+        {{ formatTvl(tvl) }}
       </div>
 
       <div class="table__cell capacity">
@@ -354,7 +354,7 @@ export default {
 
     levelFinanceFee() {
       return async (sourceAsset, targetAsset, amountIn) => {
-       return Promise.resolve(0.000);
+       return Promise.resolve(0.006);
       }
     },
 

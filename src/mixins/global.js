@@ -30,6 +30,14 @@ export default {
       }
     },
 
+    formatTvl(value) {
+      if (value < 1000000) {
+        return `$${(value / 1000).toFixed()}k`
+      } else {
+        return `$${(value / 1000000).toFixed()}M`;
+      }
+    },
+
     formatPercent(value) {
       return `${Math.round(value * 10000) / 100}%`;
     },

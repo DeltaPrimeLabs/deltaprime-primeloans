@@ -34,7 +34,7 @@
       </div>
 
       <div class="table__cell table__cell--double-value loan">
-        {{ lpToken.tvl | usd }}
+        {{ formatTvl(lpToken.tvl) }}
       </div>
 
       <div class="table__cell table__cell--double-value apr">

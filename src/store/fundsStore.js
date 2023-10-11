@@ -821,16 +821,18 @@ export default {
 
       let levelLpAssets = state.levelLpAssets;
 
-      if (Object.keys(levelLpAssets).length !== 0) {
-        for (let [symbol, asset] of Object.entries(levelLpAssets)) {
-          // we don't use getApy method anymore, but fetch APYs from db
-          if (apys[symbol] && apys[symbol][symbol]) {
-            levelLpAssets[symbol].apy = apys[symbol][symbol];
+      if (levelLpAssets) {
+        if (Object.keys(levelLpAssets).length !== 0) {
+          for (let [symbol, asset] of Object.entries(levelLpAssets)) {
+            // we don't use getApy method anymore, but fetch APYs from db
+            if (apys[symbol] && apys[symbol][symbol]) {
+              levelLpAssets[symbol].apy = apys[symbol][symbol];
+            }
           }
         }
-      }
 
-      commit('setLevelLpAssets', levelLpAssets);
+        commit('setLevelLpAssets', levelLpAssets);
+      }
 
       dataRefreshNotificationService.emitAssetApysDataRefresh();
     },
