@@ -2166,12 +2166,13 @@
     tiny-warning "^1.0.3"
     toformat "^2.0.0"
 
-"@traderjoe-xyz/sdk-v2@^2.1.5":
-  version "2.1.5"
-  resolved "https://registry.yarnpkg.com/@traderjoe-xyz/sdk-v2/-/sdk-v2-2.1.5.tgz#21271d63927f0f297b86d09670d5c57903150b8b"
-  integrity sha512-AeNBFE5RIujbQwYEzsOiBSosibB7d8rubUWnRsHfGxk+DQIGGwlWAvPrtW34Ilo/vzmRULxRCvZohb69FnO5HA==
+"@traderjoe-xyz/sdk-v2@^2.1.8":
+  version "2.1.8"
+  resolved "https://registry.yarnpkg.com/@traderjoe-xyz/sdk-v2/-/sdk-v2-2.1.8.tgz#80698b6b6aebb880cd973a3c9e890aa6a8fd9b80"
+  integrity sha512-gUO1rpOb+6VIwURVHMo7Q7nW0gAvrzlM7lKQ3al6oyjeqtnKIkSOhq2lpLpGgvFaNe0c47ZLGGmNmr5nyp194g==
   dependencies:
     "@traderjoe-xyz/sdk-core" "^1.1.0"
+    big.js "^6.2.1"
     jsbi "^4.3.0"
     lodash.flatmap "^4.5.0"
     tiny-invariant "^1.3.1"

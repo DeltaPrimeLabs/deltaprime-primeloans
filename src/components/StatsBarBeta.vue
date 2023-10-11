@@ -8,21 +8,22 @@
       ">
       </stats-bar-element-beta>
       <div class="stats-bar__divider"></div>
-      <div class="health-loader-container" v-if="noSmartLoan === null || healthLoading">
-        <vue-loaders-ball-beat color="#A6A3FF" scale="1"></vue-loaders-ball-beat>
-      </div>
-      <stats-bar-element-beta
-          v-if="noSmartLoan !== null && health != null && !healthLoading"
-          :label="'Health'"
-          :value="health | percent"
-          :info-tooltip="`How far you are from liquidation, on a scale from 100% to 0%.`
+      <div class="health-element">
+        <stats-bar-element-beta
+            v-if="noSmartLoan !== null && health != null && !healthLoading"
+            :label="'Health'"
+            :value="health | percent"
+            :info-tooltip="`How far you are from liquidation, on a scale from 100% to 0%.`
           ">
-        <div class="bar-gauge-container">
-          <bar-gauge-beta :min="0" :max="1" :value="health"></bar-gauge-beta>
+          <div class="bar-gauge-container">
+            <bar-gauge-beta :min="0" :max="1" :value="health"></bar-gauge-beta>
+          </div>
+        </stats-bar-element-beta>
+        <div class="health-loader-container" v-if="noSmartLoan === null || healthLoading">
+          <vue-loaders-ball-beat color="#A6A3FF" scale="1"></vue-loaders-ball-beat>
         </div>
-      </stats-bar-element-beta>
+      </div>
 
-      <vue-loaders-ball-beat v-if="health == null" color="#A6A3FF" scale="1"></vue-loaders-ball-beat>
 
       <div class="stats-bar__divider"></div>
 
@@ -92,6 +93,10 @@ export default {
       height: 92px;
       width: 292px;
       margin-top: -10px;
+    }
+
+    .health-element {
+      width: 292px;
     }
 
     .stats-bar__divider {

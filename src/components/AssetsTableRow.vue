@@ -162,7 +162,7 @@ import ClaimGLPRewardsModal from './ClaimGLPRewardsModal';
 import {BigNumber} from 'ethers';
 import DeltaIcon from './DeltaIcon.vue';
 import IconButton from './IconButton.vue';
-import {constructSimpleSDK, SwapSide} from '@paraswap/sdk';
+import {constructSimpleSDK, ContractMethod, SwapSide} from '@paraswap/sdk';
 import axios from 'axios';
 import TradingViewChart from "./TradingViewChart.vue";
 import Toggle from "./Toggle.vue";
@@ -437,6 +437,8 @@ export default {
           amount: amountIn,
           userAddress: this.smartLoanContract.address,
           side: SwapSide.SELL,
+          includeContractMethods: [ContractMethod.simpleSwap],
+          excludeContractMethods: [ContractMethod.directUniV3Swap],
         });
 
         const sourceAmountWei = parseUnits(Number(`${swapRate.srcAmount}e-${swapRate.srcDecimals}`).toFixed(swapRate.srcDecimals), swapRate.srcDecimals);

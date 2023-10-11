@@ -27,7 +27,7 @@ Chart.controllers.LiquidityBarChart = Chart.controllers.bar.extend({
       ctx.font = '14px Montserrat'
       ctx.textAlign = "center";
       ctx.fillStyle = getThemeVariable('--chart__active-point-label-color');
-      ctx.fillText(`Active (${this.chart.config.options.currentPrice.toFixed(2)})`, activeLineX, topY + 16)
+      ctx.fillText(`Active (${this.chart.config.options.currentPrice.toFixed(8)})`, activeLineX, topY + 16)
     }
   }
 })
@@ -76,6 +76,7 @@ export default {
         hoverBackgroundColor: newHoverColors,
         borderWidth: 0,
       }]
+      console.log(this.chartData.datasets[0].data[5].x);
       this.chartData.labels = newLabels
       this.renderChart(this.chartData, this.chartOptions);
     }
@@ -105,7 +106,6 @@ export default {
         scales: {
           y: {
             display: false,
-            beginAtZero: false,
           },
           xAxes: [{
             categoryPercentage: 1.0,
@@ -116,6 +116,10 @@ export default {
               fontFamily: 'Montserrat',
               maxRotation: 0,
               minRotation: 0,
+              userCallback: function(label) {
+                return label.toFixed(5)
+
+              },
             },
             gridLines: {
               color: "rgba(0, 0, 0, 0)",
@@ -128,6 +132,7 @@ export default {
               maxTicksLimit: 1,
               display: false,
               fontFamily: 'Montserrat',
+              beginAtZero: true,
             },
             gridLines: {
               drawTicks: false,

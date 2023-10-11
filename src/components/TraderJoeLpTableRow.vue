@@ -116,6 +116,7 @@ import LiquidityChart from "./LiquidityChart.vue";
 import FlatButton from "./FlatButton.vue";
 import SmallBlock from "./SmallBlock.vue";
 import LB_TOKEN from '/artifacts/contracts/interfaces/joe-v2/ILBToken.sol/ILBToken.json'
+const toBytes32 = require('ethers').utils.formatBytes32String;
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -182,6 +183,7 @@ export default {
       'health',
       'assetBalances',
       'smartLoanContract',
+      'readSmartLoanContract',
       'debtsPerAsset'
     ]),
     ...mapState('stakeStore', ['farms']),
@@ -382,14 +384,23 @@ export default {
       modalInstance.activePrice = this.activePrice;
       modalInstance.binStep = this.lpToken.binStep;
       modalInstance.lpTokens = this.lpTokens;
-      modalInstance.$on('ADD_LIQUIDITY', addLiquidityEvent => {
+      modalInstance.$on('ADD_LIQUIDITY', async addLiquidityEvent => {
         if (this.smartLoanContract) {
+          let firstAmount = parseUnits(Number(addLiquidityEvent.tokenXAmount).toFixed(this.firstAsset.decimals), this.firstAsset.decimals);
+          let secondAmount = parseUnits(Number(addLiquidityEvent.tokenYAmount).toFixed(this.secondAsset.decimals), this.secondAsset.decimals);
+
+          const firstBalance = await this.readSmartLoanContract.getBalance(toBytes32(this.firstAsset.symbol));
+          firstAmount = (firstAmount.gte(firstBalance)) ? firstBalance : firstAmount;
+
+          const secondBalance = await this.readSmartLoanContract.getBalance(toBytes32(this.secondAsset.symbol));
+          secondAmount = secondAmount.gte(secondBalance) ? secondBalance : secondAmount;
+
           const addLiquidityInput = this.traderJoeService.getAddLiquidityParameters(
               this.account,
               this.tokenX,
               this.tokenY,
-              parseUnits(Number(addLiquidityEvent.tokenXAmount).toFixed(this.firstAsset.decimals), this.firstAsset.decimals).toString(),
-              parseUnits(Number(addLiquidityEvent.tokenYAmount).toFixed(this.secondAsset.decimals), this.secondAsset.decimals).toString(),
+              firstAmount.toString(),
+              secondAmount.toString(),
               addLiquidityEvent.distributionMethod,
               this.lpToken.binStep,
               this.activeId,
@@ -402,8 +413,8 @@ export default {
             method: this.lpToken.addMethod,
             firstAsset: this.lpToken.primary,
             secondAsset: this.lpToken.secondary,
-            firstAmount: addLiquidityEvent.tokenXAmount.toString(),
-            secondAmount: addLiquidityEvent.tokenYAmount.toString(),
+            firstAmount: parseUnits(Number(addLiquidityEvent.tokenXAmount).toFixed(this.firstAsset.decimals), this.firstAsset.decimals),
+            secondAmount: parseUnits(Number(addLiquidityEvent.tokenYAmount).toFixed(this.secondAsset.decimals), this.secondAsset.decimals),
             addLiquidityInput,
           };
 
@@ -563,7 +574,7 @@ export default {
           isPrimary: this.lpToken.accountBalancesPrimary[index] > this.lpToken.accountBalancesSecondary[index],
           primaryTokenBalance: this.lpToken.accountBalancesPrimary[index],
           secondaryTokenBalance: this.lpToken.accountBalancesSecondary[index],
-          price: ((1 + this.lpToken.binStep / 10000) ** (binId - 8388608) * 10 ** (this.firstAsset.decimals - this.secondAsset.decimals)).toFixed(5),
+          price: (1 + this.lpToken.binStep / 10000) ** (binId - 8388608) * 10 ** (this.firstAsset.decimals - this.secondAsset.decimals),
           value: this.lpToken.accountBalancesPrimary[index] * this.firstAsset.price + this.lpToken.accountBalancesSecondary[index] * this.secondAsset.price
         }))
 

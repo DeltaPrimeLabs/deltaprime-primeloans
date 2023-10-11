@@ -44,14 +44,14 @@
           Choose liquidity Shape
           <InfoIcon
             class="label__info-icon"
-            :tooltip="{ content: 'Choose your desired liquidity shape below', placement: 'top', classes: 'info-tooltip' }"
+            :tooltip="{ content: 'Only spot is available now. Curve and bid-ask coming soon!', placement: 'top', classes: 'info-tooltip' }"
           ></InfoIcon>
         </div>
         <div class="liquidity-option__content">
           <div
             v-for="(shape, key) in liquidityShapes"
             :key="key"
-            :class="['liquidity-shape', selectedShape === key ? 'active' : '']"
+            :class="['liquidity-shape', selectedShape === key ? 'active' : '', shape.disabled ? 'disabled' : '']"
             v-on:click="() => handleShapeClick(key)"
           >
             <img class="shape-icon" :src="shape.imgSrc" />
@@ -146,7 +146,7 @@
                 :waiting="transactionOngoing"
                 :disabled="firstInputError || secondInputError || sliderError">
         </Button>
-      </div>{{firstInputError}} {{secondInputError}} {{sliderError}}
+      </div>
     </Modal>
   </div>
 </template>
@@ -211,7 +211,7 @@ export default {
       secondInputError: false,
       sliderError: false,
       priceRadius: 5,
-      maxPriceRadius: config.chainSlug === 'arbitrum' ? 60 : 20,
+      maxPriceRadius: config.chainSlug === 'arbitrum' ? 60 : 50,
       minAboveActive: false,
       maxBelowActive: false,
       priceSlippage: 0.5,
@@ -289,7 +289,7 @@ export default {
     },
 
     handleShapeClick(key) {
-      this.selectedShape = key;
+      if (!this.liquidityShapes[key].disabled) this.selectedShape = key;
     },
 
     setupValidators() {
@@ -412,6 +412,11 @@ export default {
         border-radius: 15px;
         border: var(--traderjoe-add-liquidity-modal__liquidity-shape-border);
         cursor: pointer;
+
+        &.disabled {
+          cursor: initial;
+        }
+
         .shape-icon {
           margin: 0 37px;
           filter: grayscale(1);
@@ -440,7 +445,7 @@ export default {
             font-weight: 600;
           }
         }
-        &:hover {
+        &:hover &:not(.disabled) {
           border-color: var(--traderjoe-add-liquidity-modal__liquidity-shape-border-hover);
         }
       }

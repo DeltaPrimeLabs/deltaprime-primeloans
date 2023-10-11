@@ -24,6 +24,14 @@ export default class HealthService {
       console.log('healthService - noSmartLoan');
       return 1;
     }
+    const someFarmsNotLoaded = Object.values(stakeStoreFarms).some((token) => {
+      return token.some(bin => {
+        return !bin.totalBalance || typeof bin.totalBalance === 'number'
+      })
+    })
+    if (someFarmsNotLoaded) {
+      return;
+    }
 
     const redstonePriceDataRequest = await fetch(config.redstoneFeedUrl);
     const redstonePriceData = await redstonePriceDataRequest.json();

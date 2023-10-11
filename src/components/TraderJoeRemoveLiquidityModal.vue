@@ -2,9 +2,12 @@
   <div id="modal" v-if="lpToken" class="remove-liquidity-modal-component modal-component">
     <Modal>
       <div class="modal__title">
-        Export LB position
+        Remove LB position
       </div>
-
+      <div class="modal-top-desc">
+          This transaction can take up to a minute to perform.
+        <br>
+      </div>
       <div class="liquidity-option">
         <div class="label-with-separator">
           Price range

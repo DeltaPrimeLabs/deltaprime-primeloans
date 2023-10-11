@@ -24,43 +24,51 @@ let wallet = mnemonicWallet.connect(provider);
 
 
 const fetchHistoricalPrices = async (timestamp) => {
-  // const file = fs.readFileSync('timestamps.json', 'utf-8');
-  // let timestampsData = JSON.parse(file);
+  const file = fs.readFileSync('timestamps.json', 'utf-8');
+  let timestampsData = JSON.parse(file);
 
   const nodeAddress1 = '0x83cbA8c619fb629b81A65C2e67fE15cf3E3C9747';
   const nodeAddress2 = '0x2c59617248994D12816EE1Fa77CE0a64eEB456BF';
   const nodeAddress3 = '0x12470f7aBA85c8b81D63137DD5925D6EE114952b';
 
-  // const timestamps = timestampsData.timestamps;
+  const timestamps = timestampsData.timestamps;
 
-  let json = [];
+  let results = {};
 
-  const dater = new EthDater(web);
+  await Promise.all(
+    timestamps.map(async timestamp => {
+      let json = [];
 
-  let blockData = await dater.getDate(timestamp);
+      const dater = new EthDater(web);
 
-  let block = await provider.getBlock(blockData.block);
+      let blockData = await dater.getDate(timestamp);
 
-  let approxTimestamp = parseInt((block.timestamp / 10).toString()) * 10; //requirement for Redstone
+      let block = await provider.getBlock(blockData.block);
 
-  const feeds = await queryHistoricalFeeds(approxTimestamp, [nodeAddress1, nodeAddress2, nodeAddress3]);
+      let approxTimestamp = parseInt((block.timestamp / 10).toString()) * 10; //requirement for Redstone
 
-  if (feeds && feeds.length > 0) {
-    for (let obj of feeds) {
+      const feeds = await queryHistoricalFeeds(approxTimestamp, [nodeAddress1, nodeAddress2, nodeAddress3]);
 
-        let txId = obj.node.id;
-        let url = `https://arweave.net/${txId}`;
+      if (feeds && feeds.length > 0) {
+        for (let obj of feeds) {
 
-        const response = await fetch(url);
+            let txId = obj.node.id;
+            let url = `https://arweave.net/${txId}`;
 
-        json.push(await response.json());
-    }
-  }
+            const response = await fetch(url);
+
+            json.push(await response.json());
+        }
+      }
+
+      results[timestamp] = json;
+    })
+  );
 
   // console.log(json)
-  return json;
+  // return json;
 
-  // fs.writeFileSync('feeds.json', JSON.stringify(json));
+  fs.writeFileSync('feeds.json', JSON.stringify(results));
 }
 
 async function getData(loanAddress, timestamp) {
@@ -75,12 +83,12 @@ async function getData(loanAddress, timestamp) {
 
     let loan = new ethers.Contract(loanAddress, ARTIFACT.abi, wallet);
 
-    // const feedsFile = fs.readFileSync('feeds.json', 'utf-8');
+    const feedsFile = fs.readFileSync('feeds.json', 'utf-8');
 
-    // let json = JSON.parse(feedsFile);
-    const json = await fetchHistoricalPrices(timestamp);
+    let json = JSON.parse(feedsFile);
+    // const json = await fetchHistoricalPrices(timestamp);
 
-    const feeds = json.map(feed => SignedDataPackage.fromObj(feed));
+    const feeds = json[timestamp].map(feed => SignedDataPackage.fromObj(feed));
 
     const wrappedContract =
         WrapperBuilder.wrap(loan).usingDataPackages(feeds);
@@ -102,24 +110,19 @@ async function getData(loanAddress, timestamp) {
       solvent: fromWei(decoded[0][4]),
     };
 
-    console.log(status);
     return status;
   } catch (e) {
-    console.log('-----------------getLoanStatusAtTimestamp------------------------')
-    console.log('loanAddress: ', loanAddress)
-    console.log(e)
-    throw e;
-    // const file = fs.readFileSync("./failed-loans.json", "utf-8");
-    // let data = JSON.parse(file);
+    const file = fs.readFileSync("./failed-loans.json", "utf-8");
+    let data = JSON.parse(file);
 
-    // if (!data.failed[loanAddress]) data.failed[loanAddress] = [];
+    if (!data.failed[loanAddress]) data.failed[loanAddress] = [];
 
-    // data.failed[loanAddress].push(timestamp);
-    // data.failed[loanAddress] = [...new Set(data.failed[loanAddress])]; //removing duplicates
+    data.failed[loanAddress].push(timestamp);
+    data.failed[loanAddress] = [...new Set(data.failed[loanAddress])]; //removing duplicates
 
-    // data = JSON.stringify(data);
+    data = JSON.stringify(data);
 
-    // fs.writeFileSync("./failed-loans.json", data);
+    fs.writeFileSync("./failed-loans.json", data);
   }
 }
 
@@ -137,3 +140,5 @@ async function tryFetch(func, args) {
 module.exports = {
   getLoanStatusAtTimestamp: getData
 }
+
+fetchHistoricalPrices();

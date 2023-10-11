@@ -1,16 +1,39 @@
 {
-  "arbitrum": {
-    "junior-tranche": {
-      "symbol": "arbJnrLLP",
-      "protocolIdentifier": "arbJnrLLP"
+  "Junior": {
+    "slug": "junior-tranche",
+    "symbol": "arbJnrLLP",
+    "protocolIdentifier": "arbJnrLLP"
+  },
+  "Mezzanine": {
+    "slug": "mezzanine-tranche",
+    "symbol": "arbMzeLLP",
+    "protocolIdentifier": "arbMzeLLP"
+  },
+  "Senior": {
+    "slug": "senior-tranche",
+    "symbol": "arbSnrLLP",
+    "protocolIdentifier": "arbSnrLLP"
+  },
+  "lpSymbols": {
+    "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f": {
+      "decimals": 8,
+      "symbol": "BTC"
     },
-    "mezzanine-tranche": {
-      "symbol": "arbMzeLLP",
-      "protocolIdentifier": "arbMzeLLP"
+    "0x82af49447d8a07e3bd95bd0d56f35241523fbab1": {
+      "decimals": 18,
+      "symbol": "ETH"
     },
-    "senior-tranche": {
-      "symbol": "arbSnrLLP",
-      "protocolIdentifier": "arbSnrLLP"
+    "0x912ce59144191c1204e64559fe8253a0e49e6548": {
+      "decimals": 18,
+      "symbol": "ARB"
+    },
+    "0xaf88d065e77c8cc2239327c5edb3a432268e5831": {
+      "decimals": 6,
+      "symbol": "USDC"
+    },
+    "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9": {
+      "decimals": 6,
+      "symbol": "USDT"
     }
   }
 }
