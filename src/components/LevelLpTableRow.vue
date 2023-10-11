@@ -40,7 +40,7 @@
         </div>
       </div>
 
-      <div class="table__cell table__cell--double-value loan">
+      <div class="table__cell table__cell--double-value tvl">
         {{ tvl | usd }}
       </div>
 
@@ -701,7 +701,7 @@ export default {
         margin-left: 66px;
       }
 
-      &.apr, &.max-apr {
+      &.apr, &.max-apr, &.tvl {
         align-items: flex-end;
       }
 
