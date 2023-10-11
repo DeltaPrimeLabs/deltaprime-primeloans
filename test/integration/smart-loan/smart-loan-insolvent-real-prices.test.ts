@@ -579,8 +579,7 @@ describe('Smart loan - real prices', () => {
                                     dataFeeds: ["AVAX", "ETH", "USDC", "USDT", "BTC", "PNG", "QI", "sAVAX", "YY_AAVE_AVAX", "GLP"],
                                     // @ts-ignore
                                     disablePayloadsDryRun: true
-                                },
-                                 CACHE_LAYER_URLS.urls
+                                }
                             );
 
                             for (let [symbol, leverage] of Object.entries(testCase.debtCoverage)) {
@@ -799,7 +798,6 @@ describe('Smart loan - real prices', () => {
                     // @ts-ignore
                     disablePayloadsDryRun: true
                 },
-                 CACHE_LAYER_URLS.urls
             );
 
             await wrappedLoan.isSolvent();

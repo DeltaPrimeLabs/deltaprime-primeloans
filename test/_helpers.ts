@@ -109,6 +109,22 @@ export const time = {
     }
 }
 
+export const takeSnapshot = async () => {
+    const snapshotId = await ethers.provider.send("evm_snapshot", []);
+    return snapshotId;
+};
+
+export const revertToSnapshot = async (snapshotId: number) => {
+    await ethers.provider.send("evm_revert", [snapshotId]);
+};
+
+export const setBalance = async (user: string) => {
+    await network.provider.send("hardhat_setBalance", [
+        user,
+        "0x43C33C1937564800000",
+    ]);
+};
+
 export const toRepay = function (
     action: string,
     debt: number,
@@ -740,8 +756,10 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
 
     if (mock) {
         await deployFacet("HealthMeterFacetMock", diamondAddress, ['getHealthMeter'], hardhatConfig);
-    } else {
-        await deployFacet("HealthMeterFacetProd", diamondAddress, ['getHealthMeter'], hardhatConfig);
+    } else if (chain == 'AVAX') {
+        await deployFacet("HealthMeterFacetProdAvalanche", diamondAddress, ['getHealthMeter'], hardhatConfig);
+    } else if (chain == 'ARBITRUM') {
+        await deployFacet("HealthMeterFacetProdArbitrum", diamondAddress, ['getHealthMeter'], hardhatConfig);
     }
 
     if (chain == 'AVAX') {

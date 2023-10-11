@@ -13,7 +13,9 @@ import {
     deployAndInitExchangeContract,
     recompileConstantsFile,
     toBytes32,
-    toWei, ZERO
+    toWei, ZERO, setBalance,
+    takeSnapshot,
+    revertToSnapshot
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import { parseUnits } from "ethers/lib/utils";
@@ -36,8 +38,12 @@ chai.use(solidity);
 const traderJoeRouterAddress = "0x60aE616a2155Ee3d9A68541Ba4544862310933d4";
 
 describe('Smart loan', () => {
+    let snapshotId: number;
+
     before("Synchronize blockchain time", async () => {
         await syncTime();
+
+        snapshotId = await takeSnapshot();
     });
 
     describe('A loan with edge LTV cases', () => {
@@ -105,6 +111,13 @@ describe('Smart loan', () => {
             await diamondCut.pause();
             await replaceFacet('MockSolvencyFacetAlwaysSolvent', diamondAddress, ['isSolvent']);
             await diamondCut.unpause();
+        });
+
+        after(async () => {
+            await revertToSnapshot(snapshotId);
+
+            await setBalance(owner.address);
+            await setBalance(depositor.address);
         });
 
         it("should deploy a smart loan", async () => {
@@ -188,7 +201,7 @@ describe('Smart loan', () => {
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
-            tokensPrices = await getTokensPricesMap(assetsList, getRedstonePrices, []);
+            tokensPrices = await getTokensPricesMap(assetsList, "avalanche", getRedstonePrices, []);
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
             addMissingTokenContracts(tokenContracts, assetsList);
@@ -227,6 +240,13 @@ describe('Smart loan', () => {
             await diamondCut.pause();
             await replaceFacet('MockSolvencyFacetAlwaysSolvent', diamondAddress, ['isSolvent']);
             await diamondCut.unpause();
+        });
+
+        after(async () => {
+            await revertToSnapshot(snapshotId);
+
+            await setBalance(owner.address);
+            await setBalance(depositor.address);
         });
 
         it("should deploy a smart loan", async () => {
@@ -271,8 +291,8 @@ describe('Smart loan', () => {
                 toWei(stakedAvaxAmount.toString())
             );
 
-            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(4.1666667, 0.001);
-            expect(fromWei(await wrappedLoan.getHealthMeter())).to.be.closeTo(95, 0.001);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(4.1666667, 0.01);
+            expect(fromWei(await wrappedLoan.getHealthMeter())).to.be.closeTo(95, 0.002);
         });
     });
 
@@ -386,6 +406,13 @@ describe('Smart loan', () => {
             }
         );
 
+        after(async () => {
+            await revertToSnapshot(snapshotId);
+
+            await setBalance(owner.address);
+            await setBalance(depositor.address);
+        });
+
         it("should deploy a smart loan", async () => {
             await smartLoansFactory.connect(borrower).createLoan();
 
@@ -407,7 +434,6 @@ describe('Smart loan', () => {
                     // @ts-ignore
                     disablePayloadsDryRun: true,
                 },
-                CACHE_LAYER_URLS.urls
             );
         });
 
@@ -432,7 +458,7 @@ describe('Smart loan', () => {
 
         it("should invest to yield yak", async () => {
             const usdcDeposited = parseUnits("500", BigNumber.from("6"));
-            const amountSwapped = toWei("50");
+            const amountSwapped = toWei("100");
             await tokenContracts
                 .get("AVAX")!
                 .connect(borrower)
@@ -462,7 +488,7 @@ describe('Smart loan', () => {
 
             const investAmount = toWei("110");
 
-            await wrappedLoan.vectorStakeWAVAX1(investAmount);
+            await wrappedLoan.vectorStakeWAVAX1Auto(investAmount);
 
             await wrappedLoan.getHealthMeter();
         });

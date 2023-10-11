@@ -3,14 +3,14 @@
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import "@redstone-finance/evm-connector/contracts/data-services/ArbitrumProdDataServiceConsumerBase.sol";
+import "@redstone-finance/evm-connector/contracts/core/RedstoneConsumerNumericBase.sol";
 import "../interfaces/ITokenManager.sol";
 import "../Pool.sol";
 
 //This path is updated during deployment
 import "../lib/local/DeploymentConstants.sol";
 
-contract HealthMeterFacetProd is ArbitrumProdDataServiceConsumerBase {
+abstract contract HealthMeterFacetProd is RedstoneConsumerNumericBase {
     struct AssetPrice {
         bytes32 asset;
         uint256 price;

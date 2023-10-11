@@ -15,6 +15,7 @@ import {
     getLiquidationAmounts,
     PoolAsset,
     recompileConstantsFile,
+    setBalance,
     toBytes32,
     toWei
 } from "../../_helpers";
@@ -278,6 +279,7 @@ describe('Smart loan', () => {
 
             exchange = await deployAndInitExchangeContract(owner, traderJoeRouterAddress, tokenManager.address, supportedAssets, "TraderJoeIntermediary") as TraderJoeIntermediary;
             //deposit other tokens
+            await setBalance(depositor.address);
             await depositToPool("USDC", tokenContracts['USDC'], poolContracts.USDC, 10000, INITIAL_PRICES.USDC);
             await depositToPool("ETH", tokenContracts['ETH'], poolContracts.ETH, 1, INITIAL_PRICES.ETH);
 
