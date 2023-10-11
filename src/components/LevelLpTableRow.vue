@@ -41,7 +41,7 @@
       </div>
 
       <div class="table__cell table__cell--double-value loan">
-        {{ lpToken.tvl | usd }}
+        {{ tvl | usd }}
       </div>
 
       <div class="table__cell table__cell--double-value apr" v-bind:class="{'apr--with-warning': lpToken.aprWarning}">
@@ -146,6 +146,7 @@ export default {
     this.watchAssetApysRefresh();
     this.watchExternalAssetBalanceUpdate();
     this.fetchHistoricalPrices();
+    this.setupTvl();
     await this.setupApr();
   },
 
@@ -522,6 +523,10 @@ export default {
     async setupPoolBalance() {
       const lpTokenContract = new ethers.Contract(this.lpToken.address, erc20ABI, provider);
       this.poolBalance = fromWei(await lpTokenContract.totalSupply());
+    },
+
+    async setupTvl() {
+      this.tvl = (await (await fetch(`https://uophm6e26f.execute-api.us-east-1.amazonaws.com/levelTvl/${this.lpToken.symbol}`)).json()).tvl;
     },
 
     async getWalletLpTokenBalance() {
