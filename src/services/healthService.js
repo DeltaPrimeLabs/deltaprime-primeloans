@@ -20,6 +20,7 @@ export default class HealthService {
 
   async calculateHealth(noSmartLoan, debtsPerAsset, assets, assetBalances, lpAssets, lpBalances, concentratedLpAssets, concentratedLpBalances, levelAssets, levelBalances, traderJoeV2LpAssets, stakeStoreFarms) {
     console.log('healthService.calculateHealth()');
+    console.log(0)
     if (noSmartLoan) {
       console.log('healthService - noSmartLoan');
       return 1;
@@ -36,7 +37,7 @@ export default class HealthService {
     const redstonePriceDataRequest = await fetch(config.redstoneFeedUrl);
     const redstonePriceData = await redstonePriceDataRequest.json();
 
-    if (debtsPerAsset && assets && assetBalances && lpAssets && lpBalances && levelAssets && levelBalances && stakeStoreFarms) {
+    if (debtsPerAsset && assets && assetBalances && lpAssets && lpBalances && stakeStoreFarms) {
       let tokens = [];
       for (const [symbol, data] of Object.entries(assets)) {
         let borrowed = debtsPerAsset[symbol] ? parseFloat(debtsPerAsset[symbol].debt) : 0;
@@ -71,14 +72,16 @@ export default class HealthService {
         });
       }
 
-      for (const [symbol, data] of Object.entries(levelAssets)) {
-        tokens.push({
-          price: redstonePriceData[symbol] ? redstonePriceData[symbol][0].dataPoints[0].value : 0,
-          balance: parseFloat(levelBalances[symbol]),
-          borrowed: 0,
-          debtCoverage: data.debtCoverage,
-          symbol: symbol
-        });
+      if (levelAssets) {
+        for (const [symbol, data] of Object.entries(levelAssets)) {
+          tokens.push({
+            price: redstonePriceData[symbol] ? redstonePriceData[symbol][0].dataPoints[0].value : 0,
+            balance: parseFloat(levelBalances[symbol]),
+            borrowed: 0,
+            debtCoverage: data.debtCoverage,
+            symbol: symbol
+          });
+        }
       }
 
       for (const [symbol, farms] of Object.entries(stakeStoreFarms)) {
@@ -97,6 +100,8 @@ export default class HealthService {
 
       let lbTokens = Object.values(traderJoeV2LpAssets);
 
+      console.log(tokens)
+      console.log(lbTokens)
       const health = calculateHealth(tokens, lbTokens);
       this.health$.next(health >= 0 ? health : 0);
       console.warn('EMITTING HEALTH: ', health);
