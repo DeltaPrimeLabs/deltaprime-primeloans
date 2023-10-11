@@ -329,12 +329,13 @@ export default {
       }
 
       await setExposures(allAssets);
-      await setExposures(allLevelLpAssets);
-
-
       commit('setAssets', allAssets);
-      commit('setLevelLpAssets', allLevelLpAssets);
-    },
+
+      if (allLevelLpAssets) {
+        await setExposures(allLevelLpAssets);
+        commit('setLevelLpAssets', allLevelLpAssets);
+      }
+      },
 
     async setupLpAssets({state, rootState, commit}) {
       const lpService = rootState.serviceRegistry.lpService;
