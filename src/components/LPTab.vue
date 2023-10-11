@@ -328,10 +328,10 @@ export default {
     },
     setupLevelLpTableHeaderConfig() {
       this.levelLpTableHeaderConfig = {
-        gridTemplateColumns: 'repeat(4, 1fr) 12% 135px 60px 80px 22px',
+        gridTemplateColumns: 'repeat(6, 1fr) 120px 120px 60px 80px 22px',
         cells: [
           {
-            label: 'Level LLP Token',
+            label: 'Level LLP',
             sortable: false,
             class: 'token',
             id: 'TOKEN',
@@ -344,6 +344,12 @@ export default {
             class: 'balance',
             id: 'BALANCE',
             tooltip: `The number and value of unstaked assets in your Prime Account.`
+          },          {
+            label: 'Rewards',
+            sortable: false,
+            class: 'rewards',
+            id: 'REWARDS',
+            tooltip: `Rewards from Level.`
           },
           {
             label: 'Trend (7D)',
@@ -359,6 +365,13 @@ export default {
             id: 'tvl',
             tooltip: `The Total Value Locked (TVL) in the underlying pool.<br>
                       <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/pools#tvl' target='_blank'>More information</a>.`
+          },
+          {
+            label: 'Capacity',
+            sortable: false,
+            class: 'capacity',
+            id: 'capacity',
+            tooltip: ``
           },
           {
             label: 'Min. APR',

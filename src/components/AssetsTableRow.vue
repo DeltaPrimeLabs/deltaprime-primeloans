@@ -370,24 +370,17 @@ export default {
           const gasPrice = ethers.utils.parseUnits('0.2', 'gwei');
 
           try {
-            console.log(
-                await yakRouter.findBestPathWithGas(
-                    amountIn,
-                    tknFrom,
-                    tknTo,
-                    maxHops,
-                    gasPrice,
-                    {gasLimit: 1e9}
-                )
-            )
-            return await yakRouter.findBestPathWithGas(
-                amountIn,
-                tknFrom,
-                tknTo,
-                maxHops,
-                gasPrice,
-                {gasLimit: 1e9}
-            );
+            return {
+              ...(await yakRouter.findBestPathWithGas(
+                  amountIn,
+                  tknFrom,
+                  tknTo,
+                  maxHops,
+                  gasPrice,
+                  {gasLimit: 1e9}
+              )),
+              dex: 'YAK_SWAP'
+            }
           } catch (e) {
             this.handleTransactionError(e);
           }
@@ -410,12 +403,15 @@ export default {
             }
           } else {
             try {
-              return await yakWrapRouter.unwrapAndFindBestPath(
+              return {
+                ...(await yakWrapRouter.unwrapAndFindBestPath(
                   amountIn,
                   tknTo,
                   config.yieldYakGlpWrapperAddress,
                   maxHops,
-                  gasPrice);
+                  gasPrice)),
+                  dex: 'YAK_SWAP'
+              }
             } catch (e) {
               this.handleTransactionError(e);
             }

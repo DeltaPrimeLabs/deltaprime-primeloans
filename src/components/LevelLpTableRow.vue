@@ -1,12 +1,12 @@
 <template>
-  <div class="lp-table-row-component" :class="{'expanded': rowExpanded}">
+  <div class="lp-table-row-component level" :class="{'expanded': rowExpanded}">
     <div class="table__row" v-if="lpToken">
       <div class="table__cell asset">
         <img class="asset__icon" :src="`src/assets/logo/${lpToken.symbol.toLowerCase()}.${lpToken.logoExt}`">
         <div class="asset__info">
-          <div class="asset__name">{{ lpToken.name }}</div>
+          <a class="asset__name" :href="lpToken.link" target=”_blank”>{{ lpToken.name }}</a>
           <div class="asset__dex">
-            by Level Finance
+            by Level
           </div>
         </div>
       </div>
@@ -28,6 +28,10 @@
         </template>
       </div>
 
+      <div class="table__cell rewards">
+        0$
+      </div>
+
       <div class="table__cell trend-level">
         <div class="trend__chart-change" v-on:click="toggleChart()">
           <SmallChartBeta :data-points="weeklyPrices"
@@ -42,6 +46,10 @@
 
       <div class="table__cell table__cell--double-value tvl">
         {{ tvl | usd }}
+      </div>
+
+      <div class="table__cell capacity">
+        <bar-gauge-beta :min="0" :max="1" :value="0.5" v-tooltip="{content: `50% is used`, classes: 'info-tooltip'}"></bar-gauge-beta>
       </div>
 
       <div class="table__cell table__cell--double-value apr" v-bind:class="{'apr--with-warning': lpToken.aprWarning}">
@@ -116,12 +124,14 @@ import Toggle from "./Toggle.vue";
 import TradingViewChart from "./TradingViewChart.vue";
 import LIQUIDITY_CALCULATOR from '/artifacts/contracts/interfaces/level/ILiquidityCalculator.sol/ILiquidityCalculator.json'
 import {BigNumber} from "ethers";
+import BarGaugeBeta from "./BarGaugeBeta.vue";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 export default {
   name: 'LevelLpTableRow',
   components: {
+    BarGaugeBeta,
     TradingViewChart, Toggle,
     DeltaIcon,
     DoubleAssetIcon,
@@ -171,7 +181,7 @@ export default {
       isLpBalanceEstimated: false,
       disableAllButtons: false,
       healthLoaded: false,
-      showChart: false,
+      showChart: false
     };
   },
 
@@ -342,6 +352,12 @@ export default {
       }
     },
 
+    levelFinanceFee() {
+      return async (sourceAsset, targetAsset, amountIn) => {
+       return Promise.resolve(0.000);
+      }
+    },
+
     async openAddFromWalletModal() {
       const modalInstance = this.openModal(AddFromWalletModal);
       modalInstance.asset = this.lpToken;
@@ -422,6 +438,7 @@ export default {
       modalInstance.title = 'Create LLP position';
       modalInstance.swapDex = 'Level';
       modalInstance.swapDebtMode = false;
+      modalInstance.userSlippage = 0.1;
       modalInstance.sourceAsset = initSourceAsset;
       modalInstance.sourceAssetBalance = this.assetBalances[initSourceAsset];
       modalInstance.assets = { ...this.assets, ...this.levelLpAssets };
@@ -445,6 +462,10 @@ export default {
 
       modalInstance.queryMethods = {
         Level: this.levelFinanceQuery(),
+      };
+
+      modalInstance.feeMethods = {
+        Level: this.levelFinanceFee(),
       };
 
       modalInstance.$on('SWAP', swapEvent => {
@@ -475,6 +496,7 @@ export default {
       modalInstance.swapDex = 'Level';
       modalInstance.dexOptions = ['Level'];
       modalInstance.swapDebtMode = false;
+      modalInstance.userSlippage = 0.1;
       modalInstance.sourceAsset = this.lpToken.symbol;
       modalInstance.sourceAssetBalance = this.levelLpBalances[this.lpToken.symbol];
       modalInstance.sourceAssetsConfig = config.LEVEL_LP_ASSETS_CONFIG;
@@ -497,6 +519,9 @@ export default {
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.queryMethods = {
         Level: this.levelFinanceQuery(),
+      };
+      modalInstance.feeMethods = {
+        Level: this.levelFinanceFee(),
       };
       modalInstance.swapDex = 'Level';
       modalInstance.$on('SWAP', swapEvent => {
@@ -568,7 +593,7 @@ export default {
       this.assetBalancesExternalUpdateService.observeExternalAssetBalanceUpdate().subscribe(updateEvent => {
         if (updateEvent.assetSymbol === this.lpToken.symbol) {
           this.levelLpBalances[this.lpToken.symbol] = updateEvent.balance;
-          this.isBalanceEstimated = !updateEvent.isTrueData;
+          this.isLpBalanceEstimated = !updateEvent.isTrueData;
           this.$forceUpdate();
         }
       })
@@ -594,12 +619,12 @@ export default {
           }
           case 'ERROR' : {
             this.disableAllButtons = false;
-            this.isBalanceEstimated = false;
+            this.isLpBalanceEstimated = false;
             break;
           }
           case 'CANCELLED' : {
             this.disableAllButtons = false;
-            this.isBalanceEstimated = false;
+            this.isLpBalanceEstimated = false;
             break;
           }
         }
@@ -636,7 +661,7 @@ export default {
       }
       this.closeModal();
       this.disableAllButtons = false;
-      this.isBalanceEstimated = false;
+      this.isLpBalanceEstimated = false;
     },
   },
 };
@@ -655,7 +680,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: repeat(4, 1fr) 12% 135px 60px 80px 22px;
+    grid-template-columns: repeat(6, 1fr) 120px 120px 60px 80px 22px;
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;
@@ -669,6 +694,10 @@ export default {
 
       &.asset {
         align-items: center;
+
+        .asset__name {
+          color: var(--default-text-color);
+        }
 
         .asset__icon {
           width: 20px;
@@ -690,7 +719,13 @@ export default {
         }
       }
 
-      &.balance, &.trend-level {
+      &.balance, &.trend-level, &.rewards {
+        align-items: flex-end;
+      }
+
+      &.capacity, &.rewards {
+        flex-direction: column;
+        justify-content: center;
         align-items: flex-end;
       }
 
@@ -777,4 +812,13 @@ export default {
   }
 }
 
+</style>
+<style lang="scss">
+.level {
+  .table__row {
+    .bar-gauge-beta-component .bar-gauge .bar {
+      width: 80px;
+    }
+  }
+}
 </style>

@@ -76,13 +76,25 @@
           <span class="percent">%</span>
         </div>
         <div class="slippage__divider"></div>
-        <span class="slippage-label">DEX slippage:</span>
-        <span class="deviation-value">{{ marketDeviation }}<span class="percent">%</span></span>
-        <div class="info__icon__wrapper">
-          <InfoIcon
-              class="info__icon"
-              :tooltip="{content: 'The difference between DEX and market prices.', placement: 'top', classes: 'info-tooltip'}"
-          ></InfoIcon>
+        <div class="fee" v-if="feeMethods && feeMethods[swapDex]">
+          <span class="slippage-label">Max. fee:</span>
+          <span class="deviation-value">{{ fee | percent }}</span>
+          <div class="info__icon__wrapper">
+            <InfoIcon
+                class="info__icon"
+                :tooltip="{content: 'The fee of underlying protocol.', placement: 'top', classes: 'info-tooltip'}"
+            ></InfoIcon>
+          </div>
+        </div>
+        <div class="dex-slippage" v-else>
+          <span class="slippage-label">DEX slippage:</span>
+          <span class="deviation-value">{{ marketDeviation }}<span class="percent">%</span></span>
+          <div class="info__icon__wrapper">
+            <InfoIcon
+                class="info__icon"
+                :tooltip="{content: 'The difference between DEX and market prices.', placement: 'top', classes: 'info-tooltip'}"
+            ></InfoIcon>
+          </div>
         </div>
       </div>
       <div v-if="slippageWarning" class="slippage-warning">
@@ -224,8 +236,10 @@ export default {
       conversionRate: null,
       sourceAssetAmount: 0,
       targetAssetAmount: 0,
+      fee: 0,
       userSlippage: 0,
       queryMethod: null,
+      feeMethods: null,
       lastChangedSource: true,
       sourceValidators: [],
       sourceWarnings: [],
@@ -358,27 +372,42 @@ export default {
           estimated = queryResponse;
         }
 
-        this.estimatedReceivedTokens = parseFloat(formatUnits(estimated, BigNumber.from(this.targetAssetData.decimals)));
+        let estimatedReceived = parseFloat(formatUnits(estimated, BigNumber.from(this.targetAssetData.decimals)));
 
-        this.updateSlippageWithAmounts();
+        this.updateSlippageWithAmounts(estimatedReceived);
+
+        if (this.feeMethods && this.feeMethods[this.swapDex]) {
+          this.fee = await this.feeMethods[this.swapDex]();
+          estimatedReceived -= this.fee * estimatedReceived;
+        }
+
         this.calculateHealthAfterTransaction();
       }
     },
 
     async updateAmountsWithSlippage() {
+
       if (!this.swapDebtMode) {
-        this.targetAssetAmount = this.receivedAccordingToOracle * (1 - this.userSlippage / 100);
+        this.targetAssetAmount = this.receivedAccordingToOracle * (1 - (this.userSlippage / 100 + (this.fee ? this.fee : 0)));
       } else {
-        this.targetAssetAmount = this.receivedAccordingToOracle * (1 + this.userSlippage / 100);
+        this.targetAssetAmount = this.receivedAccordingToOracle * (1 + (this.userSlippage / 100 + (this.fee ? this.fee : 0)));
       }
+
+      console.log('this.targetAssetAmount 2: ', this.targetAssetAmount)
+
       const targetInputChangeEvent = await this.$refs.targetInput.setCurrencyInputValue(this.targetAssetAmount);
+
+      this.estimatedReceivedTokens = this.targetAssetAmount;
+
       this.setSlippageWarning();
     },
 
-    async updateSlippageWithAmounts() {
+    async updateSlippageWithAmounts(estimatedReceivedTokens) {
+      console.log('updateSlippageWithAmounts')
+      console.log('estimatedReceivedTokens: ', estimatedReceivedTokens)
       let dexSlippage = 0;
       this.receivedAccordingToOracle = this.estimatedNeededTokens * this.sourceAssetData.price / this.targetAssetData.price;
-      dexSlippage = (this.receivedAccordingToOracle - this.estimatedReceivedTokens) / this.estimatedReceivedTokens;
+      dexSlippage = (this.receivedAccordingToOracle - estimatedReceivedTokens) / estimatedReceivedTokens;
 
       let slippageMargin = this.swapDebtMode ? 0.2 : 0.1;
 
@@ -397,6 +426,10 @@ export default {
       let updatedSlippage = slippageMargin + 100 * dexSlippage;
 
       this.userSlippage = parseFloat(updatedSlippage.toFixed(3));
+
+      console.log('slippageMargin: ', slippageMargin)
+      console.log('dexSlippage: ', dexSlippage)
+      console.log('this.userSlippage: ', this.userSlippage)
 
       await this.updateAmountsWithSlippage();
     },

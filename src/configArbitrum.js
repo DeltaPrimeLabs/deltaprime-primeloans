@@ -92,9 +92,9 @@ export default {
         'TJLB_BTC_ETH': { primary: 'BTC', secondary: 'ETH', name: 'BTC-ETH', dex: 'TraderJoe', symbol: 'TJLB_BTC_ETH', decimals: 18, baseFee: '0.001', address: addresses['TJLB_BTC_ETH'], binStep: 10, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2', link: "https://traderjoexyz.com/arbitrum/pool/v21/0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f/ETH/10"},
     },
     LEVEL_LP_ASSETS_CONFIG: {
-        "arbJnrLLP": {name: "Junior Tranche", symbol: "arbJnrLLP", short: "Jnr", logoExt: "png", decimals: 18, address: addresses.arbJnrLLP, debtCoverage: 0.83333333333, balanceMethod: "levelJnrBalance", underlyingAssets: ['BTC', 'ETH', 'ARB', 'USDT', 'USDC']},
-        "arbMzeLLP": {name: "Mezzanine Tranche", symbol: "arbMzeLLP", short: "Mze", logoExt: "png", decimals: 18, address: addresses.arbMzeLLP, debtCoverage: 0.83333333333, balanceMethod: "levelMzeBalance", underlyingAssets: ['BTC', 'ETH', 'USDT', 'USDC']},
-        "arbSnrLLP": {name: "Senior Tranche", symbol: "arbSnrLLP", short: "Snr", logoExt: "png", decimals: 18, address: addresses.arbSnrLLP, debtCoverage: 0.83333333333, balanceMethod: "levelSnrBalance", underlyingAssets: ['BTC', 'ETH', 'USDT', 'USDC']},
+        "arbJnrLLP": {name: "Junior", symbol: "arbJnrLLP", short: "Jnr", logoExt: "png", decimals: 18, address: addresses.arbJnrLLP, debtCoverage: 0.83333333333, balanceMethod: "levelJnrBalance", underlyingAssets: ['BTC', 'ETH', 'ARB', 'USDT', 'USDC'], link: 'https://app.level.finance/liquidity/junior-tranche/buy'},
+        "arbMzeLLP": {name: "Mezzanine", symbol: "arbMzeLLP", short: "Mze", logoExt: "png", decimals: 18, address: addresses.arbMzeLLP, debtCoverage: 0.83333333333, balanceMethod: "levelMzeBalance", underlyingAssets: ['BTC', 'ETH', 'USDT', 'USDC'], link: 'https://app.level.finance/liquidity/mezzanine-tranche/buy'},
+        "arbSnrLLP": {name: "Senior", symbol: "arbSnrLLP", short: "Snr", logoExt: "png", decimals: 18, address: addresses.arbSnrLLP, debtCoverage: 0.83333333333, balanceMethod: "levelSnrBalance", underlyingAssets: ['BTC', 'ETH', 'USDT', 'USDC'], link: 'https://app.level.finance/liquidity/senior-tranche/buy'},
     },
     LP_ASSETS_CONFIG: {
         // "SUSHI_DPX_ETH_LP": {

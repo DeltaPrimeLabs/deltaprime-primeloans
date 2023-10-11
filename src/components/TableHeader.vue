@@ -90,7 +90,11 @@ export default {
       justify-content: center;
     }
 
-    &.trend-level {
+    &.trend-level, &.rewards {
+      justify-content: flex-end;
+    }
+
+    &.capacity {
       justify-content: flex-end;
     }
 
