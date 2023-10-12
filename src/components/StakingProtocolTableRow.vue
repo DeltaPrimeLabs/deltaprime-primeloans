@@ -36,7 +36,7 @@
       <div class="table__cell">
         <div class="double-value staked-balance">
           <div class="double-value__pieces">
-            <span v-if="isStakedBalanceEstimated">~</span>{{
+            <span v-if="isStakedBalanceEstimated || farm.stakingContractAddress.toLowerCase() === '0xb8f531c0d3c53B1760bcb7F57d87762Fd25c4977'.toLowerCase()">~</span>{{
               isLP ? formatTokenBalance(underlyingTokenStaked, 10, true) : formatTokenBalance(underlyingTokenStaked)
             }}
           </div>
@@ -80,14 +80,14 @@
               :config="addActionsConfig"
               v-if="addActionsConfig"
               v-on:iconButtonClick="actionClick"
-              :disabled="disableAllButtons || !healthLoaded">
+              :disabled="disableAllButtons || !healthLoaded || platypusAffected">
           </IconButtonMenuBeta>
           <IconButtonMenuBeta
               class="actions__icon-button last"
               :config="removeActionsConfig"
               v-if="removeActionsConfig"
               v-on:iconButtonClick="actionClick"
-              :disabled="disableAllButtons || !healthLoaded">
+              :disabled="disableAllButtons || !healthLoaded || platypusAffected">
           </IconButtonMenuBeta>
         </div>
       </div>
@@ -134,6 +134,7 @@ export default {
     this.watchProgressBarState();
     this.watchFarmRefreshEvent();
     this.watchExternalStakedPerFarm();
+    this.platypusAffected = this.farm.strategy === 'Platypus' && ['AVAX', 'sAVAX'].includes(this.asset.symbol);
   },
   data() {
     return {
@@ -149,6 +150,7 @@ export default {
       addActionsConfig: null,
       removeActionsConfig: null,
       healthLoaded: false,
+      platypusAffected: false
     };
   },
   watch: {
