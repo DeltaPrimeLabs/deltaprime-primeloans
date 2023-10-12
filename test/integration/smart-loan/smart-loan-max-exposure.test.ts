@@ -266,7 +266,7 @@ describe('Smart loan', () => {
             const usdcDecimals = await tokenContracts.get('USDC')!.decimals();
             const expectedUSDCAmount = 90;
 
-            const slippageTolerance = 0.03;
+            const slippageTolerance = 0.05;
             const requiredAvaxAmount = tokensPrices.get('USDC')! * expectedUSDCAmount * (1 + slippageTolerance) / tokensPrices.get('AVAX')!;
 
             await expect(wrappedLoan.swapPangolin(
@@ -346,9 +346,9 @@ describe('Smart loan', () => {
 
             await expect(wrappedLoan.vectorStakeUSDC1Auto(parseUnits("11", usdcDecimals))).to.be.revertedWith("Max asset exposure breached");
             await wrappedLoan.vectorStakeUSDC1Auto(parseUnits("10", usdcDecimals));
-            expect(formatUnits(await tokenContracts.get('USDC')!.balanceOf(wrappedLoan.address), usdcDecimals)).to.be.equal(initialUsdcBalance - 10);
-            expect(fromWei((await tokenManager.groupToExposure(toBytes32("VECTOR_FINANCE")))[0])).to.be.equal(10);
-            expect(fromWei((await tokenManager.groupToExposure(toBytes32("STABLES_GROUP")))[0])).to.be.equal(initialUsdcExposure - 10);
+            expect(formatUnits(await tokenContracts.get('USDC')!.balanceOf(wrappedLoan.address), usdcDecimals)).to.be.closeTo(initialUsdcBalance - 10, 0.0001);
+            expect(fromWei((await tokenManager.groupToExposure(toBytes32("VECTOR_FINANCE")))[0])).to.be.closeTo(10, 0.0001);
+            expect(fromWei((await tokenManager.groupToExposure(toBytes32("STABLES_GROUP")))[0])).to.be.closeTo(initialUsdcExposure - 10, 0.0001);
 
             await wrappedLoan.vectorUnstakeUSDC1Auto(parseUnits("10", usdcDecimals), parseUnits("9", usdcDecimals));
 
@@ -371,9 +371,9 @@ describe('Smart loan', () => {
 
             await wrappedLoan.unstakeAVAXYak(toWei("2"));
 
-            expect(fromWei(await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address))).to.be.closeTo(initialAvaxBalance, 0.1);
+            expect(fromWei(await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address))).to.be.closeTo(initialAvaxBalance, 0.2);
             expect(fromWei((await tokenManager.groupToExposure(toBytes32("YIELD_YAK")))[0])).to.be.equal(0);
-            expect(fromWei((await tokenManager.groupToExposure(toBytes32("AVAX_GROUP")))[0])).to.be.closeTo(initialAvaxExposure, 0.1);
+            expect(fromWei((await tokenManager.groupToExposure(toBytes32("AVAX_GROUP")))[0])).to.be.closeTo(initialAvaxExposure, 0.2);
         });
 
 

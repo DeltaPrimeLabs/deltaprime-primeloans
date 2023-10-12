@@ -37,6 +37,7 @@ export default {
     hardhat: {
       forking: {
         url: "https://api.avax.network/ext/bc/C/rpc",
+        blockNumber: 36310000,
       },
     },
     localhost: {
