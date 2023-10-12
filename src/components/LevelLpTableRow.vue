@@ -29,7 +29,7 @@
       </div>
 
       <div class="table__cell rewards">
-        0$
+        {{ formatTokenBalance(rewards, 8) }}
       </div>
 
       <div class="table__cell trend-level">
@@ -126,6 +126,7 @@ import LIQUIDITY_CALCULATOR from '/artifacts/contracts/interfaces/level/ILiquidi
 import {BigNumber} from "ethers";
 import BarGaugeBeta from "./BarGaugeBeta.vue";
 
+const PRE_LEVEL_ADDRESS = '0x964d582dA16B37F8d16DF3A66e6BF0E7fd44ac3a';
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 export default {
@@ -157,6 +158,7 @@ export default {
     this.watchExternalAssetBalanceUpdate();
     this.fetchHistoricalPrices();
     this.setupTvl();
+    this.setupRewards();
     await this.setupApr();
   },
 
@@ -166,6 +168,7 @@ export default {
       removeActionsConfig: null,
       rowExpanded: false,
       poolBalance: 0,
+      rewards: 0,
       apr: 0,
       tvl: 0,
       weekly: true,
@@ -546,12 +549,17 @@ export default {
     },
 
     async setupPoolBalance() {
-      const lpTokenContract = new ethers.Contract(this.lpToken.address, erc20ABI, provider);
+      const lpTokenContract = new ethers.Contract(this.lpToken.address, erc20ABI, this.provider);
       this.poolBalance = fromWei(await lpTokenContract.totalSupply());
     },
 
     async setupTvl() {
       this.tvl = (await (await fetch(`https://uophm6e26f.execute-api.us-east-1.amazonaws.com/levelTvl/${this.lpToken.symbol}`)).json()).tvl;
+    },
+
+    async setupRewards() {
+      const lpTokenContract = new ethers.Contract(PRE_LEVEL_ADDRESS, erc20ABI, this.provider);
+      this.rewards = fromWei(await lpTokenContract.balanceOf(this.smartLoanContract.address));
     },
 
     async getWalletLpTokenBalance() {
