@@ -46,14 +46,21 @@
     <Banner v-if="showArbitrumPrimeAccountBanner" background="green-accent" :closable="true">
       Welcome to DeltaPrime Blue! In the coming weeks this page will significantly expand with partner protocols. Stay tuned!
     </Banner>
-    <Banner v-if="showAvalanchePrimeAccountBanner" background="green-accent" :closable="true">
-<!--      Notice: USDT.e loses its borrowing power on Monday 25th Sep. To prevent liquidation:-->
-<!--      <a class="banner-link" href="https://discordapp.com/channels/889510301421166643/912702114252329060/1151901665012752414" target="_blank">-->
+    <Banner v-if="showAvalancheDepositorBanner" background="green-accent" :closable="true">
+      No DeltaPrime liquidity pools have been affected by the recent Platypus exploit. Read more in our Discord.
+<!--      <a class="banner-link" href="" target="_blank">-->
 <!--        <b>-->
 <!--          Read more.-->
 <!--        </b>-->
 <!--      </a>-->
-      Liquidity Books incoming! It is currently Live on Arbitrum and will be live here shortly.
+    </Banner>
+    <Banner v-if="showAvalanchePrimeAccountBanner" background="green-accent" :closable="true">
+      Platypus has temporarily paused withdrawals from their vaults. Read more in our Discord.
+<!--      <a class="banner-link" href="" target="_blank">-->
+<!--        <b>-->
+<!--          Read more.-->
+<!--        </b>-->
+<!--      </a>-->
     </Banner>
     <div class="content">
       <div class="top-bar">
@@ -109,6 +116,7 @@ export default {
       showPrimeAccountBanner: false,
       showArbitrumDepositorBanner: false,
       showArbitrumPrimeAccountBanner: false,
+      showAvalancheDepositorBanner: false,
       showAvalanchePrimeAccountBanner: false,
       remainingTime: "",
       darkMode: false,
@@ -161,6 +169,7 @@ export default {
 
     if (config.chainId === 43114) {
       if (window.location.href.includes('pools')) {
+        this.showAvalancheDepositorBanner = true;
       }
       if (window.location.href.includes('prime-account')) {
         this.showAvalanchePrimeAccountBanner = true;
