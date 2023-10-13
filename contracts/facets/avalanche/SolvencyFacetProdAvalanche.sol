@@ -499,12 +499,9 @@ contract SolvencyFacetProdAvalanche is AvalancheDataServiceConsumerBase, Diamond
 
                     price = PriceHelper.convert128x128PriceToDecimal(binInfo.pair.getPriceFromId(binInfo.id)); // how is it denominated (what precision)?
 
-//                    console.log('price: ', price);
-                    liquidity = price * binReserveX
-                        / 10 ** IERC20Metadata(address(binInfo.pair.getTokenX())).decimals()
-                        + binReserveY;
+                    liquidity = price * binReserveX / 10 ** 18 + binReserveY;
 
-//                    console.log('liquidity: ', liquidity);
+                    console.log('liquidity: ', liquidity);
                 }
 
 
@@ -512,28 +509,22 @@ contract SolvencyFacetProdAvalanche is AvalancheDataServiceConsumerBase, Diamond
                     uint256 debtCoverageX = weighted ? DeploymentConstants.getTokenManager().debtCoverage(address(binInfo.pair.getTokenX())) : 1e18;
                     uint256 debtCoverageY = weighted ? DeploymentConstants.getTokenManager().debtCoverage(address(binInfo.pair.getTokenY())) : 1e18;
 
-                    console.log('Math.min a orig: ',debtCoverageX * liquidity * priceInfo.priceX / (price * 10 ** 8));
-                    console.log('Math.min b orig: ', debtCoverageY * liquidity / 10 ** IERC20Metadata(address(binInfo.pair.getTokenY())).decimals() * priceInfo.priceY / 10 ** 8);
-
-                    console.log('Math.min a 1: ', debtCoverageX * liquidity * priceInfo.priceX / (price * 10 ** 8));
-                    console.log('Math.min b 1: ', debtCoverageY * liquidity * priceInfo.priceY / 10 ** 8);
-
-                    console.log('Math.min a 2: ', debtCoverageX * liquidity * priceInfo.priceX / price * 10 ** 10 / 10 ** IERC20Metadata(address(binInfo.pair.getTokenX())).decimals());
-                    console.log('Math.min b 2: ', debtCoverageY * liquidity * priceInfo.priceY * 10 ** 10 / 10 ** IERC20Metadata(address(binInfo.pair.getTokenY())).decimals());
-
-                    console.log('-------------------');
+                    console.log('1: ', debtCoverageX * liquidity);
+                    console.log('price: ',price);
+                    console.log('2: ',debtCoverageX * liquidity / (price / 10 ** 18));
+                    console.log('3: ',debtCoverageX * liquidity / (price / 10 ** 18) / 10 ** IERC20Metadata(address(binInfo.pair.getTokenX())).decimals());
+                    console.log('4: ',debtCoverageX * liquidity / (price / 10 ** 18) / 10 ** IERC20Metadata(address(binInfo.pair.getTokenX())).decimals() * priceInfo.priceX / 10 ** 8);
+                    console.log('Math.min a 1: ', debtCoverageX * liquidity / (price / 10 ** 18) / 10 ** IERC20Metadata(address(binInfo.pair.getTokenX())).decimals() * priceInfo.priceX / 10 ** 8);
+                    console.log('Math.min b 1: ', debtCoverageY * liquidity / 10**18 * priceInfo.priceY / 10 ** 8);
 
                     total = total +
                     Math.min(
-//                        debtCoverageX * liquidity * priceInfo.priceX / price * 10 ** 10 / 10 ** IERC20Metadata(address(binInfo.pair.getTokenX())).decimals(),
-                        debtCoverageX * liquidity * priceInfo.priceX / (price * 10 ** 8),
-                        debtCoverageY * liquidity / 10 ** IERC20Metadata(address(binInfo.pair.getTokenY())).decimals() * priceInfo.priceY / 10 ** 8
+                        debtCoverageX * liquidity / (price / 10 ** 18) / 10 ** IERC20Metadata(address(binInfo.pair.getTokenX())).decimals() * priceInfo.priceX / 10 ** 8,
+                        debtCoverageY * liquidity / 10**18 * priceInfo.priceY / 10 ** 8
                     )
                     .mulDivRoundDown(binInfo.pair.balanceOf(address(this), binInfo.id), 1e18)
                     .mulDivRoundDown(1e18, binInfo.pair.totalSupply(binInfo.id));
                 }
-
-                console.log('total: ', total);
 
             }
 

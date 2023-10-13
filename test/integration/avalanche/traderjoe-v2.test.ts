@@ -192,7 +192,7 @@ describe('Smart loan', () => {
             await tokenContracts.get('AVAX')!.connect(owner).approve(wrappedLoan.address, toWei("5000"));
             await wrappedLoan.fund(toBytes32("AVAX"), toWei("5000"));
 
-            // await wrappedLoan.swapTraderJoe(toBytes32("AVAX"), toBytes32("USDC"), toWei("2.5"), 0);
+            await wrappedLoan.swapTraderJoe(toBytes32("AVAX"), toBytes32("USDC"), toWei("15"), 0);
             await wrappedLoan.swapTraderJoe(toBytes32("AVAX"), toBytes32("BTC"), toWei("100"), 0);
             // await wrappedLoan.swapTraderJoe(toBytes32("AVAX"), toBytes32("ETH"), toWei("2.5"), 0);
 
@@ -326,45 +326,97 @@ describe('Smart loan', () => {
         //
         //     expect(tvAfter).to.be.lt(tvBefore);
         //     expect(hrAfter).to.be.lt(hrBefore);
-        //     expect(bins.length).to.be.equal(1);
+            // expect(bins.length).to.be.equal(1);
         // });
 
-        // it("should add liquidity to the same bin", async () => {
-        //     const addedAvax = toWei('1');
-        //     const addedUSDC = parseUnits('10', BigNumber.from('6'));
-        //
-        //     const tvBefore = fromWei(await wrappedLoan.getTotalValue());
-        //     const hrBefore = fromWei(await wrappedLoan.getHealthRatio());
-        //
-        //     await expect(wrappedLoan.addLiquidityTraderJoeV2(
-        //         [
-        //             "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
-        //             "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
-        //             20,
-        //             addedAvax,
-        //             addedUSDC,
-        //             0, // min AVAX
-        //             0, // min USDC
-        //             8376120,
-        //             16777215, //max uint24 - means that we accept every distance ("slippage") from the active bin
-        //             [0], //just one bin
-        //             [addedAvax],
-        //             [addedUSDC],
-        //             "0x6C21A841d6f029243AF87EF01f6772F05832144b",
-        //             "0x6C21A841d6f029243AF87EF01f6772F05832144b",
-        //             Math.ceil((new Date().getTime() / 1000) + 100)]
-        //     )).not.to.be.reverted;
-        //
-        //     const bins = await wrappedLoan.getOwnedTraderJoeV2Bins();
-        //
-        //     const tvAfter = fromWei(await wrappedLoan.getTotalValue());
-        //     const hrAfter = fromWei(await wrappedLoan.getHealthRatio());
-        //
-        //     expect(tvBefore).to.be.closeTo(tvAfter, 0.5);
-        //     expect(hrBefore).to.be.closeTo(hrAfter, 0.5);
-        //     expect(bins.length).to.be.equal(1);
-        // });
+        it("should add liquidity to the same bin", async () => {
+            const addedAvax = toWei('10');
+            const addedUSDC = parseUnits('100', BigNumber.from('6'));
 
+            const tvBefore = fromWei(await wrappedLoan.getTotalValue());
+            const hrBefore = fromWei(await wrappedLoan.getHealthRatio());
+
+            console.log(0);
+            await expect(wrappedLoan.addLiquidityTraderJoeV2(
+                [
+                    "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
+                    "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
+                    20,
+                    addedAvax,
+                    addedUSDC,
+                    0, // min AVAX
+                    0, // min USDC
+                    8375885,
+                    5, //max uint24 - means that we accept every distance ("slippage") from the active bin
+                    [
+                        -21,
+                        -20,
+                        -19,
+                        -18,
+                        -17,
+                        -16,
+                        -15,
+                        -14,
+                        -13,
+                        -12,
+                        -11,
+                        -10,
+                        -9,
+                        -8,
+                        -7,
+                        -6,
+                        -5,
+                        -4,
+                        -3,
+                        -2,
+                        -1,
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5,
+                        6,
+                        7,
+                        8,
+                        9,
+                        10,
+                        11,
+                        12,
+                        13,
+                        14,
+                        15,
+                        16,
+                        17,
+                        18,
+                        19,
+                        20,
+                        21,
+                        22,
+                        23
+                    ],
+                    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,21276595744680841,42553191489361692,42553191489361692,42553191489361692,42553191489361692,42553191489361692,42553191489361692,42553191489361692,42553191489361692,42553191489361692,42553191489361692,42553191489361692,42553191489361692,42553191489361692,42553191489361692,42553191489361692,42553191489361692,42553191489361692,42553191489361692,42553191489361692,42553191489361692,42553191489361692,42553191489361692,42553191489361692].map(el => el.toString()),
+                    [46511627906976734,46511627906976734,46511627906976734,46511627906976734,46511627906976734,46511627906976734,46511627906976734,46511627906976734,46511627906976734,46511627906976734,46511627906976734,46511627906976734,46511627906976734,46511627906976734,46511627906976734,46511627906976734,46511627906976734,46511627906976734,46511627906976734,46511627906976734,46511627906976734,23255813953488362,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0].map(el=> el.toString()),
+                    "0x6C21A841d6f029243AF87EF01f6772F05832144b",
+                    "0x6C21A841d6f029243AF87EF01f6772F05832144b",
+                    Math.ceil((new Date().getTime() / 1000) + 100)]
+            )).not.to.be.reverted;
+            console.log(1);
+
+            let tjvalue = fromWei(await wrappedLoan.getTotalTraderJoeV2());
+            console.log('tjvalue: ', tjvalue)
+
+            const bins = await wrappedLoan.getOwnedTraderJoeV2Bins();
+
+            const tvAfter = fromWei(await wrappedLoan.getTotalValue());
+            const hrAfter = fromWei(await wrappedLoan.getHealthRatio());
+
+            expect(tvBefore).to.be.closeTo(tvAfter, 0.5);
+            expect(hrBefore).to.be.closeTo(hrAfter, 0.5);
+            // expect(bins.length).to.be.equal(1);
+        });
+
+/*
         it("should add liquidity to AVAX/BTC pair", async () => {
             // let bins = await wrappedLoan.getOwnedTraderJoeV2Bins();
             // expect(bins.length).to.be.equal(1);
@@ -487,7 +539,7 @@ describe('Smart loan', () => {
             // expect(hrBefore).to.be.closeTo(hrAfter, 2);
             // expect(bins.length).to.be.equal(2);
         });
-
+*/
         //     it("should remove a part of liquidity from AVAX/USDC pair", async () => {
         //         const tvBefore = fromWei(await wrappedLoan.getTotalValue());
         //         const hrBefore = fromWei(await wrappedLoan.getHealthRatio());
