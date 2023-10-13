@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: f8db734489c31b73bdfe1c19f5e9f19b30a217c1;
+// Last deployed from commit: 8f671524e3eee41b945284c6fe54791fc1da9301;
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -18,6 +18,11 @@ import "../../lib/local/DeploymentConstants.sol";
 contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     using TransferHelper for address payable;
     using TransferHelper for address;
+
+    modifier onlyOwner() {
+        DiamondStorageLib.enforceIsContractOwner();
+        _;
+    }
 
     modifier onlyWhitelistedAccounts {
         if(
@@ -41,11 +46,8 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     address private constant ETH_TOKEN =
         0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
 
-    address private constant LVL_TOKEN =
-        0xB64E280e9D1B5DbEc4AcceDb2257A87b400DB149;
-
     address private constant LEVEL_FARMING =
-        0x0180dee5Df18eBF76642e50FaaEF426f7b2874f7;
+        0xC18c952F800516E1eef6aB482F3d331c84d43d38;
 
     // LPs
     address private constant LEVEL_SENIOR_LLP =
@@ -68,7 +70,7 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         uint256 minLpAmount
     )
         public
-        onlyOwnerOrInsolvent
+        onlyOwner
         nonReentrant
         recalculateAssetsExposure
         remainsSolvent
@@ -95,7 +97,7 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         uint256 minLpAmount
     )
         public
-        onlyOwnerOrInsolvent
+        onlyOwner
         nonReentrant
         recalculateAssetsExposure
         remainsSolvent
@@ -122,7 +124,7 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         uint256 minLpAmount
     )
         public
-        onlyOwnerOrInsolvent
+        onlyOwner
         nonReentrant
         recalculateAssetsExposure
         remainsSolvent
@@ -149,7 +151,7 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         uint256 minLpAmount
     )
         public
-        onlyOwnerOrInsolvent
+        onlyOwner
         nonReentrant
         recalculateAssetsExposure
         remainsSolvent
@@ -183,7 +185,7 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         uint256 minLpAmount
     )
         public
-        onlyOwnerOrInsolvent
+        onlyOwner
         nonReentrant
         recalculateAssetsExposure
         remainsSolvent
@@ -217,7 +219,7 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         uint256 minLpAmount
     )
         public
-        onlyOwnerOrInsolvent
+        onlyOwner
         nonReentrant
         recalculateAssetsExposure
         remainsSolvent
@@ -251,7 +253,7 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         uint256 minLpAmount
     )
         public
-        onlyOwnerOrInsolvent
+        onlyOwner
         nonReentrant
         recalculateAssetsExposure
         remainsSolvent
@@ -285,7 +287,7 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         uint256 minLpAmount
     )
         public
-        onlyOwnerOrInsolvent
+        onlyOwner
         nonReentrant
         recalculateAssetsExposure
         remainsSolvent
@@ -319,7 +321,7 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         uint256 minLpAmount
     )
         public
-        onlyOwnerOrInsolvent
+        onlyOwner
         nonReentrant
         recalculateAssetsExposure
         remainsSolvent
@@ -353,7 +355,7 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         uint256 minLpAmount
     )
         public
-        onlyOwnerOrInsolvent
+        onlyOwner
         nonReentrant
         recalculateAssetsExposure
         remainsSolvent
@@ -387,7 +389,7 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         uint256 minLpAmount
     )
         public
-        onlyOwnerOrInsolvent
+        onlyOwner
         nonReentrant
         recalculateAssetsExposure
         remainsSolvent
@@ -421,7 +423,7 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         uint256 minLpAmount
     )
         public
-        onlyOwnerOrInsolvent
+        onlyOwner
         nonReentrant
         recalculateAssetsExposure
         remainsSolvent
@@ -877,8 +879,6 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
         require(amount > 0, "Cannot unstake 0 tokens");
 
-        _handleRewards(pid);
-
         uint256 balance = unstakedToken.balanceOf(address(this));
 
         if (asset == address(0)) {
@@ -921,41 +921,10 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         );
     }
 
-    function _handleRewards(uint256 pid) internal {
-        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+    function harvestRewards(uint256 pid) external nonReentrant onlyOwner {
         ILevelFinance farmingContract = ILevelFinance(LEVEL_FARMING);
-        uint256 pendingReward = farmingContract.pendingReward(pid, address(this));
-        IRewarder rewarder = farmingContract.rewarder(pid);
-        address[] memory rewardTokens;
-        if (address(rewarder) != address(0)) {
-            (rewardTokens, ) = rewarder.pendingTokens(
-                pid,
-                address(this),
-                pendingReward
-            );
-        }
-
-        farmingContract.harvest(pid, address(this));
-
-        bytes32 rewardTokenSymbol = tokenManager.tokenAddressToSymbol(LVL_TOKEN);
-        if (
-            rewardTokenSymbol != "" && IERC20(LVL_TOKEN).balanceOf(address(this)) > 0
-        ) {
-            DiamondStorageLib.addOwnedAsset(rewardTokenSymbol, LVL_TOKEN);
-        }
-
-        uint256 rewardLength = rewardTokens.length;
-        for (uint256 i; i != rewardLength; ++i) {
-            address rewardToken = rewardTokens[i];
-            rewardTokenSymbol = tokenManager.tokenAddressToSymbol(rewardToken);
-            if (rewardTokenSymbol == "") {
-                emit UnsupportedRewardToken(msg.sender, rewardToken, block.timestamp);
-                continue;
-            }
-            if (IERC20(rewardToken).balanceOf(address(this)) > 0) {
-                DiamondStorageLib.addOwnedAsset(rewardTokenSymbol, rewardToken);
-            }
-        }
+        farmingContract.harvest(pid, msg.sender);
+        emit RewardsHarvested(msg.sender, pid, block.timestamp);
     }
 
     /* ========== RECEIVE AVAX FUNCTION ========== */
@@ -998,14 +967,14 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     );
 
     /**
-     * @dev emitted when user collects rewards in tokens that are not supported
+     * @dev emitted when user harvests rewards
      * @param user the address collecting rewards
-     * @param asset reward token that was collected
+     * @param pid tranche id that rewards were harvested from
      * @param timestamp of collecting rewards
      **/
-    event UnsupportedRewardToken(
+    event RewardsHarvested(
         address indexed user,
-        address indexed asset,
+        uint256 indexed pid,
         uint256 timestamp
     );
 }
