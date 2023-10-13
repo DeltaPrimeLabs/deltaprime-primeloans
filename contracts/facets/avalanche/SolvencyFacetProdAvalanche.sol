@@ -501,7 +501,7 @@ contract SolvencyFacetProdAvalanche is AvalancheDataServiceConsumerBase, Diamond
 
                     liquidity = price * binReserveX / 10 ** 18 + binReserveY;
 
-                    console.log('liquidity: ', liquidity);
+//                    console.log('liquidity: ', liquidity);
                 }
 
 
@@ -509,13 +509,20 @@ contract SolvencyFacetProdAvalanche is AvalancheDataServiceConsumerBase, Diamond
                     uint256 debtCoverageX = weighted ? DeploymentConstants.getTokenManager().debtCoverage(address(binInfo.pair.getTokenX())) : 1e18;
                     uint256 debtCoverageY = weighted ? DeploymentConstants.getTokenManager().debtCoverage(address(binInfo.pair.getTokenY())) : 1e18;
 
-                    console.log('1: ', debtCoverageX * liquidity);
-                    console.log('price: ',price);
+//                    console.log('1: ', debtCoverageX * liquidity);
+//                    console.log('price: ',price);
 //                    console.log('2: ',debtCoverageX * liquidity / (price / 10 ** 18));
 //                    console.log('3: ',debtCoverageX * liquidity / (price / 10 ** 18) / 10 ** IERC20Metadata(address(binInfo.pair.getTokenX())).decimals());
 //                    console.log('4: ',debtCoverageX * liquidity / (price / 10 ** 18) / 10 ** IERC20Metadata(address(binInfo.pair.getTokenX())).decimals() * priceInfo.priceX / 10 ** 8);
-                    console.log('Math.min a 1: ', debtCoverageX * liquidity / price / 10 ** IERC20Metadata(address(binInfo.pair.getTokenX())).decimals() * priceInfo.priceX / 10 ** 8 * 10**18);
+                    console.log('Math.min a 1: ',
+                        price > 10**24 ?
+                            debtCoverageX * liquidity / (price / 10 ** 18) / 10 ** IERC20Metadata(address(binInfo.pair.getTokenX())).decimals() * priceInfo.priceX / 10 ** 8
+                            :
+                            debtCoverageX * liquidity / price / 10 ** IERC20Metadata(address(binInfo.pair.getTokenX())).decimals() * priceInfo.priceX / 10 ** 8 * 10**18
+                    );
                     console.log('Math.min b 1: ', debtCoverageY * liquidity / 10**(IERC20Metadata(address(binInfo.pair.getTokenY())).decimals()) * priceInfo.priceY / 10 ** 8);
+
+                    console.log('------------');
 
                     total = total +
 
