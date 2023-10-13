@@ -416,7 +416,7 @@ describe('Smart loan', () => {
             // expect(bins.length).to.be.equal(1);
         });
 
-/*
+
         it("should add liquidity to AVAX/BTC pair", async () => {
             // let bins = await wrappedLoan.getOwnedTraderJoeV2Bins();
             // expect(bins.length).to.be.equal(1);
@@ -528,7 +528,7 @@ describe('Smart loan', () => {
             )).not.to.be.reverted;
 
             let bins = await wrappedLoan.getOwnedTraderJoeV2Bins();
-            console.log(bins)
+            // console.log(bins)
             let tjvalue = fromWei(await wrappedLoan.getTotalTraderJoeV2());
             console.log('tjvalue: ', tjvalue)
 
@@ -539,7 +539,7 @@ describe('Smart loan', () => {
             // expect(hrBefore).to.be.closeTo(hrAfter, 2);
             // expect(bins.length).to.be.equal(2);
         });
-*/
+
         //     it("should remove a part of liquidity from AVAX/USDC pair", async () => {
         //         const tvBefore = fromWei(await wrappedLoan.getTotalValue());
         //         const hrBefore = fromWei(await wrappedLoan.getHealthRatio());

@@ -511,16 +511,20 @@ contract SolvencyFacetProdAvalanche is AvalancheDataServiceConsumerBase, Diamond
 
                     console.log('1: ', debtCoverageX * liquidity);
                     console.log('price: ',price);
-                    console.log('2: ',debtCoverageX * liquidity / (price / 10 ** 18));
-                    console.log('3: ',debtCoverageX * liquidity / (price / 10 ** 18) / 10 ** IERC20Metadata(address(binInfo.pair.getTokenX())).decimals());
-                    console.log('4: ',debtCoverageX * liquidity / (price / 10 ** 18) / 10 ** IERC20Metadata(address(binInfo.pair.getTokenX())).decimals() * priceInfo.priceX / 10 ** 8);
-                    console.log('Math.min a 1: ', debtCoverageX * liquidity / (price / 10 ** 18) / 10 ** IERC20Metadata(address(binInfo.pair.getTokenX())).decimals() * priceInfo.priceX / 10 ** 8);
-                    console.log('Math.min b 1: ', debtCoverageY * liquidity / 10**18 * priceInfo.priceY / 10 ** 8);
+//                    console.log('2: ',debtCoverageX * liquidity / (price / 10 ** 18));
+//                    console.log('3: ',debtCoverageX * liquidity / (price / 10 ** 18) / 10 ** IERC20Metadata(address(binInfo.pair.getTokenX())).decimals());
+//                    console.log('4: ',debtCoverageX * liquidity / (price / 10 ** 18) / 10 ** IERC20Metadata(address(binInfo.pair.getTokenX())).decimals() * priceInfo.priceX / 10 ** 8);
+                    console.log('Math.min a 1: ', debtCoverageX * liquidity / price / 10 ** IERC20Metadata(address(binInfo.pair.getTokenX())).decimals() * priceInfo.priceX / 10 ** 8 * 10**18);
+                    console.log('Math.min b 1: ', debtCoverageY * liquidity / 10**(IERC20Metadata(address(binInfo.pair.getTokenY())).decimals()) * priceInfo.priceY / 10 ** 8);
 
                     total = total +
+
                     Math.min(
-                        debtCoverageX * liquidity / (price / 10 ** 18) / 10 ** IERC20Metadata(address(binInfo.pair.getTokenX())).decimals() * priceInfo.priceX / 10 ** 8,
-                        debtCoverageY * liquidity / 10**18 * priceInfo.priceY / 10 ** 8
+                        price > 10**24 ?
+                        debtCoverageX * liquidity / (price / 10 ** 18) / 10 ** IERC20Metadata(address(binInfo.pair.getTokenX())).decimals() * priceInfo.priceX / 10 ** 8
+                        :
+                        debtCoverageX * liquidity / price / 10 ** IERC20Metadata(address(binInfo.pair.getTokenX())).decimals() * priceInfo.priceX / 10 ** 8 * 10**18,
+                        debtCoverageY * liquidity / 10**(IERC20Metadata(address(binInfo.pair.getTokenY())).decimals()) * priceInfo.priceY / 10 ** 8
                     )
                     .mulDivRoundDown(binInfo.pair.balanceOf(address(this), binInfo.id), 1e18)
                     .mulDivRoundDown(1e18, binInfo.pair.totalSupply(binInfo.id));
