@@ -17,7 +17,6 @@ import {Uint256x256Math} from "../../lib/joe-v2/math/Uint256x256Math.sol";
 import {TickMath} from "../../lib/uniswap-v3/TickMath.sol";
 import {FullMath} from "../../lib/uniswap-v3/FullMath.sol";
 
-
 //This path is updated during deployment
 import "../../lib/local/DeploymentConstants.sol";
 import "../../interfaces/facets/avalanche/IUniswapV3Facet.sol";
@@ -498,9 +497,7 @@ contract SolvencyFacetProdArbitrum is ArbitrumProdDataServiceConsumerBase, Diamo
 
                     price = PriceHelper.convert128x128PriceToDecimal(binInfo.pair.getPriceFromId(binInfo.id)); // how is it denominated (what precision)?
 
-                    liquidity = price * binReserveX
-                    / 10 ** IERC20Metadata(address(binInfo.pair.getTokenX())).decimals()
-                    + binReserveY;
+                    liquidity = price * binReserveX / 10 ** 18 + binReserveY;
                 }
 
 
@@ -510,8 +507,11 @@ contract SolvencyFacetProdArbitrum is ArbitrumProdDataServiceConsumerBase, Diamo
 
                     total = total +
                     Math.min(
-                        debtCoverageX * liquidity * priceInfo.priceX / (price * 10 ** 8),
-                        debtCoverageY * liquidity / 10 ** IERC20Metadata(address(binInfo.pair.getTokenY())).decimals() * priceInfo.priceY / 10 ** 8
+                        price > 10**24 ?
+                            debtCoverageX * liquidity / (price / 10 ** 18) / 10 ** IERC20Metadata(address(binInfo.pair.getTokenX())).decimals() * priceInfo.priceX / 10 ** 8
+                            :
+                            debtCoverageX * liquidity / price * 10**18 / 10 ** IERC20Metadata(address(binInfo.pair.getTokenX())).decimals() * priceInfo.priceX / 10 ** 8,
+                        debtCoverageY * liquidity / 10**(IERC20Metadata(address(binInfo.pair.getTokenY())).decimals()) * priceInfo.priceY / 10 ** 8
                     )
                     .mulDivRoundDown(binInfo.pair.balanceOf(address(this), binInfo.id), 1e18)
                     .mulDivRoundDown(1e18, binInfo.pair.totalSupply(binInfo.id));

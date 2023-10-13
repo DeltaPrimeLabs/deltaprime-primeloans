@@ -13,6 +13,8 @@ interface ISolvencyFacetProd {
 
     function getTotalValue() external view returns (uint256);
 
+    function getTotalTraderJoeV2() external view returns (uint256);
+
     function isSignerAuthorized(address _receivedSigner) external view returns (bool);
 
     function isSolvent() external view returns (bool);
