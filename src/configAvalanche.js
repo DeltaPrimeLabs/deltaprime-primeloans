@@ -161,7 +161,8 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['PTP', 'QI'],
                 strategy: 'Platypus',
-                refreshDelay: 60000
+                banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
+                refreshDelay: 60000,
             },
             {
                 protocol: 'VECTOR_FINANCE',
@@ -180,6 +181,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['PTP', 'QI'],
                 strategy: 'Platypus',
+                banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
                 refreshDelay: 60000
             }
         ],
@@ -202,6 +204,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['sAVAX'],
                 strategy: 'Platypus',
+                banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
                 refreshDelay: 60000
             },
             {
@@ -223,6 +226,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['PTP', 'QI'],
                 strategy: 'Platypus',
+                banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
                 refreshDelay: 60000
             },
             {
@@ -241,6 +245,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['PTP', 'QI'],
                 strategy: 'Platypus',
+                banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
                 refreshDelay: 60000
             }
         ],
@@ -262,6 +267,7 @@ export default {
                 debtCoverage: 0,
                 rewardTokens: ['PTP'],
                 strategy: 'Platypus',
+                banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
                 refreshDelay: 60000
             },
             {
@@ -280,6 +286,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['PTP'],
                 strategy: 'Platypus',
+                banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
                 refreshDelay: 60000
             },
         ],
@@ -299,6 +306,7 @@ export default {
                 isTokenLp: false,
                 debtCoverage: 0.83333333333,
                 strategy: 'Platypus',
+                banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
                 refreshDelay: 60000
             },
         ],
@@ -340,7 +348,8 @@ export default {
                 isTokenLp: true,
                 debtCoverage: 0.83333333333,
                 strategy: 'Pangolin',
-                refreshDelay: 60000
+                refreshDelay: 60000,
+                banner: 'The Pangolin APYs might temporarily report inaccurate data. We are working to solve this asap.'
             }
         ],
         PNG_AVAX_ETH_LP: [
@@ -360,7 +369,8 @@ export default {
                 isTokenLp: true,
                 debtCoverage: 0.83333333333,
                 strategy: 'Pangolin',
-                refreshDelay: 60000
+                refreshDelay: 60000,
+                banner: 'The Pangolin APYs might temporarily report inaccurate data. We are working to solve this asap.'
             }
         ],
         TJ_AVAX_USDC_LP: [
@@ -420,7 +430,8 @@ export default {
                 isTokenLp: true,
                 debtCoverage: 0.83333333333,
                 strategy: 'TraderJoe',
-                refreshDelay: 60000
+                refreshDelay: 60000,
+                banner: 'Rewards for this farm have been turned off, removing compounding benefits. Therefore, depositing into this farm has been disabled.'
             }
         ],
     },

@@ -204,16 +204,21 @@ export default {
       if (this.availableFarms) {
         let heightOfRows = 0;
         Object.values(this.availableFarms).forEach(farm => {
+          console.log(farm);
           if (farm.protocol === 'VECTOR_FINANCE' && this.asset.symbol === 'USDC') {
             heightOfRows += 26;
           }
 
-          if (simpleProtocolsWithBanner.includes(farm.protocolIdentifier)) {
+          if (farm.banner) {
             heightOfRows += 10;
           }
 
           if (tokensWithSplitCompoundingFarms.includes(farm.token) && !farm.autoCompounding) {
-            heightOfRows -= 58;
+            heightOfRows -= 38;
+          }
+
+          if (farm.token === 'USDC') {
+            heightOfRows -= 10;
           }
 
           heightOfRows += 102;
