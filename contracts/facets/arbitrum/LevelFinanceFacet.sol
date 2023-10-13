@@ -927,6 +927,93 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         emit RewardsHarvested(msg.sender, pid, block.timestamp);
     }
 
+    function unstakeAndWithdrawLLP(uint256 pid, uint256 amount) external nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent{
+        IERC20Metadata llpToken = IERC20Metadata(pidToLLPToken(pid));
+        ILevelFinance farmingContract = ILevelFinance(LEVEL_FARMING);
+        require(_levelBalance(pid) >= amount, "Insufficient balance");
+
+        farmingContract.withdraw(pid, amount, msg.sender);
+
+        if(_levelBalance(pid) == 0){
+            IStakingPositions.StakedPosition memory position = pidToStakedPosition(pid);
+            DiamondStorageLib.removeStakedPosition(position.identifier);
+        }
+
+
+        // TODO: Emit withdraw event
+    }
+
+    // @dev Requires an approval on LLP token for the PrimeAccount address prior to calling this function
+    function depositLLPAndStake(uint256 pid, uint256 amount) external nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent{
+        IERC20Metadata llpToken = IERC20Metadata(pidToLLPToken(pid));
+        ILevelFinance farmingContract = ILevelFinance(LEVEL_FARMING);
+
+        require(llpToken.balanceOf(msg.sender) >= amount, "amount > balanceOf LLP");
+        require(llpToken.allowance(msg.sender, address(this)) >= amount, "insufficient ERC20 allowance");
+
+        llpToken.transferFrom(msg.sender, address(this), amount);
+
+        asset.safeApprove(LEVEL_FARMING, 0);
+        asset.safeApprove(LEVEL_FARMING, amount);
+        farmingContract.deposit(pid, amount, address(this));
+
+        IStakingPositions.StakedPosition memory position = pidToStakedPosition(pid);
+        DiamondStorageLib.addStakedPosition(position);
+
+        emit DepositedLLP(
+            msg.sender,
+            position.symbol,
+            LEVEL_FARMING,
+            amount,
+            block.timestamp
+        );
+    }
+
+    function pidToLLPToken(uint256 pid) private pure returns (address){
+        if(pid == 0){
+            return LEVEL_SENIOR_LLP;
+        } else if(pid == 1){
+            return LEVEL_MEZZANINE_LLP;
+        } else if(pid == 2){
+            return LEVEL_JUNIOR_LLP;
+        } else {
+            revert("Invalid pid");
+        }
+    }
+
+    function pidToStakedPosition(uint256 pid) private pure returns (IStakingPositions.StakedPosition memory){
+        if(pid == 0){
+            return IStakingPositions
+            .StakedPosition({
+                asset: LEVEL_SENIOR_LLP,
+                symbol: "arbSnrLLP",
+                identifier: "stkdSnrLLP",
+                balanceSelector: this.levelSnrBalance.selector,
+                unstakeSelector: this.levelUnstakeUsdcSnr.selector
+            });
+        } else if(pid == 1){
+            return IStakingPositions
+            .StakedPosition({
+                asset: LEVEL_MEZZANINE_LLP,
+                symbol: "arbMzeLLP",
+                identifier: "stkdMzeLLP",
+                balanceSelector: this.levelMzeBalance.selector,
+                unstakeSelector: this.levelUnstakeUsdcMze.selector
+            });
+        } else if(pid == 2){
+            return IStakingPositions
+            .StakedPosition({
+                asset: LEVEL_JUNIOR_LLP,
+                symbol: "arbJnrLLP",
+                identifier: "stkdJnrLLP",
+                balanceSelector: this.levelJnrBalance.selector,
+                unstakeSelector: this.levelUnstakeUsdcJnr.selector
+            });
+        } else {
+            revert("Invalid pid");
+        }
+    }
+
     /* ========== RECEIVE AVAX FUNCTION ========== */
     receive() external payable {}
 
@@ -945,6 +1032,22 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         address indexed vault,
         uint256 depositTokenAmount,
         uint256 receiptTokenAmount,
+        uint256 timestamp
+    );
+
+    /**
+     * @dev emitted when user deposits LLP tokens into PA
+     * @param user the address executing staking
+     * @param asset the asset that was staked
+     * @param vault address of the vault token
+     * @param depositAmount how much of LLP was deposited
+     * @param timestamp of deposit
+     **/
+    event DepositedLLP(
+        address indexed user,
+        bytes32 indexed asset,
+        address indexed vault,
+        uint256 depositAmount,
         uint256 timestamp
     );
 

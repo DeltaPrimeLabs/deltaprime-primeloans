@@ -22,6 +22,18 @@ interface ILevelFinance {
 
     function rewarder(uint256 pid) external view returns (IRewarder);
 
+    function deposit(
+        uint256 pid,
+        uint256 amount,
+        address to
+    ) external;
+
+    function withdraw(
+        uint256 pid,
+        uint256 amount,
+        address to
+    ) external;
+
     function addLiquidity(
         uint256 pid,
         address assetToken,
