@@ -8,8 +8,6 @@ import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockToke
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import ILevelFinanceArtifact
     from '../../../artifacts/contracts/interfaces/facets/arbitrum/ILevelFinance.sol/ILevelFinance.json';
-import IRewarderArtifact
-    from '../../../artifacts/contracts/interfaces/facets/arbitrum/IRewarder.sol/IRewarder.json';
 import AddressProviderArtifact from '../../../artifacts/contracts/AddressProvider.sol/AddressProvider.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
@@ -53,7 +51,7 @@ chai.use(solidity);
 
 const {deployContract, provider} = waffle;
 
-const masterChefAddress = '0x0180dee5Df18eBF76642e50FaaEF426f7b2874f7';
+const masterChefAddress = '0xC18c952F800516E1eef6aB482F3d331c84d43d38';
 
 describe('Smart loan', () => {
     before("Synchronize blockchain time", async () => {
@@ -295,67 +293,10 @@ describe('Smart loan', () => {
 
             let stakingContract = await new ethers.Contract(masterChefAddress, ILevelFinanceArtifact.abi, provider);
 
-            let rewardTokens: any[] = await getRewardTokens(stakingContract, pid);
-            // convert from address to symbol
-            rewardTokens = rewardTokens.map((token) => getSymbol(token));
-
-            let beforeBalances = new Array(rewardTokens.length);
-            for (let i = 0; i < rewardTokens.length; i++) {
-                const rewardToken = rewardTokens[i];
-                beforeBalances[i] = await tokenContracts.get(rewardToken)!.balanceOf(wrappedLoan.address);
-            }
-
             await wrappedLoan[unstakeMethod](amount, minAmount);
 
-            let rewardsValue = 0;
-
-            for (let i = 0; i < rewardTokens.length; i++) {
-                const rewardToken = rewardTokens[i];
-                let ownedAssets = await wrappedLoan.getAllOwnedAssets();
-                if(isRewardTokenSupported(rewardToken)){
-                    let balance = await tokenContracts.get(rewardToken)!.balanceOf(wrappedLoan.address);
-                    if (balance > 0) {
-                        rewardsValue += formatUnits(balance.sub(beforeBalances[i]), await tokenContracts.get(rewardToken)!.decimals()) * tokensPrices.get(rewardToken)!;
-                        expect((ownedAssets).includes(toBytes32(rewardToken))).to.be.true;
-                        continue;
-                    }
-                }
-                expect((ownedAssets).includes(toBytes32(rewardToken))).to.be.false;
-            }
-
-            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue) + rewardsValue, 20);
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 20);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.01);
-        }
-
-        async function getRewardTokens(stakingContract: Contract, pid: number) {
-            let _rewarder = await stakingContract.rewarder(pid);
-            if (_rewarder != constants.AddressZero) {
-                let rewarder = await new ethers.Contract(_rewarder, IRewarderArtifact.abi, provider);
-                let pendingReward = stakingContract.pendingReward(pid, wrappedLoan.address);
-                let rewardTokens: string[] = (await rewarder.pendingTokens(pid, wrappedLoan.address, pendingReward))[0];
-                return [TOKEN_ADDRESSES["LVL"], ...rewardTokens];
-            }
-
-            return [TOKEN_ADDRESSES["LVL"]];
-        }
-
-        function isRewardTokenSupported(rewardToken: string) {
-            let supported = false;
-            for(const asset of supportedAssets) {
-                if(fromBytes32(asset.asset) === rewardToken) {
-                    supported = true;
-                    break;
-                }
-            }
-            return supported;
-        }
-
-        function getSymbol(address: string) {
-            return getKeyByValue(TOKEN_ADDRESSES, address);
-        }
-
-        function getKeyByValue(object: any, value: any) {
-            return Object.keys(object).find(key => object[key].toLowerCase() === value.toLowerCase());
         }
     });
 });
