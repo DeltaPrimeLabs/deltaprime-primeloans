@@ -49,7 +49,7 @@
       </div>
 
       <div class="table__cell capacity">
-        <bar-gauge-beta :min="0" :max="1" :value="0.5" v-tooltip="{content: `50% is used`, classes: 'info-tooltip'}"></bar-gauge-beta>
+        <bar-gauge-beta :min="0" :max="lpToken.maxExposure" :value="Math.max(lpToken.currentExposure, 0.001)" v-tooltip="{content: `${lpToken.currentExposure ? lpToken.currentExposure.toFixed(2) : 0} out of ${lpToken.maxExposure} is currently used.`, classes: 'info-tooltip'}"></bar-gauge-beta>
       </div>
 
       <div class="table__cell table__cell--double-value apr" v-bind:class="{'apr--with-warning': lpToken.aprWarning}">
@@ -77,6 +77,12 @@
             class="actions__icon-button last"
             :config="removeActionsConfig"
             v-if="removeActionsConfig"
+            v-on:iconButtonClick="actionClick"
+            :disabled="disableAllButtons || !healthLoaded">
+        </IconButtonMenuBeta>
+        <IconButtonMenuBeta
+            class="actions__icon-button"
+            :config="moreActionsConfig"
             v-on:iconButtonClick="actionClick"
             :disabled="disableAllButtons || !healthLoaded">
         </IconButtonMenuBeta>
@@ -125,9 +131,14 @@ import TradingViewChart from "./TradingViewChart.vue";
 import LIQUIDITY_CALCULATOR from '/artifacts/contracts/interfaces/level/ILiquidityCalculator.sol/ILiquidityCalculator.json'
 import {BigNumber} from "ethers";
 import BarGaugeBeta from "./BarGaugeBeta.vue";
+import ClaimLevelRewardsModal from "./ClaimLevelRewardsModal.vue";
 
-const PRE_LEVEL_ADDRESS = '0x964d582dA16B37F8d16DF3A66e6BF0E7fd44ac3a';
+const FARMING_CONTRACT_ADDRESS = '0xC18c952F800516E1eef6aB482F3d331c84d43d38';
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
+
+const FARMING_ABI = [
+  'function pendingReward(uint256 _pid, address _user) public view returns (uint256)'
+];
 
 export default {
   name: 'LevelLpTableRow',
@@ -158,7 +169,6 @@ export default {
     this.watchExternalAssetBalanceUpdate();
     this.fetchHistoricalPrices();
     this.setupTvl();
-    this.setupRewards();
     await this.setupApr();
   },
 
@@ -166,6 +176,7 @@ export default {
     return {
       addActionsConfig: null,
       removeActionsConfig: null,
+      moreActionsConfig: null,
       rowExpanded: false,
       poolBalance: 0,
       rewards: 0,
@@ -230,6 +241,8 @@ export default {
         if (smartLoanContract) {
           this.setupAddActionsConfiguration();
           this.setupRemoveActionsConfiguration();
+          this.setupMoreActionsConfiguration();
+          this.setupRewards();
         }
       },
     },
@@ -237,6 +250,7 @@ export default {
       async handler(provider) {
         if (provider) {
           await this.setupPoolBalance();
+          this.setupRewards();
         }
       }
     }
@@ -287,6 +301,19 @@ export default {
           }
     },
 
+    setupMoreActionsConfiguration() {
+      this.moreActionsConfig = {
+        iconSrc: 'src/assets/icons/icon_a_more.svg',
+        tooltip: 'More',
+        menuOptions: [
+          {
+            key: 'CLAIM_LEVEL_REWARDS',
+            name: 'Claim Level rewards',
+          }
+        ]
+      };
+    },
+
     async setupApr() {
       if (!this.lpToken.apy) return;
       this.apr = this.lpToken.apy;
@@ -318,6 +345,9 @@ export default {
             break;
           case 'REMOVE_LIQUIDITY':
             this.openRemoveLiquidityModal();
+            break;
+          case 'CLAIM_LEVEL_REWARDS':
+            this.openClaimRewardsModal();
             break;
         }
       }
@@ -548,8 +578,29 @@ export default {
       modalInstance.initiate();
     },
 
+    async openClaimRewardsModal() {
+      const modalInstance = this.openModal(ClaimLevelRewardsModal);
+      modalInstance.asset = this.lpToken;
+      modalInstance.rewardsToClaim = this.rewards;
+      modalInstance.levelRewardsAsset = 'PreLVL';
+
+      modalInstance.$on('CLAIM', addFromWalletEvent => {
+        if (this.smartLoanContract) {
+          const claimRequest = {
+            value: addFromWalletEvent.value.toString()
+          };
+          this.handleTransaction(this.claimLevelRewards, {claimRequest: claimRequest}, () => {
+            this.$forceUpdate();
+          }, (error) => {
+            this.handleTransactionError(error);
+          }).then(() => {
+          });
+        }
+      });
+    },
+
     async setupPoolBalance() {
-      const lpTokenContract = new ethers.Contract(this.lpToken.address, erc20ABI, this.provider);
+      const lpTokenContract = new ethers.Contract(this.lpToken.address, erc20ABI, this.provider.getSigner());
       this.poolBalance = fromWei(await lpTokenContract.totalSupply());
     },
 
@@ -558,8 +609,10 @@ export default {
     },
 
     async setupRewards() {
-      const lpTokenContract = new ethers.Contract(PRE_LEVEL_ADDRESS, erc20ABI, this.provider);
-      this.rewards = fromWei(await lpTokenContract.balanceOf(this.smartLoanContract.address));
+      if (!this.smartLoanContract || !this.provider) return;
+
+      const farmingContract = new ethers.Contract(FARMING_CONTRACT_ADDRESS, FARMING_ABI, this.provider.getSigner());
+      this.rewards = fromWei(await farmingContract.pendingReward(this.lpToken.pid, this.smartLoanContract.address));
     },
 
     async getWalletLpTokenBalance() {

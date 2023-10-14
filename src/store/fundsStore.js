@@ -1777,6 +1777,32 @@ export default {
       }, HARD_REFRESH_DELAY);
     },
 
+    async claimLevelRewards({state, rootState, dispatch}) {
+      const provider = rootState.network.provider;
+
+      const loanAssets = mergeArrays([(
+          await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG)
+      ]);
+
+      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).claimGLpFees();
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+
+      const tx = await awaitConfirmation(transaction, provider, 'harvestRewards');
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      rootState.serviceRegistry.modalService.closeModal();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, HARD_REFRESH_DELAY);
+    },
+
     async borrow({state, rootState, commit, dispatch}, {borrowRequest}) {
       console.log('borrowRequest', borrowRequest);
       const provider = rootState.network.provider;

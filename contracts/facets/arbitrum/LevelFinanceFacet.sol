@@ -944,30 +944,30 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     }
 
     // @dev Requires an approval on LLP token for the PrimeAccount address prior to calling this function
-    function depositLLPAndStake(uint256 pid, uint256 amount) external nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent{
-        IERC20Metadata llpToken = IERC20Metadata(pidToLLPToken(pid));
-        ILevelFinance farmingContract = ILevelFinance(LEVEL_FARMING);
-
-        require(llpToken.balanceOf(msg.sender) >= amount, "amount > balanceOf LLP");
-        require(llpToken.allowance(msg.sender, address(this)) >= amount, "insufficient ERC20 allowance");
-
-        llpToken.transferFrom(msg.sender, address(this), amount);
-
-        asset.safeApprove(LEVEL_FARMING, 0);
-        asset.safeApprove(LEVEL_FARMING, amount);
-        farmingContract.deposit(pid, amount, address(this));
-
-        IStakingPositions.StakedPosition memory position = pidToStakedPosition(pid);
-        DiamondStorageLib.addStakedPosition(position);
-
-        emit DepositedLLP(
-            msg.sender,
-            position.symbol,
-            LEVEL_FARMING,
-            amount,
-            block.timestamp
-        );
-    }
+//    function depositLLPAndStake(uint256 pid, uint256 amount) external nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent{
+//        IERC20Metadata llpToken = IERC20Metadata(pidToLLPToken(pid));
+//        ILevelFinance farmingContract = ILevelFinance(LEVEL_FARMING);
+//
+//        require(llpToken.balanceOf(msg.sender) >= amount, "amount > balanceOf LLP");
+//        require(llpToken.allowance(msg.sender, address(this)) >= amount, "insufficient ERC20 allowance");
+//
+//        llpToken.transferFrom(msg.sender, address(this), amount);
+//
+//        asset.safeApprove(LEVEL_FARMING, 0);
+//        asset.safeApprove(LEVEL_FARMING, amount);
+//        farmingContract.deposit(pid, amount, address(this));
+//
+//        IStakingPositions.StakedPosition memory position = pidToStakedPosition(pid);
+//        DiamondStorageLib.addStakedPosition(position);
+//
+//        emit DepositedLLP(
+//            msg.sender,
+//            position.symbol,
+//            LEVEL_FARMING,
+//            amount,
+//            block.timestamp
+//        );
+//    }
 
     function pidToLLPToken(uint256 pid) private pure returns (address){
         if(pid == 0){
