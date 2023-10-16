@@ -446,6 +446,7 @@ export default {
     yieldYakGlpWrapperAddress: '0x442DB6e78e54449B2a5f08A943Fa8a79041C797b',
     glpRewardsRouterAddress: '0x82147C5A7E850eA4E28155DF107F2590fD4ba327',
     depositSwapAddress: "0x74B5C3499AbDe6D85B6287617195813455051713",
+    levelLiquidityCalculatorAddress: "0xf1e5D6c0ce39fDBb9682F1A3385f0d2067740C61",
     nativeToken: "AVAX",
     SLIPPAGE_TOLERANCE: 0.03,
     dataProviderId: "redstone-avalanche-prod",

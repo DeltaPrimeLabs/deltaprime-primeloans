@@ -74,6 +74,7 @@
             :max="activeId + maxPriceRadius"
             :value="binRange"
             :validators="sliderValidators"
+            :indicator="activeId"
             @input="updateBinRange"
           ></RangeSlider>
           <div class="price-range-inputs">

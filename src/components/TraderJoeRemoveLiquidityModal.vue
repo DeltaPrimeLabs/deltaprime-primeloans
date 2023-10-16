@@ -17,6 +17,7 @@
             :min="minMaxRange[0]"
             :max="minMaxRange[1]"
             :value="selectedRange"
+            :indicator="activeId"
             @input="updateBinRange"
           ></RangeSlider>
           <div class="price-range-inputs">

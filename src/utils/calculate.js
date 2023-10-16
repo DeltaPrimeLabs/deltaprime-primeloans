@@ -404,6 +404,30 @@ export function getCountdownString(countDownDate) {
       + minutes + "min";
 }
 
+export function chartPoints(points) {
+  if (points == null || points.length === 0) {
+    return [];
+  }
+
+  let maxValue = 0;
+  let minValue = points[0].value;
+
+  let dataPoints = points.map(
+      item => {
+        if (item.value > maxValue) maxValue = item.value;
+
+        if (item.value < minValue) minValue = item.value;
+
+        return {
+          x: item.timestamp,
+          y: item.value
+        };
+      }
+  );
+
+  return [dataPoints, minValue, maxValue];
+}
+
 export const fromWei = val => parseFloat(ethers.utils.formatEther(val));
 export const toWei = ethers.utils.parseEther;
 

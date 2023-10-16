@@ -56,7 +56,7 @@ export default class StatsService {
     });
 
     const data = await client.query({query: gql(query)});
-    console.log(data);
+
     return data
 
   }

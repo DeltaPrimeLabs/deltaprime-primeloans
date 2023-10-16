@@ -27,7 +27,7 @@
               {{ selectedDepositAsset }}
             </span>
             <span v-if="asset.name !== toggleOptions[0]" class="top-info__currency">
-              {{ isLP || isFarm ? asset.name : asset.symbol }}
+              {{ asset.short ? asset.short : (isLP || isFarm ? asset.name : asset.symbol) }}
             </span>
           </div>
         </div>
@@ -45,7 +45,7 @@
       </CurrencyInput>
       <CurrencyInput ref="currencyInput"
                      v-if="!isLP"
-                     :symbol="asset.symbol"
+                     :symbol="asset.short ? asset.short : asset.symbol"
                      :logo="logo"
                      v-on:newValue="inputChange"
                      :validators="validators"
@@ -78,7 +78,7 @@
               </div>
               <div class="summary__value">
                 {{ (Number(assetBalance) + Number(value)) | smartRound(8, true) }}
-                {{ isLP ? asset.primary + '-' + asset.secondary : asset.symbol }}
+                {{ isLP ? asset.primary + '-' + asset.secondary : (asset.short ? asset.short : asset.symbol) }}
               </div>
             </div>
           </div>
@@ -135,6 +135,8 @@ export default {
     lpBalances: {},
     concentratedLpAssets: {},
     concentratedLpBalances: {},
+    levelLpAssets: {},
+    levelLpBalances: {},
     traderJoeV2LpAssets: {},
     farms: {},
     thresholdWeightedValue: Number,
@@ -250,6 +252,18 @@ export default {
       for (const [symbol, data] of Object.entries(this.concentratedLpAssets)) {
         if (this.concentratedLpBalances) {
           let balance = parseFloat(this.concentratedLpBalances[symbol]);
+
+          if (symbol === this.asset.symbol) {
+            balance += added;
+          }
+
+          tokens.push({price: data.price, balance: balance ? balance : 0, borrowed: 0, debtCoverage: data.debtCoverage});
+        }
+      }
+
+      for (const [symbol, data] of Object.entries(this.levelLpAssets)) {
+        if (this.levelLpBalances) {
+          let balance = parseFloat(this.levelLpBalances[symbol]);
 
           if (symbol === this.asset.symbol) {
             balance += added;

@@ -13,7 +13,7 @@
           <InfoIcon v-if="isFarm" :tooltip="{content: 'Receipt token amount, can differ from `Staked` amount.', classes: 'info-tooltip long', placement: 'top'}"></InfoIcon>
         </div>
         <div class="top-info__value">
-          {{ isLP ? formatTokenBalance(assetBalance, 12, true) : formatTokenBalance(assetBalance, 10, true) }}
+          {{ formatTokenBalance(assetBalance, asset.decimals, true) }}
           <span class="top-info__currency">
             {{ asset.name }}
           </span>
@@ -123,6 +123,8 @@ export default {
     lpBalances: {},
     concentratedLpAssets: {},
     concentratedLpBalances: {},
+    levelLpAssets: {},
+    levelLpBalances: {},
     traderJoeV2LpAssets: {},
   },
 
@@ -220,6 +222,16 @@ export default {
 
       for (const [symbol, data] of Object.entries(this.concentratedLpAssets)) {
         let balance = parseFloat(this.concentratedLpBalances[symbol]);
+
+        if (symbol === this.asset.symbol) {
+          balance -= withdrawn;
+        }
+
+        tokens.push({ price: data.price, balance: balance, borrowed: 0, debtCoverage: data.debtCoverage});
+      }
+
+      for (const [symbol, data] of Object.entries(this.levelLpAssets)) {
+        let balance = parseFloat(this.levelLpBalances[symbol]);
 
         if (symbol === this.asset.symbol) {
           balance -= withdrawn;

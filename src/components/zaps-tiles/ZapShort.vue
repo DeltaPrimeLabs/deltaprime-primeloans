@@ -50,6 +50,8 @@ export default {
       'traderJoeV2LpAssets',
       'lpBalances',
       'concentratedLpBalances',
+      'levelLpAssets',
+      'levelLpBalances',
       'fullLoanStatus'
     ]),
     ...mapState('stakeStore', ['farms']),
@@ -184,14 +186,17 @@ export default {
         const gasPrice = ethers.utils.parseUnits('0.2', 'gwei');
 
         try {
-          return await yakRouter.findBestPathWithGas(
-            amountIn,
-            tknFrom,
-            tknTo,
-            maxHops,
-            gasPrice,
-            {gasLimit: 1e9}
-          );
+          return {
+            ...(await yakRouter.findBestPathWithGas(
+                amountIn,
+                tknFrom,
+                tknTo,
+                maxHops,
+                gasPrice,
+                {gasLimit: 1e9}
+            )),
+            dex: 'YAK_SWAP'
+          }
         } catch (e) {
           console.error(e);
         }

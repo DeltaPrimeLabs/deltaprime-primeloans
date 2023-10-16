@@ -151,6 +151,16 @@
     }
   }
 
+  .dex-slippage, .fee {
+    display: flex;
+    align-items: center;
+
+    .info__icon__wrapper {
+      margin-left: 5px;
+    }
+  }
+
+
   .deviation-value {
     font-weight: 600;
   }

@@ -34,7 +34,7 @@
       </div>
 
       <div class="table__cell table__cell--double-value loan">
-        {{ lpToken.tvl | usd }}
+        {{ formatTvl(lpToken.tvl) }}
       </div>
 
       <div class="table__cell table__cell--double-value apr">
@@ -163,6 +163,8 @@ export default {
       'traderJoeV2LpAssets',
       'lpBalances',
       'concentratedLpBalances',
+      'levelLpAssets',
+      'levelLpBalances',
     ]),
     ...mapState('stakeStore', ['farms']),
     ...mapState('poolStore', ['pools']),
@@ -337,6 +339,8 @@ export default {
       modalInstance.lpAssets = this.lpAssets;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.concentratedLpTokenBalances = this.concentratedLpTokenBalances;
+      modalInstance.levelLpAssets = this.levelLpAssets;
+      modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.farms = this.farms;
       modalInstance.debtsPerAsset = this.debtsPerAsset;

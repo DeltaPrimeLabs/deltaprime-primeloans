@@ -228,7 +228,9 @@ export default {
       'assets',
       'lpAssets',
       'concentratedLpAssets',
+      'levelLpAssets',
       'lpBalances',
+      'levelLpBalances',
       'concentratedLpBalances',
       'traderJoeV2LpAssets',
       'noSmartLoan'
@@ -368,24 +370,17 @@ export default {
           const gasPrice = ethers.utils.parseUnits('0.2', 'gwei');
 
           try {
-            console.log(
-                await yakRouter.findBestPathWithGas(
-                    amountIn,
-                    tknFrom,
-                    tknTo,
-                    maxHops,
-                    gasPrice,
-                    {gasLimit: 1e9}
-                )
-            )
-            return await yakRouter.findBestPathWithGas(
-                amountIn,
-                tknFrom,
-                tknTo,
-                maxHops,
-                gasPrice,
-                {gasLimit: 1e9}
-            );
+            return {
+              ...(await yakRouter.findBestPathWithGas(
+                  amountIn,
+                  tknFrom,
+                  tknTo,
+                  maxHops,
+                  gasPrice,
+                  {gasLimit: 1e9}
+              )),
+              dex: 'YAK_SWAP'
+            }
           } catch (e) {
             this.handleTransactionError(e);
           }
@@ -408,12 +403,15 @@ export default {
             }
           } else {
             try {
-              return await yakWrapRouter.unwrapAndFindBestPath(
+              return {
+                ...(await yakWrapRouter.unwrapAndFindBestPath(
                   amountIn,
                   tknTo,
                   config.yieldYakGlpWrapperAddress,
                   maxHops,
-                  gasPrice);
+                  gasPrice)),
+                  dex: 'YAK_SWAP'
+              }
             } catch (e) {
               this.handleTransactionError(e);
             }
@@ -438,8 +436,6 @@ export default {
           includeContractMethods: [ContractMethod.simpleSwap],
           excludeContractMethods: [ContractMethod.directUniV3Swap],
         });
-        console.log('priceRoute');
-        console.log(swapRate);
 
         const sourceAmountWei = parseUnits(Number(`${swapRate.srcAmount}e-${swapRate.srcDecimals}`).toFixed(swapRate.srcDecimals), swapRate.srcDecimals);
         const targetAmountWei = parseUnits(Number(`${swapRate.destAmount}e-${swapRate.destDecimals}`).toFixed(swapRate.destDecimals), swapRate.destDecimals);
@@ -565,6 +561,8 @@ export default {
       modalInstance.lpAssets = this.lpAssets;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
+      modalInstance.levelLpAssets = this.levelLpAssets;
+      modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.farms = this.farms;
@@ -597,8 +595,9 @@ export default {
         YakSwap: this.swap,
         ParaSwap: this.paraSwap
       };
-      console.log(this.assetBalances);
       const modalInstance = this.openModal(SwapModal);
+      modalInstance.dexOptions = Object.entries(config.AVAILABLE_ASSETS_PER_DEX).filter(([k, v]) => v.includes(this.asset.symbol)).map(([k, v]) => k);
+      modalInstance.swapDex = Object.keys(config.AVAILABLE_ASSETS_PER_DEX)[0];
       modalInstance.swapDebtMode = false;
       modalInstance.sourceAsset = this.asset.symbol;
       modalInstance.sourceAssetBalance = this.assetBalances[this.asset.symbol];
@@ -609,9 +608,11 @@ export default {
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
+      modalInstance.levelLpAssets = this.levelLpAssets;
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
+      modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.targetAsset = Object.keys(config.ASSETS_CONFIG).filter(asset => asset !== this.asset.symbol)[0];
       modalInstance.debt = this.fullLoanStatus.debt;
@@ -633,10 +634,15 @@ export default {
         }).then(() => {
         });
       });
+
+      modalInstance.initiate();
     },
 
     openDebtSwapModal() {
       const modalInstance = this.openModal(SwapModal);
+      modalInstance.dexOptions = Object.entries(config.AVAILABLE_ASSETS_PER_DEX).filter(([k, v]) => v.includes(this.asset.symbol)).map(([k, v]) => k);
+      modalInstance.swapDex = Object.keys(config.AVAILABLE_ASSETS_PER_DEX)[0];
+      modalInstance.title = 'Swap debt';
       modalInstance.swapDebtMode = true;
       modalInstance.sourceAsset = this.asset.symbol;
       modalInstance.sourceAssetBalance = this.assetBalances[this.asset.symbol];
@@ -649,6 +655,8 @@ export default {
       modalInstance.lpAssets = this.lpAssets;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
+      modalInstance.levelLpAssets = this.levelLpAssets;
+      modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.farms = this.farms;
@@ -669,6 +677,8 @@ export default {
         }).then(() => {
         });
       });
+
+      modalInstance.initiate();
     },
 
     async openAddFromWalletModal() {
@@ -686,6 +696,8 @@ export default {
       modalInstance.lpAssets = this.lpAssets;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.lpBalances = this.lpBalances;
+      modalInstance.levelLpAssets = this.levelLpAssets;
+      modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.farms = this.farms;
@@ -764,6 +776,8 @@ export default {
       modalInstance.lpAssets = this.lpAssets;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
+      modalInstance.levelLpAssets = this.levelLpAssets;
+      modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.farms = this.farms;
@@ -825,6 +839,8 @@ export default {
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
+      modalInstance.levelLpAssets = this.levelLpAssets;
+      modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.health = this.fullLoanStatus.health;
@@ -1031,6 +1047,8 @@ export default {
           this.progressBarService.emitProgressBarErrorState('Insufficient slippage.');
         } else if (error.data.message.includes('execution reverted: Received amount of tokens are less then expected')) {
           this.progressBarService.emitProgressBarErrorState('Max acceptable slippage exceeded. Please try again.')
+        } else if (error.data && error.data.code === -32000) {
+          this.progressBarService.emitProgressBarErrorState('The selected aggregator could not find a route. Please switch aggregator, or try again later.')
         } else {
           this.progressBarService.emitProgressBarCancelledState();
         }

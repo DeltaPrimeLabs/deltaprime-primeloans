@@ -18,10 +18,8 @@ export default class HealthService {
     return this.health$.asObservable();
   }
 
-  async calculateHealth(noSmartLoan, debtsPerAsset, assets, assetBalances, lpAssets, lpBalances, concentratedLpAssets, concentratedLpBalances, traderJoeV2LpAssets, stakeStoreFarms) {
-    console.log('healthService.calculateHealth()');
+  async calculateHealth(noSmartLoan, debtsPerAsset, assets, assetBalances, lpAssets, lpBalances, concentratedLpAssets, concentratedLpBalances, levelAssets, levelBalances, traderJoeV2LpAssets, stakeStoreFarms) {
     if (noSmartLoan) {
-      console.log('healthService - noSmartLoan');
       return 1;
     }
     const someFarmsNotLoaded = Object.values(stakeStoreFarms).some((token) => {
@@ -71,6 +69,18 @@ export default class HealthService {
         });
       }
 
+      if (levelAssets) {
+        for (const [symbol, data] of Object.entries(levelAssets)) {
+          tokens.push({
+            price: redstonePriceData[symbol] ? redstonePriceData[symbol][0].dataPoints[0].value : 0,
+            balance: parseFloat(levelBalances[symbol]),
+            borrowed: 0,
+            debtCoverage: data.debtCoverage,
+            symbol: symbol
+          });
+        }
+      }
+
       for (const [symbol, farms] of Object.entries(stakeStoreFarms)) {
         farms.forEach(farm => {
           let feedSymbol = farm.feedSymbol ? farm.feedSymbol : symbol;
@@ -87,6 +97,8 @@ export default class HealthService {
 
       let lbTokens = Object.values(traderJoeV2LpAssets);
 
+      console.log(tokens)
+      console.log(lbTokens)
       const health = calculateHealth(tokens, lbTokens);
       this.health$.next(health >= 0 ? health : 0);
       console.warn('EMITTING HEALTH: ', health);

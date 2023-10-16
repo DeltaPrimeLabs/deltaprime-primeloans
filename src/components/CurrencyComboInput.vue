@@ -20,14 +20,14 @@
       <div class="select" v-bind:class="{'expanded': expanded, 'has-background': hasBackground }">
         <div v-if="selectedAsset" class="selected-asset">
           <img class="selected-asset__icon" :src="selectedAsset.logo ? selectedAsset.logo : selectedAsset.logoURI">
-          <div class="selected-asset__symbol">{{selectedAsset.symbol}}</div>
+          <div class="selected-asset__symbol">{{selectedAsset.short ? selectedAsset.short : selectedAsset.symbol}}</div>
         </div>
         <div v-if="isBridge && !selectedAsset" class="placeholder">Select chain and token</div>
         <DeltaIcon class="chevron"
                    :icon-src="'src/assets/icons/chevron-down.svg'"
                    :size="21"
                    v-on:click.native="toggleSelect()"
-                   v-if="displayedOptions && displayedOptions.length > 0">
+                   v-if="displayedOptions && displayedOptions.length > 1">
         </DeltaIcon>
         <div class="dropdown-panel" v-if="expanded" v-on:click="dropdownPanelClick()"></div>
         <div
@@ -63,7 +63,7 @@
                   class="option__icon option__alt-icon"
               >{{assetOption.name.charAt(0)}}
               </div>
-              <div class="option__symbol">{{assetOption.symbol}}</div>
+              <div class="option__symbol">{{assetOption.short ? assetOption.short : assetOption.symbol}}</div>
               <div class="option__name">{{assetOption.name}}</div>
               <ContentLoader
                   v-if="isBridge && (!assetsBalances[selectedChain.id] || assetsBalances[selectedChain.id].length !== displayedOptions.length)"
@@ -334,7 +334,7 @@ export default {
     }
 
     .divider {
-      width: 2px;
+      min-width: 2px;
       height: 34px;
       background-color: var(--currency-combo-input__divider-color);
     }
@@ -352,7 +352,7 @@ export default {
         display: flex;
         flex-direction: row;
         align-items: center;
-        min-width: 115px;
+        min-width: 105px;
 
         .selected-asset__icon {
           width: 34px;

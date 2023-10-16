@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: ecd675d46c3f696de7562f6be071a442d97f37d9;
+// Last deployed from commit: c165fda12ad379dec480c5a696229c7648c0872c;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -37,6 +37,13 @@ contract SolvencyFacetProdArbitrum is ArbitrumProdDataServiceConsumerBase, Diamo
         AssetPrice[] debtAssetsPrices;
         AssetPrice[] stakedPositionsPrices;
         AssetPrice[] assetsToRepayPrices;
+    }
+
+    struct PriceInfo {
+        address tokenX;
+        address tokenY;
+        uint256 priceX;
+        uint256 priceY;
     }
 
     /**
@@ -268,7 +275,7 @@ contract SolvencyFacetProdArbitrum is ArbitrumProdDataServiceConsumerBase, Diamo
 
             for (uint256 i = 0; i < ownedAssetsPrices.length; i++) {
                 IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(ownedAssetsPrices[i].asset, true));
-                weightedValueOfTokens = weightedValueOfTokens + (ownedAssetsPrices[i].price * token.balanceOf(address(this)) * tokenManager.debtCoverage(address(token)) / (10 ** token.decimals() * 1e8));
+                weightedValueOfTokens = weightedValueOfTokens + (ownedAssetsPrices[i].price * convertBalance(token.balanceOf(address(this)), address(token)) * tokenManager.debtCoverage(address(token)) / (10 ** token.decimals() * 1e8));
             }
         }
         return weightedValueOfTokens;
@@ -375,6 +382,7 @@ contract SolvencyFacetProdArbitrum is ArbitrumProdDataServiceConsumerBase, Diamo
             for (uint256 i = 0; i < ownedAssetsPrices.length; i++) {
                 IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(ownedAssetsPrices[i].asset, true));
                 uint256 assetBalance = token.balanceOf(address(this));
+                assetBalance = convertBalance(assetBalance, address(token));
 
                 total = total + (ownedAssetsPrices[i].price * 10 ** 10 * assetBalance / (10 ** token.decimals()));
             }
@@ -382,6 +390,16 @@ contract SolvencyFacetProdArbitrum is ArbitrumProdDataServiceConsumerBase, Diamo
         } else {
             return 0;
         }
+    }
+
+    function convertBalance(uint256 _balance, address _asset) private pure returns (uint256){
+        uint256 balance = _balance;
+        if(_asset == 0x8Bc6968b7A9Eed1DD0A259eFa85dc2325B923dd2){ // YY_WOMBEX_USDT
+            balance = balance * 1e12;
+        } else if(_asset == 0x4649c7c3316B27C4A3DB5f3B47f87C687776Eb8C){ // YY_WOMBEX_USDC.e
+            balance = balance * 1e12;
+        }
+        return balance;
     }
 
     /**
@@ -461,7 +479,7 @@ contract SolvencyFacetProdArbitrum is ArbitrumProdDataServiceConsumerBase, Diamo
 
         ITraderJoeV2Facet.TraderJoeV2Bin[] memory ownedTraderJoeV2Bins = DiamondStorageLib.getTjV2OwnedBinsView();
 
-        uint256[] memory prices = new uint256[](2);
+        PriceInfo memory priceInfo;
 
         if (ownedTraderJoeV2Bins.length > 0) {
             for (uint256 i; i < ownedTraderJoeV2Bins.length; i++) {
@@ -471,12 +489,19 @@ contract SolvencyFacetProdArbitrum is ArbitrumProdDataServiceConsumerBase, Diamo
                 uint256 liquidity;
 
                 {
-                    bytes32[] memory symbols = new bytes32[](2);
+                    address tokenXAddress = address(binInfo.pair.getTokenX());
+                    address tokenYAddress = address(binInfo.pair.getTokenY());
 
-                    symbols[0] = DeploymentConstants.getTokenManager().tokenAddressToSymbol(address(binInfo.pair.getTokenX()));
-                    symbols[1] = DeploymentConstants.getTokenManager().tokenAddressToSymbol(address(binInfo.pair.getTokenY()));
+                    if (priceInfo.tokenX != tokenXAddress || priceInfo.tokenY != tokenYAddress) {
+                        bytes32[] memory symbols = new bytes32[](2);
 
-                    prices = getOracleNumericValuesFromTxMsg(symbols);
+
+                        symbols[0] = DeploymentConstants.getTokenManager().tokenAddressToSymbol(tokenXAddress);
+                        symbols[1] = DeploymentConstants.getTokenManager().tokenAddressToSymbol(tokenYAddress);
+
+                        uint256[] memory prices = getOracleNumericValuesFromTxMsg(symbols);
+                        priceInfo = PriceInfo(tokenXAddress, tokenYAddress, prices[0], prices[1]);
+                    }
                 }
 
                 {
@@ -496,8 +521,8 @@ contract SolvencyFacetProdArbitrum is ArbitrumProdDataServiceConsumerBase, Diamo
 
                     total = total +
                     Math.min(
-                        debtCoverageX * liquidity * prices[0] / (price * 10 ** 8),
-                        debtCoverageY * liquidity / 10 ** IERC20Metadata(address(binInfo.pair.getTokenY())).decimals() * prices[1] / 10 ** 8
+                        debtCoverageX * liquidity * priceInfo.priceX / (price * 10 ** 8),
+                        debtCoverageY * liquidity / 10 ** IERC20Metadata(address(binInfo.pair.getTokenY())).decimals() * priceInfo.priceY / 10 ** 8
                     )
                     .mulDivRoundDown(binInfo.pair.balanceOf(address(this), binInfo.id), 1e18)
                     .mulDivRoundDown(1e18, binInfo.pair.totalSupply(binInfo.id));

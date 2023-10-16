@@ -89,8 +89,6 @@ export default {
     pickComment() {
       let pickedComment;
       if (this.accountApr !== null) {
-        console.log('this.accountApr: ', this.accountApr)
-        console.log(this.possibleComments)
         pickedComment = this.possibleComments.find((comment) => this.accountApr > comment.min && this.accountApr <= comment.max);
       } else {
         if (this.noSmartLoan) {

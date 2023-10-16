@@ -1,6 +1,7 @@
 <template>
   <div class="range-slider">
     <div class="slider-container">
+      <div class="slider-indicator" v-if="indicator" :style="{'left': (indicator - min) * 100 / (max - min) + '%'}"></div>
       <div class="slider-track" :style="trackStyle"></div>
       <div
         ref="slider"
@@ -32,6 +33,7 @@ export default {
       type: Number,
       default: 50
     },
+    indicator: null,
     value: {
       type: Array,
       default: [10, 40]
@@ -56,6 +58,11 @@ export default {
         width: rightThumbValue - leftThumbValue + "%",
       };
     },
+  },
+  mounted() {
+    console.error(this.$props.indicator);
+    console.error(this.$props.min);
+    console.error(this.$props.max);
   },
   methods: {
     getThumbValue(index) {
@@ -173,6 +180,17 @@ export default {
         border-radius: 50%;
         background-color: var(--range-slider__slider-thumb-background);
       }
+    }
+
+    .slider-indicator {
+      position: absolute;
+      height: calc(100% + 8px);
+      border-radius: 999px;
+      z-index: 2;
+      width: 2px;
+      top: 50%;
+      background: var(--range-slider__indicator-background);
+      transform: translate(-50%, -50%);
     }
   }
 
