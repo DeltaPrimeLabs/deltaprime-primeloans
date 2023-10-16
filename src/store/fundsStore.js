@@ -803,21 +803,11 @@ export default {
       if (Object.keys(traderJoeV2LpAssets).length !== 0) {
         for (let [symbol, traderJoeV2LpAsset] of Object.entries(traderJoeV2LpAssets)) {
           // we don't use getApy method anymore, but fetch APYs from db
-
-          console.log('symbol: ', symbol)
-          console.log(traderJoeV2LpAsset)
-          console.log(apys[symbol])
           if (apys[symbol] && apys[symbol].lp_apy) {
             traderJoeV2LpAssets[symbol].apy = apys[symbol].lp_apy * 100;
           }
         }
       }
-
-
-
-      console.log('apys')
-      console.log(apys)
-
       commit('setTraderJoeV2LpAssets', traderJoeV2LpAssets);
 
       let levelLpAssets = state.levelLpAssets;
@@ -988,9 +978,6 @@ export default {
 
         const collateral = getters.getCollateral;
 
-        console.log('yearlyAssetInterest: ', yearlyAssetInterest)
-        console.log('yearlyLpInterest: ', yearlyLpInterest)
-
         if (collateral) {
           apr = (yearlyAssetInterest + yearlyLpInterest + yearlyFarmInterest + yearlyTraderJoeV2Interest - yearlyDebtInterest) / collateral;
         }
@@ -1029,18 +1016,24 @@ export default {
 
       // Note - temporary code to remove 'ARBI' from data feed request to Redstone
       if (window.chain === 'arbitrum') {
-        console.log(loanAssets);
         const arbiTokenIndex = loanAssets.indexOf('ARBI');
         loanAssets.splice(arbiTokenIndex, 1);
       }
 
-      const transaction = fundRequest.asset === 'GLP' ?
-        await (await wrapContract(state.smartLoanContract, loanAssets)).fundGLP(
-          amountInWei)
-        :
-        await (await wrapContract(state.smartLoanContract, loanAssets)).fund(
-          toBytes32(fundRequest.asset),
-          amountInWei);
+      const isGlp = fundRequest.asset === 'GLP';
+      const isLevel = ['arbJnrLLP', 'arbMzeLLP', 'arbSnrLLP'].includes(fundRequest.asset);
+
+      const transaction =
+        isGlp ?
+          await state.smartLoanContract.fundGLP(
+            amountInWei)
+          :
+          isLevel  ?
+            await state.smartLoanContract.depositLLPAndStake(fundRequest.pid, amountInWei)
+            :
+            await state.smartLoanContract.fund(
+              toBytes32(fundRequest.asset),
+              amountInWei);
 
 
       if (!fundRequest.keepModalOpen) {
@@ -1050,7 +1043,7 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'fund');
 
-      const depositAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Funded').args.amount, fundRequest.assetDecimals);
+      const depositAmount = formatUnits(getLog(tx, SMART_LOAN.abi, isLevel ? 'depositLLPAndStake' : 'Funded').args.amount, fundRequest.assetDecimals);
       let price;
       switch (fundRequest.type) {
         case 'ASSET':
@@ -1150,7 +1143,6 @@ export default {
     },
 
     async withdraw({state, rootState, commit, dispatch}, {withdrawRequest}) {
-      console.log(withdrawRequest);
       const provider = rootState.network.provider;
 
       const loanAssets = mergeArrays([
@@ -1159,30 +1151,27 @@ export default {
         Object.keys(config.POOLS_CONFIG)
       ]);
 
-      const allOwnedAssets = (await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el))
-      const allStakedPositions = (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol))
-      const poolKeys = Object.keys(config.POOLS_CONFIG);
-
-      console.log('allOwnedAssets', allOwnedAssets);
-      console.log('allStakedPositions', allStakedPositions);
-      console.log('poolKeys', poolKeys);
-
-
       if (window.chain === 'arbitrum') {
         // Note - temporary code to remove 'ARBI' from data feed request to Redstone
         const arbiTokenIndex = loanAssets.indexOf('ARBI');
         loanAssets.splice(arbiTokenIndex, 1);
       }
 
-      console.log(loanAssets);
+      const isGlp = withdrawRequest.asset === 'GLP';
+      const isLevel = ['arbJnrLLP', 'arbMzeLLP', 'arbSnrLLP'].includes(withdrawRequest.asset);
 
-      const transaction = withdrawRequest.asset === 'GLP' ?
-        await (await wrapContract(state.smartLoanContract, loanAssets)).withdrawGLP(
-          parseUnits(String(withdrawRequest.value)))
+      const amountInWei = parseUnits(String(withdrawRequest.value), withdrawRequest.assetDecimals);
+
+      const transaction = isGlp ?
+          await (await wrapContract(state.smartLoanContract, loanAssets)).withdrawGLP(
+            parseUnits(String(withdrawRequest.value)))
         :
-        await (await wrapContract(state.smartLoanContract, loanAssets)).withdraw(
-          toBytes32(withdrawRequest.asset),
-          parseUnits(String(withdrawRequest.value), withdrawRequest.assetDecimals));
+        isLevel ?
+          await state.smartLoanContract.unstakeAndWithdrawLLP(withdrawRequest.pid, amountInWei)
+        :
+          await (await wrapContract(state.smartLoanContract, loanAssets)).withdraw(
+            toBytes32(withdrawRequest.asset),
+            amountInWei);
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
@@ -1246,10 +1235,6 @@ export default {
         (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
         Object.keys(config.POOLS_CONFIG)
       ]);
-
-      // Note - temporary code to remove 'ARBI' from data feed request to Redstone
-      // const arbiTokenIndex = loanAssets.indexOf('ARBI');
-      // loanAssets.splice(arbiTokenIndex, 1);
 
       const transaction = await (await wrapContract(state.smartLoanContract, loanAssets))
         .unwrapAndWithdraw(parseUnits(String(withdrawRequest.value), withdrawRequest.assetDecimals));
@@ -1744,7 +1729,6 @@ export default {
 
       let sourceDecimals = config.LEVEL_LP_ASSETS_CONFIG[removeLiquidityRequest.sourceAsset].decimals;
       let sourceAmount = parseUnits(parseFloat(removeLiquidityRequest.sourceAmount).toFixed(sourceDecimals), sourceDecimals);
-      console.log('sourceAmount: ', sourceAmount)
 
       let targetDecimals = config.ASSETS_CONFIG[removeLiquidityRequest.targetAsset].decimals;
       let targetAmount = parseUnits(removeLiquidityRequest.targetAmount.toFixed(targetDecimals), targetDecimals);

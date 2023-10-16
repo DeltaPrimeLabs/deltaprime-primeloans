@@ -2,7 +2,7 @@
   <div class="lp-table-row-component level" :class="{'expanded': rowExpanded}">
     <div class="table__row" v-if="lpToken">
       <div class="table__cell asset">
-        <img class="asset__icon" :src="`src/assets/logo/${lpToken.symbol.toLowerCase()}.${lpToken.logoExt}`">
+        <img class="asset__icon" :src="`src/assets/logo/${lpToken.symbol.toLowerCase()}.svg`">
         <div class="asset__info">
           <a class="asset__name" :href="lpToken.link" target=”_blank”>{{ lpToken.name }}</a>
           <div class="asset__dex">
@@ -49,7 +49,7 @@
       </div>
 
       <div class="table__cell capacity">
-        <bar-gauge-beta :min="0" :max="lpToken.maxExposure" :value="Math.max(lpToken.currentExposure, 0.001)" v-tooltip="{content: `${lpToken.currentExposure ? lpToken.currentExposure.toFixed(2) : 0} out of ${lpToken.maxExposure} is currently used.`, classes: 'info-tooltip'}"></bar-gauge-beta>
+        <bar-gauge-beta v-if="lpToken.maxExposure" :min="0" :max="lpToken.maxExposure" :value="Math.max(lpToken.currentExposure, 0.001)" v-tooltip="{content: `${lpToken.currentExposure ? lpToken.currentExposure.toFixed(2) : 0} out of ${lpToken.maxExposure} is currently used.`, classes: 'info-tooltip'}"></bar-gauge-beta>
       </div>
 
       <div class="table__cell table__cell--double-value apr" v-bind:class="{'apr--with-warning': lpToken.aprWarning}">
@@ -82,6 +82,7 @@
         </IconButtonMenuBeta>
         <IconButtonMenuBeta
             class="actions__icon-button"
+            v-if="moreActionsConfig"
             :config="moreActionsConfig"
             v-on:iconButtonClick="actionClick"
             :disabled="disableAllButtons || !healthLoaded">
@@ -257,7 +258,13 @@ export default {
   },
 
   methods: {
-    ...mapActions('fundsStore', ['fund', 'withdraw', 'addLiquidityLevelFinance', 'removeLiquidityLevelFinance']),
+    ...mapActions('fundsStore', [
+      'fund',
+      'withdraw',
+      'addLiquidityLevelFinance',
+      'removeLiquidityLevelFinance',
+      'claimLevelRewards'
+    ]),
     setupAddActionsConfiguration() {
       this.addActionsConfig =
           {
@@ -267,14 +274,14 @@ export default {
               {
                 key: 'ADD_FROM_WALLET',
                 name: 'Import existing LLP position',
-                disabled: true,
-                disabledInfo: 'Coming soon!'
+                disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
+                disabledInfo: 'To create LLP token, you need to add some funds from you wallet first'
               },
               {
                 key: 'PROVIDE_LIQUIDITY',
                 name: 'Create LLP position',
                 disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
-                disabledInfo: 'To create LP token, you need to add some funds from you wallet first'
+                disabledInfo: 'To create LLP token, you need to add some funds from you wallet first'
               }
             ]
           }
@@ -288,14 +295,15 @@ export default {
             menuOptions: [
               {
                 key: 'WITHDRAW',
-                name: 'Export LP position',
-                disabled: true || !this.hasSmartLoanContract || !this.lpTokenBalances,
-                disabledInfo: 'Coming soon!'
+                name: 'Export LLP position',
+                disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
+                disabledInfo: 'To create LLP token, you need to add some funds from you wallet first'
               },
               {
                 key: 'REMOVE_LIQUIDITY',
                 name: 'Remove LLP position',
                 disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
+                disabledInfo: 'To create LLP token, you need to add some funds from you wallet first'
               }
             ]
           }
@@ -417,6 +425,7 @@ export default {
             value: addFromWalletEvent.value.toString(),
             asset: this.lpToken.symbol,
             assetDecimals: config.LEVEL_LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
+            pid: this.lpToken.pid,
             type: 'ASSET',
           };
           this.handleTransaction(this.fund, {fundRequest: fundRequest}, () => {
@@ -453,6 +462,7 @@ export default {
           value: withdrawEvent.value.toString(),
           asset: this.lpToken.symbol,
           assetDecimals: config.LEVEL_LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
+          pid: this.lpToken.pid,
           type: 'ASSET',
         };
         this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
@@ -580,16 +590,14 @@ export default {
 
     async openClaimRewardsModal() {
       const modalInstance = this.openModal(ClaimLevelRewardsModal);
-      modalInstance.asset = this.lpToken;
+      modalInstance.lpToken = this.lpToken;
       modalInstance.rewardsToClaim = this.rewards;
       modalInstance.levelRewardsAsset = 'PreLVL';
 
       modalInstance.$on('CLAIM', addFromWalletEvent => {
         if (this.smartLoanContract) {
-          const claimRequest = {
-            value: addFromWalletEvent.value.toString()
-          };
-          this.handleTransaction(this.claimLevelRewards, {claimRequest: claimRequest}, () => {
+          this.handleTransaction(this.claimLevelRewards, {}, () => {
+            this.rewards = 0;
             this.$forceUpdate();
           }, (error) => {
             this.handleTransactionError(error);
@@ -637,9 +645,7 @@ export default {
     },
 
     watchHealth() {
-      console.log('watchHealth')
       this.healthService.observeHealth().subscribe(health => {
-        console.log('healthLoaded')
         this.healthLoaded = true;
       });
     },

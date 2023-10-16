@@ -6,7 +6,7 @@
       </div>
 
       <div class="modal-top-desc">
-        <div>
+        <div class="rewards-info">
           Rewards will be sent to your personal wallet.
           <br/>
           You can go to the
@@ -69,12 +69,26 @@ export default {
 @import "~@/styles/modal";
 
 .claim-level-rewards-modal-component {
+
+  .modal__title {
+    margin-bottom: 40px;
+  }
+
+  .modal-top-desc {
+    .rewards-info {
+      text-align: center;
+      line-height: 20px;
+      margin-top: 15px;
+    }
+  }
+
   .rewards {
+    margin-top: 40px;
     display: flex;
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    //color: ;
+    color: var(--modal__top-info-color);
 
     .rewards__label {
       font-weight: 400;

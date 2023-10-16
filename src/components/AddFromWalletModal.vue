@@ -27,7 +27,7 @@
               {{ selectedDepositAsset }}
             </span>
             <span v-if="asset.name !== toggleOptions[0]" class="top-info__currency">
-              {{ isLP || isFarm ? asset.name : asset.symbol }}
+              {{ asset.short ? asset.short : (isLP || isFarm ? asset.name : asset.symbol) }}
             </span>
           </div>
         </div>

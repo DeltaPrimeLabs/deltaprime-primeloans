@@ -19,10 +19,7 @@ export default class HealthService {
   }
 
   async calculateHealth(noSmartLoan, debtsPerAsset, assets, assetBalances, lpAssets, lpBalances, concentratedLpAssets, concentratedLpBalances, levelAssets, levelBalances, traderJoeV2LpAssets, stakeStoreFarms) {
-    console.log('healthService.calculateHealth()');
-    console.log(0)
     if (noSmartLoan) {
-      console.log('healthService - noSmartLoan');
       return 1;
     }
     const someFarmsNotLoaded = Object.values(stakeStoreFarms).some((token) => {

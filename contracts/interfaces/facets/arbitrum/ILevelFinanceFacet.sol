@@ -49,6 +49,10 @@ interface ILevelFinanceFacet {
 
     function levelUnstakeUsdcJnr(uint256 lpAmount, uint256 minAmount) external;
 
+    function depositLLPAndStake(uint256 pid, uint256 amount) external;
+
+    function unstakeAndWithdrawLLP(uint256 pid, uint256 amount) external;
+
     function harvestRewards(uint256 pid) external;
 
     function levelSnrBalance() external view returns (uint256 _stakedBalance);
