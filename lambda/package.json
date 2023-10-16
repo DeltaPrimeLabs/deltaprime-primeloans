@@ -1,0 +1,28 @@
+{
+  "name": "deltaprime-cloud",
+  "version": "1.0.0",
+  "description": "Deltaprime Cloud Functions",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "engines": {
+    "node": "16"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@redstone-finance/evm-connector": "^0.3.3-alpha.0",
+    "apollo-cache-inmemory": "^1.6.6",
+    "apollo-client": "^2.6.10",
+    "apollo-link-http": "^1.5.17",
+    "aws-sdk": "^2.1460.0",
+    "bluebird": "^3.7.2",
+    "ethers": "^5.5.4",
+    "graphql-request": "^6.1.0",
+    "graphql-tag": "^2.12.6",
+    "node-fetch": "^2.7.0",
+    "redstone-api": "^0.4.11"
+  },
+  "private": true
+}

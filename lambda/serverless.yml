@@ -1,0 +1,222 @@
+# Welcome to Serverless!
+#
+# This file is the main config file for your service.
+# It's very minimal at this point and uses default values.
+# You can always add more config options for more control.
+# We've included some commented out config examples here.
+# Just uncomment any of them to get that config option.
+#
+# For full config options, check the docs:
+#    docs.serverless.com
+#
+# Happy Coding!
+
+service: deltaprime-cloud
+# app and org for use with dashboard.serverless.com
+#app: your-app-name
+#org: your-org-name
+
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  stage: ${opt:stage, "dev"}
+  region: us-east-1
+  environment:
+    SPRIME_AVA_TABLE: sprime-ava-${opt:stage, "dev"}
+    SPRIME_ARB_TABLE: sprime-arb-${opt:stage, "dev"}
+    LOAN_AVA_TABLE: loans-ava-${opt:stage, "dev"}
+    LOAN_ARB_TABLE: loans-arb-${opt:stage, "dev"}
+    APY_TABLE: apy-table-${opt:stage, "dev"}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+      Resource: "*"
+
+# you can overwrite defaults here
+#  stage: dev
+#  region: us-east-1
+
+# you can add statements to the Lambda function's IAM Role here
+#  iam:
+#    role:
+#      statements:
+#        - Effect: "Allow"
+#          Action:
+#            - "s3:ListBucket"
+#          Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }
+#        - Effect: "Allow"
+#          Action:
+#            - "s3:PutObject"
+#          Resource:
+#            Fn::Join:
+#              - ""
+#              - - "arn:aws:s3:::"
+#                - "Ref" : "ServerlessDeploymentBucket"
+#                - "/*"
+
+# you can define service wide environment variables here
+#  environment:
+#    variable1: value1
+
+# you can add packaging information here
+#package:
+#  patterns:
+#    - '!exclude-me.js'
+#    - '!exclude-me-dir/**'
+#    - include-me.js
+#    - include-me-dir/**
+
+functions:
+  sPrimeCalculatorAva:
+    handler: sPrimeCalculatorAva.handler
+    memorySize: 1024
+    timeout: 600
+    description: Calculate sPRIME Value for depositors on Avalanche.
+    events:
+      - schedule: rate(5 minutes)
+  sPrimeCalculatorArb:
+    handler: sPrimeCalculatorArb.handler
+    memorySize: 1024
+    timeout: 600
+    description: Calculate sPRIME Value for depositors on Arbitrum.
+    events:
+      - schedule: rate(5 minutes)
+  sPrimeAggregator:
+    handler: apis/sPrimeValue.handler
+    memorySize: 512
+    description: List sPRIME value for a depositor
+    events:
+      - httpApi:
+          method: get
+          path: /sprime/{id}
+  levelTvlAggregator:
+    handler: aggregators/apy.levelTvlAggregator
+    memorySize: 512
+    timeout: 600
+    description: Fetch TVL from Level Finance.
+    events:
+      - schedule: rate(1 minute)
+  levelTvlApi:
+    handler: apis/apy.levelTvlApi
+    memorySize: 512
+    description: Return TVL of Level pool
+    events:
+      - httpApi:
+          method: get
+          path: /levelTvl/{id}
+  # loanAggregatorAva:
+  #   handler: aggregators/loan.loanAggregatorAva
+  #   memorySize: 1024
+  #   timeout: 600
+  #   description: upload loan addresses on Avalanche
+  #   events:
+  #     - schedule: rate(5 minutes)
+  # loanAggregatorArb:
+  #   handler: aggregators/loan.loanAggregatorArb
+  #   memorySize: 1024
+  #   timeout: 600
+  #   description: upload loan addresses on Arbitrum
+  #   events:
+  #     - schedule: rate(5 minutes)
+
+resources:
+  Resources:
+    sPrimeValuesAvaTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: "id"
+            AttributeType: "S"   
+        KeySchema:
+          -
+            AttributeName: "id"
+            KeyType: "HASH"
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        StreamSpecification:
+          StreamViewType: "NEW_AND_OLD_IMAGES"
+        TableName: ${self:provider.environment.SPRIME_AVA_TABLE}
+    sPrimeValuesArbTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: "id"
+            AttributeType: "S"   
+        KeySchema:
+          -
+            AttributeName: "id"
+            KeyType: "HASH"
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        StreamSpecification:
+          StreamViewType: "NEW_AND_OLD_IMAGES"
+        TableName: ${self:provider.environment.SPRIME_ARB_TABLE}
+    # loansAvaTable:
+    #   Type: AWS::DynamoDB::Table
+    #   DeletionPolicy: Retain
+    #   Properties:
+    #     AttributeDefinitions:
+    #       -
+    #         AttributeName: "id"
+    #         AttributeType: "S"   
+    #     KeySchema:
+    #       -
+    #         AttributeName: "id"
+    #         KeyType: "HASH"
+    #     ProvisionedThroughput:
+    #       ReadCapacityUnits: 1
+    #       WriteCapacityUnits: 1
+    #     StreamSpecification:
+    #       StreamViewType: "NEW_AND_OLD_IMAGES"
+    #     TableName: ${self:provider.environment.LOAN_AVA_TABLE}
+    # loansArbTable:
+    #   Type: AWS::DynamoDB::Table
+    #   DeletionPolicy: Retain
+    #   Properties:
+    #     AttributeDefinitions:
+    #       -
+    #         AttributeName: "id"
+    #         AttributeType: "S"   
+    #     KeySchema:
+    #       -
+    #         AttributeName: "id"
+    #         KeyType: "HASH"
+    #     ProvisionedThroughput:
+    #       ReadCapacityUnits: 1
+    #       WriteCapacityUnits: 1
+    #     StreamSpecification:
+    #       StreamViewType: "NEW_AND_OLD_IMAGES"
+    #     TableName: ${self:provider.environment.LOAN_ARB_TABLE}
+    ApysTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: "id"
+            AttributeType: "S"   
+        KeySchema:
+          -
+            AttributeName: "id"
+            KeyType: "HASH"
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        StreamSpecification:
+          StreamViewType: "NEW_AND_OLD_IMAGES"
+        TableName: ${self:provider.environment.APY_TABLE}
+

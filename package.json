@@ -46,6 +46,7 @@
     "@uniswap/v3-core": "^1.0.1",
     "@uniswap/v3-periphery": "^1.4.3",
     "apollo-boost": "^0.4.9",
+    "aws-sdk": "^2.1463.0",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "browserify-zlib": "^0.2.0",
     "chart.js": "^2.9.4",
