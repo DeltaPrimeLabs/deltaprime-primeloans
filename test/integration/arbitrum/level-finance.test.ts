@@ -313,83 +313,83 @@ describe('Smart loan', () => {
         });
 
 
-        // it("should swap and fund", async () => {
-        //     await tokenContracts.get('ETH')!.connect(owner).deposit({value: toWei("100")});
-        //     await tokenContracts.get('ETH')!.connect(owner).approve(wrappedLoan.address, toWei("100"));
-        //     await wrappedLoan.fund(toBytes32("ETH"), toWei("100"));
-        //
-        //     let initialTotalValue = await wrappedLoan.getTotalValue();
-        //     let initialHR = await wrappedLoan.getHealthRatio();
-        //     let initialTWV = await wrappedLoan.getThresholdWeightedValue();
-        //
-        //     let swapData = await getSwapData('ETH', 'BTC', 18, 8, toWei('2'));
-        //     await wrappedLoan.paraSwap(swapData);
-        //     btcBalance = await tokenContracts.get('BTC')!.balanceOf(wrappedLoan.address);
-        //     swapData = await getSwapData('ETH', 'USDT', 18, 6, toWei('2'));
-        //     await wrappedLoan.paraSwap(swapData);
-        //     usdtBalance = await tokenContracts.get('USDT')!.balanceOf(wrappedLoan.address);
-        //     swapData = await getSwapData('ETH', 'USDC', 18, 6, toWei('2'));
-        //     await wrappedLoan.paraSwap(swapData);
-        //     usdcBalance = await tokenContracts.get('USDC')!.balanceOf(wrappedLoan.address);
-        //
-        //     expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 10);
-        //     expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.eq(fromWei(initialHR));
-        //     expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 10);
-        // });
-        //
-        // it("should fail to stake as a non-owner", async () => {
-        //     await expect(nonOwnerWrappedLoan.levelStakeEthSnr(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-        //     await expect(nonOwnerWrappedLoan.levelStakeEthMze(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-        //     await expect(nonOwnerWrappedLoan.levelStakeEthJnr(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-        //     await expect(nonOwnerWrappedLoan.levelStakeBtcSnr(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-        //     await expect(nonOwnerWrappedLoan.levelStakeBtcMze(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-        //     await expect(nonOwnerWrappedLoan.levelStakeBtcJnr(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-        //     await expect(nonOwnerWrappedLoan.levelStakeUsdtSnr(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-        //     await expect(nonOwnerWrappedLoan.levelStakeUsdtMze(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-        //     await expect(nonOwnerWrappedLoan.levelStakeUsdtJnr(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-        //     await expect(nonOwnerWrappedLoan.levelStakeUsdcSnr(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-        //     await expect(nonOwnerWrappedLoan.levelStakeUsdcMze(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-        //     await expect(nonOwnerWrappedLoan.levelStakeUsdcJnr(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-        // });
-        //
-        // it("should fail to unstake as a non-owner", async () => {
-        //     await expect(nonOwnerWrappedLoan.levelUnstakeEthSnr(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-        //     await expect(nonOwnerWrappedLoan.levelUnstakeEthMze(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-        //     await expect(nonOwnerWrappedLoan.levelUnstakeEthJnr(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-        //     await expect(nonOwnerWrappedLoan.levelUnstakeBtcSnr(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-        //     await expect(nonOwnerWrappedLoan.levelUnstakeBtcMze(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-        //     await expect(nonOwnerWrappedLoan.levelUnstakeBtcJnr(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-        //     await expect(nonOwnerWrappedLoan.levelUnstakeUsdtSnr(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-        //     await expect(nonOwnerWrappedLoan.levelUnstakeUsdtMze(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-        //     await expect(nonOwnerWrappedLoan.levelUnstakeUsdtJnr(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-        //     await expect(nonOwnerWrappedLoan.levelUnstakeUsdcSnr(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-        //     await expect(nonOwnerWrappedLoan.levelUnstakeUsdcMze(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-        //     await expect(nonOwnerWrappedLoan.levelUnstakeUsdcJnr(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-        // });
-        //
-        // it("should stake", async () => {
-        //     await testStake("levelStakeEthSnr", "levelSnrBalance", 0, toWei('1'), constants.Zero);
-        //     await testStake("levelStakeEthMze", "levelMzeBalance", 1, toWei('1'), constants.Zero);
-        //     await testStake("levelStakeEthJnr", "levelJnrBalance", 2, toWei('1'), constants.Zero);
-        //     await testStake("levelStakeBtcSnr", "levelSnrBalance", 0, btcBalance.div(2), constants.Zero);
-        //     await testStake("levelStakeBtcMze", "levelMzeBalance", 1, btcBalance.div(2), constants.Zero);
-        //     await testStake("levelStakeUsdtMze", "levelMzeBalance", 1, usdtBalance.div(2), constants.Zero);
-        //     await testStake("levelStakeUsdtJnr", "levelJnrBalance", 2, usdtBalance.div(2), constants.Zero);
-        //     await testStake("levelStakeUsdcJnr", "levelJnrBalance", 2, usdcBalance.div(2), constants.Zero);
-        //     await testStake("levelStakeUsdcSnr", "levelSnrBalance", 0, usdcBalance.div(2), constants.Zero);
-        // });
-        //
-        // it("should unstake", async () => {
-        //     let snrBalance = await wrappedLoan.levelSnrBalance();
-        //     let mzeBalance = await wrappedLoan.levelMzeBalance();
-        //     let jnrBalance = await wrappedLoan.levelJnrBalance();
-        //
-        //     await testUnstake("levelUnstakeEthSnr", "levelSnrBalance", 0, snrBalance.div(2), constants.Zero);
-        //     await testUnstake("levelUnstakeBtcMze", "levelMzeBalance", 1, mzeBalance.div(2), constants.Zero);
-        //     await testUnstake("levelUnstakeUsdtJnr", "levelJnrBalance", 2, jnrBalance.div(2), constants.Zero);
-        //     await testUnstake("levelUnstakeUsdcSnr", "levelSnrBalance", 0, snrBalance.div(2), constants.Zero);
-        //     await testUnstake("levelUnstakeEthMze", "levelMzeBalance", 1, mzeBalance.div(2), constants.Zero);
-        // });
+        it("should swap and fund", async () => {
+            await tokenContracts.get('ETH')!.connect(owner).deposit({value: toWei("100")});
+            await tokenContracts.get('ETH')!.connect(owner).approve(wrappedLoan.address, toWei("100"));
+            await wrappedLoan.fund(toBytes32("ETH"), toWei("100"));
+
+            let initialTotalValue = await wrappedLoan.getTotalValue();
+            let initialHR = await wrappedLoan.getHealthRatio();
+            let initialTWV = await wrappedLoan.getThresholdWeightedValue();
+
+            let swapData = await getSwapData('ETH', 'BTC', 18, 8, toWei('2'));
+            await wrappedLoan.paraSwap(swapData);
+            btcBalance = await tokenContracts.get('BTC')!.balanceOf(wrappedLoan.address);
+            swapData = await getSwapData('ETH', 'USDT', 18, 6, toWei('2'));
+            await wrappedLoan.paraSwap(swapData);
+            usdtBalance = await tokenContracts.get('USDT')!.balanceOf(wrappedLoan.address);
+            swapData = await getSwapData('ETH', 'USDC', 18, 6, toWei('2'));
+            await wrappedLoan.paraSwap(swapData);
+            usdcBalance = await tokenContracts.get('USDC')!.balanceOf(wrappedLoan.address);
+
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 10);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.eq(fromWei(initialHR));
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 10);
+        });
+
+        it("should fail to stake as a non-owner", async () => {
+            await expect(nonOwnerWrappedLoan.levelStakeEthSnr(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.levelStakeEthMze(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.levelStakeEthJnr(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.levelStakeBtcSnr(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.levelStakeBtcMze(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.levelStakeBtcJnr(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.levelStakeUsdtSnr(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.levelStakeUsdtMze(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.levelStakeUsdtJnr(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.levelStakeUsdcSnr(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.levelStakeUsdcMze(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.levelStakeUsdcJnr(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+        });
+
+        it("should fail to unstake as a non-owner", async () => {
+            await expect(nonOwnerWrappedLoan.levelUnstakeEthSnr(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.levelUnstakeEthMze(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.levelUnstakeEthJnr(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.levelUnstakeBtcSnr(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.levelUnstakeBtcMze(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.levelUnstakeBtcJnr(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.levelUnstakeUsdtSnr(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.levelUnstakeUsdtMze(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.levelUnstakeUsdtJnr(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.levelUnstakeUsdcSnr(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.levelUnstakeUsdcMze(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.levelUnstakeUsdcJnr(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+        });
+
+        it("should stake", async () => {
+            await testStake("levelStakeEthSnr", "levelSnrBalance", 0, toWei('1'), constants.Zero);
+            await testStake("levelStakeEthMze", "levelMzeBalance", 1, toWei('1'), constants.Zero);
+            await testStake("levelStakeEthJnr", "levelJnrBalance", 2, toWei('1'), constants.Zero);
+            await testStake("levelStakeBtcSnr", "levelSnrBalance", 0, btcBalance.div(2), constants.Zero);
+            await testStake("levelStakeBtcMze", "levelMzeBalance", 1, btcBalance.div(2), constants.Zero);
+            await testStake("levelStakeUsdtMze", "levelMzeBalance", 1, usdtBalance.div(2), constants.Zero);
+            await testStake("levelStakeUsdtJnr", "levelJnrBalance", 2, usdtBalance.div(2), constants.Zero);
+            await testStake("levelStakeUsdcJnr", "levelJnrBalance", 2, usdcBalance.div(2), constants.Zero);
+            await testStake("levelStakeUsdcSnr", "levelSnrBalance", 0, usdcBalance.div(2), constants.Zero);
+        });
+
+        it("should unstake", async () => {
+            let snrBalance = await wrappedLoan.levelSnrBalance();
+            let mzeBalance = await wrappedLoan.levelMzeBalance();
+            let jnrBalance = await wrappedLoan.levelJnrBalance();
+
+            await testUnstake("levelUnstakeEthSnr", "levelSnrBalance", 0, snrBalance.div(2), constants.Zero);
+            await testUnstake("levelUnstakeBtcMze", "levelMzeBalance", 1, mzeBalance.div(2), constants.Zero);
+            await testUnstake("levelUnstakeUsdtJnr", "levelJnrBalance", 2, jnrBalance.div(2), constants.Zero);
+            await testUnstake("levelUnstakeUsdcSnr", "levelSnrBalance", 0, snrBalance.div(2), constants.Zero);
+            await testUnstake("levelUnstakeEthMze", "levelMzeBalance", 1, mzeBalance.div(2), constants.Zero);
+        });
 
         async function testStake(stakeMethod: string, balanceMethod: string, pid: number, amount: BigNumber, minLpAmount: BigNumber) {
             let initialTotalValue = await wrappedLoan.getTotalValue();
