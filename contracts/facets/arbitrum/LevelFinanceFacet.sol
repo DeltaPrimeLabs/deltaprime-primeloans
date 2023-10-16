@@ -944,7 +944,7 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     }
 
     // @dev Requires an approval on LLP token for the PrimeAccount address prior to calling this function
-    function depositLLPAndStake(uint256 pid, uint256 amount) external nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent{
+    function depositLLPAndStake(uint256 pid, uint256 amount) external nonReentrant onlyOwner recalculateAssetsExposure{
         IERC20Metadata llpToken = IERC20Metadata(pidToLLPToken(pid));
         ILevelFinance farmingContract = ILevelFinance(LEVEL_FARMING);
 
@@ -953,14 +953,14 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
         llpToken.transferFrom(msg.sender, address(this), amount);
 
-        asset.safeApprove(LEVEL_FARMING, 0);
-        asset.safeApprove(LEVEL_FARMING, amount);
+        address(llpToken).safeApprove(LEVEL_FARMING, 0);
+        address(llpToken).safeApprove(LEVEL_FARMING, amount);
         farmingContract.deposit(pid, amount, address(this));
 
         IStakingPositions.StakedPosition memory position = pidToStakedPosition(pid);
         DiamondStorageLib.addStakedPosition(position);
 
-        emit DepositedLLP(
+    emit DepositedLLP(
             msg.sender,
             position.symbol,
             LEVEL_FARMING,
