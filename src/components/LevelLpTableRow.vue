@@ -168,6 +168,7 @@ export default {
     this.watchProgressBarState();
     this.watchAssetApysRefresh();
     this.watchExternalAssetBalanceUpdate();
+    this.watchAsset();
     this.fetchHistoricalPrices();
     this.setupTvl();
     await this.setupApr();
@@ -417,7 +418,7 @@ export default {
       modalInstance.loan = this.debt;
       modalInstance.thresholdWeightedValue = this.thresholdWeightedValue;
       modalInstance.isLP = false;
-      modalInstance.logo = `${this.lpToken.symbol.toLowerCase()}.${this.lpToken.logoExt}`;
+      modalInstance.logo = `${this.lpToken.symbol.toLowerCase()}.svg`;
       modalInstance.walletAssetBalance = await this.getWalletLpTokenBalance();
       modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
         if (this.smartLoanContract) {
@@ -426,7 +427,7 @@ export default {
             asset: this.lpToken.symbol,
             assetDecimals: config.LEVEL_LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
             pid: this.lpToken.pid,
-            type: 'ASSET',
+            type: 'LEVEL_LLP',
           };
           this.handleTransaction(this.fund, {fundRequest: fundRequest}, () => {
             this.$forceUpdate();
@@ -456,14 +457,14 @@ export default {
       modalInstance.farms = this.farms;
       modalInstance.health = this.health;
       modalInstance.isLP = false;
-      modalInstance.logo = `${this.lpToken.symbol.toLowerCase()}.${this.lpToken.logoExt}`;
+      modalInstance.logo = `${this.lpToken.symbol.toLowerCase()}.svg`;
       modalInstance.$on('WITHDRAW', withdrawEvent => {
         const withdrawRequest = {
           value: withdrawEvent.value.toString(),
           asset: this.lpToken.symbol,
           assetDecimals: config.LEVEL_LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
           pid: this.lpToken.pid,
-          type: 'ASSET',
+          type: 'LEVEL_LLP',
         };
         this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
           this.$forceUpdate();
@@ -664,6 +665,13 @@ export default {
           this.$forceUpdate();
         }
       })
+    },
+
+    watchAsset() {
+      this.dataRefreshEventService.observeAssetUpdatedEvent().subscribe(asset => {
+        if (asset.symbol === this.lpToken.symbol) this.lpToken = asset;
+        this.$forceUpdate();
+      });
     },
 
     scheduleHardRefresh() {

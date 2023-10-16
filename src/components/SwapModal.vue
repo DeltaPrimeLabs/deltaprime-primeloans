@@ -25,13 +25,13 @@
       <div class="asset-info" v-if="!swapDebtMode">
         Available:
         <span v-if="sourceAssetBalance" class="asset-info__value">{{
-            Number(sourceAssetBalance) | smartRound(10, true)
+            Number(sourceAssetBalance) | smartRound(sourceAssetData.decimals, true)
           }}</span>
       </div>
       <div class="asset-info" v-if="swapDebtMode">
         Borrowed:
         <span v-if="sourceAssetDebt" class="asset-info__value">{{
-            Number(sourceAssetDebt) | smartRound(10, true)
+            Number(sourceAssetDebt) | smartRound(sourceAssetData.decimals, true)
           }}</span>
       </div>
 

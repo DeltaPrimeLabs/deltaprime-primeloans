@@ -308,10 +308,11 @@ export default {
       rootState.serviceRegistry.priceService.emitRefreshPrices();
     },
 
-    async setupAssetExposures({state, commit}) {
+    async setupAssetExposures({state, rootState, commit}) {
       const tokenManager = new ethers.Contract(TOKEN_MANAGER_TUP.address, TOKEN_MANAGER.abi, provider.getSigner());
       let allAssets = state.assets;
       let allLevelLpAssets = state.levelLpAssets;
+      const dataRefreshNotificationService = rootState.serviceRegistry.dataRefreshEventService;
 
       async function setExposures(assets) {
         for (let symbol of Object.keys(assets)) {
@@ -324,6 +325,8 @@ export default {
 
             asset.currentExposure = parseFloat(formatUnits(exposure.current, decimals));
             asset.maxExposure = parseFloat(formatUnits(exposure.max, decimals));
+
+            dataRefreshNotificationService.emitAssetUpdatedEvent(asset);
           }
         }
       }
@@ -335,7 +338,7 @@ export default {
         await setExposures(allLevelLpAssets);
         commit('setLevelLpAssets', allLevelLpAssets);
       }
-      },
+    },
 
     async setupLpAssets({state, rootState, commit}) {
       const lpService = rootState.serviceRegistry.lpService;
@@ -1025,13 +1028,13 @@ export default {
 
       const transaction =
         isGlp ?
-          await state.smartLoanContract.fundGLP(
+            await (await wrapContract(state.smartLoanContract, loanAssets)).fundGLP(
             amountInWei)
           :
           isLevel  ?
-            await state.smartLoanContract.depositLLPAndStake(fundRequest.pid, amountInWei)
+            await (await wrapContract(state.smartLoanContract, loanAssets)).depositLLPAndStake(fundRequest.pid, amountInWei)
             :
-            await state.smartLoanContract.fund(
+            await (await wrapContract(state.smartLoanContract, loanAssets)).fund(
               toBytes32(fundRequest.asset),
               amountInWei);
 
@@ -1043,7 +1046,7 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'fund');
 
-      const depositAmount = formatUnits(getLog(tx, SMART_LOAN.abi, isLevel ? 'depositLLPAndStake' : 'Funded').args.amount, fundRequest.assetDecimals);
+      const depositAmount = formatUnits(getLog(tx, SMART_LOAN.abi, isLevel ? 'DepositedLLP' : 'Funded').args[isLevel ? 'depositAmount' : 'amount'], fundRequest.assetDecimals);
       let price;
       switch (fundRequest.type) {
         case 'ASSET':
@@ -1055,6 +1058,8 @@ export default {
         case 'CONCENTRATED_LP':
           price = state.concentratedLpAssets[fundRequest.asset].price;
           break;
+        case 'LEVEL_LLP':
+          price = state.levelLpAssets[fundRequest.asset].price;
       }
 
       const depositAmountUSD = Number(depositAmount) * price;
@@ -1070,11 +1075,16 @@ export default {
         case 'CONCENTRATED_LP':
           assetBalanceBeforeDeposit = state.concentratedLpBalances[fundRequest.asset];
           break;
+        case 'LEVEL_LLP':
+          assetBalanceBeforeDeposit = state.levelLpBalances[fundRequest.asset];
       }
       const assetBalanceAfterDeposit = Number(assetBalanceBeforeDeposit) + Number(depositAmount);
 
-      await commit('setSingleAssetBalance', {asset: fundRequest.asset, balance: assetBalanceAfterDeposit});
-      commit('setSingleAssetCurrentExposure', {asset: fundRequest.asset, exposureChange: Number(depositAmount)});
+      if (fundRequest.type == 'ASSET') {
+        await commit('setSingleAssetBalance', {asset: fundRequest.asset, balance: assetBalanceAfterDeposit });
+        commit('setSingleAssetCurrentExposure', {asset: fundRequest.asset, exposureChange: Number(depositAmount)});
+      }
+
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate(fundRequest.asset, assetBalanceAfterDeposit, Boolean(fundRequest.isLP), true);
       rootState.serviceRegistry.collateralService.emitCollateral(totalCollateralAfterTransaction);
@@ -1167,7 +1177,7 @@ export default {
             parseUnits(String(withdrawRequest.value)))
         :
         isLevel ?
-          await state.smartLoanContract.unstakeAndWithdrawLLP(withdrawRequest.pid, amountInWei)
+            await (await wrapContract(state.smartLoanContract, loanAssets)).unstakeAndWithdrawLLP(withdrawRequest.pid, amountInWei)
         :
           await (await wrapContract(state.smartLoanContract, loanAssets)).withdraw(
             toBytes32(withdrawRequest.asset),
@@ -1178,7 +1188,9 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'withdraw');
 
-      const withdrawAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Withdrawn').args.amount, withdrawRequest.assetDecimals);
+
+      const withdrawAmount = formatUnits(getLog(tx, SMART_LOAN.abi, isLevel ? 'WithdrewLLP' : 'Withdrawn').args[isLevel ? 'depositAmount' : 'amount'], withdrawRequest.assetDecimals);
+
       let price;
       switch (withdrawRequest.type) {
         case 'ASSET':
@@ -1190,6 +1202,8 @@ export default {
         case 'CONCENTRATED_LP':
           price = state.concentratedLpAssets[withdrawRequest.asset].price;
           break;
+        case 'LEVEL_LLP':
+          price = state.levelLpAssets[withdrawRequest.asset].price;
       }
       const withdrawAmountUSD = Number(withdrawAmount) * price;
 
@@ -1204,13 +1218,17 @@ export default {
         case 'CONCENTRATED_LP':
           assetBalanceBeforeWithdraw = state.concentratedLpBalances[withdrawRequest.asset];
           break;
+        case 'LEVEL_LLP':
+          assetBalanceBeforeWithdraw = state.levelLpBalances[withdrawRequest.asset];
       }
       const assetBalanceAfterWithdraw = Number(assetBalanceBeforeWithdraw) - Number(withdrawAmount);
       const totalCollateralAfterTransaction = state.fullLoanStatus.totalValue - state.fullLoanStatus.debt - withdrawAmountUSD;
 
 
-      await commit('setSingleAssetBalance', {asset: withdrawRequest.asset, balance: assetBalanceAfterWithdraw});
-      commit('setSingleAssetCurrentExposure', {asset: withdrawRequest.asset, exposureChange: -Number(withdrawAmount)});
+      if (withdrawRequest.type == 'ASSET') {
+        await commit('setSingleAssetBalance', {asset: withdrawRequest.asset, balance: assetBalanceAfterWithdraw});
+        commit('setSingleAssetCurrentExposure', {asset: withdrawRequest.asset, exposureChange: -Number(withdrawAmount)});
+      }
 
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate(withdrawRequest.asset, assetBalanceAfterWithdraw, withdrawRequest.isLP, true);

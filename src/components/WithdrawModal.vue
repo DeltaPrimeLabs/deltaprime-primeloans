@@ -13,7 +13,7 @@
           <InfoIcon v-if="isFarm" :tooltip="{content: 'Receipt token amount, can differ from `Staked` amount.', classes: 'info-tooltip long', placement: 'top'}"></InfoIcon>
         </div>
         <div class="top-info__value">
-          {{ isLP ? formatTokenBalance(assetBalance, 12, true) : formatTokenBalance(assetBalance, 10, true) }}
+          {{ formatTokenBalance(assetBalance, asset.decimals, true) }}
           <span class="top-info__currency">
             {{ asset.name }}
           </span>
