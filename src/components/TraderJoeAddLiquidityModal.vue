@@ -80,17 +80,19 @@
             <div class="price__input">
               <div class="input-label"><b>Min Price</b> | {{ secondAsset.symbol }} per {{ firstAsset.symbol }}</div>
               <FormInput
-                :default-value="binRange && getBinPrice(binRange[0])"
+                :inputType="'number'"
+                :default-value="binRange && isWithinMaxRange && getBinPrice(binRange[0])"
                 :fontSize="18"
-                :disabled="true"
+                @valueChange="updateMinBinPrice"
               ></FormInput>
             </div>
             <div class="price__input">
               <div class="input-label"><b>Max Price</b> | {{ secondAsset.symbol }} per {{ firstAsset.symbol }}</div>
               <FormInput
-                :default-value="binRange && getBinPrice(binRange[1])"
+                :inputType="'number'"
+                :default-value="binRange && isWithinMaxRange && getBinPrice(binRange[1])"
                 :fontSize="18"
-                :disabled="true"
+                @valueChange="updateMaxBinPrice"
               ></FormInput>
             </div>
           </div>
@@ -228,14 +230,29 @@ export default {
     });
   },
 
+  computed: {
+    isWithinMaxRange() {
+      const flag = (this.binRange[0] >= this.activeId - this.maxPriceRadius) && (this.binRange[0] <= this.activeId + this.maxPriceRadius)
+        && (this.binRange[1] >= this.activeId - this.maxPriceRadius) && (this.binRange[1] <= this.activeId + this.maxPriceRadius);
+
+      return flag;
+    }
+  },
+
   methods: {
     async setupSlider() {
       this.binRange = [this.activeId - this.priceRadius, this.activeId + this.priceRadius];
+      console.log([Math.max(this.binRange[0], this.activeId - this.maxPriceRadius), Math.min(this.binRange[1], this.activeId + this.maxPriceRadius)]);
     },
 
     getBinPrice(binId) {
       const binPrice = (1 + this.binStep / 10000) ** (binId - 8388608) * 10 ** (this.firstAsset.decimals - this.secondAsset.decimals);
       return binPrice.toFixed(5);
+    },
+
+    getBinId(price) {
+      const binId = Math.trunc(Math.log(price / (10 ** (this.firstAsset.decimals - this.secondAsset.decimals))) / Math.log(1 + this.binStep / 10000)) + 8388608;
+      return binId;
     },
 
     submit() {
@@ -286,6 +303,21 @@ export default {
 
       this.firstInputError = await this.$refs.firstInput.forceValidationCheck();
       this.secondInputError = await this.$refs.secondInput.forceValidationCheck();
+    },
+
+    updateMinBinPrice({value, invalid}) {
+      const binId = this.getBinId(value);
+      console.log(binId);
+      // const price = this.getBinPrice(binId);
+
+      this.binRange = [binId, this.binRange[1]];
+    },
+
+    updateMaxBinPrice({value, invalid}) {
+      const binId = this.getBinId(value);
+      // const price = this.getBinPrice(binId);
+
+      this.binRange = [this.binRange[0], binId];
     },
 
     handleShapeClick(key) {
