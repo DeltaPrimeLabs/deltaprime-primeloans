@@ -6,6 +6,7 @@ import axios from 'axios';
 
 import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
+import liquidityRouterInterface from '../../abis/LevelFinanceLiquidityRouter.json';
 import ILevelFinanceArtifact
     from '../../../artifacts/contracts/interfaces/facets/arbitrum/ILevelFinance.sol/ILevelFinance.json';
 import AddressProviderArtifact from '../../../artifacts/contracts/AddressProvider.sol/AddressProvider.json';
@@ -75,6 +76,7 @@ describe('Smart loan', () => {
             nonOwner: SignerWithAddress,
             depositor: SignerWithAddress,
             paraSwapMin: SimpleFetchSDK,
+            liquidityRouter: Contract,
             MOCK_PRICES: any,
             diamondAddress: any;
 
@@ -139,6 +141,8 @@ describe('Smart loan', () => {
 
             await smartLoansFactory.initialize(diamondAddress, tokenManager.address);
 
+            liquidityRouter = new ethers.Contract("0x1E46Ab9D3D9e87b95F2CD802208733C90a608805", liquidityRouterInterface.abi, provider);
+
             await tokenManager.setDebtCoverageStaked(toBytes32("stkdSnrLLP"), toWei("0.8333333333333333"));
             await tokenManager.setDebtCoverageStaked(toBytes32("stkdMzeLLP"), toWei("0.8333333333333333"));
             await tokenManager.setDebtCoverageStaked(toBytes32("stkdJnrLLP"), toWei("0.8333333333333333"));
@@ -189,6 +193,125 @@ describe('Smart loan', () => {
                     dataPoints: MOCK_PRICES,
                 });
         });
+
+        async function logLLPBalances(address: string){
+            let stakingContract = await new ethers.Contract(masterChefAddress, ILevelFinanceArtifact.abi, provider);
+
+            console.log(`LLP balances of ${address}`);
+            console.log(`JnrLLP: ${fromWei(await tokenContracts.get('arbJnrLLP')!.balanceOf(address))}`);
+            console.log(`MzeLLP: ${fromWei(await tokenContracts.get('arbMzeLLP')!.balanceOf(address))}`);
+            console.log(`SnrLLP: ${fromWei(await tokenContracts.get('arbSnrLLP')!.balanceOf(address))}`);
+            console.log(`LLP staking balances:`)
+            console.log(`JnrLLP: ${fromWei((await stakingContract.userInfo(2, address))[0])}`);
+            console.log(`MzeLLP: ${fromWei((await stakingContract.userInfo(1, address))[0])}`);
+            console.log(`SnrLLP: ${fromWei((await stakingContract.userInfo(0, address))[0])}`);
+        }
+
+        it("should mint LLP outside of DP and deposit", async () => {
+            console.log(`Owner (${owner.address}) balance: ${fromWei(await provider.getBalance(owner.address))}`);
+            console.log(`liquidityRouter address: ${liquidityRouter.address}`);
+
+            let jnrLLP = tokenContracts.get("arbJnrLLP");
+            let mzeLLP = tokenContracts.get("arbMzeLLP");
+            let snrLLP = tokenContracts.get("arbSnrLLP");
+
+            console.log('LOAN:')
+            await logLLPBalances(wrappedLoan.address);
+
+            console.log('OWNER:')
+            await logLLPBalances(owner.address);
+
+            // MINT JNR
+            await liquidityRouter.connect(owner).addLiquidityETH(
+                jnrLLP!.address,
+                100, // We don't really care about it in this test case
+                owner.address,
+                {value: toWei("1.0")}
+            )
+
+            console.log('OWNER:')
+            await logLLPBalances(owner.address);
+
+            // MINT MZE
+            await liquidityRouter.connect(owner).addLiquidityETH(
+                mzeLLP!.address,
+                100, // We don't really care about it in this test case
+                owner.address,
+                {value: toWei("1.0")}
+            )
+
+            console.log('OWNER:')
+            await logLLPBalances(owner.address);
+
+            // MINT SNR
+            await liquidityRouter.connect(owner).addLiquidityETH(
+                snrLLP!.address,
+                100, // We don't really care about it in this test case
+                owner.address,
+                {value: toWei("1.0")}
+            )
+
+            console.log('OWNER:')
+            await logLLPBalances(owner.address);
+
+            // Deposit and stake JNR LLP
+
+            await tokenContracts.get('arbJnrLLP')!.connect(owner).approve(wrappedLoan.address, await jnrLLP!.balanceOf(owner.address));
+            await wrappedLoan.depositLLPAndStake(2, await jnrLLP!.balanceOf(owner.address));
+
+            console.log('OWNER afer depositLLPAndStake')
+            await logLLPBalances(owner.address);
+            console.log('LOAN:')
+            await logLLPBalances(wrappedLoan.address);
+
+            // Deposit and stake MZE LLP
+
+            await tokenContracts.get('arbMzeLLP')!.connect(owner).approve(wrappedLoan.address, await mzeLLP!.balanceOf(owner.address));
+            await wrappedLoan.depositLLPAndStake(1, await mzeLLP!.balanceOf(owner.address));
+
+            console.log('OWNER afer depositLLPAndStake')
+            await logLLPBalances(owner.address);
+            console.log('LOAN:')
+            await logLLPBalances(wrappedLoan.address);
+
+            // Deposit and stake SNR LLP
+
+            await tokenContracts.get('arbSnrLLP')!.connect(owner).approve(wrappedLoan.address, await snrLLP!.balanceOf(owner.address));
+            await wrappedLoan.depositLLPAndStake(0, await snrLLP!.balanceOf(owner.address));
+
+            console.log('OWNER afer depositLLPAndStake')
+            await logLLPBalances(owner.address);
+            console.log('LOAN:')
+            await logLLPBalances(wrappedLoan.address);
+
+            // Unstake and withdraw JNR LLP
+
+            await wrappedLoan.unstakeAndWithdrawLLP(2, await wrappedLoan.levelJnrBalance());
+
+            console.log('OWNER afer unstakeAndWithdrawLLP')
+            await logLLPBalances(owner.address);
+            console.log('LOAN:')
+            await logLLPBalances(wrappedLoan.address);
+
+            // Unstake and withdraw MZE LLP
+
+            await wrappedLoan.unstakeAndWithdrawLLP(1, await wrappedLoan.levelMzeBalance());
+
+            console.log('OWNER afer unstakeAndWithdrawLLP')
+            await logLLPBalances(owner.address);
+            console.log('LOAN:')
+            await logLLPBalances(wrappedLoan.address);
+
+            // Unstake and withdraw SNR LLP
+
+            await wrappedLoan.unstakeAndWithdrawLLP(0, await wrappedLoan.levelSnrBalance());
+
+            console.log('OWNER afer unstakeAndWithdrawLLP')
+            await logLLPBalances(owner.address);
+            console.log('LOAN:')
+            await logLLPBalances(wrappedLoan.address);
+        });
+
 
         it("should swap and fund", async () => {
             await tokenContracts.get('ETH')!.connect(owner).deposit({value: toWei("100")});

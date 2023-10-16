@@ -989,6 +989,8 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                 'levelSnrBalance',
                 'levelMzeBalance',
                 'levelJnrBalance',
+                'depositLLPAndStake',
+                'unstakeAndWithdrawLLP',
             ],
             hardhatConfig
         )
