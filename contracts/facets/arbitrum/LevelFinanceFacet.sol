@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 8f671524e3eee41b945284c6fe54791fc1da9301;
+// Last deployed from commit: 9bbee9032c5601b6f98ce245f76499dfaa624d84;
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -34,8 +34,8 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             msg.sender == 0x5C23Bd1BD272D22766eB3708B8f874CB93B75248 ||
             msg.sender == 0x000000F406CA147030BE7069149e4a7423E3A264 ||
             msg.sender == 0x5D80a1c0a5084163F1D2620c1B1F43209cd4dB12 ||
+            msg.sender == 0xb79c2A75cd9073d68E75ddF71D53C07747Df7933 ||
             msg.sender == 0x6C21A841d6f029243AF87EF01f6772F05832144b
-
         ){
             _;
         } else {
@@ -927,24 +927,31 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         emit RewardsHarvested(msg.sender, pid, block.timestamp);
     }
 
-    function unstakeAndWithdrawLLP(uint256 pid, uint256 amount) external nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent{
+    function unstakeAndWithdrawLLP(uint256 pid, uint256 amount) external onlyWhitelistedAccounts nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent{
         IERC20Metadata llpToken = IERC20Metadata(pidToLLPToken(pid));
         ILevelFinance farmingContract = ILevelFinance(LEVEL_FARMING);
         require(_levelBalance(pid) >= amount, "Insufficient balance");
 
         farmingContract.withdraw(pid, amount, msg.sender);
 
+        IStakingPositions.StakedPosition memory position = pidToStakedPosition(pid);
         if(_levelBalance(pid) == 0){
-            IStakingPositions.StakedPosition memory position = pidToStakedPosition(pid);
             DiamondStorageLib.removeStakedPosition(position.identifier);
         }
 
 
         // TODO: Emit withdraw event
+        emit WithdrewLLP(
+            msg.sender,
+            position.symbol,
+            LEVEL_FARMING,
+            amount,
+            block.timestamp
+        );
     }
 
     // @dev Requires an approval on LLP token for the PrimeAccount address prior to calling this function
-    function depositLLPAndStake(uint256 pid, uint256 amount) external nonReentrant onlyOwner recalculateAssetsExposure{
+    function depositLLPAndStake(uint256 pid, uint256 amount) external onlyWhitelistedAccounts nonReentrant onlyOwner recalculateAssetsExposure{
         IERC20Metadata llpToken = IERC20Metadata(pidToLLPToken(pid));
         ILevelFinance farmingContract = ILevelFinance(LEVEL_FARMING);
 
@@ -1037,13 +1044,29 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
     /**
      * @dev emitted when user deposits LLP tokens into PA
-     * @param user the address executing staking
+     * @param user the address depositing
      * @param asset the asset that was staked
      * @param vault address of the vault token
      * @param depositAmount how much of LLP was deposited
      * @param timestamp of deposit
      **/
     event DepositedLLP(
+        address indexed user,
+        bytes32 indexed asset,
+        address indexed vault,
+        uint256 depositAmount,
+        uint256 timestamp
+    );
+
+    /**
+     * @dev emitted when user withdraws LLP tokens from PA
+     * @param user the address withdrawing
+     * @param asset the asset that was staked
+     * @param vault address of the vault token
+     * @param depositAmount how much of LLP was withdrawn
+     * @param timestamp of withdrawal
+     **/
+    event WithdrewLLP(
         address indexed user,
         bytes32 indexed asset,
         address indexed vault,
