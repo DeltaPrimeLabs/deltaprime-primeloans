@@ -22,6 +22,12 @@
         </div>
       </div>
 
+      <div class="modal-top-desc" v-if="info">
+        <div>
+          <b>{{ info }}</b>
+        </div>
+      </div>
+
       <div class="asset-info" v-if="!swapDebtMode">
         Available:
         <span v-if="sourceAssetBalance" class="asset-info__value">{{
@@ -237,6 +243,7 @@ export default {
       sourceAssetAmount: 0,
       targetAssetAmount: 0,
       fee: 0,
+      info: null,
       userSlippage: 0,
       queryMethod: null,
       feeMethods: null,

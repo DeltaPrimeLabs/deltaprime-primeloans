@@ -561,6 +561,7 @@ export default {
       modalInstance.debt = this.fullLoanStatus.debt;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
       modalInstance.health = this.fullLoanStatus.health;
+      modalInstance.info = `This action will additionally harvest rewards to your wallet.`;
       modalInstance.queryMethods = {
         Level: this.levelFinanceQuery(),
       };
