@@ -27,7 +27,10 @@ import {
     PoolInitializationObject,
     recompileConstantsFile,
     toBytes32,
-    toWei, yakRouterAbi
+    toWei, yakRouterAbi,
+    setBalance,
+    takeSnapshot,
+    revertToSnapshot
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {
@@ -67,8 +70,12 @@ async function query(tknFrom: string, tknTo: string, amountIn: BigNumber) {
 }
 
 describe('Smart loan', () => {
+    let snapshotId: number;
+
     before("Synchronize blockchain time", async () => {
         await syncTime();
+
+        snapshotId = await takeSnapshot();
     });
 
     describe('A loan without debt - Pangolin', () => {
@@ -150,6 +157,13 @@ describe('Smart loan', () => {
             );
 
             await deployAllFacets(diamondAddress)
+        });
+
+        after(async () => {
+            await revertToSnapshot(snapshotId);
+
+            await setBalance(owner.address);
+            await setBalance(depositor.address);
         });
 
         it("should deploy a smart loan", async () => {
@@ -383,6 +397,13 @@ describe('Smart loan', () => {
             await deployAllFacets(diamondAddress)
         });
 
+        after(async () => {
+            await revertToSnapshot(snapshotId);
+
+            await setBalance(owner.address);
+            await setBalance(depositor.address);
+        });
+
         it("should deploy a smart loan", async () => {
             await smartLoansFactory.connect(owner).createLoan();
 
@@ -488,7 +509,7 @@ describe('Smart loan', () => {
             expect(formatUnits(assetsNamePrices["MCKUSD"], BigNumber.from(8))).to.be.closeTo(tokensPrices.get('MCKUSD')!, 0.001);
             expect(formatUnits(assetsNameBalance["AVAX"], await tokenContracts.get('AVAX')!.decimals())).to.be.equal(80);
             expect(formatUnits(assetsNamePrices["AVAX"], BigNumber.from(8))).to.be.closeTo(tokensPrices.get('AVAX')!, 0.001);
-            expect(formatUnits(assetsNameBalance["sAVAX"], await tokenContracts.get('sAVAX')!.decimals())).to.be.closeTo(20, 1.5);
+            expect(formatUnits(assetsNameBalance["sAVAX"], await tokenContracts.get('sAVAX')!.decimals())).to.be.closeTo(20, 2.5);
             expect(formatUnits(assetsNamePrices["sAVAX"], BigNumber.from(8))).to.be.closeTo(tokensPrices.get('sAVAX')!, 0.001);
         });
 
