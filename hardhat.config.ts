@@ -43,6 +43,7 @@ export default {
       timeout: 1800000,
       url: 'http://127.0.0.1:8545/',
       chainId: 31337,
+      allowUnlimitedContractSize: true,
       // accounts: [getKey('avalanche', 'deployer'), getKey('avalanche', 'admin')]
     },
     arbitrum_devnet: {
