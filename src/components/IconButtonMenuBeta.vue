@@ -140,7 +140,7 @@ export default {
   }
 
   .menu {
-    position: fixed;
+    position: absolute;
     transform: translate(calc(-100% + 34px), 14px);
     z-index: 1;
     display: flex;
