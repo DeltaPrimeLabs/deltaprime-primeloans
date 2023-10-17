@@ -848,7 +848,6 @@ export default {
     },
 
     async getFullLoanStatus({state, rootState, commit}) {
-      console.log('getFullLoanStatus')
       const loanAssets = mergeArrays([
         (await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
         (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),

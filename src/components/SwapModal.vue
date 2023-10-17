@@ -198,7 +198,7 @@ import Button from './Button';
 import CurrencyComboInput from './CurrencyComboInput';
 import BarGaugeBeta from './BarGaugeBeta';
 import config from '../config';
-import {calculateHealth, formatUnits, parseUnits} from '../utils/calculate';
+import {calculateHealth, formatUnits, fromWei, parseUnits} from '../utils/calculate';
 import {BigNumber} from 'ethers';
 import SimpleInput from './SimpleInput';
 import TOKEN_ADDRESSES from '../../common/addresses/avalanche/token_addresses.json';
@@ -245,6 +245,7 @@ export default {
       fee: 0,
       info: null,
       userSlippage: 0,
+      slippageMargin: 0.1,
       queryMethod: null,
       feeMethods: null,
       lastChangedSource: true,
@@ -381,20 +382,26 @@ export default {
 
         let estimatedReceived = parseFloat(formatUnits(estimated, BigNumber.from(this.targetAssetData.decimals)));
 
-        this.updateSlippageWithAmounts(estimatedReceived);
 
         if (this.feeMethods && this.feeMethods[this.swapDex]) {
-          this.fee = await this.feeMethods[this.swapDex]();
+          this.fee = fromWei(await this.feeMethods[this.swapDex](this.sourceAsset, this.targetAsset, amountInWei, estimated));
+
+          console.log('this.fee: ', this.fee)
           estimatedReceived -= this.fee * estimatedReceived;
         }
+
+        this.updateSlippageWithAmounts(estimatedReceived);
+
 
         this.calculateHealthAfterTransaction();
       }
     },
 
     async updateAmountsWithSlippage() {
-
+      console.log('updateAmountsWithSlippage')
       if (!this.swapDebtMode) {
+        console.log('this.userSlippage: ', this.userSlippage)
+        console.log('this.fee: ', this.fee)
         this.targetAssetAmount = this.receivedAccordingToOracle * (1 - (this.userSlippage / 100 + (this.fee ? this.fee : 0)));
       } else {
         this.targetAssetAmount = this.receivedAccordingToOracle * (1 + (this.userSlippage / 100 + (this.fee ? this.fee : 0)));
@@ -424,7 +431,7 @@ export default {
         if (this.swapDex === 'ParaSwap') {
           slippageMargin = config.paraSwapDefaultSlippage;
         } else {
-          slippageMargin = 0.1
+          slippageMargin = this.slippageMargin;
         }
       }
 
@@ -433,10 +440,6 @@ export default {
       let updatedSlippage = slippageMargin + 100 * dexSlippage;
 
       this.userSlippage = parseFloat(updatedSlippage.toFixed(3));
-
-      console.log('slippageMargin: ', slippageMargin)
-      console.log('dexSlippage: ', dexSlippage)
-      console.log('this.userSlippage: ', this.userSlippage)
 
       await this.updateAmountsWithSlippage();
     },

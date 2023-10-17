@@ -121,7 +121,7 @@ import WithdrawModal from './WithdrawModal';
 
 const ethers = require('ethers');
 import erc20ABI from '../../test/abis/ERC20.json';
-import {calculateMaxApy, chartPoints, fromWei} from '../utils/calculate';
+import {calculateMaxApy, chartPoints, fromWei, toWei} from '../utils/calculate';
 import addresses from '../../common/addresses/avalanche/token_addresses.json';
 import {formatUnits, parseUnits} from 'ethers/lib/utils';
 import DeltaIcon from "./DeltaIcon.vue";
@@ -369,7 +369,7 @@ export default {
       return async (sourceAsset, targetAsset, amountIn) => {
         if (config.LEVEL_LP_ASSETS_CONFIG[sourceAsset]) {
           const llp = config.LEVEL_LP_ASSETS_CONFIG[sourceAsset];
-          const trancheValue = await calculator.getTrancheValue(llp.address, true);
+          const trancheValue = await calculator.getTrancheValue(llp.address, false);
           const llpSupply = await llpContract.totalSupply();
           const llpSellPrice = formatUnits(trancheValue.div(llpSupply), 12);
 
@@ -381,7 +381,7 @@ export default {
           return parseUnits(amountOut.toFixed(target.decimals), target.decimals);
         } else {
           const llp = config.LEVEL_LP_ASSETS_CONFIG[targetAsset];
-          const trancheValue = await calculator.getTrancheValue(llp.address, false);
+          const trancheValue = await calculator.getTrancheValue(llp.address, true);
           const llpSupply = await llpContract.totalSupply();
           const llpBuyPrice = formatUnits(trancheValue.div(llpSupply), 12);
           const source = config.ASSETS_CONFIG[sourceAsset];
@@ -395,8 +395,15 @@ export default {
     },
 
     levelFinanceFee() {
-      return async (sourceAsset, targetAsset, amountIn) => {
-       return Promise.resolve(0.006);
+      const calculator = new ethers.Contract(config.levelLiquidityCalculatorAddress, LIQUIDITY_CALCULATOR.abi, provider.getSigner());
+
+      return async (sourceAsset, targetAsset, amountIn, amountOut) => {
+        const isBuyingLevel = this.lpToken.symbol === targetAsset;
+        const otherAsset = config.ASSETS_CONFIG[isBuyingLevel ? sourceAsset : targetAsset];
+        const price = BigNumber.from(Math.ceil(otherAsset.price.toString() * 100000).toString() + "0".repeat(30 - otherAsset.decimals - 5)); //we multiply by 1e5 for accuracy and then remove these 5 zeroes
+        const otherAmount = isBuyingLevel ? amountIn : amountOut;
+
+       return parseUnits((await calculator.calcAddRemoveLiquidityFee(otherAsset.address, price, otherAmount, isBuyingLevel)).toString(), 8);
       }
     },
 

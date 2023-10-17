@@ -7,7 +7,7 @@ import {
   fromWei,
   mergeArrays,
   vectorFinanceMaxUnstaked,
-  vectorFinanceRewards,
+  vectorFinanceRewards, yieldYakBalance,
   yieldYakMaxUnstaked,
   yieldYakStaked
 } from '../utils/calculate';
@@ -446,6 +446,7 @@ export default {
                 farm.balanceMethod ? from(wrappedSmartLoanContract[farm.balanceMethod]())
                   .pipe(map(balanceWei => formatUnits(balanceWei, assetDecimals))) : farm.balance(smartLoanContractAddress),
                 of(apys[farm.token] ? apys[farm.token][farm.protocolIdentifier] : 0),
+                farm.stakingContractAddress.toLowerCase() === '0xb8f531c0d3c53B1760bcb7F57d87762Fd25c4977'.toLowerCase() ? yieldYakBalance(farm.stakingContractAddress, smartLoanContractAddress, assetDecimals) :
                 farm.protocol === 'YIELD_YAK' ? yieldYakMaxUnstaked(farm.stakingContractAddress, smartLoanContractAddress, assetDecimals) :
                 farm.protocol === 'BEEFY_FINANCE' ? beefyMaxUnstaked(farm.stakingContractAddress, smartLoanContractAddress, assetDecimals) :
                   farm.autoCompounding ? vectorFinanceMaxUnstaked(farm.token, farm.stakingContractAddress, smartLoanContractAddress) :
@@ -464,6 +465,7 @@ export default {
 
               if (['YIELD_YAK','BEEFY_FINANCE'].includes(farm.protocol)) {
                 farm.totalStaked = farmData[5];
+                if (farm.stakingContractAddress.toLowerCase() === '0xb8f531c0d3c53B1760bcb7F57d87762Fd25c4977'.toLowerCase()) farm.totalStaked *= farm.price / rootState.fundsStore.assets['sAVAX'].price;
               } else if (farm.protocol === 'VECTOR_FINANCE') {
                 if (farm.autoCompounding) {
                   farm.totalStaked = farmData[5];

@@ -208,12 +208,16 @@ export default {
             heightOfRows += 26;
           }
 
-          if (simpleProtocolsWithBanner.includes(farm.protocolIdentifier)) {
+          if (farm.banner) {
             heightOfRows += 10;
           }
 
           if (tokensWithSplitCompoundingFarms.includes(farm.token) && !farm.autoCompounding) {
-            heightOfRows -= 58;
+            heightOfRows -= 38;
+          }
+
+          if (farm.token === 'USDC') {
+            heightOfRows -= 10;
           }
 
           heightOfRows += 102;
