@@ -16,6 +16,7 @@
         @input="handleInput"
         :style="{ fontSize: fontSize + 'px' }"
         :disabled="disabled"
+        @blur="handleBlur"
       >
     </div>
 
@@ -57,6 +58,7 @@ export default ({
       this.inputValue = value.replace(/ +/g, '');
     },
     defaultValue(value) {
+      if (!value) return;
       this.inputValue = value;
     }
   },
@@ -90,6 +92,10 @@ export default ({
         value: this.inputValue,
         invalid
       });
+    },
+
+    handleBlur() {
+      this.$emit('blur', {});
     }
   }
 })

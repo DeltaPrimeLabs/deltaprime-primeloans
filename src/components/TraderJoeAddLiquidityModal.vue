@@ -21,7 +21,7 @@
                      :defaultValue="firstAmount"
                      :disabled="maxBelowActive"
                      :validators="firstInputValidators"
-                     :max="firstAssetBalance">
+                     :max="maxBelowActive && firstAssetBalance">
       </CurrencyInput>
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>
@@ -82,18 +82,22 @@
               <div class="input-label"><b>Min Price</b> | {{ secondAsset.symbol }} per {{ firstAsset.symbol }}</div>
               <FormInput
                 :inputType="'number'"
-                :default-value="binRange && isWithinMaxRange && getBinPrice(binRange[0])"
+                :default-value="binRange && !minPriceChanging && getBinPrice(binRange[0])"
                 :fontSize="18"
+                :noSpace="true"
                 @valueChange="updateMinBinPrice"
+                @blur="minPriceChanging = false"
               ></FormInput>
             </div>
             <div class="price__input">
               <div class="input-label"><b>Max Price</b> | {{ secondAsset.symbol }} per {{ firstAsset.symbol }}</div>
               <FormInput
                 :inputType="'number'"
-                :default-value="binRange && isWithinMaxRange && getBinPrice(binRange[1])"
+                :default-value="binRange && !maxPriceChanging && getBinPrice(binRange[1])"
                 :fontSize="18"
+                :noSpace="true"
                 @valueChange="updateMaxBinPrice"
+                @blur="maxPriceChanging = false"
               ></FormInput>
             </div>
           </div>
@@ -218,7 +222,9 @@ export default {
       minAboveActive: false,
       maxBelowActive: false,
       priceSlippage: 0.5,
-      amountsSlippage: 0.5
+      amountsSlippage: 0.5,
+      minPriceChanging: false,
+      maxPriceChanging: false
     };
   },
 
@@ -243,7 +249,6 @@ export default {
   methods: {
     async setupSlider() {
       this.binRange = [this.activeId - this.priceRadius, this.activeId + this.priceRadius];
-      console.log([Math.max(this.binRange[0], this.activeId - this.maxPriceRadius), Math.min(this.binRange[1], this.activeId + this.maxPriceRadius)]);
     },
 
     getBinPrice(binId) {
@@ -269,7 +274,6 @@ export default {
         priceSlippage: this.priceSlippage,
         amountsSlippage: this.amountsSlippage
       };
-      console.log(addLiquidityEvent)
 
       this.$emit('ADD_LIQUIDITY', addLiquidityEvent);
     },
@@ -285,18 +289,17 @@ export default {
     },
 
     async updateBinRange({value, error}) {
-      let newRange = value;
       this.error = error;
-      this.binRange = newRange;
-      if (this.activeId < newRange[0] && this.minAboveActive === false) {
+      this.binRange = value;
+      if (this.activeId < value[0] && this.minAboveActive === false) {
         this.minAboveActive = true;
-      } else if (this.activeId >= newRange[0] && this.minAboveActive === true) {
+      } else if (this.activeId >= value[0] && this.minAboveActive === true) {
         this.minAboveActive = false;
       }
 
-      if(newRange[1] < this.activeId && this.maxBelowActive === false) {
+      if(value[1] < this.activeId && this.maxBelowActive === false) {
         this.maxBelowActive = true;
-      } else if (newRange[1] >= this.activeId && this.maxBelowActive === true) {
+      } else if (value[1] >= this.activeId && this.maxBelowActive === true) {
         this.maxBelowActive = false; 
       }
 
@@ -308,15 +311,14 @@ export default {
 
     updateMinBinPrice({value, invalid}) {
       const binId = this.getBinId(value);
-      console.log(binId);
-      // const price = this.getBinPrice(binId);
+      this.minPriceChanging = true;
 
       this.binRange = [binId, this.binRange[1]];
     },
 
     updateMaxBinPrice({value, invalid}) {
       const binId = this.getBinId(value);
-      // const price = this.getBinPrice(binId);
+      this.maxPriceChanging = true;
 
       this.binRange = [this.binRange[0], binId];
     },
@@ -362,6 +364,13 @@ export default {
 
             if (config.maxTraderJoeV2Bins && binsTotal > config.maxTraderJoeV2Bins) {
               return `Max. number of bins in a Prime Account: ${config.maxTraderJoeV2Bins}. Current number: ${binsTotal}`;
+            }
+          }
+        },
+        {
+          validate: (addedRange) => {
+            if (addedRange[0] > addedRange[1]) {
+              return "Invalid range. The min price must be lower than the max price.";
             }
           }
         }

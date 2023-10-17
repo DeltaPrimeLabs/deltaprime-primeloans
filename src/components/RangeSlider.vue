@@ -46,7 +46,8 @@ export default {
     return {
       dragging: false,
       thumbs: [0, 1], // Number of thumbs in the slider
-      error: ''
+      error: '',
+      range: []
     };
   },
   computed: {
@@ -59,15 +60,15 @@ export default {
       };
     },
   },
-  mounted() {
-    console.error(this.$props.indicator);
-    console.error(this.$props.min);
-    console.error(this.$props.max);
-  },
+  // mounted() {
+  //   console.error(this.$props.indicator);
+  //   console.error(this.$props.min);
+  //   console.error(this.$props.max);
+  // },
   methods: {
     getThumbValue(index) {
       const range = this.max - this.min;
-      return ((this.value[index] - this.min) / range) * 100;
+      return ((this.range[index] - this.min) / range) * 100;
     },
     async updateValue(index, newValue) {
       const range = this.max - this.min;
@@ -75,8 +76,8 @@ export default {
       const newValueInRange = this.min + (range * percentage) / 100;
       const newValueRounded = Math.round(newValueInRange);
 
-      if (index === 0 && newValueRounded > this.value[1]) return;
-      if (index === 1 && newValueRounded < this.value[0]) return;
+      if (index === 0 && newValueRounded > this.range[1]) return;
+      if (index === 1 && newValueRounded < this.range[0]) return;
 
       this.$set(this.value, index, newValueRounded);
     },
@@ -121,6 +122,8 @@ export default {
   watch: {
     value: {
       async handler(value) {
+        if (value.length != 2) return;
+        this.range = [Math.min(Math.max(value[0], this.min), this.max), Math.max(Math.min(value[1], this.max), this.min)];
         const hasError = await this.checkErrors(value);
         this.$emit("input", { value: value, error: hasError } );
       },
