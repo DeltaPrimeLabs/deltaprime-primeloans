@@ -87,9 +87,9 @@ export default {
         "SHLB_EUROC-USDC_V2_1_B": { primary: 'EUROC', secondary: 'USDC', name: "EUROC-USDC", dex: 'SteakHut',  symbol: 'SHLB_EUROC-USDC_V2_1_B', addMethod: 'stakeSteakHutEUROCUSDC', removeMethod: 'unstakeSteakHutEUROCUSDC', decimals: 18, address: addresses["SHLB_EUROC-USDC_V2_1_B"], tvl: 1985000, debtCoverage: 0.83333333333},
     },
     TRADERJOEV2_LP_ASSETS_CONFIG: {
-        'TJLB_AVAX-USDC': { primary: 'AVAX', secondary: 'USDC', name: 'AVAX-USDC', dex: 'TraderJoe', symbol: 'TJLB_AVAX-USDC', decimals: 18, baseFee: '0.002', address: addresses['TJLB_AVAX-USDC'], binStep: 20, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2', link: "https://traderjoexyz.com/avalanche/pool/v21/AVAX/0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e/20"},
-        'TJLB_ETH-AVAX': { primary: 'ETH', secondary: 'AVAX', name: 'ETH-AVAX', dex: 'TraderJoe', symbol: 'TJLB_ETH-AVAX', decimals: 18, baseFee: '0.001', address: addresses['TJLB_ETH-AVAX'], binStep: 10, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2', link: 'https://traderjoexyz.com/avalanche/pool/v21/0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab/AVAX/10'},
-        'TJLB_BTC.b-AVAX': { primary: 'BTC', secondary: 'AVAX', name: 'BTC-AVAX', dex: 'TraderJoe', symbol: 'TJLB_BTCB-AVAX', decimals: 18, baseFee: '0.1', address: addresses['TJLB_BTC.b-AVAX'], binStep: 10, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2', link: 'https://traderjoexyz.com/avalanche/pool/v21/0x152b9d0fdc40c096757f570a51e494bd4b943e50/AVAX/10'},
+        'TJLB_AVAX-USDC': { primary: 'AVAX', secondary: 'USDC', name: 'AVAX-USDC', dex: 'TraderJoe', symbol: 'TJLB_AVAX-USDC', debtCoverage: 0.83333333333, decimals: 18, baseFee: '0.002', address: addresses['TJLB_AVAX-USDC'], binStep: 20, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2', link: "https://traderjoexyz.com/avalanche/pool/v21/AVAX/0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e/20"},
+        'TJLB_ETH-AVAX': { primary: 'ETH', secondary: 'AVAX', name: 'ETH-AVAX', dex: 'TraderJoe', symbol: 'TJLB_ETH-AVAX', debtCoverage: 0.83333333333, decimals: 18, baseFee: '0.001', address: addresses['TJLB_ETH-AVAX'], binStep: 10, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2', link: 'https://traderjoexyz.com/avalanche/pool/v21/0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab/AVAX/10'},
+        'TJLB_BTC.b-AVAX': { primary: 'BTC', secondary: 'AVAX', name: 'BTC-AVAX', dex: 'TraderJoe', symbol: 'TJLB_BTCB-AVAX', debtCoverage: 0.83333333333, decimals: 18, baseFee: '0.1', address: addresses['TJLB_BTC.b-AVAX'], binStep: 10, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2', link: 'https://traderjoexyz.com/avalanche/pool/v21/0x152b9d0fdc40c096757f570a51e494bd4b943e50/AVAX/10'},
     },
     maxTraderJoeV2Bins: 80,
     DEX_CONFIG: {
@@ -161,7 +161,8 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['PTP', 'QI'],
                 strategy: 'Platypus',
-                refreshDelay: 60000
+                banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
+                refreshDelay: 60000,
             },
             {
                 protocol: 'VECTOR_FINANCE',
@@ -180,6 +181,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['PTP', 'QI'],
                 strategy: 'Platypus',
+                banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
                 refreshDelay: 60000
             }
         ],
@@ -202,6 +204,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['sAVAX'],
                 strategy: 'Platypus',
+                banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
                 refreshDelay: 60000
             },
             {
@@ -223,6 +226,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['PTP', 'QI'],
                 strategy: 'Platypus',
+                banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
                 refreshDelay: 60000
             },
             {
@@ -241,6 +245,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['PTP', 'QI'],
                 strategy: 'Platypus',
+                banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
                 refreshDelay: 60000
             }
         ],
@@ -262,6 +267,7 @@ export default {
                 debtCoverage: 0,
                 rewardTokens: ['PTP'],
                 strategy: 'Platypus',
+                banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
                 refreshDelay: 60000
             },
             {
@@ -280,6 +286,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['PTP'],
                 strategy: 'Platypus',
+                banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
                 refreshDelay: 60000
             },
         ],
@@ -299,6 +306,7 @@ export default {
                 isTokenLp: false,
                 debtCoverage: 0.83333333333,
                 strategy: 'Platypus',
+                banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
                 refreshDelay: 60000
             },
         ],
@@ -340,7 +348,8 @@ export default {
                 isTokenLp: true,
                 debtCoverage: 0.83333333333,
                 strategy: 'Pangolin',
-                refreshDelay: 60000
+                refreshDelay: 60000,
+                banner: 'The Pangolin APYs might temporarily report inaccurate data. We are working to solve this asap.'
             }
         ],
         PNG_AVAX_ETH_LP: [
@@ -360,7 +369,8 @@ export default {
                 isTokenLp: true,
                 debtCoverage: 0.83333333333,
                 strategy: 'Pangolin',
-                refreshDelay: 60000
+                refreshDelay: 60000,
+                banner: 'The Pangolin APYs might temporarily report inaccurate data. We are working to solve this asap.'
             }
         ],
         TJ_AVAX_USDC_LP: [
@@ -420,7 +430,8 @@ export default {
                 isTokenLp: true,
                 debtCoverage: 0.83333333333,
                 strategy: 'TraderJoe',
-                refreshDelay: 60000
+                refreshDelay: 60000,
+                banner: 'Rewards for this farm have been turned off, removing compounding benefits. Therefore, depositing into this farm has been disabled.'
             }
         ],
     },

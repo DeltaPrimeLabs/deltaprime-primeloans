@@ -1,18 +1,7 @@
 <template>
   <div class="staking-farm-table-row-component" v-if="farm">
-
-    <div class="protocol-banner" v-if="farm.protocolIdentifier === 'VF_USDC_MAIN'">Deposits and withdrawals from Platypus main pool have been
-      temporarily disabled. Read more in our
-      <a class="banner__link" href="https://discord.com/invite/9bwsnsHEzD" target="_blank">Discord</a>.
-    </div>
-    <div class="protocol-banner" v-if="farm.protocolIdentifier === 'YY_PNG_AVAX_USDC_LP'">
-      The Pangolin APYs might temporarily report inaccurate data. We are working to solve this asap.
-    </div>
-    <div class="protocol-banner" v-if="farm.protocolIdentifier === 'YY_PNG_AVAX_ETH_LP'">
-      The Pangolin APYs might temporarily report inaccurate data. We are working to solve this asap.
-    </div>
-    <div class="protocol-banner" v-if="farm.protocolIdentifier === 'YY_TJ_AVAX_sAVAX_LP'">
-      Rewards for this farm have been turned off, removing compounding benefits. Therefore, depositing into this farm has been disabled.
+    <div class="protocol-banner" v-if="farm.banner">
+      {{farm.banner}}
     </div>
 
     <div class="table__row">
@@ -36,7 +25,7 @@
       <div class="table__cell">
         <div class="double-value staked-balance">
           <div class="double-value__pieces">
-            <span v-if="isStakedBalanceEstimated">~</span>{{
+            <span v-if="isStakedBalanceEstimated || farm.stakingContractAddress.toLowerCase() === '0xb8f531c0d3c53B1760bcb7F57d87762Fd25c4977'.toLowerCase()">~</span>{{
               isLP ? formatTokenBalance(underlyingTokenStaked, 10, true) : formatTokenBalance(underlyingTokenStaked)
             }}
           </div>
@@ -80,14 +69,14 @@
               :config="addActionsConfig"
               v-if="addActionsConfig"
               v-on:iconButtonClick="actionClick"
-              :disabled="disableAllButtons || !healthLoaded">
+              :disabled="disableAllButtons || !healthLoaded || platypusAffected || platypusAffectedDisableDeposit">
           </IconButtonMenuBeta>
           <IconButtonMenuBeta
               class="actions__icon-button last"
               :config="removeActionsConfig"
               v-if="removeActionsConfig"
               v-on:iconButtonClick="actionClick"
-              :disabled="disableAllButtons || !healthLoaded">
+              :disabled="disableAllButtons || !healthLoaded || platypusAffected">
           </IconButtonMenuBeta>
         </div>
       </div>
@@ -134,6 +123,8 @@ export default {
     this.watchProgressBarState();
     this.watchFarmRefreshEvent();
     this.watchExternalStakedPerFarm();
+    this.platypusAffected = this.farm.strategy === 'Platypus' && ['AVAX', 'sAVAX'].includes(this.asset.symbol);
+    this.platypusAffectedDisableDeposit = this.farm.strategy === 'Platypus' && ['USDC', 'USDT'].includes(this.asset.symbol)
   },
   data() {
     return {
@@ -149,6 +140,8 @@ export default {
       addActionsConfig: null,
       removeActionsConfig: null,
       healthLoaded: false,
+      platypusAffected: false,
+      platypusAffectedDisableDeposit: false
     };
   },
   watch: {
