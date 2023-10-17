@@ -97,11 +97,9 @@ export default class HealthService {
 
       let lbTokens = Object.values(traderJoeV2LpAssets);
 
-      console.log(tokens)
-      console.log(lbTokens)
       const health = calculateHealth(tokens, lbTokens);
       this.health$.next(health >= 0 ? health : 0);
-      console.warn('EMITTING HEALTH: ', health);
+
       return health >= 0 ? health : 0;
     }
 

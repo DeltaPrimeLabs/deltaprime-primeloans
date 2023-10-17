@@ -13,7 +13,6 @@ export default {
   },
   mutations: {
     setProvider(state, provider) {
-      console.log(provider);
       state.provider = provider;
     },
     setAccount(state, account) {

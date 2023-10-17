@@ -11,32 +11,26 @@ export default class DataRefreshEventService {
   hardRefreshScheduledEvent$ = new Subject();
 
   emitAssetBalancesDataRefreshEvent(assetBalancesRefreshEvent) {
-    console.log('emitAssetBalancesDataRefreshEvent');
     this.assetBalancesDataRefreshEvent$.next(assetBalancesRefreshEvent);
   }
 
   emitAssetBalancesDataRefresh() {
-    console.log('emitAssetBalancesDataRefreshEvent');
     this.assetBalancesDataRefresh$.next(null);
   }
 
   emitAssetApysDataRefresh() {
-    console.log('emitAssetApysDataRefreshEvent');
     this.assetApysDataRefresh$.next(null);
   }
 
   emitDebtsPerAssetDataRefreshEvent(debtsPerAsset) {
-    console.log('emitDebtsPerAssetDataRefreshEvent');
     this.debtsPerAssetDataRefreshEvent$.next(debtsPerAsset);
   }
 
   emitAssetUpdatedEvent(asset) {
-    console.log('emitAssetUpdatedEvent');
     this.assetUpdatedEvent$.next(asset);
   }
 
   emitFullLoanStatusRefresh() {
-    console.log('emitFullLoanStatusRefresh');
     this.fullLoanStatusRefresh$.next(null);
   }
 
