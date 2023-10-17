@@ -264,5 +264,5 @@ export default {
     dataProviderHistoricalPrices: "redstone",
     redstoneFeedUrl: "https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-arbitrum-prod",
     subgraph: "https://api.thegraph.com/subgraphs/name/keizir/deltaprime",
-    readRpcUrl: "https://nd-762-566-527.p2pify.com/4514bd12de6723b94346752e90e95cf4"
+    readRpcUrl: "https://rpc.ankr.com/arbitrum"
 }
