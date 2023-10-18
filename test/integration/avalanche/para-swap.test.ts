@@ -78,7 +78,7 @@ describe('ParaSwap', () => {
                 userAddress: wrappedLoan.address,
                 side: SwapSide.SELL,
                 options: {
-                    includeContractMethods: [ContractMethod.simpleSwap, ContractMethod.multiSwap, ContractMethod.directUniV3Swap]
+                    includeContractMethods: [ContractMethod.multiSwap]
                 }
             });
             const txParams = await paraSwapMin.swap.buildTx({
