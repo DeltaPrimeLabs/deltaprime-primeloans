@@ -245,7 +245,7 @@ export default {
       fee: 0,
       info: null,
       userSlippage: 0,
-      slippageMargin: 0.1,
+      slippageMargin: null,
       queryMethod: null,
       feeMethods: null,
       lastChangedSource: true,
@@ -413,16 +413,12 @@ export default {
       this.receivedAccordingToOracle = this.estimatedNeededTokens * this.sourceAssetData.price / this.targetAssetData.price;
       dexSlippage = (this.receivedAccordingToOracle - estimatedReceivedTokens) / estimatedReceivedTokens;
 
-      let slippageMargin = this.swapDebtMode ? 0.2 : 0.1;
+      let slippageMargin;
 
-      if (this.swapDebtMode) {
-        slippageMargin = 0.2
+      if (this.swapDex === 'ParaSwap') {
+        slippageMargin = config.paraSwapDefaultSlippage;
       } else {
-        if (this.swapDex === 'ParaSwap') {
-          slippageMargin = config.paraSwapDefaultSlippage;
-        } else {
-          slippageMargin = this.slippageMargin;
-        }
+        slippageMargin = this.slippageMargin;
       }
 
       this.marketDeviation = parseFloat((100 * dexSlippage).toFixed(3));

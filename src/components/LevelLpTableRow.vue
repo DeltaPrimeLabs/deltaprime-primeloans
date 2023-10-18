@@ -32,7 +32,8 @@
 
         <template v-if="rewards">
           <div class="double-value__pieces">
-            {{ formatTokenBalance(rewards, 8) }}
+            <img src="src/assets/logo/lvl.png" class="lvl-logo">
+            {{ formatTokenBalance(rewards, 6) }}
           </div>
           <div class="double-value__usd">
             {{ rewardsInUsd | usd }}
@@ -60,7 +61,7 @@
       </div>
 
       <div class="table__cell capacity">
-        <bar-gauge-beta v-if="lpToken.maxExposure" :min="0" :max="lpToken.maxExposure" :value="Math.max(lpToken.currentExposure, 0.001)" v-tooltip="{content: `${lpToken.currentExposure ? lpToken.currentExposure.toFixed(2) : 0} out of ${lpToken.maxExposure} is currently used.`, classes: 'info-tooltip'}" width="80"></bar-gauge-beta>
+        <bar-gauge-beta v-if="lpToken.maxExposure" :min="0" :max="lpToken.maxExposure" :value="Math.max(lpToken.currentExposure, 0.001)" v-tooltip="{content: `${lpToken.currentExposure ? lpToken.currentExposure.toFixed(2) : 0} out of ${lpToken.maxExposure} is currently used.`, classes: 'info-tooltip'}" :width="80"></bar-gauge-beta>
       </div>
 
       <div class="table__cell table__cell--double-value apr" v-bind:class="{'apr--with-warning': lpToken.aprWarning}">
@@ -806,12 +807,6 @@ export default {
           color: var(--default-text-color);
         }
 
-        .asset__icon {
-          width: 20px;
-          height: 20px;
-          opacity: var(--asset-table-row__icon-opacity);
-        }
-
         .asset__info {
           display: flex;
           flex-direction: column;
@@ -834,6 +829,14 @@ export default {
         flex-direction: column;
         justify-content: center;
         align-items: flex-end;
+      }
+
+      &.rewards {
+        .lvl-logo {
+          width: 20px;
+          height: 20px;
+          opacity: var(--asset-table-row__icon-opacity);
+        }
       }
 
       &.trend-level {

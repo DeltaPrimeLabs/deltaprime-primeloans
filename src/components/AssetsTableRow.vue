@@ -599,6 +599,7 @@ export default {
       modalInstance.dexOptions = Object.entries(config.AVAILABLE_ASSETS_PER_DEX).filter(([k, v]) => v.includes(this.asset.symbol)).map(([k, v]) => k);
       modalInstance.swapDex = Object.keys(config.AVAILABLE_ASSETS_PER_DEX)[0];
       modalInstance.swapDebtMode = false;
+      modalInstance.slippageMargin = 0.1;
       modalInstance.sourceAsset = this.asset.symbol;
       modalInstance.sourceAssetBalance = this.assetBalances[this.asset.symbol];
       modalInstance.assets = this.assets;
@@ -644,6 +645,7 @@ export default {
       modalInstance.swapDex = Object.keys(config.AVAILABLE_ASSETS_PER_DEX)[0];
       modalInstance.title = 'Swap debt';
       modalInstance.swapDebtMode = true;
+      modalInstance.slippageMargin = 0.2;
       modalInstance.sourceAsset = this.asset.symbol;
       modalInstance.sourceAssetBalance = this.assetBalances[this.asset.symbol];
       modalInstance.sourceAssetDebt = this.debtsPerAsset[this.asset.symbol].debt;
