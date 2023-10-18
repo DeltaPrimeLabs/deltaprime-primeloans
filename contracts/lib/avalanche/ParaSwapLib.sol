@@ -80,9 +80,11 @@ library ParaSwapLib {
     function extractTokensAndAmount(bytes4 selector, bytes memory data) internal pure returns (address fromToken, address toToken, uint256 fromAmount) {
         if (selector == SIMPLESWAP_SELECTOR) {
             return getSimpleSwapData(data);
-        } else if (selector == MULTISWAP_SELECTOR) {
+        }
+        else if (selector == MULTISWAP_SELECTOR) {
             return getMultiSwapData(data);
-        } else if (selector == DIRECT_UNIV3_SELECTOR) {
+        }
+        else if (selector == DIRECT_UNIV3_SELECTOR) {
             return getDirectUniV3SwapData(data);
         } else {
             revert ("Unknown Selector");
@@ -95,9 +97,20 @@ library ParaSwapLib {
     }
 
     function getMultiSwapData(bytes memory data) internal pure returns (address fromToken, address toToken, uint256 fromAmount) {
-        SellData memory sellData = abi.decode(data, (SellData));
-        toToken = sellData.path[sellData.path.length - 1].to;
-        (fromToken, fromAmount) = (sellData.fromToken, sellData.fromAmount);
+        uint256 length;
+        assembly {
+            // Read 32 bytes from data ptr + 32 bytes offset, shift right 12 bytes
+            fromToken := shr(mul(0x0c, 0x08), mload(add(data, 0x20)))
+            // Read 32 bytes from data ptr + 52 bytes offset
+            fromAmount := mload(add(data, 0x34))
+            // bytes_memory_len_offset + address + uint256(x3) + address = (32 + 20 + 3*32 + 20) bytes = 168
+            // 0xa8 = 168 bytes offset = offset at which Path[] memory ptr resides
+
+            let pathArrayLength := mload(mload(add(data, 0xa8))) // First element of array in memory layout is array length
+            // One element of Path struct occupies address + uint256 + Path[] -> (20 + 32 + 32) bytes -> 84 bytes that is 0x54
+            let toTokenOffsetFromPathArrayStart := add(mul(sub(pathArrayLength, 0x1), 0x54), 0x20) // (Path[].length - 1) * 84 bytes + 32 bytes offset (1st element of array is 32 bytes representing array length)
+            toToken := shr(mul(0x0c, 0x08), mload(add(mload(add(data, 0xa8)), toTokenOffsetFromPathArrayStart)))
+        }
     }
 
     function getDirectUniV3SwapData(bytes memory data) internal pure returns (address fromToken, address toToken, uint256 fromAmount) {
