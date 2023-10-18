@@ -371,7 +371,9 @@ export default {
             sortable: false,
             class: 'capacity',
             id: 'capacity',
-            tooltip: `Maximum amount of tokens held by all Prime Accounts.`
+            tooltip: `The global maximum capacity of this LLP. When the capacity is at 100%, this asset can not be created or deposited.
+            <a href='https://docs.deltaprime.io/protocol/security/token-exposure-protection' target='_blank'>More information</a>.
+            `
           },
           {
             label: 'Min. APR',
