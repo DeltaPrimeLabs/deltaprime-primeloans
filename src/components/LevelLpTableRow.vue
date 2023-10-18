@@ -60,7 +60,7 @@
       </div>
 
       <div class="table__cell capacity">
-        <bar-gauge-beta v-if="lpToken.maxExposure" :min="0" :max="lpToken.maxExposure" :value="Math.max(lpToken.currentExposure, 0.001)" v-tooltip="{content: `${lpToken.currentExposure ? lpToken.currentExposure.toFixed(2) : 0} out of ${lpToken.maxExposure} is currently used.`, classes: 'info-tooltip'}"></bar-gauge-beta>
+        <bar-gauge-beta v-if="lpToken.maxExposure" :min="0" :max="lpToken.maxExposure" :value="Math.max(lpToken.currentExposure, 0.001)" v-tooltip="{content: `${lpToken.currentExposure ? lpToken.currentExposure.toFixed(2) : 0} out of ${lpToken.maxExposure} is currently used.`, classes: 'info-tooltip'}" width="80"></bar-gauge-beta>
       </div>
 
       <div class="table__cell table__cell--double-value apr" v-bind:class="{'apr--with-warning': lpToken.aprWarning}">
