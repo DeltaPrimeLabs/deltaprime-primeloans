@@ -2,7 +2,7 @@ import {ethers, waffle} from 'hardhat';
 import chai from 'chai';
 import {BigNumber, Contract} from 'ethers';
 import {solidity} from "ethereum-waffle";
-import { constructSimpleSDK, SimpleFetchSDK, SwapSide } from '@paraswap/sdk';
+import { constructSimpleSDK, ContractMethod, SimpleFetchSDK, SwapSide } from '@paraswap/sdk';
 import axios from 'axios';
 
 import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json';
@@ -36,7 +36,7 @@ import {
     PoolAsset,
     PoolInitializationObject,
     recompileConstantsFile,
-    paraSwapRouteToSimpleData
+    parseParaSwapRouteData
 } from "../../_helpers";
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import {parseUnits} from "ethers/lib/utils";
@@ -77,6 +77,9 @@ describe('ParaSwap', () => {
                 amount: srcAmount.toString(),
                 userAddress: wrappedLoan.address,
                 side: SwapSide.SELL,
+                options: {
+                    includeContractMethods: [ContractMethod.simpleSwap, ContractMethod.multiSwap, ContractMethod.directUniV3Swap]
+                }
             });
             const txParams = await paraSwapMin.swap.buildTx({
                 srcToken: priceRoute.srcToken,
@@ -89,7 +92,7 @@ describe('ParaSwap', () => {
             }, {
                 ignoreChecks: true,
             });
-            const swapData = paraSwapRouteToSimpleData(txParams);
+            const swapData = parseParaSwapRouteData(txParams);
             return swapData;
         };
 
@@ -175,7 +178,7 @@ describe('ParaSwap', () => {
 
         it("should fail to swap as a non-owner", async () => {
             const swapData = await getSwapData('AVAX', 'USDC', toWei('10'));
-            await expect(nonOwnerWrappedLoan.paraSwap(swapData)).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.paraSwap(swapData.selector, swapData.data)).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
         });
 
         it('should swap funds: AVAX -> USDC', async () => {
@@ -186,7 +189,7 @@ describe('ParaSwap', () => {
             expect(await loanOwnsAsset("USDC")).to.be.false;
 
             const swapData = await getSwapData('AVAX', 'USDC', toWei('10'));
-            await wrappedLoan.paraSwap(swapData);
+            await wrappedLoan.paraSwap(swapData.selector, swapData.data);
 
             expect(await loanOwnsAsset("USDC")).to.be.true;
 
@@ -204,7 +207,7 @@ describe('ParaSwap', () => {
             let usdcBalance = await wrappedLoan.getBalance(toBytes32('USDC'));
 
             const swapData = await getSwapData('USDC', 'ETH', usdcBalance);
-            await wrappedLoan.paraSwap(swapData);
+            await wrappedLoan.paraSwap(swapData.selector, swapData.data);
 
             expect(await loanOwnsAsset("USDC")).to.be.false;
             expect(await loanOwnsAsset("ETH")).to.be.true;
@@ -223,7 +226,7 @@ describe('ParaSwap', () => {
             let ethBalance = await wrappedLoan.getBalance(toBytes32('ETH'));
 
             const swapData = await getSwapData('ETH', 'USDC', ethBalance);
-            await wrappedLoan.paraSwap(swapData);
+            await wrappedLoan.paraSwap(swapData.selector, swapData.data);
 
             expect(await loanOwnsAsset("ETH")).to.be.false;
             expect(await loanOwnsAsset("USDC")).to.be.true;

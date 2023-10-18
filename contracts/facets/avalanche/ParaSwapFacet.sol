@@ -4,10 +4,10 @@ pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import "../../interfaces/facets/avalanche/IParaSwapRouter.sol";
 import "../../ReentrancyGuardKeccak.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
+import {ParaSwapLib} from "../../lib/avalanche/ParaSwapLib.sol";
 import "../../lib/SolvencyMethods.sol";
 import "../../interfaces/ITokenManager.sol";
 
@@ -58,18 +58,18 @@ contract ParaSwapFacet is ReentrancyGuardKeccak, SolvencyMethods {
         });
     }
 
-    function paraSwap(IParaSwapRouter.SimpleData memory data) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent{
-        SwapTokensDetails memory swapTokensDetails = getInitialTokensDetails(data.fromToken, data.toToken);
+    function paraSwap(bytes4 selector, bytes memory data) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent{
+        (address fromToken, address toToken, uint256 fromAmount) = ParaSwapLib.extractTokensAndAmount(selector, data);
+        SwapTokensDetails memory swapTokensDetails = getInitialTokensDetails(fromToken, toToken);
 
-        uint256 amount = Math.min(swapTokensDetails.soldToken.balanceOf(address(this)), data.fromAmount);
+        uint256 amount = Math.min(swapTokensDetails.soldToken.balanceOf(address(this)), fromAmount);
         require(amount > 0, "Amount of tokens to sell has to be greater than 0");
 
         address(swapTokensDetails.soldToken).safeApprove(PARA_TRANSFER_PROXY, 0);
         address(swapTokensDetails.soldToken).safeApprove(PARA_TRANSFER_PROXY, amount);
 
-        IParaSwapRouter router = IParaSwapRouter(PARA_ROUTER);
-
-        router.simpleSwap(data);
+        (bool success, ) = PARA_ROUTER.call((abi.encodePacked(selector, data)));
+        require(success, "Swap failed");
 
         // Add asset to ownedAssets
         if (swapTokensDetails.boughtToken.balanceOf(address(this)) > 0) {
