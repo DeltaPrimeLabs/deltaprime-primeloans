@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 62afb7a09f896ec372c51b1ff4111f89a8083eb8;
+// Last deployed from commit: 0b1929776ad17008d99dac92499ffc36e0534f8b;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -275,7 +275,6 @@ contract SolvencyFacetProdArbitrum is ArbitrumProdDataServiceConsumerBase, Diamo
             for (uint256 i = 0; i < ownedAssetsPrices.length; i++) {
                 IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(ownedAssetsPrices[i].asset, true));
                 uint256 assetBalance = token.balanceOf(address(this));
-                assetBalance = convertBalance(assetBalance, address(token));
 
                 weightedValueOfTokens = weightedValueOfTokens + (ownedAssetsPrices[i].price * assetBalance * tokenManager.debtCoverage(address(token)) / (10 ** token.decimals() * 1e8));
             }
@@ -384,7 +383,6 @@ contract SolvencyFacetProdArbitrum is ArbitrumProdDataServiceConsumerBase, Diamo
             for (uint256 i = 0; i < ownedAssetsPrices.length; i++) {
                 IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(ownedAssetsPrices[i].asset, true));
                 uint256 assetBalance = token.balanceOf(address(this));
-                assetBalance = convertBalance(assetBalance, address(token));
 
                 total = total + (ownedAssetsPrices[i].price * 10 ** 10 * assetBalance / (10 ** token.decimals()));
             }
@@ -392,16 +390,6 @@ contract SolvencyFacetProdArbitrum is ArbitrumProdDataServiceConsumerBase, Diamo
         } else {
             return 0;
         }
-    }
-
-    function convertBalance(uint256 _balance, address _asset) private pure returns (uint256){
-        uint256 balance = _balance;
-        if(_asset == 0x8Bc6968b7A9Eed1DD0A259eFa85dc2325B923dd2){ // YY_WOMBEX_USDT
-            balance = balance * 1e12;
-        } else if(_asset == 0x4649c7c3316B27C4A3DB5f3B47f87C687776Eb8C){ // YY_WOMBEX_USDC.e
-            balance = balance * 1e12;
-        }
-        return balance;
     }
 
     /**
