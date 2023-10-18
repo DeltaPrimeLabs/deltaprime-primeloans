@@ -368,7 +368,7 @@ export default {
         if (queryResponse.dex === 'PARA_SWAP') {
           estimated = queryResponse.amounts[queryResponse.amounts.length - 1];
           this.paraSwapRate = queryResponse.swapRate;
-        } else if (queryResponse.dex === 'YAK_SWAP') {
+        } else {
           if (queryResponse instanceof BigNumber) {
             estimated = queryResponse;
           } else {
@@ -376,8 +376,6 @@ export default {
             this.adapters = queryResponse.adapters;
             estimated = queryResponse.amounts[queryResponse.amounts.length - 1];
           }
-        } else {
-          estimated = queryResponse;
         }
 
         let estimatedReceived = parseFloat(formatUnits(estimated, BigNumber.from(this.targetAssetData.decimals)));
@@ -386,7 +384,6 @@ export default {
         if (this.feeMethods && this.feeMethods[this.swapDex]) {
           this.fee = fromWei(await this.feeMethods[this.swapDex](this.sourceAsset, this.targetAsset, amountInWei, estimated));
 
-          console.log('this.fee: ', this.fee)
           estimatedReceived -= this.fee * estimatedReceived;
         }
 
@@ -398,16 +395,11 @@ export default {
     },
 
     async updateAmountsWithSlippage() {
-      console.log('updateAmountsWithSlippage')
       if (!this.swapDebtMode) {
-        console.log('this.userSlippage: ', this.userSlippage)
-        console.log('this.fee: ', this.fee)
         this.targetAssetAmount = this.receivedAccordingToOracle * (1 - (this.userSlippage / 100 + (this.fee ? this.fee : 0)));
       } else {
         this.targetAssetAmount = this.receivedAccordingToOracle * (1 + (this.userSlippage / 100 + (this.fee ? this.fee : 0)));
       }
-
-      console.log('this.targetAssetAmount 2: ', this.targetAssetAmount)
 
       const targetInputChangeEvent = await this.$refs.targetInput.setCurrencyInputValue(this.targetAssetAmount);
 
@@ -417,8 +409,6 @@ export default {
     },
 
     async updateSlippageWithAmounts(estimatedReceivedTokens) {
-      console.log('updateSlippageWithAmounts')
-      console.log('estimatedReceivedTokens: ', estimatedReceivedTokens)
       let dexSlippage = 0;
       this.receivedAccordingToOracle = this.estimatedNeededTokens * this.sourceAssetData.price / this.targetAssetData.price;
       dexSlippage = (this.receivedAccordingToOracle - estimatedReceivedTokens) / estimatedReceivedTokens;
@@ -567,9 +557,6 @@ export default {
     },
 
     calculateSourceAssetBalance() {
-      console.log('calculateSourceAssetBalance')
-      console.log(this.assetBalances)
-      console.log(this.sourceAsset)
       const sourceAssetBalance = this.assetBalances[this.sourceAsset];
       this.sourceAssetBalance = sourceAssetBalance;
     },
@@ -695,9 +682,6 @@ export default {
       }
 
       let lbTokens = Object.values(this.traderJoeV2LpAssets);
-
-      console.log('tokens')
-      console.log(tokens)
 
       this.healthAfterTransaction = calculateHealth(tokens, lbTokens);
     },
