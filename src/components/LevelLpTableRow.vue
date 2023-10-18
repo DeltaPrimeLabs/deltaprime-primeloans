@@ -28,8 +28,19 @@
         </template>
       </div>
 
-      <div class="table__cell rewards">
-        {{ formatTokenBalance(rewards, 8) }}
+      <div class="table__cell table__cell--double-value rewards">
+
+        <template v-if="rewards">
+          <div class="double-value__pieces">
+            {{ formatTokenBalance(rewards, 8) }}
+          </div>
+          <div class="double-value__usd">
+            {{ rewardsInUsd | usd }}
+          </div>
+        </template>
+        <template v-else>
+          <div class="no-value-dash"></div>
+        </template>
       </div>
 
       <div class="table__cell trend-level">
@@ -49,7 +60,7 @@
       </div>
 
       <div class="table__cell capacity">
-        <bar-gauge-beta v-if="lpToken.maxExposure" :min="0" :max="lpToken.maxExposure" :value="Math.max(lpToken.currentExposure, 0.001)" v-tooltip="{content: `${lpToken.currentExposure ? lpToken.currentExposure.toFixed(2) : 0} out of ${lpToken.maxExposure} is currently used.`, classes: 'info-tooltip'}"></bar-gauge-beta>
+        <bar-gauge-beta v-if="lpToken.maxExposure" :min="0" :max="lpToken.maxExposure" :value="Math.max(lpToken.currentExposure, 0.001)" v-tooltip="{content: `${lpToken.currentExposure ? lpToken.currentExposure.toFixed(2) : 0} out of ${lpToken.maxExposure} is currently used.`, classes: 'info-tooltip'}" width="80"></bar-gauge-beta>
       </div>
 
       <div class="table__cell table__cell--double-value apr" v-bind:class="{'apr--with-warning': lpToken.aprWarning}">
@@ -182,6 +193,8 @@ export default {
       rowExpanded: false,
       poolBalance: 0,
       rewards: 0,
+      rewardsInUsd: 0,
+      lvlPrice: 0,
       apr: 0,
       tvl: 0,
       weekly: true,
@@ -244,7 +257,7 @@ export default {
           this.setupAddActionsConfiguration();
           this.setupRemoveActionsConfiguration();
           this.setupMoreActionsConfiguration();
-          this.setupRewards();
+          this.setupLevelPriceAndRewards();
         }
       },
     },
@@ -252,7 +265,7 @@ export default {
       async handler(provider) {
         if (provider) {
           await this.setupPoolBalance();
-          this.setupRewards();
+          this.setupLevelPriceAndRewards();
         }
       }
     }
@@ -630,6 +643,17 @@ export default {
 
       const farmingContract = new ethers.Contract(FARMING_CONTRACT_ADDRESS, FARMING_ABI, this.provider.getSigner());
       this.rewards = fromWei(await farmingContract.pendingReward(this.lpToken.pid, this.smartLoanContract.address));
+
+      this.rewardsInUsd = this.rewards * this.lvlPrice;
+    },
+
+    async setupLevelPriceAndRewards() {
+      const redstonePriceDataRequest = await fetch(config.redstoneFeedUrl);
+      const redstonePriceData = await redstonePriceDataRequest.json();
+
+      this.lvlPrice = redstonePriceData['LVL'][0].dataPoints[0].value;
+
+      this.setupRewards();
     },
 
     async getWalletLpTokenBalance() {

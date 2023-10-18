@@ -335,7 +335,7 @@ export default {
             sortable: false,
             class: 'token',
             id: 'TOKEN',
-            tooltip: `The LP-asset name. These names are simplified for a smoother UI.
+            tooltip: `The LLP-asset name. These names are simplified for a smoother UI.
                                        <a href='https://docs.deltaprime.io/integrations/tokens' target='_blank'>More information</a>.`
           },
           {
@@ -343,20 +343,20 @@ export default {
             sortable: false,
             class: 'balance',
             id: 'BALANCE',
-            tooltip: `The number and value of unstaked assets in your Prime Account.`
+            tooltip: `The balance of this LLP in your Prime Account.`
           },          {
             label: 'Rewards',
             sortable: false,
             class: 'rewards',
             id: 'REWARDS',
-            tooltip: `Rewards from Level.`
+            tooltip: `PreLVL incentives.`
           },
           {
             label: 'Trend (7D)',
             sortable: false,
             class: 'trend-level',
             id: 'TREND',
-            tooltip: `7D price change of an underlying LLP token.`
+            tooltip: `7D price change of this LVL token. This does not include any earned preLVL incentives.`
           },
           {
             label: 'TVL',
@@ -371,14 +371,16 @@ export default {
             sortable: false,
             class: 'capacity',
             id: 'capacity',
-            tooltip: ``
+            tooltip: `The global maximum capacity of this LLP. When the capacity is at 100%, this asset can not be created or deposited.
+            <a href='https://docs.deltaprime.io/protocol/security/token-exposure-protection' target='_blank'>More information</a>.
+            `
           },
           {
             label: 'Min. APR',
             sortable: false,
             class: 'apr',
             id: 'APR',
-            tooltip: `The APR of the pool. This number includes 6.06% sAVAX price appreciation if the pool includes that asset.`
+            tooltip: `All fees, rewards and counterparty PnL collected, divided by TVL of this tranche. This does not take underlying asset price changes or IL into account.`
           },
           {
             label: 'Max. APR',
