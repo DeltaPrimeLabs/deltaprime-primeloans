@@ -113,10 +113,17 @@ export default {
         this.updateValue(this.dragging, event.pageX - this.$el.getBoundingClientRect().left);
       }
     },
-    endDrag() {
+    async endDrag() {
       this.dragging = false;
       window.removeEventListener("mousemove", this.handleDrag);
       window.removeEventListener("mouseup", this.endDrag);
+      const hasError = await this.checkErrors(this.value);
+
+      this.$emit("input", {
+        value: this.value,
+        dragging: this.dragging,
+        error: hasError
+      });
     },
   },
   watch: {
@@ -125,7 +132,11 @@ export default {
         if (value.length != 2) return;
         this.range = [Math.min(Math.max(value[0], this.min), this.max), Math.max(Math.min(value[1], this.max), this.min)];
         const hasError = await this.checkErrors(value);
-        this.$emit("input", { value: value, error: hasError } );
+        this.$emit("input", {
+          value: value,
+          dragging: this.dragging,
+          error: hasError
+        });
       },
       immediate: true
     },

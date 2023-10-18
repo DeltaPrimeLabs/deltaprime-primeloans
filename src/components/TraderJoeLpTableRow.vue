@@ -384,38 +384,45 @@ export default {
       modalInstance.activePrice = this.activePrice;
       modalInstance.binStep = this.lpToken.binStep;
       modalInstance.lpTokens = this.lpTokens;
+      modalInstance.readSmartLoanContract = this.readSmartLoanContract;
+      modalInstance.traderJoeService = this.traderJoeService;
+      modalInstance.addLiquidityParams = {
+        account: this.account,
+        tokenX: this.tokenX,
+        tokenY: this.tokenY,
+      }
       modalInstance.$on('ADD_LIQUIDITY', async addLiquidityEvent => {
         if (this.smartLoanContract) {
-          let firstAmount = parseUnits(Number(addLiquidityEvent.tokenXAmount).toFixed(this.firstAsset.decimals), this.firstAsset.decimals);
-          let secondAmount = parseUnits(Number(addLiquidityEvent.tokenYAmount).toFixed(this.secondAsset.decimals), this.secondAsset.decimals);
+          // let firstAmount = parseUnits(Number(addLiquidityEvent.tokenXAmount).toFixed(this.firstAsset.decimals), this.firstAsset.decimals);
+          // let secondAmount = parseUnits(Number(addLiquidityEvent.tokenYAmount).toFixed(this.secondAsset.decimals), this.secondAsset.decimals);
 
-          const firstBalance = await this.readSmartLoanContract.getBalance(toBytes32(this.firstAsset.symbol));
-          firstAmount = (firstAmount.gte(firstBalance)) ? firstBalance : firstAmount;
+          // const firstBalance = await this.readSmartLoanContract.getBalance(toBytes32(this.firstAsset.symbol));
+          // firstAmount = (firstAmount.gte(firstBalance)) ? firstBalance : firstAmount;
 
-          const secondBalance = await this.readSmartLoanContract.getBalance(toBytes32(this.secondAsset.symbol));
-          secondAmount = secondAmount.gte(secondBalance) ? secondBalance : secondAmount;
+          // const secondBalance = await this.readSmartLoanContract.getBalance(toBytes32(this.secondAsset.symbol));
+          // secondAmount = secondAmount.gte(secondBalance) ? secondBalance : secondAmount;
 
-          const addLiquidityInput = this.traderJoeService.getAddLiquidityParameters(
-              this.account,
-              this.tokenX,
-              this.tokenY,
-              firstAmount.toString(),
-              secondAmount.toString(),
-              addLiquidityEvent.distributionMethod,
-              this.lpToken.binStep,
-              this.activeId,
-              addLiquidityEvent.binRange,
-              addLiquidityEvent.priceSlippage,
-              addLiquidityEvent.amountsSlippage
-          );
+          // const addLiquidityInput = this.traderJoeService.getAddLiquidityParameters(
+          //     this.account,
+          //     this.tokenX,
+          //     this.tokenY,
+          //     firstAmount.toString(),
+          //     secondAmount.toString(),
+          //     addLiquidityEvent.distributionMethod,
+          //     this.lpToken.binStep,
+          //     this.activeId,
+          //     addLiquidityEvent.binRange,
+          //     addLiquidityEvent.priceSlippage,
+          //     addLiquidityEvent.amountsSlippage
+          // );
           const addLiquidityRequest = {
             symbol: this.lpToken.symbol,
             method: this.lpToken.addMethod,
             firstAsset: this.lpToken.primary,
             secondAsset: this.lpToken.secondary,
-            firstAmount: parseUnits(Number(addLiquidityEvent.tokenXAmount).toFixed(this.firstAsset.decimals), this.firstAsset.decimals),
-            secondAmount: parseUnits(Number(addLiquidityEvent.tokenYAmount).toFixed(this.secondAsset.decimals), this.secondAsset.decimals),
-            addLiquidityInput,
+            firstAmount: addLiquidityEvent.firstAssetAmount,
+            secondAmount: addLiquidityEvent.secondAssetAmount,
+            addLiquidityInput: addLiquidityEvent.addLiquidityInput,
           };
 
           this.handleTransaction(this.addLiquidityTraderJoeV2Pool, {addLiquidityRequest}, () => {
@@ -423,7 +430,9 @@ export default {
           }, (error) => {
             this.handleTransactionError(error);
           }).then(() => {
-            this.closeTraderJoeLpModal();
+            if (!addLiquidityEvent.batchTransfer) {
+              this.closeTraderJoeLpModal();
+            }
           });
         }
       });

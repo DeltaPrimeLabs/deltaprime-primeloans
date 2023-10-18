@@ -146,14 +146,43 @@
 <!--          </div>-->
 <!--        </TransactionResultSummaryBeta>-->
 <!--      </div>-->
-
-      <div class="button-wrapper">
+      <div
+        v-if="!this.addLiquidityInput || !this.addLiquidityInput.deltaIds || this.addLiquidityInput.deltaIds.length <= batchSize"
+        class="button-wrapper"
+      >
         <Button :label="'Add Liquidity'"
                 v-on:click="submit()"
-                :waiting="transactionOngoing"
+                :waiting="transactionOngoing || isLoading"
                 :disabled="firstInputError || secondInputError || sliderError">
         </Button>
       </div>
+      <template v-if="this.addLiquidityInput && this.addLiquidityInput.deltaIds && this.addLiquidityInput.deltaIds.length > batchSize">
+        <div
+          v-for="batchId in Math.ceil(this.addLiquidityInput.deltaIds.length / batchSize)"
+          class="button-wrapper batch"
+        >
+          <span class="batch-header">Batch {{ batchId }}</span>
+          <div class="batch-description">
+            <div class="batch-description_row">
+              <span class="row-label">Range</span>
+              <span class="row-value">{{ getBatchRange(batchId) }}</span>
+            </div>
+            <div class="batch-description_row">
+              <span class="row-label">{{ firstAsset.symbol }} to add</span>
+              <span class="row-value">{{ getFirstAssetAmount(batchId) }}</span>
+            </div>
+            <div class="batch-description_row">
+              <span class="row-label">{{ secondAsset.symbol }} to add</span>
+              <span class="row-value">{{ getSecondAssetAmount(batchId) }}</span>
+            </div>
+          </div>
+          <Button :label="'Add Liquidity'"
+                  v-on:click="submit(batchId)"
+                  :waiting="transactionOngoing || isLoading"
+                  :disabled="firstInputError || secondInputError || sliderError">
+          </Button>
+        </div>
+      </template>
     </Modal>
   </div>
 </template>
@@ -171,8 +200,12 @@ import RangeSlider from './RangeSlider';
 import FormInput from './FormInput';
 import SimpleInput from "./SimpleInput.vue";
 import Paginator from "./Paginator.vue";
+import {parseUnits} from '../utils/calculate';
+import {formatUnits} from '../utils/calculate';
+import {BigNumber} from 'ethers';
 
 const ethers = require('ethers');
+const toBytes32 = require('ethers').utils.formatBytes32String;
 
 
 export default {
@@ -200,7 +233,10 @@ export default {
     secondAssetBalance: Number,
     activeId: null,
     activePrice: null,
-    binStep: null
+    binStep: null,
+    traderJoeService: null,
+    readSmartLoanContract: null,
+    addLiquidityParams: null
   },
 
   data() {
@@ -224,7 +260,12 @@ export default {
       priceSlippage: 0.5,
       amountsSlippage: 0.5,
       minPriceChanging: false,
-      maxPriceChanging: false
+      maxPriceChanging: false,
+      firstAssetAmount: null,
+      secondAssetAmount: null,
+      addLiquidityInput: {},
+      isLoading: false,
+      batchSize: 100
     };
   },
 
@@ -243,6 +284,10 @@ export default {
         && (this.binRange[1] >= this.activeId - this.maxPriceRadius) && (this.binRange[1] <= this.activeId + this.maxPriceRadius);
 
       return flag;
+    },
+
+    isInputInvalid() {
+      return this.firstInputError || this.secondInputError || this.sliderError;
     }
   },
 
@@ -261,34 +306,89 @@ export default {
       return binId;
     },
 
-    submit() {
+    submit(batchId = 0) {
       this.transactionOngoing = true;
+      let addLiquidityInput;
+
+      if (batchId > 0) {
+        // split distributions for batch call
+        addLiquidityInput = {
+          ...this.addLiquidityInput,
+          deltaIds: this.addLiquidityInput.deltaIds.slice((batchId - 1) * this.batchSize, batchId * this.batchSize),
+          distributionX: this.addLiquidityInput.distributionX.slice((batchId - 1) * this.batchSize, batchId * this.batchSize),
+          distributionY: this.addLiquidityInput.distributionY.slice((batchId - 1) * this.batchSize, batchId * this.batchSize)
+        };
+      } else {
+        // single call
+        addLiquidityInput = this.addLiquidityInput;
+      }
+      console.log(addLiquidityInput);
 
       const addLiquidityEvent = {
-        firstAsset: this.firstAsset,
-        secondAsset: this.secondAsset,
-        tokenXAmount: this.maxBelowActive ? 0 : this.firstAmount,
-        tokenYAmount: this.minAboveActive ? 0 : this.secondAmount,
-        distributionMethod: this.liquidityShapes[this.selectedShape].distributionMethod,
-        binRange: this.binRange,
-        priceSlippage: this.priceSlippage,
-        amountsSlippage: this.amountsSlippage
+        // firstAsset: this.firstAsset,
+        // secondAsset: this.secondAsset,
+        // tokenXAmount: this.maxBelowActive ? 0 : this.firstAmount,
+        // tokenYAmount: this.minAboveActive ? 0 : this.secondAmount,
+        // distributionMethod: this.liquidityShapes[this.selectedShape].distributionMethod,
+        // binRange: this.binRange,
+        // priceSlippage: this.priceSlippage,
+        // amountsSlippage: this.amountsSlippage,
+        firstAssetAmount: this.firstAssetAmount,
+        secondAssetAmount: this.secondAssetAmount,
+        addLiquidityInput: this.addLiquidityInput,
+        batchTransfer: batchId > 0
       };
 
       this.$emit('ADD_LIQUIDITY', addLiquidityEvent);
     },
 
+    async calculateParameters() {
+      if (!this.isInputInvalid) {
+        this.isLoading = true;
+
+        const tokenXAmount = this.maxBelowActive ? 0 : this.firstAmount;
+        const tokenYAmount = this.minAboveActive ? 0 : this.secondAmount;
+        const firstAmount = parseUnits(Number(tokenXAmount).toFixed(this.firstAsset.decimals), this.firstAsset.decimals);
+        const secondAmount = parseUnits(Number(tokenYAmount).toFixed(this.secondAsset.decimals), this.secondAsset.decimals);
+        const firstBalance = await this.readSmartLoanContract.getBalance(toBytes32(this.firstAsset.symbol));
+        const secondBalance = await this.readSmartLoanContract.getBalance(toBytes32(this.secondAsset.symbol));
+
+        const addLiquidityInput = this.traderJoeService.getAddLiquidityParameters(
+          this.addLiquidityParams.account,
+          this.addLiquidityParams.tokenX,
+          this.addLiquidityParams.tokenY,
+          ((firstAmount.gte(firstBalance)) ? firstBalance : firstAmount).toString(),
+          (secondAmount.gte(secondBalance) ? secondBalance : secondAmount).toString(),
+          this.liquidityShapes[this.selectedShape].distributionMethod,
+          this.lpToken.binStep,
+          this.activeId,
+          this.binRange,
+          this.priceSlippage,
+          this.amountsSlippage
+        );
+
+        this.firstAssetAmount = firstAmount;
+        this.secondAssetAmount = secondAmount;
+        this.addLiquidityInput = addLiquidityInput;
+        this.isLoading = false;
+      }
+    },
+
     async firstInputChange(change) {
       this.firstAmount = change;
       this.firstInputError = await this.$refs.firstInput.forceValidationCheck();
+      this.calculateParameters();
     },
 
     async secondInputChange(change) {
       this.secondAmount = change;
       this.secondInputError = await this.$refs.secondInput.forceValidationCheck();
+      this.calculateParameters();
     },
 
-    async updateBinRange({value, error}) {
+    async updateBinRange({value, dragging, error}) {
+      if (dragging === false) this.calculateParameters();
+
       this.error = error;
       this.binRange = value;
       if (this.activeId < value[0] && this.minAboveActive === false) {
@@ -314,6 +414,7 @@ export default {
       this.minPriceChanging = true;
 
       this.binRange = [binId, this.binRange[1]];
+      this.calculateParameters();
     },
 
     updateMaxBinPrice({value, invalid}) {
@@ -321,10 +422,14 @@ export default {
       this.maxPriceChanging = true;
 
       this.binRange = [this.binRange[0], binId];
+      this.calculateParameters();
     },
 
     handleShapeClick(key) {
-      if (!this.liquidityShapes[key].disabled) this.selectedShape = key;
+      if (!this.liquidityShapes[key].disabled) {
+        this.selectedShape = key;
+        this.calculateParameters();
+      }
     },
 
     setupValidators() {
@@ -385,6 +490,29 @@ export default {
     async amountsSlippageChange(changeEvent) {
       this.amountsSlippage = changeEvent.value ? changeEvent.value : 0;
     },
+
+    getBatchRange(batchId) {
+      const batchMin = (batchId - 1) * this.batchSize;
+      const batchMax = batchId * this.batchSize;
+
+      return `${this.getBinPrice(this.activeId + this.addLiquidityInput.deltaIds[batchMin])} - ${this.getBinPrice(this.activeId + this.addLiquidityInput.deltaIds[Math.min(batchMax-1, this.addLiquidityInput.deltaIds.length-1)])} ${this.secondAsset.symbol} per ${this.firstAsset.symbol}`;
+    },
+
+    getFirstAssetAmount(batchId) {      
+      const distributionX = this.addLiquidityInput.distributionX.slice((batchId - 1) * this.batchSize, batchId * this.batchSize);
+      const distributionSum = distributionX.reduce((a, b) => BigNumber.from(a).add(BigNumber.from(b)), 0);
+      const amount = parseFloat(this.firstAmount) * parseFloat(formatUnits(distributionSum.toString()));
+
+      return amount.toFixed(5);
+    },
+
+    getSecondAssetAmount(batchId) {
+      const distributionY = this.addLiquidityInput.distributionY.slice((batchId - 1) * this.batchSize, batchId * this.batchSize);
+      const distributionSum = distributionY.reduce((a, b) => BigNumber.from(a).add(BigNumber.from(b)), 0);
+      const amount = parseFloat(this.secondAmount) * parseFloat(formatUnits(distributionSum.toString()));
+
+      return amount.toFixed(5);
+    }
   }
 };
 </script>
@@ -516,6 +644,42 @@ export default {
   }
   .button-wrapper {
     margin-top: 20px;
+  }
+  .batch {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+    border-radius: 12px;
+    border: var(--form-input__border);
+    background-color: var(--form-input__background-color);
+
+    .batch-header {
+      width: 100%;
+      margin-bottom: 10px;
+      font-family: Montserrat;
+      font-size: $font-size-sm;
+      color: var(--traderjoe-add-liquidity-modal__price-slider-input-color);
+    }
+
+    .batch-description {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      margin-bottom: 10px;
+      
+      .batch-description_row {
+        display: flex;
+        justify-content: space-between;
+        font-family: Montserrat;
+        font-size: $font-size-xsm;
+        color: var(--traderjoe-add-liquidity-modal__batch-row-color);
+        &:not(:last-child) {
+          margin-bottom: 5px;
+        }
+      }
+    }
   }
 }
 
