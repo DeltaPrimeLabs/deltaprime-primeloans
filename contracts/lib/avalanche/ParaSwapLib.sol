@@ -97,7 +97,6 @@ library ParaSwapLib {
     }
 
     function getMultiSwapData(bytes memory data) internal pure returns (address fromToken, address toToken, uint256 fromAmount) {
-        uint256 length;
         assembly {
             // Read 32 bytes from data ptr + 32 bytes offset, shift right 12 bytes
             fromToken := shr(mul(0x0c, 0x08), mload(add(data, 0x20)))
