@@ -28,7 +28,6 @@ const ethers = require('ethers');
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 const SUCCESS_DELAY_AFTER_TRANSACTION = 1000;
-const HARD_REFRESH_DELAY = 60000;
 
 let SMART_LOAN_FACTORY_TUP;
 let DIAMOND_BEACON;
@@ -228,6 +227,7 @@ export default {
     },
 
     async updateFunds({state, dispatch, commit, rootState}) {
+      console.log('updateFunds')
       try {
         if (state.smartLoanContract.address !== NULL_ADDRESS) {
           commit('setNoSmartLoan', false);
@@ -1004,10 +1004,10 @@ export default {
 
       const allowance = formatUnits(await fundToken.allowance(rootState.network.account, state.smartLoanContract.address), fundRequest.assetDecimals);
 
-      if (parseFloat(allowance) < parseFloat(fundRequest.value)) {
-        const approveTransaction = await fundToken.connect(provider.getSigner()).approve(state.smartLoanContract.address, amountInWei);
-        await awaitConfirmation(approveTransaction, provider, 'approve');
-      }
+      // if (parseFloat(allowance) < parseFloat(fundRequest.value)) {
+      //   const approveTransaction = await fundToken.connect(provider.getSigner()).approve(state.smartLoanContract.address, amountInWei);
+      //   await awaitConfirmation(approveTransaction, provider, 'approve');
+      // }
 
       const loanAssets = mergeArrays([(
         await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
@@ -1025,17 +1025,17 @@ export default {
       const isGlp = fundRequest.asset === 'GLP';
       const isLevel = ['arbJnrLLP', 'arbMzeLLP', 'arbSnrLLP'].includes(fundRequest.asset);
 
-      const transaction =
-        isGlp ?
-            await (await wrapContract(state.smartLoanContract, loanAssets)).fundGLP(
-            amountInWei)
-          :
-          isLevel  ?
-            await (await wrapContract(state.smartLoanContract, loanAssets)).depositLLPAndStake(fundRequest.pid, amountInWei)
-            :
-            await (await wrapContract(state.smartLoanContract, loanAssets)).fund(
-              toBytes32(fundRequest.asset),
-              amountInWei);
+      // const transaction =
+      //   isGlp ?
+      //       await (await wrapContract(state.smartLoanContract, loanAssets)).fundGLP(
+      //       amountInWei)
+      //     :
+      //     isLevel  ?
+      //       await (await wrapContract(state.smartLoanContract, loanAssets)).depositLLPAndStake(fundRequest.pid, amountInWei)
+      //       :
+      //       await (await wrapContract(state.smartLoanContract, loanAssets)).fund(
+      //         toBytes32(fundRequest.asset),
+      //         amountInWei);
 
 
       if (!fundRequest.keepModalOpen) {
@@ -1043,9 +1043,13 @@ export default {
         rootState.serviceRegistry.modalService.closeModal();
       }
 
-      let tx = await awaitConfirmation(transaction, provider, 'fund');
+      // let tx = await awaitConfirmation(transaction, provider, 'fund');
 
-      const depositAmount = formatUnits(getLog(tx, SMART_LOAN.abi, isLevel ? 'DepositedLLP' : 'Funded').args[isLevel ? 'depositAmount' : 'amount'], fundRequest.assetDecimals);
+      // const depositAmount = formatUnits(getLog(tx, SMART_LOAN.abi, isLevel ? 'DepositedLLP' : 'Funded').args[isLevel ? 'depositAmount' : 'amount'], fundRequest.assetDecimals);
+
+      //TODO: remove
+      let depositAmount = 10;
+
       let price;
       switch (fundRequest.type) {
         case 'ASSET':
@@ -1100,7 +1104,7 @@ export default {
 
       setTimeout(async () => {
         await dispatch('updateFunds');
-      }, HARD_REFRESH_DELAY);
+      }, config.refreshDelay);
     },
 
     async fundNativeToken({state, rootState, commit, dispatch}, {value}) {
@@ -1148,7 +1152,7 @@ export default {
 
       setTimeout(async () => {
         await dispatch('updateFunds');
-      }, HARD_REFRESH_DELAY);
+      }, config.refreshDelay);
     },
 
     async withdraw({state, rootState, commit, dispatch}, {withdrawRequest}) {
@@ -1240,7 +1244,7 @@ export default {
 
       setTimeout(async () => {
         await dispatch('updateFunds');
-      }, HARD_REFRESH_DELAY);
+      }, config.refreshDelay);
     },
 
     async withdrawNativeToken({state, rootState, commit, dispatch}, {withdrawRequest}) {
@@ -1279,7 +1283,7 @@ export default {
 
       setTimeout(async () => {
         await dispatch('updateFunds');
-      }, HARD_REFRESH_DELAY);
+      }, config.refreshDelay);
     },
 
     async provideLiquidity({state, rootState, commit, dispatch}, {provideLiquidityRequest}) {
@@ -1335,7 +1339,7 @@ export default {
 
       setTimeout(async () => {
         await dispatch('updateFunds');
-      }, HARD_REFRESH_DELAY);
+      }, config.refreshDelay);
     },
 
     async removeLiquidity({state, rootState, commit, dispatch}, {removeLiquidityRequest}) {
@@ -1389,7 +1393,7 @@ export default {
 
       setTimeout(async () => {
         await dispatch('updateFunds');
-      }, HARD_REFRESH_DELAY);
+      }, config.refreshDelay);
     },
 
     async provideLiquidityConcentratedPool({state, rootState, commit, dispatch}, {provideLiquidityRequest}) {
@@ -1445,7 +1449,7 @@ export default {
 
       setTimeout(async () => {
         await dispatch('updateFunds');
-      }, HARD_REFRESH_DELAY);
+      }, config.refreshDelay);
     },
 
     async removeLiquidityConcentratedPool({state, rootState, commit, dispatch}, {removeLiquidityRequest}) {
@@ -1497,7 +1501,7 @@ export default {
 
       setTimeout(async () => {
         await dispatch('updateFunds');
-      }, HARD_REFRESH_DELAY);
+      }, config.refreshDelay);
     },
 
     async fundLiquidityTraderJoeV2Pool({state, rootState, commit, dispatch}, {fundLiquidityRequest}) {
@@ -1556,7 +1560,7 @@ export default {
 
       setTimeout(async () => {
         await dispatch('updateFunds');
-      }, HARD_REFRESH_DELAY);
+      }, config.refreshDelay);
     },
 
 
@@ -1592,7 +1596,7 @@ export default {
 
       setTimeout(async () => {
         await dispatch('updateFunds');
-      }, HARD_REFRESH_DELAY);
+      }, config.refreshDelay);
     },
 
 
@@ -1636,7 +1640,7 @@ export default {
 
       setTimeout(async () => {
         await dispatch('updateFunds');
-      }, HARD_REFRESH_DELAY);
+      }, config.refreshDelay);
     },
 
     async removeLiquidityTraderJoeV2Pool({state, rootState, dispatch}, {removeLiquidityRequest}) {
@@ -1683,7 +1687,7 @@ export default {
 
       setTimeout(async () => {
         await dispatch('updateFunds');
-      }, HARD_REFRESH_DELAY);
+      }, config.refreshDelay);
     },
 
     async addLiquidityLevelFinance({state, rootState, commit, dispatch}, {addLiquidityRequest}) {
@@ -1729,7 +1733,7 @@ export default {
 
       setTimeout(async () => {
         await dispatch('updateFunds');
-      }, HARD_REFRESH_DELAY);
+      }, config.refreshDelay);
     },
 
     async removeLiquidityLevelFinance({state, rootState, dispatch}, {removeLiquidityRequest}) {
@@ -1775,7 +1779,7 @@ export default {
 
       setTimeout(async () => {
         await dispatch('updateFunds');
-      }, HARD_REFRESH_DELAY);
+      }, config.refreshDelay);
     },
 
     async claimLevelRewards({state, rootState, dispatch}) {
@@ -1801,7 +1805,7 @@ export default {
 
       setTimeout(async () => {
         await dispatch('updateFunds');
-      }, HARD_REFRESH_DELAY);
+      }, config.refreshDelay);
     },
 
     async borrow({state, rootState, commit, dispatch}, {borrowRequest}) {
@@ -1848,7 +1852,7 @@ export default {
 
       setTimeout(async () => {
         await dispatch('updateFunds');
-      }, HARD_REFRESH_DELAY);
+      }, config.refreshDelay);
     },
 
     async repay({state, rootState, commit, dispatch}, {repayRequest}) {
@@ -1896,7 +1900,7 @@ export default {
 
       setTimeout(async () => {
         await dispatch('updateFunds');
-      }, HARD_REFRESH_DELAY);
+      }, config.refreshDelay);
     },
 
     async swap({state, rootState, commit, dispatch}, {swapRequest}) {
@@ -1950,7 +1954,7 @@ export default {
 
       setTimeout(async () => {
         await dispatch('updateFunds');
-      }, HARD_REFRESH_DELAY);
+      }, config.refreshDelay);
     },
 
     async paraSwap({state, rootState, commit, dispatch}, {swapRequest}) {
@@ -2081,7 +2085,7 @@ export default {
 
       setTimeout(async () => {
         await dispatch('updateFunds');
-      }, HARD_REFRESH_DELAY);
+      }, config.refreshDelay);
     },
 
     async mintAndStakeGlp({state, rootState, commit, dispatch}, {mintAndStakeGlpRequest}) {
@@ -2198,7 +2202,7 @@ export default {
 
       setTimeout(async () => {
         await dispatch('updateFunds');
-      }, HARD_REFRESH_DELAY);
+      }, config.refreshDelay);
     },
 
     async claimGLPRewards({state, rootState, dispatch}) {
@@ -2229,7 +2233,7 @@ export default {
 
       setTimeout(async () => {
         await dispatch('updateFunds');
-      }, HARD_REFRESH_DELAY);
+      }, config.refreshDelay);
     },
   }
 };
