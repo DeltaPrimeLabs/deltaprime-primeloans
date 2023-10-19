@@ -6,7 +6,7 @@
             <TraderJoeLpTableRow v-for="(lpToken, index) in traderJoeLpTokens" v-bind:key="index" :index="index" :lp-token="lpToken" :lp-tokens="traderJoeLpTokens"></TraderJoeLpTableRow>
           </div>
         </div>
-    <div class="lp-tokens">
+    <div class="lp-tokens" v-if="Object.keys(levelLpTokens).length">
       <div class="lp-table level" v-if="levelLpTokens">
         <TableHeader :config="levelLpTableHeaderConfig"></TableHeader>
         <LevelLpTableRow v-for="(lpToken, index) in levelLpTokens" v-bind:key="index" :index="index" :lp-token="lpToken"></LevelLpTableRow>
@@ -356,7 +356,7 @@ export default {
             sortable: false,
             class: 'trend-level',
             id: 'TREND',
-            tooltip: `7D price change of this LVL token. This does not include any earned preLVL incentives.`
+            tooltip: `7D price change of this LLP token. This does not include any earned preLVL incentives.`
           },
           {
             label: 'TVL',

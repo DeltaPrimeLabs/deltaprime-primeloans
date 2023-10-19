@@ -21,7 +21,7 @@
                      :defaultValue="firstAmount"
                      :disabled="maxBelowActive"
                      :validators="firstInputValidators"
-                     :max="firstAssetBalance">
+                     :max="maxBelowActive ? 0 : firstAssetBalance">
       </CurrencyInput>
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>
@@ -36,7 +36,7 @@
                      :defaultValue="secondAmount"
                      :disabled="minAboveActive"
                      :validators="secondInputValidators"
-                     :max="secondAssetBalance">
+                     :max="minAboveActive ? 0 : secondAssetBalance">
       </CurrencyInput>
 
       <div class="liquidity-option shape">
