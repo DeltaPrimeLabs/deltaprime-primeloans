@@ -21,7 +21,7 @@
                      :defaultValue="firstAmount"
                      :disabled="maxBelowActive"
                      :validators="firstInputValidators"
-                     :max="maxBelowActive && firstAssetBalance">
+                     :max="maxBelowActive ? 0 : firstAssetBalance">
       </CurrencyInput>
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>
