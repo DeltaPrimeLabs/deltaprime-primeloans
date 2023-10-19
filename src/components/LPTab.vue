@@ -356,7 +356,7 @@ export default {
             sortable: false,
             class: 'trend-level',
             id: 'TREND',
-            tooltip: `7D price change of this LVL token. This does not include any earned preLVL incentives.`
+            tooltip: `7D price change of this LLP token. This does not include any earned preLVL incentives.`
           },
           {
             label: 'TVL',
