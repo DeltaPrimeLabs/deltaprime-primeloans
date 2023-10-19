@@ -27,7 +27,7 @@
                    :icon-src="'src/assets/icons/chevron-down.svg'"
                    :size="21"
                    v-on:click.native="toggleSelect()"
-                   v-if="displayedOptions && displayedOptions.length > 1">
+                   v-if="displayedOptions && displayedOptions.length > 0 && assetOptions.length > 1">
         </DeltaIcon>
         <div class="dropdown-panel" v-if="expanded" v-on:click="dropdownPanelClick()"></div>
         <div
