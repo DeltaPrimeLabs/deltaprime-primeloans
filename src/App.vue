@@ -29,9 +29,6 @@
     <Banner v-if="highGasPrice && !showMetamaskBanner && !showNetworkBanner && !showUpgradeBanner" :closable="true">
       Gas prices are high at the moment. Be careful with your transactions.
     </Banner>
-    <Banner v-if="protocolPaused">
-      The protocol is paused because of an upgrade.
-    </Banner>
     <Banner v-if="oracleError">
       Data feeds error. Some functions might be not available.
     </Banner>
