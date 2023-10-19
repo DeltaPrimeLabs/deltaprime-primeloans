@@ -393,28 +393,6 @@ export default {
       }
       modalInstance.$on('ADD_LIQUIDITY', async addLiquidityEvent => {
         if (this.smartLoanContract) {
-          // let firstAmount = parseUnits(Number(addLiquidityEvent.tokenXAmount).toFixed(this.firstAsset.decimals), this.firstAsset.decimals);
-          // let secondAmount = parseUnits(Number(addLiquidityEvent.tokenYAmount).toFixed(this.secondAsset.decimals), this.secondAsset.decimals);
-
-          // const firstBalance = await this.readSmartLoanContract.getBalance(toBytes32(this.firstAsset.symbol));
-          // firstAmount = (firstAmount.gte(firstBalance)) ? firstBalance : firstAmount;
-
-          // const secondBalance = await this.readSmartLoanContract.getBalance(toBytes32(this.secondAsset.symbol));
-          // secondAmount = secondAmount.gte(secondBalance) ? secondBalance : secondAmount;
-
-          // const addLiquidityInput = this.traderJoeService.getAddLiquidityParameters(
-          //     this.account,
-          //     this.tokenX,
-          //     this.tokenY,
-          //     firstAmount.toString(),
-          //     secondAmount.toString(),
-          //     addLiquidityEvent.distributionMethod,
-          //     this.lpToken.binStep,
-          //     this.activeId,
-          //     addLiquidityEvent.binRange,
-          //     addLiquidityEvent.priceSlippage,
-          //     addLiquidityEvent.amountsSlippage
-          // );
           const addLiquidityRequest = {
             symbol: this.lpToken.symbol,
             method: this.lpToken.addMethod,

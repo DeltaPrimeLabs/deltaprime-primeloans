@@ -21,7 +21,7 @@
                      :defaultValue="firstAmount"
                      :disabled="maxBelowActive"
                      :validators="firstInputValidators"
-                     :max="maxBelowActive && firstAssetBalance">
+                     :max="firstAssetBalance">
       </CurrencyInput>
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>
@@ -200,8 +200,7 @@ import RangeSlider from './RangeSlider';
 import FormInput from './FormInput';
 import SimpleInput from "./SimpleInput.vue";
 import Paginator from "./Paginator.vue";
-import {parseUnits} from '../utils/calculate';
-import {formatUnits} from '../utils/calculate';
+import {formatUnits, parseUnits} from '../utils/calculate';
 import {BigNumber} from 'ethers';
 
 const ethers = require('ethers');
@@ -309,33 +308,43 @@ export default {
     submit(batchId = 0) {
       this.transactionOngoing = true;
       let addLiquidityInput;
+      let amountX;
+      let amountY;
 
       if (batchId > 0) {
         // split distributions for batch call
+        amountX = parseUnits(this.getFirstAssetAmount(batchId).toString(), this.firstAsset.decimals);
+        const amountXMin = amountX.mul(BigNumber.from(10000 - this.amountsSlippage * 100)).div(BigNumber.from(10000));
+        amountY = parseUnits(this.getSecondAssetAmount(batchId).toString(), this.secondAsset.decimals);
+        const amountYMin = BigNumber.from(amountY).mul(BigNumber.from(10000 - this.amountsSlippage * 100)).div(BigNumber.from(10000));
+
+        const distributionX = this.addLiquidityInput.distributionX.slice((batchId - 1) * this.batchSize, batchId * this.batchSize);
+        const distributionY = this.addLiquidityInput.distributionY.slice((batchId - 1) * this.batchSize, batchId * this.batchSize);
+        const distributionXSum = distributionX.reduce((a, b) => BigNumber.from(a).add(BigNumber.from(b)), 0);
+        const distributionYSum = distributionY.reduce((a, b) => BigNumber.from(a).add(BigNumber.from(b)), 0);
+
+        const batchDistributionX = distributionX.map(d => distributionXSum.toString() == 0 ? 0 : parseUnits(d.toString()).div(distributionXSum).toString());
+        const batchDistributionY = distributionY.map(d => distributionYSum.toString() == 0 ? 0 : parseUnits(d.toString()).div(distributionYSum).toString());
+
         addLiquidityInput = {
           ...this.addLiquidityInput,
+          amountX: amountX.toString(),
+          amountXMin: amountXMin.toString(),
+          amountY: amountY.toString(),
+          amountYMin: amountYMin.toString(),
           deltaIds: this.addLiquidityInput.deltaIds.slice((batchId - 1) * this.batchSize, batchId * this.batchSize),
-          distributionX: this.addLiquidityInput.distributionX.slice((batchId - 1) * this.batchSize, batchId * this.batchSize),
-          distributionY: this.addLiquidityInput.distributionY.slice((batchId - 1) * this.batchSize, batchId * this.batchSize)
+          distributionX: batchDistributionX,
+          distributionY: batchDistributionY
         };
       } else {
         // single call
         addLiquidityInput = this.addLiquidityInput;
       }
-      console.log(addLiquidityInput);
 
       const addLiquidityEvent = {
-        // firstAsset: this.firstAsset,
-        // secondAsset: this.secondAsset,
-        // tokenXAmount: this.maxBelowActive ? 0 : this.firstAmount,
-        // tokenYAmount: this.minAboveActive ? 0 : this.secondAmount,
-        // distributionMethod: this.liquidityShapes[this.selectedShape].distributionMethod,
-        // binRange: this.binRange,
-        // priceSlippage: this.priceSlippage,
-        // amountsSlippage: this.amountsSlippage,
-        firstAssetAmount: this.firstAssetAmount,
-        secondAssetAmount: this.secondAssetAmount,
-        addLiquidityInput: this.addLiquidityInput,
+        firstAssetAmount: batchId > 0 ? amountX : this.firstAssetAmount,
+        secondAssetAmount: batchId > 0 ? amountY : this.secondAssetAmount,
+        addLiquidityInput: addLiquidityInput,
         batchTransfer: batchId > 0
       };
 
@@ -503,7 +512,7 @@ export default {
       const distributionSum = distributionX.reduce((a, b) => BigNumber.from(a).add(BigNumber.from(b)), 0);
       const amount = parseFloat(this.firstAmount) * parseFloat(formatUnits(distributionSum.toString()));
 
-      return amount.toFixed(5);
+      return amount == 0 ? 0 : amount.toFixed(5);
     },
 
     getSecondAssetAmount(batchId) {
@@ -511,7 +520,7 @@ export default {
       const distributionSum = distributionY.reduce((a, b) => BigNumber.from(a).add(BigNumber.from(b)), 0);
       const amount = parseFloat(this.secondAmount) * parseFloat(formatUnits(distributionSum.toString()));
 
-      return amount.toFixed(5);
+      return amount == 0 ? 0 : amount.toFixed(5);
     }
   }
 };
