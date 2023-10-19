@@ -666,6 +666,15 @@ export default {
         });
       }
 
+      for (const [symbol, data] of Object.entries(this.levelLpAssets)) {
+        tokens.push({
+          price: data.price,
+          balance: parseFloat(this.levelLpBalances[symbol]),
+          borrowed: 0,
+          debtCoverage: data.debtCoverage
+        });
+      }
+
       for (const [, farms] of Object.entries(this.farms)) {
         farms.forEach(farm => {
           tokens.push({
@@ -678,6 +687,8 @@ export default {
       }
 
       let lbTokens = Object.values(this.traderJoeV2LpAssets);
+
+      console.log()
 
       this.healthAfterTransaction = calculateHealth(tokens, lbTokens);
     },
