@@ -17,7 +17,7 @@ console.log(timestamps.timestamps);
 async function fetchLoanHistory () {
 
     for (let i = 0; i < Math.ceil(totalLoans/batchSize); i++) {
-        console.log(`processing ${i * batchSize} - ${(i + 1) * batchSize > totalLoans ? totalLoans : (i + 1) * batchSize} loans`);
+        console.log(`processing ${i * batchSize} - ${(i + 1) * batchSize > totalLoans ? totalLoans - 1 : (i + 1) * batchSize - 1} loans`);
         const batchLoanAddresses = loanAddresses.slice(i * batchSize, (i + 1) * batchSize);
 
         await Promise.all(

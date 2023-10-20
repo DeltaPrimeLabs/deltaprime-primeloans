@@ -137,5 +137,3 @@ async function tryFetch(func, args) {
 module.exports = {
   getLoanStatusAtTimestamp: getData
 }
-
-fetchHistoricalPrices();
