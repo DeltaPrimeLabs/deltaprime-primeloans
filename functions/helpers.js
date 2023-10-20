@@ -2,7 +2,7 @@ const ethers = require("ethers");
 const factoryAddress = "0x3Ea9D480295A73fd2aF95b4D96c2afF88b21B03D";
 const FACTORY = require(`./SmartLoansFactory.json`);
 const fs = require("fs");
-const {queryHistoricalFeeds} = require("./query-arweave");
+const { queryHistoricalFeeds } = require("./query-arweave");
 const config = JSON.parse(fs.readFileSync('config.json', 'utf-8'));
 const jsonRPC = config.jsonRpc;
 const EthDater = require("ethereum-block-by-date");
@@ -63,15 +63,18 @@ const fetchHistoricalPrices = async () => {
     const file = fs.readFileSync('timestamps.json', 'utf-8');
     let timestampsData = JSON.parse(file);
 
+    const feedsFile = fs.readFileSync('feeds.json', 'utf-8');
+    let json = JSON.parse(feedsFile);
+
     const nodeAddress1 = '0x83cbA8c619fb629b81A65C2e67fE15cf3E3C9747';
     const nodeAddress2 = '0x2c59617248994D12816EE1Fa77CE0a64eEB456BF';
     const nodeAddress3 = '0x12470f7aBA85c8b81D63137DD5925D6EE114952b';
 
     const timestamps = timestampsData.timestamps;
 
-    let json = {};
-
     for (let timestamp of timestamps) {
+        if (json[timestamp.length > 0]) continue;
+
         json[timestamp] = [];
 
         const dater = new EthDater(web);
@@ -96,8 +99,9 @@ const fetchHistoricalPrices = async () => {
     }
 
     console.log(json)
-
     fs.writeFileSync('feeds.json', JSON.stringify(json));
+
+    // return json;
 }
 
 
@@ -125,7 +129,7 @@ const checkMissingLoansData = () => {
         if (json.dataPoints.length >= 20) {
             moreThan20++;
         } else {
-            lessThan20Array.push(name.replace('.json',''));
+            lessThan20Array.push(name.replace('.json', ''));
 
         }
         if (json.dataPoints.length >= 30) {
@@ -134,7 +138,7 @@ const checkMissingLoansData = () => {
 
 
         if (!json.dataPoints || json.dataPoints.length === 0) {
-            missing.push(name.replace('.json',''))
+            missing.push(name.replace('.json', ''))
         }
     });
 
@@ -191,4 +195,4 @@ const findNotFetchedAddresses = () => {
 fillTimestamps(1683720000000, 24 * 3600 * 1000, 2);
 // fillFailedTimestamps('0x19F9C63cC50D8DbCd268F59798F8854cDCF21eE5');
 // fetchLoanAddresses();
-// fetchHistoricalPrices();
+fetchHistoricalPrices();

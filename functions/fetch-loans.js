@@ -1,18 +1,30 @@
 const fs = require("fs");
-const {uploadLoanStatuses} = require("./fetch-loan");
 const timestamps = require('./timestamps.json');
 
 const file = fs.readFileSync('loan-addresses.json', "utf-8");
 
 const data = JSON.parse(file);
 
-const loanAddresses = data.addresses;
+const loanAddresses = [data.addresses[0]];
 const totalLoans = loanAddresses.length;
 console.log("..........starting...........")
 
-const batchSize = 150;
+const batchSize = 1;
 
 console.log(timestamps.timestamps);
+
+
+const { initializeApp, cert } = require('firebase-admin/app');
+const { getFirestore } = require('firebase-admin/firestore');
+
+const { getLoanStatusAtTimestamp } = require('./loan-history');
+
+const serviceAccount = require('./delta-prime-db-firebase-adminsdk-nm0hk-12b5817179.json');
+initializeApp({
+    credential: cert(serviceAccount)
+});
+
+const db = getFirestore();
 
 async function fetchLoanHistory () {
 
@@ -22,7 +34,33 @@ async function fetchLoanHistory () {
 
         await Promise.all(
             batchLoanAddresses.map(async loanAddress => {
-                await uploadLoanStatuses(loanAddress, timestamps.timestamps)
+                const loanHistoryRef = db
+                    .collection('loansHistory')
+                    .doc(loanAddress.toLowerCase())
+                    .collection('loanStatus');
+
+                await Promise.all(
+                    timestamps.timestamps.map(async (timestamp) => {
+                        console.log(`fetching ${loanAddress} at ${timestamp}...`);
+                        const loanStatus = await getLoanStatusAtTimestamp(loanAddress, timestamp);
+
+                        const status = await loanHistoryRef.doc(timestamp.toString()).get();
+
+                        if (loanStatus && !status.exists) {
+                            await loanHistoryRef.doc(timestamp.toString()).set({
+                                totalValue: loanStatus.totalValue,
+                                borrowed: loanStatus.borrowed,
+                                collateral: loanStatus.totalValue - loanStatus.borrowed,
+                                twv: loanStatus.twv,
+                                health: loanStatus.health,
+                                solvent: loanStatus.solvent === 1e-18,
+                                timestamp: timestamp
+                            });
+                        }
+
+                        console.log(loanStatus);
+                    })
+                )
             })
         )
     }
