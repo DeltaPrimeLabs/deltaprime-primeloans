@@ -1004,10 +1004,10 @@ export default {
 
       const allowance = formatUnits(await fundToken.allowance(rootState.network.account, state.smartLoanContract.address), fundRequest.assetDecimals);
 
-      // if (parseFloat(allowance) < parseFloat(fundRequest.value)) {
-      //   const approveTransaction = await fundToken.connect(provider.getSigner()).approve(state.smartLoanContract.address, amountInWei);
-      //   await awaitConfirmation(approveTransaction, provider, 'approve');
-      // }
+      if (parseFloat(allowance) < parseFloat(fundRequest.value)) {
+        const approveTransaction = await fundToken.connect(provider.getSigner()).approve(state.smartLoanContract.address, amountInWei);
+        await awaitConfirmation(approveTransaction, provider, 'approve');
+      }
 
       const loanAssets = mergeArrays([(
         await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
@@ -1025,17 +1025,17 @@ export default {
       const isGlp = fundRequest.asset === 'GLP';
       const isLevel = ['arbJnrLLP', 'arbMzeLLP', 'arbSnrLLP'].includes(fundRequest.asset);
 
-      // const transaction =
-      //   isGlp ?
-      //       await (await wrapContract(state.smartLoanContract, loanAssets)).fundGLP(
-      //       amountInWei)
-      //     :
-      //     isLevel  ?
-      //       await (await wrapContract(state.smartLoanContract, loanAssets)).depositLLPAndStake(fundRequest.pid, amountInWei)
-      //       :
-      //       await (await wrapContract(state.smartLoanContract, loanAssets)).fund(
-      //         toBytes32(fundRequest.asset),
-      //         amountInWei);
+      const transaction =
+        isGlp ?
+            await (await wrapContract(state.smartLoanContract, loanAssets)).fundGLP(
+            amountInWei)
+          :
+          isLevel  ?
+            await (await wrapContract(state.smartLoanContract, loanAssets)).depositLLPAndStake(fundRequest.pid, amountInWei)
+            :
+            await (await wrapContract(state.smartLoanContract, loanAssets)).fund(
+              toBytes32(fundRequest.asset),
+              amountInWei);
 
 
       if (!fundRequest.keepModalOpen) {
@@ -1043,12 +1043,9 @@ export default {
         rootState.serviceRegistry.modalService.closeModal();
       }
 
-      // let tx = await awaitConfirmation(transaction, provider, 'fund');
+      let tx = await awaitConfirmation(transaction, provider, 'fund');
 
-      // const depositAmount = formatUnits(getLog(tx, SMART_LOAN.abi, isLevel ? 'DepositedLLP' : 'Funded').args[isLevel ? 'depositAmount' : 'amount'], fundRequest.assetDecimals);
-
-      //TODO: remove
-      let depositAmount = 10;
+      const depositAmount = formatUnits(getLog(tx, SMART_LOAN.abi, isLevel ? 'DepositedLLP' : 'Funded').args[isLevel ? 'depositAmount' : 'amount'], fundRequest.assetDecimals);
 
       let price;
       switch (fundRequest.type) {
