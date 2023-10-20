@@ -2,22 +2,19 @@ const fs = require('fs');
 
 const { getLoanStatusAtTimestamp } = require('./loan-history');
 
-const uploadLoanStatuses = async (loanAddress) => {
+const uploadLoanStatuses = async (loanAddress, timestamps) => {
     let fileName = `results/${loanAddress}.json`;
 
     let loanStatuses = [];
 
-    const file = fs.readFileSync('timestamps.json', 'utf-8');
-    let timestampsData = JSON.parse(file);
-
-    const timestamps = timestampsData.timestamps;
-
-    console.log(timestamps);
+    // const file = fs.readFileSync('timestamps.json', 'utf-8');
+    // let timestampsData = JSON.parse(file);
 
     if (timestamps.length > 0) {
 
         await Promise.all(
             timestamps.map(async (timestamp) => {
+                console.log(`fetching loan ${loanAddress} at ${timestamp}......`);
                 const loanStatus = await getLoanStatusAtTimestamp(loanAddress, timestamp);
 
                 if (loanStatus) {
@@ -54,6 +51,10 @@ const uploadLoanStatuses = async (loanAddress) => {
 }
 
 
-const loanAddress = process.argv[2];
+// const loanAddress = process.argv[2];
 
-uploadLoanStatuses(loanAddress);
+// uploadLoanStatuses(loanAddress);
+
+module.exports = {
+    uploadLoanStatuses
+}
