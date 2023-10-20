@@ -610,7 +610,7 @@ export default {
             const allowed = this.targetAssetsConfig[this.targetAsset].maxExposure - this.targetAssetsConfig[this.targetAsset].currentExposure;
 
             if (value > allowed) {
-              return `Max. allowed ${this.targetAsset} amount is ${allowed.toFixed(0)}.`;
+              return `Max. allowed amount is ${allowed.toFixed(2)}.`;
             }
           }
         }
