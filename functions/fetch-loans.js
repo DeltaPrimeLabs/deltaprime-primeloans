@@ -41,24 +41,29 @@ async function fetchLoanHistory () {
 
                 await Promise.all(
                     timestamps.timestamps.map(async (timestamp) => {
-                        console.log(`fetching ${loanAddress} at ${timestamp}...`);
-                        const loanStatus = await getLoanStatusAtTimestamp(loanAddress, timestamp);
+                        // console.log(`fetching ${loanAddress} at ${timestamp}...`);
+                        try {
+                            const loanStatus = await getLoanStatusAtTimestamp(loanAddress, timestamp);
+                            if (loanStatus) {
+                                const status = await loanHistoryRef.doc(timestamp.toString()).get();
 
-                        const status = await loanHistoryRef.doc(timestamp.toString()).get();
-
-                        if (loanStatus && !status.exists) {
-                            await loanHistoryRef.doc(timestamp.toString()).set({
-                                totalValue: loanStatus.totalValue,
-                                borrowed: loanStatus.borrowed,
-                                collateral: loanStatus.totalValue - loanStatus.borrowed,
-                                twv: loanStatus.twv,
-                                health: loanStatus.health,
-                                solvent: loanStatus.solvent === 1e-18,
-                                timestamp: timestamp
-                            });
+                                if (!status.exists) {
+                                    await loanHistoryRef.doc(timestamp.toString()).set({
+                                        totalValue: loanStatus.totalValue,
+                                        borrowed: loanStatus.borrowed,
+                                        collateral: loanStatus.totalValue - loanStatus.borrowed,
+                                        twv: loanStatus.twv,
+                                        health: loanStatus.health,
+                                        solvent: loanStatus.solvent === 1e-18,
+                                        timestamp: timestamp
+                                    });
+                                }
+                            }
+                        } catch(error) {
+                            console.log(`fetching ${loanAddress} at ${timestamp} failed`)
                         }
 
-                        console.log(loanStatus);
+                        // console.log(loanStatus);
                     })
                 )
             })

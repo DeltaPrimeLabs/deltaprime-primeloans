@@ -85,6 +85,8 @@ async function getData(loanAddress, timestamp) {
     let json = JSON.parse(feedsFile);
     // const json = await fetchHistoricalPrices(timestamp);
 
+    if (json[timestamp].length == 0) return;
+
     const feeds = json[timestamp].map(feed => SignedDataPackage.fromObj(feed));
 
     const wrappedContract =
