@@ -73,7 +73,7 @@ const fetchHistoricalPrices = async () => {
     const timestamps = timestampsData.timestamps;
 
     for (let timestamp of timestamps) {
-        if (json[timestamp.length > 0]) continue;
+        if (json[timestamp].length > 0) continue;
 
         json[timestamp] = [];
 
