@@ -73,7 +73,8 @@ const fetchHistoricalPrices = async () => {
     const timestamps = timestampsData.timestamps;
 
     for (let timestamp of timestamps) {
-        if (json[timestamp].length > 0) continue;
+        console.log(timestamp, json[timestamp])
+        if (json[timestamp] && json[timestamp].length > 0) continue;
 
         json[timestamp] = [];
 
@@ -98,7 +99,7 @@ const fetchHistoricalPrices = async () => {
         }
     }
 
-    console.log(json)
+    // console.log(json)
     fs.writeFileSync('feeds.json', JSON.stringify(json));
 
     // return json;
@@ -192,7 +193,7 @@ const findNotFetchedAddresses = () => {
 //methods run
 //checkMissingLoansData();
 //findNotFetchedAddresses();
-fillTimestamps(1683720000000, 24 * 3600 * 1000, 2);
+// fillTimestamps(1683720000000, 24 * 3600 * 1000, 2);
 // fillFailedTimestamps('0x19F9C63cC50D8DbCd268F59798F8854cDCF21eE5');
 // fetchLoanAddresses();
 fetchHistoricalPrices();
