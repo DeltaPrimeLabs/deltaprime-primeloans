@@ -1,62 +1,17 @@
 const { GraphQLClient } = require("graphql-request");
-const gql = require("graphql-tag");
+const {
+  poolQuery,
+  transferQuery,
+  depositorQuery
+} = require("./queries");
+const ApolloClient = require("apollo-client").ApolloClient;
+const createHttpLink = require("apollo-link-http").createHttpLink;
+const InMemoryCache = require("apollo-cache-inmemory").InMemoryCache;
 
 const GRAPH_API = {
   "avalanche": "https://api.thegraph.com/subgraphs/name/mbare0/deltaprime",
   "arbitrum": "https://api.thegraph.com/subgraphs/name/keizir/deltaprime"
 };
-
-const poolQuery = (limit = 1000, page = 0) => {
-  return gql(`
-  {
-    pools(
-      first: ${limit}
-      skip: ${page * limit}
-    ) {
-      id
-      totalSupply
-      timestamp
-      decimals
-    }
-  }
-  `);
-}
-
-const transferQuery = (poolId, limit = 1000, offset = 0, lm_start_date = 0) => {
-  return gql(`
-  {
-    transfers(
-      first: ${limit}
-      skip: ${offset}
-      where: {pool: "${poolId}", timestamp_gte: "${lm_start_date}"}
-      orderBy: timestamp
-      orderDirection: asc
-    ) {
-      curPoolTvl
-      amount
-      id
-      timestamp
-      tokenSymbol
-      depositor {
-        id
-      }
-    }
-  }
-  `);
-}
-
-const depositorQuery = (limit = 1000, page = 0) => {
-  return gql(`
-  {
-    depositors(
-      first: ${limit}
-      skip: ${page * limit}
-    ) {
-      id
-    }
-  }
-  `);
-}
 
 const fetchPools = async (network) => {
   const client = new GraphQLClient(GRAPH_API[network]);
@@ -116,8 +71,81 @@ const fetchAllDepositors = async (network) => {
   return depositors;
 }
 
+const fetchTraderJoeLpApr = async (lpAddress, assetAppreciation = 0) => {
+  const tjSubgraphUrl = 'https://api.thegraph.com/subgraphs/name/traderjoe-xyz/exchange';
+  const FEE_RATE = 0.0025;
+  const aprDate = new Date();
+  const date = Math.round(aprDate.getTime() / 1000 - 32 * 3600);
+
+  const pairQuery = gql(`
+{
+  pairs(
+    first: 1
+    where: {id: "${lpAddress.toLowerCase()}"}
+  ) {
+    id
+    name
+    token0Price
+    token1Price
+    token0 {
+      id
+      symbol
+      decimals
+    }
+    token1 {
+      id
+      symbol
+      decimals
+    }
+    reserve0
+    reserve1
+    reserveUSD
+    volumeUSD
+    hourData(
+        first: 25
+        where: {date_gte: ${date}}
+        orderBy: date
+        orderDirection: desc
+      ) {
+        untrackedVolumeUSD
+        volumeUSD
+        date
+        volumeToken0
+        volumeToken1
+      }
+    timestamp
+    }
+  }
+`)
+
+  const httpLink = createHttpLink({
+    uri: tjSubgraphUrl,
+    fetch: fetch
+  });
+
+  const client = new ApolloClient({
+    link: httpLink,
+    cache: new InMemoryCache()
+  });
+
+  const response = await client.query({ query: pairQuery });
+
+  const hourData = response.data.pairs[0].hourData;
+  hourData.shift();
+
+  let volumeUSD = parseFloat(hourData.reduce((sum, data) => sum + parseFloat(data.volumeUSD), 0));
+  let reserveUSD = parseFloat(response.data.pairs[0].reserveUSD);
+
+
+
+  const feesUSD = volumeUSD * FEE_RATE;
+
+  return ((1 + feesUSD * 365 / reserveUSD) * (1 + assetAppreciation / 100) - 1) * 100;
+}
+
 module.exports = {
   fetchPools,
   fetchTransfersForPool,
-  fetchAllDepositors
+  fetchAllDepositors,
+  fetchTraderJoeLpApr
 }

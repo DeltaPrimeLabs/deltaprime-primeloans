@@ -1,16 +1,15 @@
 const AWS = require('aws-sdk');
 const ethers = require('ethers');
 const redstone = require('redstone-api');
-const fs = require('fs');
 const WrapperBuilder = require('@redstone-finance/evm-connector').WrapperBuilder;
 
 const networkInfo = require('./constants.json');
 const CACHE_LAYER_URLS = require('../config/redstone-cache-layer-urls.json');
 
-const config = JSON.parse(fs.readFileSync('config.json', 'utf-8'));
+const config = require('../rpcConfig.json');
 
 // AWS DynamoDB setup
-// AWS.config.update({region:'us-east-1'});
+AWS.config.update({region:'us-east-1'});
 AWS.config.setPromisesDependency(require('bluebird'));
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
 

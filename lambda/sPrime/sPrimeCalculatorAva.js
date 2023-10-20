@@ -4,28 +4,29 @@ const {
   fetchPools,
   fetchTransfersForPool,
   fetchAllDepositors
-} = require('./utils/graphql');
+} = require('../utils/graphql');
 const {
   formatUnits,
   getHistoricalTokenPrice,
   getSymbolFromPoolAddress,
   dynamoDb,
-  arbitrumProvider
-} = require('./utils/helpers');
+  avalancheProvider
+} = require('../utils/helpers');
+const initialSPrimeData = require('./sPrimeValue.json');
 
 const tvlThreshold = 4000000;
 
 const networkConfig = {
-  tokenManagerAddress: '0x0a0d954d4b0f0b47a5990c0abd179a90ff74e255',
-  provider: arbitrumProvider,
-  database: process.env.SPRIME_ARB_TABLE,
-  poolsUnlocked: false
-}
+  tokenManagerAddress: '0xF3978209B7cfF2b90100C6F87CEC77dE928Ed58e',
+  provider: avalancheProvider,
+  database: 'sprime-ava-dev',//process.env.SPRIME_AVA_TABLE,
+  poolsUnlocked: true
+};
 const tokenManagerAbi = [
   'function getAllPoolAssets() public view returns (bytes32[])',
   'function getPoolAddress(bytes32) public view returns (address)'
 ];
-const network = 'arbitrum';
+const network = 'avalanche';
 
 const getLatestSprimes = async () => {
   const params = {
@@ -37,7 +38,7 @@ const getLatestSprimes = async () => {
   return res.Items;
 };
 
-const sPrimeCalculator = async (event) => {  
+const sPrimeCalculator = async (event) => {
   const tokenManagerContract = new ethers.Contract(
     networkConfig.tokenManagerAddress,
     tokenManagerAbi,
@@ -68,6 +69,10 @@ const sPrimeCalculator = async (event) => {
       if (key != 'id') sPrimeValue[sPrime.id][key] = value;
     }
   })
+
+  if (sPrimeValueArray.length == 0) {
+    sPrimeValue = initialSPrimeData;
+  }
 
   await Promise.all(
     availablePools.map(async (pool) => {
@@ -197,4 +202,4 @@ const sPrimeCalculator = async (event) => {
 };
 
 module.exports.handler = sPrimeCalculator;
-// sPrimeCalculator();
+sPrimeCalculator();
