@@ -73,7 +73,7 @@ const fetchHistoricalPrices = async () => {
     const timestamps = timestampsData.timestamps;
 
     for (let timestamp of timestamps) {
-        console.log(timestamp, json[timestamp])
+        console.log(timestamp);
         if (json[timestamp] && json[timestamp].length > 0) continue;
 
         json[timestamp] = [];
@@ -87,6 +87,7 @@ const fetchHistoricalPrices = async () => {
         let approxTimestamp = parseInt((block.timestamp / 10).toString()) * 10; //requirement for Redstone
 
         const feeds = await queryHistoricalFeeds(approxTimestamp, [nodeAddress1, nodeAddress2, nodeAddress3]);
+        console.log(feeds);
 
         for (let obj of feeds) {
 
