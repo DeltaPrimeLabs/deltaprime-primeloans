@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../../ReentrancyGuardKeccak.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
-import {ParaSwapLib} from "../../lib/avalanche/ParaSwapLib.sol";
 import "../../lib/SolvencyMethods.sol";
 import "../../interfaces/ITokenManager.sol";
 
@@ -17,8 +16,10 @@ import "../../lib/local/DeploymentConstants.sol";
 contract ParaSwapFacet is ReentrancyGuardKeccak, SolvencyMethods {
     using TransferHelper for address;
 
-    address private constant PARA_TRANSFER_PROXY = 0x216B4B4Ba9F3e719726886d34a177484278Bfcae;
-    address private constant PARA_ROUTER = 0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57;
+    address private constant PARA_TRANSFER_PROXY =
+        0x216B4B4Ba9F3e719726886d34a177484278Bfcae;
+    address private constant PARA_ROUTER =
+        0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57;
 
     struct SwapTokensDetails {
         bytes32 tokenSoldSymbol;
@@ -29,7 +30,10 @@ contract ParaSwapFacet is ReentrancyGuardKeccak, SolvencyMethods {
         uint256 initialBoughtTokenBalance;
     }
 
-    function getInitialTokensDetails(address _soldTokenAddress, address _boughtTokenAddress) internal view returns (SwapTokensDetails memory){
+    function getInitialTokensDetails(
+        address _soldTokenAddress,
+        address _boughtTokenAddress
+    ) internal view returns (SwapTokensDetails memory) {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         if (_boughtTokenAddress == 0xaE64d55a6f09E4263421737397D1fdFA71896a69) {
@@ -40,40 +44,73 @@ contract ParaSwapFacet is ReentrancyGuardKeccak, SolvencyMethods {
             _soldTokenAddress = 0x9e295B5B976a184B14aD8cd72413aD846C299660;
         }
 
-        bytes32 _tokenSoldSymbol = tokenManager.tokenAddressToSymbol(_soldTokenAddress);
-        bytes32 _tokenBoughtSymbol = tokenManager.tokenAddressToSymbol(_boughtTokenAddress);
+        bytes32 _tokenSoldSymbol = tokenManager.tokenAddressToSymbol(
+            _soldTokenAddress
+        );
+        bytes32 _tokenBoughtSymbol = tokenManager.tokenAddressToSymbol(
+            _boughtTokenAddress
+        );
 
-        require(tokenManager.isTokenAssetActive(_boughtTokenAddress), "Asset not supported.");
+        require(
+            tokenManager.isTokenAssetActive(_boughtTokenAddress),
+            "Asset not supported."
+        );
 
         IERC20Metadata _soldToken = IERC20Metadata(_soldTokenAddress);
         IERC20Metadata _boughtToken = IERC20Metadata(_boughtTokenAddress);
 
-        return SwapTokensDetails({
-            tokenSoldSymbol: _tokenSoldSymbol,
-            tokenBoughtSymbol: _tokenBoughtSymbol,
-            soldToken: _soldToken,
-            boughtToken: _boughtToken,
-            initialSoldTokenBalance: _soldToken.balanceOf(address(this)),
-            initialBoughtTokenBalance: _boughtToken.balanceOf(address(this))
-        });
+        return
+            SwapTokensDetails({
+                tokenSoldSymbol: _tokenSoldSymbol,
+                tokenBoughtSymbol: _tokenBoughtSymbol,
+                soldToken: _soldToken,
+                boughtToken: _boughtToken,
+                initialSoldTokenBalance: _soldToken.balanceOf(address(this)),
+                initialBoughtTokenBalance: _boughtToken.balanceOf(address(this))
+            });
     }
 
-    function paraSwap(bytes4 selector, bytes memory data) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent{
-        (address fromToken, address toToken, uint256 fromAmount) = ParaSwapLib.extractTokensAndAmount(selector, data);
-        SwapTokensDetails memory swapTokensDetails = getInitialTokensDetails(fromToken, toToken);
+    function paraSwap(
+        bytes4 selector,
+        bytes memory data,
+        address fromToken,
+        uint256 fromAmount,
+        address toToken,
+        uint256 minOut
+    )
+        external
+        nonReentrant
+        onlyOwner
+        noBorrowInTheSameBlock
+        recalculateAssetsExposure
+        remainsSolvent
+    {
+        SwapTokensDetails memory swapTokensDetails = getInitialTokensDetails(
+            fromToken,
+            toToken
+        );
 
-        uint256 amount = Math.min(swapTokensDetails.soldToken.balanceOf(address(this)), fromAmount);
+        uint256 amount = Math.min(
+            swapTokensDetails.soldToken.balanceOf(address(this)),
+            fromAmount
+        );
         require(amount > 0, "Amount of tokens to sell has to be greater than 0");
 
         address(swapTokensDetails.soldToken).safeApprove(PARA_TRANSFER_PROXY, 0);
-        address(swapTokensDetails.soldToken).safeApprove(PARA_TRANSFER_PROXY, amount);
+        address(swapTokensDetails.soldToken).safeApprove(
+            PARA_TRANSFER_PROXY,
+            amount
+        );
 
         (bool success, ) = PARA_ROUTER.call((abi.encodePacked(selector, data)));
         require(success, "Swap failed");
 
         // Add asset to ownedAssets
         if (swapTokensDetails.boughtToken.balanceOf(address(this)) > 0) {
-            DiamondStorageLib.addOwnedAsset(swapTokensDetails.tokenBoughtSymbol, address(swapTokensDetails.boughtToken));
+            DiamondStorageLib.addOwnedAsset(
+                swapTokensDetails.tokenBoughtSymbol,
+                address(swapTokensDetails.boughtToken)
+            );
         }
 
         // Remove asset from ownedAssets if the asset balance is 0 after the swap
@@ -81,17 +118,20 @@ contract ParaSwapFacet is ReentrancyGuardKeccak, SolvencyMethods {
             DiamondStorageLib.removeOwnedAsset(swapTokensDetails.tokenSoldSymbol);
         }
 
-        uint256 boughtTokenFinalAmount = swapTokensDetails.boughtToken.balanceOf(address(this)) - swapTokensDetails.initialBoughtTokenBalance;
+        uint256 boughtTokenFinalAmount = swapTokensDetails.boughtToken.balanceOf(
+            address(this)
+        ) - swapTokensDetails.initialBoughtTokenBalance;
+        require(boughtTokenFinalAmount >= minOut, "Too little received");
 
         emit Swap(
             msg.sender,
             swapTokensDetails.tokenSoldSymbol,
             swapTokensDetails.tokenBoughtSymbol,
-            swapTokensDetails.initialSoldTokenBalance - swapTokensDetails.soldToken.balanceOf(address(this)),
+            swapTokensDetails.initialSoldTokenBalance -
+                swapTokensDetails.soldToken.balanceOf(address(this)),
             boughtTokenFinalAmount,
             block.timestamp
         );
-
     }
 
     modifier onlyOwner() {
@@ -108,5 +148,12 @@ contract ParaSwapFacet is ReentrancyGuardKeccak, SolvencyMethods {
      * @param amountBought amount of tokens bought
      * @param timestamp time of the swap
      **/
-    event Swap(address indexed user, bytes32 indexed soldAsset, bytes32 indexed boughtAsset, uint256 amountSold, uint256 amountBought, uint256 timestamp);
+    event Swap(
+        address indexed user,
+        bytes32 indexed soldAsset,
+        bytes32 indexed boughtAsset,
+        uint256 amountSold,
+        uint256 amountBought,
+        uint256 timestamp
+    );
 }
