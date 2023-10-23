@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 9bbee9032c5601b6f98ce245f76499dfaa624d84;
+// Last deployed from commit: efca9304e9053397d6f95875b33c7dfe2935f72b;
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -13,7 +13,7 @@ import "../../interfaces/IWrappedNativeToken.sol";
 import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
 
 //This path is updated during deployment
-import "../../lib/arbitrum/DeploymentConstants.sol";
+import "../../lib/local/DeploymentConstants.sol";
 
 contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     using TransferHelper for address payable;
