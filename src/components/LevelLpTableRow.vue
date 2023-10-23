@@ -503,7 +503,7 @@ export default {
       modalInstance.title = 'Create LLP position';
       modalInstance.swapDex = 'Level';
       modalInstance.swapDebtMode = false;
-      modalInstance.userSlippage = 0.1;
+      modalInstance.slippageMargin = 0.1;
       modalInstance.sourceAsset = initSourceAsset;
       modalInstance.sourceAssetBalance = this.assetBalances[initSourceAsset];
       modalInstance.assets = { ...this.assets, ...this.levelLpAssets };
@@ -561,7 +561,7 @@ export default {
       modalInstance.swapDex = 'Level';
       modalInstance.dexOptions = ['Level'];
       modalInstance.swapDebtMode = false;
-      modalInstance.userSlippage = 0.1;
+      modalInstance.slippageMargin = 0.1;
       modalInstance.sourceAsset = this.lpToken.symbol;
       modalInstance.sourceAssetBalance = this.levelLpBalances[this.lpToken.symbol];
       modalInstance.sourceAssetsConfig = config.LEVEL_LP_ASSETS_CONFIG;
