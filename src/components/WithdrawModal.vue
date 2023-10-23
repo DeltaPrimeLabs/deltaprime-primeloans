@@ -13,7 +13,7 @@
           <InfoIcon v-if="isFarm" :tooltip="{content: 'Receipt token amount, can differ from `Staked` amount.', classes: 'info-tooltip long', placement: 'top'}"></InfoIcon>
         </div>
         <div class="top-info__value">
-          {{ formatTokenBalance(assetBalance, asset.decimals, true) }}
+          {{assetBalance}}
           <span class="top-info__currency">
             {{ asset.name }}
           </span>
@@ -191,6 +191,8 @@ export default {
 
 
     withdrawValueChange(event) {
+      console.log('withdrawValueChange')
+      console.log(event)
       this.withdrawValue = event.value;
       this.currencyInputError = event.error;
       this.calculateHealthAfterTransaction();
@@ -274,6 +276,9 @@ export default {
         {
           validate: (value) => {
             if (this.assetBalance - value < 0) {
+              console.log('validate')
+              console.log('this.assetBalance: ', this.assetBalance)
+              console.log('value: ', value)
               return `Withdraw amount exceeds balance`;
             }
           }

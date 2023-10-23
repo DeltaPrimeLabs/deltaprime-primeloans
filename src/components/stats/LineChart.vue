@@ -55,7 +55,7 @@ export default {
     },
     getGradient() {
       const ctx = this.$refs.canvas.getContext('2d')
-      const gradient = ctx.createLinearGradient(0, 0, 0, 350)
+      const gradient = ctx.createLinearGradient(0, 0, 0, this.chartOptions.height)
       gradient.addColorStop(COLOR_PALETTES[this.theme][0].offset, COLOR_PALETTES[this.theme][0].color)
       gradient.addColorStop(COLOR_PALETTES[this.theme][1].offset, COLOR_PALETTES[this.theme][1].color)
       return gradient

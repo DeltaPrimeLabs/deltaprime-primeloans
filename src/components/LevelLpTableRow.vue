@@ -2,11 +2,11 @@
   <div class="lp-table-row-component level" :class="{'expanded': rowExpanded}">
     <div class="table__row" v-if="lpToken">
       <div class="table__cell asset">
-        <img class="asset__icon" :src="`src/assets/logo/${lpToken.symbol.toLowerCase()}.svg`">
+        <img class="asset__icon" :src="`src/assets/logo/${lpToken.symbol.toLowerCase()}.svg`" v-on:click="openProfileModal">
         <div class="asset__info">
           <a class="asset__name" :href="lpToken.link" target=”_blank”>{{ lpToken.name }}</a>
           <div class="asset__dex">
-            by Level
+            by <a v-on:click="openProfileModal"><b>Level</b></a>
           </div>
         </div>
       </div>
@@ -145,6 +145,8 @@ import LIQUIDITY_CALCULATOR from '/artifacts/contracts/interfaces/level/ILiquidi
 import {BigNumber} from "ethers";
 import BarGaugeBeta from "./BarGaugeBeta.vue";
 import ClaimLevelRewardsModal from "./ClaimLevelRewardsModal.vue";
+import PartnerInfoModal from "./PartnerInfoModal.vue";
+import moment from "moment/moment";
 
 const FARMING_CONTRACT_ADDRESS = '0xC18c952F800516E1eef6aB482F3d331c84d43d38';
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -332,6 +334,10 @@ export default {
           {
             key: 'CLAIM_LEVEL_REWARDS',
             name: 'Claim Level rewards',
+          },
+          {
+            key: 'PARTNER_PROFILE',
+            name: 'Show profile',
           }
         ]
       };
@@ -371,6 +377,9 @@ export default {
             break;
           case 'CLAIM_LEVEL_REWARDS':
             this.openClaimRewardsModal();
+            break;
+          case 'PARTNER_PROFILE':
+            this.openProfileModal();
             break;
         }
       }
@@ -503,7 +512,7 @@ export default {
       modalInstance.title = 'Create LLP position';
       modalInstance.swapDex = 'Level';
       modalInstance.swapDebtMode = false;
-      modalInstance.userSlippage = 0.1;
+      modalInstance.slippageMargin = 0.1;
       modalInstance.sourceAsset = initSourceAsset;
       modalInstance.sourceAssetBalance = this.assetBalances[initSourceAsset];
       modalInstance.assets = { ...this.assets, ...this.levelLpAssets };
@@ -561,7 +570,7 @@ export default {
       modalInstance.swapDex = 'Level';
       modalInstance.dexOptions = ['Level'];
       modalInstance.swapDebtMode = false;
-      modalInstance.userSlippage = 0.1;
+      modalInstance.slippageMargin = 0.1;
       modalInstance.sourceAsset = this.lpToken.symbol;
       modalInstance.sourceAssetBalance = this.levelLpBalances[this.lpToken.symbol];
       modalInstance.sourceAssetsConfig = config.LEVEL_LP_ASSETS_CONFIG;
@@ -628,6 +637,36 @@ export default {
           });
         }
       });
+    },
+
+    openProfileModal() {
+      const modalInstance = this.openModal(PartnerInfoModal);
+      modalInstance.partner = {
+        name: 'Level',
+        iconSrc: 'src/assets/logo/lvl.png',
+        launchDate: moment(Date.parse('23 Nov 2022')).format('DD.MM.YYYY'),
+        introduction: 'Level Finance is the only Perpetual Derivatives exchange on Arbitrum with a Tranching system. With 5.59M TVL, they are currently the 42nd biggest protocol on Arbitrum.',
+        mainFeatures: [
+            'Perpetual Derivative Trading',
+            'Leveraged Trading',
+            'Basket LPing'
+        ],
+        securityMeasures: [
+          {name: 'Upgradeability', state: 'ENABLED'},
+          {name: 'Timelock (12h)', state: 'ENABLED'},
+          {name: 'Multisig', state: 'ENABLED'},
+          {name: `Audits `, state: 'ENABLED', tooltip:
+                `
+                 - <a href="https://obeliskauditing.com/audits/level-finance-trading?openPdf=true" target="_blank">Obelisk Trading</a>, Jan&nbsp;2023<br>
+                 - <a href="https://obeliskauditing.com/audits/level-finance-core" target="_blank">Obelisk Core</a>,&nbsp;Jan&nbsp;2023<br>
+                 - <a href="https://certificate.quantstamp.com/full/level-finance/929d1708-a464-476d-86f3-7d7942faa4d2/index.html" target="_blank">Quantstamp</a>, April 2023
+          `},
+          {name: 'Doxxed team', state: 'DISABLED', tooltip: `The team is anonymous and has not performed KYC with the DeltaPrime team.`},
+        ],
+        chainImpact: 'Level Finance gives perpetual derivative traders increased control over their exposure to the DEX and underlying assets through their Tranching system, while providing traders with 0% price impact swaps.',
+        yieldCalculation: 'Level Finance calculates its APY as: 7D (Trading fees + counterparty PnL + LVL minting fees + incentives) / Assets under Management * 52.',
+        chartData: [{x: new Date(), y: 5}, {x: new Date(), y: 15}, {x: new Date(), y: 25}, {x: new Date(), y: 20}, {x: new Date(), y: 15}, {x: new Date(), y: 25}, {x: new Date(), y: 5}]
+      }
     },
 
     async setupPoolBalance() {
@@ -803,6 +842,10 @@ export default {
       &.asset {
         align-items: center;
 
+        .asset__icon {
+          cursor: pointer;
+        }
+
         .asset__name {
           color: var(--default-text-color);
         }
@@ -818,6 +861,10 @@ export default {
         .asset__dex {
           font-size: $font-size-xxs;
           color: var(--asset-table-row__asset-loan-color);
+
+          a {
+            cursor: pointer;
+          }
         }
       }
 
