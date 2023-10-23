@@ -662,7 +662,8 @@ export default {
                  - <a href="https://obeliskauditing.com/audits/level-finance-core" target="_blank">Obelisk Core</a>,&nbsp;Jan&nbsp;2023<br>
                  - <a href="https://certificate.quantstamp.com/full/level-finance/929d1708-a464-476d-86f3-7d7942faa4d2/index.html" target="_blank">Quantstamp</a>, April 2023
           `},
-          {name: 'Doxxed team', state: 'DISABLED', tooltip: `Although the team is not doxxed, multiple reputable investors have taken exposure on LVL. An article from one of these investors, Arthur Hayes, can be found <a href="https://level-finance.medium.com/hear-ye-hear-ye-73b0423c9b98" target="_blank">here</a>.`},
+          {name: 'Doxxed team', state: 'DISABLED', tooltip: `The team is anonymous and has not performed KYC <br>with the DeltaPrime team.<br><br>
+            Comment from the Level team: <br>"Although the team is not doxxed, <br>multiple reputable investors have taken exposure on LVL.<br> An article from one of these investors, <br>Arthur Hayes, can be found <a href="https://level-finance.medium.com/hear-ye-hear-ye-73b0423c9b98" target="_blank">here</a>."`},
         ],
         chainImpact: 'Level Finance gives perpetual derivative traders increased control over their exposure to the DEX and underlying assets through their Tranching system, while providing traders with 0% price impact swaps.',
         yieldCalculation: 'Level Finance calculates its APY as: 7D (Trading fees + counterparty PnL + LVL minting fees + incentives) / Assets under Management * 52.',
