@@ -1,5 +1,5 @@
 const fs = require("fs");
-const timestamps = require('./timestamps.json');
+const timestampData = require('./timestamps.json');
 
 const file = fs.readFileSync('loan-addresses.json', "utf-8");
 
@@ -11,7 +11,8 @@ console.log("..........starting...........")
 
 const batchSize = 1;
 
-console.log(timestamps.timestamps);
+const timestamps = timestampData.timestamps;
+console.log(timestamps);
 
 
 const { initializeApp, cert } = require('firebase-admin/app');
@@ -39,8 +40,11 @@ async function fetchLoanHistory () {
                     .doc(loanAddress.toLowerCase())
                     .collection('loanStatus');
 
+                let fileName = `results/${loanAddress}.json`;
+                let loanStatuses = [];
+
                 await Promise.all(
-                    timestamps.timestamps.map(async (timestamp) => {
+                    timestamps.map(async (timestamp) => {
                         // console.log(`fetching ${loanAddress} at ${timestamp}...`);
                         try {
                             const loanStatus = await getLoanStatusAtTimestamp(loanAddress, timestamp);
@@ -49,6 +53,16 @@ async function fetchLoanHistory () {
 
                                 if (!status.exists) {
                                     await loanHistoryRef.doc(timestamp.toString()).set({
+                                        totalValue: loanStatus.totalValue,
+                                        borrowed: loanStatus.borrowed,
+                                        collateral: loanStatus.totalValue - loanStatus.borrowed,
+                                        twv: loanStatus.twv,
+                                        health: loanStatus.health,
+                                        solvent: loanStatus.solvent === 1e-18,
+                                        timestamp: timestamp
+                                    });
+
+                                    loanStatuses.push({
                                         totalValue: loanStatus.totalValue,
                                         borrowed: loanStatus.borrowed,
                                         collateral: loanStatus.totalValue - loanStatus.borrowed,
@@ -66,6 +80,9 @@ async function fetchLoanHistory () {
                         // console.log(loanStatus);
                     })
                 )
+                fs.writeFileSync(fileName, JSON.stringify({
+                    dataPoints: loanStatuses
+                }));
             })
         )
     }

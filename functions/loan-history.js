@@ -122,6 +122,7 @@ async function getData(loanAddress, timestamp) {
     data = JSON.stringify(data);
 
     fs.writeFileSync("./failed-loans.json", data);
+    throw e;
   }
 }
 
