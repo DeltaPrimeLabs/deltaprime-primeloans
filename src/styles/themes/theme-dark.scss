@@ -556,4 +556,15 @@
   // region CurrencyComboInput
   --checkbox: #{$storm-blue};
   // endregion
+
+  // region PartnerInfoModal
+  --partner-info-modal__partner-name-color: #{$mist-blue};
+  --partner-info-modal__launch-date-color: #{$storm-blue};
+  --partner-info-modal__description-section-color: #{$mist-blue};
+  --partner-info-modal__measure-color: #{$mist-blue};
+  --partner-info-modal__measure-background-color: #{$mist-navy};
+  --partner-info-modal__measure-border: 1px solid #{$light-fuchsia};
+  --partner-info-modal__measure-state-indicator-color--disabled: #{$pale-red};
+  --partner-info-modal__measure-state-indicator-color--enabled: #{$pale-green};
+  // endregion
 }
