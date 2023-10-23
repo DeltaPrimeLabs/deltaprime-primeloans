@@ -13,7 +13,7 @@ import "../../interfaces/IWrappedNativeToken.sol";
 import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
 
 //This path is updated during deployment
-import "../../lib/local/DeploymentConstants.sol";
+import "../../lib/arbitrum/DeploymentConstants.sol";
 
 contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     using TransferHelper for address payable;
@@ -22,25 +22,6 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     modifier onlyOwner() {
         DiamondStorageLib.enforceIsContractOwner();
         _;
-    }
-
-    modifier onlyWhitelistedAccounts {
-        if(
-            msg.sender == 0x0E5Bad4108a6A5a8b06820f98026a7f3A77466b2 ||
-            msg.sender == 0x2fFA7E9624B923fA811d9B9995Aa34b715Db1945 ||
-            msg.sender == 0x0d7137feA34BC97819f05544Ec7DE5c98617989C ||
-            msg.sender == 0xC6ba6BB819f1Be84EFeB2E3f2697AD9818151e5D ||
-            msg.sender == 0x14f69F9C351b798dF31fC53E33c09dD29bFAb547 ||
-            msg.sender == 0x5C23Bd1BD272D22766eB3708B8f874CB93B75248 ||
-            msg.sender == 0x000000F406CA147030BE7069149e4a7423E3A264 ||
-            msg.sender == 0x5D80a1c0a5084163F1D2620c1B1F43209cd4dB12 ||
-            msg.sender == 0xb79c2A75cd9073d68E75ddF71D53C07747Df7933 ||
-            msg.sender == 0x6C21A841d6f029243AF87EF01f6772F05832144b
-        ){
-            _;
-        } else {
-            revert("Not whitelisted");
-        }
     }
 
     address private constant ETH_TOKEN =
@@ -796,7 +777,7 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         uint256 minLpAmount,
         uint256 pid,
         IStakingPositions.StakedPosition memory position
-    ) private onlyWhitelistedAccounts {
+    ) private {
         if (asset == address(0)) {
             amount = Math.min(
                 IWrappedNativeToken(ETH_TOKEN).balanceOf(address(this)),
@@ -868,7 +849,7 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         uint256 minAmount,
         uint256 pid,
         IStakingPositions.StakedPosition memory position
-    ) private onlyWhitelistedAccounts {
+    ) private {
         ILevelFinance farmingContract = ILevelFinance(LEVEL_FARMING);
         IERC20Metadata unstakedToken = getERC20TokenInstance(symbol, false);
         uint256 initialReceiptTokenBalance = farmingContract
@@ -927,7 +908,7 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         emit RewardsHarvested(msg.sender, pid, block.timestamp);
     }
 
-    function unstakeAndWithdrawLLP(uint256 pid, uint256 amount) external onlyWhitelistedAccounts nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent{
+    function unstakeAndWithdrawLLP(uint256 pid, uint256 amount) external nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent{
         IERC20Metadata llpToken = IERC20Metadata(pidToLLPToken(pid));
         ILevelFinance farmingContract = ILevelFinance(LEVEL_FARMING);
         require(_levelBalance(pid) >= amount, "Insufficient balance");
@@ -951,7 +932,7 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     }
 
     // @dev Requires an approval on LLP token for the PrimeAccount address prior to calling this function
-    function depositLLPAndStake(uint256 pid, uint256 amount) external onlyWhitelistedAccounts nonReentrant onlyOwner recalculateAssetsExposure{
+    function depositLLPAndStake(uint256 pid, uint256 amount) external nonReentrant onlyOwner recalculateAssetsExposure{
         IERC20Metadata llpToken = IERC20Metadata(pidToLLPToken(pid));
         ILevelFinance farmingContract = ILevelFinance(LEVEL_FARMING);
 
