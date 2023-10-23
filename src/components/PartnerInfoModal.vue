@@ -37,13 +37,13 @@
         </div>
       </div>
 
-      <div class="description-section">
-        <div class="section-header">TVL Chart:</div>
-        <div class="section section--chart">
-          <LineChart ref="chart" :chart-options="this.chartOptions()" :chart-data="this.chartData()"
-                     :theme="theme"></LineChart>
-        </div>
-      </div>
+<!--      <div class="description-section">-->
+<!--        <div class="section-header">TVL Chart:</div>-->
+<!--        <div class="section section&#45;&#45;chart">-->
+<!--          <LineChart ref="chart" :chart-options="this.chartOptions()" :chart-data="this.chartData()"-->
+<!--                     :theme="theme"></LineChart>-->
+<!--        </div>-->
+<!--      </div>-->
 
       <div class="description-section">
         <div class="section-header">Chain impact:</div>
@@ -79,26 +79,12 @@ export default {
       'themeService',
     ]),
   },
+  props: {
+    partner: null
+  },
   data() {
     return {
       theme: 'DARK',
-      partner: {
-        name: 'Yield Yak',
-        iconSrc: 'src/assets/logo/yak.svg',
-        launchDate: moment(new Date()).format('DD.MM.YYYY'),
-        introduction: 'Yield Yak is one of the top Avalanche protocols. Currently being number (...) on Avalanche with (...) M TVL, they focus on...',
-        mainFeatures: 'Autocompounding – Yield aggregation',
-        securityMeasures: [
-          {name: 'Upgradability', state: 'ENABLED'},
-          {name: 'Timelock', state: 'ENABLED'},
-          {name: 'Multisig', state: 'DISABLED'},
-          {name: 'Audits: one per pool', state: 'NONE'},
-          {name: 'Doxxed team', state: 'DISABLED'},
-        ],
-        chainImpact: 'Yield Yak helps users make informed decisions, through easy comparison of protocol returns. Their autocompounding feature allows smaller investors to benefit from the same compounding benefits whales make use of, without having to worry about gas.',
-        yieldCalculation: 'Yield Yak calculates its APY through 7D historical return tracking. This number gets updated with every reinvestment on their platform.',
-        chartData: [{x: new Date(), y: 5}, {x: new Date(), y: 15}, {x: new Date(), y: 25}, {x: new Date(), y: 20}, {x: new Date(), y: 15}, {x: new Date(), y: 25}, {x: new Date(), y: 5}]
-      }
     }
   },
   methods: {

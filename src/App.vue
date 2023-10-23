@@ -89,7 +89,6 @@ const ethereum = window.ethereum;
 import Vue from 'vue';
 import Button from './components/Button';
 import ProgressBar from './components/ProgressBar';
-import PartnerInfoModal from './components/PartnerInfoModal';
 import ThemeToggle from "./components/ThemeToggle.vue";
 import {getCountdownString} from "./utils/calculate";
 
@@ -176,9 +175,6 @@ export default {
   },
 
   mounted() {
-    setTimeout(() => {
-      this.openModal(PartnerInfoModal)
-    }, 2000)
     window.testProperty = 'test value'
     document.addEventListener('keyup', (event) => {
       if (event.key === 'Escape') {

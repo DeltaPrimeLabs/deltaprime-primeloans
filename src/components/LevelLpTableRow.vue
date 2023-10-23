@@ -2,11 +2,11 @@
   <div class="lp-table-row-component level" :class="{'expanded': rowExpanded}">
     <div class="table__row" v-if="lpToken">
       <div class="table__cell asset">
-        <img class="asset__icon" :src="`src/assets/logo/${lpToken.symbol.toLowerCase()}.svg`">
+        <img class="asset__icon" :src="`src/assets/logo/${lpToken.symbol.toLowerCase()}.svg`" v-on:click="openProfileModal">
         <div class="asset__info">
           <a class="asset__name" :href="lpToken.link" target=”_blank”>{{ lpToken.name }}</a>
           <div class="asset__dex">
-            by Level
+            by <a v-on:click="openProfileModal"><b>Level</b></a>
           </div>
         </div>
       </div>
@@ -145,6 +145,8 @@ import LIQUIDITY_CALCULATOR from '/artifacts/contracts/interfaces/level/ILiquidi
 import {BigNumber} from "ethers";
 import BarGaugeBeta from "./BarGaugeBeta.vue";
 import ClaimLevelRewardsModal from "./ClaimLevelRewardsModal.vue";
+import PartnerInfoModal from "./PartnerInfoModal.vue";
+import moment from "moment/moment";
 
 const FARMING_CONTRACT_ADDRESS = '0xC18c952F800516E1eef6aB482F3d331c84d43d38';
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -332,6 +334,10 @@ export default {
           {
             key: 'CLAIM_LEVEL_REWARDS',
             name: 'Claim Level rewards',
+          },
+          {
+            key: 'PARTNER_PROFILE',
+            name: 'Show profile',
           }
         ]
       };
@@ -371,6 +377,9 @@ export default {
             break;
           case 'CLAIM_LEVEL_REWARDS':
             this.openClaimRewardsModal();
+            break;
+          case 'PARTNER_PROFILE':
+            this.openProfileModal();
             break;
         }
       }
@@ -630,6 +639,27 @@ export default {
       });
     },
 
+    openProfileModal() {
+      const modalInstance = this.openModal(PartnerInfoModal);
+      modalInstance.partner = {
+        name: 'Level',
+        iconSrc: 'src/assets/logo/lvl.png',
+        launchDate: moment(new Date()).format('DD.MM.YYYY'),
+        introduction: 'Yield Yak is one of the top Avalanche protocols. Currently being number (...) on Avalanche with (...) M TVL, they focus on...',
+        mainFeatures: 'Autocompounding – Yield aggregation',
+        securityMeasures: [
+          {name: 'Upgradability', state: 'ENABLED'},
+          {name: 'Timelock', state: 'ENABLED'},
+          {name: 'Multisig', state: 'DISABLED'},
+          {name: 'Audits: one per pool', state: 'NONE'},
+          {name: 'Doxxed team', state: 'DISABLED'},
+        ],
+        chainImpact: 'Yield Yak helps users make informed decisions, through easy comparison of protocol returns. Their autocompounding feature allows smaller investors to benefit from the same compounding benefits whales make use of, without having to worry about gas.',
+        yieldCalculation: 'Yield Yak calculates its APY through 7D historical return tracking. This number gets updated with every reinvestment on their platform.',
+        chartData: [{x: new Date(), y: 5}, {x: new Date(), y: 15}, {x: new Date(), y: 25}, {x: new Date(), y: 20}, {x: new Date(), y: 15}, {x: new Date(), y: 25}, {x: new Date(), y: 5}]
+      }
+    },
+
     async setupPoolBalance() {
       const lpTokenContract = new ethers.Contract(this.lpToken.address, erc20ABI, this.provider.getSigner());
       this.poolBalance = fromWei(await lpTokenContract.totalSupply());
@@ -818,6 +848,10 @@ export default {
         .asset__dex {
           font-size: $font-size-xxs;
           color: var(--asset-table-row__asset-loan-color);
+
+          a {
+            cursor: pointer;
+          }
         }
       }
 
