@@ -659,7 +659,7 @@ export default {
                 `
                  - <a href="https://obeliskauditing.com/audits/level-finance-trading?openPdf=true" target="_blank">Obelisk Trading</a>, Jan&nbsp;2023<br>
                  - <a href="https://obeliskauditing.com/audits/level-finance-core" target="_blank">Obelisk Core</a>,&nbsp;Jan&nbsp;2023<br>
-                 - Quantstamp, April 2023
+                 - <a href="https://certificate.quantstamp.com/full/level-finance/929d1708-a464-476d-86f3-7d7942faa4d2/index.html" target="_blank">Quantstamp</a>, April 2023
           `},
           {name: 'Doxxed team', state: 'DISABLED', tooltip: `The team is anonymous and has not performed KYC with the DeltaPrime team.`},
         ],
