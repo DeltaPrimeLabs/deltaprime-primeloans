@@ -122,7 +122,6 @@ export default {
 @import "~@/styles/variables";
 
 .icon-button-menu-component {
-  position: relative;
 
   .icon-button {
     cursor: pointer;
