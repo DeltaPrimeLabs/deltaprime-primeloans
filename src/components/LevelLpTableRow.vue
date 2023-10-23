@@ -644,18 +644,27 @@ export default {
       modalInstance.partner = {
         name: 'Level',
         iconSrc: 'src/assets/logo/lvl.png',
-        launchDate: moment(new Date()).format('DD.MM.YYYY'),
-        introduction: 'Yield Yak is one of the top Avalanche protocols. Currently being number (...) on Avalanche with (...) M TVL, they focus on...',
-        mainFeatures: 'Autocompounding – Yield aggregation',
-        securityMeasures: [
-          {name: 'Upgradability', state: 'ENABLED'},
-          {name: 'Timelock', state: 'ENABLED'},
-          {name: 'Multisig', state: 'DISABLED'},
-          {name: 'Audits: one per pool', state: 'NONE'},
-          {name: 'Doxxed team', state: 'DISABLED'},
+        launchDate: moment(Date.parse('23 Nov 2022')).format('DD.MM.YYYY'),
+        introduction: 'Level Finance is the only Perpetual Derivatives exchange on Arbitrum with a Tranching system. With 5.59M TVL, they are currently the 42nd biggest protocol on Arbitrum.',
+        mainFeatures: [
+            'Perpetual Derivative Trading',
+            'Leveraged Trading',
+            'Basket LPing'
         ],
-        chainImpact: 'Yield Yak helps users make informed decisions, through easy comparison of protocol returns. Their autocompounding feature allows smaller investors to benefit from the same compounding benefits whales make use of, without having to worry about gas.',
-        yieldCalculation: 'Yield Yak calculates its APY through 7D historical return tracking. This number gets updated with every reinvestment on their platform.',
+        securityMeasures: [
+          {name: 'Upgradeability', state: 'ENABLED'},
+          {name: 'Timelock (12h)', state: 'ENABLED'},
+          {name: 'Multisig', state: 'ENABLED'},
+          {name: `Audits `, state: 'ENABLED', tooltip:
+                `
+                 - <a href="https://obeliskauditing.com/audits/level-finance-trading?openPdf=true" target="_blank">Obelisk Trading</a>, Jan&nbsp;2023<br>
+                 - <a href="https://obeliskauditing.com/audits/level-finance-core" target="_blank">Obelisk Core</a>,&nbsp;Jan&nbsp;2023<br>
+                 - Quantstamp, April 2023
+          `},
+          {name: 'Doxxed team', state: 'DISABLED', tooltip: `The team is anonymous and has not performed KYC with the DeltaPrime team.`},
+        ],
+        chainImpact: 'Level Finance gives perpetual derivative traders increased control over their exposure to the DEX and underlying assets through their Tranching system, while providing traders with 0% price impact swaps.',
+        yieldCalculation: 'Level Finance calculates its APY as: 7D (Trading fees + counterparty PnL + LVL minting fees + incentives) / Assets under Management * 52.',
         chartData: [{x: new Date(), y: 5}, {x: new Date(), y: 15}, {x: new Date(), y: 25}, {x: new Date(), y: 20}, {x: new Date(), y: 15}, {x: new Date(), y: 25}, {x: new Date(), y: 5}]
       }
     },
@@ -832,6 +841,10 @@ export default {
 
       &.asset {
         align-items: center;
+
+        .asset__icon {
+          cursor: pointer;
+        }
 
         .asset__name {
           color: var(--default-text-color);

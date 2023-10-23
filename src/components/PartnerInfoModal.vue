@@ -19,14 +19,14 @@
 
       <div class="description-section">
         <div class="section-header">Main features:</div>
-        <div class="section">{{ partner.mainFeatures }}</div>
+        <div class="section" v-for="feature of partner.mainFeatures">- {{ feature }}</div>
       </div>
 
       <div class="description-section description-section--security-measures">
         <div class="section-header">Security measures:</div>
         <div class="security-measures">
           <div class="measure" v-for="measure in partner.securityMeasures">
-            <div class="measure__name">
+            <div class="measure__name" v-tooltip="{content: measure.tooltip, classes: 'info-tooltip'}">
               {{ measure.name }}
             </div>
             <DeltaIcon class="measure__state measure__state--enabled" v-if="measure.state === 'ENABLED'"
