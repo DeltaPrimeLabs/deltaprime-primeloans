@@ -204,13 +204,10 @@ const getApysFromVector = async () => {
   const page = await browser.newPage();
 
   // navigate pools page and wait till javascript fully load.
-  await page.goto(URL);
-  const vtxPriceSelector = "div.price-and-gas div[title='VTX']";
-  await page.mainFrame().waitForFunction(
-    selector => !!document.querySelector(selector).innerText,
-    {},
-    vtxPriceSelector
-  )
+  await page.goto(URL, {
+    waitUntil: "networkidle0",
+    timeout: 60000
+  });
 
   functions.logger.info("parsing auto compounding APYs...");
   const [avaxApy, savaxApy, usdcApy, usdtApy] = await page.evaluate(() => {
