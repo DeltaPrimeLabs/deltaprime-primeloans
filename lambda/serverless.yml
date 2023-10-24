@@ -76,14 +76,14 @@ provider:
 
 functions:
   sPrimeCalculatorAva:
-    handler: sPrimeCalculatorAva.handler
+    handler: sPrime/sPrimeCalculatorAva.handler
     memorySize: 1024
     timeout: 600
     description: Calculate sPRIME Value for depositors on Avalanche.
     events:
       - schedule: rate(5 minutes)
   sPrimeCalculatorArb:
-    handler: sPrimeCalculatorArb.handler
+    handler: sPrime/sPrimeCalculatorArb.handler
     memorySize: 1024
     timeout: 600
     description: Calculate sPRIME Value for depositors on Arbitrum.
@@ -112,6 +112,13 @@ functions:
       - httpApi:
           method: get
           path: /levelTvl/{id}
+  glpAprAggregator:
+    handler: aggregators/apy.glpAprAggregator
+    memorySize: 2048
+    timeout: 300
+    description: Fetch GLP Apr from GMX website.
+    events:
+      - schedule: rate(1 minute)
   # loanAggregatorAva:
   #   handler: aggregators/loan.loanAggregatorAva
   #   memorySize: 1024
