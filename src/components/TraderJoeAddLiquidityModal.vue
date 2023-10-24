@@ -297,7 +297,7 @@ export default {
 
     getBinPrice(binId) {
       const binPrice = (1 + this.binStep / 10000) ** (binId - 8388608) * 10 ** (this.firstAsset.decimals - this.secondAsset.decimals);
-      return binPrice.toFixed(5);
+      return binPrice.toFixed(7);
     },
 
     getBinId(price) {
@@ -513,7 +513,7 @@ export default {
       const distributionSum = distributionX.reduce((a, b) => BigNumber.from(a).add(BigNumber.from(b)), 0);
       const amount = parseFloat(this.firstAmount) * parseFloat(formatUnits(distributionSum.toString()));
 
-      return amount == 0 ? 0 : amount.toFixed(5);
+      return amount == 0 ? 0 : amount.toFixed(7);
     },
 
     getSecondAssetAmount(batchId) {
@@ -521,7 +521,7 @@ export default {
       const distributionSum = distributionY.reduce((a, b) => BigNumber.from(a).add(BigNumber.from(b)), 0);
       const amount = parseFloat(this.secondAmount) * parseFloat(formatUnits(distributionSum.toString()));
 
-      return amount == 0 ? 0 : amount.toFixed(5);
+      return amount == 0 ? 0 : amount.toFixed(7);
     }
   }
 };
