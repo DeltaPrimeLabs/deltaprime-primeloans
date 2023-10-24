@@ -5,7 +5,7 @@ const file = fs.readFileSync('loan-addresses.json', "utf-8");
 
 const data = JSON.parse(file);
 
-const loanAddresses = [data.addresses[0]];
+const loanAddresses = data.addresses;
 const totalLoans = loanAddresses.length;
 console.log("..........starting...........")
 
@@ -45,36 +45,33 @@ async function fetchLoanHistory () {
 
                 await Promise.all(
                     timestamps.map(async (timestamp) => {
-                        // console.log(`fetching ${loanAddress} at ${timestamp}...`);
-                        try {
-                            const loanStatus = await getLoanStatusAtTimestamp(loanAddress, timestamp);
-                            if (loanStatus) {
-                                const status = await loanHistoryRef.doc(timestamp.toString()).get();
+                        console.log(`fetching ${loanAddress} at ${timestamp}...`);
+                        const loanStatus = await getLoanStatusAtTimestamp(loanAddress, timestamp);
+                        console.log(loanStatus);
+                        if (loanStatus) {
+                            const status = await loanHistoryRef.doc(timestamp.toString()).get();
 
-                                if (!status.exists) {
-                                    await loanHistoryRef.doc(timestamp.toString()).set({
-                                        totalValue: loanStatus.totalValue,
-                                        borrowed: loanStatus.borrowed,
-                                        collateral: loanStatus.totalValue - loanStatus.borrowed,
-                                        twv: loanStatus.twv,
-                                        health: loanStatus.health,
-                                        solvent: loanStatus.solvent === 1e-18,
-                                        timestamp: timestamp
-                                    });
+                            if (!status.exists) {
+                                await loanHistoryRef.doc(timestamp.toString()).set({
+                                    totalValue: loanStatus.totalValue,
+                                    borrowed: loanStatus.borrowed,
+                                    collateral: loanStatus.totalValue - loanStatus.borrowed,
+                                    twv: loanStatus.twv,
+                                    health: loanStatus.health,
+                                    solvent: loanStatus.solvent === 1e-18,
+                                    timestamp: timestamp
+                                });
 
-                                    loanStatuses.push({
-                                        totalValue: loanStatus.totalValue,
-                                        borrowed: loanStatus.borrowed,
-                                        collateral: loanStatus.totalValue - loanStatus.borrowed,
-                                        twv: loanStatus.twv,
-                                        health: loanStatus.health,
-                                        solvent: loanStatus.solvent === 1e-18,
-                                        timestamp: timestamp
-                                    });
-                                }
+                                loanStatuses.push({
+                                    totalValue: loanStatus.totalValue,
+                                    borrowed: loanStatus.borrowed,
+                                    collateral: loanStatus.totalValue - loanStatus.borrowed,
+                                    twv: loanStatus.twv,
+                                    health: loanStatus.health,
+                                    solvent: loanStatus.solvent === 1e-18,
+                                    timestamp: timestamp
+                                });
                             }
-                        } catch(error) {
-                            console.log(`fetching ${loanAddress} at ${timestamp} failed`)
                         }
 
                         // console.log(loanStatus);

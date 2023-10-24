@@ -111,6 +111,8 @@ async function getData(loanAddress, timestamp) {
 
     return status;
   } catch (e) {
+    console.log(`fetching ${loanAddress} at ${timestamp} failed`)
+    console.log(e);
     const file = fs.readFileSync("./failed-loans.json", "utf-8");
     let data = JSON.parse(file);
 
@@ -122,7 +124,6 @@ async function getData(loanAddress, timestamp) {
     data = JSON.stringify(data);
 
     fs.writeFileSync("./failed-loans.json", data);
-    throw e;
   }
 }
 
