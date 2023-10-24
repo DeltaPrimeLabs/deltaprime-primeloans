@@ -86,7 +86,116 @@ const glpAprAggregator = async () => {
   await browser.close();
 }
 
+const vectorApyAggregator = async () => {
+  const URL = "https://vectorfinance.io/pools";
+  const browser = await puppeteer.launch({headless: false});
+  const page = await browser.newPage();
+
+  // navigate pools page and wait till javascript fully load.
+  await page.goto(URL, {
+    waitUntil: "networkidle0",
+    timeout: 60000
+  });
+  // const vtxPriceSelector = "header.not-landing-page div[title='VTX']";
+  // await page.mainFrame().waitForFunction(
+  //   selector => !!document.querySelector(selector).innerText,
+  //   {},
+  //   vtxPriceSelector
+  // )
+
+  console.log("parsing auto compounding APYs...");
+  const [avaxApy, savaxApy, usdcApy, usdtApy] = await page.evaluate(() => {
+    const parseApyFromTable = (pools, keyword) => {
+      const assetPool = Array.from(pools).find(pool => pool.innerText.replace(/\s+/g, "").toLowerCase().startsWith(keyword));
+      const assetColumns = assetPool.querySelectorAll("p.MuiTypography-root.MuiTypography-body1");
+      const assetApy = parseFloat(assetColumns[2].innerText.split('%')[0].trim());
+    
+      return assetApy;
+    }
+
+    // select the pools with the class and find relevant records
+    const pools = document.querySelectorAll("div.MuiAccordionSummary-content");
+
+    // parsing USDT main auto APY
+    const avaxApy = parseApyFromTable(pools, "avaxautopairedwithsavax");
+
+    // parsing USDT main auto APY
+    const savaxApy = parseApyFromTable(pools, "savaxautopairedwithavax");
+
+    // parsing USDC main auto APY
+    const usdcApy = parseApyFromTable(pools, "usdcautomainpool");
+
+    // parsing USDT main auto APY
+    const usdtApy = parseApyFromTable(pools, "usdtautomainpool");
+
+    return [avaxApy, savaxApy, usdcApy, usdtApy];
+  });
+
+  console.log(avaxApy, savaxApy, usdcApy, usdtApy);
+
+  // update APYs in db
+  let params = {
+    TableName: process.env.APY_TABLE,
+    Key: {
+      id: "AVAX"
+    },
+    AttributeUpdates: {
+      VF_AVAX_SAVAX_AUTO: {
+        Value: avaxApy ? avaxApy : null,
+        Action: "PUT"
+      }
+    }
+  };
+  await dynamoDb.update(params).promise();
+
+  params = {
+    TableName: process.env.APY_TABLE,
+    Key: {
+      id: "AVAX"
+    },
+    AttributeUpdates: {
+      VF_SAVAX_MAIN_AUTO: {
+        Value: savaxApy ? savaxApy : null,
+        Action: "PUT"
+      }
+    }
+  };
+  await dynamoDb.update(params).promise();
+
+  params = {
+    TableName: process.env.APY_TABLE,
+    Key: {
+      id: "AVAX"
+    },
+    AttributeUpdates: {
+      VF_USDC_MAIN_AUTO: {
+        Value: usdcApy ? usdcApy : null,
+        Action: "PUT"
+      }
+    }
+  };
+  await dynamoDb.update(params).promise();
+
+  params = {
+    TableName: process.env.APY_TABLE,
+    Key: {
+      id: "AVAX"
+    },
+    AttributeUpdates: {
+      VF_USDT_MAIN_AUTO: {
+        Value: usdtApy ? usdtApy : null,
+        Action: "PUT"
+      }
+    }
+  };
+  await dynamoDb.update(params).promise();
+
+  // close browser
+  await browser.close();
+}
+
 module.exports = {
   levelTvlAggregator,
-  glpAprAggregator
+  glpAprAggregator,
+  vectorApyAggregator
 }

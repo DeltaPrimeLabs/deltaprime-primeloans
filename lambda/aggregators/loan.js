@@ -19,7 +19,7 @@ const walletArbitrum = (new ethers.Wallet("0xca63cb3223cb19b06fa42110c89ad21a17b
 const factory = new ethers.Contract(networkInfo.avalanche.factory, FACTORY.abi, avalancheProvider);
 const factoryArbitrum = new ethers.Contract(networkInfo.arbitrum.factory, FACTORY.abi, arbitrumProvider);
 
-module.exports.loanAggregatorAva = async (event) => {
+const loanAggregatorAva = async (event) => {
   console.log("fetching loans on Avalanche")
 
   const loanAddresses = await factory.getAllLoans();
@@ -59,7 +59,7 @@ module.exports.loanAggregatorAva = async (event) => {
   return event;
 };
 
-module.exports.loanAggregatorArb = async (event) => {
+const loanAggregatorArb = async (event) => {
   console.log("fetching loans on Arbitrum");
 
   const loanAddresses = await factoryArbitrum.getAllLoans();
@@ -97,4 +97,9 @@ module.exports.loanAggregatorArb = async (event) => {
   console.log(`Uploaded ${loanAddresses.length} loans on Arbitrum.`);
 
   return event;
+}
+
+module.exports = {
+  loanAggregatorAva,
+  loanAggregatorArb
 }

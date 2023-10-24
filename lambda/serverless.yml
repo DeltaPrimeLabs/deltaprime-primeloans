@@ -119,6 +119,11 @@ functions:
     description: Fetch GLP Apr from GMX website.
     events:
       - schedule: rate(1 minute)
+  vectorApyAggregator:
+    handler: aggregators/apy.vectorApyAggregator
+    memorySize: 2048
+    timeout: 300
+    description: Fetch auto-compounding APYs from Vector website.
   # loanAggregatorAva:
   #   handler: aggregators/loan.loanAggregatorAva
   #   memorySize: 1024
@@ -143,14 +148,14 @@ resources:
         AttributeDefinitions:
           -
             AttributeName: "id"
-            AttributeType: "S"   
+            AttributeType: "S"
         KeySchema:
           -
             AttributeName: "id"
             KeyType: "HASH"
         ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
         StreamSpecification:
           StreamViewType: "NEW_AND_OLD_IMAGES"
         TableName: ${self:provider.environment.SPRIME_AVA_TABLE}
@@ -161,14 +166,14 @@ resources:
         AttributeDefinitions:
           -
             AttributeName: "id"
-            AttributeType: "S"   
+            AttributeType: "S"
         KeySchema:
           -
             AttributeName: "id"
             KeyType: "HASH"
         ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
         StreamSpecification:
           StreamViewType: "NEW_AND_OLD_IMAGES"
         TableName: ${self:provider.environment.SPRIME_ARB_TABLE}
@@ -179,14 +184,14 @@ resources:
     #     AttributeDefinitions:
     #       -
     #         AttributeName: "id"
-    #         AttributeType: "S"   
+    #         AttributeType: "S"
     #     KeySchema:
     #       -
     #         AttributeName: "id"
     #         KeyType: "HASH"
     #     ProvisionedThroughput:
-    #       ReadCapacityUnits: 1
-    #       WriteCapacityUnits: 1
+    #       ReadCapacityUnits: 5
+    #       WriteCapacityUnits: 5
     #     StreamSpecification:
     #       StreamViewType: "NEW_AND_OLD_IMAGES"
     #     TableName: ${self:provider.environment.LOAN_AVA_TABLE}
@@ -197,14 +202,14 @@ resources:
     #     AttributeDefinitions:
     #       -
     #         AttributeName: "id"
-    #         AttributeType: "S"   
+    #         AttributeType: "S"
     #     KeySchema:
     #       -
     #         AttributeName: "id"
     #         KeyType: "HASH"
     #     ProvisionedThroughput:
-    #       ReadCapacityUnits: 1
-    #       WriteCapacityUnits: 1
+    #       ReadCapacityUnits: 5
+    #       WriteCapacityUnits: 5
     #     StreamSpecification:
     #       StreamViewType: "NEW_AND_OLD_IMAGES"
     #     TableName: ${self:provider.environment.LOAN_ARB_TABLE}
@@ -215,14 +220,14 @@ resources:
         AttributeDefinitions:
           -
             AttributeName: "id"
-            AttributeType: "S"   
+            AttributeType: "S"
         KeySchema:
           -
             AttributeName: "id"
             KeyType: "HASH"
         ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
         StreamSpecification:
           StreamViewType: "NEW_AND_OLD_IMAGES"
         TableName: ${self:provider.environment.APY_TABLE}
