@@ -124,6 +124,11 @@ functions:
     memorySize: 2048
     timeout: 300
     description: Fetch auto-compounding APYs from Vector website.
+  lpAndFarmApyAggregator:
+    handler: aggregators/apy.lpAndFarmApyAggregator
+    memorySize: 512
+    timeout: 120
+    description: Fetch LP and Farm APYs from Pangolin and TraderJoe V1
   # loanAggregatorAva:
   #   handler: aggregators/loan.loanAggregatorAva
   #   memorySize: 1024

@@ -194,8 +194,139 @@ const vectorApyAggregator = async () => {
   await browser.close();
 }
 
+const lpAndFarmApyAggregator = async () => {
+  const VECTOR_APY_URL = "https://vector-api-git-overhaul-vectorfinance.vercel.app/api/v1/vtx/apr";
+  const YIELDYAK_APY_AVA_URL = "https://staging-api.yieldyak.com/apys";
+  const YIELDYAK_APY_ARB_URL = "https://staging-api.yieldyak.com/42161/apys";
+
+  // fetching lp APYs
+  try {
+    for (const [asset, data] of Object.entries(lpAssets)) {
+      let apy;
+      if (data.dex === "Pangolin") {
+        apy = await getPangolinLpApr(data.url);
+      } else if (data.dex === "TraderJoe") {
+        apy = await getTraderJoeLpApr(tokenAddresses[asset], data.appreciation);
+      }
+
+      console.log(asset, apy);
+
+      params = {
+        TableName: process.env.APY_TABLE,
+        Key: {
+          id: asset
+        },
+        AttributeUpdates: {
+          lp_apy: {
+            Value: apy ? apy : null,
+            Action: "PUT"
+          }
+        }
+      };
+      await dynamoDb.update(params).promise();
+    }
+
+    console.log(`Fetching lp APYs finished.`);
+  } catch (error) {
+    console.log(`Fetching lp APYs failed. Error: ${error}`);
+  };
+
+  // fetching farm APYs
+  const apys = {};
+  const urls = [
+    VECTOR_APY_URL,
+    YIELDYAK_APY_AVA_URL,
+    YIELDYAK_APY_ARB_URL
+  ];
+
+  try {
+    Promise.all(urls.map(url =>
+      fetch(url).then(resp => resp.json())
+    )).then(async ([vectorAprs, yieldYakAvaApys, yieldYakArbApys]) => {
+
+      if (!vectorAprs["Staking"]) console.log('APRs not available from Vector.');
+      const stakingAprs = vectorAprs['Staking'];
+
+      // fetching Vector APYs
+      for (const [token, farm] of Object.entries(vectorApyConfig)) {
+        if (Object.keys(stakingAprs).includes(farm.vectorId)) {
+          // manual weekly APY
+          const aprTotal = parseFloat(stakingAprs[farm.vectorId].total);
+          const weeklyApy = (1 + aprTotal / 100 / 52) ** 52 - 1;
+
+          if (token in apys) {
+            apys[token][farm.protocolIdentifier] = weeklyApy;
+          } else {
+            apys[token] = {
+              [farm.protocolIdentifier]: weeklyApy
+            };
+          }
+        }
+      }
+
+      // fetching YieldYak APYs Avalanche
+      for (const [token, farm] of Object.entries(yieldYakConfig.avalanche)) {
+        if (!yieldYakAvaApys[farm.stakingContractAddress]) continue
+
+        const yieldApy = yieldYakAvaApys[farm.stakingContractAddress].apy / 100;
+
+        if (token in apys) {
+          apys[token][farm.protocolIdentifier] = yieldApy;
+        } else {
+          apys[token] = {
+            [farm.protocolIdentifier]: yieldApy
+          };
+        }
+      }
+
+      // fetching YieldYak APYs Arbitrum
+      for (const [token, farm] of Object.entries(yieldYakConfig.arbitrum)) {
+        if (!yieldYakArbApys[farm.stakingContractAddress]) continue
+
+        const yieldApy = yieldYakArbApys[farm.stakingContractAddress].apy / 100;
+
+        if (token in apys) {
+          apys[token][farm.protocolIdentifier] = yieldApy;
+        } else {
+          apys[token] = {
+            [farm.protocolIdentifier]: yieldApy
+          };
+        }
+      }
+
+      console.log(apys);
+      // write apys to db
+      for (const [token, apyData] of Object.entries(apys)) {
+        const attributes = {};
+
+        for (const [identifier, apy] of Object.entries(apyData)) {
+          attributes[identifier] = {
+            Value: apy ? apy : null,
+            Action: "PUT"
+          }
+        }
+
+        params = {
+          TableName: process.env.APY_TABLE,
+          Key: {
+            id: token
+          },
+          AttributeUpdates: attributes
+        };
+        await dynamoDb.update(params).promise();
+      }
+
+      console.log(`Fetching farm APYs finished.`);
+    });
+
+  } catch (error) {
+    console.log(`Fetching farm APYs failed. Error: ${error}`);
+  }
+}
+
 module.exports = {
   levelTvlAggregator,
   glpAprAggregator,
-  vectorApyAggregator
+  vectorApyAggregator,
+  lpAndFarmApyAggregator
 }
