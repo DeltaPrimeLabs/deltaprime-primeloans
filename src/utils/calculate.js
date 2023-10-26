@@ -378,7 +378,7 @@ export const paraSwapRouteToSimpleData = (txParams) => {
 
 export function getBinPrice(binId, binStep, firstDecimals, secondDecimals) {
   const binPrice = (1 + binStep / 10000) ** (binId - 8388608) * 10 ** (firstDecimals - secondDecimals);
-  return binPrice.toFixed(5);
+  return formatTokenBalance(binPrice, 8, true);
 }
 
 export function getCountdownString(countDownDate) {
@@ -430,3 +430,18 @@ export const parseUnits = ethers.utils.parseUnits;
 
 // BigNumber -> String
 export const formatUnits = ethers.utils.formatUnits;
+
+function formatTokenBalance(value, precision = 5, toFixed = false) {
+  const balanceOrderOfMagnitudeExponent = String(value).split('.')[0].length - 1;
+  const precisionMultiplierExponent = precision - balanceOrderOfMagnitudeExponent;
+  const precisionMultiplier = Math.pow(10, precisionMultiplierExponent >= 0 ? precisionMultiplierExponent : 0);
+  if (value !== null) {
+    if (!toFixed) {
+      return String(Math.round(value * precisionMultiplier) / precisionMultiplier);
+    } else {
+      return (Math.round(value * precisionMultiplier) / precisionMultiplier).toFixed(precision).replace(/([0-9]+(\.[0-9]+[1-9])?)(\.?0+$)/, '$1');
+    }
+  } else {
+    return '';
+  }
+}
