@@ -66,7 +66,7 @@ export default {
         {
           chainId: this.toHex(42161),
           chainName: 'Arbitrum',
-          rpcUrls: ['https://rpc.ankr.com/arbitrum'],
+          rpcUrls: ['+= https://arb-mainnet-public.unifra.io'],
           nativeCurrency: {
             name: 'ETH',
             symbol: 'ETH',

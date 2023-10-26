@@ -257,9 +257,7 @@ export default {
         console.error(error);
         console.error('ERROR DURING UPDATE FUNDS');
         console.warn('refreshing page in 5s');
-        setTimeout(() => {
-          window.location.reload();
-        }, 5000);
+        await dispatch('updateFunds');
       }
     },
 
