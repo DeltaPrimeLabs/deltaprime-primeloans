@@ -148,7 +148,7 @@ export default {
                 rewardsInfo: 'These are the rewards that you accumulated. These are staked too.',
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['USDC.e'],
-                strategy: 'USDC.e',
+                strategy: 'Wombex',
                 refreshDelay: 60000
             }
         ],
@@ -170,7 +170,7 @@ export default {
                 rewardsInfo: 'These are the rewards that you accumulated. These are staked too.',
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['USDT'],
-                strategy: 'USDT',
+                strategy: 'Wombex',
                 refreshDelay: 60000
             }
         ],
@@ -192,7 +192,7 @@ export default {
                 rewardsInfo: 'These are the rewards that you accumulated. These are staked too.',
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['DAI'],
-                strategy: 'DAI',
+                strategy: 'Wombex',
                 refreshDelay: 60000
             }
         ],
@@ -214,7 +214,7 @@ export default {
                 rewardsInfo: 'These are the rewards that you accumulated. These are staked too.',
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['GMX'],
-                strategy: 'GMX',
+                strategy: 'Wombex',
                 refreshDelay: 60000
             }
         ],
@@ -236,7 +236,7 @@ export default {
                 rewardsInfo: 'These are the rewards that you accumulated. These are staked too.',
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['GLP'],
-                strategy: 'GLP',
+                strategy: 'Wombex',
                 refreshDelay: 60000
             }
         ],
