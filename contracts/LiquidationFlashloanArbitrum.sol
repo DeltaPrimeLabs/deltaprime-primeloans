@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 607001f27d5d6302c6a3c0a04e12a50b279f52ec;
+// Last deployed from commit: 6d8a4b2b018438310122a83aaa6873cbbf515691;
 pragma solidity 0.8.17;
 
 import "./LiquidationFlashloan.sol";

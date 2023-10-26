@@ -289,12 +289,12 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
           int256(premiums[uint256(index)]);
         if (amount > 0) {
           assetSurplus[i] = AssetAmount(
-            supportedTokens[uint256(index)],
+            supportedTokens[i],
             uint256(amount)
           );
         } else if (amount < 0) {
           assetDeficit[i] = AssetAmount(
-            supportedTokens[uint256(index)],
+            supportedTokens[i],
             uint256(amount * -1)
           );
         }
