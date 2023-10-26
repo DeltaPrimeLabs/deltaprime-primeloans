@@ -26,7 +26,7 @@
         <div class="section-header">Security measures:</div>
         <div class="security-measures">
           <div class="measure" v-for="measure in partner.securityMeasures">
-            <div class="measure__name" v-tooltip="{content: measure.tooltip, classes: 'info-tooltip'}">
+            <div class="measure__name" v-tooltip="{content: measure.tooltip, classes: 'info-tooltip long'}">
               {{ measure.name }}
             </div>
             <DeltaIcon class="measure__state measure__state--enabled" v-if="measure.state === 'ENABLED'"
