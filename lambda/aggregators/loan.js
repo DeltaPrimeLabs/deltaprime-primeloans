@@ -7,7 +7,8 @@ const {
   dynamoDb,
   avalancheProvider,
   arbitrumProvider,
-  wrap
+  wrap,
+  getWrappedContracts
 } = require("../utils/helpers");
 const networkInfo = require('../utils/constants.json');
 
@@ -99,7 +100,80 @@ const loanAggregatorArb = async (event) => {
   return event;
 }
 
+
+const saveLiveLoansStatusAvalanche = async () => {
+  const loanAddresses = await factory.getAllLoans();
+  const totalLoans = loanAddresses.length;
+  const batchSize = 50;
+
+  for (let i = 0; i < Math.ceil(totalLoans/batchSize); i++) {
+    console.log(`processing ${i * batchSize} - ${(i + 1) * batchSize > totalLoans ? totalLoans : (i + 1) * batchSize} loans`);
+    const batchLoanAddresses = loanAddresses.slice(i * batchSize, (i + 1) * batchSize);
+    const wrappedContracts = getWrappedContracts(batchLoanAddresses, 'avalanche');
+
+    const loanStatusResults = await Promise.all(wrappedContracts.map(contract => contract.getFullLoanStatus()));
+
+    if (loanStatusResults.length > 0) {
+      const timestamp = Date.now();
+      await Promise.all(
+        loanStatusResults.map(async (status, id) => {
+          const loanHistoryRef = db
+            .collection('loansHistory')
+            .doc(batchLoanAddresses[id].toLowerCase())
+            .collection('loanStatus');
+          await loanHistoryRef.doc(timestamp.toString()).set({
+            totalValue: fromWei(status[0]),
+            borrowed: fromWei(status[1]),
+            collateral: fromWei(status[0]) - fromWei(status[1]),
+            twv: fromWei(status[2]),
+            health: fromWei(status[3]),
+            solvent: fromWei(status[4]) === 1e-18,
+            timestamp
+          });
+        })
+      );
+    }
+  }
+}
+
+const saveLiveLoansStatusArbitrum = async () => {
+  const loanAddresses = await factoryArbitrum.getAllLoans();
+  const totalLoans = loanAddresses.length;
+  const batchSize = 50;
+
+  for (let i = 0; i < Math.ceil(totalLoans/batchSize); i++) {
+    console.log(`processing ${i * batchSize} - ${(i + 1) * batchSize > totalLoans ? totalLoans : (i + 1) * batchSize} loans`);
+    const batchLoanAddresses = loanAddresses.slice(i * batchSize, (i + 1) * batchSize);
+    const wrappedContracts = getWrappedContracts(batchLoanAddresses, 'arbitrum');
+
+    const loanStatusResults = await Promise.all(wrappedContracts.map(contract => contract.getFullLoanStatus()));
+
+    if (loanStatusResults.length > 0) {
+      const timestamp = Date.now();
+      await Promise.all(
+        loanStatusResults.map(async (status, id) => {
+          const loanHistoryRef = db
+            .collection('loansHistoryArbitrum')
+            .doc(batchLoanAddresses[id].toLowerCase())
+            .collection('loanStatus');
+          await loanHistoryRef.doc(timestamp.toString()).set({
+            totalValue: fromWei(status[0]),
+            borrowed: fromWei(status[1]),
+            collateral: fromWei(status[0]) - fromWei(status[1]),
+            twv: fromWei(status[2]),
+            health: fromWei(status[3]),
+            solvent: fromWei(status[4]) === 1e-18,
+            timestamp
+          });
+        })
+      );
+    }
+  }
+}
+
 module.exports = {
   loanAggregatorAva,
-  loanAggregatorArb
+  loanAggregatorArb,
+  saveLiveLoansStatusAvalanche,
+  saveLiveLoansStatusArbitrum
 }
