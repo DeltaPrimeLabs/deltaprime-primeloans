@@ -126,35 +126,43 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
 
     // Swap to negate deficits
     for (uint32 i = 0; i < assetDeficit.length; i++) {
+      bool deficitPaidInFull;
       if (assetDeficit[i].amount != 0) {
         for (uint32 j = 0; j < assetSurplus.length; j++) {
           if (assetSurplus[j].amount != 0) {
-            bool shouldBreak;
+            deficitPaidInFull = false;
+            bool offerFound = false;
             for (uint32 k = 0; k < lep.offers.length; ++k) {
+              // get next `offer`
               IYieldYakRouter.FormattedOffer memory offer = lep.offers[k];
+              // * if offer is non-empty
+              // * swap `from`, `to` elements match `assetSurplus[j].asset` and `assetDeficit[i].asset` respectively
               if (
+                offer.path.length > 0 &&
                 offer.path[0] == assetSurplus[j].asset &&
                 offer.path[offer.path.length - 1] == assetDeficit[i].asset
               ) {
+                offerFound = true;
                 uint256 remainDeficitAmount;
-                (
-                  shouldBreak,
-                  remainDeficitAmount
-                ) = swapToNegateDeficits(
-                    assetDeficit[i],
-                    assetSurplus[j],
-                    offer
-                  );
-                if (shouldBreak) {
-                  address(assetDeficit[i].asset).safeTransfer(
-                    lep.liquidator,
-                    remainDeficitAmount
-                  );
-                  break;
+                // swap as much as possible and as little as necessary `assetSurplus[j].asset` in order to cover as much as possible / whole `assetDeficit[i].asset`
+                (deficitPaidInFull, remainDeficitAmount) = swapToNegateDeficits(
+                  assetDeficit[i],
+                  assetSurplus[j],
+                  offer
+                );
+                // There was enough of `assetSurplus[j].amount` to swap for `assetDeficit[i].amount` and potentially even a bit more; namely `remainDeficitAmount` more.
+                // We send it to the liquidator if `remainDeficitAmount` > 0
+                if (deficitPaidInFull && remainDeficitAmount > 0) {
+                    address(assetDeficit[i].asset).safeTransfer(
+                      lep.liquidator,
+                      remainDeficitAmount
+                    );
                 }
+                break;  // Breaks out of offers-loop once one matching offer is found.
               }
             }
-            if (shouldBreak) {
+            require(offerFound, "No matching `FormattedOffer` found.");
+            if (deficitPaidInFull) {
               break;
             }
           }
@@ -177,7 +185,6 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
       assets[i].safeApprove(address(POOL), 0);
       assets[i].safeApprove(address(POOL), amounts[i] + premiums[i]);
     }
-
     return true;
   }
 
