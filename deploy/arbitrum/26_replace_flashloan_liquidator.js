@@ -38,20 +38,20 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         });
     console.log(`Verified LiquidationFlashloanArbitrum`);
 
-    let liquidationFacet = await ethers.getContractAt(
-        "SmartLoanLiquidationFacet",
-        "0x62Cf82FB0484aF382714cD09296260edc1DC0c6c",
-        deployer
-    );
-    await liquidationFacet.whitelistLiquidators([
-        result.address,
-    ]);
-    console.log(`Whitelisted flashloan liquidator: ${result.address}`);
-
-    await liquidationFacet.delistLiquidators([
-        "0x0D45A30F878895aF7510F7a23E82EcA253f6e375",
-    ]);
-    console.log(`Delisted old flashloan liquidator: 0x0D45A30F878895aF7510F7a23E82EcA253f6e375`);
+    // let liquidationFacet = await ethers.getContractAt(
+    //     "SmartLoanLiquidationFacet",
+    //     "0x62Cf82FB0484aF382714cD09296260edc1DC0c6c",
+    //     deployer
+    // );
+    // await liquidationFacet.whitelistLiquidators([
+    //     result.address,
+    // ]);
+    // console.log(`Whitelisted flashloan liquidator: ${result.address}`);
+    //
+    // await liquidationFacet.delistLiquidators([
+    //     "0x0D45A30F878895aF7510F7a23E82EcA253f6e375",
+    // ]);
+    // console.log(`Delisted old flashloan liquidator: 0x0D45A30F878895aF7510F7a23E82EcA253f6e375`);
 
 };
 

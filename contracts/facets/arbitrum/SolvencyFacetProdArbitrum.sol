@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: ecd675d46c3f696de7562f6be071a442d97f37d9;
+// Last deployed from commit: 0b1929776ad17008d99dac92499ffc36e0534f8b;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -16,7 +16,6 @@ import {PriceHelper} from "../../lib/joe-v2/PriceHelper.sol";
 import {Uint256x256Math} from "../../lib/joe-v2/math/Uint256x256Math.sol";
 import {TickMath} from "../../lib/uniswap-v3/TickMath.sol";
 import {FullMath} from "../../lib/uniswap-v3/FullMath.sol";
-
 
 //This path is updated during deployment
 import "../../lib/local/DeploymentConstants.sol";
@@ -37,6 +36,13 @@ contract SolvencyFacetProdArbitrum is ArbitrumProdDataServiceConsumerBase, Diamo
         AssetPrice[] debtAssetsPrices;
         AssetPrice[] stakedPositionsPrices;
         AssetPrice[] assetsToRepayPrices;
+    }
+
+    struct PriceInfo {
+        address tokenX;
+        address tokenY;
+        uint256 priceX;
+        uint256 priceY;
     }
 
     /**
@@ -268,7 +274,9 @@ contract SolvencyFacetProdArbitrum is ArbitrumProdDataServiceConsumerBase, Diamo
 
             for (uint256 i = 0; i < ownedAssetsPrices.length; i++) {
                 IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(ownedAssetsPrices[i].asset, true));
-                weightedValueOfTokens = weightedValueOfTokens + (ownedAssetsPrices[i].price * token.balanceOf(address(this)) * tokenManager.debtCoverage(address(token)) / (10 ** token.decimals() * 1e8));
+                uint256 assetBalance = token.balanceOf(address(this));
+
+                weightedValueOfTokens = weightedValueOfTokens + (ownedAssetsPrices[i].price * assetBalance * tokenManager.debtCoverage(address(token)) / (10 ** token.decimals() * 1e8));
             }
         }
         return weightedValueOfTokens;
@@ -461,7 +469,7 @@ contract SolvencyFacetProdArbitrum is ArbitrumProdDataServiceConsumerBase, Diamo
 
         ITraderJoeV2Facet.TraderJoeV2Bin[] memory ownedTraderJoeV2Bins = DiamondStorageLib.getTjV2OwnedBinsView();
 
-        uint256[] memory prices = new uint256[](2);
+        PriceInfo memory priceInfo;
 
         if (ownedTraderJoeV2Bins.length > 0) {
             for (uint256 i; i < ownedTraderJoeV2Bins.length; i++) {
@@ -471,12 +479,19 @@ contract SolvencyFacetProdArbitrum is ArbitrumProdDataServiceConsumerBase, Diamo
                 uint256 liquidity;
 
                 {
-                    bytes32[] memory symbols = new bytes32[](2);
+                    address tokenXAddress = address(binInfo.pair.getTokenX());
+                    address tokenYAddress = address(binInfo.pair.getTokenY());
 
-                    symbols[0] = DeploymentConstants.getTokenManager().tokenAddressToSymbol(address(binInfo.pair.getTokenX()));
-                    symbols[1] = DeploymentConstants.getTokenManager().tokenAddressToSymbol(address(binInfo.pair.getTokenY()));
+                    if (priceInfo.tokenX != tokenXAddress || priceInfo.tokenY != tokenYAddress) {
+                        bytes32[] memory symbols = new bytes32[](2);
 
-                    prices = getOracleNumericValuesFromTxMsg(symbols);
+
+                        symbols[0] = DeploymentConstants.getTokenManager().tokenAddressToSymbol(tokenXAddress);
+                        symbols[1] = DeploymentConstants.getTokenManager().tokenAddressToSymbol(tokenYAddress);
+
+                        uint256[] memory prices = getOracleNumericValuesFromTxMsg(symbols);
+                        priceInfo = PriceInfo(tokenXAddress, tokenYAddress, prices[0], prices[1]);
+                    }
                 }
 
                 {
@@ -484,9 +499,7 @@ contract SolvencyFacetProdArbitrum is ArbitrumProdDataServiceConsumerBase, Diamo
 
                     price = PriceHelper.convert128x128PriceToDecimal(binInfo.pair.getPriceFromId(binInfo.id)); // how is it denominated (what precision)?
 
-                    liquidity = price * binReserveX
-                    / 10 ** IERC20Metadata(address(binInfo.pair.getTokenX())).decimals()
-                    + binReserveY;
+                    liquidity = price * binReserveX / 10 ** 18 + binReserveY;
                 }
 
 
@@ -496,8 +509,11 @@ contract SolvencyFacetProdArbitrum is ArbitrumProdDataServiceConsumerBase, Diamo
 
                     total = total +
                     Math.min(
-                        debtCoverageX * liquidity * prices[0] / (price * 10 ** 8),
-                        debtCoverageY * liquidity / 10 ** IERC20Metadata(address(binInfo.pair.getTokenY())).decimals() * prices[1] / 10 ** 8
+                        price > 10**24 ?
+                            debtCoverageX * liquidity / (price / 10 ** 18) / 10 ** IERC20Metadata(address(binInfo.pair.getTokenX())).decimals() * priceInfo.priceX / 10 ** 8
+                            :
+                            debtCoverageX * liquidity / price * 10**18 / 10 ** IERC20Metadata(address(binInfo.pair.getTokenX())).decimals() * priceInfo.priceX / 10 ** 8,
+                        debtCoverageY * liquidity / 10**(IERC20Metadata(address(binInfo.pair.getTokenY())).decimals()) * priceInfo.priceY / 10 ** 8
                     )
                     .mulDivRoundDown(binInfo.pair.balanceOf(address(this), binInfo.id), 1e18)
                     .mulDivRoundDown(1e18, binInfo.pair.totalSupply(binInfo.id));
