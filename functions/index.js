@@ -167,18 +167,29 @@ const getGlpApr = async () => {
     glpApySelector
   )
 
-  const glpApy = await page.evaluate(() => {
+  const { arbApy, avaApy } = await page.evaluate(() => {
     // select the elements with relevant class
     const items = document.querySelectorAll(".Home-token-card-option-apr");
 
     // parse APR of GLP on Avalanche
-    return parseFloat(items[1].innerText.split(':').at(-1).trim().replaceAll('%', ''));
+    const arbApy = parseFloat(items[1].innerText.split(',')[0].split(':').at(-1).trim().replaceAll('%', ''));
+    const avaApy = parseFloat(items[1].innerText.split(':').at(-1).trim().replaceAll('%', ''));
+    return {
+      arbApy,
+      avaApy
+    };
   });
+  console.log(arbApy, avaApy);
 
-  console.log(glpApy);
-  if (glpApy && Number(glpApy) != 0) {
+  if (avaApy && Number(avaApy) != 0) {
     await db.collection('apys').doc('GLP').set({
-      apy: glpApy
+      apy: avaApy
+    }, { merge: true });
+  }
+
+  if (arbApy && Number(arbApy) != 0) {
+    await db.collection('apys').doc('GLP').set({
+      arbApy
     }, { merge: true });
   }
 
