@@ -1,19 +1,34 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity ^0.8.0;
+// Last deployed from commit: 799a1765b64edc5c158198ef84f785af79e234ae;
+pragma solidity 0.8.17;
 
-import "../interfaces/gmx-v2/Deposit.sol";
-import "../interfaces/gmx-v2/Withdrawal.sol";
-import "../interfaces/gmx-v2/Order.sol";
-import "../interfaces/gmx-v2/BasicMulticall.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
+import "../../interfaces/facets/avalanche/IGLPRewarder.sol";
+import "../../interfaces/facets/avalanche/IRewardRouterV2.sol";
+import "../../interfaces/facets/avalanche/IRewardTracker.sol";
+import "../../ReentrancyGuardKeccak.sol";
+import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
+import "../../OnlyOwnerOrInsolvent.sol";
+import "../../interfaces/ITokenManager.sol";
+
+import "../../interfaces/gmx-v2/Deposit.sol";
+import "../../interfaces/gmx-v2/Withdrawal.sol";
+import "../../interfaces/gmx-v2/Order.sol";
+import "../../interfaces/gmx-v2/BasicMulticall.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import "../interfaces/gmx-v2/IDepositCallbackReceiver.sol";
-import "../interfaces/gmx-v2/EventUtils.sol";
-import "../interfaces/gmx-v2/IDepositUtils.sol";
-import "../interfaces/gmx-v2/IWithdrawalUtils.sol";
-import "../interfaces/gmx-v2/IGmxV2Router.sol";
-import "../interfaces/gmx-v2/IWithdrawalCallbackReceiver.sol";
+import "../../interfaces/gmx-v2/IDepositCallbackReceiver.sol";
+import "../../interfaces/gmx-v2/EventUtils.sol";
+import "../../interfaces/gmx-v2/IDepositUtils.sol";
+import "../../interfaces/gmx-v2/IWithdrawalUtils.sol";
+import "../../interfaces/gmx-v2/IGmxV2Router.sol";
+import "../../interfaces/gmx-v2/IWithdrawalCallbackReceiver.sol";
 
-contract TestGmxV2 is IDepositCallbackReceiver, IWithdrawalCallbackReceiver {
+//This path is updated during deployment
+import "../../lib/local/DeploymentConstants.sol";
+
+contract GmxV2FacetArbitrum is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
+    using TransferHelper for address;
 
     address GMX_V2_ROUTER = 0x7452c558d45f8afC8c83dAe62C3f8A5BE19c71f6;
     address GMX_V2_EXCHANGE_ROUTER = 0x7C68C7866A64FA2160F78EEaE12217FFbf871fa8;
@@ -23,13 +38,9 @@ contract TestGmxV2 is IDepositCallbackReceiver, IWithdrawalCallbackReceiver {
     address ETH = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
     address USDC = 0xaf88d065e77c8cC2239327C5EDb3A432268e5831;
 
-    function getSelector(string memory _func) internal pure returns (bytes4) {
-        return bytes4(keccak256(bytes(_func)));
-    }
-
-    function depositEthUsdc(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) public payable returns (bytes[] memory) {
-        address depositedToken = isLongToken ? ETH : USDC;
-
+    //TODO: add whitelisting
+    //TODO: can you create a small doc (can be a test file
+    function _deposit(address gmToken, address depositedToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) internal returns (bytes[] memory) {
         IERC20(depositedToken).approve(GMX_V2_ROUTER, tokenAmount);
 
         bytes[] memory data = new bytes[](3);
@@ -51,7 +62,7 @@ contract TestGmxV2 is IDepositCallbackReceiver, IWithdrawalCallbackReceiver {
                 receiver: address(this), //receiver
                 callbackContract: address(this), //callbackContract
                 uiFeeReceiver: address(0), //uiFeeReceiver
-                market: GM_ETH_USDC, //market
+                market: gmToken, //market
                 initialLongToken: ETH, //initialLongToken
                 initialShortToken: USDC, //initialShortToken
                 longTokenSwapPath: new address[](0), //longTokenSwapPath
@@ -66,14 +77,15 @@ contract TestGmxV2 is IDepositCallbackReceiver, IWithdrawalCallbackReceiver {
         bytes[] memory results = BasicMulticall(GMX_V2_EXCHANGE_ROUTER).multicall{ value: msg.value }(data);
 
         //TODO: pause the Prime Account
+        //TODO: add to owned assets (once we have a feed)
         return results;
     }
 
     //TODO: withdrawal guard
-    function withdrawEthUsdc(uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) public payable returns (bytes[] memory) {
+    function _withdraw(address gmToken, uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) internal returns (bytes[] memory) {
         bytes[] memory data = new bytes[](3);
 
-        IERC20(GM_ETH_USDC).approve(GMX_V2_ROUTER, gmAmount);
+        IERC20(gmToken).approve(GMX_V2_ROUTER, gmAmount);
 
         data[0] = abi.encodeWithSelector(
             IGmxV2Router.sendWnt.selector,
@@ -83,7 +95,7 @@ contract TestGmxV2 is IDepositCallbackReceiver, IWithdrawalCallbackReceiver {
 
         data[1] = abi.encodeWithSelector(
             IGmxV2Router.sendTokens.selector,
-            GM_ETH_USDC,
+            gmToken,
             GMX_V2_WITHDRAWAL_VAULT,
             gmAmount
         );
@@ -94,7 +106,7 @@ contract TestGmxV2 is IDepositCallbackReceiver, IWithdrawalCallbackReceiver {
                 receiver: address(this), //receiver
                 callbackContract: address(this), //callbackContract
                 uiFeeReceiver: address(0), //uiFeeReceiver
-                market: GM_ETH_USDC, //market
+                market: gmToken, //market
                 longTokenSwapPath: new address[](0), //longTokenSwapPath
                 shortTokenSwapPath: new address[](0), //shortTokenSwapPath
                 minLongTokenAmount: minLongTokenAmount,
@@ -108,41 +120,22 @@ contract TestGmxV2 is IDepositCallbackReceiver, IWithdrawalCallbackReceiver {
         bytes[] memory results = BasicMulticall(GMX_V2_EXCHANGE_ROUTER).multicall{ value: msg.value }(data);
 
         //TODO: pause the Prime Account
+        //TODO: remove owned assets (once we have a feed)
         return results;
     }
 
-    function afterDepositExecution(bytes32 key, Deposit.Props memory deposit, EventUtils.EventLogData memory eventData) external override {
-        //TODO: recalculate asset exposure
-        //TODO: add assets
-        emit DepositExecuted();
+    function depositEthUsdc(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent {
+        address _depositedToken = isLongToken ? ETH : USDC;
+
+        _deposit(GM_ETH_USDC, _depositedToken, tokenAmount, minGmAmount, executionFee);
     }
 
-    function afterDepositCancellation(bytes32 key, Deposit.Props memory deposit, EventUtils.EventLogData memory eventData) external override {
-        //TODO: add assets (deposited in previous tx)
-        emit DepositCancelled();
+    function withdrawEthUsdc(uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) external payable nonReentrant onlyOwnerOrInsolvent noBorrowInTheSameBlock recalculateAssetsExposure {
+        _withdraw(GM_ETH_USDC, gmAmount, minLongTokenAmount, minShortTokenAmount, executionFee);
     }
 
-    function afterWithdrawalExecution(bytes32 key, Withdrawal.Props memory withdrawal, EventUtils.EventLogData memory eventData) external override {
-        //TODO: recalculate asset exposure
-        //TODO: add assets
-        emit WithdrawalExecuted();
+    modifier onlyOwner() {
+        DiamondStorageLib.enforceIsContractOwner();
+        _;
     }
-
-    function afterWithdrawalCancellation(bytes32 key, Withdrawal.Props memory withdrawal, EventUtils.EventLogData memory eventData) external override {
-        //TODO: add assets (deposited in previous tx)
-        emit WithdrawalCancelled();
-    }
-
-    //TODO: remove, these are mock events
-    event DepositExecuted();
-
-    event DepositCancelled();
-
-    event WithdrawalExecuted();
-
-    event WithdrawalCancelled();
-
 }
-
-
-
