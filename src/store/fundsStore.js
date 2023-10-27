@@ -768,7 +768,7 @@ export default {
       for (let [symbol, asset] of Object.entries(assets)) {
         // we don't use getApy method anymore, but fetch APYs from db
         if (apys[symbol] && apys[symbol].apy) {
-          assets[symbol].apy = apys[symbol].apy;
+          assets[symbol].apy = window.chain == 'arbitrum' ? apys[symbol].arbApy : apys[symbol].apy;
         }
       }
 

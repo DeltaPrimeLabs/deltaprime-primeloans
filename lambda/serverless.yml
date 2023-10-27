@@ -30,7 +30,7 @@ provider:
     SPRIME_ARB_TABLE: sprime-arb-${opt:stage, "dev"}
     LOAN_AVA_TABLE: loans-ava-${opt:stage, "dev"}
     LOAN_ARB_TABLE: loans-arb-${opt:stage, "dev"}
-    APY_TABLE: apy-table-${opt:stage, "dev"}
+    APY_TABLE: apys-${opt:stage, "dev"}
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -38,29 +38,35 @@ provider:
         - dynamodb:Scan
         - dynamodb:GetItem
         - dynamodb:PutItem
+        - dynamodb:UpdateItem
       Resource: "*"
-
-# you can overwrite defaults here
-#  stage: dev
-#  region: us-east-1
-
-# you can add statements to the Lambda function's IAM Role here
-#  iam:
-#    role:
-#      statements:
-#        - Effect: "Allow"
-#          Action:
-#            - "s3:ListBucket"
-#          Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }
-#        - Effect: "Allow"
-#          Action:
-#            - "s3:PutObject"
-#          Resource:
-#            Fn::Join:
-#              - ""
-#              - - "arn:aws:s3:::"
-#                - "Ref" : "ServerlessDeploymentBucket"
-#                - "/*"
+  # you can add statements to the Lambda function's IAM Role here
+  # iam:
+  #   role:
+  #     statements:
+  #       - Effect: "Allow"
+  #         Action:
+  #           - dynamodb:CreateTable
+  #           - dynamodb:CreateTableReplica
+  #           - dynamodb:CreateGlobalTable
+  #           - dynamodb:DeleteTable
+  #           - dynamodb:DeleteGlobalTable
+  #           - dynamodb:DeleteTableReplica
+  #           - dynamodb:Describe*
+  #           - dynamodb:List*
+  #           - dynamodb:Get*
+  #           - dynamodb:TagResource
+  #           - dynamodb:UntagResource
+  #           - dynamodb:UpdateContinuousBackups
+  #           - dynamodb:UpdateGlobalTable
+  #           - dynamodb:UpdateGlobalTableSettings
+  #           - dynamodb:UpdateTable
+  #           - dynamodb:UpdateTableReplicaAutoScaling
+  #           - dynamodb:UpdateTimeToLive
+  #           - dynamodb:UpdateItem
+  #           - dynamodb:Update*
+  #         Resource:
+  #           - "*"
 
 # you can define service wide environment variables here
 #  environment:
@@ -76,14 +82,14 @@ provider:
 
 functions:
   sPrimeCalculatorAva:
-    handler: sPrimeCalculatorAva.handler
+    handler: sPrime/sPrimeCalculatorAva.handler
     memorySize: 1024
     timeout: 600
     description: Calculate sPRIME Value for depositors on Avalanche.
     events:
       - schedule: rate(5 minutes)
   sPrimeCalculatorArb:
-    handler: sPrimeCalculatorArb.handler
+    handler: sPrime/sPrimeCalculatorArb.handler
     memorySize: 1024
     timeout: 600
     description: Calculate sPRIME Value for depositors on Arbitrum.
@@ -112,6 +118,64 @@ functions:
       - httpApi:
           method: get
           path: /levelTvl/{id}
+  # glpAprAggregator:
+  #   handler: aggregators/apy.glpAprAggregator
+  #   memorySize: 2048
+  #   timeout: 300
+  #   description: Fetch GLP Apr from GMX website.
+  #   events:
+  #     - schedule: rate(1 minute)
+  #   layers:
+  #     - !Ref ChromiumLambdaLayer
+  # vectorApyAggregator:
+  #   handler: aggregators/apy.vectorApyAggregator
+  #   memorySize: 2048
+  #   timeout: 300
+  #   description: Fetch auto-compounding APYs from Vector website.
+  #   events:
+  #     - schedule: rate(1 minute)
+  # lpAndFarmApyAggregator:
+  #   handler: aggregators/apy.lpAndFarmApyAggregator
+  #   memorySize: 512
+  #   timeout: 120
+  #   description: Fetch LP and Farm APYs from Pangolin and TraderJoe V1
+  #   events:
+  #     - schedule: rate(1 minute)
+  # steakHutApyAggregator:
+  #   handler: aggregators/apy.steakHutApyAggregator
+  #   memorySize: 2048
+  #   timeout: 300
+  #   description: Fetch APYs from StackHut website.
+  #   events:
+  #     - schedule: rate(1 minute)
+  # traderJoeApyAggregator:
+  #   handler: aggregators/apy.traderJoeApyAggregator
+  #   memorySize: 2048
+  #   timeout: 300
+  #   description: Fetch APYs from TraderJoe website.
+  #   events:
+  #     - schedule: rate(1 minute)
+  # sushiApyAggregator:
+  #   handler: aggregators/apy.sushiApyAggregator
+  #   memorySize: 2048
+  #   timeout: 300
+  #   description: Fetch APYs from Sushi website.
+  #   events:
+  #     - schedule: rate(1 minute)
+  # beefyApyAggregator:
+  #   handler: aggregators/apy.beefyApyAggregator
+  #   memorySize: 2048
+  #   timeout: 300
+  #   description: Fetch APYs from Beefy website.
+  #   events:
+  #     - schedule: rate(1 minute)
+  # levelApyAggregator:
+  #   handler: aggregators/apy.levelApyAggregator
+  #   memorySize: 2048
+  #   timeout: 300
+  #   description: Fetch APYs from Level website.
+  #   events:
+  #     - schedule: rate(1 minute)
   # loanAggregatorAva:
   #   handler: aggregators/loan.loanAggregatorAva
   #   memorySize: 1024
@@ -127,6 +191,11 @@ functions:
   #   events:
   #     - schedule: rate(5 minutes)
 
+layers:
+  chromium:
+    package:
+      artifact: ./chromium.zip
+
 resources:
   Resources:
     sPrimeValuesAvaTable:
@@ -136,14 +205,12 @@ resources:
         AttributeDefinitions:
           -
             AttributeName: "id"
-            AttributeType: "S"   
+            AttributeType: "S"
         KeySchema:
           -
             AttributeName: "id"
             KeyType: "HASH"
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
+        BillingMode: PAY_PER_REQUEST
         StreamSpecification:
           StreamViewType: "NEW_AND_OLD_IMAGES"
         TableName: ${self:provider.environment.SPRIME_AVA_TABLE}
@@ -154,14 +221,12 @@ resources:
         AttributeDefinitions:
           -
             AttributeName: "id"
-            AttributeType: "S"   
+            AttributeType: "S"
         KeySchema:
           -
             AttributeName: "id"
             KeyType: "HASH"
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
+        BillingMode: PAY_PER_REQUEST
         StreamSpecification:
           StreamViewType: "NEW_AND_OLD_IMAGES"
         TableName: ${self:provider.environment.SPRIME_ARB_TABLE}
@@ -172,14 +237,14 @@ resources:
     #     AttributeDefinitions:
     #       -
     #         AttributeName: "id"
-    #         AttributeType: "S"   
+    #         AttributeType: "S"
     #     KeySchema:
     #       -
     #         AttributeName: "id"
     #         KeyType: "HASH"
     #     ProvisionedThroughput:
-    #       ReadCapacityUnits: 1
-    #       WriteCapacityUnits: 1
+    #       ReadCapacityUnits: 5
+    #       WriteCapacityUnits: 5
     #     StreamSpecification:
     #       StreamViewType: "NEW_AND_OLD_IMAGES"
     #     TableName: ${self:provider.environment.LOAN_AVA_TABLE}
@@ -190,14 +255,14 @@ resources:
     #     AttributeDefinitions:
     #       -
     #         AttributeName: "id"
-    #         AttributeType: "S"   
+    #         AttributeType: "S"
     #     KeySchema:
     #       -
     #         AttributeName: "id"
     #         KeyType: "HASH"
     #     ProvisionedThroughput:
-    #       ReadCapacityUnits: 1
-    #       WriteCapacityUnits: 1
+    #       ReadCapacityUnits: 5
+    #       WriteCapacityUnits: 5
     #     StreamSpecification:
     #       StreamViewType: "NEW_AND_OLD_IMAGES"
     #     TableName: ${self:provider.environment.LOAN_ARB_TABLE}
@@ -208,14 +273,12 @@ resources:
         AttributeDefinitions:
           -
             AttributeName: "id"
-            AttributeType: "S"   
+            AttributeType: "S"
         KeySchema:
           -
             AttributeName: "id"
             KeyType: "HASH"
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
+        BillingMode: PAY_PER_REQUEST
         StreamSpecification:
           StreamViewType: "NEW_AND_OLD_IMAGES"
         TableName: ${self:provider.environment.APY_TABLE}

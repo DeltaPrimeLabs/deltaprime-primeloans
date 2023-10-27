@@ -74,7 +74,7 @@ export default ({
     },
 
     handleInput() {
-      if (this.inputType === 'number' && !this.inputValue.match(/^\d+$/)) {
+      if (this.inputType === 'number' && !this.inputValue.match(/^\d*[\.|\,]?\d{0,18}$/)) {
         this.inputValue = this.inputValue.substring(0, this.inputValue.length - 1);
       }
 
