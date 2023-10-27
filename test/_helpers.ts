@@ -951,6 +951,19 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             hardhatConfig
         )
         await deployFacet(
+            "GmxV2FacetArbitrum",
+            diamondAddress,
+            [
+                'depositEthUsdcGmxV2',
+                'withdrawEthUsdcGmxV2',
+                'afterDepositExecution',
+                'afterDepositCancellation',
+                'afterWithdrawalExecution',
+                'afterWithdrawalCancellation'
+            ],
+            hardhatConfig
+        )
+        await deployFacet(
             "SushiSwapFacet",
             diamondAddress,
             [
