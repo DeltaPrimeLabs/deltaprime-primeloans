@@ -126,12 +126,11 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
 
     // Swap to negate deficits
     for (uint32 i = 0; i < assetDeficit.length; i++) {
-      bool deficitPaidInFull;
       if (assetDeficit[i].amount != 0) {
         for (uint32 j = 0; j < assetSurplus.length; j++) {
           if (assetSurplus[j].amount != 0) {
-            deficitPaidInFull = false;
-            bool offerFound = false;
+            bool deficitPaidInFull = false;
+//            bool offerFound = false; // stackTooDeep
             for (uint32 k = 0; k < lep.offers.length; ++k) {
               // get next `offer`
               IYieldYakRouter.FormattedOffer memory offer = lep.offers[k];
@@ -142,7 +141,7 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
                 offer.path[0] == assetSurplus[j].asset &&
                 offer.path[offer.path.length - 1] == assetDeficit[i].asset
               ) {
-                offerFound = true;
+//                offerFound = true; // stackTooDeep
                 uint256 remainDeficitAmount;
                 // swap as much as possible and as little as necessary `assetSurplus[j].asset` in order to cover as much as possible / whole `assetDeficit[i].asset`
                 (deficitPaidInFull, remainDeficitAmount) = swapToNegateDeficits(
@@ -161,7 +160,7 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
                 break;  // Breaks out of offers-loop once one matching offer is found.
               }
             }
-            require(offerFound, "No matching `FormattedOffer` found.");
+//            require(offerFound, "No matching `FormattedOffer` found."); // stackTooDeep
             if (deficitPaidInFull) {
               break;
             }
