@@ -1,15 +1,18 @@
-import {ethers} from "hardhat";
-import TEST_GMX_V2 from "artifacts/contracts/mock/TestGmxV2.sol/TestGmxV2.json";
+import hre, {ethers} from "hardhat";
+import verifyContract from "./verify-contract";
+import {deploy} from "./deploy-contract";
 const fromWei = val => parseFloat(ethers.utils.formatEther(val));
 
 const fs = require("fs");
 export const toWei = ethers.utils.parseUnits;
 
-const jsonRPC = "https://rpc.vnet.tenderly.co/devnet/arbi-mainnet/0404bbd3-f5e2-4ea8-a935-652c0884053c";
-const key = fs.readFileSync("./.secret").toString().trim();
+const jsonRPC = "https://arb1.arbitrum.io/rpc";
+const key = fs.readFileSync("./.secret-2").toString().trim();
 let mnemonicWallet = new ethers.Wallet(key);
 let provider = new ethers.providers.JsonRpcProvider(jsonRPC);
 let wallet = mnemonicWallet.connect(provider);
+
+const TEST_CONTRACT_ADDRESS = '0xd476c6Bcb7e6d53D08355f89f5553107630b76c7';
 const abi = [
     {
         "inputs": [
@@ -1164,40 +1167,35 @@ function printDecodedArguments(values){
         console.log(`${arg}: ${values[0][index]}`)
     }
 }
-async function run() {
-
-    // const iface = new ethers.utils.Interface(abi)
-    // const dataSuccess = '0x5b4e956100000000000000000000000000000000000000000000000000000000000000200000000000000000000000006c21a841d6f029243af87ef01f6772f05832144b0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000070d95587d40a2caf56bd97485ab3eec10bee633600000000000000000000000082af49447d8a07e3bd95bd0d56f35241523fbab1000000000000000000000000af88d065e77c8cc2239327c5edb3a432268e5831000000000000000000000000000000000000000000000000000000000000018000000000000000000000000000000000000000000000000000000000000001a0000000000000000000000000000000000000000000000000003efb862ecd5669000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000019f2f30570800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000';
-    // const dataTest = '0x5b4e956100000000000000000000000089f85f9ec26c6bbcc102e2cb5a3c67652cc2ad8600000000000000000000000089f85f9ec26c6bbcc102e2cb5a3c67652cc2ad8600000000000000000000000070d95587d40a2caf56bd97485ab3eec10bee633600000000000000000000000082af49447d8a07e3bd95bd0d56f35241523fbab1000000000000000000000000af88d065e77c8cc2239327c5edb3a432268e5831000000000000000000000000000000000000000000000000000000000000018000000000000000000000000000000000000000000000000000000000000001a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001c6bf526340000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000';
-    // let successTxInputParameters = iface.decodeFunctionData('createDeposit', dataSuccess)
-    // let testTxInputParameters = iface.decodeFunctionData('createDeposit', dataTest)
-
-    // console.log('Successful tx:')
-    // printDecodedArguments(successTxInputParameters)
-    // console.log('Test tx:')
-    // printDecodedArguments(testTxInputParameters)
-
-
-    console.log(0)
+async function deposit() {
     const weth = await ethers.getContractAt("WETH9", '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1');
-    const tokenAmount = toWei('1');
-    const maxFee = toWei('0.0005');
-    await setBalances();
+    const tokenAmount = toWei('0.0005');
+    const maxFee = toWei('0.0015');
+    // await setBalances();
     await weth.connect(wallet).deposit({ value: tokenAmount});
-    const testAddress = await deployContract("TestGmxV2");
+    const testAddress = TEST_CONTRACT_ADDRESS;
     const test = await ethers.getContractAt('TestGmxV2', testAddress)
     await weth.connect(wallet).transfer(testAddress, tokenAmount);
 
     try {
-
-
-        await test.depositEthUsdc(true, tokenAmount, 0, maxFee, { gasLimit: 100000000, value: maxFee });
-
+        await test.connect(wallet).depositEthUsdc(true, tokenAmount, 0, maxFee, { gasLimit: 2000000, value: maxFee });
     } catch (e) {
         console.log(e);
     }
-    console.log(1);
+}
 
+async function withdraw() {
+    const gmAmount = toWei('0.01');
+    const maxFee = toWei('0.0015');
+    // await setBalances();
+    const testAddress = TEST_CONTRACT_ADDRESS;
+    const test = await ethers.getContractAt('TestGmxV2', testAddress)
+
+    try {
+        await test.connect(wallet).withdrawEthUsdc(gmAmount, 0, 0, maxFee, { gasLimit: 2000000, value: maxFee });
+    } catch (e) {
+        console.log(e);
+    }
 }
 
 async function setBalances() {
@@ -1214,25 +1212,21 @@ async function setBalances() {
 
 async function deployContract(contractName) {
     // We get the name of contract to deploy
-    const Contract = await ethers.getContractFactory(contractName);
-    const contract = await Contract.deploy();
+    let result = await deploy('TestGmxV2', {
+        from: deployer,
+        // gasLimit: 8000000,
+        args: []
+    });
 
-    return contract.address;
+    console.log(`Deployed TestGmxV2 at address: ${result.address}`);
 }
 
+async function verify() {
+    await verifyContract(hre, {
+        address: TEST_CONTRACT_ADDRESS
+    });
+}
+// deposit();
+// withdraw();
 
-run();
-
-/*
-const data = '0x7ff36ab50000000000000000000000000000000000000000000000bc18ba4144048bbab00000000000000000000000000000000000000000000000000000000000000080000000000000000000000000c0c5eb43e2df059e3be6e4fb0284c283caa5991900000000000000000000000000000000000000000000000000000000614d87a80000000000000000000000000000000000000000000000000000000000000002000000000000000000000000bb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c00000000000000000000000008ba0619b1e7a582e0bce5bbe9843322c954c340';
-
-ethers.utils.defaultAbiCoder.decode(
-    ['uint256', 'address[]', 'address', 'uint256'],
-    ethers.utils.hexDataSlice(data, 4)
-)
-
-const iface = new ethers.utils.Interface(['function swapExactETHForTokens(uint256 amountOutMin, address[] path, address to, uint256 deadline)'])
-
-iface.decodeFunctionData('swapExactETHForTokens', '0x7ff36ab50000000000000000000000000000000000000000000000bc18ba4144048bbab00000000000000000000000000000000000000000000000000000000000000080000000000000000000000000c0c5eb43e2df059e3be6e4fb0284c283caa5991900000000000000000000000000000000000000000000000000000000614d87a80000000000000000000000000000000000000000000000000000000000000002000000000000000000000000bb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c00000000000000000000000008ba0619b1e7a582e0bce5bbe9843322c954c340')
-// gives: [e, ["0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c", "0x08ba0619b1e7A582E0BCe5BBE9843322C954C340"], "0xC0C5eb43E2dF059e3Be6E4fb0284C283CAa59919", e] (4)
-*/
+// verify();
