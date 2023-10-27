@@ -27,7 +27,7 @@ contract TestGmxV2 is IDepositCallbackReceiver, IWithdrawalCallbackReceiver {
         return bytes4(keccak256(bytes(_func)));
     }
 
-    function depositEthUsdc(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) public payable returns (bytes[] memory) {
+    function depositEthUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) public payable returns (bytes[] memory) {
         address depositedToken = isLongToken ? ETH : USDC;
 
         IERC20(depositedToken).approve(GMX_V2_ROUTER, tokenAmount);
@@ -70,7 +70,7 @@ contract TestGmxV2 is IDepositCallbackReceiver, IWithdrawalCallbackReceiver {
     }
 
     //TODO: withdrawal guard
-    function withdrawEthUsdc(uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) public payable returns (bytes[] memory) {
+    function withdrawEthUsdcGmxV2(uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) public payable returns (bytes[] memory) {
         bytes[] memory data = new bytes[](3);
 
         IERC20(GM_ETH_USDC).approve(GMX_V2_ROUTER, gmAmount);
