@@ -690,56 +690,6 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         hardhatConfig
     )
 
-    if(mock) {
-        await deployFacet("SolvencyFacetMock", diamondAddress, [
-                'canRepayDebtFully',
-                'isSolvent',
-                'isSolventWithPrices',
-                'getOwnedAssetsWithNativePrices',
-                'getTotalValueWithPrices',
-                'getTotalTraderJoeV2',
-                'getHealthRatioWithPrices',
-                'getDebtAssets',
-                'getDebtAssetsPrices',
-                'getStakedPositionsPrices',
-                'getAllPricesForLiquidation',
-                'getDebt',
-                'getDebtWithPrices',
-                'getPrices',
-                'getTotalAssetsValue',
-                'getThresholdWeightedValue',
-                'getStakedValue',
-                'getTotalValue',
-                'getFullLoanStatus',
-                'getHealthRatio'
-            ],
-            hardhatConfig)
-    } else {
-        await deployFacet("SolvencyFacetProdAvalanche", diamondAddress, [
-                'canRepayDebtFully',
-                'isSolvent',
-                'isSolventWithPrices',
-                'getOwnedAssetsWithNativePrices',
-                'getTotalValueWithPrices',
-                'getTotalTraderJoeV2',
-                'getHealthRatioWithPrices',
-                'getDebtAssets',
-                'getDebtAssetsPrices',
-                'getStakedPositionsPrices',
-                'getAllPricesForLiquidation',
-                'getDebt',
-                'getDebtWithPrices',
-                'getPrices',
-                'getTotalAssetsValue',
-                'getThresholdWeightedValue',
-                'getStakedValue',
-                'getTotalValue',
-                'getFullLoanStatus',
-                'getHealthRatio'
-            ],
-            hardhatConfig)
-    }
-
     if (mock) {
         await deployFacet("HealthMeterFacetMock", diamondAddress, ['getHealthMeter'], hardhatConfig);
     } else {
@@ -747,6 +697,54 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
     }
 
     if (chain == 'AVAX') {
+        if (mock) {
+            await deployFacet("SolvencyFacetMockAvalanche", diamondAddress, [
+                    'canRepayDebtFully',
+                    'isSolvent',
+                    'isSolventWithPrices',
+                    'getOwnedAssetsWithNativePrices',
+                    'getTotalValueWithPrices',
+                    'getHealthRatioWithPrices',
+                    'getDebtAssets',
+                    'getDebtAssetsPrices',
+                    'getStakedPositionsPrices',
+                    'getAllPricesForLiquidation',
+                    'getDebt',
+                    'getDebtWithPrices',
+                    'getPrices',
+                    'getTotalAssetsValue',
+                    'getThresholdWeightedValue',
+                    'getStakedValue',
+                    'getTotalValue',
+                    'getFullLoanStatus',
+                    'getHealthRatio'
+                ],
+                hardhatConfig)
+        } else {
+            await deployFacet("SolvencyFacetProdAvalanche", diamondAddress, [
+                    'canRepayDebtFully',
+                    'isSolvent',
+                    'isSolventWithPrices',
+                    'getOwnedAssetsWithNativePrices',
+                    'getTotalValueWithPrices',
+                    'getHealthRatioWithPrices',
+                    'getDebtAssets',
+                    'getDebtAssetsPrices',
+                    'getStakedPositionsPrices',
+                    'getAllPricesForLiquidation',
+                    'getDebt',
+                    'getDebtWithPrices',
+                    'getPrices',
+                    'getTotalAssetsValue',
+                    'getThresholdWeightedValue',
+                    'getStakedValue',
+                    'getTotalValue',
+                    'getFullLoanStatus',
+                    'getHealthRatio'
+                ],
+                hardhatConfig)
+        }
+
         await deployFacet(
             "AssetsOperationsFacet",
             diamondAddress,
@@ -859,6 +857,53 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         }
     }
     if (chain == 'ARBITRUM') {
+        if (mock) {
+            await deployFacet("SolvencyFacetMockArbitrum", diamondAddress, [
+                    'canRepayDebtFully',
+                    'isSolvent',
+                    'isSolventWithPrices',
+                    'getOwnedAssetsWithNativePrices',
+                    'getTotalValueWithPrices',
+                    'getHealthRatioWithPrices',
+                    'getDebtAssets',
+                    'getDebtAssetsPrices',
+                    'getStakedPositionsPrices',
+                    'getAllPricesForLiquidation',
+                    'getDebt',
+                    'getDebtWithPrices',
+                    'getPrices',
+                    'getTotalAssetsValue',
+                    'getThresholdWeightedValue',
+                    'getStakedValue',
+                    'getTotalValue',
+                    'getFullLoanStatus',
+                    'getHealthRatio'
+                ],
+                hardhatConfig)
+        } else {
+            await deployFacet("SolvencyFacetProdArbitrum", diamondAddress, [
+                    'canRepayDebtFully',
+                    'isSolvent',
+                    'isSolventWithPrices',
+                    'getOwnedAssetsWithNativePrices',
+                    'getTotalValueWithPrices',
+                    'getHealthRatioWithPrices',
+                    'getDebtAssets',
+                    'getDebtAssetsPrices',
+                    'getStakedPositionsPrices',
+                    'getAllPricesForLiquidation',
+                    'getDebt',
+                    'getDebtWithPrices',
+                    'getPrices',
+                    'getTotalAssetsValue',
+                    'getThresholdWeightedValue',
+                    'getStakedValue',
+                    'getTotalValue',
+                    'getFullLoanStatus',
+                    'getHealthRatio'
+                ],
+                hardhatConfig)
+        }
         await deployFacet("SmartLoanWrappedNativeTokenFacet", diamondAddress, ['depositNativeToken', 'wrapNativeToken', 'unwrapAndWithdraw'], hardhatConfig)
         // await deployFacet("TraderJoeV2ArbitrumFacet", diamondAddress, ['addLiquidityTraderJoeV2', 'removeLiquidityTraderJoeV2', 'getOwnedTraderJoeV2Bins'], hardhatConfig)
         // await deployFacet("UniswapV3ArbitrumFacet", diamondAddress, ['mintLiquidityUniswapV3', 'increaseLiquidityUniswapV3', 'decreaseLiquidityUniswapV3', 'burnLiquidityUniswapV3', 'getOwnedUniswapV3TokenIds'], hardhatConfig)
@@ -902,6 +947,52 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                 'stakeGmxBeefy',
                 'unstakeSushiDpxEthLpBeefy',
                 'unstakeGmxBeefy'
+            ],
+            hardhatConfig
+        )
+        await deployFacet(
+            "SushiSwapFacet",
+            diamondAddress,
+            [
+                'sushiStakeDpxEthLp',
+                'sushiUnstakeDpxEthLp',
+                'sushiDpxEthLpBalance',
+            ],
+            hardhatConfig
+        )
+        await deployFacet(
+            "LevelFinanceFacet",
+            diamondAddress,
+            [
+                'levelStakeEthSnr',
+                'levelStakeEthMze',
+                'levelStakeEthJnr',
+                'levelStakeBtcSnr',
+                'levelStakeBtcMze',
+                'levelStakeBtcJnr',
+                'levelStakeUsdtSnr',
+                'levelStakeUsdtMze',
+                'levelStakeUsdtJnr',
+                'levelStakeUsdcSnr',
+                'levelStakeUsdcMze',
+                'levelStakeUsdcJnr',
+                'levelUnstakeEthSnr',
+                'levelUnstakeEthMze',
+                'levelUnstakeEthJnr',
+                'levelUnstakeBtcSnr',
+                'levelUnstakeBtcMze',
+                'levelUnstakeBtcJnr',
+                'levelUnstakeUsdtSnr',
+                'levelUnstakeUsdtMze',
+                'levelUnstakeUsdtJnr',
+                'levelUnstakeUsdcSnr',
+                'levelUnstakeUsdcMze',
+                'levelUnstakeUsdcJnr',
+                'levelSnrBalance',
+                'levelMzeBalance',
+                'levelJnrBalance',
+                'depositLLPAndStake',
+                'unstakeAndWithdrawLLP',
             ],
             hardhatConfig
         )
@@ -1253,7 +1344,7 @@ export class StakedPosition {
 }
 
 export const paraSwapRouteToSimpleData = (txParams: TransactionParams) => {
-    const data = "0x" + txParams.data.substr(10);
+    const data = "0x" + txParams.data.slice(10);
     const [
         decoded,
     ] = ethers.utils.defaultAbiCoder.decode(
