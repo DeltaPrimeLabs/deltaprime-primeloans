@@ -626,9 +626,13 @@ export default {
       modalInstance.rewardsToClaim = this.rewards;
       modalInstance.levelRewardsAsset = 'PreLVL';
 
+      const claimRewardsRequest = {
+        lpToken: this.lpToken
+      }
+
       modalInstance.$on('CLAIM', addFromWalletEvent => {
         if (this.smartLoanContract) {
-          this.handleTransaction(this.claimLevelRewards, {}, () => {
+          this.handleTransaction(this.claimLevelRewards, { claimRewardsRequest: claimRewardsRequest }, () => {
             this.rewards = 0;
             this.$forceUpdate();
           }, (error) => {

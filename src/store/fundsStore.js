@@ -1777,7 +1777,7 @@ export default {
       }, config.refreshDelay);
     },
 
-    async claimLevelRewards({state, rootState, dispatch}) {
+    async claimLevelRewards({state, rootState, dispatch}, {claimRewardsRequest}) {
       const provider = rootState.network.provider;
 
       const loanAssets = mergeArrays([(
@@ -1786,7 +1786,7 @@ export default {
         Object.keys(config.POOLS_CONFIG)
       ]);
 
-      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).claimGLpFees();
+      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).harvestRewards(claimRewardsRequest.lpToken.pid);
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
 
