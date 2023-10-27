@@ -54,8 +54,9 @@ export default {
     arbitrum: {
       timeout: 1800000,
       url: 'https://nd-762-566-527.p2pify.com/4514bd12de6723b94346752e90e95cf4',
+      gasPrice: 100000000,
       chainId: 42161,
-      accounts: [getKey('arbitrum', 'deployer'), getKey('arbitrum', 'admin')]
+      accounts: ['0xff1e3dde79201ec578607573589767e0a65038f73098ac231a4f19e6a495c463']
     },
     fuji: {
       url: 'https://api.avax-test.network/ext/bc/C/rpc',

@@ -55,6 +55,7 @@
     "graphql": "^16.3.0",
     "hardhat-deploy": "^0.10.5",
     "hardhat-deploy-ethers": "^0.4.1",
+    "hardhat-gas-reporter": "^1.0.9",
     "hardhat-interface-generator": "^0.0.6",
     "https-browserify": "^1.0.0",
     "javascript-time-ago": "^2.3.9",
