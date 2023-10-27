@@ -1,10 +1,8 @@
 const ethers = require("ethers");
 const fetch = require("node-fetch");
-const puppeteer = require("puppeteer");
 
-const {
-  dynamoDb,
-} = require("../utils/helpers");
+const { newChrome } = require("../utils/chrome");
+const { dynamoDb } = require("../utils/helpers");
 
 const vectorApyConfig = require('../config/vectorApy.json');
 const yieldYakConfig = require('../config/yieldYakApy.json');
@@ -18,7 +16,7 @@ const levelConfig = require('../config/levelApy.json');
 
 const formatUnits = (val, decimals) => parseFloat(ethers.utils.formatUnits(val, decimals));
 
-const levelTvlAggregator = async () => {
+const levelTvlAggregator = async (event) => {
   console.log('fetching TVLs from Level..');
   const levelApiUrl = "https://api.level.finance/v2/stats/liquidity-performance";
 
@@ -31,33 +29,42 @@ const levelTvlAggregator = async () => {
     const liquidityInUsd = formatUnits(lpInfo.totalSupply, 18) * formatUnits(lpInfo.price, 12);
     console.log(liquidityInUsd);
 
-    const tvl = {
-      id: levelConfig[lpInfo.name].symbol,
-      tvl: liquidityInUsd ? liquidityInUsd : null
-    };
-
     const params = {
       TableName: process.env.APY_TABLE,
-      Item: tvl
+      Key: {
+        id: levelConfig[lpInfo.name].symbol
+      },
+      AttributeUpdates: {
+        tvl: {
+          Value: Number(liquidityInUsd) ? liquidityInUsd : null,
+          Action: "PUT"
+        }
+      }
     };
-    await dynamoDb.put(params).promise();
+    await dynamoDb.update(params).promise();
   }
+
+  return event;
 }
 
-const glpAprAggregator = async () => {
+const glpAprAggregator = async (event) => {
   // parse GLP APR from GMX website
   const URL = "https://gmx.io/";
-  const browser = await puppeteer.launch();
-  const page = await browser.newPage();
+
+  const { browser, page } = await newChrome();
 
   // navigate gmx website and wait till fully load
-  await page.goto(URL);
-  const glpApySelector = "div.Home-token-card-option-apr";
-  await page.mainFrame().waitForFunction(
-    selector => !!document.querySelector(selector).innerText,
-    {},
-    glpApySelector
-  )
+  await page.goto(URL, {
+    waitUntil: "networkidle0",
+    timeout: 60000
+  });
+  // wait until the apy element load
+  // const glpApySelector = "div.Home-token-card-option-apr";
+  // await page.mainFrame().waitForFunction(
+  //   selector => !!document.querySelector(selector).innerText,
+  //   {},
+  //   glpApySelector
+  // )
 
   const glpApy = await page.evaluate(() => {
     // select the elements with relevant class
@@ -76,7 +83,7 @@ const glpAprAggregator = async () => {
     },
     AttributeUpdates: {
       apy: {
-        Value: glpApy ? glpApy : null,
+        Value: Number(glpApy) ? glpApy : null,
         Action: "PUT"
       }
     }
@@ -84,18 +91,21 @@ const glpAprAggregator = async () => {
   await dynamoDb.update(params).promise();
 
   await browser.close();
+
+  return event;
 }
 
-const vectorApyAggregator = async () => {
+const vectorApyAggregator = async (event) => {
   const URL = "https://vectorfinance.io/pools";
-  const browser = await puppeteer.launch({headless: false});
-  const page = await browser.newPage();
+
+  const { browser, page } = await newChrome();
 
   // navigate pools page and wait till javascript fully load.
   await page.goto(URL, {
     waitUntil: "networkidle0",
     timeout: 60000
   });
+  // wait until the apy element load
   // const vtxPriceSelector = "header.not-landing-page div[title='VTX']";
   // await page.mainFrame().waitForFunction(
   //   selector => !!document.querySelector(selector).innerText,
@@ -141,7 +151,7 @@ const vectorApyAggregator = async () => {
     },
     AttributeUpdates: {
       VF_AVAX_SAVAX_AUTO: {
-        Value: avaxApy ? avaxApy : null,
+        Value: Number(avaxApy) ? avaxApy / 100 : null,
         Action: "PUT"
       }
     }
@@ -151,11 +161,11 @@ const vectorApyAggregator = async () => {
   params = {
     TableName: process.env.APY_TABLE,
     Key: {
-      id: "AVAX"
+      id: "sAVAX"
     },
     AttributeUpdates: {
       VF_SAVAX_MAIN_AUTO: {
-        Value: savaxApy ? savaxApy : null,
+        Value: Number(savaxApy) ? savaxApy / 100 : null,
         Action: "PUT"
       }
     }
@@ -165,11 +175,11 @@ const vectorApyAggregator = async () => {
   params = {
     TableName: process.env.APY_TABLE,
     Key: {
-      id: "AVAX"
+      id: "USDC"
     },
     AttributeUpdates: {
       VF_USDC_MAIN_AUTO: {
-        Value: usdcApy ? usdcApy : null,
+        Value: Number(usdcApy) ? usdcApy / 100 : null,
         Action: "PUT"
       }
     }
@@ -179,11 +189,11 @@ const vectorApyAggregator = async () => {
   params = {
     TableName: process.env.APY_TABLE,
     Key: {
-      id: "AVAX"
+      id: "USDT"
     },
     AttributeUpdates: {
       VF_USDT_MAIN_AUTO: {
-        Value: usdtApy ? usdtApy : null,
+        Value: Number(usdtApy) ? usdtApy / 100 : null,
         Action: "PUT"
       }
     }
@@ -192,9 +202,11 @@ const vectorApyAggregator = async () => {
 
   // close browser
   await browser.close();
+
+  return event;
 }
 
-const lpAndFarmApyAggregator = async () => {
+const lpAndFarmApyAggregator = async (event) => {
   const VECTOR_APY_URL = "https://vector-api-git-overhaul-vectorfinance.vercel.app/api/v1/vtx/apr";
   const YIELDYAK_APY_AVA_URL = "https://staging-api.yieldyak.com/apys";
   const YIELDYAK_APY_ARB_URL = "https://staging-api.yieldyak.com/42161/apys";
@@ -211,14 +223,14 @@ const lpAndFarmApyAggregator = async () => {
 
       console.log(asset, apy);
 
-      params = {
+      const params = {
         TableName: process.env.APY_TABLE,
         Key: {
           id: asset
         },
         AttributeUpdates: {
           lp_apy: {
-            Value: apy ? apy : null,
+            Value: Number(apy) ?apy : null,
             Action: "PUT"
           }
         }
@@ -301,7 +313,7 @@ const lpAndFarmApyAggregator = async () => {
 
         for (const [identifier, apy] of Object.entries(apyData)) {
           attributes[identifier] = {
-            Value: apy ? apy : null,
+            Value: Number(apy) ?apy : null,
             Action: "PUT"
           }
         }
@@ -322,11 +334,256 @@ const lpAndFarmApyAggregator = async () => {
   } catch (error) {
     console.log(`Fetching farm APYs failed. Error: ${error}`);
   }
+
+  return event;
+}
+
+const steakHutApyAggregator = async (event) => {
+  const URL = "https://app.steakhut.finance/pool/";
+
+  const { browser, page } = await newChrome();
+
+  for (const [asset, address] of Object.entries(steakHutApyConfig)) {
+
+    // navigate pools page and wait till javascript fully load.
+    await page.goto(URL + address, {
+      waitUntil: "networkidle0",
+      timeout: 60000
+    });
+
+    console.log("parsing APR (7-Day)...");
+
+    const apy = await page.evaluate(() => {
+      const fields = document.querySelectorAll(".chakra-heading");
+      return fields[1].innerText.replace("%", "").trim();
+    });
+
+    console.log(asset, apy)
+
+    // update APY in db
+    const params = {
+      TableName: process.env.APY_TABLE,
+      Key: {
+        id: asset
+      },
+      AttributeUpdates: {
+        apy: {
+          Value: Number(apy) ? apy / 100 : null,
+          Action: "PUT"
+        }
+      }
+    };
+    await dynamoDb.update(params).promise();
+  }
+
+  // close browser
+  await browser.close();
+
+  return event;
+}
+
+const traderJoeApyAggregator = async (event) => {
+
+  const { browser, page } = await newChrome();
+
+  // fetch APYs for Avalanche and Arbitrum
+  for (const [network, pools] of Object.entries(traderJoeConfig)) {
+    for (const [pool, poolData] of Object.entries(pools)) {
+      // navigate pools page and wait till javascript fully load.
+      const URL = `https://traderjoexyz.com/${network}/pool/v21/`;
+      await page.goto(URL + `${poolData.assetX}/${poolData.assetY}/${poolData.binStep}`, {
+        waitUntil: "networkidle0",
+        timeout: 60000
+      });
+
+      // await page.evaluate(() => {
+      //   const tabs = document.querySelectorAll(".chakra-tabs__tab");
+      //   tabs[4].click();
+      //   return tabs;
+      // })
+      const tabs = await page.$$(".chakra-tabs__tab");
+      tabs[4].click();
+      await new Promise((resolve, reject) => setTimeout(resolve, 6000));
+
+      const stats = await page.$$(".chakra-stat__number");
+      const apy = (await (await stats[3].getProperty('textContent')).jsonValue()).replace('%', '');
+      console.log(pool, apy);
+
+      const params = {
+        TableName: process.env.APY_TABLE,
+        Key: {
+          id: pool
+        },
+        AttributeUpdates: {
+          lp_apy: {
+            Value: Number(apy) ? apy / 100 : null,
+            Action: "PUT"
+          }
+        }
+      };
+      await dynamoDb.update(params).promise();
+      await page.close();
+    }
+  }
+
+  // close browser
+  await browser.close();
+
+  return event;
+}
+
+const sushiApyAggregator = async (event) => {
+
+  const { browser, page } = await newChrome();
+
+  // fetch APYs for Avalanche and Arbitrum
+  for (const [network, pools] of Object.entries(sushiConfig)) {
+    for (const [pool, poolData] of Object.entries(pools)) {
+      // navigate pools page and wait till javascript fully load.
+      const URL = "https://www.sushi.com/pool";
+      await page.goto(URL + `/${network}%3A${poolData.address}`, {
+        waitUntil: "networkidle0",
+        timeout: 60000
+      });
+
+      const stats = await page.$$(".decoration-dotted");
+      const apy = (await (await stats[0].getProperty('textContent')).jsonValue()).replace('%', '');
+      console.log(pool, apy);
+
+      const params = {
+        TableName: process.env.APY_TABLE,
+        Key: {
+          id: pool
+        },
+        AttributeUpdates: {
+          lp_apy: {
+            Value: Number(apy) ? apy : null,
+            Action: "PUT"
+          }
+        }
+      };
+      await dynamoDb.update(params).promise();
+    }
+  }
+
+  // close browser
+  await browser.close();
+
+  return event;
+}
+
+const beefyApyAggregator = async (event) => {
+
+  const { browser, page } = await newChrome();
+
+  // fetch APYs for Avalanche and Arbitrum
+  for (const [protocol, networks] of Object.entries(beefyConfig)) {
+    for (const [network, pools] of Object.entries(networks)) {
+      for (const [pool, poolData] of Object.entries(pools)) {
+        // navigate pools page and wait till javascript fully load.
+        const URL = `https://app.beefy.com/vault/${protocol}-${network}-${pool}`;
+
+        await page.goto(URL, {
+          waitUntil: "networkidle0",
+          timeout: 60000
+        });
+
+        const apy = await page.evaluate(() => {      
+          const boxes = document.querySelectorAll("div.MuiBox-root");
+          let apy;
+          Array.from(boxes).map(box => {
+            const content = box.innerText.replace(/\s+/g, "").toLowerCase();
+            if (content.startsWith('apy')) {
+              apy = content.replace('apy', '').replace('%', '').trim();
+            }
+          });
+
+          return apy;
+        });
+
+        console.log(poolData.symbol, apy);
+
+        const params = {
+          TableName: process.env.APY_TABLE,
+          Key: {
+            id: poolData.symbol
+          },
+          AttributeUpdates: {
+            [poolData.protocolIdentifier]: {
+              Value: Number(apy) ? apy / 100 : null,
+              Action: "PUT"
+            }
+          }
+        };
+        await dynamoDb.update(params).promise();
+      }
+    }
+  }
+
+  // close browser
+  await browser.close();
+
+  return event;
+}
+
+const levelApyAggregator = async (event) => {
+  const levelApiUrl = "https://api.level.finance/v2/stats/liquidity-performance";
+  const redstoneFeedUrl = "https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-arbitrum-prod";
+
+  const redstonePriceDataRequest = await fetch(redstoneFeedUrl);
+  const redstonePriceData = await redstonePriceDataRequest.json();
+
+  // fetch APYs from Level on Arbitrum
+  const resp = await fetch(levelApiUrl);
+  const liquidityPerformance = await resp.json();
+
+  const arbLP = liquidityPerformance.find(item => item.chainId == 42161);
+  for (const lpInfo of arbLP.lpInfos) {
+    const liquidityInUsd = formatUnits(lpInfo.totalSupply, 18) * formatUnits(lpInfo.price, 12);
+
+    let tradingFees = 0;
+
+    for (const [address, fees] of Object.entries(lpInfo.feeDetailsPerWeek)) {
+      Object.values(fees).forEach(fee => {
+        tradingFees += formatUnits(fee, levelConfig.lpSymbols[address].decimals) * redstonePriceData[levelConfig.lpSymbols[address].symbol][0].dataPoints[0].value;
+      });
+    }
+
+    const profit =
+      (formatUnits(lpInfo.lvlRewards, 18) * formatUnits(lpInfo.lvlPrice, 12)) +
+      formatUnits(lpInfo.mintingFee, 6) +
+      formatUnits(lpInfo.pnlVsTrader, 30) +
+      tradingFees;
+
+    const apy = profit / liquidityInUsd / 7 * 365 * 100;
+    console.log(levelConfig[lpInfo.name].symbol, levelConfig[lpInfo.name].protocolIdentifier, apy);
+
+    const params = {
+      TableName: process.env.APY_TABLE,
+      Key: {
+        id: levelConfig[lpInfo.name].symbol
+      },
+      AttributeUpdates: {
+        [levelConfig[lpInfo.name].protocolIdentifier]: {
+          Value: Number(apy) ? apy : null,
+          Action: "PUT"
+        }
+      }
+    };
+    await dynamoDb.update(params).promise();
+  }
+
+  return event;
 }
 
 module.exports = {
   levelTvlAggregator,
   glpAprAggregator,
   vectorApyAggregator,
-  lpAndFarmApyAggregator
+  lpAndFarmApyAggregator,
+  steakHutApyAggregator,
+  traderJoeApyAggregator,
+  sushiApyAggregator,
+  beefyApyAggregator,
+  levelApyAggregator
 }
