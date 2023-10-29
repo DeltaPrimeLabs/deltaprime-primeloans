@@ -43,14 +43,7 @@
     <Banner v-if="showArbitrumPrimeAccountBanner" background="green-accent" :closable="true">
       Welcome to DeltaPrime Blue! In the coming weeks this page will significantly expand with partner protocols. Stay tuned!
     </Banner>
-    <Banner v-if="showAvalancheDepositorBanner" background="green-accent" :closable="true">
-      No DeltaPrime liquidity pools have been affected by the recent Platypus exploit. Read more in our Discord.
-<!--      <a class="banner-link" href="" target="_blank">-->
-<!--        <b>-->
-<!--          Read more.-->
-<!--        </b>-->
-<!--      </a>-->
-    </Banner>
+<!--    <Banner v-if="showAvalancheDepositorBanner" background="green-accent" :closable="true"></Banner>-->
 <!--    <Banner v-if="showAvalanchePrimeAccountBanner" background="green-accent" :closable="true"></Banner>-->
     <div class="content">
       <div class="top-bar">
