@@ -51,14 +51,7 @@
 <!--        </b>-->
 <!--      </a>-->
     </Banner>
-    <Banner v-if="showAvalanchePrimeAccountBanner" background="green-accent" :closable="true">
-      Platypus has temporarily paused withdrawals from their vaults. Read more in our Discord.
-<!--      <a class="banner-link" href="" target="_blank">-->
-<!--        <b>-->
-<!--          Read more.-->
-<!--        </b>-->
-<!--      </a>-->
-    </Banner>
+<!--    <Banner v-if="showAvalanchePrimeAccountBanner" background="green-accent" :closable="true"></Banner>-->
     <div class="content">
       <div class="top-bar">
         <div class="top-bar__left-part">
