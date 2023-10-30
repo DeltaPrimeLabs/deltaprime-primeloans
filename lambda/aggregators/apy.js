@@ -229,36 +229,37 @@ const lpAndFarmApyAggregator = async (event) => {
   const YIELDYAK_APY_ARB_URL = "https://staging-api.yieldyak.com/42161/apys";
 
   // fetching lp APYs
-  try {
-    for (const [asset, data] of Object.entries(lpAssets)) {
-      let apy;
+  for (const [asset, data] of Object.entries(lpAssets)) {
+    let apy;
+
+    try {
       if (data.dex === "Pangolin") {
         apy = await fetchPangolinLpApr(data.url);
       } else if (data.dex === "TraderJoe") {
         apy = await fetchTraderJoeLpApr(tokenAddresses[asset], data.appreciation);
       }
+    } catch (error) {
+      console.log(`Fetching ${asset} APY failed. Error: ${error}`);
+    };
 
-      console.log(asset, apy);
+    console.log(asset, apy);
 
-      const params = {
-        TableName: process.env.APY_TABLE,
-        Key: {
-          id: asset
-        },
-        AttributeUpdates: {
-          lp_apy: {
-            Value: Number(apy) ?apy : null,
-            Action: "PUT"
-          }
+    const params = {
+      TableName: process.env.APY_TABLE,
+      Key: {
+        id: asset
+      },
+      AttributeUpdates: {
+        lp_apy: {
+          Value: Number(apy) ?apy : null,
+          Action: "PUT"
         }
-      };
-      await dynamoDb.update(params).promise();
-    }
+      }
+    };
+    await dynamoDb.update(params).promise();
+  }
 
-    console.log(`Fetching lp APYs finished.`);
-  } catch (error) {
-    console.log(`Fetching lp APYs failed. Error: ${error}`);
-  };
+  console.log(`Fetching lp APYs finished.`);
 
   // fetching farm APYs
   const apys = {};

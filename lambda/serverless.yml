@@ -84,62 +84,62 @@ functions:
       - httpApi:
           method: get
           path: /levelTvl/{id}
-  # glpAprAggregator:
-  #   handler: aggregators/apy.glpAprAggregator
-  #   memorySize: 2048
-  #   timeout: 300
-  #   description: Fetch GLP Apr from GMX website.
-  #   events:
-  #     - schedule: rate(1 minute)
-  # vectorApyAggregator:
-  #   handler: aggregators/apy.vectorApyAggregator
-  #   memorySize: 2048
-  #   timeout: 300
-  #   description: Fetch auto-compounding APYs from Vector website.
-  #   events:
-  #     - schedule: rate(1 minute)
-  # lpAndFarmApyAggregator:
-  #   handler: aggregators/apy.lpAndFarmApyAggregator
-  #   memorySize: 512
-  #   timeout: 120
-  #   description: Fetch LP and Farm APYs from Pangolin and TraderJoe V1
-  #   events:
-  #     - schedule: rate(1 minute)
-  # steakHutApyAggregator:
-  #   handler: aggregators/apy.steakHutApyAggregator
-  #   memorySize: 2048
-  #   timeout: 300
-  #   description: Fetch APYs from StackHut website.
-  #   events:
-  #     - schedule: rate(1 minute)
-  # traderJoeApyAggregator:
-  #   handler: aggregators/apy.traderJoeApyAggregator
-  #   memorySize: 2048
-  #   timeout: 300
-  #   description: Fetch APYs from TraderJoe website.
-  #   events:
-  #     - schedule: rate(1 minute)
-  # sushiApyAggregator:
-  #   handler: aggregators/apy.sushiApyAggregator
-  #   memorySize: 2048
-  #   timeout: 300
-  #   description: Fetch APYs from Sushi website.
-  #   events:
-  #     - schedule: rate(1 minute)
-  # beefyApyAggregator:
-  #   handler: aggregators/apy.beefyApyAggregator
-  #   memorySize: 2048
-  #   timeout: 300
-  #   description: Fetch APYs from Beefy website.
-  #   events:
-  #     - schedule: rate(1 minute)
-  # levelApyAggregator:
-  #   handler: aggregators/apy.levelApyAggregator
-  #   memorySize: 2048
-  #   timeout: 300
-  #   description: Fetch APYs from Level website.
-  #   events:
-  #     - schedule: rate(1 minute)
+  glpAprAggregator:
+    handler: aggregators/apy.glpAprAggregator
+    memorySize: 2048
+    timeout: 300
+    description: Fetch GLP Apr from GMX website.
+    events:
+      - schedule: rate(2 minutes)
+  vectorApyAggregator:
+    handler: aggregators/apy.vectorApyAggregator
+    memorySize: 2048
+    timeout: 300
+    description: Fetch auto-compounding APYs from Vector website.
+    events:
+      - schedule: rate(2 minutes)
+  lpAndFarmApyAggregator:
+    handler: aggregators/apy.lpAndFarmApyAggregator
+    memorySize: 512
+    timeout: 120
+    description: Fetch LP and Farm APYs from Pangolin and TraderJoe V1
+    events:
+      - schedule: rate(2 minutes)
+  steakHutApyAggregator:
+    handler: aggregators/apy.steakHutApyAggregator
+    memorySize: 2048
+    timeout: 300
+    description: Fetch APYs from StackHut website.
+    events:
+      - schedule: rate(2 minutes)
+  traderJoeApyAggregator:
+    handler: aggregators/apy.traderJoeApyAggregator
+    memorySize: 2048
+    timeout: 300
+    description: Fetch APYs from TraderJoe website.
+    events:
+      - schedule: rate(3 minutes)
+  sushiApyAggregator:
+    handler: aggregators/apy.sushiApyAggregator
+    memorySize: 2048
+    timeout: 300
+    description: Fetch APYs from Sushi website.
+    events:
+      - schedule: rate(2 minutes)
+  beefyApyAggregator:
+    handler: aggregators/apy.beefyApyAggregator
+    memorySize: 2048
+    timeout: 300
+    description: Fetch APYs from Beefy website.
+    events:
+      - schedule: rate(2 minutes)
+  levelApyAggregator:
+    handler: aggregators/apy.levelApyAggregator
+    memorySize: 2048
+    timeout: 300
+    description: Fetch APYs from Level website.
+    events:
+      - schedule: rate(2 minutes)
   # loanAggregatorAva:
   #   handler: aggregators/loan.loanAggregatorAva
   #   memorySize: 1024
