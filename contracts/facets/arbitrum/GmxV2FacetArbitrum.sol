@@ -30,14 +30,14 @@ import "../../lib/local/DeploymentConstants.sol";
 contract GmxV2FacetArbitrum is  IDepositCallbackReceiver, IWithdrawalCallbackReceiver, ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     using TransferHelper for address;
 
-    address GMX_V2_ROUTER = 0x7452c558d45f8afC8c83dAe62C3f8A5BE19c71f6;
-    address GMX_V2_EXCHANGE_ROUTER = 0x7C68C7866A64FA2160F78EEaE12217FFbf871fa8;
-    address GMX_V2_DEPOSIT_VAULT = 0xF89e77e8Dc11691C9e8757e84aaFbCD8A67d7A55;
-    address GMX_V2_WITHDRAWAL_VAULT = 0x0628D46b5D145f183AdB6Ef1f2c97eD1C4701C55;
-    address GM_ETH_USDC = 0x70d95587d40A2caf56bd97485aB3Eec10Bee6336;
-    address GMX_V2_KEEPER = 0xE47b36382DC50b90bCF6176Ddb159C4b9333A7AB;
-    address ETH = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
-    address USDC = 0xaf88d065e77c8cC2239327C5EDb3A432268e5831;
+    address constant GMX_V2_ROUTER = 0x7452c558d45f8afC8c83dAe62C3f8A5BE19c71f6;
+    address constant GMX_V2_EXCHANGE_ROUTER = 0x7C68C7866A64FA2160F78EEaE12217FFbf871fa8;
+    address constant GMX_V2_DEPOSIT_VAULT = 0xF89e77e8Dc11691C9e8757e84aaFbCD8A67d7A55;
+    address constant GMX_V2_WITHDRAWAL_VAULT = 0x0628D46b5D145f183AdB6Ef1f2c97eD1C4701C55;
+    address constant GM_ETH_USDC = 0x70d95587d40A2caf56bd97485aB3Eec10Bee6336;
+    address constant GMX_V2_KEEPER = 0xE47b36382DC50b90bCF6176Ddb159C4b9333A7AB;
+    address constant ETH = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
+    address constant USDC = 0xaf88d065e77c8cC2239327C5EDb3A432268e5831;
 
     //TODO: add whitelisting
     //TODO: can you create a small doc (can be a test file
@@ -83,7 +83,7 @@ contract GmxV2FacetArbitrum is  IDepositCallbackReceiver, IWithdrawalCallbackRec
     }
 
     //TODO: withdrawal guard
-    function _withdraw(address gmToken, uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) internal returns (bytes[] memory) {
+    function _withdraw(address gmToken, uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) internal nonReentrant onlyOwnerOrInsolvent noBorrowInTheSameBlock recalculateAssetsExposure returns (bytes[] memory) {
         bytes[] memory data = new bytes[](3);
 
         IERC20(gmToken).approve(GMX_V2_ROUTER, gmAmount);
@@ -125,13 +125,13 @@ contract GmxV2FacetArbitrum is  IDepositCallbackReceiver, IWithdrawalCallbackRec
         return results;
     }
 
-    function depositEthUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent {
+    function depositEthUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable {
         address _depositedToken = isLongToken ? ETH : USDC;
 
         _deposit(GM_ETH_USDC, _depositedToken, tokenAmount, minGmAmount, executionFee);
     }
 
-    function withdrawEthUsdcGmxV2(uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) external payable nonReentrant onlyOwnerOrInsolvent noBorrowInTheSameBlock recalculateAssetsExposure {
+    function withdrawEthUsdcGmxV2(uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) external payable {
         _withdraw(GM_ETH_USDC, gmAmount, minLongTokenAmount, minShortTokenAmount, executionFee);
     }
 
