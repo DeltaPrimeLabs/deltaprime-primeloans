@@ -41,44 +41,10 @@ provider:
         - dynamodb:UpdateItem
       Resource: "*"
   # you can add statements to the Lambda function's IAM Role here
-  # iam:
-  #   role:
-  #     statements:
-  #       - Effect: "Allow"
-  #         Action:
-  #           - dynamodb:CreateTable
-  #           - dynamodb:CreateTableReplica
-  #           - dynamodb:CreateGlobalTable
-  #           - dynamodb:DeleteTable
-  #           - dynamodb:DeleteGlobalTable
-  #           - dynamodb:DeleteTableReplica
-  #           - dynamodb:Describe*
-  #           - dynamodb:List*
-  #           - dynamodb:Get*
-  #           - dynamodb:TagResource
-  #           - dynamodb:UntagResource
-  #           - dynamodb:UpdateContinuousBackups
-  #           - dynamodb:UpdateGlobalTable
-  #           - dynamodb:UpdateGlobalTableSettings
-  #           - dynamodb:UpdateTable
-  #           - dynamodb:UpdateTableReplicaAutoScaling
-  #           - dynamodb:UpdateTimeToLive
-  #           - dynamodb:UpdateItem
-  #           - dynamodb:Update*
-  #         Resource:
-  #           - "*"
 
 # you can define service wide environment variables here
 #  environment:
 #    variable1: value1
-
-# you can add packaging information here
-#package:
-#  patterns:
-#    - '!exclude-me.js'
-#    - '!exclude-me-dir/**'
-#    - include-me.js
-#    - include-me-dir/**
 
 functions:
   sPrimeCalculatorAva:
@@ -109,7 +75,7 @@ functions:
     timeout: 600
     description: Fetch TVL from Level Finance.
     events:
-      - schedule: rate(1 minute)
+      - schedule: rate(2 minutes)
   levelTvlApi:
     handler: apis/apy.levelTvlApi
     memorySize: 512
@@ -125,8 +91,6 @@ functions:
   #   description: Fetch GLP Apr from GMX website.
   #   events:
   #     - schedule: rate(1 minute)
-  #   layers:
-  #     - !Ref ChromiumLambdaLayer
   # vectorApyAggregator:
   #   handler: aggregators/apy.vectorApyAggregator
   #   memorySize: 2048
@@ -190,11 +154,6 @@ functions:
   #   description: upload loan addresses on Arbitrum
   #   events:
   #     - schedule: rate(5 minutes)
-
-layers:
-  chromium:
-    package:
-      artifact: ./chromium.zip
 
 resources:
   Resources:

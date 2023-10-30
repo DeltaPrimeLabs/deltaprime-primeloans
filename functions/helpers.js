@@ -188,7 +188,7 @@ const findNotFetchedAddresses = () => {
 //methods run
 //checkMissingLoansData();
 //findNotFetchedAddresses();
-fillTimestamps(1683720000000, 24 * 3600 * 1000, 2);
+// fillTimestamps(1683720000000, 24 * 3600 * 1000, 2);
 // fillFailedTimestamps('0x19F9C63cC50D8DbCd268F59798F8854cDCF21eE5');
 // fetchLoanAddresses();
 // fetchHistoricalPrices();

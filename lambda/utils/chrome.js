@@ -12,7 +12,7 @@ module.exports.newChrome = async () => {
       args: chromium.args,
       executablePath: await chromium.executablePath(),
       headless: chromium.headless,
-      defaultViewport: chromium.defaultViewport,
+      defaultViewport: null,
       ignoreHTTPSErrors: true,
     });
   }
