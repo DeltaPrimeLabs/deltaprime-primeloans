@@ -421,26 +421,11 @@ const traderJoeApyAggregator = async (event) => {
         timeout: 60000
       });
 
-      // wait until the apy element load
-      const tabSelector = "div.chakra-tabs__tablist";
-      await page.mainFrame().waitForFunction(
-        selector => !!document.querySelector(selector).innerText,
-        {},
-        tabSelector
-      );
-
       try {
         const tabs = await page.$$(".chakra-tabs__tab");
         await tabs[4].click();
-        await new Promise((resolve, reject) => setTimeout(resolve, 3000));
 
-        // const apySelector = "div.chakra-stat__number";
-        // await page.mainFrame().waitForFunction(
-        //   selector => !!document.querySelector(selector).innerText,
-        //   {},
-        //   apySelector
-        // );
-        // await page.screenshot({path: `./${poolData.assetX}-${poolData.assetY}.jpg`});
+        await new Promise((resolve, reject) => setTimeout(resolve, 5000));
 
         const stats = await page.$$(".chakra-stat__number");
         const apy = (await (await stats[3].getProperty('textContent')).jsonValue()).replace('%', '');
