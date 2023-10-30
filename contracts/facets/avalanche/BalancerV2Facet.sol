@@ -16,7 +16,6 @@ import "../../interfaces/facets/avalanche/IBalancerV2Facet.sol";
 //This path is updated during deployment
 import "../../lib/local/DeploymentConstants.sol";
 
-
 contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     using TransferHelper for address;
 
@@ -45,7 +44,7 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
         for (uint256 i; i < stakedTokensLength; i++) {
             if (request.stakedAmounts[i] > 0 && !tokenManager.isTokenAssetActive(request.stakedTokens[i])) revert DepositingInactiveToken();
-            if (request.stakedTokens[i] == address(pool) || request.stakedTokens[i] == address(gauge)) revert DepositingWrongToken();
+            if (request.stakedTokens[i] == address(gauge)) revert DepositingWrongToken();
         }
 
         bool allZero = true;
@@ -69,22 +68,44 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         require(!allZero, "Cannot joinPoolAndStakeBalancerV2 0 tokens");
 
         {
-            IAsset[] memory tokens = new IAsset[](stakedTokensLength + 1);
-            uint256[] memory amounts = new uint256[](stakedTokensLength + 1);
+            IAsset[] memory tokens;
+            uint256[] memory amounts;
+            bytes memory userData;
 
-            for (uint256 i; i < stakedTokensLength; i++) {
-                tokens[i] = IAsset(request.stakedTokens[i]);
-                amounts[i] = request.stakedAmounts[i];
+            {
+                uint256 length;
+                {
+                    bool hasPoolToken;
+                    for (uint256 i; i < stakedTokensLength; i++) {
+                        if (request.stakedTokens[i] == pool) {
+                            hasPoolToken = true;
+                            break;
+                        }
+                    }
+
+                    length = hasPoolToken ? stakedTokensLength : stakedTokensLength + 1;
+                }
+                tokens = new IAsset[](length);
+                amounts = new uint256[](length);
+
+                for (uint256 i; i < stakedTokensLength; i++) {
+                    tokens[i] = IAsset(request.stakedTokens[i]);
+                    amounts[i] = request.stakedAmounts[i];
+                }
+
+                if (stakedTokensLength != length) {
+                    tokens[stakedTokensLength] = IAsset(pool);
+                    amounts[stakedTokensLength] = 0;
+                }
+
+                userData = _calcUserData(request, stakedTokensLength, length);
             }
-
-            tokens[stakedTokensLength] = IAsset(pool);
-            amounts[stakedTokensLength] = 0;
 
             IVault.JoinPoolRequest memory joinRequest = IVault.JoinPoolRequest(
                 tokens,
                 amounts,
                 //https://docs.balancer.fi/reference/joins-and-exits/pool-joins.html
-                abi.encode(1, request.stakedAmounts, request.minBptAmount),
+                userData,
                 false
             );
 
@@ -111,15 +132,16 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
         // Remove deposit tokens if empty and prepare arrays for the event
         for (uint256 i; i < stakedTokensLength; ++i ) {
-            IERC20Metadata token = IERC20Metadata(request.stakedTokens[i]);
+            if (request.stakedAmounts[i] > 0) {
+                IERC20Metadata token = IERC20Metadata(request.stakedTokens[i]);
 
-            if (token.balanceOf(address(this)) == 0) {
-                DiamondStorageLib.removeOwnedAsset(tokenManager.tokenAddressToSymbol(address(token)));
+                if (token.balanceOf(address(this)) == 0) {
+                    DiamondStorageLib.removeOwnedAsset(tokenManager.tokenAddressToSymbol(address(token)));
+                }
+
+                stakedAssets[i] = tokenManager.tokenAddressToSymbol(request.stakedTokens[i]);
+                stakedAmounts[i] = initialDepositTokenBalances[i] - token.balanceOf(address(this));
             }
-
-            stakedAssets[i] = tokenManager.tokenAddressToSymbol(request.stakedTokens[i]);
-            stakedAmounts[i] = initialDepositTokenBalances[i] - token.balanceOf(address(this));
-
         }
 
         emit Staked(
@@ -213,7 +235,6 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         );
     }
 
-
     function claimRewardsBalancerV2(bytes32 poolId) external nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
@@ -223,38 +244,67 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
         gauge.claim_rewards();
 
-        bytes32[] memory rewardTokens = rewardTokens(pool);
+        bytes32[] memory _rewardTokens = rewardTokens(pool);
 
-        for (uint256 i; i < rewardTokens.length; i++) {
-            address rewardToken = tokenManager.getAssetAddress(rewardTokens[i], false);
+        for (uint256 i; i < _rewardTokens.length; i++) {
+            address rewardToken = tokenManager.getAssetAddress(_rewardTokens[i], false);
             if(IERC20(rewardToken).balanceOf(address(this)) > 0) {
-                DiamondStorageLib.addOwnedAsset(rewardTokens[i], rewardToken);
+                DiamondStorageLib.addOwnedAsset(_rewardTokens[i], rewardToken);
             }
         }
     }
 
-
     // INTERNAL FUNCTIONS
 
-    function poolToGauge(address pool) internal returns (address) {
-        if (pool == 0xA154009870E9B6431305F19b09F9cfD7284d4E7A) {
-            return 0x301A121D1d0d72C4005B354854a842A55D23251f;
+    function poolToGauge(address pool) internal pure returns (address) {
+        if (pool == 0xC13546b97B9B1b15372368Dc06529d7191081F5B) {
+            return 0x231d84C37b2C4B5a2E2Fe325BB77DAa65bF71D92;
+        }
+        if (pool == 0x9fA6aB3d78984A69e712730A2227F20bCC8b5aD9) {
+            return 0x720158c329E6558287c4539b0Ed21742B0B73436;
         }
 
         revert BalancerV2PoolNotWhitelisted();
     }
 
-    function rewardTokens(address pool) internal returns (bytes32[] memory) {
-        if (pool == 0xA154009870E9B6431305F19b09F9cfD7284d4E7A) {
+    function rewardTokens(address pool) internal pure returns (bytes32[] memory) {
+        if (pool == 0xC13546b97B9B1b15372368Dc06529d7191081F5B) {
             bytes32[] memory tokens = new bytes32[](3);
             tokens[0] = "AVAX";
-            tokens[1] = "QI";
+            tokens[1] = "ggAVAX";
+            tokens[2] = "USDC";
+
+            return tokens;
+        }
+        if (pool == 0x9fA6aB3d78984A69e712730A2227F20bCC8b5aD9) {
+            bytes32[] memory tokens = new bytes32[](3);
+            tokens[0] = "AVAX";
+            tokens[1] = "yyAVAX";
             tokens[2] = "USDC";
 
             return tokens;
         }
 
         revert BalancerV2RewardsNotDefined();
+    }
+
+    function _calcUserData(IBalancerV2Facet.StakeRequest memory request, uint256 stakedTokensLength, uint256 length) internal view returns (bytes memory userData) {
+        IVault vault = IVault(MASTER_VAULT_ADDRESS);
+        (address pool,) = vault.getPool(request.poolId);
+
+        if (stakedTokensLength != length) {
+            userData = abi.encode(1, request.stakedAmounts, request.minBptAmount);
+        } else {
+            uint256[] memory stakedAmounts = new uint256[](length - 1);
+            uint256 j;
+            for (uint256 i; i < stakedTokensLength; i++) {
+                if (request.stakedTokens[i] != pool) {
+                    stakedAmounts[j] = request.stakedAmounts[i];
+                    ++j;
+                }
+            }
+            userData = abi.encode(1, stakedAmounts, request.minBptAmount);
+        }
     }
 
     // MODIFIERS

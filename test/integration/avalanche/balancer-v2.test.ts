@@ -1,6 +1,8 @@
 import {ethers, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
+import { constructSimpleSDK, ContractMethod, SimpleFetchSDK, SwapSide } from '@paraswap/sdk';
+import axios from 'axios';
 
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json';
@@ -24,6 +26,7 @@ import {
     recompileConstantsFile,
     toBytes32,
     toWei,
+    parseParaSwapRouteData,
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
@@ -31,7 +34,6 @@ import {parseUnits} from "ethers/lib/utils";
 import {
     AddressProvider,
     MockTokenManager,
-    PangolinIntermediary,
     SmartLoanGigaChadInterface,
     SmartLoansFactory,
 } from "../../../typechain";
@@ -43,8 +45,8 @@ import web3Abi from "web3-eth-abi";
 chai.use(solidity);
 
 const {deployContract, provider} = waffle;
-const balancerTokenAddress = TOKEN_ADDRESSES['BAL_sAVAX_WAVAX_BPT'];
-const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
+const ggAvaxTokenAddress = TOKEN_ADDRESSES['BAL_ggAVAX_WAVAX_BPT'];
+const yyAvaxTokenAddress = TOKEN_ADDRESSES['BAL_yyAVAX_WAVAX_BPT'];
 
 describe('Smart loan', () => {
     before("Synchronize blockchain time", async () => {
@@ -53,8 +55,8 @@ describe('Smart loan', () => {
 
     describe('A loan with staking operations', () => {
         let smartLoansFactory: SmartLoansFactory,
-            exchange: PangolinIntermediary,
-            balancerTokenContract: Contract,
+            ggAvaxTokenContract: Contract,
+            yyAvaxTokenContract: Contract,
             loan: SmartLoanGigaChadInterface,
             wrappedLoan: any,
             nonOwnerWrappedLoan: any,
@@ -67,11 +69,37 @@ describe('Smart loan', () => {
             tokenContracts: Map<string, Contract> = new Map(),
             lendingPools: Array<PoolAsset> = [],
             supportedAssets: Array<Asset>,
+            paraSwapMin: SimpleFetchSDK,
             tokensPrices: Map<string, number>;
+
+        const getSwapData = async (srcToken: keyof typeof TOKEN_ADDRESSES, srcDecimals: number, destToken: keyof typeof TOKEN_ADDRESSES, destDecimals: number, srcAmount: any) => {
+            const priceRoute = await paraSwapMin.swap.getRate({
+                srcToken: TOKEN_ADDRESSES[srcToken],
+                srcDecimals,
+                destToken: TOKEN_ADDRESSES[destToken],
+                destDecimals,
+                amount: srcAmount.toString(),
+                userAddress: wrappedLoan.address,
+                side: SwapSide.SELL,
+            });
+            const txParams = await paraSwapMin.swap.buildTx({
+                srcToken: priceRoute.srcToken,
+                destToken: priceRoute.destToken,
+                srcAmount: priceRoute.srcAmount,
+                slippage: 300,
+                priceRoute,
+                userAddress: wrappedLoan.address,
+                partner: 'anon',
+            }, {
+                ignoreChecks: true,
+            });
+            const swapData = parseParaSwapRouteData(txParams);
+            return swapData;
+        };
 
         before("deploy factory and pool", async () => {
             [owner, depositor, liquidator] = await getFixedGasSigners(10000000);
-            let assetsList = ['AVAX', 'sAVAX', 'QI', 'USDC', 'BAL_sAVAX_WAVAX_BPT'];
+            let assetsList = ['AVAX', 'ggAVAX', 'yyAVAX', 'USDC', 'BAL_ggAVAX_WAVAX_BPT', 'BAL_yyAVAX_WAVAX_BPT'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'AVAX', airdropList: [depositor]},
             ];
@@ -82,19 +110,23 @@ describe('Smart loan', () => {
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
             tokensPrices = await getTokensPricesMap(
-                ['AVAX', 'sAVAX', 'USDC', 'QI'],
+                ['AVAX', 'USDC', 'QI'],
                 "avalanche",
                 getRedstonePrices,
                 [
                     //TODO: put price that makes sense
-                    {symbol: 'BAL_sAVAX_WAVAX_BPT', value: 1000},
+                    {symbol: 'ggAVAX', value: 5},
+                    {symbol: 'yyAVAX', value: 11},
+                    {symbol: 'BAL_ggAVAX_WAVAX_BPT', value: 1000},
+                    {symbol: 'BAL_yyAVAX_WAVAX_BPT', value: 1000},
                 ]
             );
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
             addMissingTokenContracts(tokenContracts, assetsList);
 
-            balancerTokenContract = await new ethers.Contract(balancerTokenAddress, erc20ABI, provider);
+            ggAvaxTokenContract = await new ethers.Contract(ggAvaxTokenAddress, erc20ABI, provider);
+            yyAvaxTokenContract = await new ethers.Contract(yyAvaxTokenAddress, erc20ABI, provider);
 
             let tokenManager = await deployContract(
                 owner,
@@ -107,8 +139,6 @@ describe('Smart loan', () => {
 
             await smartLoansFactory.initialize(diamondAddress, tokenManager.address);
 
-            exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, tokenManager.address, supportedAssets, "PangolinIntermediary") as PangolinIntermediary;
-
             let addressProvider = await deployContract(
                 owner,
                 AddressProviderArtifact,
@@ -118,12 +148,7 @@ describe('Smart loan', () => {
             await recompileConstantsFile(
                 'local',
                 "DeploymentConstants",
-                [
-                    {
-                        facetPath: './contracts/facets/avalanche/PangolinDEXFacet.sol',
-                        contractAddress: exchange.address,
-                    }
-                ],
+                [],
                 tokenManager.address,
                 addressProvider.address,
                 diamondAddress,
@@ -132,6 +157,8 @@ describe('Smart loan', () => {
             );
 
             await deployAllFacets(diamondAddress)
+
+            paraSwapMin = constructSimpleSDK({chainId: 43114, axios});
         });
 
         it("should deploy a smart loan", async () => {
@@ -158,7 +185,7 @@ describe('Smart loan', () => {
                 });
         });
 
-        it("should fund a loan and swap to sAVAX", async () => {
+        it("should fund a loan and swap to ggAVAX, yyAVAX", async () => {
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.equal(0);
             expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1.157920892373162e+59);
@@ -168,7 +195,10 @@ describe('Smart loan', () => {
             await wrappedLoan.fund(toBytes32("AVAX"), toWei("200"));
             await wrappedLoan.borrow(toBytes32("AVAX"), toWei("1"));
 
-            await wrappedLoan.swapPangolin(toBytes32("AVAX"), toBytes32("sAVAX"), toWei("50"), 0);
+            let swapData = await getSwapData('AVAX', 18, 'yyAVAX', 18, toWei('50'));
+            await wrappedLoan.paraSwap(swapData.selector, swapData.data, TOKEN_ADDRESSES['AVAX'], toWei('50'), TOKEN_ADDRESSES['yyAVAX'], 0);
+            swapData = await getSwapData('AVAX', 18, 'ggAVAX', 18, toWei('50'));
+            await wrappedLoan.paraSwap(swapData.selector, swapData.data, TOKEN_ADDRESSES['AVAX'], toWei('50'), TOKEN_ADDRESSES['ggAVAX'], 0);
 
             //TODO: high slippage on Pangolin
             // expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(151 * tokensPrices.get('AVAX')! + 50 * tokensPrices.get('sAVAX')!, 0.01);
@@ -176,27 +206,13 @@ describe('Smart loan', () => {
         });
 
         it("should fail to stake as a non-owner", async () => {
-
-            let userData = ethers.utils.defaultAbiCoder.encode(
-            ['uint256', 'uint256[]', 'uint256'],
-        [
-                    1,
-                    [
-                        toWei("10"), //try with no
-                        0,
-                        0
-                    ],
-                    0
-                ]
-            );
-
             //https://docs.balancer.fi/reference/joins-and-exits/pool-joins.html#userdata
             await expect(nonOwnerWrappedLoan.joinPoolAndStakeBalancerV2(
                 [
-                    "0xa154009870e9b6431305f19b09f9cfd7284d4e7a000000000000000000000013",
+                    "0xc13546b97b9b1b15372368dc06529d7191081f5b00000000000000000000001d",
                     [
-                        "0x2b2c81e08f1af8835a78bb2a90ae924ace0ea4be",
-                        "0x7275c131b1f67e8b53b4691f92b0e35a4c1c6e22",
+                        "0xA25EaF2906FA1a3a13EdAc9B9657108Af7B703e3",
+                        "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
                     ],
                     [
                         toWei("10"), //try with no
@@ -209,33 +225,19 @@ describe('Smart loan', () => {
             )).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
         });
 
-        it("should stake sAVAX in Balancer vault", async () => {
+        it("should stake ggAVAX in Balancer vault", async () => {
             let initialHR = fromWei(await wrappedLoan.getHealthRatio());
             let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
 
-            let initialStakedBalance = await balancerTokenContract.balanceOf(wrappedLoan.address);
+            let initialStakedBalance = await ggAvaxTokenContract.balanceOf(wrappedLoan.address);
             expect(initialStakedBalance).to.be.equal(0);
-
-
-            //https://docs.balancer.fi/reference/joins-and-exits/pool-joins.html
-            let userData = ethers.utils.defaultAbiCoder.encode(
-                ['uint256', 'uint256[]', 'uint256'],
-                [
-                    1,
-                    [
-                        toWei("10"), //try with no
-                        0 //2 ELEMENTS INSTEAD OF 3!
-                    ],
-                    0
-                ]
-            );
 
             await wrappedLoan.joinPoolAndStakeBalancerV2(
                 [
-                    "0xa154009870e9b6431305f19b09f9cfd7284d4e7a000000000000000000000013",
+                    "0xc13546b97b9b1b15372368dc06529d7191081f5b00000000000000000000001d",
                     [
-                        "0x2b2c81e08f1af8835a78bb2a90ae924ace0ea4be",
-                        "0x7275c131b1f67e8b53b4691f92b0e35a4c1c6e22",
+                        "0xA25EaF2906FA1a3a13EdAc9B9657108Af7B703e3",
+                        "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
                     ],
                     [
                         toWei("10"), //try with no
@@ -244,9 +246,9 @@ describe('Smart loan', () => {
                     //TODO: check slippage
                     toWei('0.0001')
                 ]
-        );
+            );
 
-            let balanceAfterStake = fromWei(await balancerTokenContract.balanceOf(wrappedLoan.address));
+            let balanceAfterStake = fromWei(await ggAvaxTokenContract.balanceOf(wrappedLoan.address));
             expect(balanceAfterStake).to.be.gt(0);
 
             //TODO: uncomment after RS feed is ready
@@ -256,7 +258,7 @@ describe('Smart loan', () => {
 
         it("should claim rewards", async () => {
             await expect(wrappedLoan.claimRewardsBalancerV2(
-                "0xa154009870e9b6431305f19b09f9cfd7284d4e7a000000000000000000000013",
+                "0xc13546b97b9b1b15372368dc06529d7191081f5b00000000000000000000001d",
             )).not.to.be.reverted;
         });
 
@@ -275,15 +277,15 @@ describe('Smart loan', () => {
                     //TODO: check slippage
                     toWei('0.0001')
                 ]
-            )).to.be.revertedWith('BalancerV2PoolNotWhitelisted()');
+            )).to.be.revertedWith('BalancerV2PoolNotWhitelisted');
         });
 
         it("should not allow staking a non-whitelisted asset", async () => {
             await expect(wrappedLoan.joinPoolAndStakeBalancerV2(
                 [
-                    "0xa154009870e9b6431305f19b09f9cfd7284d4e7a000000000000000000000013",
+                    "0xc13546b97b9b1b15372368dc06529d7191081f5b00000000000000000000001d",
                     [
-                        "0x2b2c81e08f1af8835a78bb2a90ae924ace0ea4be",
+                        "0xA25EaF2906FA1a3a13EdAc9B9657108Af7B703e3",
                         "0x7275c131b1f67e8b53b4691f92b0e35a4c1c6e22",
                     ],
                     [
@@ -293,31 +295,117 @@ describe('Smart loan', () => {
                     //TODO: check slippage
                     toWei('0.0001')
                 ]
-            )).to.be.revertedWith('DepositingInactiveToken()');
+            )).to.be.revertedWith('DepositingInactiveToken');
         });
 
-        it("should unstake part of sAVAX", async () => {
+        it("should unstake part of ggAVAX", async () => {
             let initialTotalValue = await wrappedLoan.getTotalValue();
             let initialHR = fromWei(await wrappedLoan.getHealthRatio());
             let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
 
-            let userData = ethers.utils.defaultAbiCoder.encode(
-                ['uint256', 'uint256', 'uint256'],
+            await wrappedLoan.unstakeAndExitPoolBalancerV2(
                 [
-                    0, // first exit strat - just one token
-                    (await balancerTokenContract.balanceOf(wrappedLoan.address)).div(2),
-                    0 //index of the token- sAVAX
+                    "0xc13546b97b9b1b15372368dc06529d7191081f5b00000000000000000000001d",
+                    "0xA25EaF2906FA1a3a13EdAc9B9657108Af7B703e3",
+                    toWei("9"), //max. slippage = 10%,
+                    await ggAvaxTokenContract.balanceOf(wrappedLoan.address)
                 ]
             );
 
+            //TODO: uncomment after RS feed is ready
+            // expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 25);
+            // expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 4);
+            // expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 60);
+        });
+
+        it("should stake yyAVAX in Balancer vault", async () => {
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+            let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
+
+            let initialStakedBalance = await yyAvaxTokenContract.balanceOf(wrappedLoan.address);
+            expect(initialStakedBalance).to.be.equal(0);
+
+            await wrappedLoan.joinPoolAndStakeBalancerV2(
+                [
+                    "0x9fa6ab3d78984a69e712730a2227f20bcc8b5ad900000000000000000000001f",
+                    [
+                        "0x9fa6ab3d78984a69e712730a2227f20bcc8b5ad9",
+                        "0x0000000000000000000000000000000000000000",
+                        "0xF7D9281e8e363584973F946201b82ba72C965D27",
+                    ],
+                    [
+                        0,
+                        0,
+                        toWei("10"), //try with no
+                    ],
+                    //TODO: check slippage
+                    toWei('0.0001')
+                ]
+            );
+
+            let balanceAfterStake = fromWei(await yyAvaxTokenContract.balanceOf(wrappedLoan.address));
+            expect(balanceAfterStake).to.be.gt(0);
+
+            //TODO: uncomment after RS feed is ready
+            // expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 20);
+            // expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 300);
+        });
+
+        it("should claim rewards", async () => {
+            await expect(wrappedLoan.claimRewardsBalancerV2(
+                "0x9fa6ab3d78984a69e712730a2227f20bcc8b5ad900000000000000000000001f",
+            )).not.to.be.reverted;
+        });
+
+        it("should not allow staking in a non-whitelisted Balancer vault", async () => {
+            await expect(wrappedLoan.joinPoolAndStakeBalancerV2(
+                [
+                    "0xb06fdbd2941d2f42d60accee85086198ac72923600020000000000000000001a",
+                    [
+                        "0x502580fc390606b47FC3b741d6D49909383c28a9",
+                        "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
+                    ],
+                    [
+                        0,
+                        toWei("10")
+                    ],
+                    //TODO: check slippage
+                    toWei('0.0001')
+                ]
+            )).to.be.revertedWith('BalancerV2PoolNotWhitelisted');
+        });
+
+        it("should not allow staking a non-whitelisted asset", async () => {
+            await expect(wrappedLoan.joinPoolAndStakeBalancerV2(
+                [
+                    "0x9fa6ab3d78984a69e712730a2227f20bcc8b5ad900000000000000000000001f",
+                    [
+                        "0xF7D9281e8e363584973F946201b82ba72C965D27",
+                        "0x7275c131b1f67e8b53b4691f92b0e35a4c1c6e22",
+                    ],
+                    [
+                        0,
+                        toWei("10")
+                    ],
+                    //TODO: check slippage
+                    toWei('0.0001')
+                ]
+            )).to.be.revertedWith('DepositingInactiveToken');
+        });
+
+        it("should unstake part of yyAVAX", async () => {
+            let initialTotalValue = await wrappedLoan.getTotalValue();
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+            let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
+
             await wrappedLoan.unstakeAndExitPoolBalancerV2(
                 [
-                    "0xa154009870e9b6431305f19b09f9cfd7284d4e7a000000000000000000000013",
-                    "0x2b2c81e08f1af8835a78bb2a90ae924ace0ea4be",
+                    "0x9fa6ab3d78984a69e712730a2227f20bcc8b5ad900000000000000000000001f",
+                    "0xF7D9281e8e363584973F946201b82ba72C965D27",
                     toWei("9"), //max. slippage = 10%,
-                    await balancerTokenContract.balanceOf(wrappedLoan.address)
+                    await yyAvaxTokenContract.balanceOf(wrappedLoan.address)
                 ]
-        );
+            );
 
             //TODO: uncomment after RS feed is ready
             // expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 25);
