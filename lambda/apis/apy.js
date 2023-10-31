@@ -2,7 +2,7 @@ const AWS = require('aws-sdk');
 AWS.config.setPromisesDependency(require('bluebird'));
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
 
-module.exports.levelTvlApi = (event, context, callback) => {
+const levelTvlApi = (event, context, callback) => {
   const params = {
     TableName: process.env.APY_TABLE,
     Key: {
@@ -23,4 +23,8 @@ module.exports.levelTvlApi = (event, context, callback) => {
       callback(new Error('Couldn\'t fetch TVL of the Level pool.'));
       return;
     });
+}
+
+module.exports = {
+  levelTvlApi
 }
