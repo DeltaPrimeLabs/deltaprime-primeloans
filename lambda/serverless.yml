@@ -62,9 +62,9 @@ functions:
     events:
       - schedule: rate(5 minutes)
   sPrimeAggregator:
-    handler: apis/sPrimeValue.handler
+    handler: apis/sPrimeValue.sPrimeAggregator
     memorySize: 512
-    description: List sPRIME value for a depositor
+    description: Fetch sPRIME value for a depositor
     events:
       - httpApi:
           method: get
