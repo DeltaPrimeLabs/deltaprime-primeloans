@@ -290,7 +290,8 @@ export default {
       showParaSwapWarning: config.showParaSwapWarning,
       showYakSwapWarning: config.showYakSwapWarning,
       sourceAssetsConfig: config.ASSETS_CONFIG,
-      targetAssetsConfig: config.ASSETS_CONFIG
+      targetAssetsConfig: config.ASSETS_CONFIG,
+      swapDexsConfig: config.SWAP_DEXS_CONFIG,
     };
   },
 
@@ -413,13 +414,7 @@ export default {
       this.receivedAccordingToOracle = this.estimatedNeededTokens * this.sourceAssetData.price / this.targetAssetData.price;
       dexSlippage = (this.receivedAccordingToOracle - estimatedReceivedTokens) / estimatedReceivedTokens;
 
-      let slippageMargin;
-
-      if (this.swapDex === 'ParaSwap') {
-        slippageMargin = config.paraSwapDefaultSlippage;
-      } else {
-        slippageMargin = this.slippageMargin;
-      }
+      let slippageMargin = config.SWAP_DEXS_CONFIG[this.swapDex].slippageMargin;
 
       this.marketDeviation = parseFloat((100 * dexSlippage).toFixed(3));
 
@@ -436,14 +431,14 @@ export default {
         this.slippageWarning = 'Slippage exceeds 2%. Be careful.';
       } else if (this.userSlippage < this.marketDeviation) {
         this.slippageWarning = 'Slippage below current DEX slippage. Transaction will likely fail.';
-      } else if (parseFloat((this.userSlippage - this.marketDeviation).toFixed(3)) < 0.1) {
+      } else if (parseFloat((this.userSlippage - this.marketDeviation).toFixed(3)) < 0.01) {
         this.slippageWarning = 'Slippage close to current DEX slippage. Transaction can fail.';
       }
     },
 
     setupSourceAssetOptions() {
       this.sourceAssetOptions = [];
-      const sourceAssets = this.swapDebtMode ? this.sourceAssets : this.sourceAssets[this.swapDex];
+      const sourceAssets = this.swapDebtMode ? this.sourceAssets : this.swapDexsConfig[this.swapDex].availableAssets;
       sourceAssets.forEach(assetSymbol => {
         const asset = this.sourceAssetsConfig[assetSymbol];
         const assetOption = {
@@ -459,7 +454,7 @@ export default {
     setupTargetAssetOptions() {
       this.targetAssetOptions = [];
 
-      const targetAssets = this.swapDebtMode ? this.targetAssets : this.targetAssets[this.swapDex];
+      const targetAssets = this.swapDebtMode ? this.targetAssets : this.swapDexsConfig[this.swapDex].availableAssets;
       targetAssets.forEach(assetSymbol => {
         const asset = this.targetAssetsConfig[assetSymbol];
         const assetOption = {

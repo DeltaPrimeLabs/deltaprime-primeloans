@@ -38,9 +38,16 @@ export default {
       "PNG": {name: "PNG", symbol: "PNG", logoExt: "png", decimals: 18, address: addresses.PNG, debtCoverage: 0, tradingViewSymbol: "COINBASE:PNGUSD"},
       "PTP": {name: "PTP", symbol: "PTP", logoExt: "png", decimals: 18, address: addresses.PTP, debtCoverage: 0, tradingViewSymbol: "COINEX:PTPUSDT"},
     },
-    AVAILABLE_ASSETS_PER_DEX: {
-        YakSwap: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'EUROC', 'GLP', 'sAVAX', 'GMX', 'JOE', 'QI', 'PNG', 'PTP'],
-        ParaSwap: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'sAVAX', 'QI', 'PNG', 'PTP']
+
+    SWAP_DEXS_CONFIG: {
+        YakSwap: {
+            availableAssets: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'EUROC', 'GLP', 'sAVAX', 'GMX', 'JOE', 'QI', 'PNG', 'PTP'],
+            slippageMargin: 0.02
+        },
+        ParaSwap: {
+            availableAssets: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'sAVAX', 'QI', 'PNG', 'PTP'],
+            slippageMargin: 0.05
+        }
     },
     paraSwapDefaultSlippage: 1,
     showParaSwapWarning: true,
@@ -105,7 +112,6 @@ export default {
         'TraderJoe': {
             intermediaryAddress: TRADERJOE_INTERMEDIARY_TUP.address,
             routerAddress: '0x60aE616a2155Ee3d9A68541Ba4544862310933d4',
-
             addLiquidityMethod: 'addLiquidityTraderJoe',
             removeLiquidityMethod: 'removeLiquidityTraderJoe',
             logo: 'joe.png'

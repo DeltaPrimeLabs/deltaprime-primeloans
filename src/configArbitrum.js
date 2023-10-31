@@ -39,6 +39,17 @@ export default {
         YakSwap: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'GLP', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH'],
         ParaSwap: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH']
     },
+
+    SWAP_DEXS_CONFIG: {
+        YakSwap: {
+            availableAssets: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'GLP', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH'],
+            slippageMargin: 0.02
+        },
+        ParaSwap: {
+            availableAssets: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH'],
+            slippageMargin: 0.05
+        }
+    },
     paraSwapDefaultSlippage: 0.02,
     showYakSwapWarning: true,
     ASSET_FILTER_TOKENS_OPTIONS: ['ETH', 'DPX',],

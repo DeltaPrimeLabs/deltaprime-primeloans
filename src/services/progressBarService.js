@@ -11,6 +11,7 @@ export default class ProgressBarService {
   }
 
   emitProgressBarErrorState(additionalInfo) {
+    console.log('emitting error state');
     this.requestProgressBar();
     this.progressBarState$.next({state: 'ERROR', additionalInfo});
   }
