@@ -191,11 +191,15 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
                 assets = new IAsset[](tokensLength);
                 amounts = new uint256[](tokensLength);
 
+                bool foundPoolToken;
                 for (uint256 i; i < tokensLength; ++i) {
                     assets[i] = IAsset(address(tokens[i]));
+                    if (address(tokens[i]) == pool) {
+                        foundPoolToken = true;
+                    }
                     if (address(tokens[i]) == request.unstakedToken) {
                         amounts[i] = request.unstakedAmount;
-                        unstakedIndex = i;
+                        unstakedIndex = foundPoolToken ? i - 1 : i;
                     }
                 }
             }
