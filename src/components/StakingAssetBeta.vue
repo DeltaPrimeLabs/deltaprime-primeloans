@@ -74,18 +74,18 @@
             <div class="table__header__cell asset">Asset & protocol</div>
             <div class="table__header__cell">Staked&nbsp;
               <div class="info__icon__wrapper">
-                <InfoIcon :tooltip="{content: 'How many tokens you are currently staking.', classes: 'info-tooltip long', placement: 'top'}"></InfoIcon>
+                <InfoIcon :tooltip="{content: 'How many tokens you are currently staking.', classes: 'info-tooltip long', placement: 'force-top'}"></InfoIcon>
               </div>
             </div>
             <div class="table__header__cell"></div>
             <div class="table__header__cell">Min. APY
               <div class="info__icon__wrapper">
-                <InfoIcon :tooltip="{content: minApyTooltip, classes: 'info-tooltip long', placement: 'top'}"></InfoIcon>
+                <InfoIcon :tooltip="{content: minApyTooltip, classes: 'info-tooltip long', placement: 'force-top'}"></InfoIcon>
               </div>
             </div>
             <div class="table__header__cell">Max. APY
               <div class="info__icon__wrapper">
-                <InfoIcon :tooltip="{content: maxApyTooltip, classes: 'info-tooltip long', placement: 'top'}"></InfoIcon>
+                <InfoIcon :tooltip="{content: maxApyTooltip, classes: 'info-tooltip long', placement: 'force-top'}"></InfoIcon>
               </div>
             </div>
             <div class="table__header__cell">Actions</div>

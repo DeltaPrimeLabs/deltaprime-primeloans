@@ -76,7 +76,6 @@ export default {
         hoverBackgroundColor: newHoverColors,
         borderWidth: 0,
       }]
-      console.log(this.chartData.datasets[0].data[5].x);
       this.chartData.labels = newLabels
       this.renderChart(this.chartData, this.chartOptions);
     }
@@ -118,7 +117,6 @@ export default {
               minRotation: 0,
               userCallback: function(label) {
                 return label.toFixed(5)
-
               },
             },
             gridLines: {

@@ -564,13 +564,29 @@ export default {
     },
     calculateChartData() {
       if (this.lpToken.binIds) {
-        this.chartData = this.lpToken.binIds.map((binId, index) => ({
-          isPrimary: this.lpToken.accountBalancesPrimary[index] > this.lpToken.accountBalancesSecondary[index],
-          primaryTokenBalance: this.lpToken.accountBalancesPrimary[index],
-          secondaryTokenBalance: this.lpToken.accountBalancesSecondary[index],
-          price: (1 + this.lpToken.binStep / 10000) ** (binId - 8388608) * 10 ** (this.firstAsset.decimals - this.secondAsset.decimals),
-          value: this.lpToken.accountBalancesPrimary[index] * this.firstAsset.price + this.lpToken.accountBalancesSecondary[index] * this.secondAsset.price
-        }))
+        let index = 0
+        let indexBin = this.lpToken.binIds[index]
+        while (indexBin <= this.lpToken.binIds[this.lpToken.binIds.length - 1]) {
+          if (this.lpToken.binIds.findIndex(binId => binId === indexBin) > -1) {
+            this.chartData.push({
+              isPrimary: this.lpToken.accountBalancesPrimary[index] > this.lpToken.accountBalancesSecondary[index],
+              primaryTokenBalance: this.lpToken.accountBalancesPrimary[index],
+              secondaryTokenBalance: this.lpToken.accountBalancesSecondary[index],
+              price: ((1 + this.lpToken.binStep / 10000) ** (indexBin - 8388608) * 10 ** (this.firstAsset.decimals - this.secondAsset.decimals)),
+              value: this.lpToken.accountBalancesPrimary[index] * this.firstAsset.price + this.lpToken.accountBalancesSecondary[index] * this.secondAsset.price
+            })
+            index++;
+          } else {
+            this.chartData.push({
+              isPrimary: false,
+              primaryTokenBalance: 0,
+              secondaryTokenBalance: 0,
+              price: ((1 + this.lpToken.binStep / 10000) ** (indexBin - 8388608) * 10 ** (this.firstAsset.decimals - this.secondAsset.decimals)),
+              value: 0,
+            })
+          }
+          indexBin++;
+        }
 
         this.currentPrice = (1 + this.lpToken.binStep / 10000) ** (this.activeId - 8388608) * 10 ** (this.firstAsset.decimals - this.secondAsset.decimals)
         this.currentPriceIndex = this.lpToken.binIds.findIndex(binId => binId === this.activeId)
