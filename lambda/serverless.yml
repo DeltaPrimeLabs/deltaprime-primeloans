@@ -30,7 +30,7 @@ provider:
     SPRIME_ARB_TABLE: sprime-arb-${opt:stage, "dev"}
     LOAN_AVA_TABLE: loans-ava-${opt:stage, "dev"}
     LOAN_ARB_TABLE: loans-arb-${opt:stage, "dev"}
-    APY_TABLE: apy-table-${opt:stage, "dev"}
+    APY_TABLE: apys-${opt:stage, "dev"}
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -38,52 +38,24 @@ provider:
         - dynamodb:Scan
         - dynamodb:GetItem
         - dynamodb:PutItem
+        - dynamodb:UpdateItem
       Resource: "*"
-
-# you can overwrite defaults here
-#  stage: dev
-#  region: us-east-1
-
-# you can add statements to the Lambda function's IAM Role here
-#  iam:
-#    role:
-#      statements:
-#        - Effect: "Allow"
-#          Action:
-#            - "s3:ListBucket"
-#          Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }
-#        - Effect: "Allow"
-#          Action:
-#            - "s3:PutObject"
-#          Resource:
-#            Fn::Join:
-#              - ""
-#              - - "arn:aws:s3:::"
-#                - "Ref" : "ServerlessDeploymentBucket"
-#                - "/*"
+  # you can add statements to the Lambda function's IAM Role here
 
 # you can define service wide environment variables here
 #  environment:
 #    variable1: value1
 
-# you can add packaging information here
-#package:
-#  patterns:
-#    - '!exclude-me.js'
-#    - '!exclude-me-dir/**'
-#    - include-me.js
-#    - include-me-dir/**
-
 functions:
   sPrimeCalculatorAva:
-    handler: sPrimeCalculatorAva.handler
+    handler: sPrime/sPrimeCalculatorAva.handler
     memorySize: 1024
     timeout: 600
     description: Calculate sPRIME Value for depositors on Avalanche.
     events:
       - schedule: rate(5 minutes)
   sPrimeCalculatorArb:
-    handler: sPrimeCalculatorArb.handler
+    handler: sPrime/sPrimeCalculatorArb.handler
     memorySize: 1024
     timeout: 600
     description: Calculate sPRIME Value for depositors on Arbitrum.
@@ -103,7 +75,7 @@ functions:
     timeout: 600
     description: Fetch TVL from Level Finance.
     events:
-      - schedule: rate(1 minute)
+      - schedule: rate(2 minutes)
   levelTvlApi:
     handler: apis/apy.levelTvlApi
     memorySize: 512
@@ -112,6 +84,62 @@ functions:
       - httpApi:
           method: get
           path: /levelTvl/{id}
+  glpAprAggregator:
+    handler: aggregators/apy.glpAprAggregator
+    memorySize: 2048
+    timeout: 300
+    description: Fetch GLP Apr from GMX website.
+    events:
+      - schedule: rate(2 minutes)
+  vectorApyAggregator:
+    handler: aggregators/apy.vectorApyAggregator
+    memorySize: 2048
+    timeout: 300
+    description: Fetch auto-compounding APYs from Vector website.
+    events:
+      - schedule: rate(2 minutes)
+  lpAndFarmApyAggregator:
+    handler: aggregators/apy.lpAndFarmApyAggregator
+    memorySize: 512
+    timeout: 120
+    description: Fetch LP and Farm APYs from Pangolin and TraderJoe V1
+    events:
+      - schedule: rate(2 minutes)
+  steakHutApyAggregator:
+    handler: aggregators/apy.steakHutApyAggregator
+    memorySize: 2048
+    timeout: 300
+    description: Fetch APYs from StackHut website.
+    events:
+      - schedule: rate(2 minutes)
+  traderJoeApyAggregator:
+    handler: aggregators/apy.traderJoeApyAggregator
+    memorySize: 2048
+    timeout: 300
+    description: Fetch APYs from TraderJoe website.
+    events:
+      - schedule: rate(5 minutes)
+  sushiApyAggregator:
+    handler: aggregators/apy.sushiApyAggregator
+    memorySize: 2048
+    timeout: 300
+    description: Fetch APYs from Sushi website.
+    events:
+      - schedule: rate(2 minutes)
+  beefyApyAggregator:
+    handler: aggregators/apy.beefyApyAggregator
+    memorySize: 2048
+    timeout: 300
+    description: Fetch APYs from Beefy website.
+    events:
+      - schedule: rate(2 minutes)
+  levelApyAggregator:
+    handler: aggregators/apy.levelApyAggregator
+    memorySize: 2048
+    timeout: 300
+    description: Fetch APYs from Level website.
+    events:
+      - schedule: rate(2 minutes)
   # loanAggregatorAva:
   #   handler: aggregators/loan.loanAggregatorAva
   #   memorySize: 1024
@@ -136,14 +164,12 @@ resources:
         AttributeDefinitions:
           -
             AttributeName: "id"
-            AttributeType: "S"   
+            AttributeType: "S"
         KeySchema:
           -
             AttributeName: "id"
             KeyType: "HASH"
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
+        BillingMode: PAY_PER_REQUEST
         StreamSpecification:
           StreamViewType: "NEW_AND_OLD_IMAGES"
         TableName: ${self:provider.environment.SPRIME_AVA_TABLE}
@@ -154,14 +180,12 @@ resources:
         AttributeDefinitions:
           -
             AttributeName: "id"
-            AttributeType: "S"   
+            AttributeType: "S"
         KeySchema:
           -
             AttributeName: "id"
             KeyType: "HASH"
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
+        BillingMode: PAY_PER_REQUEST
         StreamSpecification:
           StreamViewType: "NEW_AND_OLD_IMAGES"
         TableName: ${self:provider.environment.SPRIME_ARB_TABLE}
@@ -172,14 +196,14 @@ resources:
     #     AttributeDefinitions:
     #       -
     #         AttributeName: "id"
-    #         AttributeType: "S"   
+    #         AttributeType: "S"
     #     KeySchema:
     #       -
     #         AttributeName: "id"
     #         KeyType: "HASH"
     #     ProvisionedThroughput:
-    #       ReadCapacityUnits: 1
-    #       WriteCapacityUnits: 1
+    #       ReadCapacityUnits: 5
+    #       WriteCapacityUnits: 5
     #     StreamSpecification:
     #       StreamViewType: "NEW_AND_OLD_IMAGES"
     #     TableName: ${self:provider.environment.LOAN_AVA_TABLE}
@@ -190,14 +214,14 @@ resources:
     #     AttributeDefinitions:
     #       -
     #         AttributeName: "id"
-    #         AttributeType: "S"   
+    #         AttributeType: "S"
     #     KeySchema:
     #       -
     #         AttributeName: "id"
     #         KeyType: "HASH"
     #     ProvisionedThroughput:
-    #       ReadCapacityUnits: 1
-    #       WriteCapacityUnits: 1
+    #       ReadCapacityUnits: 5
+    #       WriteCapacityUnits: 5
     #     StreamSpecification:
     #       StreamViewType: "NEW_AND_OLD_IMAGES"
     #     TableName: ${self:provider.environment.LOAN_ARB_TABLE}
@@ -208,14 +232,12 @@ resources:
         AttributeDefinitions:
           -
             AttributeName: "id"
-            AttributeType: "S"   
+            AttributeType: "S"
         KeySchema:
           -
             AttributeName: "id"
             KeyType: "HASH"
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
+        BillingMode: PAY_PER_REQUEST
         StreamSpecification:
           StreamViewType: "NEW_AND_OLD_IMAGES"
         TableName: ${self:provider.environment.APY_TABLE}

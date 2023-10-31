@@ -396,8 +396,6 @@ export default {
     },
 
     async updateBinRange({value, dragging, error}) {
-      if (dragging === false) this.calculateParameters();
-
       this.error = error;
       this.binRange = value;
       if (this.activeId < value[0] && this.minAboveActive === false) {
@@ -413,16 +411,17 @@ export default {
       }
 
       this.sliderError = this.$refs.slider.error;
-
       this.firstInputError = await this.$refs.firstInput.forceValidationCheck();
       this.secondInputError = await this.$refs.secondInput.forceValidationCheck();
+
+      if (dragging === false) this.calculateParameters();
     },
 
     updateMinBinPrice({value, invalid}) {
       const binId = this.getBinId(value);
       this.minPriceChanging = true;
 
-      this.binRange = [binId, this.binRange[1]];
+      this.binRange = [Math.min(binId > 0 ? binId : 0, this.binRange[1]), this.binRange[1]];
       this.calculateParameters();
     },
 
@@ -430,7 +429,7 @@ export default {
       const binId = this.getBinId(value);
       this.maxPriceChanging = true;
 
-      this.binRange = [this.binRange[0], binId];
+      this.binRange = [this.binRange[0], Math.max(binId > 0 ? binId : 0, this.binRange[0])];
       this.calculateParameters();
     },
 
@@ -465,6 +464,8 @@ export default {
       this.sliderValidators = [
         {
           validate: (addedRange) => {
+            if (addedRange[0] === 0 || addedRange[1] === 0) return "Invalid range. The price must be higher than 0.";
+
             let newBins = [];
             for (let i = addedRange[0]; i <= addedRange[1]; i++) {
               newBins.push(i);
@@ -512,7 +513,7 @@ export default {
       const distributionSum = distributionX.reduce((a, b) => BigNumber.from(a).add(BigNumber.from(b)), 0);
       const amount = parseFloat(this.firstAmount) * parseFloat(formatUnits(distributionSum.toString()));
 
-      return amount == 0 ? 0 : amount.toFixed(5);
+      return amount == 0 ? 0 : amount.toFixed(7);
     },
 
     getSecondAssetAmount(batchId) {
@@ -520,7 +521,7 @@ export default {
       const distributionSum = distributionY.reduce((a, b) => BigNumber.from(a).add(BigNumber.from(b)), 0);
       const amount = parseFloat(this.secondAmount) * parseFloat(formatUnits(distributionSum.toString()));
 
-      return amount == 0 ? 0 : amount.toFixed(5);
+      return amount == 0 ? 0 : amount.toFixed(7);
     }
   }
 };

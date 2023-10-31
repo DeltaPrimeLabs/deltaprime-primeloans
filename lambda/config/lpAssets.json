@@ -1,15 +1,15 @@
 {
   "PNG_AVAX_USDC_LP": {
     "dex": "Pangolin",
-    "url": "https://api.pangolin.exchange/pangolin/apr2/55"
+    "url": "https://api.pangolin.exchange/v2/43114/pangolin/aprs/55"
   },
   "PNG_AVAX_USDT_LP": {
     "dex": "Pangolin",
-    "url": "https://api.pangolin.exchange/pangolin/apr2/113"
+    "url": "https://api.pangolin.exchange/v2/43114/pangolin/aprs/113"
   },
   "PNG_AVAX_ETH_LP": {
     "dex": "Pangolin",
-    "url": "https://api.pangolin.exchange/pangolin/apr2/8"
+    "url": "https://api.pangolin.exchange/v2/43114/pangolin/aprs/8"
   },
   "TJ_AVAX_USDC_LP": {
     "dex": "TraderJoe",

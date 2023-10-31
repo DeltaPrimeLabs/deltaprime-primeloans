@@ -19,6 +19,11 @@ const parseUnits = ethers.utils.parseUnits;
 const formatUnits = ethers.utils.formatUnits;
 const fromWei = val => parseFloat(ethers.utils.formatEther(val));
 
+const jsonRpcAva = config.jsonRpcAva;
+const jsonRpcArb = config.jsonRpcArb;
+const avalancheProvider = new ethers.providers.JsonRpcProvider(jsonRpcAva);
+const arbitrumProvider = new ethers.providers.JsonRpcProvider(jsonRpcArb);
+
 const getHistoricalTokenPrice = async (token, timestamp) => {
   let depth = 0;
   while (1) {
@@ -47,10 +52,14 @@ const wrap = (contract, network) => {
   );
 }
 
-const jsonRpcAva = config.jsonRpcAva;
-const jsonRpcArb = config.jsonRpcArb;
-const avalancheProvider = new ethers.providers.JsonRpcProvider(jsonRpcAva);
-const arbitrumProvider = new ethers.providers.JsonRpcProvider(jsonRpcArb);
+const getWrappedContracts = (addresses, network) => {
+  return addresses.map(address => {
+    const loanContract = new ethers.Contract(address, LOAN.abi, network == "avalanche" ? wallet : walletArbitrum);
+    const wrappedContract = wrap(loanContract, network);
+
+    return wrappedContract;
+  });
+}
 
 module.exports = {
   parseUnits,
@@ -61,5 +70,6 @@ module.exports = {
   wrap,
   avalancheProvider,
   arbitrumProvider,
-  dynamoDb
+  dynamoDb,
+  getWrappedContracts
 }

@@ -10,9 +10,8 @@ import {formatUnits, fromWei, parseUnits, toWei} from '@/utils/calculate';
 import config from '@/config';
 import redstone from 'redstone-api';
 import {BigNumber, utils} from 'ethers';
-import {initializeApp} from 'firebase/app';
-import {getFirestore, collection, query, getDocs} from 'firebase/firestore/lite';
-import firebaseConfig from '../../.secrets/firebaseConfig.json';
+import * as AWS from 'aws-sdk';
+import awsConfig from '../../.secrets/awsConfig.json';
 import {getBinPrice, mergeArrays, paraSwapRouteToSimpleData, removePaddedTrailingZeros} from '../utils/calculate';
 import wrappedAbi from '../../test/abis/WAVAX.json';
 import erc20ABI from '../../test/abis/ERC20.json';
@@ -36,7 +35,14 @@ let TOKEN_MANAGER;
 let TOKEN_MANAGER_TUP;
 let TOKEN_ADDRESSES;
 
-const fireStore = getFirestore(initializeApp(firebaseConfig));
+AWS.config.update({
+  region: 'us-east-1',
+  endpoint: 'dynamodb.us-east-1.amazonaws.com',
+  accessKeyId: awsConfig.accessKey,
+  secretAccessKey: awsConfig.secretKey
+});
+
+const docClient = new AWS.DynamoDB.DocumentClient();
 
 export default {
   namespaced: true,
@@ -273,12 +279,17 @@ export default {
     },
 
     async setupApys({commit}) {
-      const apys = {};
-      const apysQuerySnapshot = await getDocs(query(collection(fireStore, 'apys')));
+      let params = {
+        TableName: "apys-prod"
+      };
 
-      apysQuerySnapshot.forEach((doc) => {
-        apys[doc.id] = doc.data();
+      const apyDoc = await docClient.scan(params).promise();
+      const apys = {};
+
+      apyDoc.Items.map(apy => {
+        apys[apy.id] = {...apy};
       });
+      console.log(apys);
 
       commit('setApys', apys);
     },
@@ -768,7 +779,7 @@ export default {
       for (let [symbol, asset] of Object.entries(assets)) {
         // we don't use getApy method anymore, but fetch APYs from db
         if (apys[symbol] && apys[symbol].apy) {
-          assets[symbol].apy = apys[symbol].apy;
+          assets[symbol].apy = window.chain == 'arbitrum' ? apys[symbol].arbApy : apys[symbol].apy;
         }
       }
 
