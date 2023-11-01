@@ -9,14 +9,20 @@ module.exports = async ({
     const {deployer} = await getNamedAccounts();
 
     // IMPORTANT: Update contract's name and path accordingly before using the 0_deploy_contract.js script
-    embedCommitHash('UsdcVariableUtilisationRatesCalculator', './contracts/deployment/avalanche');
-    const contractName = 'UsdcVariableUtilisationRatesCalculator';
+    // embedCommitHash('TestGmxV2', './contracts/deployment/avalanche');
+    const contractName = 'TestGmxV2';
+
+    console.log(await getNamedAccounts())
+    console.log(deployer.address)
     let result = await deploy(contractName, {
         from: deployer,
-        gasLimit: 8000000
+        // gasLimit: 8000000
     });
 
+    console.log('result.address: ', result.address)
+
     await verifyContract(hre, {
+        contract: 'contracts/mock/TestGmxV2.sol:TestGmxV2',
         address: result.address
     });
 
