@@ -55,9 +55,10 @@ const fetchHistoricalPrices = async (timestamp) => {
 
     const response = await fetch(url);
 
-    json[timestamp].push(await response.json());
+    json.push(await response.json());
   }
 
+  console.log('-----------------------------');
   console.log(json)
   // fs.writeFileSync('feeds.json', JSON.stringify(json));
 
