@@ -24,48 +24,44 @@ let wallet = mnemonicWallet.connect(provider);
 
 
 const fetchHistoricalPrices = async (timestamp) => {
-  const file = fs.readFileSync('timestamps.json', 'utf-8');
-  let timestampsData = JSON.parse(file);
+  // const file = fs.readFileSync('timestamps.json', 'utf-8');
+  // let timestampsData = JSON.parse(file);
 
-  const feedsFile = fs.readFileSync('feeds.json', 'utf-8');
-  let json = JSON.parse(feedsFile);
+  // const feedsFile = fs.readFileSync('feeds.json', 'utf-8');
+  // let json = JSON.parse(feedsFile);
 
   const nodeAddress1 = '0x83cbA8c619fb629b81A65C2e67fE15cf3E3C9747';
   const nodeAddress2 = '0x2c59617248994D12816EE1Fa77CE0a64eEB456BF';
   const nodeAddress3 = '0x12470f7aBA85c8b81D63137DD5925D6EE114952b';
 
-  const timestamps = timestampsData.timestamps;
+  // const timestamps = timestampsData.timestamps;
 
-  for (let timestamp of timestamps) {
-    if (json[timestamp.length > 0]) continue;
+  const json = [];
 
-    json[timestamp] = [];
+  const dater = new EthDater(web);
 
-    const dater = new EthDater(web);
+  let blockData = await dater.getDate(timestamp);
 
-    let blockData = await dater.getDate(timestamp);
+  let block = await provider.getBlock(blockData.block);
 
-    let block = await provider.getBlock(blockData.block);
+  let approxTimestamp = parseInt((block.timestamp / 10).toString()) * 10; //requirement for Redstone
 
-    let approxTimestamp = parseInt((block.timestamp / 10).toString()) * 10; //requirement for Redstone
+  const feeds = await queryHistoricalFeeds(approxTimestamp, [nodeAddress1, nodeAddress2, nodeAddress3]);
 
-    const feeds = await queryHistoricalFeeds(approxTimestamp, [nodeAddress1, nodeAddress2, nodeAddress3]);
+  for (let obj of feeds) {
 
-    for (let obj of feeds) {
+    let txId = obj.node.id;
+    let url = `https://arweave.net/${txId}`;
 
-      let txId = obj.node.id;
-      let url = `https://arweave.net/${txId}`;
+    const response = await fetch(url);
 
-      const response = await fetch(url);
-
-      json[timestamp].push(await response.json());
-    }
+    json[timestamp].push(await response.json());
   }
 
   console.log(json)
-  fs.writeFileSync('feeds.json', JSON.stringify(json));
+  // fs.writeFileSync('feeds.json', JSON.stringify(json));
 
-  // return json;
+  return json;
 }
 
 async function getData(loanAddress, timestamp) {
@@ -80,14 +76,14 @@ async function getData(loanAddress, timestamp) {
 
     let loan = new ethers.Contract(loanAddress, ARTIFACT.abi, wallet);
 
-    const feedsFile = fs.readFileSync('feeds.json', 'utf-8');
+    // const feedsFile = fs.readFileSync('feeds.json', 'utf-8');
 
-    let json = JSON.parse(feedsFile);
-    // const json = await fetchHistoricalPrices(timestamp);
+    // let json = JSON.parse(feedsFile);
+    const json = await fetchHistoricalPrices(timestamp);
 
-    if (json[timestamp].length == 0) return;
+    // if (json[timestamp].length == 0) return;
 
-    const feeds = json[timestamp].map(feed => SignedDataPackage.fromObj(feed));
+    const feeds = json.map(feed => SignedDataPackage.fromObj(feed));
 
     const wrappedContract =
         WrapperBuilder.wrap(loan).usingDataPackages(feeds);
@@ -111,19 +107,20 @@ async function getData(loanAddress, timestamp) {
 
     return status;
   } catch (e) {
-    console.log(`fetching ${loanAddress} at ${timestamp} failed`)
-    console.log(e);
-    const file = fs.readFileSync("./failed-loans.json", "utf-8");
-    let data = JSON.parse(file);
+    return getData(loanAddress, timestamp - 1800 * 1000);
+    // console.log(`fetching ${loanAddress} at ${timestamp} failed`)
+    // console.log(e);
+    // const file = fs.readFileSync("./failed-loans.json", "utf-8");
+    // let data = JSON.parse(file);
 
-    if (!data.failed[loanAddress]) data.failed[loanAddress] = [];
+    // if (!data.failed[loanAddress]) data.failed[loanAddress] = [];
 
-    data.failed[loanAddress].push(timestamp);
-    data.failed[loanAddress] = [...new Set(data.failed[loanAddress])]; //removing duplicates
+    // data.failed[loanAddress].push(timestamp);
+    // data.failed[loanAddress] = [...new Set(data.failed[loanAddress])]; //removing duplicates
 
-    data = JSON.stringify(data);
+    // data = JSON.stringify(data);
 
-    fs.writeFileSync("./failed-loans.json", data);
+    // fs.writeFileSync("./failed-loans.json", data);
   }
 }
 
