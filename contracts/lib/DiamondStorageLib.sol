@@ -70,6 +70,10 @@ library DiamondStorageLib {
         EnumerableMap.Bytes32ToAddressMap ownedAssets;
         // Staked positions of the contract
         IStakingPositions.StakedPosition[] currentStakedPositions;
+
+        // Timestamp since which the account is frozen
+        // 0 means an account that is not frozen. Any other value means that the account is frozen
+        uint256 frozenSince;
     }
 
     struct TraderJoeV2Storage {
@@ -138,11 +142,33 @@ library DiamondStorageLib {
 
     event PauseAdminOwnershipTransferred(address indexed previousPauseAdmin, address indexed newPauseAdmin);
 
+    event AccountFrozen(address indexed freezeToken, uint256 timestamp);
+
+    event AccountUnfrozen(address indexed keeper, uint256 timestamp);
+
     function setContractOwner(address _newOwner) internal {
         SmartLoanStorage storage sls = smartLoanStorage();
         address previousOwner = sls.contractOwner;
         sls.contractOwner = _newOwner;
         emit OwnershipTransferred(previousOwner, _newOwner);
+    }
+
+    function freezeAccount(address freezeToken) internal {
+        SmartLoanStorage storage sls = smartLoanStorage();
+        sls.frozenSince = block.timestamp;
+        emit AccountFrozen(freezeToken, block.timestamp);
+    }
+
+    function isAccountFrozen() internal view returns (bool){
+        SmartLoanStorage storage sls = smartLoanStorage();
+        return sls.frozenSince != 0;
+    }
+
+    function unfreezeAccount(address keeperAddress) internal {
+        SmartLoanStorage storage sls = smartLoanStorage();
+        require(sls.frozenSince != 0, "Account is not frozen");
+        sls.frozenSince = 0;
+        emit AccountUnfrozen(keeperAddress, block.timestamp);
     }
 
     function getTjV2OwnedBins() internal returns(ITraderJoeV2Facet.TraderJoeV2Bin[] storage bins){

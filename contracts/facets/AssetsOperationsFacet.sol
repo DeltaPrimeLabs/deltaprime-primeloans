@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 import "../lib/SolvencyMethods.sol";
 import "../interfaces/ITokenManager.sol";
+import "./SmartLoanLiquidationFacet.sol";
 import "../interfaces/facets/IYieldYakRouter.sol";
 
 //this path is updated during deployment
@@ -155,6 +156,16 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         }
 
         emit Repaid(msg.sender, _asset, _amount, block.timestamp);
+    }
+
+    function unfreezeAccount() external onlyWhitelistedLiquidators {
+        DiamondStorageLib.unfreezeAccount(msg.sender);
+    }
+
+    modifier onlyWhitelistedLiquidators() {
+        // External call in order to execute this method in the SmartLoanDiamondBeacon contract storage
+        require(SmartLoanLiquidationFacet(DeploymentConstants.getDiamondAddress()).isLiquidatorWhitelisted(msg.sender), "Only whitelisted liquidators can execute this method");
+        _;
     }
 
     /**
