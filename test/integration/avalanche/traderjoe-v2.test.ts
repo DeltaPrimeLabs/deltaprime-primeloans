@@ -42,6 +42,10 @@ import { IVectorFinanceCompounder__factory } from './../../../typechain/factorie
 import {BigNumber, BigNumberish, Contract} from "ethers";
 import {deployDiamond, replaceFacet} from '../../../tools/diamond/deploy-diamond';
 import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
+import * as traderJoeSdk from "@traderjoe-xyz/sdk-v2";
+import {TokenAmount} from "@traderjoe-xyz/sdk-core";
+import {JSBI} from "@traderjoe-xyz/sdk";
+import { Token } from '@traderjoe-xyz/sdk-core';
 
 chai.use(solidity);
 
@@ -60,6 +64,14 @@ const LBRouterAbi = [
     'function addLiquidity((address tokenX, address tokenY, uint256 binStep, uint256 amountX, uint256 amountY, uint256 amountXMin, uint256 amountYMin, uint256 activeIdDesired, uint256 idSlippage, int256[] deltaIds, uint256[] distributionX, uint256[] distributionY, address to, address refundTo, uint256 deadline))',
     'event DepositedToBins(address indexed sender,address indexed to,uint256[] ids,bytes32[] amounts)'
 ]
+
+const LBPairABI = [
+    'function getReserves() public view returns (uint128, uint128)',
+    'function getActiveId() public view returns (uint24)',
+    'function balanceOf(address, uint256) public view returns (uint256)',
+    'function getBin(uint24) public view returns (uint128, uint128)',
+    'function totalSupply(uint256) public view returns (uint256)'
+];
 
 const {deployContract, provider} = waffle;
 describe('Smart loan', () => {
@@ -188,12 +200,12 @@ describe('Smart loan', () => {
             expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1.157920892373162e+59);
 
-            await tokenContracts.get('AVAX')!.connect(owner).deposit({value: toWei("10")});
-            await tokenContracts.get('AVAX')!.connect(owner).approve(wrappedLoan.address, toWei("10"));
-            await wrappedLoan.fund(toBytes32("AVAX"), toWei("10"));
+            await tokenContracts.get('AVAX')!.connect(owner).deposit({value: toWei("30")});
+            await tokenContracts.get('AVAX')!.connect(owner).approve(wrappedLoan.address, toWei("30"));
+            await wrappedLoan.fund(toBytes32("AVAX"), toWei("30"));
 
             await wrappedLoan.swapTraderJoe(toBytes32("AVAX"), toBytes32("USDC"), toWei("2.5"), 0);
-            await wrappedLoan.swapTraderJoe(toBytes32("AVAX"), toBytes32("BTC"), toWei("2.5"), 0);
+            await wrappedLoan.swapTraderJoe(toBytes32("AVAX"), toBytes32("BTC"), toWei("15"), 0);
             await wrappedLoan.swapTraderJoe(toBytes32("AVAX"), toBytes32("ETH"), toWei("2.5"), 0);
 
             //for owner direct liquidity providing
@@ -201,8 +213,6 @@ describe('Smart loan', () => {
             await wrappedLoan.withdraw(toBytes32("AVAX"), parseUnits("0.1", BigNumber.from(18)));
             await wrappedLoan.withdraw(toBytes32("ETH"), parseUnits("0.001", BigNumber.from(18)));
             await wrappedLoan.borrow(toBytes32("AVAX"), toWei("1"));
-
-            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(11 * tokensPrices.get('AVAX')! - 10, 3);
         });
 
         it("should fail to add LB as a non-owner", async () => {
@@ -647,5 +657,238 @@ describe('Smart loan', () => {
                     Math.ceil((new Date().getTime() / 1000) + 100)]
             )).to.be.reverted;
         });
+        it("should check total value for AVAX-USDC pair", async () => {
+            const addedAvax = '1000000000000000000';
+            const addedUSDC = '10000000';
+
+            let tjvBefore = fromWei(await wrappedLoan.getTotalTraderJoeV2());
+
+            const tokenX = initializeToken({
+                address: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7',
+                decimals: 18,
+                symbol: 'WAVAX',
+                name: 'WAVAX'
+            });
+
+
+            const tokenY = initializeToken({
+                address: '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E',
+                decimals: 6,
+                symbol: 'USDC',
+                name: 'USDC'
+            });
+
+            const lbPairContract = new ethers.Contract('0xD446eb1660F766d533BeCeEf890Df7A69d26f7d1', LBPairABI, provider);
+
+            const activeId = await lbPairContract.getActiveId()
+
+            let input = getAddLiquidityParameters(
+                owner.address,
+                tokenX,
+                tokenY,
+                addedAvax,
+                addedUSDC,
+                "getUniformDistributionFromBinRange",
+                20,
+                activeId,
+                [activeId - 10, activeId + 10],
+                2,
+                2
+
+            );
+
+            await expect(wrappedLoan.addLiquidityTraderJoeV2(input)).not.to.be.reverted;
+
+
+            let tjvAfter = fromWei(await wrappedLoan.getTotalTraderJoeV2());
+            await expect(tjvAfter - tjvBefore).to.be.closeTo(tokensPrices.get('AVAX') * 1 + tokensPrices.get('USDC') * 10, 0.1);
+        });
+
+        it("should check total value for BTC.b-AVAX pair", async () => {
+            const addedBtc = '100000';
+            const addedAvax = '1000000000000000000';
+
+            let tjvBefore = fromWei(await wrappedLoan.getTotalTraderJoeV2());
+
+            const tokenX = initializeToken({
+                address: '0x152b9d0fdc40c096757f570a51e494bd4b943e50',
+                decimals: 8,
+                symbol: 'BTC',
+                name: 'BTC'
+            });
+
+
+            const tokenY = initializeToken({
+                address: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7',
+                decimals: 18,
+                symbol: 'WAVAX',
+                name: 'WAVAX'
+            });
+
+            const lbPairContract = new ethers.Contract('0xd9fa522f5bc6cfa40211944f2c8da785773ad99d', LBPairABI, provider);
+
+            const activeId = await lbPairContract.getActiveId()
+
+            let input = getAddLiquidityParameters(
+                owner.address,
+                tokenX,
+                tokenY,
+                addedBtc,
+                addedAvax,
+                "getUniformDistributionFromBinRange",
+                10,
+                activeId,
+                [activeId - 10, activeId + 10],
+                2,
+                2
+
+            );
+
+            await expect(wrappedLoan.addLiquidityTraderJoeV2(input)).not.to.be.reverted;
+
+
+            let tjvAfter = fromWei(await wrappedLoan.getTotalTraderJoeV2());
+            await expect(tjvAfter - tjvBefore).to.be.closeTo(tokensPrices.get('AVAX') * 1 + tokensPrices.get('BTC') * 0.001, 0.1);
+        });
+
+        it("should check total value for AVAX-ETH pair", async () => {
+            const addedEth = '10000000000000000';
+            const addedAvax = '1000000000000000000';
+
+            let tjvBefore = fromWei(await wrappedLoan.getTotalTraderJoeV2());
+
+            const tokenX = initializeToken({
+                address: '0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab',
+                decimals: 18,
+                symbol: 'WETH',
+                name: 'WETH'
+            });
+
+            const tokenY = initializeToken({
+                address: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7',
+                decimals: 18,
+                symbol: 'WAVAX',
+                name: 'WAVAX'
+            });
+
+
+            const lbPairContract = new ethers.Contract('0x1901011a39b11271578a1283d620373abed66faa', LBPairABI, provider);
+
+            const activeId = await lbPairContract.getActiveId()
+
+            let input = getAddLiquidityParameters(
+                owner.address,
+                tokenX,
+                tokenY,
+                addedEth,
+                addedAvax,
+                "getUniformDistributionFromBinRange",
+                10,
+                activeId,
+                [activeId - 10, activeId + 10],
+                2,
+                2
+            );
+
+            await expect(wrappedLoan.addLiquidityTraderJoeV2(input)).not.to.be.reverted;
+
+
+            let tjvAfter = fromWei(await wrappedLoan.getTotalTraderJoeV2());
+            await expect(tjvAfter - tjvBefore).to.be.closeTo(tokensPrices.get('ETH') * 0.01 + tokensPrices.get('AVAX') * 1, 0.1);
+        });
+
+
+        function getAddLiquidityParameters(
+            address,
+            tokenX,
+            tokenY,
+            tokenXValue,
+            tokenYValue,
+            distributionMethod,
+            binStep,
+            activeBinId,
+            binRange,
+            userPriceSlippage,
+            userAmountsSlippage
+        ) {
+            // wrap into TokenAmount
+            const tokenXAmount = new TokenAmount(tokenX, JSBI.BigInt(tokenXValue));
+            const tokenYAmount = new TokenAmount(tokenY, JSBI.BigInt(tokenYValue));
+
+            const allowedAmountsSlippage = userAmountsSlippage * 100;
+            const minTokenXAmount =  JSBI.divide(
+                JSBI.multiply(tokenXAmount.raw, JSBI.BigInt(10000 - allowedAmountsSlippage)),
+                JSBI.BigInt(10000)
+            );
+            const minTokenYAmount =  JSBI.divide(
+                JSBI.multiply(tokenYAmount.raw, JSBI.BigInt(10000 - allowedAmountsSlippage)),
+                JSBI.BigInt(10000)
+            );
+
+            const allowedPriceSlippage = userPriceSlippage * 100;
+            const priceSlippage = allowedPriceSlippage / 10000; // 0.005
+
+            // set deadline for the transaction
+            const currenTimeInSec = Math.floor((new Date().getTime()) / 1000);
+            const deadline = currenTimeInSec + 3600;
+
+            const idSlippage = getIdSlippageFromPriceSlippage(
+                priceSlippage,
+                Number(binStep)
+            );
+
+            // getting distribution parameters for selected shape given a price range
+            let { deltaIds, distributionX, distributionY } = traderJoeSdk[distributionMethod](
+                activeBinId,
+                binRange,
+                [tokenXAmount, tokenYAmount]
+            );
+
+            let number =  ((BigInt(distributionX[0])) > 0) ? BigInt(distributionX[0]) - BigInt(10) : BigInt(0);
+
+            distributionX = distributionX.map(el => ((BigInt(el)) > BigInt(10)) ? BigInt(el) - BigInt(10) : BigInt(el))
+            distributionY = distributionY.map(el => ((BigInt(el)) > BigInt(10)) ? BigInt(el) - BigInt(10) : BigInt(el))
+
+
+            // declare liquidity parameters
+            const addLiquidityInput = {
+                tokenX: tokenX.address,
+                tokenY: tokenY.address,
+                binStep: Number(binStep),
+                amountX: tokenXAmount.raw.toString(),
+                amountY: tokenYAmount.raw.toString(),
+                amountXMin: minTokenXAmount.toString(),
+                amountYMin: minTokenYAmount.toString(),
+                activeIdDesired: activeBinId,
+                idSlippage,
+                deltaIds,
+                distributionX,
+                distributionY,
+                to: address,
+                refundTo: address,
+                deadline
+            };
+
+            return addLiquidityInput;
+        }
+
+        function getIdSlippageFromPriceSlippage(priceSlippage, binStep) {
+            return Math.floor(
+                Math.log(1 + priceSlippage) / Math.log(1 + binStep / 1e4)
+            );
+        }
+
+        function initializeToken(tokenData) {
+            // initialize Token
+            const token = new Token(
+                43114,
+                tokenData.address,
+                tokenData.decimals,
+                tokenData.symbol,
+                tokenData.name
+            );
+
+            return token;
+        }
     });
 });

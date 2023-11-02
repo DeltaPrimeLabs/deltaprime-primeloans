@@ -4,7 +4,6 @@ const { ethers } = require("hardhat");
 import verifyContract from "../../tools/scripts/verify-contract";
 import hre from "hardhat";
 
-
 module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deploy } = deployments;
     const { deployer, admin } = await getNamedAccounts();
@@ -15,27 +14,27 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         Remove: 2
     }
 
-    embedCommitHash("SolvencyFacetProdArbitrum", "./contracts/facets/arbitrum");
+    embedCommitHash("SolvencyFacetProdAvalanche", "./contracts/facets/avalanche");
 
-    let SolvencyFacetProdArbitrum = await deploy("SolvencyFacetProdArbitrum", {
+    let SolvencyFacetProdAvalanche = await deploy("SolvencyFacetProdAvalanche", {
         from: deployer,
-        gasLimit: 50000000,
+        gasLimit: 15000000,
         args: [],
     });
 
 
     console.log(
-        `SolvencyFacetProdArbitrum implementation deployed at address: ${SolvencyFacetProdArbitrum.address}`
+        `SolvencyFacetProdAvalanche implementation deployed at address: ${SolvencyFacetProdAvalanche.address}`
     );
 
     await verifyContract(hre,
         {
-            address: SolvencyFacetProdArbitrum.address,
-            contract: `contracts/facets/arbitrum/SolvencyFacetProdArbitrum.sol:SolvencyFacetProdArbitrum`,
+            address: SolvencyFacetProdAvalanche.address,
+            contract: `contracts/facets/avalanche/SolvencyFacetProdAvalanche.sol:SolvencyFacetProdAvalanche`,
             constructorArguments: []
         });
-    console.log(`Verified SolvencyFacetProdArbitrum`);
+    console.log(`Verified SolvencyFacetProdAvalanche`);
 
 };
 
-module.exports.tags = ["arbitrum-solvency-facet"];
+module.exports.tags = ["avalanche-solvency-facet"];
