@@ -12,14 +12,14 @@
       </div>
 
       <div class="table__cell table__cell--double-value balance">
-        <template v-if="gmxV2LpBalances && parseFloat(gmxV2LpBalances[lpToken.symbol])">
+        <template v-if="gmxV2Balances && parseFloat(gmxV2Balances[lpToken.symbol])">
           <div class="double-value__pieces">
             <span v-if="isLpBalanceEstimated">~</span>
-            {{ formatTokenBalance(gmxV2LpBalances[lpToken.symbol], 10, true) }}
+            {{ formatTokenBalance(gmxV2Balances[lpToken.symbol], 10, true) }}
           </div>
           <div class="double-value__usd">
-            <span v-if="gmxV2LpBalances[lpToken.symbol]">
-              {{ gmxV2LpBalances[lpToken.symbol] * lpToken.price | usd }}
+            <span v-if="gmxV2Balances[lpToken.symbol]">
+              {{ gmxV2Balances[lpToken.symbol] * lpToken.price | usd }}
             </span>
           </div>
         </template>
@@ -152,19 +152,6 @@ import SwapToMultipleModal from "./SwapToMultipleModal.vue";
 import TOKEN_ADDRESSES from "../../common/addresses/avalanche/token_addresses.json";
 import {BigNumber} from "ethers";
 
-const GMX_V2_READER_ABI = [
-  'function getDepositAmountOut(address dataStore, tuple market, tuple prices, uint256 longTokenAmount, uint256 shortTokenAmount, address uiFeeReceiver) external view returns (uint256)',
-  'function getWithdrawalAmountOut(address dataStore, tuple market, tuple prices, uint256 marketTokenAmount, address uiFeeReceiver) external view returns (uint256, uint256)',
-];
-
-const GMX_V2_MARKET_UTILS_ABI = [
-  'function getDepositAmountOut(address dataStore, tuple market, tuple prices, uint256 longTokenAmount, uint256 shortTokenAmount, address uiFeeReceiver) external view returns (uint256)',
-];
-
-const GMX_V2_ORACLE_ABI = [
-  'function getPrimaryPrice(address token) external view returns (tuple memory)'
-];
-
 export default {
   name: 'GmxV2LpTableRow',
   components: {
@@ -232,13 +219,13 @@ export default {
       'fullLoanStatus',
       'assetBalances',
       'levelLpBalances',
-      'gmxV2LpBalances',
+      'gmxV2Balances',
       'assets',
       'debtsPerAsset',
       'lpAssets',
       'concentratedLpAssets',
       'levelLpAssets',
-      'gmxV2LpAssets',
+      'gmxV2Assets',
       'traderJoeV2LpAssets'
     ]),
     ...mapState('poolStore', ['pools']),
@@ -444,15 +431,15 @@ export default {
     async openAddFromWalletModal() {
       const modalInstance = this.openModal(AddFromWalletModal);
       modalInstance.asset = this.lpToken;
-      modalInstance.assetBalance = this.gmxV2LpBalances && this.gmxV2LpBalances[this.lpToken.symbol] ? this.gmxV2LpBalances[this.lpToken.symbol] : 0;
+      modalInstance.assetBalance = this.gmxV2Balances && this.gmxV2Balances[this.lpToken.symbol] ? this.gmxV2Balances[this.lpToken.symbol] : 0;
       modalInstance.assets = this.assets;
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.lpAssets = this.lpAssets;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
       modalInstance.levelLpBalances = this.levelLpBalances;
-      modalInstance.gmxV2LpAssets = this.gmxV2LpAssets;
-      modalInstance.gmxV2LpBalances = this.gmxV2LpBalances;
+      modalInstance.gmxV2Assets = this.gmxV2Assets;
+      modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
@@ -487,14 +474,14 @@ export default {
     openWithdrawModal() {
       const modalInstance = this.openModal(WithdrawModal);
       modalInstance.asset = this.lpToken;
-      modalInstance.assetBalance = this.gmxV2LpBalances[this.lpToken.symbol];
+      modalInstance.assetBalance = this.gmxV2Balances[this.lpToken.symbol];
       modalInstance.assets = this.assets;
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.lpAssets = this.lpAssets;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
-      modalInstance.gmxV2LpAssets = this.gmxV2LpAssets;
-      modalInstance.gmxV2LpBalances = this.gmxV2LpBalances;
+      modalInstance.gmxV2Assets = this.gmxV2Assets;
+      modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
@@ -523,10 +510,8 @@ export default {
     },
 
     openProvideLiquidityModal() {
-      console.log('openProvideLiquidityModal')
       const modalInstance = this.openModal(SwapModal);
       let initSourceAsset = this.lpToken.longToken;
-      console.log('initSourceAsset: ', initSourceAsset)
 
       modalInstance.title = 'Create GMX V2 position';
       modalInstance.swapDex = 'GmxV2';
@@ -534,17 +519,17 @@ export default {
       modalInstance.slippageMargin = 0.1;
       modalInstance.sourceAsset = initSourceAsset;
       modalInstance.sourceAssetBalance = this.assetBalances[initSourceAsset];
-      modalInstance.assets = { ...this.assets, ...this.gmxV2LpAssets };
+      modalInstance.assets = { ...this.assets, ...this.gmxV2Assets };
       modalInstance.sourceAssets = { GmxV2: [this.lpToken.shortToken, this.lpToken.longToken] };
       modalInstance.targetAssetsConfig = config.GMX_V2_ASSETS_CONFIG;
       modalInstance.targetAssets = { GmxV2: [this.lpToken.symbol] };
-      modalInstance.assetBalances = { ...this.assetBalances, ...this.gmxV2LpBalances };
+      modalInstance.assetBalances = { ...this.assetBalances, ...this.gmxV2Balances };
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
-      modalInstance.gmxV2LpAssets = this.gmxV2LpAssets;
-      modalInstance.gmxV2LpBalances = this.gmxV2LpBalances;
+      modalInstance.gmxV2Assets = this.gmxV2Assets;
+      modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
@@ -587,23 +572,23 @@ export default {
 
     openRemoveLiquidityModal() {
       const modalInstance = this.openModal(SwapToMultipleModal);
-      modalInstance.title = 'Unwind LLP position';
+      modalInstance.title = 'Unwind GMX V2 position';
       modalInstance.swapDex = 'GmxV2';
       modalInstance.dexOptions = ['GmxV2'];
       modalInstance.slippageMargin = 0.1;
       modalInstance.sourceAsset = this.lpToken.symbol;
-      modalInstance.sourceAssetBalance = this.gmxV2LpBalances[this.lpToken.symbol];
+      modalInstance.sourceAssetBalance = this.gmxV2Balances[this.lpToken.symbol];
       modalInstance.sourceAssetsConfig = config.GMX_V2_ASSETS_CONFIG;
-      modalInstance.assets = { ...this.assets, ...this.gmxV2LpAssets };
+      modalInstance.assets = { ...this.assets, ...this.gmxV2Assets };
       modalInstance.sourceAssets = { GmxV2: [this.lpToken.symbol]} ;
       modalInstance.targetAssets = { GmxV2: [this.lpToken.shortToken, this.lpToken.longToken] };
-      modalInstance.assetBalances = { ...this.assetBalances, ...this.gmxV2LpBalances };
+      modalInstance.assetBalances = { ...this.assetBalances, ...this.gmxV2Balances };
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
-      modalInstance.gmxV2LpAssets = this.gmxV2LpAssets;
-      modalInstance.gmxV2LpBalances = this.gmxV2LpBalances;
+      modalInstance.gmxV2Assets = this.gmxV2Assets;
+      modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
@@ -613,7 +598,7 @@ export default {
       modalInstance.debt = this.fullLoanStatus.debt;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
       modalInstance.health = this.fullLoanStatus.health;
-      modalInstance.info = `This action will additionally harvest rewards to your wallet.`;
+      modalInstance.info = `info .`;
       modalInstance.queryMethods = {
         GmxV2: this.gmxV2Query(),
       };
@@ -744,7 +729,7 @@ export default {
     watchExternalAssetBalanceUpdate() {
       this.assetBalancesExternalUpdateService.observeExternalAssetBalanceUpdate().subscribe(updateEvent => {
         if (updateEvent.assetSymbol === this.lpToken.symbol) {
-          this.gmxV2LpBalances[this.lpToken.symbol] = updateEvent.balance;
+          this.gmxV2Balances[this.lpToken.symbol] = updateEvent.balance;
           this.isLpBalanceEstimated = !updateEvent.isTrueData;
           this.$forceUpdate();
         }

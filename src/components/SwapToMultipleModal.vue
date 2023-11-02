@@ -36,25 +36,28 @@
       >
       </CurrencyComboInput>
 
-      <div class="reverse-swap-button" v-on:click="reverseSwap && !reverseSwapDisabled">
+      <div class="reverse-swap-button">
         <DeltaIcon class="reverse-swap-icon" :size="22" :icon-src="'src/assets/icons/swap-arrow.svg'"></DeltaIcon>
       </div>
 
-      <CurrencyComboInput ref="targetInput"
-                          v-for="asset of targetAssetOptions"
-                          v-bind:key="asset.symbol"
-                          :asset-options="[asset]"
-                          :default-asset="asset"
-                          v-on:valueChange="targetInputChange"
-                          :disabled="true"
-                          info-icon-message="Minimum received amount"
-                          :validators="targetValidators">
-      </CurrencyComboInput>
+      <div class="target-input"
+           v-for="asset of targetAssetOptions"
+           v-bind:key="asset.symbol"
+      >
+        <CurrencyComboInput ref="targetInput"
+                            :asset-options="[asset]"
+                            :default-asset="asset.symbol"
+                            v-on:valueChange="targetInputChange"
+                            :disabled="true"
+                            info-icon-message="Minimum received amount"
+                            :validators="targetValidators">
+        </CurrencyComboInput>
+      </div>
       <div class="target-asset-info">
         <div class="usd-info">
           Price:&nbsp;<span
             class="price-info__value">1 {{
-            (targetAssetData && targetAssetData.short) ? targetAssetData.short : targetAsset
+            targetName
           }} = {{ estimatedNeededTokens / estimatedReceivedTokens | smartRound }} {{ sourceAsset }}</span>
         </div>
       </div>
@@ -120,7 +123,7 @@
 
             <div class="summary__value__pair">
               <div class="summary__label">
-                {{ (sourceAssetData && sourceAssetData.short) ? sourceAssetData.short: sourceAsset }} balance:
+                {{ sourceName }} balance:
               </div>
               <div class="summary__value">
                 {{
@@ -133,7 +136,7 @@
 
             <div class="summary__value__pair">
               <div class="summary__label">
-                {{ (targetAssetData && targetAssetData.short) ? targetAssetData.short : targetAsset }} balance:
+                {{ targetName }} balance:
               </div>
               <div class="summary__value">
                 {{ formatTokenBalance(Number(assetBalances[targetAsset]) + Number(targetAssetAmount)) }}
@@ -263,6 +266,12 @@ export default {
   computed: {
     maxSourceValue() {
       return this.sourceAssetBalance;
+    },
+    sourceName() {
+      return (this.sourceAssetData && this.sourceAssetData.short) ? this.sourceAssetData.short: this.sourceAsset;
+    },
+    targetName() {
+      return (this.targetAssetData && this.targetAssetData.short) ? this.targetAssetData.short : this.targetAsset;
     },
   },
 
@@ -413,7 +422,7 @@ export default {
     setupTargetAssetOptions() {
       this.targetAssetOptions = [];
 
-      const targetAssets = this.targetAssets;
+      const targetAssets = this.targetAssets[this.swapDex];
       targetAssets.forEach(assetSymbol => {
         const asset = this.targetAssetsConfig[assetSymbol];
         const assetOption = {
@@ -698,6 +707,10 @@ export default {
   display: flex;
   font-size: 14px;
   color: var(--swap-modal__received-amount-color);
+}
+
+.target-input {
+  margin-top: 20px;
 }
 
 .target-asset-info {

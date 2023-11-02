@@ -97,7 +97,7 @@ export default {
         "arbSnrLLP": {name: "Senior", symbol: "arbSnrLLP", pid: 0, short: "Snr", decimals: 18, address: addresses.arbSnrLLP, debtCoverage: 0.83333333333, balanceMethod: "levelSnrBalance", groupIdentifier: 'STKD_SNR_LLP_GROUP', underlyingAssets: ['BTC', 'ETH', 'USDT', 'USDC'], link: 'https://app.level.finance/liquidity/senior-tranche/buy'},
     },
     GMX_V2_ASSETS_CONFIG: {
-        "GMX_V2_ETH_USD": {name: "ETH-USDC", symbol: "GMX_V2_ETH_USD", short: "ETH-USDC", decimals: 18, address: addresses.GMX_V2_ETH_USD, debtCoverage: 0.83333333333, longToken: 'ETH', shortToken: 'USDC'},
+        "GMX_V2_ETH_USD": {name: "ETH-USDC", symbol: "GMX_V2_ETH_USD", short: "GM", decimals: 18, address: addresses.GMX_V2_ETH_USD, debtCoverage: 0.83333333333, longToken: 'ETH', shortToken: 'USDC'},
     },
     LP_ASSETS_CONFIG: {
         // "SUSHI_DPX_ETH_LP": {
