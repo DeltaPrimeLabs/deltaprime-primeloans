@@ -11,6 +11,13 @@ interface IReaderDepositUtils {
         address uiFeeReceiver
     ) external view returns (uint256);
 
+    function getWithdrawalAmountOut(
+        address dataStore,
+        MarketProps memory market,
+        MarketPrices memory prices,
+        uint256 marketTokenAmount,
+        address uiFeeReceiver
+    ) external view returns (uint256, uint256);
 
     struct MarketPrices {
         PriceProps indexTokenPrice;
