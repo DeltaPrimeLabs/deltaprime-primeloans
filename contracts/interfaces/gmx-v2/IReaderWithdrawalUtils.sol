@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-interface IReaderDepositUtils {
+interface IReaderWithdrawalUtils {
     function getWithdrawalAmountOut(
         address dataStore,
         MarketProps memory market,
         MarketPrices memory prices,
         uint256 marketTokenAmount,
         address uiFeeReceiver
-    ) external view returns (uint256, uint256)
-
+    ) external view returns (uint256, uint256);
 
     struct MarketPrices {
         PriceProps indexTokenPrice;
