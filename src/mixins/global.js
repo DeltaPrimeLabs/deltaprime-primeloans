@@ -103,6 +103,9 @@ export default {
     },
     minAllowedHealth() {
       return config.MIN_ALLOWED_HEALTH;
+    },
+    nullAddress() {
+      return '0x0000000000000000000000000000000000000000';
     }
   },
   data() {

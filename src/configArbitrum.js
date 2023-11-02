@@ -96,6 +96,9 @@ export default {
         "arbMzeLLP": {name: "Mezzanine", symbol: "arbMzeLLP", pid: 1, short: "Mze", decimals: 18, address: addresses.arbMzeLLP, debtCoverage: 0.83333333333, balanceMethod: "levelMzeBalance", groupIdentifier: 'STKD_MZE_LLP_GROUP', underlyingAssets: ['BTC', 'ETH', 'USDT', 'USDC'], link: 'https://app.level.finance/liquidity/mezzanine-tranche/buy'},
         "arbSnrLLP": {name: "Senior", symbol: "arbSnrLLP", pid: 0, short: "Snr", decimals: 18, address: addresses.arbSnrLLP, debtCoverage: 0.83333333333, balanceMethod: "levelSnrBalance", groupIdentifier: 'STKD_SNR_LLP_GROUP', underlyingAssets: ['BTC', 'ETH', 'USDT', 'USDC'], link: 'https://app.level.finance/liquidity/senior-tranche/buy'},
     },
+    GMX_V2_ASSETS_CONFIG: {
+        "GMX_V2_ETH_USD": {name: "ETH-USDC", symbol: "GMX_V2_ETH_USD", short: "ETH-USDC", decimals: 18, address: addresses.GMX_V2_ETH_USD, debtCoverage: 0.83333333333, longToken: 'ETH', shortToken: 'USDC'},
+    },
     LP_ASSETS_CONFIG: {
         // "SUSHI_DPX_ETH_LP": {
         //     primary: 'DPX',
@@ -264,6 +267,10 @@ export default {
     glpRewardsRouterAddress: '0xA906F338CB21815cBc4Bc87ace9e68c87eF8d8F1', //TODO: needs testing
     depositSwapAddress: "0x889Cfe41a376CFeF8F28E48A848728D5377552b9",
     levelLiquidityCalculatorAddress: "0xf1e5D6c0ce39fDBb9682F1A3385f0d2067740C61",
+    gmxV2ReaderAddress: "0xf60becbba223eea9495da3f606753867ec10d139",
+    gmxV2DataStoreAddress: "0xFD70de6b91282D8017aA4E741e9Ae325CAb992d8",
+    gmxV2MarketUtilsAddress: "0x7ffF7ef2fc8Db5159B0046ad49d018A5aB40dB11",
+    gmxV2OracleAddress: "0xa11B501c2dd83Acd29F6727570f2502FAaa617F2",
     nativeToken: "ETH",
     SLIPPAGE_TOLERANCE: 0.03,
     dataProviderId: "redstone-arbitrum-prod",

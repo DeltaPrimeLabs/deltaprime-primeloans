@@ -46,6 +46,7 @@ export default {
     concentratedLpAssets: null,
     traderJoeV2LpAssets: null,
     levelLpAssets: null,
+    gmxV2Assets: null,
     supportedAssets: null,
     provider: null,
     readSmartLoanContract: null,
@@ -57,6 +58,7 @@ export default {
     lpBalances: null,
     concentratedLpBalances: null,
     levelLpBalances: null,
+    gmxV2Balances: null,
     accountApr: null,
     debt: null,
     totalValue: null,
@@ -102,6 +104,10 @@ export default {
       state.levelLpAssets = assets;
     },
 
+    setGmxV2Assets(state, assets) {
+      state.gmxV2Assets = assets;
+    },
+
     setSupportedAssets(state, assets) {
       state.supportedAssets = assets;
     },
@@ -140,6 +146,10 @@ export default {
 
     setLevelLpBalances(state, lpBalances) {
       state.levelLpBalances = lpBalances;
+    },
+
+    setGmxV2Balances(state, balances) {
+      state.gmxV2Balances = balances;
     },
 
     setFullLoanStatus(state, status) {
@@ -190,6 +200,7 @@ export default {
       await dispatch('setupConcentratedLpAssets');
       await dispatch('setupTraderJoeV2LpAssets');
       if (config.LEVEL_LP_ASSETS_CONFIG) await dispatch('setupLevelLpAssets');
+      if (config.GMX_V2_ASSETS_CONFIG) await dispatch('setupGmxV2Assets');
       await dispatch('stakeStore/updateStakedPrices', null, {root: true});
       state.assetBalances = [];
 
@@ -239,6 +250,7 @@ export default {
         await dispatch('setupConcentratedLpAssets');
         await dispatch('setupTraderJoeV2LpAssets');
         if (config.LEVEL_LP_ASSETS_CONFIG) await dispatch('setupLevelLpAssets');
+        if (config.GMX_V2_ASSETS_CONFIG) await dispatch('setupGmxV2Assets');
         await dispatch('getAllAssetsBalances');
         await dispatch('getAllAssetsApys');
         await dispatch('getDebtsPerAsset');
@@ -425,6 +437,30 @@ export default {
       commit('setLevelLpAssets', lpTokens);
     },
 
+    async setupGmxV2Assets({state, rootState, commit}) {
+      const lpService = rootState.serviceRegistry.lpService;
+      let lpTokens = {};
+
+      Object.values(config.GMX_V2_ASSETS_CONFIG).forEach(
+          asset => {
+            if (state.supportedAssets.includes(asset.symbol)) {
+              lpTokens[asset.symbol] = asset;
+            }
+          }
+      );
+
+      const redstonePriceDataRequest = await fetch(config.redstoneFeedUrl);
+      const redstonePriceData = await redstonePriceDataRequest.json();
+
+      Object.keys(lpTokens).forEach(async assetSymbol => {
+        lpTokens[assetSymbol].price = redstonePriceData[assetSymbol] ? redstonePriceData[assetSymbol][0].dataPoints[0].value : 0;
+        lpService.emitRefreshLp();
+      });
+
+      commit('setGmxV2Assets', lpTokens);
+    },
+
+
     async setupContracts({rootState, commit}) {
       const provider = rootState.network.provider;
       const smartLoanFactoryContract = new ethers.Contract(SMART_LOAN_FACTORY_TUP.address, SMART_LOAN_FACTORY.abi, provider.getSigner());
@@ -597,6 +633,7 @@ export default {
       const balances = {};
       const lpBalances = {};
       const concentratedLpBalances = {};
+      const gmxV2Balances = {};
       const levelLpBalances = {};
       const assetBalances = await state.readSmartLoanContract.getAllAssetsBalances();
       assetBalances.forEach(
@@ -610,6 +647,9 @@ export default {
           }
           if (config.CONCENTRATED_LP_ASSETS_CONFIG[symbol]) {
             concentratedLpBalances[symbol] = formatUnits(asset.balance.toString(), config.CONCENTRATED_LP_ASSETS_CONFIG[symbol].decimals);
+          }
+          if (config.GMX_V2_ASSETS_CONFIG[symbol]) {
+            concentratedLpBalances[symbol] = formatUnits(asset.balance.toString(), config.GMX_V2_ASSETS_CONFIG[symbol].decimals);
           }
         }
       );
@@ -632,6 +672,7 @@ export default {
       await commit('setLpBalances', lpBalances);
       await commit('setConcentratedLpBalances', concentratedLpBalances);
       await commit('setLevelLpBalances', levelLpBalances);
+      await commit('setGmxV2Balances', gmxV2Balances);
       await dispatch('setupConcentratedLpUnderlyingBalances');
       await dispatch('setupTraderJoeV2LpUnderlyingBalancesAndLiquidity');
       const refreshEvent = {assetBalances: balances, lpBalances: lpBalances};
@@ -824,6 +865,20 @@ export default {
         }
 
         commit('setLevelLpAssets', levelLpAssets);
+      }
+
+      let gmxV2Assets = state.gmxV2Assets;
+
+      if (gmxV2Assets) {
+        if (Object.keys(gmxV2Assets).length !== 0) {
+          for (let [symbol, asset] of Object.entries(gmxV2Assets)) {
+            if (apys[symbol] && apys[symbol][symbol]) {
+              gmxV2Assets[symbol].apy = apys[symbol][symbol];
+            }
+          }
+        }
+
+        commit('setGmxV2Assets', gmxV2Assets);
       }
 
       dataRefreshNotificationService.emitAssetApysDataRefresh();

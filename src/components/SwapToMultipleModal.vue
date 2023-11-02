@@ -6,21 +6,10 @@
         {{ title }}
       </div>
 
-      <div class="dex-toggle" v-if="!swapDebtMode && dexOptions && dexOptions.length > 1">
+      <div class="dex-toggle" v-if="dexOptions && dexOptions.length > 1">
         <Toggle v-on:change="swapDexChange" :options="dexOptions"></Toggle>
       </div>
 
-      <div class="modal-top-desc" v-if="swapDex === 'ParaSwap' && showParaSwapWarning">
-        <div>
-          <b>Caution: Paraswap slippage vastly exceeds YakSwap. Use with caution.</b>
-        </div>
-      </div>
-
-      <div class="modal-top-desc" v-if="swapDex === 'YakSwap' && showYakSwapWarning">
-        <div>
-          <b>We recommend using Paraswap for swaps of $50K+.</b>
-        </div>
-      </div>
 
       <div class="modal-top-desc" v-if="info">
         <div>
@@ -28,19 +17,12 @@
         </div>
       </div>
 
-      <div class="asset-info" v-if="!swapDebtMode">
+      <div class="asset-info">
         Available:
         <span v-if="sourceAssetBalance" class="asset-info__value">{{
             Number(sourceAssetBalance) | smartRound(sourceAssetData.decimals, true)
           }}</span>
       </div>
-      <div class="asset-info" v-if="swapDebtMode">
-        Borrowed:
-        <span v-if="sourceAssetDebt" class="asset-info__value">{{
-            Number(sourceAssetDebt) | smartRound(sourceAssetData.decimals, true)
-          }}</span>
-      </div>
-
 
       <CurrencyComboInput ref="sourceInput"
                           :asset-options="sourceAssetOptions"
@@ -59,8 +41,10 @@
       </div>
 
       <CurrencyComboInput ref="targetInput"
-                          :asset-options="targetAssetOptions"
-                          :default-asset="targetAsset"
+                          v-for="asset of targetAssetOptions"
+                          v-bind:key="asset.symbol"
+                          :asset-options="[asset]"
+                          :default-asset="asset"
                           v-on:valueChange="targetInputChange"
                           :disabled="true"
                           info-icon-message="Minimum received amount"
@@ -134,7 +118,7 @@
             </div>
             <div class="summary__divider divider--long light"></div>
 
-            <div class="summary__value__pair" v-if="!swapDebtMode">
+            <div class="summary__value__pair">
               <div class="summary__label">
                 {{ (sourceAssetData && sourceAssetData.short) ? sourceAssetData.short: sourceAsset }} balance:
               </div>
@@ -145,20 +129,9 @@
               </div>
             </div>
 
-            <div class="summary__value__pair" v-if="swapDebtMode">
-              <div class="summary__label">
-                {{ sourceAsset }} borrowed:
-              </div>
-              <div class="summary__value">
-                {{
-                  formatTokenBalance(Number(debtsPerAsset[sourceAsset].debt) - Number(sourceAssetAmount)) > 0 ? formatTokenBalance(Number(debtsPerAsset[sourceAsset].debt) - Number(sourceAssetAmount)) : 0
-                }}
-              </div>
-            </div>
-
             <div class="summary__divider divider--long light"></div>
 
-            <div class="summary__value__pair" v-if="!swapDebtMode">
+            <div class="summary__value__pair">
               <div class="summary__label">
                 {{ (targetAssetData && targetAssetData.short) ? targetAssetData.short : targetAsset }} balance:
               </div>
@@ -166,21 +139,12 @@
                 {{ formatTokenBalance(Number(assetBalances[targetAsset]) + Number(targetAssetAmount)) }}
               </div>
             </div>
-
-            <div class="summary__value__pair" v-if="swapDebtMode">
-              <div class="summary__label">
-                {{ targetAsset }} borrowed:
-              </div>
-              <div class="summary__value">
-                {{ formatTokenBalance(Number(debtsPerAsset[targetAsset].debt) + Number(targetAssetAmount)) }}
-              </div>
-            </div>
           </div>
         </TransactionResultSummaryBeta>
       </div>
 
       <div class="button-wrapper">
-        <Button :label="swapDebtMode ? 'Swap debt' : 'Swap'"
+        <Button :label="'Swap'"
                 v-on:click="submit()"
                 :disabled="sourceInputError || targetInputError"
                 :waiting="transactionOngoing || isTyping">
@@ -205,12 +169,14 @@ import TOKEN_ADDRESSES from '../../common/addresses/avalanche/token_addresses.js
 import DeltaIcon from "./DeltaIcon.vue";
 import InfoIcon from "./InfoIcon.vue";
 import Toggle from './Toggle.vue';
+import AssetsTableRow from "./AssetsTableRow.vue";
 
 const ethers = require('ethers');
 
 export default {
-  name: 'SwapModal',
+  name: 'SwapToMultipleModal',
   components: {
+    AssetsTableRow,
     Toggle,
     InfoIcon,
     DeltaIcon,
@@ -227,7 +193,6 @@ export default {
 
   data() {
     return {
-      swapDebtMode: null,
       sourceAssets: null,
       targetAssets: null,
       sourceAssetOptions: null,
@@ -271,6 +236,8 @@ export default {
       levelLpAssets: {},
       levelLpBalances: {},
       traderJoeV2LpAssets: {},
+      gmxV2LpAssets: {},
+      gmxV2LpBalances: {},
       transactionOngoing: false,
       debt: 0,
       thresholdWeightedValue: 0,
@@ -287,8 +254,6 @@ export default {
       swapDex: null,
       title: 'Swap',
       currentSourceInputChangeEvent: {},
-      showParaSwapWarning: config.showParaSwapWarning,
-      showYakSwapWarning: config.showYakSwapWarning,
       sourceAssetsConfig: config.ASSETS_CONFIG,
       targetAssetsConfig: config.ASSETS_CONFIG,
       reverseSwapDisabled: false
@@ -297,17 +262,13 @@ export default {
 
   computed: {
     maxSourceValue() {
-      if (this.swapDebtMode) {
-        return this.sourceAssetDebt;
-      } else {
-        return this.sourceAssetBalance;
-      }
+      return this.sourceAssetBalance;
     },
   },
 
   methods: {
     initiate() {
-      if (this.swapDebtMode && !this.swapDex) {
+      if (!this.swapDex) {
         this.swapDex = 'YakSwap'
       }
       this.setupSourceAssetOptions();
@@ -344,11 +305,7 @@ export default {
     },
 
     async query(sourceAsset, targetAsset, amountIn) {
-      if (this.swapDebtMode) {
-        return await this.queryMethod(sourceAsset, targetAsset, amountIn);
-      } else {
-        return await this.queryMethods[this.swapDex](sourceAsset, targetAsset, amountIn);
-      }
+      return await this.queryMethods[this.swapDex](sourceAsset, targetAsset, amountIn);
     },
 
     async chooseBestTrade(basedOnSource = true) {
@@ -396,11 +353,7 @@ export default {
     },
 
     async updateAmountsWithSlippage() {
-      if (!this.swapDebtMode) {
-        this.targetAssetAmount = this.receivedAccordingToOracle * (1 - (this.userSlippage / 100 + (this.fee ? this.fee : 0)));
-      } else {
-        this.targetAssetAmount = this.receivedAccordingToOracle * (1 + (this.userSlippage / 100 + (this.fee ? this.fee : 0)));
-      }
+      this.targetAssetAmount = this.receivedAccordingToOracle * (1 - (this.userSlippage / 100 + (this.fee ? this.fee : 0)));
 
       const targetInputChangeEvent = await this.$refs.targetInput.setCurrencyInputValue(this.targetAssetAmount);
 
@@ -444,7 +397,7 @@ export default {
 
     setupSourceAssetOptions() {
       this.sourceAssetOptions = [];
-      const sourceAssets = this.swapDebtMode ? this.sourceAssets : this.sourceAssets[this.swapDex];
+      const sourceAssets = this.sourceAssets[this.swapDex];
       sourceAssets.forEach(assetSymbol => {
         const asset = this.sourceAssetsConfig[assetSymbol];
         const assetOption = {
@@ -460,7 +413,7 @@ export default {
     setupTargetAssetOptions() {
       this.targetAssetOptions = [];
 
-      const targetAssets = this.swapDebtMode ? this.targetAssets : this.targetAssets[this.swapDex];
+      const targetAssets = this.targetAssets;
       targetAssets.forEach(assetSymbol => {
         const asset = this.targetAssetsConfig[assetSymbol];
         const assetOption = {
@@ -586,14 +539,8 @@ export default {
       this.sourceValidators = [
         {
           validate: async (value) => {
-            if (!this.swapDebtMode) {
-              if (value > parseFloat(this.assetBalances[this.sourceAsset])) {
-                return 'Amount exceeds the current balance.';
-              }
-            } else {
-              if (value > parseFloat(this.debtsPerAsset[this.sourceAsset].debt)) {
-                return 'Amount exceeds the current debt.';
-              }
+            if (value > parseFloat(this.assetBalances[this.sourceAsset])) {
+              return 'Amount exceeds the current balance.';
             }
           },
         }
@@ -623,26 +570,12 @@ export default {
       for (const [symbol, data] of Object.entries(this.assets)) {
         let borrowed = this.debtsPerAsset[symbol] ? parseFloat(this.debtsPerAsset[symbol].debt) : 0;
         let balance = parseFloat(this.assetBalances[symbol]);
+        if (symbol === this.sourceAsset) {
+          balance -= this.sourceAssetAmount;
+        }
 
-        if (this.swapDebtMode) {
-          if (symbol === this.sourceAsset) {
-            borrowed -= this.sourceAssetAmount;
-            balance -= this.sourceAssetAmount;
-          }
-
-          if (symbol === this.targetAsset) {
-            borrowed += this.targetAssetAmount;
-            balance += this.targetAssetAmount;
-          }
-
-        } else {
-          if (symbol === this.sourceAsset) {
-            balance -= this.sourceAssetAmount;
-          }
-
-          if (symbol === this.targetAsset) {
-            balance += this.targetAssetAmount;
-          }
+        if (symbol === this.targetAsset) {
+          balance += this.targetAssetAmount;
         }
 
         tokens.push({price: data.price, balance: balance, borrowed: borrowed, debtCoverage: data.debtCoverage});
@@ -688,8 +621,6 @@ export default {
       }
 
       let lbTokens = Object.values(this.traderJoeV2LpAssets);
-
-      console.log()
 
       this.healthAfterTransaction = calculateHealth(tokens, lbTokens);
     },
