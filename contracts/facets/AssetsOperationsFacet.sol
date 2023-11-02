@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 import "../lib/SolvencyMethods.sol";
 import "../interfaces/ITokenManager.sol";
+import "./SmartLoanLiquidationFacet.sol";
 import "../interfaces/facets/IYieldYakRouter.sol";
 
 //this path is updated during deployment

@@ -5,25 +5,25 @@ pragma solidity 0.8.17;
 //This path is updated during deployment
 import "../GmxV2Facet.sol";
 
-abstract contract GmxV2FacetArbitrum is GmxV2Facet {
+abstract contract GmxV2FacetAvalanche is GmxV2Facet {
     using TransferHelper for address;
 
-    // https://github.com/gmx-io/gmx-synthetics/blob/main/deployments/arbitrum/
+    // https://github.com/gmx-io/gmx-synthetics/blob/main/deployments/avalanche/
     // GMX contracts
     function getGMX_V2_ROUTER() internal pure virtual override returns (address) {
-        return 0x820F5FfC5b525cD4d88Cd91aCf2c28F16530Cc68;
+        return 0x7452c558d45f8afC8c83dAe62C3f8A5BE19c71f6;
     }
 
     function getGMX_V2_EXCHANGE_ROUTER() internal pure virtual override returns (address) {
-        return 0x7C68C7866A64FA2160F78EEaE12217FFbf871fa8;
+        return 0x11E590f6092D557bF71BaDEd50D81521674F8275;
     }
 
     function getGMX_V2_DEPOSIT_VAULT() internal pure virtual override returns (address) {
-        return 0xF89e77e8Dc11691C9e8757e84aaFbCD8A67d7A55;
+        return 0x90c670825d0C62ede1c5ee9571d6d9a17A722DFF;
     }
 
     function getGMX_V2_WITHDRAWAL_VAULT() internal pure virtual override returns (address) {
-        return 0x0628D46b5D145f183AdB6Ef1f2c97eD1C4701C55;
+        return 0xf5F30B10141E1F63FC11eD772931A8294a591996;
     }
 
     // TODO: Dynamically source whitelisted keepers?
@@ -32,37 +32,16 @@ abstract contract GmxV2FacetArbitrum is GmxV2Facet {
     }
 
     // Markets
-    address constant GM_ETH_USDC = 0x70d95587d40A2caf56bd97485aB3Eec10Bee6336;
 
     // Tokens
-    address constant ETH = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
-    address constant USDC = 0xaf88d065e77c8cC2239327C5EDb3A432268e5831;
 
     // Mappings
     function marketToLongToken(address market) internal override pure returns (address){
-        if(market == GM_ETH_USDC){
-            return ETH;
-        } else {
-            revert("Market not supported");
-        }
+        revert("Not implemented");
     }
 
     function marketToShortToken(address market) internal override pure returns (address){
-        if(market == GM_ETH_USDC){
-            return USDC;
-        } else {
-            revert("Market not supported");
-        }
-    }
-
-    function depositEthUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
-        address _depositedToken = isLongToken ? ETH : USDC;
-
-        _deposit(GM_ETH_USDC, _depositedToken, tokenAmount, minGmAmount, executionFee);
-    }
-
-    function withdrawEthUsdcGmxV2(uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
-        _withdraw(GM_ETH_USDC, gmAmount, minLongTokenAmount, minShortTokenAmount, executionFee);
+        revert("Not implemented");
     }
 
     // MODIFIERS
