@@ -48,6 +48,11 @@ contract SmartLoanViewFacet is ReentrancyGuardKeccak, SolvencyMethods {
         return DeploymentConstants.getPercentagePrecision();
     }
 
+    function getAccountFrozenSince() public view returns (uint256){
+        DiamondStorageLib.SmartLoanStorage storage sls = DiamondStorageLib.smartLoanStorage();
+        return sls.frozenSince;
+    }
+
 
     /**
     * Returns a current balance of the asset held by the smart loan
