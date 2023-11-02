@@ -377,7 +377,8 @@ export default {
     },
 
     gmxV2Query() {
-      const reader = new ethers.Contract(config.gmxV2ReaderAddress, IREADER_DEPOSIT_UTILS.abi, this.provider.getSigner());
+      const depositReader = new ethers.Contract(config.gmxV2DepositReaderAddress, IREADER_DEPOSIT_UTILS.abi, this.provider.getSigner());
+      const withdrawalReader = new ethers.Contract(config.gmxV2WithdrawalReaderAddress, IREADER_WITHDRAWAL_UTILS.abi, this.provider.getSigner());
 
       const longToken = config.ASSETS_CONFIG[this.lpToken.longToken];
       const shortToken = config.ASSETS_CONFIG[this.lpToken.shortToken];
@@ -403,16 +404,16 @@ export default {
         }
 
         if (config.GMX_V2_ASSETS_CONFIG[sourceAsset]) {
-          let amountOut = await reader.getWithdrawalAmountOut(
+          let [longTokenOut, shortTokenOut] = await withdrawalReader.getWithdrawalAmountOut(
               config.gmxV2DataStoreAddress, marketProps, prices, amountIn, this.nullAddress
           );
 
-          return amountOut;
+          return [longTokenOut, shortTokenOut];
         } else {
 
           let isLong = config.GMX_V2_ASSETS_CONFIG[targetAsset].longAsset === sourceAsset;
 
-          let amountOut = await reader.getDepositAmountOut(
+          let amountOut = await depositReader.getDepositAmountOut(
               config.gmxV2DataStoreAddress, marketProps, prices, isLong ? amountIn : 0, isLong ? 0 : amountIn, this.nullAddress
           );
 
