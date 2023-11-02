@@ -16,7 +16,6 @@ import {Uint256x256Math} from "../../lib/joe-v2/math/Uint256x256Math.sol";
 import {TickMath} from "../../lib/uniswap-v3/TickMath.sol";
 import {FullMath} from "../../lib/uniswap-v3/FullMath.sol";
 
-
 //This path is updated during deployment
 import "../../lib/local/DeploymentConstants.sol";
 import "../../interfaces/facets/avalanche/IUniswapV3Facet.sol";
