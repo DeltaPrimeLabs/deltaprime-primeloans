@@ -5,6 +5,7 @@ import "../ReentrancyGuardKeccak.sol";
 import "../OnlyOwnerOrInsolvent.sol";
 import "../interfaces/joe-v2/ILBRouter.sol";
 import "../interfaces/joe-v2/ILBFactory.sol";
+import "../interfaces/joe-v2/IRewarder.sol";
 import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 
 //This path is updated during deployment
@@ -13,6 +14,8 @@ import "../lib/local/DeploymentConstants.sol";
 abstract contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
     using TransferHelper for address;
+
+    address private constant REWARDER = 0x624C5b9BEB13af6893e715932c26e2b7A59c410a;
 
     function maxBinsPerPrimeAccount() public view virtual returns (uint256);
 
@@ -37,6 +40,26 @@ abstract contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, 
             if (pair == address(pairs[i])) return true;
         }
         return false;
+    }
+
+    function claimReward(IRewarder.MerkleEntry[] calldata merkleEntries) external nonReentrant onlyOwner {
+        uint256 length = merkleEntries.length;
+        IERC20[] memory tokens = new IERC20[](length);
+        uint256[] memory beforeBalances = new uint256[](length);
+        for (uint256 i; i != length; ++i) {
+            tokens[i] = merkleEntries[i].token;
+            beforeBalances[i] = tokens[i].balanceOf(address(this));
+        }
+
+        IRewarder rewarder = IRewarder(REWARDER);
+        rewarder.batchClaim(merkleEntries);
+
+        for (uint256 i; i != length; ++i) {
+            uint256 newBalance = tokens[i].balanceOf(address(this));
+            if (newBalance > beforeBalances[i]) {
+                address(tokens[i]).safeTransfer(msg.sender, newBalance - beforeBalances[i]);
+            }
+        }
     }
 
     function fundLiquidityTraderJoeV2(ILBPair pair, uint256[] memory ids, uint256[] memory amounts) external nonReentrant {
