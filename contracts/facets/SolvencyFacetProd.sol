@@ -45,6 +45,7 @@ abstract contract SolvencyFacetProd is RedstoneConsumerNumericBase, DiamondHelpe
       * @dev This function uses the redstone-evm-connector
     **/
     function isSolvent() public view returns (bool) {
+        require(!DiamondStorageLib.isAccountFrozen(), "Account frozen");
         return getHealthRatio() >= 1e18;
     }
 
