@@ -1168,7 +1168,7 @@ export default {
       const isGlp = withdrawRequest.asset === 'GLP';
       const isLevel = ['arbJnrLLP', 'arbMzeLLP', 'arbSnrLLP'].includes(withdrawRequest.asset);
 
-      const amountInWei = parseUnits(String(withdrawRequest.value), withdrawRequest.assetDecimals);
+      const amountInWei = parseUnits(parseFloat(withdrawRequest.value).toFixed(withdrawRequest.assetDecimals), withdrawRequest.assetDecimals);
 
       const transaction = isGlp ?
           await (await wrapContract(state.smartLoanContract, loanAssets)).withdrawGLP(
