@@ -2,7 +2,7 @@
   <div class="lp-table-row-component gmxV2" :class="{'expanded': rowExpanded}">
     <div class="table__row" v-if="lpToken">
       <div class="table__cell asset">
-        <DoubleAssetIcon :primary="lpToken.longToken" :secondary="lpToken.shortToken"></DoubleAssetIcon>
+        <img class="asset__icon" :src="getAssetIcon(lpToken.longToken)">
         <div class="asset__info">
           <a class="asset__name" :href="lpToken.link" target=”_blank”>{{ lpToken.name }}</a>
           <div class="asset__dex">
@@ -28,22 +28,6 @@
         </template>
       </div>
 
-      <div class="table__cell table__cell--double-value rewards">
-
-        <template v-if="rewards">
-          <div class="double-value__pieces">
-            <img src="src/assets/logo/lvl.png" class="lvl-logo">
-            {{ formatTokenBalance(rewards, 6) }}
-          </div>
-          <div class="double-value__usd">
-            {{ rewardsInUsd | usd }}
-          </div>
-        </template>
-        <template v-else>
-          <div class="no-value-dash"></div>
-        </template>
-      </div>
-
       <div class="table__cell trend-gmxV2">
         <div class="trend__chart-change" v-on:click="toggleChart()">
           <SmallChartBeta :data-points="weeklyPrices"
@@ -58,6 +42,10 @@
 
       <div class="table__cell table__cell--double-value tvl">
         {{ formatTvl(tvl) }}
+      </div>
+
+<!--      composition-->
+      <div class="table__cell table__cell--double-value tvl">
       </div>
 
       <div class="table__cell capacity">
@@ -378,7 +366,6 @@ export default {
 
     gmxV2Query() {
       const depositReader = new ethers.Contract(config.gmxV2DepositReaderAddress, IREADER_DEPOSIT_UTILS.abi, this.provider.getSigner());
-      const withdrawalReader = new ethers.Contract(config.gmxV2WithdrawalReaderAddress, IREADER_WITHDRAWAL_UTILS.abi, this.provider.getSigner());
 
       const longToken = config.ASSETS_CONFIG[this.lpToken.longToken];
       const shortToken = config.ASSETS_CONFIG[this.lpToken.shortToken];
@@ -386,7 +373,7 @@ export default {
 
       const marketProps = {
           marketToken: this.lpToken.address,
-          indexToken: longToken.address,
+          indexToken: this.lpToken.indexTokenAddress,
           longToken: longToken.address,
           shortToken: shortToken.address
         }
@@ -396,22 +383,22 @@ export default {
 
         let shortTokenGmxData = gmxData.find(el => el.tokenSymbol === shortToken.symbol);
         let longTokenGmxData = gmxData.find(el => el.tokenSymbol === longToken.symbol);
+        let indexTokenGmxData = gmxData.find(el => el.tokenAddress === this.lpToken.indexTokenAddress);
 
         const prices = {
-          indexTokenPrice: { min: BigNumber.from(longTokenGmxData.minPrice), max: BigNumber.from(longTokenGmxData.maxPrice) },
+          indexTokenPrice: { min: BigNumber.from(indexTokenGmxData.minPrice), max: BigNumber.from(indexTokenGmxData.maxPrice) },
           longTokenPrice: { min: BigNumber.from(longTokenGmxData.minPrice) , max: BigNumber.from(longTokenGmxData.maxPrice) },
           shortTokenPrice: { min: BigNumber.from(shortTokenGmxData.minPrice), max: BigNumber.from(shortTokenGmxData.maxPrice) }
         }
 
         if (config.GMX_V2_ASSETS_CONFIG[sourceAsset]) {
-          let [longTokenOut, shortTokenOut] = await withdrawalReader.getWithdrawalAmountOut(
+          let [longTokenOut, shortTokenOut] = await depositReader.getWithdrawalAmountOut(
               config.gmxV2DataStoreAddress, marketProps, prices, amountIn, this.nullAddress
           );
 
           return [longTokenOut, shortTokenOut];
         } else {
-
-          let isLong = config.GMX_V2_ASSETS_CONFIG[targetAsset].longAsset === sourceAsset;
+          let isLong = this.lpToken.longToken === sourceAsset;
 
           let amountOut = await depositReader.getDepositAmountOut(
               config.gmxV2DataStoreAddress, marketProps, prices, isLong ? amountIn : 0, isLong ? 0 : amountIn, this.nullAddress
@@ -425,7 +412,7 @@ export default {
     gmxV2Fee() {
       return async (sourceAsset, targetAsset, amountIn, amountOut) => {
 
-       return parseUnits('0', 18);
+       return [0,0];
       }
     },
 
@@ -491,7 +478,7 @@ export default {
       modalInstance.farms = this.farms;
       modalInstance.health = this.health;
       modalInstance.isLP = false;
-      modalInstance.logo = `${this.lpToken.symbol.toLowerCase()}.svg`;
+      modalInstance.logo = `${this.lpToken.longToken.toLowerCase()}.svg`;
       modalInstance.reverseSwapDisabled = true;
       modalInstance.$on('WITHDRAW', withdrawEvent => {
         const withdrawRequest = {
@@ -540,6 +527,7 @@ export default {
       modalInstance.debt = this.fullLoanStatus.debt;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
       modalInstance.health = this.fullLoanStatus.health;
+      modalInstance.checkMarketDeviation = false;
 
       modalInstance.queryMethods = {
         GmxV2: this.gmxV2Query(),
@@ -558,7 +546,6 @@ export default {
           targetAmount: swapEvent.targetAmount,
           method: `gmxV2Stake${swapEvent.sourceAsset.charAt(0) + swapEvent.sourceAsset.toLowerCase().slice(1)}${this.lpToken.short}`
         };
-        console.log(addLiquidityRequest)
 
         this.handleTransaction(this.addLiquidityGmxV2Finance, {addLiquidityRequest: addLiquidityRequest}, () => {
           this.$forceUpdate();
@@ -576,13 +563,13 @@ export default {
       modalInstance.title = 'Unwind GMX V2 position';
       modalInstance.swapDex = 'GmxV2';
       modalInstance.dexOptions = ['GmxV2'];
-      modalInstance.slippageMargin = 0.1;
+      modalInstance.userSlippage = 0.1;
       modalInstance.sourceAsset = this.lpToken.symbol;
       modalInstance.sourceAssetBalance = this.gmxV2Balances[this.lpToken.symbol];
       modalInstance.sourceAssetsConfig = config.GMX_V2_ASSETS_CONFIG;
       modalInstance.assets = { ...this.assets, ...this.gmxV2Assets };
       modalInstance.sourceAssets = { GmxV2: [this.lpToken.symbol]} ;
-      modalInstance.targetAssets = { GmxV2: [this.lpToken.shortToken, this.lpToken.longToken] };
+      modalInstance.targetAssets = { GmxV2: [this.lpToken.longToken, this.lpToken.shortToken] };
       modalInstance.assetBalances = { ...this.assetBalances, ...this.gmxV2Balances };
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
@@ -599,7 +586,7 @@ export default {
       modalInstance.debt = this.fullLoanStatus.debt;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
       modalInstance.health = this.fullLoanStatus.health;
-      modalInstance.info = `info .`;
+      // modalInstance.info = `info .`;
       modalInstance.queryMethods = {
         GmxV2: this.gmxV2Query(),
       };

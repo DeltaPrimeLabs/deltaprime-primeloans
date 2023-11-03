@@ -257,6 +257,7 @@ export default {
       targetInputError: false,
       checkingPrices: false,
       isTyping: false,
+      checkMarketDeviation: true, //check oracle slippage
       marketDeviation: 0,
       MIN_ALLOWED_HEALTH: config.MIN_ALLOWED_HEALTH,
       healthAfterTransaction: 0,
@@ -411,9 +412,14 @@ export default {
 
     async updateSlippageWithAmounts(estimatedReceivedTokens) {
       let dexSlippage = 0;
-      this.receivedAccordingToOracle = this.estimatedNeededTokens * this.sourceAssetData.price / this.targetAssetData.price;
-      dexSlippage = (this.receivedAccordingToOracle - estimatedReceivedTokens) / estimatedReceivedTokens;
 
+      if (this.checkMarketDeviation) {
+        this.receivedAccordingToOracle = this.estimatedNeededTokens * this.sourceAssetData.price / this.targetAssetData.price;
+        dexSlippage = (this.receivedAccordingToOracle - estimatedReceivedTokens) / estimatedReceivedTokens;
+        this.marketDeviation = parseFloat((100 * dexSlippage).toFixed(3));
+      } else {
+        this.receivedAccordingToOracle = this.estimatedNeededTokens;
+      }
       let slippageMargin;
 
       if (this.swapDex === 'ParaSwap') {
@@ -422,7 +428,6 @@ export default {
         slippageMargin = this.slippageMargin;
       }
 
-      this.marketDeviation = parseFloat((100 * dexSlippage).toFixed(3));
 
       let updatedSlippage = slippageMargin + 100 * dexSlippage;
 
@@ -688,8 +693,6 @@ export default {
       }
 
       let lbTokens = Object.values(this.traderJoeV2LpAssets);
-
-      console.log()
 
       this.healthAfterTransaction = calculateHealth(tokens, lbTokens);
     },

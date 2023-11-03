@@ -23,12 +23,14 @@
       <CurrencyInput v-if="isLP"
                      :symbol="asset.primary"
                      :symbol-secondary="asset.secondary"
+                     :asset="asset"
                      v-on:newValue="withdrawValueChange"
                      :validators="validators"
                      :info="() => sourceAssetValue">
       </CurrencyInput>
       <CurrencyInput v-else
                      :symbol="asset.symbol"
+                     :asset="asset"
                      v-on:newValue="withdrawValueChange"
                      :logo="logo"
                      :validators="validators"
