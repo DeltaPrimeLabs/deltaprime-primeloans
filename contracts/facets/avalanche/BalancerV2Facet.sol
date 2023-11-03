@@ -267,6 +267,9 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         if (pool == 0x9fA6aB3d78984A69e712730A2227F20bCC8b5aD9) {
             return 0x720158c329E6558287c4539b0Ed21742B0B73436;
         }
+        if (pool == 0xfD2620C9cfceC7D152467633B3B0Ca338D3d78cc) {
+            return 0xf9aE6D2D56f02304f72dcC61694eAD0dC8DB51f7;
+        }
 
         revert BalancerV2PoolNotWhitelisted();
     }
@@ -284,6 +287,14 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             bytes32[] memory tokens = new bytes32[](3);
             tokens[0] = "AVAX";
             tokens[1] = "yyAVAX";
+            tokens[2] = "USDC";
+
+            return tokens;
+        }
+        if (pool == 0xfD2620C9cfceC7D152467633B3B0Ca338D3d78cc) {
+            bytes32[] memory tokens = new bytes32[](3);
+            tokens[0] = "AVAX";
+            tokens[1] = "sAVAX";
             tokens[2] = "USDC";
 
             return tokens;
