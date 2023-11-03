@@ -82,6 +82,10 @@ export default {
       justify-content: flex-end;
     }
 
+    &.rewards {
+      justify-content: flex-end;
+    }
+
     &.impact {
       justify-content: center;
     }
