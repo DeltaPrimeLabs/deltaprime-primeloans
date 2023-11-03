@@ -47,6 +47,12 @@
         </template>
       </div>
 
+      <div class="table__cell rewards">
+        <FlatButton :active="false" v-tooltip="{content: 'This button will show more information about your ranking and collected incentives. While the button is not yet active, your Prime Account is already collecting.', classes: 'info-tooltip'}">
+          {{ 'soon!' }}
+        </FlatButton>
+      </div>
+
       <div class="table__cell table__cell--double-value loan">
         {{ formatTvl(lpToken.tvl) }}
       </div>
@@ -255,12 +261,12 @@ export default {
         iconSrc: 'src/assets/icons/minus.svg',
         tooltip: 'Remove',
         menuOptions: [
-          {
-            key: 'WITHDRAW',
-            name: 'Export LB position',
-            disabled: !this.hasSmartLoanContract || !this.hasBinsInPool,
-            disabledInfo: 'No LB tokens in Prime Account'
-          },
+          // {
+          //   key: 'WITHDRAW',
+          //   name: 'Export LB position',
+          //   disabled: !this.hasSmartLoanContract || !this.hasBinsInPool,
+          //   disabledInfo: 'No LB tokens in Prime Account'
+          // },
           {
             key: 'REMOVE_LIQUIDITY',
             name: 'Remove LB position',
@@ -358,7 +364,7 @@ export default {
       modalInstance.$on('WITHDRAW', addFromWalletEvent => {
         const withdrawLiquidityRequest = {
           ids: this.lpToken.binIds,
-          amounts: this.lpToken.accountBalances,
+          amounts: this.lpToken.accountBalances.map(el => el.toLocaleString('fullwide', {useGrouping:false})),
           pair: this.lpToken.address,
           lpToken: this.lpToken
         };
@@ -597,7 +603,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: 180px 100px 100px 195px 150px 120px 120px 35px 80px;
+    grid-template-columns: 180px 100px 100px 180px 100px 90px 120px 120px 35px 80px;
     height: 60px;
     padding-left: 6px;
 
@@ -688,6 +694,11 @@ export default {
 
       &.loan, &.apr, &.max-apr {
         align-items: flex-end;
+      }
+
+      &.rewards {
+        align-items: center;
+        justify-content: flex-end;
       }
 
       &.max-apr {

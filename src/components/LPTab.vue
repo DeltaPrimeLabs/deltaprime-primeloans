@@ -189,7 +189,7 @@ export default {
     },
     setupTraderJoeLpTableHeaderConfig() {
       this.traderJoeLpTableHeaderConfig = {
-        gridTemplateColumns: '180px 100px 100px 195px 150px 120px 120px 35px 80px',
+        gridTemplateColumns: '180px 100px 100px 180px 100px 90px 120px 120px 35px 80px',
         cells: [
           {
             label: 'TraderJoe V2',
@@ -222,6 +222,13 @@ export default {
             class: 'balance',
             id: 'COMPOSITION',
             tooltip: `Underlying assets`
+          },
+          {
+            label: 'Rewards',
+            sortable: false,
+            class: 'rewards',
+            id: 'REWARDS',
+            tooltip: `Trader Joe has received $1.44M in ARB to distribute to users from Nov-Jan 2023. The majority will be distributed over the 30 largest users of each incentivized pool. Click on a “Rewards” button to see how your Prime Account is performing.`
           },
           {
             label: 'TVL',
