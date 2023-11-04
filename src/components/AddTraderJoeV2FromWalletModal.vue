@@ -6,7 +6,7 @@
       </div>
       <div class="modal-top-desc">
         <div v-if="userBalances && userBalances.length > 0">
-          <span v-if="!tooManyBins">This action will <b>route</b> your <a :href="lpToken.link" target="_blank"><b>{{ lpToken.name}} LB tokens</b></a> through your Prime Account</span>
+          <span v-if="!tooManyBins">This action will route your <a :href="lpToken.link" target="_blank"><b>{{ lpToken.name}} LB tokens</b></a> through your Prime Account</span>
           <span v-else>That action would result in too many bins in your account. Max. amount is 20. Consider opening a new Prime Account.</span>
         </div>
         <div v-if="!userBalances || userBalances.length == 0">
