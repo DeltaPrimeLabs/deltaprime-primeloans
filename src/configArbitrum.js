@@ -96,6 +96,7 @@ export default {
     },
     poolsUnlocking: true,
     TRADERJOEV2_LP_ASSETS_CONFIG: {
+        'TJLB_GMX_ETH': { primary: 'GMX', secondary: 'ETH', name: 'GMX-ETH', dex: 'TraderJoe', symbol: 'TJLB_GMX_ETH', decimals: 18, baseFee: '0.002', address: addresses['TJLB_GMX_ETH'], binStep: 20, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2', link: "https://traderjoexyz.com/arbitrum/pool/v21/0xfc5a1a6eb076a2c7ad06ed22c90d7e710e35ad0a/ETH/20"},
         'TJLB_DAI_USDCe': { primary: 'DAI', secondary: 'USDC.e', name: 'DAI-USDCe', dex: 'TraderJoe', symbol: 'TJLB_DAI_USDCe', decimals: 18, baseFee: '0.00005', address: addresses['TJLB_DAI_USDCe'], binStep: 1, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2', link: "https://traderjoexyz.com/arbitrum/pool/v21/0xda10009cbd5d07dd0cecc66161fc93d7c9000da1/0xff970a61a04b1ca14834a43f5de4533ebddb5cc8/1"},
         'TJLB_ETH_USDT': { primary: 'ETH', secondary: 'USDT', name: 'ETH-USDT', dex: 'TraderJoe', symbol: 'TJLB_ETH_USDT', decimals: 18, baseFee: '0.0015', address: addresses['TJLB_ETH_USDT'], binStep: 15, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2', link: "https://traderjoexyz.com/arbitrum/pool/v21/ETH/0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9/15"},
         'TJLB_ETH_USDCe': { primary: 'ETH', secondary: 'USDC.e', name: 'ETH-USDCe', dex: 'TraderJoe', symbol: 'TJLB_ETH_USDCe', decimals: 18, baseFee: '0.0015', address: addresses['TJLB_ETH_USDCe'], binStep: 15, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2', link: "https://traderjoexyz.com/arbitrum/pool/v21/ETH/0xff970a61a04b1ca14834a43f5de4533ebddb5cc8/15"},
@@ -103,8 +104,8 @@ export default {
         'TJLB_BTC_ETH': { primary: 'BTC', secondary: 'ETH', name: 'BTC-ETH', dex: 'TraderJoe', symbol: 'TJLB_BTC_ETH', decimals: 18, baseFee: '0.001', address: addresses['TJLB_BTC_ETH'], binStep: 10, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2', link: "https://traderjoexyz.com/arbitrum/pool/v21/0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f/ETH/10"},
     },
     LEVEL_LP_ASSETS_CONFIG: {
-        "arbJnrLLP": {name: "Junior", symbol: "arbJnrLLP", pid: 2, short: "Jnr", decimals: 18, address: addresses.arbJnrLLP, debtCoverage: 0.83333333333, balanceMethod: "levelJnrBalance", groupIdentifier: 'STKD_JNR_LLP_GROUP', underlyingAssets: ['BTC', 'ETH', 'ARB', 'USDT', 'USDC'], link: 'https://app.level.finance/liquidity/junior-tranche/buy'},
-        "arbMzeLLP": {name: "Mezzanine", symbol: "arbMzeLLP", pid: 1, short: "Mze", decimals: 18, address: addresses.arbMzeLLP, debtCoverage: 0.83333333333, balanceMethod: "levelMzeBalance", groupIdentifier: 'STKD_MZE_LLP_GROUP', underlyingAssets: ['BTC', 'ETH', 'USDT', 'USDC'], link: 'https://app.level.finance/liquidity/mezzanine-tranche/buy'},
+        "arbJnrLLP": {name: "Junior", symbol: "arbJnrLLP", pid: 2, short: "Jnr", decimals: 18, address: addresses.arbJnrLLP, debtCoverage: 0.83333333333, balanceMethod: "levelJnrBalance", groupIdentifier: 'STKD_JNR_LLP_GROUP', underlyingAssets: ['BTC', 'ETH', 'ARB', 'USDT', 'USDC'], link: 'https://app.level.finance/liquidity/junior-tranche/buy', disableAddTokenButton: true},
+        "arbMzeLLP": {name: "Mezzanine", symbol: "arbMzeLLP", pid: 1, short: "Mze", decimals: 18, address: addresses.arbMzeLLP, debtCoverage: 0.83333333333, balanceMethod: "levelMzeBalance", groupIdentifier: 'STKD_MZE_LLP_GROUP', underlyingAssets: ['BTC', 'ETH', 'USDT', 'USDC'], link: 'https://app.level.finance/liquidity/mezzanine-tranche/buy', disableAddTokenButton: true},
         "arbSnrLLP": {name: "Senior", symbol: "arbSnrLLP", pid: 0, short: "Snr", decimals: 18, address: addresses.arbSnrLLP, debtCoverage: 0.83333333333, balanceMethod: "levelSnrBalance", groupIdentifier: 'STKD_SNR_LLP_GROUP', underlyingAssets: ['BTC', 'ETH', 'USDT', 'USDC'], link: 'https://app.level.finance/liquidity/senior-tranche/buy'},
     },
     LP_ASSETS_CONFIG: {
@@ -281,7 +282,7 @@ export default {
     dataProviderHistoricalPrices: "redstone",
     redstoneFeedUrl: "https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-arbitrum-prod",
     subgraph: "https://api.thegraph.com/subgraphs/name/keizir/deltaprime",
-    readRpcUrl: "https://arb-mainnet-public.unifra.io",
+    readRpcUrl: "https://arbitrum-mainnet.core.chainstack.com/9a30fb13b2159a76c8e143c52d5579bf",
     EMAIL_REGEX: /(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])/,
     refreshDelay: 2000,
 }

@@ -378,6 +378,8 @@ export default {
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpTokenBalances;
+      modalInstance.levelLpAssets = this.levelLpAssets;
+      modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.farms = this.farms;
       modalInstance.health = this.health;
