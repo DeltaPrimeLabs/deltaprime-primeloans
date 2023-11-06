@@ -418,7 +418,9 @@ export default {
     },
 
     levelFinanceFee() {
+      console.log('levelFinanceFee');
       const calculator = new ethers.Contract(config.levelLiquidityCalculatorAddress, LIQUIDITY_CALCULATOR.abi, provider.getSigner());
+      console.log(calculator);
 
       return async (sourceAsset, targetAsset, amountIn, amountOut) => {
         const isBuyingLevel = this.lpToken.symbol === targetAsset;
@@ -508,15 +510,22 @@ export default {
     openProvideLiquidityModal() {
       console.log('openProvideLiquidityModal')
       const modalInstance = this.openModal(SwapModal);
+      const swapDexsConfig = {
+        Level: {
+          availableAssets: [...this.lpToken.underlyingAssets]
+        }
+      }
       let initSourceAsset = [...this.lpToken.underlyingAssets][0];
       modalInstance.title = 'Create LLP position';
       modalInstance.swapDex = 'Level';
       modalInstance.swapDebtMode = false;
+      modalInstance.levelMode = true;
       modalInstance.slippageMargin = 0.1;
       modalInstance.sourceAsset = initSourceAsset;
       modalInstance.sourceAssetBalance = this.assetBalances[initSourceAsset];
       modalInstance.assets = { ...this.assets, ...this.levelLpAssets };
       modalInstance.sourceAssets = { Level: [...this.lpToken.underlyingAssets] };
+      modalInstance.swapDexsConfig = swapDexsConfig;
       modalInstance.targetAssetsConfig = config.LEVEL_LP_ASSETS_CONFIG;
       modalInstance.targetAssets = { Level: [this.lpToken.symbol] };
       modalInstance.assetBalances = { ...this.assetBalances, ...this.levelLpBalances };

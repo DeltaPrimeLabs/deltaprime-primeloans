@@ -228,6 +228,7 @@ export default {
   data() {
     return {
       swapDebtMode: null,
+      levelMode: null,
       sourceAssets: null,
       targetAssets: null,
       sourceAssetOptions: null,
@@ -439,6 +440,9 @@ export default {
     setupSourceAssetOptions() {
       this.sourceAssetOptions = [];
       const sourceAssets = this.swapDebtMode ? this.sourceAssets : this.swapDexsConfig[this.swapDex].availableAssets;
+      console.log(this.sourceAssets);
+      console.log(this.swapDexsConfig);
+      console.log(sourceAssets);
       sourceAssets.forEach(assetSymbol => {
         const asset = this.sourceAssetsConfig[assetSymbol];
         const assetOption = {
@@ -454,8 +458,19 @@ export default {
     setupTargetAssetOptions() {
       this.targetAssetOptions = [];
 
-      const targetAssets = this.swapDebtMode ? this.targetAssets : this.swapDexsConfig[this.swapDex].availableAssets;
+      // const targetAssets = this.swapDebtMode || this.levelMode ? this.targetAssets : this.swapDexsConfig[this.swapDex].availableAssets;
+      let targetAssets;
+      if (this.swapDebtMode) {
+        targetAssets = this.targetAssets;
+      } else if (this.levelMode) {
+        targetAssets = this.targetAssets.Level;
+      } else {
+        targetAssets = this.swapDexsConfig[this.swapDex].availableAssets;
+      }
+      console.log(targetAssets);
+      console.log(this.targetAssetsConfig);
       targetAssets.forEach(assetSymbol => {
+        console.log(assetSymbol);
         const asset = this.targetAssetsConfig[assetSymbol];
         const assetOption = {
           symbol: assetSymbol,

@@ -48,6 +48,9 @@ export default {
         ParaSwap: {
             availableAssets: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH'],
             slippageMargin: 0.05
+        },
+        Level: {
+            slippageMargin: 0.1
         }
     },
     paraSwapDefaultSlippage: 0.02,
@@ -226,7 +229,7 @@ export default {
                 rewardsInfo: 'These are the rewards that you accumulated. These are staked too.',
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['GMX'],
-                strategy: 'Wombex',
+                strategy: 'GMX',
                 refreshDelay: 60000
             }
         ],
