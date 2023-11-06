@@ -26,9 +26,8 @@ abstract contract GmxV2FacetArbitrum is GmxV2Facet {
         return 0x0628D46b5D145f183AdB6Ef1f2c97eD1C4701C55;
     }
 
-    // TODO: Dynamically source whitelisted keepers?
-    function getGMX_V2_KEEPER() internal pure virtual override returns (address) {
-        return 0xE47b36382DC50b90bCF6176Ddb159C4b9333A7AB;
+    function getGMX_V2_ROLE_STORE() internal pure virtual override returns (address){
+        return 0x3c3d99FD298f679DBC2CEcd132b4eC4d0F5e6e72;
     }
 
     // Markets
