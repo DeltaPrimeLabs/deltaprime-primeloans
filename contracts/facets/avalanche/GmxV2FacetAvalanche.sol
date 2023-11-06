@@ -37,9 +37,9 @@ abstract contract GmxV2FacetAvalanche is GmxV2Facet {
     address constant GM_SOL_SOL_USDC = 0xd2eFd1eA687CD78c41ac262B3Bc9B53889ff1F70;
 
     // Tokens
-    address constant USDC = 0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e;
+    address constant USDC = 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E;
     address constant BTCb = 0x152b9d0FdC40C096757F570A51E494bd4b943E50;
-    address constant WETHe = 0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab;
+    address constant WETHe = 0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB;
     address constant WAVAX = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
     address constant SOL = 0xFE6B19286885a4F7F55AdAD09C3Cd1f906D2478F;
 

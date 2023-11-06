@@ -14,5 +14,5 @@ interface IRoleStore {
      * @param roleKey The key of the role.
      * @return True if the account has the role, false otherwise.
      */
-    function hasRole(address account, bytes32 roleKey) public view returns (bool);
+    function hasRole(address account, bytes32 roleKey) external view returns (bool);
 }
