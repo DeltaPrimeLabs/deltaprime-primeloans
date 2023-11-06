@@ -58,6 +58,8 @@ export default {
       const newData = []
       const newBackgroundColors = []
       const newHoverColors = []
+      const newBorderWidths = []
+      const newBorderColors = []
       const newLabels = []
       this.tokensData.forEach((data, index) => {
         const isPrimaryData = data.primaryTokenBalance > data.secondaryTokenBalance
@@ -67,14 +69,25 @@ export default {
           y: data.value,
           token: data,
         })
-        newBackgroundColors.push(index === this.currentPriceIndex ? getThemeVariable('--liquidity-chart__active-price-bar-color') : isPrimaryData ? getThemeVariable('--liquidity-chart__main-token-color') : getThemeVariable('--liquidity-chart__secondary-token-color'))
-        newHoverColors.push(index === this.currentPriceIndex ? getThemeVariable('--liquidity-chart__active-price-bar-color--hover') : isPrimaryData ? getThemeVariable('--liquidity-chart__main-token-color--hover') : getThemeVariable('--liquidity-chart__secondary-token-color--hover'))
+
+        if (data.isEmpty) {
+          newBackgroundColors.push(getThemeVariable('--liquidity-chart__ghost-bar-color'))
+          newHoverColors.push(getThemeVariable('--liquidity-chart__ghost-bar-color'))
+          newBorderColors.push(getThemeVariable('--liquidity-chart__ghost-bar-border-color'))
+          newBorderWidths.push(1)
+        } else {
+          newBackgroundColors.push(index === this.currentPriceIndex ? getThemeVariable('--liquidity-chart__active-price-bar-color') : isPrimaryData ? getThemeVariable('--liquidity-chart__main-token-color') : getThemeVariable('--liquidity-chart__secondary-token-color'))
+          newHoverColors.push(index === this.currentPriceIndex ? getThemeVariable('--liquidity-chart__active-price-bar-color--hover') : isPrimaryData ? getThemeVariable('--liquidity-chart__main-token-color--hover') : getThemeVariable('--liquidity-chart__secondary-token-color--hover'))
+          newBorderColors.push(getThemeVariable('--liquidity-chart__active-price-bar-color--hover'))
+          newBorderWidths.push(0)
+        }
       })
       this.chartData.datasets = [{
         data: newData,
         backgroundColor: newBackgroundColors,
         hoverBackgroundColor: newHoverColors,
-        borderWidth: 0,
+        borderWidth: newBorderWidths,
+        borderColor: newBorderColors,
       }]
       this.chartData.labels = newLabels
       this.renderChart(this.chartData, this.chartOptions);
@@ -147,10 +160,11 @@ export default {
               return;
             }
             const binData = this.tokensData[tooltipModel.dataPoints[0].index]
+            const noLiquidityText = `<div style="margin-top: 8px">Currently there is <br> no liquidity in this bin</div>`
             const priceText = `<div>Price (${this.primary} / ${this.secondary})</div><div class="value">${binData.price}</div>`
             const primaryTokenText = binData.primaryTokenBalance === '0.0' ? '' : `<div>${this.primary}</div><div class="value">${binData.primaryTokenBalance}</div>`
             const secondaryTokenText = binData.secondaryTokenBalance === '0.0' ? '' : `<div>${this.secondary}</div><div class="value">${binData.secondaryTokenBalance}</div>`
-            tooltipElement.innerHTML = priceText + primaryTokenText + secondaryTokenText;
+            tooltipElement.innerHTML = priceText + (binData.isEmpty ? noLiquidityText : primaryTokenText + secondaryTokenText);
             tooltipElement.classList.remove('above', 'below', 'no-transform');
             if (tooltipModel.yAlign) {
               tooltipElement.classList.add(tooltipModel.yAlign);
