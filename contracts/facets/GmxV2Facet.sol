@@ -116,8 +116,8 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
             bytes32 gmTokenSymbol = tokenManager.tokenAddressToSymbol(gmToken);
             uint256 debt = _getDebt();
             uint256 gmTokenUsdPrice = getPrice(gmTokenSymbol);
-            uint256 gmTokensUsdValue = gmTokenUsdPrice * minGmAmount * tokenManager.debtCoverage(gmToken) / 1e26;
-            require((totalWeightedValuePostDeposit + gmTokensUsdValue) / debt > 1.0, "The action may cause the account to become insolvent");
+            uint256 gmTokensWeightedUsdValue = gmTokenUsdPrice * minGmAmount * tokenManager.debtCoverage(gmToken) / 1e26;
+            require((totalWeightedValuePostDeposit + gmTokensWeightedUsdValue) / debt > 1.0, "The action may cause the account to become insolvent");
         }
 
         // Freeze account
@@ -192,12 +192,12 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
             receivedTokensPrices = getPrices(receivedTokensSymbols);
             uint256 debt = _getDebt();
 
-            uint256 receivedTokensUsdValue = (
+            uint256 receivedTokensWeightedUsdValue = (
                 (receivedTokensPrices[0] * minLongTokenAmount * tokenManager.debtCoverage(longToken)) +
                 (receivedTokensPrices[1] * minShortTokenAmount * tokenManager.debtCoverage(shortToken))
             )
             / 1e26;
-            require((totalWeightedValuePostWithdrawal + receivedTokensUsdValue) / debt > 1.0, "The action may cause the account to become insolvent");
+            require((totalWeightedValuePostWithdrawal + receivedTokensWeightedUsdValue) / debt > 1.0, "The action may cause the account to become insolvent");
         }
 
         // Freeze account
