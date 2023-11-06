@@ -15,6 +15,7 @@ import "../interfaces/ITokenManager.sol";
 import "../interfaces/gmx-v2/Deposit.sol";
 import "../interfaces/gmx-v2/Withdrawal.sol";
 import "../interfaces/gmx-v2/Order.sol";
+import "../interfaces/gmx-v2/IRoleStore.sol";
 import "../interfaces/gmx-v2/BasicMulticall.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "../interfaces/gmx-v2/IDepositCallbackReceiver.sol";
@@ -30,6 +31,13 @@ import "../lib/local/DeploymentConstants.sol";
 abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackReceiver, ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     using TransferHelper for address;
 
+    // CONSTANTS
+    bytes32 constant public CONTROLLER = keccak256(abi.encode("CONTROLLER"));
+    bytes32 constant public ORDER_KEEPER = keccak256(abi.encode("ORDER_KEEPER"));
+    bytes32 constant public MARKET_KEEPER = keccak256(abi.encode("MARKET_KEEPER"));
+    bytes32 constant public FEE_KEEPER = keccak256(abi.encode("FEE_KEEPER"));
+    bytes32 constant public FROZEN_ORDER_KEEPER = keccak256(abi.encode("FROZEN_ORDER_KEEPER"));
+
     // GMX contracts
     function getGMX_V2_ROUTER() internal pure virtual returns (address);
 
@@ -39,12 +47,26 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
 
     function getGMX_V2_WITHDRAWAL_VAULT() internal pure virtual returns (address);
 
-    function getGMX_V2_KEEPER() internal pure virtual returns (address);
+    function getGMX_V2_ROLE_STORE() internal pure virtual returns (address);
 
     // Mappings
     function marketToLongToken(address market) internal virtual pure returns (address);
 
     function marketToShortToken(address market) internal virtual pure returns (address);
+
+    function isCallerAuthorized(address _caller) internal view returns (bool){
+        IRoleStore roleStore = IRoleStore(getGMX_V2_ROLE_STORE());
+        if(
+            roleStore.hasRole(_caller, CONTROLLER) ||
+            roleStore.hasRole(_caller, ORDER_KEEPER) ||
+            roleStore.hasRole(_caller, MARKET_KEEPER) ||
+            roleStore.hasRole(_caller, FEE_KEEPER) ||
+            roleStore.hasRole(_caller, FROZEN_ORDER_KEEPER)
+        ){
+            return true;
+        }
+        return false;
+    }
 
 
     //TODO: can you create a small doc (can be a test file
@@ -248,7 +270,7 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
     // MODIFIERS
     //TODO: probably not a good solution
     modifier onlyGmxV2Keeper() {
-        require(msg.sender == getGMX_V2_KEEPER(), "Must be a GMX V2 Keeper");
+        require(isCallerAuthorized(msg.sender), "Must be a GMX V2 authorized Keeper");
         _;
     }
 
