@@ -405,16 +405,20 @@ export default {
             lpTokens[asset.symbol] = asset;
 
             if (asset.rewardToken) {
-              const rewardsRaw = traderJoeService.getClaimableRewards(state.smartLoanContract.address, asset.address);
-              let totalRewards = 0;
+              try {
+                const rewardsRaw = traderJoeService.getClaimableRewards(state.smartLoanContract.address, asset.address);
+                let totalRewards = 0;
 
-              rewardsRaw.map(rewards => {
-                rewards.claimableRewards.map(claimable => {
-                  totalRewards += parseFloat(formatUnits(claimable.amount, asset.rewardToken.decimals));
+                rewardsRaw.map(rewards => {
+                  rewards.claimableRewards.map(claimable => {
+                    totalRewards += parseFloat(formatUnits(claimable.amount, asset.rewardToken.decimals));
+                  })
                 })
-              })
 
-              lpTokens[asset.symbol]['rewards'] = totalRewards;
+                lpTokens[asset.symbol]['rewards'] = totalRewards;
+              } catch (error) {
+                console.log(`fetching climable rewards error: ${error}`);
+              }
             }
           }
       );
