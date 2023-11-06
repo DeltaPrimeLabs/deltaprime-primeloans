@@ -73,6 +73,7 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
     function _deposit(address gmToken, address depositedToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) internal nonReentrant noBorrowInTheSameBlock onlyOwner returns (bytes[] memory) {
         address longToken = marketToLongToken(gmToken);
         address shortToken = marketToShortToken(gmToken);
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         IERC20(depositedToken).approve(getGMX_V2_ROUTER(), tokenAmount);
 
@@ -109,11 +110,20 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
 
         bytes[] memory results = BasicMulticall(getGMX_V2_EXCHANGE_ROUTER()).multicall{ value: msg.value }(data);
 
+        // Simulate solvency check
+        {
+            uint256 totalWeightedValuePostDeposit = SolvencyMethods._getThresholdWeightedValue();
+            bytes32 gmTokenSymbol = tokenManager.tokenAddressToSymbol(gmToken);
+            uint256 debt = _getDebt();
+            uint256 gmTokenUsdPrice = getPrice(gmTokenSymbol);
+            uint256 gmTokensUsdValue = gmTokenUsdPrice * minGmAmount * tokenManager.debtCoverage(gmToken) / 1e24;
+            require((totalWeightedValuePostDeposit + gmTokensUsdValue) / debt > 1.0, "The action may cause the account to become insolvent");
+        }
+
         // Freeze account
         DiamondStorageLib.freezeAccount(gmToken);
 
         // Reset assets exposure
-        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         bytes32[] memory resetExposureAssets = new bytes32[](3);
         resetExposureAssets[0] = tokenManager.tokenAddressToSymbol(gmToken);
         resetExposureAssets[1] = tokenManager.tokenAddressToSymbol(longToken);
@@ -132,6 +142,7 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
 
     //TODO: withdrawal guard
     function _withdraw(address gmToken, uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) internal nonReentrant noBorrowInTheSameBlock onlyOwnerOrInsolvent returns (bytes[] memory) {
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         bytes[] memory data = new bytes[](3);
 
         IERC20(gmToken).approve(getGMX_V2_ROUTER(), gmAmount);
@@ -168,11 +179,31 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
 
         bytes[] memory results = BasicMulticall(getGMX_V2_EXCHANGE_ROUTER()).multicall{ value: msg.value }(data);
 
+        // Simulate solvency check
+        {
+            uint256 totalWeightedValuePostWithdrawal= SolvencyMethods._getThresholdWeightedValue();
+            address longToken = marketToLongToken(gmToken);
+            address shortToken = marketToShortToken(gmToken);
+            bytes32[] memory receivedTokensSymbols = new bytes32[](2);
+            uint256[] memory receivedTokensPrices = new uint256[](2);
+
+            receivedTokensSymbols[0] = tokenManager.tokenAddressToSymbol(longToken);
+            receivedTokensSymbols[1] = tokenManager.tokenAddressToSymbol(shortToken);
+            receivedTokensPrices = getPrices(receivedTokensSymbols);
+            uint256 debt = _getDebt();
+
+            uint256 receivedTokensUsdValue = (
+                (receivedTokensPrices[0] * minLongTokenAmount * tokenManager.debtCoverage(longToken)) +
+                (receivedTokensPrices[1] * minShortTokenAmount * tokenManager.debtCoverage(shortToken))
+            )
+            / 1e24;
+            require((totalWeightedValuePostWithdrawal + receivedTokensUsdValue) / debt > 1.0, "The action may cause the account to become insolvent");
+        }
+
         // Freeze account
         DiamondStorageLib.freezeAccount(gmToken);
 
         // Reset assets exposure
-        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         bytes32[] memory resetExposureAssets = new bytes32[](3);
         resetExposureAssets[0] = tokenManager.tokenAddressToSymbol(gmToken);
         resetExposureAssets[1] = tokenManager.tokenAddressToSymbol(marketToLongToken(gmToken));
