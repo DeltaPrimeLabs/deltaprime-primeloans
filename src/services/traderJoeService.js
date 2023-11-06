@@ -6,7 +6,9 @@ import * as traderJoeSdk from '@traderjoe-xyz/sdk-v2';
 import { JSBI, ERC20ABI } from '@traderjoe-xyz/sdk';
 import { Token, TokenAmount } from '@traderjoe-xyz/sdk-core';
 import { ethers, BigNumber, utils } from 'ethers';
+import axios from 'axios';
 import config from '../config';
+import tjApiKey from '../../.secrets/traderJoe.json';
 
 const CHAIN_ID = config.chainId;
 const LBPairABI = [
@@ -243,5 +245,22 @@ export default class TraderJoeService {
     ];
 
     return removeLiquidityParams;
+  }
+
+  async getClaimableRewards(loan, market) {
+    const BASE_URL = 'https://api.traderjoexyz.dev/v1/rewards/claimable';
+
+    try {
+      const rewards = await axios.get(`${BASE_URL}/${window.chain}/${loan}?market=${market}`, {
+        headers: {
+          'x-traderjoe-api-key': tjApiKey.apiKey
+        }
+      });
+      console.log(rewards);
+
+      return rewards;
+    } catch (error) {
+      console.log(`fetching claimable rewards failed. ${error}`);
+    }
   }
 }

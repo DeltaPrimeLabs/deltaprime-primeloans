@@ -48,9 +48,13 @@
       </div>
 
       <div class="table__cell rewards">
-        <FlatButton :active="false" v-tooltip="{content: 'This button will show more information about your ranking and collected incentives. While the button is not yet active, your Prime Account is already collecting.', classes: 'info-tooltip'}">
+        <!-- <FlatButton :active="false" v-tooltip="{content: 'This button will show more information about your ranking and collected incentives. While the button is not yet active, your Prime Account is already collecting.', classes: 'info-tooltip'}">
           {{ 'soon!' }}
-        </FlatButton>
+        </FlatButton> -->
+        <template v-if="lpToken.rewardToken">
+          <img class="asset__icon" :src="'src/assets/logo/joe.png'">
+          {{ lpToken.rewards ? lpToken.rewards : 0 }}
+        </template>
       </div>
 
       <div class="table__cell table__cell--double-value loan">

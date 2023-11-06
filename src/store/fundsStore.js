@@ -396,15 +396,26 @@ export default {
     },
 
     async setupTraderJoeV2LpAssets({state, rootState, commit}) {
-      const lpService = rootState.serviceRegistry.lpService;
+      const traderJoeService = rootState.serviceRegistry.traderJoeService;
       let lpTokens = {};
 
       Object.values(config.TRADERJOEV2_LP_ASSETS_CONFIG).forEach(
           asset => {
             // To-do: check if the assets supported. correct symbols if not.
-            // if (state.supportedAssets.includes(asset.symbol)) {
-              lpTokens[asset.symbol] = asset;
-            // }
+            lpTokens[asset.symbol] = asset;
+
+            if (asset.rewardToken) {
+              const rewardsRaw = traderJoeService.getClaimableRewards(state.smartLoanContract.address, asset.address);
+              let totalRewards = 0;
+
+              rewardsRaw.map(rewards => {
+                rewards.claimableRewards.map(claimable => {
+                  totalRewards += parseFloat(formatUnits(claimable.amount, asset.rewardToken.decimals));
+                })
+              })
+
+              lpTokens[asset.symbol]['rewards'] = totalRewards;
+            }
           }
       );
 
