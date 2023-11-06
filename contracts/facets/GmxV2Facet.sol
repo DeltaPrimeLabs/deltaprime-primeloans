@@ -56,6 +56,7 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
 
     function isCallerAuthorized(address _caller) internal view returns (bool){
         IRoleStore roleStore = IRoleStore(getGMX_V2_ROLE_STORE());
+        // TODO: Once on prod - verify the roles of authorized signers
         if(
             roleStore.hasRole(_caller, CONTROLLER) ||
             roleStore.hasRole(_caller, ORDER_KEEPER) ||
