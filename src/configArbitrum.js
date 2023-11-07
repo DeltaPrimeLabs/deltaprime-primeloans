@@ -50,6 +50,7 @@ export default {
             slippageMargin: 0.05
         },
         Level: {
+            availableAssets: [],
             slippageMargin: 0.1
         }
     },
