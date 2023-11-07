@@ -252,7 +252,7 @@ export default {
                 rewardsInfo: 'These are the rewards that you accumulated. These are staked too.',
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['GLP'],
-                strategy: 'Wombex',
+                strategy: 'GMX',
                 refreshDelay: 60000
             }
         ],
