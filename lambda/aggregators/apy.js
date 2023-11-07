@@ -270,7 +270,7 @@ const lpAndFarmApyAggregator = async (event) => {
   ];
 
   try {
-    Promise.all(urls.map(url =>
+    await Promise.all(urls.map(url =>
       fetch(url).then(resp => resp.json())
     )).then(async ([vectorAprs, yieldYakAvaApys, yieldYakArbApys]) => {
 

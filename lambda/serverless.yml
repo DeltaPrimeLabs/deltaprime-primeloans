@@ -132,7 +132,7 @@ functions:
     timeout: 300
     description: Fetch APYs from Beefy website.
     events:
-      - schedule: rate(2 minutes)
+      - schedule: rate(3 minutes)
   levelApyAggregator:
     handler: aggregators/apy.levelApyAggregator
     memorySize: 2048
