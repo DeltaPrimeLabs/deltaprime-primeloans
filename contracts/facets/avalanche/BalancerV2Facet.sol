@@ -9,9 +9,11 @@ import "../../ReentrancyGuardKeccak.sol";
 import "../../OnlyOwnerOrInsolvent.sol";
 import "../../interfaces/ITokenManager.sol";
 import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
+import "../../interfaces/IStakingPositions.sol";
 import "../../interfaces/balancer-v2/IBalancerV2Vault.sol";
 import "../../interfaces/balancer-v2/IBalancerV2Gauge.sol";
 import "../../interfaces/facets/avalanche/IBalancerV2Facet.sol";
+import "hardhat/console.sol";
 
 //This path is updated during deployment
 import "../../lib/local/DeploymentConstants.sol";
@@ -122,10 +124,19 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             IERC20(pool).approve(address(gauge), poolBalance);
             //stakes everything in a gauge
             gauge.deposit(poolBalance);
-        }
 
-        // Add pool token
-        DiamondStorageLib.addOwnedAsset(tokenManager.tokenAddressToSymbol(address(gauge)), address(gauge));
+            bytes32 poolSymbol = tokenManager.tokenAddressToSymbol(pool);
+            IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
+                asset : pool,
+                symbol : poolSymbol,
+                identifier : poolToIdentifier(pool),
+                balanceSelector : poolToBalanceSelector(pool),
+                unstakeSelector : bytes4(0)
+            });
+
+            // Add staked position
+            DiamondStorageLib.addStakedPosition(position);
+        }
 
         bytes32[] memory stakedAssets = new bytes32[](stakedTokensLength);
         uint256[] memory stakedAmounts = new uint256[](stakedTokensLength);
@@ -226,7 +237,7 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         uint256 newGaugeBalance = IERC20(gauge).balanceOf(address(this));
 
         if (newGaugeBalance == 0) {
-            DiamondStorageLib.removeOwnedAsset(DeploymentConstants.getTokenManager().tokenAddressToSymbol(address(gauge)));
+            DiamondStorageLib.removeStakedPosition(poolToIdentifier(pool));
         }
 
         emit Unstaked(
@@ -258,6 +269,18 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         }
     }
 
+    function balancerGgAvaxBalance() public view returns (uint256) {
+        return gaugeBalance(0xC13546b97B9B1b15372368Dc06529d7191081F5B);
+    }
+
+    function balancerYyAvaxBalance() public view returns (uint256) {
+        return gaugeBalance(0x9fA6aB3d78984A69e712730A2227F20bCC8b5aD9);
+    }
+
+    function balancerSAvaxBalance() public view returns (uint256) {
+        return gaugeBalance(0xfD2620C9cfceC7D152467633B3B0Ca338D3d78cc);
+    }
+
     // INTERNAL FUNCTIONS
 
     function poolToGauge(address pool) internal pure returns (address) {
@@ -272,6 +295,39 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         }
 
         revert BalancerV2PoolNotWhitelisted();
+    }
+
+    function poolToIdentifier(address pool) internal pure returns (bytes32) {
+        if (pool == 0xC13546b97B9B1b15372368Dc06529d7191081F5B) {
+            return "BAL_GG_AVAX_MAIN";
+        }
+        if (pool == 0x9fA6aB3d78984A69e712730A2227F20bCC8b5aD9) {
+            return "BAL_YY_AVAX_MAIN";
+        }
+        if (pool == 0xfD2620C9cfceC7D152467633B3B0Ca338D3d78cc) {
+            return "BAL_S_AVAX_MAIN";
+        }
+
+        revert BalancerV2PoolNotWhitelisted();
+    }
+
+    function poolToBalanceSelector(address pool) internal pure returns (bytes4) {
+        if (pool == 0xC13546b97B9B1b15372368Dc06529d7191081F5B) {
+            return this.balancerGgAvaxBalance.selector;
+        }
+        if (pool == 0x9fA6aB3d78984A69e712730A2227F20bCC8b5aD9) {
+            return this.balancerYyAvaxBalance.selector;
+        }
+        if (pool == 0xfD2620C9cfceC7D152467633B3B0Ca338D3d78cc) {
+            return this.balancerSAvaxBalance.selector;
+        }
+
+        revert BalancerV2PoolNotWhitelisted();
+    }
+
+    function gaugeBalance(address pool) internal view returns (uint256) {
+        address gauge = poolToGauge(pool);
+        return IERC20(gauge).balanceOf(address(this));
     }
 
     function rewardTokens(address pool) internal pure returns (bytes32[] memory) {

@@ -45,9 +45,9 @@ import web3Abi from "web3-eth-abi";
 chai.use(solidity);
 
 const {deployContract, provider} = waffle;
-const ggAvaxTokenAddress = TOKEN_ADDRESSES['BAL_ggAVAX_WAVAX_BPT'];
-const yyAvaxTokenAddress = TOKEN_ADDRESSES['BAL_yyAVAX_WAVAX_BPT'];
-const sAvaxTokenAddress = TOKEN_ADDRESSES['BAL_sAVAX_WAVAX_BPT'];
+const ggAvaxTokenAddress = "0x231d84C37b2C4B5a2E2Fe325BB77DAa65bF71D92";
+const yyAvaxTokenAddress = "0x720158c329E6558287c4539b0Ed21742B0B73436";
+const sAvaxTokenAddress = "0xf9aE6D2D56f02304f72dcC61694eAD0dC8DB51f7";
 
 describe('Smart loan', () => {
     before("Synchronize blockchain time", async () => {
@@ -129,9 +129,9 @@ describe('Smart loan', () => {
             supportedAssets = convertAssetsListToSupportedAssets(assetsList);
             addMissingTokenContracts(tokenContracts, assetsList);
 
-            ggAvaxTokenContract = await new ethers.Contract(ggAvaxTokenAddress, erc20ABI, provider);
-            yyAvaxTokenContract = await new ethers.Contract(yyAvaxTokenAddress, erc20ABI, provider);
-            sAvaxTokenContract = await new ethers.Contract(sAvaxTokenAddress, erc20ABI, provider);
+            ggAvaxTokenContract = new ethers.Contract(ggAvaxTokenAddress, erc20ABI, provider);
+            yyAvaxTokenContract = new ethers.Contract(yyAvaxTokenAddress, erc20ABI, provider);
+            sAvaxTokenContract = new ethers.Contract(sAvaxTokenAddress, erc20ABI, provider);
 
             let tokenManager = await deployContract(
                 owner,
