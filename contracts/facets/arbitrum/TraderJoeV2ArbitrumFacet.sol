@@ -27,19 +27,35 @@ contract TraderJoeV2ArbitrumFacet is ITraderJoeV2Facet, ReentrancyGuardKeccak, O
         return DiamondStorageLib.getTjV2OwnedBins();
     }
 
-    function getWhitelistedTraderJoeV2Pairs() internal view virtual returns (ILBPair[6] memory pools){
+    function getWhitelistedTraderJoeV2Pairs() internal view virtual returns (ILBPair[11] memory pools){
         return [
+            // TJLB_DAI_USDCe
             ILBPair(0x500173F418137090dad96421811147b63b448A0f),
+            // TJLB_ETH_USDT
             ILBPair(0xd387c40a72703B38A5181573724bcaF2Ce6038a5),
+            // TJLB_ETH_USDCe
             ILBPair(0x94d53BE52706a155d27440C4a2434BEa772a6f7C),
+            // TJLB_ARB_ETH
             ILBPair(0x0Be4aC7dA6cd4bAD60d96FbC6d091e1098aFA358),
+            // TJLB_BTC_ETH
             ILBPair(0xcfA09B20c85933B197e8901226ad0D6dACa7f114),
-            ILBPair(0x60563686ca7b668e4a2d7D31448e5F10456ecaF8)
+            // TJLB_GMX_ETH
+            ILBPair(0x60563686ca7b668e4a2d7D31448e5F10456ecaF8),
+            // TJLB_WOO_ETH
+            ILBPair(0xB87495219C432fc85161e4283DfF131692A528BD),
+            // TJLB_JOE_ETH
+            ILBPair(0x4b9bfeD1dD4E6780454b2B02213788f31FfBA74a),
+            // TJLB_USDT_USDCe
+            ILBPair(0x0242DD3b2e792CdBD399cc6195951bC202Aee97B),
+            // TJLB_ETH_USDC
+            ILBPair(0x69f1216cB2905bf0852f74624D5Fa7b5FC4dA710),
+            // TJLB_GRAIL_ETH
+            ILBPair(0x461761f2848EC6B9Fb3D3fb031e112c7d5b89563)
         ];
     }
 
     function isPairWhitelisted(address pair) internal view virtual returns (bool){
-        ILBPair[6] memory pairs = getWhitelistedTraderJoeV2Pairs();
+        ILBPair[11] memory pairs = getWhitelistedTraderJoeV2Pairs();
 
         for (uint i; i < pairs.length; ++i) {
             if (pair == address(pairs[i])) return true;
@@ -99,7 +115,7 @@ contract TraderJoeV2ArbitrumFacet is ITraderJoeV2Facet, ReentrancyGuardKeccak, O
     }
 
 
-    function addLiquidityTraderJoeV2(ILBRouter.LiquidityParameters memory liquidityParameters) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent {
+    function addLiquidityTraderJoeV2(ILBRouter.LiquidityParameters memory liquidityParameters) external nonReentrant onlyOwner noBorrowInTheSameBlock remainsSolvent {
         ILBRouter traderJoeV2Router = ILBRouter(getJoeV2RouterAddress());
         TraderJoeV2Bin[] memory ownedBins = getOwnedTraderJoeV2Bins();
         ILBFactory lbFactory = traderJoeV2Router.getFactory();
@@ -151,7 +167,7 @@ contract TraderJoeV2ArbitrumFacet is ITraderJoeV2Facet, ReentrancyGuardKeccak, O
         emit AddLiquidityTraderJoeV2(msg.sender, address(pairInfo.LBPair), depositIds, liquidityMinted, tokenX, tokenY, amountXAdded, amountYAdded, block.timestamp);
     }
 
-    function removeLiquidityTraderJoeV2(RemoveLiquidityParameters memory parameters) external nonReentrant onlyOwnerOrInsolvent noBorrowInTheSameBlock recalculateAssetsExposure {
+    function removeLiquidityTraderJoeV2(RemoveLiquidityParameters memory parameters) external nonReentrant onlyOwnerOrInsolvent noBorrowInTheSameBlock {
         ILBRouter traderJoeV2Router = ILBRouter(getJoeV2RouterAddress());
 
         ILBPair(traderJoeV2Router.getFactory().getLBPairInformation(parameters.tokenX, parameters.tokenY, parameters.binStep).LBPair).approveForAll(address(traderJoeV2Router), true);
