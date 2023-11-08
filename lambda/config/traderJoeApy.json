@@ -71,6 +71,16 @@
       "assetX": "0xcafcd85d8ca7ad1e1c6f82f651fa15e33aefd07b",
       "assetY": "ETH",
       "binStep": 25
+    },
+    "TJLB_USDT_USDCe": {
+      "assetX": "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
+      "assetY": "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8",
+      "binStep": 1
+    },
+    "TJLB_ETH_USDC": {
+      "assetX": "ETH",
+      "assetY": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
+      "binStep": 15
     }
   }
 }

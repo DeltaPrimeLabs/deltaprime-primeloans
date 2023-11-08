@@ -31,6 +31,7 @@ provider:
     LOAN_AVA_TABLE: loans-ava-${opt:stage, "dev"}
     LOAN_ARB_TABLE: loans-arb-${opt:stage, "dev"}
     APY_TABLE: apys-${opt:stage, "dev"}
+    TJ_API_KEY: ${file(./.secrets/traderJoe.json):apiKey}
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -154,6 +155,14 @@ functions:
   #   description: upload loan addresses on Arbitrum
   #   events:
   #     - schedule: rate(5 minutes)
+  getClaimableRewardsApi:
+    handler: apis/traderJoe.getClaimableRewardsApi
+    memorySize: 512
+    description: Fetch claimable rewards from TraderJoe V2 pool
+    events:
+      - httpApi:
+          method: get
+          path: /traderjoe/rewards/claimable
 
 resources:
   Resources:

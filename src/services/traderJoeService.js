@@ -8,7 +8,6 @@ import { Token, TokenAmount } from '@traderjoe-xyz/sdk-core';
 import { ethers, BigNumber, utils } from 'ethers';
 import axios from 'axios';
 import config from '../config';
-import tjApiKey from '../../.secrets/traderJoe.json';
 
 const CHAIN_ID = config.chainId;
 const LBPairABI = [
@@ -248,14 +247,9 @@ export default class TraderJoeService {
   }
 
   async getClaimableRewards(loan, market) {
-    const BASE_URL = 'https://api.traderjoexyz.dev/v1/rewards/claimable';
-
     try {
-      const rewards = await axios.get(`${BASE_URL}/${window.chain}/${loan}?market=${market}`, {
-        headers: {
-          'x-traderjoe-api-key': tjApiKey.apiKey
-        }
-      });
+      const URL = `https://uophm6e26f.execute-api.us-east-1.amazonaws.com/traderjoe/rewards/claimable?chain=${window.chain}&loan=${loan}&market=${market}`;
+      const rewards = await axios.get(URL);
       console.log(rewards);
 
       return rewards;
