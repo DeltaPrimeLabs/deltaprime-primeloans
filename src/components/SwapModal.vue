@@ -439,12 +439,21 @@ export default {
 
     setupSourceAssetOptions() {
       this.sourceAssetOptions = [];
-      const sourceAssets = this.swapDebtMode ? this.sourceAssets : this.swapDexsConfig[this.swapDex].availableAssets;
+      let sourceAssets;
+      if (this.swapDebtMode) {
+        this.sourceAssets;
+      } else if (this.levelMode) {
+        sourceAssets = this.sourceAssets.Level;
+      } else {
+        this.swapDexsConfig[this.swapDex].availableAssets;
+      }
       console.log(this.sourceAssets);
       console.log(this.swapDexsConfig);
       console.log(sourceAssets);
+      console.log(this.sourceAssetsConfig);
       sourceAssets.forEach(assetSymbol => {
         const asset = this.sourceAssetsConfig[assetSymbol];
+        console.log(asset);
         const assetOption = {
           symbol: assetSymbol,
           short: asset.short,
@@ -458,7 +467,6 @@ export default {
     setupTargetAssetOptions() {
       this.targetAssetOptions = [];
 
-      // const targetAssets = this.swapDebtMode || this.levelMode ? this.targetAssets : this.swapDexsConfig[this.swapDex].availableAssets;
       let targetAssets;
       if (this.swapDebtMode) {
         targetAssets = this.targetAssets;
