@@ -44,7 +44,9 @@
       Welcome to DeltaPrime Blue! In the coming weeks this page will significantly expand with partner protocols. Stay tuned!
     </Banner>
 <!--    <Banner v-if="showAvalancheDepositorBanner" background="green-accent" :closable="true"></Banner>-->
-<!--    <Banner v-if="showAvalanchePrimeAccountBanner" background="green-accent" :closable="true"></Banner>-->
+    <Banner v-if="showAvalanchePrimeAccountBanner" background="orange-accent" :closable="true">
+      Vector farms temporarily unavailable
+    </Banner>
     <div class="content">
       <div class="top-bar">
         <div class="top-bar__left-part">

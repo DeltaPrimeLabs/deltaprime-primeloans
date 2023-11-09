@@ -122,10 +122,6 @@ export default {
             logo: 'yak.svg',
             name: 'Yield Yak'
         },
-        VECTOR_FINANCE: {
-            logo: 'vector.png',
-            name: 'Vector Finance'
-        },
     },
     FARMED_TOKENS_CONFIG: {
         AVAX: [
@@ -149,48 +145,6 @@ export default {
                 strategy: 'AAVE',
                 refreshDelay: 60000
             },
-            {
-                protocol: 'VECTOR_FINANCE',
-                protocolIdentifier: 'VF_AVAX_SAVAX',
-                balance: async (address) => vectorFinanceBalance('0xab42ed09F43DDa849aa7F62500885A973A38a8Bc', address),
-                stakingContractAddress: '0xab42ed09F43DDa849aa7F62500885A973A38a8Bc',
-                receiptTokenAddress: '0x25dd42103b7da808e68a2bae5e14f48871488a85',
-                decimals: 18, //decimals of staking contract
-                stakeMethod: 'vectorStakeWAVAX1',
-                unstakeMethod: 'vectorUnstakeWAVAX1',
-                migrateMethod: 'vectorMigrateAvax',
-                migrateToProtocolIdentifier: 'VF_AVAX_SAVAX_AUTO',
-                minAmount: 0.8,
-                symbol: 'V-WAVAX-R',
-                token: 'AVAX',
-                isTokenLp: false,
-                info: 'Uses Vector Finance strategy on Platypus. Deposit/withdrawal fees may apply. Check <a href="https://docs.platypus.finance/platypus-finance-docs/our-innovative-concepts/fees/withdrawal-fee" target="_blank">docs</a>.',
-                debtCoverage: 0.83333333333,
-                rewardTokens: ['PTP', 'QI'],
-                strategy: 'Platypus',
-                banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
-                refreshDelay: 60000,
-            },
-            {
-                protocol: 'VECTOR_FINANCE',
-                protocolIdentifier: 'VF_AVAX_SAVAX_AUTO',
-                autoCompounding: true,
-                stakingContractAddress: '0xe2406Af0E26769D3231682C80D4bB7bBdF329A88',
-                decimals: 18, //decimals of staking contract
-                balanceMethod: 'vectorWAVAX1BalanceAuto',
-                stakeMethod: 'vectorStakeWAVAX1Auto',
-                unstakeMethod: 'vectorUnstakeWAVAX1Auto',
-                minAmount: 0.8,
-                symbol: 'AVAX_SAVAX ACR',
-                token: 'AVAX',
-                isTokenLp: false,
-                info: 'Uses Vector Finance strategy on Platypus. Withdrawal fees may apply. Check <a href="https://docs.platypus.finance/platypus-finance-docs/our-innovative-concepts/fees/withdrawal-fee" target="_blank">docs</a>.',
-                debtCoverage: 0.83333333333,
-                rewardTokens: ['PTP', 'QI'],
-                strategy: 'Platypus',
-                banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
-                refreshDelay: 60000
-            }
         ],
         sAVAX: [
             {
@@ -210,108 +164,6 @@ export default {
                 rewardsInfo: 'These are the rewards that you accumulated. These are staked too.',
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['sAVAX'],
-                strategy: 'Platypus',
-                banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
-                refreshDelay: 60000
-            },
-            {
-                protocol: 'VECTOR_FINANCE',
-                protocolIdentifier: 'VF_SAVAX_MAIN',
-                balance: (address) => vectorFinanceBalance('0x91F78865b239432A1F1Cc1fFeC0Ac6203079E6D7', address),
-                stakingContractAddress: '0x91F78865b239432A1F1Cc1fFeC0Ac6203079E6D7',
-                receiptTokenAddress: '0x8aa347d9a2bb8e32342f50939236251853604c79',
-                decimals: 18, //decimals of staking contract
-                stakeMethod: 'vectorStakeSAVAX1',
-                unstakeMethod: 'vectorUnstakeSAVAX1',
-                migrateMethod: 'vectorMigrateSAvax',
-                migrateToProtocolIdentifier: 'VF_SAVAX_MAIN_AUTO',
-                minAmount: 0.8,
-                symbol: 'V-SAVAX-R',
-                token: 'sAVAX',
-                isTokenLp: false,
-                info: 'Uses Vector Finance strategy on Platypus. Deposit/withdrawal fees may apply. Check <a href="https://docs.platypus.finance/platypus-finance-docs/our-innovative-concepts/fees/withdrawal-fee" target="_blank">docs</a>.',
-                debtCoverage: 0.83333333333,
-                rewardTokens: ['PTP', 'QI'],
-                strategy: 'Platypus',
-                banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
-                refreshDelay: 60000
-            },
-            {
-                protocol: 'VECTOR_FINANCE',
-                protocolIdentifier: 'VF_SAVAX_MAIN_AUTO',
-                autoCompounding: true,
-                balance: (address) => vectorFinanceBalance('0x91F78865b239432A1F1Cc1fFeC0Ac6203079E6D7', address),
-                stakingContractAddress: '0x1636bE3843E86826cB6aDC141B5d40d782763B85',
-                decimals: 18, //decimals of staking contract
-                stakeMethod: 'vectorStakeSAVAX1Auto',
-                unstakeMethod: 'vectorUnstakeSAVAX1Auto',
-                minAmount: 0.8,
-                token: 'sAVAX',
-                isTokenLp: false,
-                info: 'Uses Vector Finance strategy on Platypus. Withdrawal fees may apply. Check <a href="https://docs.platypus.finance/platypus-finance-docs/our-innovative-concepts/fees/withdrawal-fee" target="_blank">docs</a>.',
-                debtCoverage: 0.83333333333,
-                rewardTokens: ['PTP', 'QI'],
-                strategy: 'Platypus',
-                banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
-                refreshDelay: 60000
-            }
-        ],
-        USDC: [
-            {
-                protocol: 'VECTOR_FINANCE',
-                protocolIdentifier: 'VF_USDC_MAIN',
-                balance: (address) => vectorFinanceBalance('0xE5011Ab29612531727406d35cd9BcCE34fAEdC30', address, 6),
-                stakingContractAddress: '0xE5011Ab29612531727406d35cd9BcCE34fAEdC30',
-                receiptTokenAddress: '0x0adab2f0455987098059cfc10875c010800c659f',
-                decimals: 18, //decimals of staking contract
-                stakeMethod: 'vectorStakeUSDC1',
-                unstakeMethod: 'vectorUnstakeUSDC1',
-                info: 'Depositing into Platypus\' main pool has been temporarily disabled. Read more in our <a href="https://discord.com/invite/9bwsnsHEzD" target="_blank">discord</a>.',
-                minAmount: 0.8,
-                symbol: 'V USDC-LP',
-                token: 'USDC',
-                isTokenLp: false,
-                debtCoverage: 0,
-                rewardTokens: ['PTP'],
-                strategy: 'Platypus',
-                banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
-                refreshDelay: 60000
-            },
-            {
-                protocol: 'VECTOR_FINANCE',
-                protocolIdentifier: 'VF_USDC_MAIN_AUTO',
-                autoCompounding: true,
-                stakingContractAddress: '0x1DBd41f9Efde5b387E820e9B43BDa00c4154a82A',
-                decimals: 18, //decimals of staking contract
-                stakeMethod: 'vectorStakeUSDC1Auto',
-                unstakeMethod: 'vectorUnstakeUSDC1Auto',
-                balanceMethod: 'vectorUSDC1BalanceAuto',
-                minAmount: 0.8,
-                symbol: 'USDC ACR',
-                token: 'USDC',
-                isTokenLp: false,
-                debtCoverage: 0.83333333333,
-                rewardTokens: ['PTP'],
-                strategy: 'Platypus',
-                banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
-                refreshDelay: 60000
-            },
-        ],
-        USDT: [
-            {
-                protocol: 'VECTOR_FINANCE',
-                protocolIdentifier: 'VF_USDT_MAIN_AUTO',
-                autoCompounding: true,
-                stakingContractAddress: '0x951CbF0DDA285FD8011F2cB7Ed435fA095f803a0',
-                decimals: 18, //decimals of staking contract
-                stakeMethod: 'vectorStakeUSDT1Auto',
-                unstakeMethod: 'vectorUnstakeUSDT1Auto',
-                balanceMethod: 'vectorUSDT1BalanceAuto',
-                minAmount: 0.9,
-                symbol: 'USDT ACR',
-                token: 'USDT',
-                isTokenLp: false,
-                debtCoverage: 0.83333333333,
                 strategy: 'Platypus',
                 banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
                 refreshDelay: 60000
@@ -471,7 +323,7 @@ export default {
     dataProviderHistoricalPrices: "redstone-avalanche",
     redstoneFeedUrl: "https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-avalanche-prod",
     subgraph: "https://api.thegraph.com/subgraphs/name/mbare0/deltaprime",
-    readRpcUrl: "https://api.avax.network/ext/bc/C/rpc",
+    readRpcUrl: "https://avalanche-mainnet.core.chainstack.com/ext/bc/C/rpc/0968db18a01a90bac990ff00df6f7da1",
     EMAIL_REGEX: /(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])/,
     refreshDelay: 5000,
 }
