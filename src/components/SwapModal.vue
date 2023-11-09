@@ -24,7 +24,7 @@
 
       <div class="modal-top-desc" v-if="info">
         <div>
-          <b>{{ info }}</b>
+          <b v-html="info"></b>
         </div>
       </div>
 

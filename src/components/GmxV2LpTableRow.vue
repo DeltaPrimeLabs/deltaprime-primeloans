@@ -136,9 +136,16 @@ import LIQUIDITY_CALCULATOR
   from "../../artifacts/contracts/interfaces/level/ILiquidityCalculator.sol/ILiquidityCalculator.json";
 import IREADER_DEPOSIT_UTILS
   from "../../artifacts/contracts/interfaces/gmx-v2/IReaderDepositUtils.sol/IReaderDepositUtils.json";
+import IDATA_STORE
+  from "../../artifacts/contracts/interfaces/gmx-v2/IDataStore.sol/IDataStore.json";
 import SwapToMultipleModal from "./SwapToMultipleModal.vue";
 import TOKEN_ADDRESSES from "../../common/addresses/avalanche/token_addresses.json";
 import {BigNumber} from "ethers";
+import {
+  DEPOSIT_GAS_LIMIT_KEY,
+  ESTIMATED_GAS_FEE_BASE_AMOUNT,
+  ESTIMATED_GAS_FEE_MULTIPLIER_FACTOR, WITHDRAWAL_GAS_LIMIT_KEY
+} from "../integrations/contracts/dataStore";
 
 export default {
   name: 'GmxV2LpTableRow',
@@ -259,8 +266,8 @@ export default {
     ...mapActions('fundsStore', [
       'fund',
       'withdraw',
-      'addLiquidityGmxV2Finance',
-      'removeLiquidityGmxV2Finance',
+      'addLiquidityGmxV2',
+      'removeLiquidityGmxV2',
     ]),
     setupAddActionsConfiguration() {
       this.addActionsConfig =
@@ -411,9 +418,35 @@ export default {
 
     gmxV2Fee() {
       return async (sourceAsset, targetAsset, amountIn, amountOut) => {
+       let isDeposit = targetAsset === this.lpToken.symbol;
 
        return [0,0];
       }
+    },
+
+    async calculateExecutionFee(isDeposit) {
+      const dataStore = new ethers.Contract(config.gmxV2DataStoreAddress, IDATA_STORE.abi, this.provider.getSigner());
+
+      //TODO: use multicall
+
+      const estimatedGasLimit = isDeposit ?
+          fromWei(await dataStore.getUint(DEPOSIT_GAS_LIMIT_KEY)) + config.gmxV2DepositCallbackGasLimit
+          :
+          fromWei(await dataStore.getUint(WITHDRAWAL_GAS_LIMIT_KEY)) + config.gmxV2DepositCallbackGasLimit;
+
+      let baseGasLimit = fromWei(await dataStore.getUint(ESTIMATED_GAS_FEE_BASE_AMOUNT));
+
+      let multiplierFactor = fromWei(await dataStore.getUint(ESTIMATED_GAS_FEE_MULTIPLIER_FACTOR)) / 9e12;
+
+      const adjustedGasLimit = baseGasLimit + estimatedGasLimit * multiplierFactor;
+
+      const gasPrice = fromWei(await provider.getGasPrice());
+
+      const feeTokenAmount = adjustedGasLimit * gasPrice;
+
+      // const feeUsd = feeTokenAmount * this.assets[config.nativeToken].price;
+
+      return feeTokenAmount;
     },
 
     async openAddFromWalletModal() {
@@ -497,7 +530,7 @@ export default {
       });
     },
 
-    openProvideLiquidityModal() {
+    async openProvideLiquidityModal() {
       const modalInstance = this.openModal(SwapModal);
       let initSourceAsset = this.lpToken.longToken;
 
@@ -529,6 +562,9 @@ export default {
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.checkMarketDeviation = false;
 
+      const executionFee = await this.calculateExecutionFee(true);
+      modalInstance.info = `<div>Execution fee: ${executionFee.toFixed(6)}${config.nativeToken}</div>`;
+
       modalInstance.queryMethods = {
         GmxV2: this.gmxV2Query(),
       };
@@ -541,13 +577,15 @@ export default {
 
         const addLiquidityRequest = {
           sourceAsset: swapEvent.sourceAsset,
-          sourceAmount: swapEvent.sourceAmount,
           targetAsset: swapEvent.targetAsset,
-          targetAmount: swapEvent.targetAmount,
-          method: `gmxV2Stake${swapEvent.sourceAsset.charAt(0) + swapEvent.sourceAsset.toLowerCase().slice(1)}${this.lpToken.short}`
+          isLongToken: swapEvent.sourceAsset === this.lpToken.longToken,
+          sourceAmount: swapEvent.sourceAmount,
+          minGmAmount: swapEvent.targetAmount,
+          executionFee: executionFee,
+          method: `gmxV2Stake${this.capitalize(this.lpToken.longToken)}${this.capitalize(this.lpToken.shortToken)}`
         };
 
-        this.handleTransaction(this.addLiquidityGmxV2Finance, {addLiquidityRequest: addLiquidityRequest}, () => {
+        this.handleTransaction(this.addLiquidityGmxV2, {addLiquidityRequest: addLiquidityRequest}, () => {
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
@@ -558,7 +596,7 @@ export default {
       modalInstance.initiate();
     },
 
-    openRemoveLiquidityModal() {
+    async openRemoveLiquidityModal() {
       const modalInstance = this.openModal(SwapToMultipleModal);
       modalInstance.title = 'Unwind GMX V2 position';
       modalInstance.swapDex = 'GmxV2';
@@ -594,17 +632,21 @@ export default {
         GmxV2: this.gmxV2Fee(),
       };
       modalInstance.swapDex = 'GmxV2';
+
+      const executionFee = await this.calculateExecutionFee(false);
+      modalInstance.info = `<div>Execution fee: ${executionFee.toFixed(6)}${config.nativeToken}</div>`;
+
       modalInstance.$on('SWAP_TO_MULTIPLE', swapEvent => {
 
         const removeLiquidityRequest = {
           sourceAsset: swapEvent.sourceAsset,
           sourceAmount: swapEvent.sourceAmount,
-          targetAsset: swapEvent.targetAsset,
-          targetAmount: swapEvent.targetAmount,
-          method: `gmxV2Unstake${swapEvent.targetAsset.charAt(0).toUpperCase() + swapEvent.targetAsset.toLowerCase().slice(1)}${this.lpToken.short}`
+          targetAssets: swapEvent.targetAssets,
+          targetAmounts: swapEvent.targetAmounts,
+          method: `gmxV2Unstake${this.capitalize(this.lpToken.longToken)}${this.capitalize(this.lpToken.shortToken)}`
         };
 
-        this.handleTransaction(this.removeLiquidityGmxV2Finance, {removeLiquidityRequest: removeLiquidityRequest}, () => {
+        this.handleTransaction(this.removeLiquidityGmxV2, {removeLiquidityRequest: removeLiquidityRequest}, () => {
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
@@ -613,29 +655,6 @@ export default {
       });
 
       modalInstance.initiate();
-    },
-
-    async openClaimRewardsModal() {
-      const modalInstance = this.openModal(ClaimGmxV2RewardsModal);
-      modalInstance.lpToken = this.lpToken;
-      modalInstance.rewardsToClaim = this.rewards;
-      modalInstance.gmxV2RewardsAsset = 'PreLVL';
-
-      const claimRewardsRequest = {
-        lpToken: this.lpToken
-      }
-
-      modalInstance.$on('CLAIM', addFromWalletEvent => {
-        if (this.smartLoanContract) {
-          this.handleTransaction(this.claimGmxV2Rewards, { claimRewardsRequest: claimRewardsRequest }, () => {
-            this.rewards = 0;
-            this.$forceUpdate();
-          }, (error) => {
-            this.handleTransactionError(error);
-          }).then(() => {
-          });
-        }
-      });
     },
 
     openProfileModal() {
@@ -662,6 +681,10 @@ export default {
         yieldCalculation: '',
         chartData: [{x: new Date(), y: 5}, {x: new Date(), y: 15}, {x: new Date(), y: 25}, {x: new Date(), y: 20}, {x: new Date(), y: 15}, {x: new Date(), y: 25}, {x: new Date(), y: 5}]
       }
+    },
+
+    capitalize(word) {
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
     },
 
     async setupPoolBalance() {

@@ -13,7 +13,7 @@
 
       <div class="modal-top-desc" v-if="info">
         <div>
-          <b>{{ info }}</b>
+          <b v-html="info"></b>
         </div>
       </div>
 
@@ -329,8 +329,9 @@ export default {
           async (asset, index) => {
             this.targetAssetAmounts[index] = estimatedReceivedTokens[index] * (1 - (this.userSlippage / 100 + (this.fee ? this.fee : 0)));
 
-
-            const targetInputChangeEvent = await (this.$refs[`targetInput-${index}`])[0].setCurrencyInputValue(this.targetAssetAmounts[index]);
+            if (this.$refs[`targetInput-${index}`][0]) {
+              await (this.$refs[`targetInput-${index}`][0]).setCurrencyInputValue(this.targetAssetAmounts[index]);
+            }
           }
       );
 

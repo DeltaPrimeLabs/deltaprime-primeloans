@@ -63,7 +63,6 @@ export default {
   props: {
     price: {type: Number},
     max: {default: null},
-    asset: {default: null},
     infoIconMessage: {default: null},
     symbol: {type: String, default: 'AVAX'},
     symbolSecondary: {type: String, default: null},
