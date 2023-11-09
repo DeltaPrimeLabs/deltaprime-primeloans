@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 3b625a1b173395a815494045d4d55e4d5427371e;
+// Last deployed from commit: e0b7d4c696bf3135b985e7f92053898942be20bc;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -10,7 +10,6 @@ import "../../interfaces/IVectorFinanceStaking.sol";
 import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
 import "../../interfaces/IStakingPositions.sol";
 import "../../OnlyOwnerOrInsolvent.sol";
-import "../../interfaces/IVectorFinanceMainStaking.sol";
 //This path is updated during deployment
 import "../../lib/local/DeploymentConstants.sol";
 
@@ -38,7 +37,7 @@ contract VectorFinanceFacetOld is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     }
 
     function vectorUSDC1Balance() public view returns(uint256 _stakedBalance) {
-        IVectorFinanceStaking stakingContract = IVectorFinanceStaking(0xE5011Ab29612531727406d35cd9BcCE34fAEdC30);
+        IVectorFinanceStaking stakingContract = getAssetPoolHelper(0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E);
         _stakedBalance = stakingContract.balance(address(this));
     }
 
@@ -58,7 +57,7 @@ contract VectorFinanceFacetOld is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     }
 
     function vectorWAVAX1Balance() public view returns(uint256 _stakedBalance) {
-        IVectorFinanceStaking stakingContract = IVectorFinanceStaking(getAssetPoolHelper(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7));
+        IVectorFinanceStaking stakingContract = getAssetPoolHelper(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7);
         _stakedBalance = stakingContract.balance(address(this));
     }
 
@@ -78,7 +77,7 @@ contract VectorFinanceFacetOld is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     }
 
     function vectorSAVAX1Balance() public view returns(uint256 _stakedBalance) {
-        IVectorFinanceStaking stakingContract = IVectorFinanceStaking(getAssetPoolHelper(0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE));
+        IVectorFinanceStaking stakingContract = getAssetPoolHelper(0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE);
         _stakedBalance = stakingContract.balance(address(this));
     }
 
@@ -151,8 +150,15 @@ contract VectorFinanceFacetOld is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     }
 
     function getAssetPoolHelper(address asset) internal view returns(IVectorFinanceStaking){
-        IVectorFinanceMainStaking mainStaking = IVectorFinanceMainStaking(VectorMainStaking);
-        return IVectorFinanceStaking(mainStaking.getPoolInfo(asset).helper);
+        if(asset == 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E){
+            return IVectorFinanceStaking(0x7d44f9eb1ffa6848362a966EF7D6340D14f4AF7E);
+        } else if (asset == 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7){
+            return IVectorFinanceStaking(0xab42ed09F43DDa849aa7F62500885A973A38a8Bc);
+        } else if (asset == 0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE){
+            return IVectorFinanceStaking(0x91F78865b239432A1F1Cc1fFeC0Ac6203079E6D7);
+        } else {
+            revert("asset not supported");
+        }
     }
 
     // MODIFIERS

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 6d7066f60ada99f38d30366e1744ac9979433ec9;
+// Last deployed from commit: e0b7d4c696bf3135b985e7f92053898942be20bc;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -43,20 +43,6 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             unstakeSelector : this.vectorUnstakeUSDC1Auto.selector
         });
         unstakeToken(amount, minAmount, position);
-    }
-
-    function getAssetCompounder(address asset) internal pure returns (address compounder){
-        if(asset == 0x06f01502327De1c37076Bea4689a7e44279155e9){ // USDC
-            return 0x1DBd41f9Efde5b387E820e9B43BDa00c4154a82A;
-        } else if (asset = 0x836648A8cE166Ba7CaFb27F0E6AD21d5C91b7774){ // USDT
-            return 0x951CbF0DDA285FD8011F2cB7Ed435fA095f803a0;
-        } else if (asset = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7){ // WAVAX
-            return 0xe2406Af0E26769D3231682C80D4bB7bBdF329A88;
-        } else if (asset = 0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE){ // SAVAX
-            return 0x1636bE3843E86826cB6aDC141B5d40d782763B85;
-        } else {
-            revert("Asset not supported");
-        }
     }
 
     function vectorUSDC1BalanceAuto() public view returns (uint256 _stakedBalance) {
@@ -267,6 +253,20 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
                 migrated,
                 block.timestamp
             );
+        }
+    }
+
+    function getAssetCompounder(address asset) internal pure returns (IVectorFinanceCompounder compounder){
+        if(asset == 0x06f01502327De1c37076Bea4689a7e44279155e9){ // USDC
+            return IVectorFinanceCompounder(0x1DBd41f9Efde5b387E820e9B43BDa00c4154a82A);
+        } else if (asset == 0x836648A8cE166Ba7CaFb27F0E6AD21d5C91b7774){ // USDT
+            return IVectorFinanceCompounder(0x951CbF0DDA285FD8011F2cB7Ed435fA095f803a0);
+        } else if (asset == 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7){ // WAVAX
+            return IVectorFinanceCompounder(0xe2406Af0E26769D3231682C80D4bB7bBdF329A88);
+        } else if (asset == 0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE){ // SAVAX
+            return IVectorFinanceCompounder(0x1636bE3843E86826cB6aDC141B5d40d782763B85);
+        } else {
+            revert("Asset not supported");
         }
     }
 
