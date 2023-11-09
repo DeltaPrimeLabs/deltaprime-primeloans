@@ -7,7 +7,7 @@ import config from '../config';
 const ethers = require('ethers');
 
 export function transactionUrl(tx) {
-  return 'https://snowtrace.io/tx/' + tx;
+  return 'https://snowtrace.dev/tx/' + tx;
 }
 
 export const wrapContract = async function wrapContract(contract, assets) {
