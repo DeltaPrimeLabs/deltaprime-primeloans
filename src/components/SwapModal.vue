@@ -441,11 +441,11 @@ export default {
       this.sourceAssetOptions = [];
       let sourceAssets;
       if (this.swapDebtMode) {
-        this.sourceAssets;
+        sourceAssets = this.sourceAssets;
       } else if (this.levelMode) {
         sourceAssets = this.sourceAssets.Level;
       } else {
-        this.swapDexsConfig[this.swapDex].availableAssets;
+        sourceAssets = this.swapDexsConfig[this.swapDex].availableAssets;
       }
       console.log(this.sourceAssets);
       console.log(this.swapDexsConfig);
