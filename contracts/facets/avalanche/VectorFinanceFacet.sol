@@ -45,8 +45,22 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         unstakeToken(amount, minAmount, position);
     }
 
+    function getAssetCompounder(address asset) internal pure returns (address compounder){
+        if(asset == 0x06f01502327De1c37076Bea4689a7e44279155e9){ // USDC
+            return 0x1DBd41f9Efde5b387E820e9B43BDa00c4154a82A;
+        } else if (asset = 0x836648A8cE166Ba7CaFb27F0E6AD21d5C91b7774){ // USDT
+            return 0x951CbF0DDA285FD8011F2cB7Ed435fA095f803a0;
+        } else if (asset = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7){ // WAVAX
+            return 0xe2406Af0E26769D3231682C80D4bB7bBdF329A88;
+        } else if (asset = 0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE){ // SAVAX
+            return 0x1636bE3843E86826cB6aDC141B5d40d782763B85;
+        } else {
+            revert("Asset not supported");
+        }
+    }
+
     function vectorUSDC1BalanceAuto() public view returns (uint256 _stakedBalance) {
-        IVectorFinanceCompounder compounder = getAssetPoolHelper(0x06f01502327De1c37076Bea4689a7e44279155e9).compounder();
+        IVectorFinanceCompounder compounder = getAssetCompounder(0x06f01502327De1c37076Bea4689a7e44279155e9);
         uint256 shares = compounder.balanceOf(address(this));
         _stakedBalance = compounder.getDepositTokensForShares(shares);
     }
@@ -74,7 +88,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     }
 
     function vectorUSDT1BalanceAuto() public view returns (uint256 _stakedBalance) {
-        IVectorFinanceCompounder compounder = getAssetPoolHelper(0x836648A8cE166Ba7CaFb27F0E6AD21d5C91b7774).compounder();
+        IVectorFinanceCompounder compounder = getAssetCompounder(0x836648A8cE166Ba7CaFb27F0E6AD21d5C91b7774);
         uint256 shares = compounder.balanceOf(address(this));
         _stakedBalance = compounder.getDepositTokensForShares(shares);
     }
@@ -102,7 +116,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     }
 
     function vectorWAVAX1BalanceAuto() public view returns (uint256 _stakedBalance) {
-        IVectorFinanceCompounder compounder = getAssetPoolHelper(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7).compounder();
+        IVectorFinanceCompounder compounder = getAssetCompounder(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7);
         uint256 shares = compounder.balanceOf(address(this));
         _stakedBalance = compounder.getDepositTokensForShares(shares);
     }
@@ -130,7 +144,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     }
 
     function vectorSAVAX1BalanceAuto() public view returns (uint256 _stakedBalance) {
-        IVectorFinanceCompounder compounder = getAssetPoolHelper(0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE).compounder();
+        IVectorFinanceCompounder compounder = getAssetCompounder(0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE);
         uint256 shares = compounder.balanceOf(address(this));
         _stakedBalance = compounder.getDepositTokensForShares(shares);
     }
@@ -163,7 +177,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     **/
     function stakeToken(uint256 amount, IStakingPositions.StakedPosition memory position) internal
     onlyOwner nonReentrant recalculateAssetsExposure remainsSolvent {
-        IVectorFinanceCompounder compounder = getAssetPoolHelper(position.asset).compounder();
+        IVectorFinanceCompounder compounder = getAssetCompounder(position.asset);
         IERC20Metadata stakedToken = getERC20TokenInstance(position.symbol, false);
         uint256 initialReceiptTokenBalance = compounder.balanceOf(address(this));
 
@@ -199,7 +213,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     **/
     function unstakeToken(uint256 amount, uint256 minAmount, IStakingPositions.StakedPosition memory position) internal
     onlyOwnerOrInsolvent recalculateAssetsExposure nonReentrant returns (uint256 unstaked) {
-        IVectorFinanceCompounder compounder = getAssetPoolHelper(position.asset).compounder();
+        IVectorFinanceCompounder compounder = getAssetCompounder(position.asset);
         IERC20Metadata unstakedToken = getERC20TokenInstance(position.symbol, false);
         uint256 initialReceiptTokenBalance = compounder.balanceOf(address(this));
 
@@ -236,7 +250,7 @@ contract VectorFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     function migrateStake(IStakingPositions.StakedPosition memory position, bytes32 oldIdentifier) internal
     onlyOwner nonReentrant recalculateAssetsExposure remainsSolvent returns (uint256 migrated) {
         IVectorFinanceStaking poolHelper = getAssetPoolHelper(position.asset);
-        IVectorFinanceCompounder compounder = poolHelper.compounder();
+        IVectorFinanceCompounder compounder = getAssetCompounder(position.asset);
 
         migrated = poolHelper.balance(address(this));
         if (migrated > 0) {
