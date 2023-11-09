@@ -23,13 +23,10 @@ export default class HealthService {
       return 1;
     }
     const someFarmsNotLoaded = Object.values(stakeStoreFarms).some((token) => {
-      console.log(token);
       return token.some(bin => {
-        console.log(bin);
         return !bin.totalBalance || typeof bin.totalBalance === 'number'
       })
     })
-    console.log('someFarmsNotLoaded', someFarmsNotLoaded);
     if (someFarmsNotLoaded) {
       return;
     }

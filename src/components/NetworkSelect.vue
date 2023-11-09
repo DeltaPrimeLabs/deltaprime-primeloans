@@ -56,7 +56,7 @@ export default {
         {
           chainId: this.toHex(43114),
           chainName: 'Avalanche',
-          rpcUrls: ['https://avalanche-mainnet.core.chainstack.com/ext/bc/C/rpc/0968db18a01a90bac990ff00df6f7da1'],
+          rpcUrls: ['https://api.avax.network/ext/bc/C/rpc'],
           nativeCurrency: {
             name: 'AVAX',
             symbol: 'AVAX',
