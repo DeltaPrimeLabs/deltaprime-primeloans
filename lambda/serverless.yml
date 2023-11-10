@@ -141,6 +141,13 @@ functions:
     description: Fetch APYs from Level website.
     events:
       - schedule: rate(2 minutes)
+  gmxApyAggregator:
+    handler: aggregators/apy.gmxApyAggregator
+    memorySize: 2048
+    timeout: 300
+    description: Fetch GM token APYs from GMX website.
+    events:
+      - schedule: rate(2 minutes)
   # loanAggregatorAva:
   #   handler: aggregators/loan.loanAggregatorAva
   #   memorySize: 1024

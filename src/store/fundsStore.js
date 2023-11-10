@@ -1540,9 +1540,13 @@ export default {
           provider.getSigner()
       );
 
-      const approveTransaction = await lbTokenContract.approveForAll(state.smartLoanContract.address, true);
+      const isApprovedForAll = await lbTokenContract.isApprovedForAll(rootState.network.account, state.smartLoanContract.address);
 
-      await approveTransaction.wait();
+      if (!isApprovedForAll) {
+        const approveTransaction = await lbTokenContract.approveForAll(state.smartLoanContract.address, true);
+
+        await approveTransaction.wait();
+      }
 
       const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
 

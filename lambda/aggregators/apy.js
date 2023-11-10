@@ -15,6 +15,7 @@ const traderJoeConfig = require("../config/traderJoeApy.json");
 const sushiConfig = require("../config/sushiApy.json");
 const beefyConfig = require("../config/beefyApy.json");
 const levelConfig = require("../config/levelApy.json");
+const gmxApyConfig = require("../config/gmxApy.json");
 
 const formatUnits = (val, decimals) => parseFloat(ethers.utils.formatUnits(val, decimals));
 
@@ -29,7 +30,7 @@ const levelTvlAggregator = async (event) => {
   const arbLP = liquidityPerformance.find(item => item.chainId == 42161);
   for (const lpInfo of arbLP.lpInfos) {
     const liquidityInUsd = formatUnits(lpInfo.totalSupply, 18) * formatUnits(lpInfo.price, 12);
-    console.log(liquidityInUsd);
+    console.log(lpInfo.name, liquidityInUsd);
 
     const params = {
       TableName: process.env.APY_TABLE,
@@ -567,23 +568,24 @@ const levelApyAggregator = async (event) => {
 
   const arbLP = liquidityPerformance.find(item => item.chainId == 42161);
   for (const lpInfo of arbLP.lpInfos) {
-    const liquidityInUsd = formatUnits(lpInfo.totalSupply, 18) * formatUnits(lpInfo.price, 12);
+    // const liquidityInUsd = formatUnits(lpInfo.totalSupply, 18) * formatUnits(lpInfo.price, 12);
 
-    let tradingFees = 0;
+    // let tradingFees = 0;
 
-    for (const [address, fees] of Object.entries(lpInfo.feeDetailsPerWeek)) {
-      Object.values(fees).forEach(fee => {
-        tradingFees += formatUnits(fee, levelConfig.lpSymbols[address].decimals) * redstonePriceData[levelConfig.lpSymbols[address].symbol][0].dataPoints[0].value;
-      });
-    }
+    // for (const [address, fees] of Object.entries(lpInfo.feeDetailsPerWeek)) {
+    //   Object.values(fees).forEach(fee => {
+    //     tradingFees += formatUnits(fee, levelConfig.lpSymbols[address].decimals) * redstonePriceData[levelConfig.lpSymbols[address].symbol][0].dataPoints[0].value;
+    //   });
+    // }
 
-    const profit =
-      (formatUnits(lpInfo.lvlRewards, 18) * formatUnits(lpInfo.lvlPrice, 12)) +
-      formatUnits(lpInfo.mintingFee, 6) +
-      formatUnits(lpInfo.pnlVsTrader, 30) +
-      tradingFees;
+    // const profit =
+    //   (formatUnits(lpInfo.lvlRewards, 18) * formatUnits(lpInfo.lvlPrice, 12)) +
+    //   formatUnits(lpInfo.mintingFee, 6) +
+    //   formatUnits(lpInfo.pnlVsTrader, 30) +
+    //   tradingFees;
 
-    const apy = profit / liquidityInUsd / 7 * 365 * 100;
+    // const apy = profit / liquidityInUsd / 7 * 365 * 100;
+    const apy = formatUnits(lpInfo.feeApr, 8) + formatUnits(lpInfo.rewardApr, 8);
     console.log(levelConfig[lpInfo.name].symbol, levelConfig[lpInfo.name].protocolIdentifier, apy);
 
     const params = {
@@ -604,6 +606,83 @@ const levelApyAggregator = async (event) => {
   return event;
 }
 
+const gmxApyAggregator = async (event) => {
+  const { page } = await newChrome();
+
+  // navigate pools page and wait till javascript fully load.
+  const URL = "https://app.gmx.io/#/pools";
+
+  await page.setViewport({
+    width: 1920,
+    height: 1080
+  });
+
+  await page.goto(URL, {
+    waitUntil: "networkidle0",
+    timeout: 60000
+  });
+
+  // fetch GM tokens' APYs on Arbitrum and Avalanche
+  for (const [network, pools] of Object.entries(gmxApyConfig)) {
+    if (network == "avalanche") {
+      const networkBtn = await page.$$(".network-dropdown");
+
+      await networkBtn[0].click();
+
+      await page.mainFrame().waitForFunction(
+        selector => !!document.querySelector(selector).innerText,
+        {},
+        "div.network-dropdown-list"
+      )
+
+      const dropdownBtns = await page.$$("div.network-dropdown-list > .network-dropdown-menu-item");
+
+      await dropdownBtns[1].click();
+
+      await page.goto(URL, {
+        waitUntil: "networkidle0",
+        timeout: 60000
+      });
+    }
+
+    const marketRows = await page.$$(".token-table > tbody > tr");
+    const marketInnerTexts = await Promise.all(Array.from(marketRows).map(async market => {
+      return (await (await market.getProperty("textContent")).jsonValue()).replace(/\s+/g, "");
+    }));
+
+    for (const [poolId, marketId] of Object.entries(pools)) {
+      try {
+        const matchId = marketInnerTexts.findIndex(innerText => innerText.startsWith(marketId));
+        const market = marketRows[matchId];
+        const marketColumns = await market.$$("td");
+        const marketApy = parseFloat((await (await marketColumns[5].getProperty("textContent")).jsonValue()).split('%')[0].trim());
+
+        console.log(poolId, marketApy);
+
+        const params = {
+          TableName: process.env.APY_TABLE,
+          Key: {
+            id: poolId
+          },
+          AttributeUpdates: {
+            lp_apy: {
+              Value: Number(marketApy) ? marketApy / 100 : null,
+              Action: "PUT"
+            }
+          }
+        };
+        await dynamoDb.update(params).promise();
+      } catch (error) {
+        console.log(error);
+      }
+    }
+  }
+
+  console.log('fetching done.');
+
+  return event;
+}
+
 module.exports = {
   levelTvlAggregator,
   glpAprAggregator,
@@ -613,5 +692,6 @@ module.exports = {
   traderJoeApyAggregator,
   sushiApyAggregator,
   beefyApyAggregator,
-  levelApyAggregator
+  levelApyAggregator,
+  gmxApyAggregator
 }
