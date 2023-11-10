@@ -158,7 +158,7 @@ export default {
     setupStableCoinsOptions() {
       this.stableCoinsOptions = [
         {
-          options: Object.values(config.ASSETS_CONFIG).filter(asset => asset.isStableCoin).map(asset => asset.symbol),
+          options: Object.values(config.ASSETS_CONFIG).filter(asset => asset.isStableCoin && asset.symbol !== 'USDT.e').map(asset => asset.symbol),
           key: 'asset'
         }
       ];

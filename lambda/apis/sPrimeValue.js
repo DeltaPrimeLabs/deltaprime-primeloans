@@ -2,7 +2,7 @@ const AWS = require('aws-sdk');
 AWS.config.setPromisesDependency(require('bluebird'));
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
 
-module.exports.handler = (event, context, callback) => {
+const sPrimeAggregator = (event, context, callback) => {
   const params = {
     TableName: event.queryStringParameters.network === 'arbitrum' ? process.env.SPRIME_ARB_TABLE : process.env.SPRIME_AVA_TABLE,
     Key: {
@@ -23,4 +23,8 @@ module.exports.handler = (event, context, callback) => {
       callback(new Error('Couldn\'t fetch sPRIME values for depositor.'));
       return;
     });
+};
+
+module.exports = {
+  sPrimeAggregator
 }

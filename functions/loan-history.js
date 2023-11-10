@@ -138,4 +138,4 @@ module.exports = {
   getLoanStatusAtTimestamp: getData
 }
 
-fetchHistoricalPrices();
+// fetchHistoricalPrices();

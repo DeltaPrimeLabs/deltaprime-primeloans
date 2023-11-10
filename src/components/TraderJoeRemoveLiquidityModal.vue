@@ -144,7 +144,7 @@ export default {
 
     getBinPrice(binId) {
       const binPrice = (1 + this.binStep / 10000) ** (binId - 8388608) * 10 ** (this.firstAsset.decimals - this.secondAsset.decimals);
-      return binPrice.toFixed(5);
+      return this.formatTokenBalance(binPrice, 8, true)
     },
 
     submit() {

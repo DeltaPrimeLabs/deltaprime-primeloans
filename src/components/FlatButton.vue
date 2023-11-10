@@ -39,7 +39,6 @@ export default {
   flex-wrap: nowrap;
   align-items: center;
   padding: 2px 8px;
-  margin: 0 18px 0 5px;
   border-radius: 10px;
   border: solid 1px var(--flat-button__border-color);
   text-transform: uppercase;

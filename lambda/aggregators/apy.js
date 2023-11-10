@@ -3,16 +3,18 @@ const fetch = require("node-fetch");
 
 const { newChrome } = require("../utils/chrome");
 const { dynamoDb } = require("../utils/helpers");
+const { fetchTraderJoeLpApr } = require("../utils/graphql");
+const { fetchPangolinLpApr } = require("../utils/rest");
 
-const vectorApyConfig = require('../config/vectorApy.json');
-const yieldYakConfig = require('../config/yieldYakApy.json');
-const tokenAddresses = require('../config/token_addresses.json');
-const lpAssets = require('../config/lpAssets.json');
-const steakHutApyConfig = require('../config/steakHutApy.json');
-const traderJoeConfig = require('../config/traderJoeApy.json');
-const sushiConfig = require('../config/sushiApy.json');
-const beefyConfig = require('../config/beefyApy.json');
-const levelConfig = require('../config/levelApy.json');
+const vectorApyConfig = require("../config/vectorApy.json");
+const yieldYakConfig = require("../config/yieldYakApy.json");
+const tokenAddresses = require("../config/token_addresses.json");
+const lpAssets = require("../config/lpAssets.json");
+const steakHutApyConfig = require("../config/steakHutApy.json");
+const traderJoeConfig = require("../config/traderJoeApy.json");
+const sushiConfig = require("../config/sushiApy.json");
+const beefyConfig = require("../config/beefyApy.json");
+const levelConfig = require("../config/levelApy.json");
 
 const formatUnits = (val, decimals) => parseFloat(ethers.utils.formatUnits(val, decimals));
 
@@ -44,6 +46,8 @@ const levelTvlAggregator = async (event) => {
     await dynamoDb.update(params).promise();
   }
 
+  console.log('fetching done.');
+
   return event;
 }
 
@@ -66,15 +70,19 @@ const glpAprAggregator = async (event) => {
   //   glpApySelector
   // )
 
-  const glpApy = await page.evaluate(() => {
+  const { avaApy, arbApy } = await page.evaluate(() => {
     // select the elements with relevant class
     const items = document.querySelectorAll(".Home-token-card-option-apr");
 
     // parse APR of GLP on Avalanche
-    return parseFloat(items[1].innerText.split(':').at(-1).trim().replaceAll('%', ''));
+    const avaApy = parseFloat(items[1].innerText.split(':').at(-1).trim().replaceAll('%', ''));
+    const arbApy = parseFloat(items[1].innerText.split(',')[0].split(':').at(-1).trim().replaceAll('%', ''));
+    return {
+      avaApy,
+      arbApy
+    };
   });
-
-  console.log(glpApy);
+  console.log(avaApy, arbApy);
 
   const params = {
     TableName: process.env.APY_TABLE,
@@ -83,14 +91,20 @@ const glpAprAggregator = async (event) => {
     },
     AttributeUpdates: {
       apy: {
-        Value: Number(glpApy) ? glpApy : null,
+        Value: Number(avaApy) ? avaApy : null,
+        Action: "PUT"
+      },
+      arbApy: {
+        Value: Number(arbApy) ? arbApy : null,
         Action: "PUT"
       }
     }
   };
   await dynamoDb.update(params).promise();
+  // To-do: close() blocks execution. chromium version compatibility or something.
+  // await browser.close();
 
-  await browser.close();
+  console.log('fetching done.');
 
   return event;
 }
@@ -141,7 +155,10 @@ const vectorApyAggregator = async (event) => {
     return [avaxApy, savaxApy, usdcApy, usdtApy];
   });
 
-  console.log(avaxApy, savaxApy, usdcApy, usdtApy);
+  console.log("AVAX", avaxApy);
+  console.log("sAVAX", savaxApy);
+  console.log("USDC", usdcApy);
+  console.log("USDT", usdtApy);
 
   // update APYs in db
   let params = {
@@ -199,9 +216,9 @@ const vectorApyAggregator = async (event) => {
     }
   };
   await dynamoDb.update(params).promise();
+  // await browser.close();
 
-  // close browser
-  await browser.close();
+  console.log('fetching done.');
 
   return event;
 }
@@ -212,36 +229,37 @@ const lpAndFarmApyAggregator = async (event) => {
   const YIELDYAK_APY_ARB_URL = "https://staging-api.yieldyak.com/42161/apys";
 
   // fetching lp APYs
-  try {
-    for (const [asset, data] of Object.entries(lpAssets)) {
-      let apy;
+  for (const [asset, data] of Object.entries(lpAssets)) {
+    let apy;
+
+    try {
       if (data.dex === "Pangolin") {
-        apy = await getPangolinLpApr(data.url);
+        apy = await fetchPangolinLpApr(data.url);
       } else if (data.dex === "TraderJoe") {
-        apy = await getTraderJoeLpApr(tokenAddresses[asset], data.appreciation);
+        apy = await fetchTraderJoeLpApr(tokenAddresses[asset], data.appreciation);
       }
+    } catch (error) {
+      console.log(`Fetching ${asset} APY failed. Error: ${error}`);
+    };
 
-      console.log(asset, apy);
+    console.log(asset, apy);
 
-      const params = {
-        TableName: process.env.APY_TABLE,
-        Key: {
-          id: asset
-        },
-        AttributeUpdates: {
-          lp_apy: {
-            Value: Number(apy) ?apy : null,
-            Action: "PUT"
-          }
+    const params = {
+      TableName: process.env.APY_TABLE,
+      Key: {
+        id: asset
+      },
+      AttributeUpdates: {
+        lp_apy: {
+          Value: Number(apy) ?apy : null,
+          Action: "PUT"
         }
-      };
-      await dynamoDb.update(params).promise();
-    }
+      }
+    };
+    await dynamoDb.update(params).promise();
+  }
 
-    console.log(`Fetching lp APYs finished.`);
-  } catch (error) {
-    console.log(`Fetching lp APYs failed. Error: ${error}`);
-  };
+  console.log(`Fetching lp APYs finished.`);
 
   // fetching farm APYs
   const apys = {};
@@ -376,8 +394,9 @@ const steakHutApyAggregator = async (event) => {
     await dynamoDb.update(params).promise();
   }
 
-  // close browser
-  await browser.close();
+  // await browser.close();
+
+  console.log('fetching done.');
 
   return event;
 }
@@ -391,43 +410,50 @@ const traderJoeApyAggregator = async (event) => {
     for (const [pool, poolData] of Object.entries(pools)) {
       // navigate pools page and wait till javascript fully load.
       const URL = `https://traderjoexyz.com/${network}/pool/v21/`;
+
+      await page.setViewport({
+        width: 1920,
+        height: 1080
+      });
+
       await page.goto(URL + `${poolData.assetX}/${poolData.assetY}/${poolData.binStep}`, {
         waitUntil: "networkidle0",
         timeout: 60000
       });
 
-      // await page.evaluate(() => {
-      //   const tabs = document.querySelectorAll(".chakra-tabs__tab");
-      //   tabs[4].click();
-      //   return tabs;
-      // })
-      const tabs = await page.$$(".chakra-tabs__tab");
-      tabs[4].click();
-      await new Promise((resolve, reject) => setTimeout(resolve, 6000));
+      try {
+        const tabs = await page.$$(".chakra-tabs__tab");
+        await tabs[4].click();
 
-      const stats = await page.$$(".chakra-stat__number");
-      const apy = (await (await stats[3].getProperty('textContent')).jsonValue()).replace('%', '');
-      console.log(pool, apy);
+        await new Promise((resolve, reject) => setTimeout(resolve, 5000));
 
-      const params = {
-        TableName: process.env.APY_TABLE,
-        Key: {
-          id: pool
-        },
-        AttributeUpdates: {
-          lp_apy: {
-            Value: Number(apy) ? apy / 100 : null,
-            Action: "PUT"
+        const stats = await page.$$(".chakra-stat__number");
+        const apy = (await (await stats[3].getProperty('textContent')).jsonValue()).replace('%', '');
+        console.log(pool, apy);
+
+        const params = {
+          TableName: process.env.APY_TABLE,
+          Key: {
+            id: pool
+          },
+          AttributeUpdates: {
+            lp_apy: {
+              Value: Number(apy) ? apy / 100 : null,
+              Action: "PUT"
+            }
           }
-        }
-      };
-      await dynamoDb.update(params).promise();
-      await page.close();
+        };
+        await dynamoDb.update(params).promise();
+        await new Promise((resolve, reject) => setTimeout(resolve, 3000));
+      } catch (error) {
+        console.log(error);
+      }
     }
   }
 
-  // close browser
-  await browser.close();
+  // await browser.close();
+
+  console.log('fetching done.');
 
   return event;
 }
@@ -466,8 +492,9 @@ const sushiApyAggregator = async (event) => {
     }
   }
 
-  // close browser
-  await browser.close();
+  // await browser.close();
+
+  console.log('fetching done.');
 
   return event;
 }
@@ -520,8 +547,9 @@ const beefyApyAggregator = async (event) => {
     }
   }
 
-  // close browser
-  await browser.close();
+  // await browser.close();
+
+  console.log('fetching done.');
 
   return event;
 }

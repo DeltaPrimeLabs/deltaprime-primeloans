@@ -1,6 +1,6 @@
 const fetch = require("node-fetch");
 
-export const getPangolinLpApr = async (url) => {
+const fetchPangolinLpApr = async (url) => {
   let apr;
 
   if (url) {
@@ -13,4 +13,8 @@ export const getPangolinLpApr = async (url) => {
   }
 
   return apr;
+}
+
+module.exports = {
+  fetchPangolinLpApr
 }

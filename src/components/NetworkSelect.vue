@@ -56,7 +56,7 @@ export default {
         {
           chainId: this.toHex(43114),
           chainName: 'Avalanche',
-          rpcUrls: ['https://api.avax.network/ext/bc/C/rpc'],
+          rpcUrls: ['https://avalanche-mainnet.core.chainstack.com/ext/bc/C/rpc/0968db18a01a90bac990ff00df6f7da1'],
           nativeCurrency: {
             name: 'AVAX',
             symbol: 'AVAX',
@@ -66,7 +66,7 @@ export default {
         {
           chainId: this.toHex(42161),
           chainName: 'Arbitrum',
-          rpcUrls: ['+= https://arb-mainnet-public.unifra.io'],
+          rpcUrls: ['https://arbitrum-mainnet.core.chainstack.com/9a30fb13b2159a76c8e143c52d5579bf'],
           nativeCurrency: {
             name: 'ETH',
             symbol: 'ETH',

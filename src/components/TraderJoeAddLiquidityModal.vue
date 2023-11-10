@@ -1,5 +1,5 @@
 <template>
-  <div id="modal" v-if="lpToken" class="add-liquidity-modal-component modal-component">
+  <div id="modal" v-if="lpToken" class="trader-joe-add-liquidity-modal-component modal-component">
     <Modal>
       <div class="modal__title">
         Create LB position
@@ -297,7 +297,7 @@ export default {
 
     getBinPrice(binId) {
       const binPrice = (1 + this.binStep / 10000) ** (binId - 8388608) * 10 ** (this.firstAsset.decimals - this.secondAsset.decimals);
-      return binPrice.toFixed(7);
+      return this.formatTokenBalance(binPrice, 8, true);
     },
 
     getBinId(price) {
@@ -531,7 +531,7 @@ export default {
 @import "~@/styles/variables";
 @import "~@/styles/modal";
 
-.add-liquidity-modal-component {
+.trader-joe-add-liquidity-modal-component {
   .modal__title {
     margin-bottom: 43px;
   }

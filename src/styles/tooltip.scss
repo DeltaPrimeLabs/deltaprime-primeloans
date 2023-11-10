@@ -72,6 +72,23 @@
     }
   }
 
+  &[x-placement^="force-top"] {
+    margin-top: 2px;
+    transform: translate(10px, 50px);
+
+    .tooltip-arrow {
+      transform: rotate(-135deg);
+      top: -30px;
+      left: calc(50% - 2px);
+      margin-top: 0;
+      margin-bottom: 0;
+    }
+
+    .tooltip-inner {
+      transform: translateY(calc(-100% - 25px));
+    }
+  }
+
   &[x-placement^="right"] {
     margin-left: 7px;
 
@@ -90,6 +107,7 @@
     .tooltip-arrow {
       right: -5px;
       top: calc(50% - 5px);
+      transform: rotate(135deg);
       margin-left: 0;
       margin-right: 0;
     }
@@ -136,6 +154,13 @@
     max-width: none;
     width: auto;
     border: none;
+
+    &[x-placement^="top"] {
+      .tooltip-arrow {
+        transform: rotate(-45deg);
+        bottom: -2px;
+      }
+    }
 
     .tooltip-inner {
       background: var(--tooltip__button-tooltip-background);

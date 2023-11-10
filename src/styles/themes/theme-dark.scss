@@ -542,6 +542,8 @@
   // region LiquidityChart
   --liquidity-chart__active-price-bar-color: #{$pale-green--accent};
   --liquidity-chart__active-price-bar-color--hover: #{$pale-green};
+  --liquidity-chart__ghost-bar-color: #{$space};
+  --liquidity-chart__ghost-bar-border-color: #{$storm-blue};
   --liquidity-chart__main-token-color: #{$awesome-lilac};
   --liquidity-chart__main-token-color--hover: #{$pale-lilac};
   --liquidity-chart__secondary-token-color: #{$bright-teal};

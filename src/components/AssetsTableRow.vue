@@ -2,7 +2,7 @@
   <div class="fund-table-row-component"
        :class="{'expanded': rowExpanded, 'expanded--trading-view': selectedChart === 'TradingView'}">
     <div class="table__row" v-if="asset" :class="{'inactive': asset.inactive}">
-      <div class="table__cell asset" >
+      <div class="table__cell asset">
         <img class="asset__icon" :src="getAssetIcon(asset.symbol)">
         <div class="asset__info">
           <div class="asset__name">{{ asset.symbol }}</div>
@@ -112,7 +112,8 @@
 
     <div class="chart-container" v-if="rowExpanded">
       <SmallBlock v-on:close="toggleChart()">
-        <Toggle class="chart-container__toggle" v-if="asset.tradingViewSymbol" v-on:change="onOptionChange" :options="['TradingView', 'Chart']"
+        <Toggle class="chart-container__toggle" v-if="asset.tradingViewSymbol" v-on:change="onOptionChange"
+                :options="['TradingView', 'Chart']"
                 :initial-option="0"></Toggle>
         <Chart :data-points="asset.prices"
                :line-width="3"
@@ -370,7 +371,7 @@ export default {
           const gasPrice = ethers.utils.parseUnits('0.2', 'gwei');
 
           try {
-            return {
+            const route = {
               ...(await yakRouter.findBestPathWithGas(
                   amountIn,
                   tknFrom,
@@ -378,9 +379,17 @@ export default {
                   maxHops,
                   gasPrice,
                   {gasLimit: 1e9}
-              )),
-              dex: 'YAK_SWAP'
+              ))
             }
+            console.log(route);
+            if (route[0].length === 0 && route[1].length === 0 && route[2].length === 0) {
+              this.progressBarService.emitProgressBarErrorState('The selected aggregator could not find a route. Please switch aggregator, or try again later.')
+              this.cleanupAfterError();
+            }
+            return {
+              ...route,
+              dex: 'YAK_SWAP'
+            };
           } catch (e) {
             this.handleTransactionError(e);
           }
@@ -405,12 +414,12 @@ export default {
             try {
               return {
                 ...(await yakWrapRouter.unwrapAndFindBestPath(
-                  amountIn,
-                  tknTo,
-                  config.yieldYakGlpWrapperAddress,
-                  maxHops,
-                  gasPrice)),
-                  dex: 'YAK_SWAP'
+                    amountIn,
+                    tknTo,
+                    config.yieldYakGlpWrapperAddress,
+                    maxHops,
+                    gasPrice)),
+                dex: 'YAK_SWAP'
               }
             } catch (e) {
               this.handleTransactionError(e);
@@ -425,29 +434,40 @@ export default {
         console.warn('PARA SWAP QUERY METHOD');
         const paraSwapSDK = constructSimpleSDK({chainId: config.chainId, axios});
 
-        const swapRate = await paraSwapSDK.swap.getRate({
-          srcToken: TOKEN_ADDRESSES[sourceAsset],
-          srcDecimals: config.ASSETS_CONFIG[sourceAsset].decimals,
-          destToken: TOKEN_ADDRESSES[targetAsset],
-          destDecimals: config.ASSETS_CONFIG[targetAsset].decimals,
-          amount: amountIn,
-          userAddress: this.smartLoanContract.address,
-          side: SwapSide.SELL,
-          includeContractMethods: [ContractMethod.simpleSwap],
-          excludeContractMethods: [ContractMethod.directUniV3Swap],
-        });
+        try {
+          const swapRate = await paraSwapSDK.swap.getRate({
+            srcToken: TOKEN_ADDRESSES[sourceAsset],
+            srcDecimals: config.ASSETS_CONFIG[sourceAsset].decimals,
+            destToken: TOKEN_ADDRESSES[targetAsset],
+            destDecimals: config.ASSETS_CONFIG[targetAsset].decimals,
+            amount: amountIn,
+            userAddress: this.smartLoanContract.address,
+            side: SwapSide.SELL,
+            includeContractMethods: [ContractMethod.simpleSwap],
+            excludeContractMethods: [ContractMethod.directUniV3Swap],
+          });
 
-        const sourceAmountWei = parseUnits(Number(`${swapRate.srcAmount}e-${swapRate.srcDecimals}`).toFixed(swapRate.srcDecimals), swapRate.srcDecimals);
-        const targetAmountWei = parseUnits(Number(`${swapRate.destAmount}e-${swapRate.destDecimals}`).toFixed(swapRate.destDecimals), swapRate.destDecimals);
+          const sourceAmountWei = parseUnits(Number(`${swapRate.srcAmount}e-${swapRate.srcDecimals}`).toFixed(swapRate.srcDecimals), swapRate.srcDecimals);
+          const targetAmountWei = parseUnits(Number(`${swapRate.destAmount}e-${swapRate.destDecimals}`).toFixed(swapRate.destDecimals), swapRate.destDecimals);
 
-        const queryResponse = {
-          amounts: [sourceAmountWei, targetAmountWei],
-          dex: 'PARA_SWAP',
-          swapRate: swapRate
-        };
+          const queryResponse = {
+            amounts: [sourceAmountWei, targetAmountWei],
+            dex: 'PARA_SWAP',
+            swapRate: swapRate
+          };
 
-        console.log('queryResponse', queryResponse);
-        return queryResponse;
+          console.log('queryResponse', queryResponse);
+          return queryResponse;
+        } catch (error) {
+          console.warn('para swap query method error');
+          console.log(error);
+          console.log(typeof error);
+          console.log(String(error));
+          if (String(error).includes('No routes found with enough liquidity')) {
+            this.progressBarService.emitProgressBarErrorState('The selected aggregator could not find a route. Please switch aggregator, or try again later.')
+            this.cleanupAfterError();
+          }
+        }
       };
     },
 
@@ -596,15 +616,15 @@ export default {
         ParaSwap: this.paraSwap
       };
       const modalInstance = this.openModal(SwapModal);
-      modalInstance.dexOptions = Object.entries(config.AVAILABLE_ASSETS_PER_DEX).filter(([k, v]) => v.includes(this.asset.symbol)).map(([k, v]) => k);
-      modalInstance.swapDex = Object.keys(config.AVAILABLE_ASSETS_PER_DEX)[0];
+      modalInstance.dexOptions = Object.entries(config.SWAP_DEXS_CONFIG)
+          .filter(([dexName, dexConfig]) => dexConfig.availableAssets.includes(this.asset.symbol))
+          .map(([dexName, dexConfig]) => dexName);
+      modalInstance.swapDex = Object.keys(config.SWAP_DEXS_CONFIG)[0];
+      console.log(modalInstance.swapDex);
       modalInstance.swapDebtMode = false;
-      modalInstance.slippageMargin = 0.1;
       modalInstance.sourceAsset = this.asset.symbol;
       modalInstance.sourceAssetBalance = this.assetBalances[this.asset.symbol];
       modalInstance.assets = this.assets;
-      modalInstance.sourceAssets = config.AVAILABLE_ASSETS_PER_DEX;
-      modalInstance.targetAssets = config.AVAILABLE_ASSETS_PER_DEX;
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
@@ -641,8 +661,10 @@ export default {
 
     openDebtSwapModal() {
       const modalInstance = this.openModal(SwapModal);
-      modalInstance.dexOptions = Object.entries(config.AVAILABLE_ASSETS_PER_DEX).filter(([k, v]) => v.includes(this.asset.symbol)).map(([k, v]) => k);
-      modalInstance.swapDex = Object.keys(config.AVAILABLE_ASSETS_PER_DEX)[0];
+      modalInstance.dexOptions = Object.entries(config.SWAP_DEXS_CONFIG)
+          .filter(([dexName, dexConfig]) => dexConfig.availableAssets.includes(this.asset.symbol))
+          .map(([dexName, dexConfig]) => dexName);
+      modalInstance.swapDex = Object.keys(config.SWAP_DEXS_CONFIG)[0];
       modalInstance.title = 'Swap debt';
       modalInstance.swapDebtMode = true;
       modalInstance.slippageMargin = 0.2;
@@ -1036,31 +1058,31 @@ export default {
     },
 
     handleTransactionError(error) {
-      console.error('handleTransactionError');
-      console.error(error);
-      if (error && error.data && error.data.message) {
-        console.error(error.data.message)
-      }
+      console.error('____handleTransactionError______________');
+      console.log(typeof error);
+      console.log(error);
+      console.warn(error.code);
+      console.warn(error.message);
+      console.log(String(error));
+
       if (!error) {
         return;
       }
-      if (error && error.code && error.code === 4001 || error.code === -32603) {
-        if (error.message.toLowerCase().includes('insufficient output amount')) {
-          this.progressBarService.emitProgressBarErrorState('Insufficient slippage.');
-        } else if (error.data.message.includes('execution reverted: Received amount of tokens are less then expected')) {
-          this.progressBarService.emitProgressBarErrorState('Max acceptable slippage exceeded. Please try again.')
-        } else if (error.data && error.data.code === -32000) {
+
+      if (String(error) === '[object Object]') {
+        if (error.code === -32000) {
           this.progressBarService.emitProgressBarErrorState('The selected aggregator could not find a route. Please switch aggregator, or try again later.')
-        } else {
-          this.progressBarService.emitProgressBarCancelledState();
         }
       } else {
-        if (error.includes('Failed to swap')) {
-          this.progressBarService.emitProgressBarErrorState('Slippage might be too low.');
-          return;
+        const parsedError = String(error);
+        if (parsedError.includes('execution reverted: YakRouter: Insufficient output amount')) {
+          this.progressBarService.emitProgressBarErrorState('Insufficient slippage.');
         }
-        this.progressBarService.emitProgressBarErrorState();
       }
+      this.cleanupAfterError();
+    },
+
+    cleanupAfterError() {
       this.closeModal();
       this.disableAllButtons = false;
       this.isBalanceEstimated = false;

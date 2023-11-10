@@ -1,9 +1,13 @@
 const { GraphQLClient } = require("graphql-request");
+const gql = require("graphql-tag");
+const fetch = require("node-fetch");
+
 const {
   poolQuery,
   transferQuery,
   depositorQuery
 } = require("./queries");
+
 const ApolloClient = require("apollo-client").ApolloClient;
 const createHttpLink = require("apollo-link-http").createHttpLink;
 const InMemoryCache = require("apollo-cache-inmemory").InMemoryCache;

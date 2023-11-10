@@ -25,7 +25,7 @@ export default {
     ASSETS_CONFIG: {
       "AVAX": {name: "AVAX", symbol: "AVAX", decimals: 18, address: addresses.AVAX, debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:AVAXUSDT"},
       "USDC": {name: "USDC", symbol: "USDC", decimals: 6, address: addresses.USDC, isStableCoin: true, debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:USDCUSDT"},
-      "BTC": {name: "BTC", symbol: "BTC", decimals: 8, address: addresses.BTC, debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:BTCUSDT"},
+      "BTC": {name: "BTC", symbol: "BTC", logoExt: "png", decimals: 8, address: addresses.BTC, debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:BTCUSDT"},
       "ETH": {name: "ETH", symbol: "ETH", decimals: 18, address: addresses.ETH, debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:ETHUSDT"},
       "USDT": {name: "USDT", symbol: "USDT", decimals: 6, address: addresses.USDT, isStableCoin: true, debtCoverage: 0.83333333333, tradingViewSymbol: "COINBASE:USDTUSD"},
       "USDT.e": {inactive: true, name: "USDT.e", symbol: "USDT.e", decimals: 6, address: addresses['USDT.e'],  isStableCoin: true, debtCoverage: 0.83333333333, tradingViewSymbol: "TRADERJOE:USDTEUSDT_74B651"},
@@ -38,9 +38,16 @@ export default {
       "PNG": {name: "PNG", symbol: "PNG", logoExt: "png", decimals: 18, address: addresses.PNG, debtCoverage: 0, tradingViewSymbol: "COINBASE:PNGUSD"},
       "PTP": {name: "PTP", symbol: "PTP", logoExt: "png", decimals: 18, address: addresses.PTP, debtCoverage: 0, tradingViewSymbol: "COINEX:PTPUSDT"},
     },
-    AVAILABLE_ASSETS_PER_DEX: {
-        YakSwap: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'EUROC', 'GLP', 'sAVAX', 'GMX', 'JOE', 'QI', 'PNG', 'PTP'],
-        ParaSwap: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'sAVAX', 'QI', 'PNG', 'PTP']
+
+    SWAP_DEXS_CONFIG: {
+        YakSwap: {
+            availableAssets: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'EUROC', 'GLP', 'sAVAX', 'GMX', 'JOE', 'QI', 'PNG', 'PTP'],
+            slippageMargin: 0.02
+        },
+        ParaSwap: {
+            availableAssets: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'sAVAX', 'QI', 'PNG', 'PTP'],
+            slippageMargin: 0.05
+        }
     },
     paraSwapDefaultSlippage: 1,
     showParaSwapWarning: true,
@@ -105,7 +112,6 @@ export default {
         'TraderJoe': {
             intermediaryAddress: TRADERJOE_INTERMEDIARY_TUP.address,
             routerAddress: '0x60aE616a2155Ee3d9A68541Ba4544862310933d4',
-
             addLiquidityMethod: 'addLiquidityTraderJoe',
             removeLiquidityMethod: 'removeLiquidityTraderJoe',
             logo: 'joe.png'
@@ -465,7 +471,7 @@ export default {
     dataProviderHistoricalPrices: "redstone-avalanche",
     redstoneFeedUrl: "https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-avalanche-prod",
     subgraph: "https://api.thegraph.com/subgraphs/name/mbare0/deltaprime",
-    readRpcUrl: "https://api.avax.network/ext/bc/C/rpc",
+    readRpcUrl: "https://avalanche-mainnet.core.chainstack.com/ext/bc/C/rpc/0968db18a01a90bac990ff00df6f7da1",
     EMAIL_REGEX: /(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])/,
     refreshDelay: 5000,
 }

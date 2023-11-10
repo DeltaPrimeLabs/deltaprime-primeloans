@@ -83,7 +83,7 @@
             :config="addActionsConfig"
             v-if="addActionsConfig"
             v-on:iconButtonClick="actionClick"
-            :disabled="disableAllButtons || !healthLoaded">
+            :disabled="disableAllButtons || !healthLoaded || lpToken.disableAddTokenButton">
         </IconButtonMenuBeta>
         <IconButtonMenuBeta
             class="actions__icon-button last"
@@ -417,7 +417,9 @@ export default {
     },
 
     levelFinanceFee() {
+      console.log('levelFinanceFee');
       const calculator = new ethers.Contract(config.levelLiquidityCalculatorAddress, LIQUIDITY_CALCULATOR.abi, provider.getSigner());
+      console.log(calculator);
 
       return async (sourceAsset, targetAsset, amountIn, amountOut) => {
         const isBuyingLevel = this.lpToken.symbol === targetAsset;
@@ -507,15 +509,23 @@ export default {
     openProvideLiquidityModal() {
       console.log('openProvideLiquidityModal')
       const modalInstance = this.openModal(SwapModal);
+      const swapDexsConfig = {
+        Level: {
+          availableAssets: [...this.lpToken.underlyingAssets]
+        }
+      }
       let initSourceAsset = [...this.lpToken.underlyingAssets][0];
       modalInstance.title = 'Create LLP position';
       modalInstance.swapDex = 'Level';
+      modalInstance.dexOptions = ['Level'];
       modalInstance.swapDebtMode = false;
+      modalInstance.levelMode = true;
       modalInstance.slippageMargin = 0.1;
       modalInstance.sourceAsset = initSourceAsset;
       modalInstance.sourceAssetBalance = this.assetBalances[initSourceAsset];
       modalInstance.assets = { ...this.assets, ...this.levelLpAssets };
       modalInstance.sourceAssets = { Level: [...this.lpToken.underlyingAssets] };
+      modalInstance.swapDexsConfig = swapDexsConfig;
       modalInstance.targetAssetsConfig = config.LEVEL_LP_ASSETS_CONFIG;
       modalInstance.targetAssets = { Level: [this.lpToken.symbol] };
       modalInstance.assetBalances = { ...this.assetBalances, ...this.levelLpBalances };
@@ -565,10 +575,16 @@ export default {
 
     openRemoveLiquidityModal() {
       const modalInstance = this.openModal(SwapModal);
+      const swapDexsConfig = {
+        Level: {
+          availableAssets: [...this.lpToken.underlyingAssets]
+        }
+      }
       modalInstance.title = 'Unwind LLP position';
       modalInstance.swapDex = 'Level';
       modalInstance.dexOptions = ['Level'];
       modalInstance.swapDebtMode = false;
+      modalInstance.levelMode = true;
       modalInstance.slippageMargin = 0.1;
       modalInstance.sourceAsset = this.lpToken.symbol;
       modalInstance.sourceAssetBalance = this.levelLpBalances[this.lpToken.symbol];
@@ -576,6 +592,7 @@ export default {
       modalInstance.assets = { ...this.assets, ...this.levelLpAssets };
       modalInstance.sourceAssets = { Level: [this.lpToken.symbol]} ;
       modalInstance.targetAssets = { Level: [...this.lpToken.underlyingAssets] };
+      modalInstance.swapDexsConfig = swapDexsConfig;
       modalInstance.assetBalances = { ...this.assetBalances, ...this.levelLpBalances };
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;

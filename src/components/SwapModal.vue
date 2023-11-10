@@ -228,6 +228,7 @@ export default {
   data() {
     return {
       swapDebtMode: null,
+      levelMode: null,
       sourceAssets: null,
       targetAssets: null,
       sourceAssetOptions: null,
@@ -292,6 +293,7 @@ export default {
       showYakSwapWarning: config.showYakSwapWarning,
       sourceAssetsConfig: config.ASSETS_CONFIG,
       targetAssetsConfig: config.ASSETS_CONFIG,
+      swapDexsConfig: config.SWAP_DEXS_CONFIG,
       reverseSwapDisabled: false
     };
   },
@@ -412,6 +414,9 @@ export default {
 
     async updateSlippageWithAmounts(estimatedReceivedTokens) {
       let dexSlippage = 0;
+      this.receivedAccordingToOracle = this.estimatedNeededTokens * this.sourceAssetData.price / this.targetAssetData.price;
+      dexSlippage = (this.receivedAccordingToOracle - estimatedReceivedTokens) / estimatedReceivedTokens;
+
 
       if (this.checkMarketDeviation) {
         this.receivedAccordingToOracle = this.estimatedNeededTokens * this.sourceAssetData.price / this.targetAssetData.price;
@@ -420,14 +425,8 @@ export default {
       } else {
         this.receivedAccordingToOracle = this.estimatedNeededTokens;
       }
-      let slippageMargin;
 
-      if (this.swapDex === 'ParaSwap') {
-        slippageMargin = config.paraSwapDefaultSlippage;
-      } else {
-        slippageMargin = this.slippageMargin;
-      }
-
+      let slippageMargin = config.SWAP_DEXS_CONFIG[this.swapDex].slippageMargin;
 
       let updatedSlippage = slippageMargin + 100 * dexSlippage;
 
@@ -442,16 +441,28 @@ export default {
         this.slippageWarning = 'Slippage exceeds 2%. Be careful.';
       } else if (this.userSlippage < this.marketDeviation) {
         this.slippageWarning = 'Slippage below current DEX slippage. Transaction will likely fail.';
-      } else if (parseFloat((this.userSlippage - this.marketDeviation).toFixed(3)) < 0.1) {
+      } else if (parseFloat((this.userSlippage - this.marketDeviation).toFixed(3)) < 0.01) {
         this.slippageWarning = 'Slippage close to current DEX slippage. Transaction can fail.';
       }
     },
 
     setupSourceAssetOptions() {
       this.sourceAssetOptions = [];
-      const sourceAssets = this.swapDebtMode ? this.sourceAssets : this.sourceAssets[this.swapDex];
+      let sourceAssets;
+      if (this.swapDebtMode) {
+        sourceAssets = this.sourceAssets;
+      } else if (this.levelMode) {
+        sourceAssets = this.sourceAssets.Level;
+      } else {
+        sourceAssets = this.swapDexsConfig[this.swapDex].availableAssets;
+      }
+      console.log(this.sourceAssets);
+      console.log(this.swapDexsConfig);
+      console.log(sourceAssets);
+      console.log(this.sourceAssetsConfig);
       sourceAssets.forEach(assetSymbol => {
         const asset = this.sourceAssetsConfig[assetSymbol];
+        console.log(asset);
         const assetOption = {
           symbol: assetSymbol,
           short: asset.short,
@@ -465,8 +476,18 @@ export default {
     setupTargetAssetOptions() {
       this.targetAssetOptions = [];
 
-      const targetAssets = this.swapDebtMode ? this.targetAssets : this.targetAssets[this.swapDex];
+      let targetAssets;
+      if (this.swapDebtMode) {
+        targetAssets = this.targetAssets;
+      } else if (this.levelMode) {
+        targetAssets = this.targetAssets.Level;
+      } else {
+        targetAssets = this.swapDexsConfig[this.swapDex].availableAssets;
+      }
+      console.log(targetAssets);
+      console.log(this.targetAssetsConfig);
       targetAssets.forEach(assetSymbol => {
+        console.log(assetSymbol);
         const asset = this.targetAssetsConfig[assetSymbol];
         const assetOption = {
           symbol: assetSymbol,
