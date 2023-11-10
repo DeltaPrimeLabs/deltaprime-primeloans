@@ -1,5 +1,11 @@
 <template>
   <div class="lp-tab">
+    <div class="lp-tokens" v-if="Object.keys(gmxV2LpTokens).length">
+      <div class="lp-table level" v-if="gmxV2LpTokens">
+        <TableHeader :config="gmxV2LpTableHeaderConfig"></TableHeader>
+        <GmxV2LpTableRow v-for="(lpToken, index) in gmxV2LpTokens" v-bind:key="index" :index="index" :lp-token="lpToken"></GmxV2LpTableRow>
+      </div>
+    </div>
     <div class="lp-tokens">
       <div class="lp-table" v-if="traderJoeLpTokens">
         <TableHeader :config="traderJoeLpTableHeaderConfig"></TableHeader>
@@ -16,12 +22,6 @@
         </div>
         <LevelLpTableRow v-for="(lpToken, index) in levelLpTokens" v-bind:key="index" :index="index"
                          :lp-token="lpToken"></LevelLpTableRow>
-      </div>
-    </div>
-    <div class="lp-tokens" v-if="Object.keys(gmxV2LpTokens).length">
-      <div class="lp-table level" v-if="gmxV2LpTokens">
-        <TableHeader :config="gmxV2LpTableHeaderConfig"></TableHeader>
-        <GmxV2LpTableRow v-for="(lpToken, index) in gmxV2LpTokens" v-bind:key="index" :index="index" :lp-token="lpToken"></GmxV2LpTableRow>
       </div>
     </div>
     <div class="lp-tokens" v-if="Object.keys(concentratedLpTokens).length">

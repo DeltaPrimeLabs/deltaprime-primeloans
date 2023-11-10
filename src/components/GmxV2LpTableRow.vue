@@ -41,7 +41,7 @@
           </div>
           <div class="double-value__usd">
             <span>
-              {{(gmxV2Balances ? gmxV2Balances[lpToken.symbol] : 0) * lpToken.price | usd}}
+              {{((gmxV2Balances && gmxV2Balances[lpToken.symbol]) ? gmxV2Balances[lpToken.symbol] : 0) * lpToken.price | usd}}
             </span>
           </div>
         </template>
@@ -190,6 +190,7 @@ export default {
     this.watchAssetApysRefresh();
     this.watchExternalAssetBalanceUpdate();
     this.watchAsset();
+    this.watchAssetPricesUpdate();
     this.fetchHistoricalPrices();
   },
 
@@ -247,6 +248,7 @@ export default {
       'assetBalancesExternalUpdateService',
       'dataRefreshEventService',
       'progressBarService',
+      'priceService',
       'lpService',
       'healthService'
     ]),
@@ -760,10 +762,6 @@ export default {
       this.poolBalance = fromWei(await lpTokenContract.totalSupply());
     },
 
-    async setupTvl() {
-      this.tvl = 0;
-    },
-
     async setupRewards() {
       if (!this.smartLoanContract || !this.provider) return;
 
@@ -819,6 +817,12 @@ export default {
       this.dataRefreshEventService.observeAssetUpdatedEvent().subscribe(asset => {
         if (asset.symbol === this.lpToken.symbol) this.lpToken = asset;
         this.$forceUpdate();
+      });
+    },
+
+    watchAssetPricesUpdate() {
+      this.priceService.observeRefreshPrices().subscribe((updateEvent) => {
+        this.setupTvl();
       });
     },
 
@@ -885,6 +889,23 @@ export default {
       this.closeModal();
       this.disableAllButtons = false;
       this.isLpBalanceEstimated = false;
+    },
+
+    async setupTvl() {
+      console.log('setupTvl')
+      const longConfig = config.ASSETS_CONFIG[this.lpToken.longToken];
+      const shortConfig = config.ASSETS_CONFIG[this.lpToken.shortToken];
+      const longERC20 = new ethers.Contract(longConfig.address, erc20ABI, this.provider.getSigner());
+      const shortERC20 = new ethers.Contract(shortConfig.address, erc20ABI, this.provider.getSigner());
+
+      console.log('longConfig.price: ', longConfig.price)
+      console.log('shortConfig.price: ', shortConfig.price)
+      const longTotalWorth = longConfig.price * formatUnits(await longERC20.balanceOf(this.lpToken.address), longConfig.decimals);
+      const shortTotalWorth = shortConfig.price * formatUnits(await shortERC20.balanceOf(this.lpToken.address), shortConfig.decimals);
+
+      this.tvl = longTotalWorth + shortTotalWorth;
+      console.log('this.tvl: ', this.tvl)
+
     },
   },
 };
