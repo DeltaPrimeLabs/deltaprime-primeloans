@@ -454,9 +454,10 @@ export default {
 
       Object.values(config.GMX_V2_ASSETS_CONFIG).forEach(
           asset => {
-            if (state.supportedAssets.includes(asset.symbol)) {
+            //TODO: include check
+            // if (state.supportedAssets.includes(asset.symbol)) {
               lpTokens[asset.symbol] = asset;
-            }
+            // }
           }
       );
 
@@ -883,8 +884,8 @@ export default {
       if (gmxV2Assets) {
         if (Object.keys(gmxV2Assets).length !== 0) {
           for (let [symbol, asset] of Object.entries(gmxV2Assets)) {
-            if (apys[symbol] && apys[symbol][symbol]) {
-              gmxV2Assets[symbol].apy = apys[symbol][symbol];
+            if (apys[symbol] && apys[symbol].lp_apy) {
+              gmxV2Assets[symbol].apy = apys[symbol].lp_apy * 100;
             }
           }
         }
