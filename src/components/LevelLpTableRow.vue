@@ -225,7 +225,6 @@ export default {
       'smartLoanContract',
       'fullLoanStatus',
       'assetBalances',
-      'levelLpBalances',
       'assets',
       'debtsPerAsset',
       'lpAssets',

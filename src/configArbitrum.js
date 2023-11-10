@@ -97,7 +97,7 @@ export default {
         "arbSnrLLP": {name: "Senior", symbol: "arbSnrLLP", pid: 0, short: "Snr", decimals: 18, address: addresses.arbSnrLLP, debtCoverage: 0.83333333333, balanceMethod: "levelSnrBalance", groupIdentifier: 'STKD_SNR_LLP_GROUP', underlyingAssets: ['BTC', 'ETH', 'USDT', 'USDC'], link: 'https://app.level.finance/liquidity/senior-tranche/buy'},
     },
     GMX_V2_ASSETS_CONFIG: {
-        "GMX_V2_ETH_USD": {name: "ETH-USDC", symbol: "GMX_V2_ETH_USD", short: "GM", price: 1, decimals: 18, address: addresses.GMX_V2_ETH_USD, debtCoverage: 0.83333333333, longToken: 'ETH', shortToken: 'USDC', indexTokenAddress: addresses.ETH, link: 'https://app.gmx.io/#/stats'},
+        "GM_ETH_WETH_USDC": {name: "ETH-USDC", symbol: "GM_ETH_WETH_USDC", short: "GM", price: 1, decimals: 18, address: addresses.GM_ETH_WETH_USDC, debtCoverage: 0.83333333333, longToken: 'ETH', shortToken: 'USDC', indexTokenAddress: addresses.ETH, link: 'https://app.gmx.io/#/stats'},
     },
     LP_ASSETS_CONFIG: {
         // "SUSHI_DPX_ETH_LP": {
@@ -278,7 +278,7 @@ export default {
     nativeToken: "ETH",
     SLIPPAGE_TOLERANCE: 0.03,
     dataProviderId: "redstone-arbitrum-prod",
-    dataProviderHistoricalPrices: "redstone",
+    dataProviderHistoricalPrices: "redstone-arbitrum-prod",
     redstoneFeedUrl: "https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-arbitrum-prod",
     subgraph: "https://api.thegraph.com/subgraphs/name/keizir/deltaprime",
     readRpcUrl: "https://arb-mainnet-public.unifra.io",

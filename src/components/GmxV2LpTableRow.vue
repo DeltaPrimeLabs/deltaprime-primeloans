@@ -28,6 +28,25 @@
         </template>
       </div>
 
+      <!--      composition-->
+      <div class="table__cell table__cell--double-value balance">
+        <template>
+          <div class="table__cell composition">
+            <img class="asset__icon" :src="getAssetIcon(lpToken.longToken)">{{
+              formatTokenBalance(longTokenAmount ? longTokenAmount : 0, 4, true)
+            }}
+            <img class="asset__icon" :src="getAssetIcon(lpToken.shortToken)">{{
+              formatTokenBalance(shortTokenAmount ? shortTokenAmount : 0, 4, true)
+            }}
+          </div>
+          <div class="double-value__usd">
+            <span>
+              {{(gmxV2Balances ? gmxV2Balances[lpToken.symbol] : 0) * lpToken.price | usd}}
+            </span>
+          </div>
+        </template>
+      </div>
+
       <div class="table__cell trend-gmxV2">
         <div class="trend__chart-change" v-on:click="toggleChart()">
           <SmallChartBeta :data-points="weeklyPrices"
@@ -42,10 +61,6 @@
 
       <div class="table__cell table__cell--double-value tvl">
         {{ formatTvl(tvl) }}
-      </div>
-
-<!--      composition-->
-      <div class="table__cell table__cell--double-value tvl">
       </div>
 
       <div class="table__cell capacity">
@@ -175,6 +190,7 @@ export default {
     this.watchAssetApysRefresh();
     this.watchExternalAssetBalanceUpdate();
     this.watchAsset();
+    this.fetchHistoricalPrices();
   },
 
   data() {
@@ -202,7 +218,9 @@ export default {
       isLpBalanceEstimated: false,
       disableAllButtons: false,
       healthLoaded: false,
-      showChart: false
+      showChart: false,
+      longTokenAmount: 0,
+      shortTokenAmount: 0
     };
   },
 
@@ -256,10 +274,17 @@ export default {
     provider: {
       async handler(provider) {
         if (provider) {
-          await this.setupPoolBalance();
+          this.setupPoolBalance();
         }
       }
-    }
+    },
+    gmxV2Balances: {
+      async handler(gmxV2Balances) {
+        if (gmxV2Balances) {
+          this.setupGmUnderlyingBalances();
+        }
+      }
+    },
   },
 
   methods: {
@@ -278,13 +303,13 @@ export default {
               {
                 key: 'ADD_FROM_WALLET',
                 name: 'Import existing GM token',
-                disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
+                disabled: !this.hasSmartLoanContract,
                 disabledInfo: 'To import GM token, you need to add some funds from you wallet first'
               },
               {
                 key: 'PROVIDE_LIQUIDITY',
                 name: 'Create GM position',
-                disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
+                disabled: !this.hasSmartLoanContract,
                 disabledInfo: 'To create GM token, you need to add some funds from you wallet first'
               }
             ]
@@ -300,12 +325,12 @@ export default {
               {
                 key: 'WITHDRAW',
                 name: 'Export GM position',
-                disabled: !this.hasSmartLoanContract || !this.lpTokenBalances
+                disabled: !this.hasSmartLoanContract
               },
               {
                 key: 'REMOVE_LIQUIDITY',
                 name: 'Remove GM position',
-                disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
+                disabled: !this.hasSmartLoanContract,
                 disabledInfo: 'You need to add some funds from you wallet first'
               }
             ]
@@ -334,6 +359,38 @@ export default {
       this.apr = this.lpToken.apy;
     },
 
+    async setupGmUnderlyingBalances() {
+      const depositReader = new ethers.Contract(config.gmxV2DepositReaderAddress, IREADER_DEPOSIT_UTILS.abi, this.provider.getSigner());
+
+      const longToken = config.ASSETS_CONFIG[this.lpToken.longToken];
+      const shortToken = config.ASSETS_CONFIG[this.lpToken.shortToken];
+
+      const marketProps = {
+        marketToken: this.lpToken.address,
+        indexToken: this.lpToken.indexTokenAddress,
+        longToken: longToken.address,
+        shortToken: shortToken.address
+      }
+
+      const gmxData = await (await fetch('https://arbitrum-api.gmxinfra.io/prices/tickers')).json();
+
+      let shortTokenGmxData = gmxData.find(el => el.tokenSymbol === shortToken.symbol);
+      let longTokenGmxData = gmxData.find(el => el.tokenSymbol === longToken.symbol);
+      let indexTokenGmxData = gmxData.find(el => el.tokenAddress === this.lpToken.indexTokenAddress);
+
+      const prices = {
+        indexTokenPrice: { min: BigNumber.from(indexTokenGmxData.minPrice), max: BigNumber.from(indexTokenGmxData.maxPrice) },
+        longTokenPrice: { min: BigNumber.from(longTokenGmxData.minPrice) , max: BigNumber.from(longTokenGmxData.maxPrice) },
+        shortTokenPrice: { min: BigNumber.from(shortTokenGmxData.minPrice), max: BigNumber.from(shortTokenGmxData.maxPrice) }
+      }
+
+      let [longTokenOut, shortTokenOut] = await depositReader.getWithdrawalAmountOut(
+          config.gmxV2DataStoreAddress, marketProps, prices, this.gmxV2Balances[this.lpToken.symbol], this.nullAddress
+      );
+      this.longTokenAmount = longTokenOut;
+      this.shortTokenAmount = shortTokenOut;
+    },
+
     toggleChart() {
       if (this.rowExpanded) {
         this.showChart = false;
@@ -360,9 +417,6 @@ export default {
             break;
           case 'REMOVE_LIQUIDITY':
             this.openRemoveLiquidityModal();
-            break;
-          case 'CLAIM_GMX_V2_REWARDS':
-            this.openGmxV2RewardsModal();
             break;
           case 'PARTNER_PROFILE':
             this.openProfileModal();
@@ -418,9 +472,20 @@ export default {
 
     gmxV2Fee() {
       return async (sourceAsset, targetAsset, amountIn, amountOut) => {
-       let isDeposit = targetAsset === this.lpToken.symbol;
+        let isDeposit = targetAsset === this.lpToken.symbol;
 
-       return [0,0];
+        let firstAsset = isDeposit ? sourceAsset : targetAsset;
+        let isLong = firstAsset === this.lpToken.longToken;
+        const firstConfig = config.ASSETS_CONFIG[firstAsset];
+        const secondAsset = isLong ? this.lpToken.shortToken : this.lpToken.longToken;
+        const secondConfig = config.ASSETS_CONFIG[secondAsset];
+        const firstERC20 = new ethers.Contract(firstConfig.address, erc20ABI, this.provider.getSigner());
+        const secondERC20 = new ethers.Contract(secondConfig.address, erc20ABI, this.provider.getSigner());
+
+        const firstTotalWorth = firstConfig.price * formatUnits(await firstERC20.balanceOf(this.lpToken.address), firstConfig.decimals);
+        const secondTotalWorth = secondConfig.price * formatUnits(await secondERC20.balanceOf(this.lpToken.address), secondConfig.decimals);
+
+        return firstTotalWorth > secondTotalWorth ? 0.007 : 0.005;
       }
     },
 
@@ -578,6 +643,7 @@ export default {
         const addLiquidityRequest = {
           sourceAsset: swapEvent.sourceAsset,
           targetAsset: swapEvent.targetAsset,
+
           isLongToken: swapEvent.sourceAsset === this.lpToken.longToken,
           sourceAmount: swapEvent.sourceAmount,
           minGmAmount: swapEvent.targetAmount,
@@ -639,10 +705,12 @@ export default {
       modalInstance.$on('SWAP_TO_MULTIPLE', swapEvent => {
 
         const removeLiquidityRequest = {
-          sourceAsset: swapEvent.sourceAsset,
-          sourceAmount: swapEvent.sourceAmount,
-          targetAssets: swapEvent.targetAssets,
-          targetAmounts: swapEvent.targetAmounts,
+          gmToken: swapEvent.sourceAsset,
+          longToken: swapEvent.targetAssets[0],
+          shortToken: swapEvent.targetAssets[1],
+          gmAmount: swapEvent.sourceAmount,
+          minLongAmount: swapEvent.targetAmounts[0],
+          minShortAmount: swapEvent.targetAmounts[1],
           method: `gmxV2Unstake${this.capitalize(this.lpToken.longToken)}${this.capitalize(this.lpToken.shortToken)}`
         };
 
@@ -835,7 +903,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: repeat(6, 1fr) 120px 120px 60px 80px 22px;
+    grid-template-columns: repeat(2, 1fr) 160px 110px 100px 120px 120px 120px 60px 80px 22px;
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;
@@ -852,6 +920,13 @@ export default {
 
         .asset__icon {
           cursor: pointer;
+        }
+
+        .asset__icon {
+          cursor: pointer;
+          width: 20px;
+          height: 20px;
+          opacity: var(--asset-table-row__icon-opacity);
         }
 
         .asset__name {
@@ -884,6 +959,20 @@ export default {
         flex-direction: column;
         justify-content: center;
         align-items: flex-end;
+      }
+
+      &.composition {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+
+        .asset__icon {
+          margin-left: 5px;
+          height: 22px;
+          width: 22px;
+          border-radius: 50%;
+          margin-right: 9px;
+        }
       }
 
       &.rewards {

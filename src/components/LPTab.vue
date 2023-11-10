@@ -416,7 +416,7 @@ export default {
     },
     setupGmxV2LpTableHeaderConfig() {
       this.gmxV2LpTableHeaderConfig = {
-        gridTemplateColumns: 'repeat(6, 1fr) 120px 120px 60px 80px 22px',
+        gridTemplateColumns: 'repeat(2, 1fr) 160px 110px 100px 120px 120px 120px 60px 80px 22px',
         cells: [
           {
             label: 'GM Token',
@@ -433,6 +433,13 @@ export default {
             tooltip: `The balance of this GM token in your Prime Account.`
           },
           {
+            label: 'Composition',
+            sortable: false,
+            class: 'composition',
+            id: 'COMPOSITION',
+            tooltip: `Composition ot the GM token.`
+          },
+          {
             label: 'Trend (7D)',
             sortable: false,
             class: 'trend-level',
@@ -446,13 +453,6 @@ export default {
             id: 'tvl',
             tooltip: `The Total Value Locked (TVL) in the underlying pool.<br>
                       <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/pools#tvl' target='_blank'>More information</a>.`
-          },
-          {
-            label: 'Composition',
-            sortable: false,
-            class: 'composition',
-            id: 'COMPOSITION',
-            tooltip: `Composition ot the GM token.`
           },
           {
             label: 'Capacity',

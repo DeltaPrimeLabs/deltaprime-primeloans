@@ -70,7 +70,7 @@ export default {
     &.asset {
     }
 
-    &.balance {
+    &.balance, &.composition {
       justify-content: flex-end;
     }
 
