@@ -69,14 +69,14 @@
               :config="addActionsConfig"
               v-if="addActionsConfig"
               v-on:iconButtonClick="actionClick"
-              :disabled="disableAllButtons || !healthLoaded || platypusAffected || platypusAffectedDisableDeposit">
+              :disabled="disableAllButtons || platypusAffected || platypusAffectedDisableDeposit">
           </IconButtonMenuBeta>
           <IconButtonMenuBeta
               class="actions__icon-button last"
               :config="removeActionsConfig"
               v-if="removeActionsConfig"
               v-on:iconButtonClick="actionClick"
-              :disabled="disableAllButtons || !healthLoaded || platypusAffected">
+              :disabled="disableAllButtons || platypusAffected">
           </IconButtonMenuBeta>
         </div>
       </div>
@@ -188,7 +188,7 @@ export default {
       return config.PROTOCOLS_CONFIG[this.farm.protocol];
     },
     disabled() {
-      return !this.smartLoanContract || this.smartLoanContract.address === NULL_ADDRESS || this.disableAllButtons || !this.healthLoaded;
+      return !this.smartLoanContract || this.smartLoanContract.address === NULL_ADDRESS || this.disableAllButtons;
     },
     isLP() {
       return this.asset.secondary != null;

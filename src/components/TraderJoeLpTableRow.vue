@@ -72,14 +72,14 @@
             v-if="addActionsConfig"
             :config="addActionsConfig"
             v-on:iconButtonClick="actionClick"
-            :disabled="inProcess || !healthLoaded">
+            :disabled="inProcess">
         </IconButtonMenuBeta>
         <IconButtonMenuBeta
             class="actions__icon-button"
             v-if="removeActionsConfig"
             :config="removeActionsConfig"
             v-on:iconButtonClick="actionClick"
-            :disabled="inProcess || !healthLoaded">
+            :disabled="inProcess">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -311,7 +311,7 @@ export default {
     },
 
     actionClick(key) {
-      if (!this.inProcess && this.healthLoaded) {
+      if (!this.inProcess) {
         switch (key) {
           case 'ADD_FROM_WALLET':
             this.openAddTraderJoeV2FromWalletModal();

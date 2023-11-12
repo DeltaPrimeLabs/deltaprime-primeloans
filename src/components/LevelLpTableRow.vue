@@ -83,21 +83,21 @@
             :config="addActionsConfig"
             v-if="addActionsConfig"
             v-on:iconButtonClick="actionClick"
-            :disabled="disableAllButtons || !healthLoaded || lpToken.disableAddTokenButton">
+            :disabled="disableAllButtons || lpToken.disableAddTokenButton">
         </IconButtonMenuBeta>
         <IconButtonMenuBeta
             class="actions__icon-button last"
             :config="removeActionsConfig"
             v-if="removeActionsConfig"
             v-on:iconButtonClick="actionClick"
-            :disabled="disableAllButtons || !healthLoaded">
+            :disabled="disableAllButtons">
         </IconButtonMenuBeta>
         <IconButtonMenuBeta
             class="actions__icon-button"
             v-if="moreActionsConfig"
             :config="moreActionsConfig"
             v-on:iconButtonClick="actionClick"
-            :disabled="disableAllButtons || !healthLoaded">
+            :disabled="disableAllButtons">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -361,7 +361,7 @@ export default {
     },
 
     actionClick(key) {
-      if (!this.disableAllButtons && this.healthLoaded) {
+      if (!this.disableAllButtons) {
         switch (key) {
           case 'ADD_FROM_WALLET':
             this.openAddFromWalletModal();
