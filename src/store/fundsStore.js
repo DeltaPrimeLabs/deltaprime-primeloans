@@ -20,6 +20,8 @@ import router from '@/router';
 import {constructSimpleSDK, SimpleFetchSDK, SwapSide} from '@paraswap/sdk';
 import axios from 'axios';
 import LB_TOKEN from '/artifacts/contracts/interfaces/joe-v2/ILBToken.sol/ILBToken.json'
+import MULTICALL from '/artifacts/contracts/lib/Multicall3.sol/Multicall3.json'
+import {decodeFunctionData} from "viem";
 
 const toBytes32 = require('ethers').utils.formatBytes32String;
 const fromBytes32 = require('ethers').utils.parseBytes32String;
@@ -58,7 +60,7 @@ export default {
     smartLoanContract: null,
     smartLoanFactoryContract: null,
     wrappedTokenContract: null,
-    usdcTokenContract: null,
+    multicallContract: null,
     assetBalances: null,
     lpBalances: null,
     concentratedLpBalances: null,
@@ -120,8 +122,8 @@ export default {
       state.wrappedTokenContract = wrappedTokenContract;
     },
 
-    setUsdcTokenContract(state, usdcTokenContract) {
-      state.usdcTokenContract = usdcTokenContract;
+    setMulticallContract(state, multicall) {
+      state.multicallContract = multicall;
     },
 
     setAssetBalances(state, assetBalances) {
@@ -437,14 +439,14 @@ export default {
     },
 
     async setupContracts({rootState, commit}) {
-      const provider = rootState.network.provider;
       const smartLoanFactoryContract = new ethers.Contract(SMART_LOAN_FACTORY_TUP.address, SMART_LOAN_FACTORY.abi, provider.getSigner());
       const wrappedTokenContract = new ethers.Contract(config.WRAPPED_TOKEN_ADDRESS, wrappedAbi, provider.getSigner());
-      const usdcTokenContract = new ethers.Contract(TOKEN_ADDRESSES['USDC'], erc20ABI, provider.getSigner());
+      let readProvider = new ethers.providers.JsonRpcProvider(config.readRpcUrl);
+      const multicallContract = new ethers.Contract(config.multicallAddress, MULTICALL.abi, readProvider);
 
       commit('setSmartLoanFactoryContract', smartLoanFactoryContract);
       commit('setWrappedTokenContract', wrappedTokenContract);
-      commit('setUsdcTokenContract', usdcTokenContract);
+      commit('setMulticallContract', multicallContract);
     },
 
     async setupSmartLoanContract({state, rootState, commit}) {
@@ -626,15 +628,19 @@ export default {
       );
 
       if (config.LEVEL_LP_ASSETS_CONFIG) {
-        const balancesArray = await Promise.all(Object.entries(config.LEVEL_LP_ASSETS_CONFIG).map(
+        let result = await state.multicallContract.callStatic.aggregate(
+          Object.entries(config.LEVEL_LP_ASSETS_CONFIG).map(
             ([key, value]) => {
-              return state.readSmartLoanContract[value.balanceMethod]()
-            }
-        ));
+              return {
+                target: state.readSmartLoanContract.address,
+                callData: state.readSmartLoanContract.interface.encodeFunctionData(value.balanceMethod)
+              }
+            })
+        );
 
         Object.keys(config.LEVEL_LP_ASSETS_CONFIG).forEach(
             (key, index) => {
-              levelLpBalances[key] = fromWei(balancesArray[index]);
+              levelLpBalances[key] = fromWei(result.returnData[index]);
             }
         )
       }
@@ -857,6 +863,52 @@ export default {
     },
 
     async getFullLoanStatus({state, rootState, commit}) {
+      console.log('getFullLoanStatus')
+      console.log(0)
+      console.log(state.multicallContract.address)
+      console.log(fromWei(await state.multicallContract.getChainId()))
+      console.log(state.readSmartLoanContract.interface.encodeFunctionData('getAllOwnedAssets'))
+      console.log(state.readSmartLoanContract.interface.encodeFunctionData('getStakedPositions'))
+
+      let result;
+
+      console.log(state.multicallContract.callStatic.aggregate)
+
+      try {
+        result = await state.multicallContract.callStatic.aggregate(
+          [
+            {
+              target: state.smartLoanContract.address,
+              callData: state.readSmartLoanContract.interface.encodeFunctionData('getAllOwnedAssets')
+            }
+          ]
+        );
+      } catch (e) {
+        console.log('error')
+        console.log(e)
+      }
+
+      let allOwnedAssets = state.readSmartLoanContract.interface.decodeFunctionData('getAllOwnedAssets', result[0]);
+      console.log('allOwnedAssets')
+      console.log(allOwnedAssets)
+      // let result = await state.multicallContract.aggregate(
+      //     [
+      //       {
+      //         target: state.smartLoanContract.address,
+      //         callData: state.readSmartLoanContract.interface.encodeFunctionData('getAllOwnedAssets')
+      //       },
+      //       {
+      //         target: state.smartLoanContract.address,
+      //         callData: state.readSmartLoanContract.interface.encodeFunctionData('getStakedPositions')
+      //       },
+      //     ]
+      // );
+
+      console.log(1)
+      console.log(result)
+
+
+
       const loanAssets = mergeArrays([
         (await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
         (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
