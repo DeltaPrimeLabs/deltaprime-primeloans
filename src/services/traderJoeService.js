@@ -249,9 +249,7 @@ export default class TraderJoeService {
   async getRewardsInfo(loan, market, token) {
     try {
       const URL = `https://uophm6e26f.execute-api.us-east-1.amazonaws.com/traderjoe/rewards/claimable?chain=${window.chain}&loan=${loan}&market=${market}&token=${token}`;
-      // const rewardsInfo = await axios.get(URL);
-      const rewardsInfo = {"rewards":[{"epoch":6,"claimableRewards":[]},{"epoch":7,"claimableRewards":[{"amount":"316953165140564164157","tokenAddress":"0x371c7ec6d8039ff7933a2aa28eb827ffe1f52f07"}]}],"proofs":[["0x6de7ff6494772072f09f080d2c1e3d18eb875ba89055f2a2adfa3b8823f3f1d8","0x2737a2683556db1ee97a49fe8f3d035b7022397f85d4910fc19d9ab80564be2e","0x19be568450a1ab2f96893564328fbbe35cd1ae692aaf6fe20016bfb2a8deb668","0xb8a2f0ce201368a0f5d2b257a65ad6ac1b2d6d2069016c8ec4b85e7b374b8148","0x8fbb16092944116c0a20ec465d4d88ad7d2238afe6ed71c54abf175700ef1c14"],["0x65867fd4b5da30c5e0b4cea35c2e87204736cb341b956a2c6e07f4c35e53e8a8","0x6a692abbaef3880c2a78aa124fe578dff69d21ecd975c8e1194611586c89aead","0x1cced47c48a154a03b6d0c133a3c8867e1613f7de5a5bb8a3b6b8ccde52604cd","0xb174b605971169619292194e9ad7ddafe9e88f47065b5c214ddb92fcbc32462f","0x5934b700de5824088958539a83fc6b948a01952452738505431dd3d73a424e75"]]};
-      console.log(rewardsInfo);
+      const rewardsInfo = await axios.get(URL);
 
       return rewardsInfo;
     } catch (error) {
