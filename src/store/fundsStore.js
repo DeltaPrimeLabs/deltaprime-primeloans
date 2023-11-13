@@ -399,29 +399,20 @@ export default {
       const traderJoeService = rootState.serviceRegistry.traderJoeService;
       let lpTokens = {};
 
-      Object.values(config.TRADERJOEV2_LP_ASSETS_CONFIG).forEach(
-          asset => {
-            // To-do: check if the assets supported. correct symbols if not.
-            lpTokens[asset.symbol] = asset;
+      Object.values(config.TRADERJOEV2_LP_ASSETS_CONFIG).forEach(async asset => {
+        // To-do: check if the assets supported. correct symbols if not.
+        lpTokens[asset.symbol] = asset;
 
-            if (asset.rewardToken) {
-              try {
-                const rewardsRaw = traderJoeService.getClaimableRewards(state.smartLoanContract.address, asset.address);
-                let totalRewards = 0;
+        if (asset.rewardToken) {
+          try {
+            const rewardsInfo = await traderJoeService.getRewardsInfo(state.smartLoanContract.address, asset.address, asset.rewardToken.address);
 
-                rewardsRaw.map(rewards => {
-                  rewards.claimableRewards.map(claimable => {
-                    totalRewards += parseFloat(formatUnits(claimable.amount, asset.rewardToken.decimals));
-                  })
-                })
-
-                lpTokens[asset.symbol]['rewards'] = totalRewards;
-              } catch (error) {
-                console.log(`fetching climable rewards error: ${error}`);
-              }
-            }
+            lpTokens[asset.symbol]['rewardsInfo'] = rewardsInfo;
+          } catch (error) {
+            console.log(`fetching climable rewards error: ${error}`);
           }
-      );
+        }
+      });
 
       // To-do: request price of TJLB token prices from Redstone
 
@@ -1706,6 +1697,32 @@ export default {
       await dispatch("refreshTraderJoeV2LpUnderlyingBalancesAndLiquidity", {lpAsset});
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, config.refreshDelay);
+    },
+
+    async claimTraderJoeRewards({state, rootState, dispatch}, {claimRewardsRequest}) {
+      const provider = rootState.network.provider;
+
+      const loanAssets = mergeArrays([(
+          await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG)
+      ]);
+
+      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).claimReward(claimRewardsRequest.merkleEntries);
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+
+      const tx = await awaitConfirmation(transaction, provider, 'claim rewards from traderjoe v2 pools');
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      rootState.serviceRegistry.modalService.closeModal();
       setTimeout(() => {
         rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
       }, SUCCESS_DELAY_AFTER_TRANSACTION);

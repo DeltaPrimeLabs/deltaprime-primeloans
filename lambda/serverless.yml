@@ -162,10 +162,10 @@ functions:
   #   description: upload loan addresses on Arbitrum
   #   events:
   #     - schedule: rate(5 minutes)
-  getClaimableRewardsApi:
-    handler: apis/traderJoe.getClaimableRewardsApi
+  getRewardsInfoApi:
+    handler: apis/traderJoe.getRewardsInfoApi
     memorySize: 512
-    description: Fetch claimable rewards from TraderJoe V2 pool
+    description: Fetch claimable rewards and user proofs from TraderJoe V2 pool
     events:
       - httpApi:
           method: get

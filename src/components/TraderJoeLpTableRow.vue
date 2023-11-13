@@ -53,7 +53,7 @@
         </FlatButton> -->
         <template v-if="lpToken.rewardToken">
           <img class="asset__icon" :src="'src/assets/logo/joe.png'">
-          {{ lpToken.rewards ? lpToken.rewards : 0 }}
+          {{ totalRewards }}
         </template>
       </div>
 
@@ -82,6 +82,13 @@
             class="actions__icon-button"
             v-if="removeActionsConfig"
             :config="removeActionsConfig"
+            v-on:iconButtonClick="actionClick"
+            :disabled="inProcess || !healthLoaded">
+        </IconButtonMenuBeta>
+        <IconButtonMenuBeta
+            class="actions__icon-button"
+            v-if="moreActionsConfig"
+            :config="moreActionsConfig"
             v-on:iconButtonClick="actionClick"
             :disabled="inProcess || !healthLoaded">
         </IconButtonMenuBeta>
@@ -117,6 +124,7 @@ import config from '../config';
 import {mapActions, mapState} from 'vuex';
 import TraderJoeAddLiquidityModal from './TraderJoeAddLiquidityModal.vue';
 import TraderJoeRemoveLiquidityModal from './TraderJoeRemoveLiquidityModal.vue';
+import ClaimTraderJoeRewardsModal from "./ClaimTraderJoeRewardsModal.vue";
 import {calculateMaxApy, formatUnits, getBinPrice, parseUnits} from '../utils/calculate';
 import DeltaIcon from './DeltaIcon.vue';
 import {ethers} from 'ethers';
@@ -150,6 +158,7 @@ export default {
   async mounted() {
     this.setupAddActionsConfiguration();
     this.setupRemoveActionsConfiguration();
+    this.setupMoreActionsConfiguration();
     this.watchRefreshLP();
     this.watchAssetBalancesDataRefreshEvent();
     this.watchHealth();
@@ -166,6 +175,7 @@ export default {
       tokenY: null,
       addActionsConfig: null,
       removeActionsConfig: null,
+      moreActionsConfig: null,
       rowExpanded: false,
       showLiquidityChart: false,
       userBins: null,
@@ -223,6 +233,20 @@ export default {
     secondAsset() {
       return config.ASSETS_CONFIG[this.lpToken.secondary];
     },
+
+    totalRewards() {
+      let totalRewards = 0;
+
+      if (this.lpToken.rewardsInfo) {
+        this.lpToken.rewardsInfo.rewards.map(rewards => {
+          rewards.claimableRewards.map(claimable => {
+            totalRewards += parseFloat(formatUnits(claimable.amount, this.lpToken.rewardToken.decimals));
+          })
+        })
+      }
+
+      return totalRewards;
+    }
   },
 
   methods: {
@@ -230,7 +254,8 @@ export default {
       'fundLiquidityTraderJoeV2Pool',
       'addLiquidityTraderJoeV2Pool',
       'withdrawLiquidityTraderJoeV2Pool',
-      'removeLiquidityTraderJoeV2Pool'
+      'removeLiquidityTraderJoeV2Pool',
+      'claimTraderJoeRewards'
     ]),
     watchRefreshLP() {
       this.lpService.observeRefreshLp().subscribe(async (lpType) => {
@@ -281,6 +306,21 @@ export default {
       }
     },
 
+    setupMoreActionsConfiguration() {
+      this.moreActionsConfig = {
+        iconSrc: 'src/assets/icons/icon_a_more.svg',
+        tooltip: 'More',
+        menuOptions: [
+          {
+            key: 'CLAIM_TRADERJOE_REWARDS',
+            name: 'Claim TraderJoe rewards',
+            // disabled: !this.hasSmartLoanContract || !this.totalRewards,
+            disabledInfo: 'You don\'t have any rewards available.'
+          }
+        ]
+      };
+    },
+
     initAccount() {
       this.accountService.observeAccountLoaded().subscribe(account => {
         this.account = account;
@@ -329,6 +369,8 @@ export default {
           case 'REMOVE_LIQUIDITY':
             this.openRemoveLiquidityModal();
             break;
+          case 'CLAIM_TRADERJOE_REWARDS':
+            this.openClaimRewardsModal();
         }
       }
     },
@@ -465,6 +507,42 @@ export default {
             this.handleTransactionError(error);
           }).then(() => {
             this.closeTraderJoeLpModal();
+          });
+        }
+      });
+    },
+
+    async openClaimRewardsModal() {
+      const modalInstance = this.openModal(ClaimTraderJoeRewardsModal);
+      modalInstance.lpToken = this.lpToken;
+      modalInstance.rewardsToClaim = this.totalRewards;
+      modalInstance.traderJoeRewardsAsset = this.lpToken.rewardToken.symbol;
+
+      const merkleEntries = [];
+      this.lpToken.rewardsInfo.rewards.map((reward, id) => {
+        reward.claimableRewards.map(claimable => {
+          merkleEntries.push({
+            market: this.lpToken.address,
+            epoch: reward.epoch,
+            token: claimable.tokenAddress,
+            amount: claimable.amount,
+            merkleProof: this.lpToken.rewardsInfo.proofs[id]
+          });
+        })
+      })
+
+      const claimRewardsRequest = {
+        merkleEntries
+      };
+
+      modalInstance.$on('CLAIM', addFromWalletEvent => {
+        if (this.smartLoanContract) {
+          this.handleTransaction(this.claimTraderJoeRewards, { claimRewardsRequest: claimRewardsRequest }, () => {
+            this.rewards = 0;
+            this.$forceUpdate();
+          }, (error) => {
+            this.handleTransactionError(error);
+          }).then(() => {
           });
         }
       });
