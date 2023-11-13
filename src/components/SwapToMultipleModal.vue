@@ -19,7 +19,7 @@
 
       <div class="asset-info">
         Available:
-        <span v-if="sourceAssetBalance" class="asset-info__value">{{
+        <span v-if="sourceAssetBalance && sourceAssetData" class="asset-info__value">{{
             Number(sourceAssetBalance) | smartRound(sourceAssetData.decimals, true)
           }}</span>
       </div>
@@ -282,6 +282,7 @@ export default {
     },
 
     async chooseBestTrade(basedOnSource = true) {
+      console.log('chooseBestTrade')
       if (this.sourceAssetAmount == null) return;
       if (this.sourceAssetAmount === 0) {
         this.targetAssetAmount = 0;
@@ -295,9 +296,7 @@ export default {
       const queryResponse = await this.query(this.sourceAsset, this.targetAsset, amountInWei);
 
       if (this.feeMethods && this.feeMethods[this.swapDex]) {
-        this.fees = (await this.feeMethods[this.swapDex](this.sourceAsset, this.targetAssets[this.swapDex], amountInWei)).map(
-            (el, i) => fromWei(el, this.targetConfig(i).decimals)
-        );
+        this.fee = fromWei(await this.feeMethods[this.swapDex](this.sourceAsset, this.targetAssets[this.swapDex], amountInWei), this.sourceAssetData.decimals);
       }
 
       if (queryResponse) {
@@ -329,7 +328,7 @@ export default {
           async (asset, index) => {
             this.targetAssetAmounts[index] = estimatedReceivedTokens[index] * (1 - (this.userSlippage / 100 + (this.fee ? this.fee : 0)));
 
-            if (this.$refs[`targetInput-${index}`][0]) {
+            if (this.$refs[`targetInput-${index}`] && this.$refs[`targetInput-${index}`][0]) {
               await (this.$refs[`targetInput-${index}`][0]).setCurrencyInputValue(this.targetAssetAmounts[index]);
             }
           }
@@ -421,6 +420,7 @@ export default {
     },
 
     async userSlippageChange(changeEvent) {
+      console.log('userSlippageChange')
       this.userSlippage = changeEvent.value ? changeEvent.value : 0;
 
       await this.updateAmountsWithSlippage(this.targetAssetAmounts);

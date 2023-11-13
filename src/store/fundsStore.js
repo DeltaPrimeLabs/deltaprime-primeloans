@@ -333,6 +333,7 @@ export default {
       const tokenManager = new ethers.Contract(TOKEN_MANAGER_TUP.address, TOKEN_MANAGER.abi, provider.getSigner());
       let allAssets = state.assets;
       let allLevelLpAssets = state.levelLpAssets;
+      let allGmxV2Assets = state.gmxV2Assets;
       const dataRefreshNotificationService = rootState.serviceRegistry.dataRefreshEventService;
 
       async function setExposures(assets) {
@@ -358,6 +359,11 @@ export default {
       if (allLevelLpAssets) {
         await setExposures(allLevelLpAssets);
         commit('setLevelLpAssets', allLevelLpAssets);
+      }
+
+      if (allGmxV2Assets) {
+        await setExposures(allGmxV2Assets);
+        commit('setGmxV2Assets', allGmxV2Assets);
       }
     },
 
@@ -454,10 +460,9 @@ export default {
 
       Object.values(config.GMX_V2_ASSETS_CONFIG).forEach(
           asset => {
-            //TODO: include check
-            // if (state.supportedAssets.includes(asset.symbol)) {
+            if (state.supportedAssets.includes(asset.symbol)) {
               lpTokens[asset.symbol] = asset;
-            // }
+            }
           }
       );
 

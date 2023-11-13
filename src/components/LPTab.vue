@@ -430,7 +430,7 @@ export default {
     },
     setupGmxV2LpTableHeaderConfig() {
       this.gmxV2LpTableHeaderConfig = {
-        gridTemplateColumns: 'repeat(2, 1fr) 160px 110px 100px 120px 120px 120px 60px 80px 22px',
+        gridTemplateColumns: 'repeat(2, 1fr) 180px 110px 100px 120px 100px 100px 60px 80px 22px',
         cells: [
           {
             label: 'GM Token',

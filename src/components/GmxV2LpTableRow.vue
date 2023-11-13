@@ -161,6 +161,7 @@ import {
   ESTIMATED_GAS_FEE_BASE_AMOUNT,
   ESTIMATED_GAS_FEE_MULTIPLIER_FACTOR, WITHDRAWAL_GAS_LIMIT_KEY
 } from "../integrations/contracts/dataStore";
+import zapLong from "./zaps-tiles/ZapLong.vue";
 
 export default {
   name: 'GmxV2LpTableRow',
@@ -387,10 +388,11 @@ export default {
       }
 
       let [longTokenOut, shortTokenOut] = await depositReader.getWithdrawalAmountOut(
-          config.gmxV2DataStoreAddress, marketProps, prices, this.gmxV2Balances[this.lpToken.symbol], this.nullAddress
+          config.gmxV2DataStoreAddress, marketProps, prices, toWei(this.gmxV2Balances[this.lpToken.symbol]), this.nullAddress
       );
-      this.longTokenAmount = longTokenOut;
-      this.shortTokenAmount = shortTokenOut;
+
+      this.longTokenAmount = formatUnits(longTokenOut, longToken.decimals);
+      this.shortTokenAmount = formatUnits(shortTokenOut, shortToken.decimals);
     },
 
     toggleChart() {
@@ -472,7 +474,7 @@ export default {
       }
     },
 
-    gmxV2Fee() {
+    gmxV2DepositFee() {
       return async (sourceAsset, targetAsset, amountIn, amountOut) => {
         let isDeposit = targetAsset === this.lpToken.symbol;
 
@@ -487,7 +489,13 @@ export default {
         const firstTotalWorth = firstConfig.price * formatUnits(await firstERC20.balanceOf(this.lpToken.address), firstConfig.decimals);
         const secondTotalWorth = secondConfig.price * formatUnits(await secondERC20.balanceOf(this.lpToken.address), secondConfig.decimals);
 
-        return firstTotalWorth > secondTotalWorth ? 0.007 : 0.005;
+        return toWei((firstTotalWorth > secondTotalWorth ? 0.007 : 0.005).toString());
+      }
+    },
+
+    gmxV2WithdrawFee() {
+      return async (sourceAsset, targetAsset, amountIn, amountOut) => {
+        return toWei('0.007');
       }
     },
 
@@ -510,8 +518,6 @@ export default {
       const gasPrice = fromWei(await provider.getGasPrice());
 
       const feeTokenAmount = adjustedGasLimit * gasPrice;
-
-      // const feeUsd = feeTokenAmount * this.assets[config.nativeToken].price;
 
       return feeTokenAmount;
     },
@@ -608,9 +614,9 @@ export default {
       modalInstance.sourceAsset = initSourceAsset;
       modalInstance.sourceAssetBalance = this.assetBalances[initSourceAsset];
       modalInstance.assets = { ...this.assets, ...this.gmxV2Assets };
-      modalInstance.sourceAssets = { GmxV2: [this.lpToken.shortToken, this.lpToken.longToken] };
+      modalInstance.sourceAssets = [this.lpToken.shortToken, this.lpToken.longToken];
       modalInstance.targetAssetsConfig = config.GMX_V2_ASSETS_CONFIG;
-      modalInstance.targetAssets = { GmxV2: [this.lpToken.symbol] };
+      modalInstance.targetAssets = [this.lpToken.symbol];
       modalInstance.assetBalances = { ...this.assetBalances, ...this.gmxV2Balances };
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
@@ -629,6 +635,8 @@ export default {
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.checkMarketDeviation = false;
 
+      modalInstance.initiate();
+
       const executionFee = await this.calculateExecutionFee(true);
       modalInstance.info = `<div>Execution fee: ${executionFee.toFixed(6)}${config.nativeToken}</div>`;
 
@@ -637,7 +645,7 @@ export default {
       };
 
       modalInstance.feeMethods = {
-        GmxV2: this.gmxV2Fee(),
+        GmxV2: this.gmxV2DepositFee(),
       };
 
       modalInstance.$on('SWAP', swapEvent => {
@@ -660,8 +668,6 @@ export default {
         }).then(() => {
         });
       });
-
-      modalInstance.initiate();
     },
 
     async openRemoveLiquidityModal() {
@@ -692,12 +698,16 @@ export default {
       modalInstance.debt = this.fullLoanStatus.debt;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
       modalInstance.health = this.fullLoanStatus.health;
+      modalInstance.targetAssetAmounts = [0, 0];
+
+      modalInstance.initiate();
+
       // modalInstance.info = `info .`;
       modalInstance.queryMethods = {
         GmxV2: this.gmxV2Query(),
       };
       modalInstance.feeMethods = {
-        GmxV2: this.gmxV2Fee(),
+        GmxV2: this.gmxV2WithdrawFee(),
       };
       modalInstance.swapDex = 'GmxV2';
 
@@ -723,8 +733,6 @@ export default {
         }).then(() => {
         });
       });
-
-      modalInstance.initiate();
     },
 
     openProfileModal() {
@@ -892,20 +900,15 @@ export default {
     },
 
     async setupTvl() {
-      console.log('setupTvl')
       const longConfig = config.ASSETS_CONFIG[this.lpToken.longToken];
       const shortConfig = config.ASSETS_CONFIG[this.lpToken.shortToken];
       const longERC20 = new ethers.Contract(longConfig.address, erc20ABI, this.provider.getSigner());
       const shortERC20 = new ethers.Contract(shortConfig.address, erc20ABI, this.provider.getSigner());
 
-      console.log('longConfig.price: ', longConfig.price)
-      console.log('shortConfig.price: ', shortConfig.price)
       const longTotalWorth = longConfig.price * formatUnits(await longERC20.balanceOf(this.lpToken.address), longConfig.decimals);
       const shortTotalWorth = shortConfig.price * formatUnits(await shortERC20.balanceOf(this.lpToken.address), shortConfig.decimals);
 
       this.tvl = longTotalWorth + shortTotalWorth;
-      console.log('this.tvl: ', this.tvl)
-
     },
   },
 };
@@ -924,7 +927,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: repeat(2, 1fr) 160px 110px 100px 120px 120px 120px 60px 80px 22px;
+    grid-template-columns: repeat(2, 1fr) 180px 110px 100px 120px 100px 100px 60px 80px 22px;
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;

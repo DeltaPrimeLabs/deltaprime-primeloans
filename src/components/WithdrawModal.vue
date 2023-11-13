@@ -29,7 +29,7 @@
                      :info="() => sourceAssetValue">
       </CurrencyInput>
       <CurrencyInput v-else
-                     :symbol="asset.symbol"
+                     :symbol="asset.short ? asset.short : asset.symbol"
                      :asset="asset"
                      v-on:newValue="withdrawValueChange"
                      :logo="logo"

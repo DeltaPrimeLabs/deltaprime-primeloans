@@ -30,13 +30,13 @@
 
       <div class="asset-info" v-if="!swapDebtMode">
         Available:
-        <span v-if="sourceAssetBalance" class="asset-info__value">{{
+        <span v-if="sourceAssetBalance && sourceAssetData" class="asset-info__value">{{
             Number(sourceAssetBalance) | smartRound(sourceAssetData.decimals, true)
           }}</span>
       </div>
       <div class="asset-info" v-if="swapDebtMode">
         Borrowed:
-        <span v-if="sourceAssetDebt" class="asset-info__value">{{
+        <span v-if="sourceAssetDebt && sourceAssetData" class="asset-info__value">{{
             Number(sourceAssetDebt) | smartRound(sourceAssetData.decimals, true)
           }}</span>
       </div>
@@ -449,17 +449,14 @@ export default {
     setupSourceAssetOptions() {
       this.sourceAssetOptions = [];
       let sourceAssets;
-      if (this.swapDebtMode) {
+      if (this.sourceAssets) {
         sourceAssets = this.sourceAssets;
       } else if (this.levelMode) {
         sourceAssets = this.sourceAssets.Level;
       } else {
         sourceAssets = this.swapDexsConfig[this.swapDex].availableAssets;
       }
-      console.log(this.sourceAssets);
-      console.log(this.swapDexsConfig);
-      console.log(sourceAssets);
-      console.log(this.sourceAssetsConfig);
+
       sourceAssets.forEach(assetSymbol => {
         const asset = this.sourceAssetsConfig[assetSymbol];
         console.log(asset);
@@ -477,15 +474,14 @@ export default {
       this.targetAssetOptions = [];
 
       let targetAssets;
-      if (this.swapDebtMode) {
+      if (this.targetAssets) {
         targetAssets = this.targetAssets;
       } else if (this.levelMode) {
         targetAssets = this.targetAssets.Level;
       } else {
         targetAssets = this.swapDexsConfig[this.swapDex].availableAssets;
       }
-      console.log(targetAssets);
-      console.log(this.targetAssetsConfig);
+
       targetAssets.forEach(assetSymbol => {
         console.log(assetSymbol);
         const asset = this.targetAssetsConfig[assetSymbol];
