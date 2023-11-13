@@ -3,7 +3,7 @@ import {
   isOracleError,
   signMessage,
   loanTermsToSign,
-  wrapContract, getLog
+  wrapContract, getLog, decodeOutput
 } from '../utils/blockchain';
 import SMART_LOAN from '@artifacts/contracts/interfaces/SmartLoanGigaChadInterface.sol/SmartLoanGigaChadInterface.json';
 import {formatUnits, fromWei, parseUnits, toWei} from '@/utils/calculate';
@@ -863,16 +863,7 @@ export default {
     },
 
     async getFullLoanStatus({state, rootState, commit}) {
-      console.log('getFullLoanStatus')
-      console.log(0)
-      console.log(state.multicallContract.address)
-      console.log(fromWei(await state.multicallContract.getChainId()))
-      console.log(state.readSmartLoanContract.interface.encodeFunctionData('getAllOwnedAssets'))
-      console.log(state.readSmartLoanContract.interface.encodeFunctionData('getStakedPositions'))
-
       let result;
-
-      console.log(state.multicallContract.callStatic.aggregate)
 
       try {
         result = await state.multicallContract.callStatic.aggregate(
@@ -880,6 +871,10 @@ export default {
             {
               target: state.smartLoanContract.address,
               callData: state.readSmartLoanContract.interface.encodeFunctionData('getAllOwnedAssets')
+            },
+            {
+              target: state.smartLoanContract.address,
+              callData: state.readSmartLoanContract.interface.encodeFunctionData('getStakedPositions')
             }
           ]
         );
@@ -888,33 +883,14 @@ export default {
         console.log(e)
       }
 
-      let allOwnedAssets = state.readSmartLoanContract.interface.decodeFunctionData('getAllOwnedAssets', result[0]);
-      console.log('allOwnedAssets')
-      console.log(allOwnedAssets)
-      // let result = await state.multicallContract.aggregate(
-      //     [
-      //       {
-      //         target: state.smartLoanContract.address,
-      //         callData: state.readSmartLoanContract.interface.encodeFunctionData('getAllOwnedAssets')
-      //       },
-      //       {
-      //         target: state.smartLoanContract.address,
-      //         callData: state.readSmartLoanContract.interface.encodeFunctionData('getStakedPositions')
-      //       },
-      //     ]
-      // );
-
-      console.log(1)
-      console.log(result)
-
-
+      let owned = decodeOutput(SMART_LOAN.abi, 'getAllOwnedAssets', result.returnData[0])[0];
+      let staked = decodeOutput(SMART_LOAN.abi, 'getStakedPositions', result.returnData[1])[0];
 
       const loanAssets = mergeArrays([
-        (await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        owned.map(el => fromBytes32(el)),
+        staked.map(el => {return fromBytes32(el[1])}),
         Object.keys(config.POOLS_CONFIG)
       ]);
-
 
       const fullLoanStatusResponse = await (await wrapContract(state.readSmartLoanContract, loanAssets)).getFullLoanStatus();
 
