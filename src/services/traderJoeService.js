@@ -248,7 +248,7 @@ export default class TraderJoeService {
 
   async getRewardsInfo(loan, market, token) {
     try {
-      const URL = `https://uophm6e26f.execute-api.us-east-1.amazonaws.com/traderjoe/rewards/claimable?chain=${window.chain}&loan=${loan}&market=${market}&token=${token}`;
+      const URL = `https://uophm6e26f.execute-api.us-east-1.amazonaws.com/traderjoe/rewards/claimable?chain=${window.chain}&loan=${loan}&market=${market}`;
       const rewardsInfo = await axios.get(URL);
 
       return rewardsInfo;

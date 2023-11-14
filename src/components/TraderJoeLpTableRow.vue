@@ -47,13 +47,15 @@
         </template>
       </div>
 
-      <div class="table__cell rewards">
+      <div class="table__cell table__cell--rewards-token balance">
         <!-- <FlatButton :active="false" v-tooltip="{content: 'This button will show more information about your ranking and collected incentives. While the button is not yet active, your Prime Account is already collecting.', classes: 'info-tooltip'}">
           {{ 'soon!' }}
         </FlatButton> -->
-        <template v-if="lpToken.rewardToken">
-          <img class="asset__icon" :src="'src/assets/logo/joe.png'">
-          {{ totalRewards }}
+        <template v-if="this.totalRewards.length > 0">
+          <div class="table__cell composition" v-for="reward in totalRewards">
+            <img class="asset__icon" :src="getAssetIcon(reward.symbol)">
+            {{ formatLongNum(reward.amount) }}
+          </div>
         </template>
       </div>
 
@@ -76,14 +78,14 @@
             v-if="addActionsConfig"
             :config="addActionsConfig"
             v-on:iconButtonClick="actionClick"
-            :disabled="inProcess || !healthLoaded">
+            :disabled="inProcess">
         </IconButtonMenuBeta>
         <IconButtonMenuBeta
             class="actions__icon-button"
             v-if="removeActionsConfig"
             :config="removeActionsConfig"
             v-on:iconButtonClick="actionClick"
-            :disabled="inProcess || !healthLoaded">
+            :disabled="inProcess">
         </IconButtonMenuBeta>
         <IconButtonMenuBeta
             class="actions__icon-button"
@@ -193,6 +195,7 @@ export default {
       userValue: 0,
       currentPriceIndex: 0,
       currentPrice: 0,
+      totalRewards: []
     };
   },
 
@@ -232,20 +235,6 @@ export default {
 
     secondAsset() {
       return config.ASSETS_CONFIG[this.lpToken.secondary];
-    },
-
-    totalRewards() {
-      let totalRewards = 0;
-
-      if (this.lpToken.rewardsInfo) {
-        this.lpToken.rewardsInfo.rewards.map(rewards => {
-          rewards.claimableRewards.map(claimable => {
-            totalRewards += parseFloat(formatUnits(claimable.amount, this.lpToken.rewardToken.decimals));
-          })
-        })
-      }
-
-      return totalRewards;
     }
   },
 
@@ -265,6 +254,7 @@ export default {
         this.setupRemoveActionsConfiguration();
         this.setupApr();
         this.calculateUserValue();
+        this.calculateTotalRewards();
       })
     },
     setupAddActionsConfiguration() {
@@ -354,8 +344,29 @@ export default {
       this.userValue = this.lpToken.primaryBalance * this.firstAsset.price + this.lpToken.secondaryBalance * this.secondAsset.price;
     },
 
+    calculateTotalRewards() {
+      let totalRewards = [];
+
+      this.lpToken.rewardTokens.map(token => {
+        let rewardToken = 0;
+
+        if (this.lpToken.rewardsInfo) {
+          rewardToken = this.lpToken.rewardsInfo.rewards
+            .filter(rewardToken => rewardToken.tokenAddress.toLowerCase() === token.address.toLowerCase())
+            .reduce((sum, rewardToken) => sum + parseFloat(formatUnits(rewardToken.amount, token.decimals)), 0);
+        }
+
+        totalRewards.push({
+          symbol: token.symbol,
+          amount: rewardToken.toFixed(0)
+        });
+      });
+
+      this.totalRewards = totalRewards;
+    },
+
     actionClick(key) {
-      if (!this.inProcess && this.healthLoaded) {
+      if (!this.inProcess) {
         switch (key) {
           case 'ADD_FROM_WALLET':
             this.openAddTraderJoeV2FromWalletModal();
@@ -515,21 +526,18 @@ export default {
     async openClaimRewardsModal() {
       const modalInstance = this.openModal(ClaimTraderJoeRewardsModal);
       modalInstance.lpToken = this.lpToken;
-      modalInstance.rewardsToClaim = this.totalRewards;
-      modalInstance.traderJoeRewardsAsset = this.lpToken.rewardToken.symbol;
+      modalInstance.totalRewards = this.totalRewards;
 
       const merkleEntries = [];
       this.lpToken.rewardsInfo.rewards.map((reward, id) => {
-        reward.claimableRewards.map(claimable => {
-          merkleEntries.push({
-            market: this.lpToken.address,
-            epoch: reward.epoch,
-            token: claimable.tokenAddress,
-            amount: claimable.amount,
-            merkleProof: this.lpToken.rewardsInfo.proofs[id]
-          });
-        })
-      })
+        merkleEntries.push({
+          market: this.lpToken.address,
+          epoch: reward.epoch,
+          token: reward.tokenAddress,
+          amount: reward.amount,
+          merkleProof: this.lpToken.rewardsInfo.proofs[id]
+        });
+      });
 
       const claimRewardsRequest = {
         merkleEntries
@@ -703,7 +711,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: 180px 100px 100px 180px 100px 90px 120px 120px 35px 80px;
+    grid-template-columns: 180px 100px 100px 180px 130px 80px 110px 115px 30px 80px;
     height: 60px;
     padding-left: 6px;
 
@@ -726,6 +734,10 @@ export default {
           font-weight: 500;
           text-align: right;
         }
+      }
+
+      &.table__cell--rewards-token {
+        justify-content: flex-end;
       }
 
       &.asset {

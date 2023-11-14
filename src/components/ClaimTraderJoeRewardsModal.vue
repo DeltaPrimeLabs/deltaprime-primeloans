@@ -14,7 +14,10 @@
       <div class="rewards">
         <span class="rewards__label">Rewards to claim:</span>
         <span class="rewards__value">
-          {{ rewardsToClaim | smartRound(10, true) }} {{ traderJoeRewardsAsset }}
+          <div class="rewards__reward-token" v-for="reward in totalRewards">
+            <img class="asset__icon" :src="getAssetIcon(reward.symbol)">
+            {{ reward.amount | smartRound(10, true) }} {{ reward.symbol }}
+          </div>
         </span>
       </div>
 
@@ -41,8 +44,7 @@ export default {
 
   props: {
     assetBalances: {},
-    rewardsToClaim: {},
-    traderJoeRewardsAsset: {}
+    totalRewards: {}
   },
 
   data() {
@@ -93,6 +95,19 @@ export default {
 
     .rewards__value {
       font-weight: 600;
+      display: flex;
+
+      .rewards__reward-token {
+        &:not(:first-child) {
+          margin-left: 15px;
+        }
+
+        .asset__icon {
+          width: 20px;
+          height: 20px;
+          opacity: var(--asset-table-row__icon-opacity);
+        }
+      }
     }
   }
 }

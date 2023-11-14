@@ -189,7 +189,7 @@ export default {
     },
     setupTraderJoeLpTableHeaderConfig() {
       this.traderJoeLpTableHeaderConfig = {
-        gridTemplateColumns: '180px 100px 100px 180px 100px 90px 120px 120px 35px 80px',
+        gridTemplateColumns: '180px 100px 100px 180px 130px 80px 110px 115px 30px 80px',
         cells: [
           {
             label: 'TraderJoe V2',

@@ -465,7 +465,7 @@ export default {
 
               if (['YIELD_YAK','BEEFY_FINANCE'].includes(farm.protocol)) {
                 farm.totalStaked = farmData[5];
-                if (farm.stakingContractAddress.toLowerCase() === '0xb8f531c0d3c53B1760bcb7F57d87762Fd25c4977'.toLowerCase()) farm.totalStaked *= farm.price / rootState.fundsStore.assets['sAVAX'].price;
+                if (farm.stakingContractAddress.toLowerCase() === '0xb8f531c0d3c53B1760bcb7F57d87762Fd25c4977'.toLowerCase()) farm.totalStaked *= 0;
               } else if (farm.protocol === 'VECTOR_FINANCE') {
                 if (farm.autoCompounding) {
                   farm.totalStaked = farmData[5];

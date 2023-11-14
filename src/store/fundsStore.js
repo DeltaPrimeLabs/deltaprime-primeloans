@@ -403,9 +403,9 @@ export default {
         // To-do: check if the assets supported. correct symbols if not.
         lpTokens[asset.symbol] = asset;
 
-        if (asset.rewardToken) {
+        if (asset.rewardTokens && asset.rewardTokens.length > 0) {
           try {
-            const rewardsInfo = await traderJoeService.getRewardsInfo(state.smartLoanContract.address, asset.address, asset.rewardToken.address);
+            const rewardsInfo = await traderJoeService.getRewardsInfo(state.smartLoanContract.address, asset.address);
 
             lpTokens[asset.symbol]['rewardsInfo'] = rewardsInfo;
           } catch (error) {

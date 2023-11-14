@@ -6,9 +6,8 @@ const getRewardsInfoApi = async (event, context, callback) => {
   const chain = event.queryStringParameters.chain;
   const loan = event.queryStringParameters.loan;
   const market = event.queryStringParameters.market;
-  const token = event.queryStringParameters.token;
 
-  if (!chain || !loan || !market || !token) {
+  if (!chain || !loan || !market) {
     callback(new Error('required params invalid.'));
   }
 
@@ -20,17 +19,29 @@ const getRewardsInfoApi = async (event, context, callback) => {
         "x-traderjoe-api-key": process.env.TJ_API_KEY
       }
     });
-    const rewards = await rewardsRes.json();
+
+    const rewards = [];
+    const batch = [];
+    (await rewardsRes.json()).map(reward => {
+      reward.claimableRewards.map(claimable => {
+        rewards.push({
+          epoch: reward.epoch,
+          amount: claimable.amount,
+          tokenAddress: claimable.tokenAddress
+        });
+
+        batch.push({
+          market,
+          epoch: reward.epoch,
+          token: claimable.tokenAddress
+        });
+      })
+    });
+
     console.log('claimable rewards: ', rewards);
+    console.log('batch: ', batch);
 
     // get user proofs
-    const batch = rewards.map(reward => ({
-      market,
-      epoch: reward.epoch,
-      token
-    }));
-    console.log(batch);
-
     const proofsRes = await fetch(`${BASE_URL}/rewards/batch-proof/${chain}/${loan}`, {
       method: "POST",
       headers: {

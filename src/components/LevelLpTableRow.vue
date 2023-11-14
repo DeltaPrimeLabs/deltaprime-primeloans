@@ -83,21 +83,21 @@
             :config="addActionsConfig"
             v-if="addActionsConfig"
             v-on:iconButtonClick="actionClick"
-            :disabled="disableAllButtons || !healthLoaded || lpToken.disableAddTokenButton">
+            :disabled="disableAllButtons || lpToken.disableAddTokenButton">
         </IconButtonMenuBeta>
         <IconButtonMenuBeta
             class="actions__icon-button last"
             :config="removeActionsConfig"
             v-if="removeActionsConfig"
             v-on:iconButtonClick="actionClick"
-            :disabled="disableAllButtons || !healthLoaded">
+            :disabled="disableAllButtons">
         </IconButtonMenuBeta>
         <IconButtonMenuBeta
             class="actions__icon-button"
             v-if="moreActionsConfig"
             :config="moreActionsConfig"
             v-on:iconButtonClick="actionClick"
-            :disabled="disableAllButtons || !healthLoaded">
+            :disabled="disableAllButtons">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -361,7 +361,7 @@ export default {
     },
 
     actionClick(key) {
-      if (!this.disableAllButtons && this.healthLoaded) {
+      if (!this.disableAllButtons) {
         switch (key) {
           case 'ADD_FROM_WALLET':
             this.openAddFromWalletModal();
@@ -518,6 +518,7 @@ export default {
       let initSourceAsset = [...this.lpToken.underlyingAssets][0];
       modalInstance.title = 'Create LLP position';
       modalInstance.swapDex = 'Level';
+      modalInstance.dexOptions = ['Level'];
       modalInstance.swapDebtMode = false;
       modalInstance.levelMode = true;
       modalInstance.slippageMargin = 0.1;
@@ -575,10 +576,16 @@ export default {
 
     openRemoveLiquidityModal() {
       const modalInstance = this.openModal(SwapModal);
+      const swapDexsConfig = {
+        Level: {
+          availableAssets: [...this.lpToken.underlyingAssets]
+        }
+      }
       modalInstance.title = 'Unwind LLP position';
       modalInstance.swapDex = 'Level';
       modalInstance.dexOptions = ['Level'];
       modalInstance.swapDebtMode = false;
+      modalInstance.levelMode = true;
       modalInstance.slippageMargin = 0.1;
       modalInstance.sourceAsset = this.lpToken.symbol;
       modalInstance.sourceAssetBalance = this.levelLpBalances[this.lpToken.symbol];
@@ -586,6 +593,7 @@ export default {
       modalInstance.assets = { ...this.assets, ...this.levelLpAssets };
       modalInstance.sourceAssets = { Level: [this.lpToken.symbol]} ;
       modalInstance.targetAssets = { Level: [...this.lpToken.underlyingAssets] };
+      modalInstance.swapDexsConfig = swapDexsConfig;
       modalInstance.assetBalances = { ...this.assetBalances, ...this.levelLpBalances };
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
