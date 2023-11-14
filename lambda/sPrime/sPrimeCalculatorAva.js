@@ -19,7 +19,7 @@ const tvlThreshold = 4000000;
 const networkConfig = {
   tokenManagerAddress: '0xF3978209B7cfF2b90100C6F87CEC77dE928Ed58e',
   provider: avalancheProvider,
-  database: 'sprime-ava-dev',//process.env.SPRIME_AVA_TABLE,
+  database: process.env.SPRIME_AVA_TABLE,
   poolsUnlocked: true
 };
 const tokenManagerAbi = [
