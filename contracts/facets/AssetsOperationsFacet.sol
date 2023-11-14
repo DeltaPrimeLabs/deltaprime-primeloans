@@ -10,6 +10,7 @@ import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 import "../lib/SolvencyMethods.sol";
 import "../interfaces/ITokenManager.sol";
 import "../interfaces/facets/IYieldYakRouter.sol";
+import "./SmartLoanLiquidationFacet.sol";
 
 //this path is updated during deployment
 import "../lib/local/DeploymentConstants.sol";
@@ -17,6 +18,9 @@ import "../lib/local/DeploymentConstants.sol";
 contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
     using TransferHelper for address payable;
     using TransferHelper for address;
+
+
+
 
     /* ========== PUBLIC AND EXTERNAL MUTATIVE FUNCTIONS ========== */
 
@@ -39,6 +43,44 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         tokenManager.increaseProtocolExposure(_fundedAsset, _amount * 1e18 / 10 ** token.decimals());
 
         emit Funded(msg.sender, _fundedAsset, _amount, block.timestamp);
+    }
+
+
+    // amounts: USDCe, USDTe, DAIe
+    function convertToSupportedStablesAfterPTPRecoveryBeforeLiquidation(uint256[] calldata amounts, address _tokenReceived) onlyWhitelistedLiquidators {
+        address USDCe = 0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664;
+        address USDTe = 0xc7198437980c041c805A1EDcbA50c1Ce5db95118;
+        address DAIe = 0xd586E7F844cEa2F87f50152665BCbc2C279D8d70;
+
+        require(
+            (
+                _tokenReceived == 0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e || // USDC
+                _tokenReceived == 0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7    // USDt
+            ),
+            "Token must be USDC or USDt"
+        );
+        IERC20Metadata tokenReceived = IERC20Metadata(_tokenReceived);
+
+        require(
+            tokenReceived.allowance(msg.sender, address(this)) >= amounts[0],
+            "Insufficient allowance for USDCe swap"
+        );
+        tokenReceived.safeTransferFrom(msg.sender, address(this), amounts[0]);
+        USDCe.safeTransfer(msg.sender, amounts[0]);
+
+        require(
+            tokenReceived.allowance(msg.sender, address(this)) >= amounts[1],
+            "Insufficient allowance for USDTe swap"
+        );
+        tokenReceived.safeTransferFrom(msg.sender, address(this), amounts[1]);
+        USDTe.safeTransfer(msg.sender, amounts[1]);
+
+        require(
+            tokenReceived.allowance(msg.sender, address(this)) >= amounts[2],
+            "Insufficient allowance for DAIe swap"
+        );
+        tokenReceived.safeTransferFrom(msg.sender, address(this), amounts[2]);
+        DAIe.safeTransfer(msg.sender, amounts[2]);
     }
 
     /**
@@ -224,10 +266,17 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         return 0xC4729E56b831d74bBc18797e0e17A295fA77488c;
     }
 
+
     /* ========== MODIFIERS ========== */
 
     modifier onlyOwner() {
         DiamondStorageLib.enforceIsContractOwner();
+        _;
+    }
+
+    modifier onlyWhitelistedLiquidators() {
+        // External call in order to execute this method in the SmartLoanDiamondBeacon contract storage
+        require(SmartLoanLiquidationFacet(DeploymentConstants.getDiamondAddress()).isLiquidatorWhitelisted(msg.sender), "Only whitelisted liquidators can execute this method");
         _;
     }
 
