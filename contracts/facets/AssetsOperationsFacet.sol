@@ -60,12 +60,15 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
             "Token must be USDC or USDt"
         );
         IERC20Metadata tokenReceived = IERC20Metadata(_tokenReceived);
+        uint256 tokenReceivedBalanceBeforeTransfer = tokenReceived.balanceOf(address(this));
 
         require(
             tokenReceived.allowance(msg.sender, address(this)) >= amounts[0],
             "Insufficient allowance for USDCe swap"
         );
         tokenReceived.safeTransferFrom(msg.sender, address(this), amounts[0]);
+        require(tokenReceived.balanceOf(address(this)) == tokenReceivedBalanceBeforeTransfer + amounts[0]);
+        tokenReceivedBalanceBeforeTransfer = tokenReceived.balanceOf(address(this));
         USDCe.safeTransfer(msg.sender, amounts[0]);
 
         require(
@@ -73,13 +76,17 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
             "Insufficient allowance for USDTe swap"
         );
         tokenReceived.safeTransferFrom(msg.sender, address(this), amounts[1]);
+        require(tokenReceived.balanceOf(address(this)) == tokenReceivedBalanceBeforeTransfer + amounts[1]);
+        tokenReceivedBalanceBeforeTransfer = tokenReceived.balanceOf(address(this));
         USDTe.safeTransfer(msg.sender, amounts[1]);
+
 
         require(
             tokenReceived.allowance(msg.sender, address(this)) >= amounts[2],
             "Insufficient allowance for DAIe swap"
         );
         tokenReceived.safeTransferFrom(msg.sender, address(this), amounts[2]);
+        require(tokenReceived.balanceOf(address(this)) == tokenReceivedBalanceBeforeTransfer + amounts[2]);
         DAIe.safeTransfer(msg.sender, amounts[2]);
     }
 
