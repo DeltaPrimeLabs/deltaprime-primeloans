@@ -26,7 +26,7 @@ export default {
         settings: {
           optimizer: {
             enabled: true,
-            runs: 200
+            runs: 50
           }
         }
       },
@@ -36,7 +36,7 @@ export default {
   networks: {
     hardhat: {
       forking: {
-        url: "https://api.avax.network/ext/bc/C/rpc",
+        url: "https://arb1.arbitrum.io/rpc",
       },
     },
     localhost: {
@@ -48,16 +48,16 @@ export default {
     },
     arbitrum_devnet: {
       timeout: 1800000,
-      url: 'https://rpc.vnet.tenderly.co/devnet/arbi-mainnet/ece5d91f-fe1e-4565-8caf-aac8760f710f',
+      url: 'https://rpc.vnet.tenderly.co/devnet/arbi-0-gas/f5ecbccf-4ea7-4e7f-9faf-34c49ccc1121',
       chainId: 42161,
-      accounts: [getKey('arbitrum', 'deployer'), getKey('arbitrum', 'admin')]
+      // accounts: [getKey('arbitrum', 'deployer'), getKey('arbitrum', 'admin')]
     },
     arbitrum: {
       timeout: 1800000,
       url: 'https://nd-762-566-527.p2pify.com/4514bd12de6723b94346752e90e95cf4',
       gasPrice: 100000000,
       chainId: 42161,
-      accounts: ['0xff1e3dde79201ec578607573589767e0a65038f73098ac231a4f19e6a495c463']
+      accounts: [getKey('arbitrum', 'deployer'), getKey('arbitrum', 'admin')]
     },
     fuji: {
       url: 'https://api.avax-test.network/ext/bc/C/rpc',

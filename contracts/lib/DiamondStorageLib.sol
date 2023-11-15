@@ -155,6 +155,7 @@ library DiamondStorageLib {
 
     function freezeAccount(address freezeToken) internal {
         SmartLoanStorage storage sls = smartLoanStorage();
+        require(sls.frozenSince == 0, "Account is already frozen");
         sls.frozenSince = block.timestamp;
         emit AccountFrozen(freezeToken, block.timestamp);
     }

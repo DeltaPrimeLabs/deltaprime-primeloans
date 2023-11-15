@@ -86,6 +86,17 @@ contract SolvencyMethods is DiamondHelper, ProxyConnector {
         );
     }
 
+    // This function executes SolvencyFacetProd.getThresholdWeightedValue()
+    function _getThresholdWeightedValue() public virtual returns (uint256 twv) {
+        twv = abi.decode(
+            proxyDelegateCalldata(
+                DiamondHelper._getFacetAddress(SolvencyFacetProd.getThresholdWeightedValue.selector),
+                abi.encodeWithSelector(SolvencyFacetProd.getThresholdWeightedValue.selector)
+            ),
+            (uint256)
+        );
+    }
+
     // This function executes SolvencyFacetProd.getHealthRatioWithPrices()
     function _getHealthRatioWithPrices(SolvencyFacetProd.CachedPrices memory cachedPrices) public virtual returns (uint256 health) {
         health = abi.decode(
@@ -109,9 +120,9 @@ contract SolvencyMethods is DiamondHelper, ProxyConnector {
     }
 
     // This function executes SolvencyFacetProd.getPrices()
-    function getPrices(bytes32[] memory symbols) public virtual returns (uint256[] memory prices) {
+    function getPrices(bytes32[] memory symbols) internal view virtual returns (uint256[] memory prices) {
         prices = abi.decode(
-            proxyDelegateCalldata(
+            proxyCalldataView(
                 DiamondHelper._getFacetAddress(SolvencyFacetProd.getPrices.selector),
                 abi.encodeWithSelector(SolvencyFacetProd.getPrices.selector, symbols)
             ),
@@ -174,10 +185,10 @@ contract SolvencyMethods is DiamondHelper, ProxyConnector {
         );
     }
 
-    // This function executes SolvencyFacetProd.getPrices()
-    function getPrice(bytes32 symbol) public virtual returns (uint256 price) {
+    // This function executes SolvencyFacetProd.getPrice()
+    function getPrice(bytes32 symbol) public view virtual returns (uint256 price) {
         price = abi.decode(
-            proxyDelegateCalldata(
+            proxyCalldataView(
                 DiamondHelper._getFacetAddress(SolvencyFacetProd.getPrice.selector),
                 abi.encodeWithSelector(SolvencyFacetProd.getPrice.selector, symbol)
             ),

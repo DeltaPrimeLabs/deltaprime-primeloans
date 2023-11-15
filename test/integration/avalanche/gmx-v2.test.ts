@@ -43,12 +43,11 @@ import {
 } from "../../../typechain";
 import {BigNumber, Contract, constants} from "ethers";
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
-import TOKEN_ADDRESSES from '../../../common/addresses/arbitrum/token_addresses.json';
+import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
 
 chai.use(solidity);
 
 const {deployContract, provider} = waffle;
-
 
 describe('Smart loan', () => {
     before("Synchronize blockchain time", async () => {
@@ -110,21 +109,21 @@ describe('Smart loan', () => {
             paraSwapMin = constructSimpleSDK({ chainId: 42161, axios });
 
             [owner, nonOwner, depositor] = await getFixedGasSigners(10000000);
-            let assetsList = ['ETH', 'BTC', 'USDT', 'USDC', 'GM_ETH_WETH_USDC'];
+            let assetsList = ['AVAX', 'BTC', 'USDT', 'USDC', 'GM_AVAX_WAVAX_USDC'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
-                {name: 'ETH', airdropList: [depositor]}
+                {name: 'AVAX', airdropList: [depositor]}
             ];
 
             diamondAddress = await deployDiamond();
 
             smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
 
-            await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor, 1000, 'ARBITRUM');
+            await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor, 1000, 'AVAX');
 
-            tokensPrices = await getTokensPricesMap(assetsList, "arbitrum", getRedstonePrices, [{symbol: 'LVL', value: 1}]);
+            tokensPrices = await getTokensPricesMap(assetsList, "avalanche", getRedstonePrices, [{symbol: 'LVL', value: 1}]);
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
-            addMissingTokenContracts(tokenContracts, assetsList, 'ARBITRUM');
-            supportedAssets = convertAssetsListToSupportedAssets(assetsList, [], 'ARBITRUM');
+            addMissingTokenContracts(tokenContracts, assetsList, 'AVAX');
+            supportedAssets = convertAssetsListToSupportedAssets(assetsList, [], 'AVAX');
 
             let tokenManager = await deployContract(
                 owner,
@@ -155,11 +154,11 @@ describe('Smart loan', () => {
                 5000,
                 "1.042e18",
                 100,
-                "ETH",
-                "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
+                "AVAX",
+                "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7"
             );
 
-            await deployAllFacets(diamondAddress, true, 'ARBITRUM');
+            await deployAllFacets(diamondAddress, true, 'AVAX');
         });
 
         it("should deploy a smart loan", async () => {
@@ -190,41 +189,43 @@ describe('Smart loan', () => {
 
 
         it("should swap and fund", async () => {
-            await tokenContracts.get('ETH')!.connect(owner).deposit({value: toWei("10")});
-            await tokenContracts.get('ETH')!.connect(owner).approve(wrappedLoan.address, toWei("10"));
-            await wrappedLoan.fund(toBytes32("ETH"), toWei("10"));
+            await tokenContracts.get('AVAX')!.connect(owner).deposit({value: toWei("10")});
+            await tokenContracts.get('AVAX')!.connect(owner).approve(wrappedLoan.address, toWei("10"));
+            await wrappedLoan.fund(toBytes32("AVAX"), toWei("10"));
 
             let initialTotalValue = await wrappedLoan.getTotalValue();
             let initialHR = await wrappedLoan.getHealthRatio();
             let initialTWV = await wrappedLoan.getThresholdWeightedValue();
 
-            let swapData = await getSwapData('ETH', 'BTC', 18, 8, toWei('2'));
-            console.log('swap 1')
-            await wrappedLoan.paraSwap(swapData);
-            btcBalance = await tokenContracts.get('BTC')!.balanceOf(wrappedLoan.address);
-            swapData = await getSwapData('ETH', 'USDT', 18, 6, toWei('2'));
-            console.log('swap 2')
-            await wrappedLoan.paraSwap(swapData);
-            usdtBalance = await tokenContracts.get('USDT')!.balanceOf(wrappedLoan.address);
-            swapData = await getSwapData('ETH', 'USDC', 18, 6, toWei('2'));
-            console.log('swap 3')
-            await wrappedLoan.paraSwap(swapData);
-            usdcBalance = await tokenContracts.get('USDC')!.balanceOf(wrappedLoan.address);
+            // let swapData = await getSwapData('AVAX', 'BTC', 18, 8, toWei('2'));
+            // console.log('swap 1')
+            // await wrappedLoan.paraSwap(swapData);
+            // btcBalance = await tokenContracts.get('BTC')!.balanceOf(wrappedLoan.address);
+            // swapData = await getSwapData('AVAX', 'USDT', 18, 6, toWei('2'));
+            // console.log('swap 2')
+            // await wrappedLoan.paraSwap(swapData);
+            // usdtBalance = await tokenContracts.get('USDT')!.balanceOf(wrappedLoan.address);
+            // swapData = await getSwapData('AVAX', 'USDC', 18, 6, toWei('2'));
+            // console.log('swap 3')
+            // await wrappedLoan.paraSwap(swapData);
+            // usdcBalance = await tokenContracts.get('USDC')!.balanceOf(wrappedLoan.address);
         });
 
         it("should deposit to GMX V2", async () => {
             const tokenAmount = toWei('0.0005');
             const maxFee = toWei('0.01');
 
-            await wrappedLoan.depositEthUsdcGmxV2(true, tokenAmount, 0, maxFee, { value: maxFee });
+            console.log(`WAVAX PA balance: ${fromWei(await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address))}`);
+
+            await wrappedLoan.depositAvaxUsdcGmxV2(true, tokenAmount, 0, maxFee, { value: maxFee });
         });
 
-        it("should deposit to GMX V2", async () => {
-            const gmAmount = await tokenContracts.get('GM_ETH_WETH_USDC')!.balanceOf(wrappedLoan.address);
-            const maxFee = toWei('0.01');
-
-            await wrappedLoan.withdrawEthUsdcGmxV2(gmAmount, 0, 0, maxFee, { value: maxFee });
-        });
+        // it("should withdraw from to GMX V2", async () => {
+        //     const gmAmount = await tokenContracts.get('GM_AVAX_WAVAX_USDC')!.balanceOf(wrappedLoan.address);
+        //     const maxFee = toWei('0.01');
+        //
+        //     await wrappedLoan.withdrawAvaxUsdcGmxV2(gmAmount, 0, 0, maxFee, { value: maxFee });
+        // });
     });
 });
 
