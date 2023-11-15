@@ -49,6 +49,10 @@ abstract contract SolvencyFacetProd is RedstoneConsumerNumericBase, DiamondHelpe
         return getHealthRatio() >= 1e18;
     }
 
+    function isSolventPayable() external payable returns (bool) {
+        return isSolvent();
+    }
+
     /**
       * Checks if the loan is solvent.
       * It means that the Health Ratio is greater than 1e18.
@@ -316,6 +320,10 @@ abstract contract SolvencyFacetProd is RedstoneConsumerNumericBase, DiamondHelpe
         return _getThresholdWeightedValueBase(ownedAssetsPrices, stakedPositionsPrices);
     }
 
+    function getThresholdWeightedValuePayable() external payable virtual returns (uint256) {
+        return getThresholdWeightedValue();
+    }
+
     /**
       * Returns the threshold weighted value of assets in USD including all tokens as well as staking and LP positions
       * Uses provided AssetPrice struct arrays instead of extracting the pricing data from the calldata again.
@@ -352,6 +360,10 @@ abstract contract SolvencyFacetProd is RedstoneConsumerNumericBase, DiamondHelpe
     function getDebt() public view virtual returns (uint256) {
         AssetPrice[] memory debtAssetsPrices = getDebtAssetsPrices();
         return getDebtBase(debtAssetsPrices);
+    }
+
+    function getDebtPayable() external payable returns (uint256){
+        return getDebt();
     }
 
     /**

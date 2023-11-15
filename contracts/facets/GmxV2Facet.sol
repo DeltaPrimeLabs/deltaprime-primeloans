@@ -116,7 +116,7 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
             dataFeedIds[0] = tokenManager.tokenAddressToSymbol(gmToken);
             uint256 gmTokenUsdPrice = SolvencyMethods.getPrices(dataFeedIds)[0];
             uint256 gmTokensWeightedUsdValue = gmTokenUsdPrice * minGmAmount * tokenManager.debtCoverage(gmToken) / 1e26;
-            require((_getThresholdWeightedValue() + gmTokensWeightedUsdValue) > _getDebt(), "The action may cause the account to become insolvent");
+            require((_getThresholdWeightedValuePayable() + gmTokensWeightedUsdValue) > _getDebtPayable(), "The action may cause the account to become insolvent");
         }
 
         // Freeze account
@@ -139,7 +139,7 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
     }
 
 
-    function _withdraw(address gmToken, uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) internal nonReentrant noBorrowInTheSameBlock onlyOwnerOrInsolvent{
+    function _withdraw(address gmToken, uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) internal nonReentrant noBorrowInTheSameBlock onlyOwnerNoStaySolventOrInsolvent {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         bytes[] memory data = new bytes[](3);
 
@@ -193,7 +193,7 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
                 (receivedTokensPrices[1] * minShortTokenAmount * tokenManager.debtCoverage(shortToken))
             )
             / 1e26;
-            require((SolvencyMethods._getThresholdWeightedValue() + receivedTokensWeightedUsdValue) > _getDebt(), "The action may cause the account to become insolvent");
+            require((_getThresholdWeightedValuePayable() + receivedTokensWeightedUsdValue) > _getDebtPayable(), "The action may cause the account to become insolvent");
         }
 
         // Freeze account

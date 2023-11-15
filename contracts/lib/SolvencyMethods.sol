@@ -20,6 +20,17 @@ contract SolvencyMethods is DiamondHelper, ProxyConnector {
         );
     }
 
+    // This function executes SolvencyFacetProd.getDebtPayable()
+    function _getDebtPayable() internal virtual returns (uint256 debt) {
+        debt = abi.decode(
+            proxyDelegateCalldata(
+                DiamondHelper._getFacetAddress(SolvencyFacetProd.getDebtPayable.selector),
+                abi.encodeWithSelector(SolvencyFacetProd.getDebtPayable.selector)
+            ),
+            (uint256)
+        );
+    }
+
     // This function executes SolvencyFacetProd.getDebtWithPrices()
     function _getDebtWithPrices(SolvencyFacetProd.AssetPrice[] memory debtAssetsPrices) internal virtual returns (uint256 debt) {
         debt = abi.decode(
@@ -48,6 +59,17 @@ contract SolvencyMethods is DiamondHelper, ProxyConnector {
             proxyDelegateCalldata(
                 DiamondHelper._getFacetAddress(SolvencyFacetProd.isSolvent.selector),
                 abi.encodeWithSelector(SolvencyFacetProd.isSolvent.selector)
+            ),
+            (bool)
+        );
+    }
+
+    // This function executes SolvencyFacetProd.isSolventPayable()
+    function _isSolventPayable() internal virtual returns (bool solvent){
+        solvent = abi.decode(
+            proxyDelegateCalldata(
+                DiamondHelper._getFacetAddress(SolvencyFacetProd.isSolventPayable.selector),
+                abi.encodeWithSelector(SolvencyFacetProd.isSolventPayable.selector)
             ),
             (bool)
         );
@@ -86,12 +108,12 @@ contract SolvencyMethods is DiamondHelper, ProxyConnector {
         );
     }
 
-    // This function executes SolvencyFacetProd.getThresholdWeightedValue()
-    function _getThresholdWeightedValue() public virtual returns (uint256 twv) {
+    // This function executes SolvencyFacetProd.getThresholdWeightedValuePayable()
+    function _getThresholdWeightedValuePayable() public virtual returns (uint256 twv) {
         twv = abi.decode(
             proxyDelegateCalldata(
-                DiamondHelper._getFacetAddress(SolvencyFacetProd.getThresholdWeightedValue.selector),
-                abi.encodeWithSelector(SolvencyFacetProd.getThresholdWeightedValue.selector)
+                DiamondHelper._getFacetAddress(SolvencyFacetProd.getThresholdWeightedValuePayable.selector),
+                abi.encodeWithSelector(SolvencyFacetProd.getThresholdWeightedValuePayable.selector)
             ),
             (uint256)
         );
