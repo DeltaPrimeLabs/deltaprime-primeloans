@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: e9435ff1dc84231437989722d43a5d0ea97e5dd5;
+// Last deployed from commit: 36a0b698bf0187eb99ba20481d3d009a774fb718;
 pragma solidity 0.8.17;
 
 //This path is updated during deployment
@@ -85,7 +85,7 @@ contract GmxV2FacetArbitrum is GmxV2Facet {
     }
 
     // DEPOSIT
-    function depositEthUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
+    function depositEthUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable onlyWhitelistedAccounts  {
         address _depositedToken = isLongToken ? WETH : USDC;
 
         _deposit(GM_ETH_WETH_USDC, _depositedToken, tokenAmount, minGmAmount, executionFee);

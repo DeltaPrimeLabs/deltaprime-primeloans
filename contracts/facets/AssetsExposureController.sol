@@ -11,7 +11,7 @@ import "../lib/local/DeploymentConstants.sol";
 
 contract AssetsExposureController {
 
-    function resetPrimeAccountExposureForChosenAssets(bytes32[] memory assetsNames) external {
+    function resetPrimeAccountExposureForChosenAssets(bytes32[] memory assetsNames) payable external {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         for(uint i=0; i<assetsNames.length; i++){
             IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(assetsNames[i], true));
@@ -19,7 +19,7 @@ contract AssetsExposureController {
         }
     }
 
-    function setPrimeAccountExposureForChosenAssets(bytes32[] memory assetsNames) external {
+    function setPrimeAccountExposureForChosenAssets(bytes32[] memory assetsNames) payable external {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         for(uint i=0; i<assetsNames.length; i++){
             IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(assetsNames[i], true));
