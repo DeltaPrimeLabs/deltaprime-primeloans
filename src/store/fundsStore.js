@@ -403,14 +403,12 @@ export default {
         // To-do: check if the assets supported. correct symbols if not.
         lpTokens[asset.symbol] = asset;
 
-        if (asset.rewardTokens && asset.rewardTokens.length > 0) {
-          try {
-            const rewardsInfo = await traderJoeService.getRewardsInfo(state.smartLoanContract.address, asset.address);
+        try {
+          const rewardsInfo = await traderJoeService.getRewardsInfo(state.smartLoanContract.address, asset.address);
 
-            lpTokens[asset.symbol]['rewardsInfo'] = rewardsInfo;
-          } catch (error) {
-            console.log(`fetching climable rewards error: ${error}`);
-          }
+          lpTokens[asset.symbol]['rewardsInfo'] = rewardsInfo;
+        } catch (error) {
+          console.log(`fetching climable rewards error: ${error}`);
         }
       });
 

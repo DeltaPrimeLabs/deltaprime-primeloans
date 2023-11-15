@@ -35,7 +35,7 @@ export default {
       if (value < 1000) {
         return value;
       } else if (value < 1000000) {
-        return `${(value / 1000).toFixed()}k`
+        return `${(value / 1000).toFixed()}k`;
       } else {
         return `${(value / 1000000).toFixed()}M`;
       }

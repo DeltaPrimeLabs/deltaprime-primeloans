@@ -51,12 +51,18 @@
         <!-- <FlatButton :active="false" v-tooltip="{content: 'This button will show more information about your ranking and collected incentives. While the button is not yet active, your Prime Account is already collecting.', classes: 'info-tooltip'}">
           {{ 'soon!' }}
         </FlatButton> -->
-        <template v-if="this.totalRewards.length > 0">
-          <div class="table__cell composition" v-for="reward in totalRewards">
-            <img class="asset__icon" :src="getAssetIcon(reward.symbol)">
-            {{ formatLongNum(reward.amount) }}
-          </div>
-        </template>
+        <div class="table__cell composition">
+          <template v-if="totalRewards.length > 0">
+            <div v-for="reward in totalRewards.slice(0, 2)">
+              <img class="asset__icon" :src="getAssetIcon(reward.symbol)">
+              {{ formatLongNum(reward.amount) }}
+            </div>
+          </template>
+          <template v-else>
+            <div class="no-value-dash"></div>
+          </template>
+        </div>
+        <div v-if="totalRewards.length > 2" class="more-rewards">more...</div>
       </div>
 
       <div class="table__cell table__cell--double-value loan">
@@ -136,6 +142,7 @@ import LiquidityChart from "./LiquidityChart.vue";
 import FlatButton from "./FlatButton.vue";
 import SmallBlock from "./SmallBlock.vue";
 import LB_TOKEN from '/artifacts/contracts/interfaces/joe-v2/ILBToken.sol/ILBToken.json'
+import addresses from '../../common/addresses/arbitrum/token_addresses.json';
 const toBytes32 = require('ethers').utils.formatBytes32String;
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -252,6 +259,7 @@ export default {
         await this.setupPool();
         this.setupAddActionsConfiguration();
         this.setupRemoveActionsConfiguration();
+        this.setupMoreActionsConfiguration();
         this.setupApr();
         this.calculateUserValue();
         this.calculateTotalRewards();
@@ -304,8 +312,8 @@ export default {
           {
             key: 'CLAIM_TRADERJOE_REWARDS',
             name: 'Claim TraderJoe rewards',
-            // disabled: !this.hasSmartLoanContract || !this.totalRewards,
-            disabledInfo: 'You don\'t have any rewards available.'
+            disabled: !this.hasSmartLoanContract || this.totalRewards.length == 0,
+            disabledInfo: 'You don\'t have any claimable rewards yet.'
           }
         ]
       };
@@ -346,10 +354,29 @@ export default {
 
     calculateTotalRewards() {
       let totalRewards = [];
+      const rewardTokens = {};
 
-      if (!this.lpToken.rewardTokens) return;
+      if (this.lpToken.rewardsInfo) {
+        this.lpToken.rewardsInfo.rewards.forEach(reward => {
+          const tokenAddress = reward.tokenAddress.toLowerCase();
 
-      this.lpToken.rewardTokens.map(token => {
+          if (!(tokenAddress in rewardTokens)) {
+            let symbol;
+
+            for (const [asset, address] of Object.entries(addresses)) {
+              if (address.toLowerCase() === tokenAddress) symbol = asset;
+            }
+
+            rewardTokens[tokenAddress] = {
+              symbol,
+              address: tokenAddress,
+              decimals: config.ASSETS_CONFIG[symbol].decimals
+            }
+          }
+        });
+      }
+
+      Object.values(rewardTokens).map(token => {
         let rewardToken = 0;
 
         if (this.lpToken.rewardsInfo) {
@@ -360,7 +387,7 @@ export default {
 
         totalRewards.push({
           symbol: token.symbol,
-          amount: rewardToken.toFixed(0)
+          amount: rewardToken.toFixed()
         });
       });
 
@@ -716,7 +743,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: 180px 100px 100px 180px 130px 80px 110px 115px 30px 80px;
+    grid-template-columns: 180px 100px 100px 180px 140px 70px 110px 115px 30px 80px;
     height: 60px;
     padding-left: 6px;
 
@@ -742,7 +769,15 @@ export default {
       }
 
       &.table__cell--rewards-token {
-        justify-content: flex-end;
+        flex-direction: column;
+        justify-content: center;
+
+        .more-rewards {
+          font-size: $font-size-xxs;
+          color: var(--asset-table-row__double-value-color);
+          font-weight: 500;
+          text-align: right;
+        }
       }
 
       &.asset {
@@ -878,6 +913,12 @@ export default {
           cursor: default;
           pointer-events: none;
         }
+      }
+
+      .no-value-dash {
+        height: 1px;
+        width: 15px;
+        background-color: var(--asset-table-row__no-value-dash-color);
       }
     }
   }
