@@ -489,13 +489,13 @@ export default {
         const firstTotalWorth = firstConfig.price * formatUnits(await firstERC20.balanceOf(this.lpToken.address), firstConfig.decimals);
         const secondTotalWorth = secondConfig.price * formatUnits(await secondERC20.balanceOf(this.lpToken.address), secondConfig.decimals);
 
-        return toWei((firstTotalWorth > secondTotalWorth ? 0.007 : 0.005).toString());
+        return toWei((firstTotalWorth > secondTotalWorth ? 0.0007 : 0.0005).toString());
       }
     },
 
     gmxV2WithdrawFee() {
       return async (sourceAsset, targetAsset, amountIn, amountOut) => {
-        return toWei('0.007');
+        return toWei('0.0007');
       }
     },
 
@@ -816,6 +816,7 @@ export default {
         if (updateEvent.assetSymbol === this.lpToken.symbol) {
           this.gmxV2Balances[this.lpToken.symbol] = updateEvent.balance;
           this.isLpBalanceEstimated = !updateEvent.isTrueData;
+          this.setupGmUnderlyingBalances();
           this.$forceUpdate();
         }
       })

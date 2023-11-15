@@ -1006,6 +1006,17 @@ export default {
           }
         }
 
+        if (state.gmxV2Assets && state.gmxV2Balances) {
+          for (let entry of Object.entries(state.gmxV2Assets)) {
+            let symbol = entry[0];
+            let lpAsset = entry[1];
+
+            const apy = lpAsset.apy ? lpAsset.apy / 100 : 0;
+
+            yearlyLpInterest += parseFloat(state.gmxV2Balances[symbol]) * apy * lpAsset.price;
+          }
+        }
+
         let yearlyTraderJoeV2Interest = 0;
 
         if (state.traderJoeV2LpAssets) {
@@ -1894,18 +1905,18 @@ export default {
 
       let minGmAmount = parseUnits(addLiquidityRequest.minGmAmount.toFixed(targetDecimals), targetDecimals);
 
-      const transaction = await wrappedContract[addLiquidityRequest.method](
-          addLiquidityRequest.isLongToken,
-          sourceAmount,
-          minGmAmount,
-          addLiquidityRequest.executionFee,
-          { value: addLiquidityRequest.executionFee}
-      );
+      // const transaction = await wrappedContract[addLiquidityRequest.method](
+      //     addLiquidityRequest.isLongToken,
+      //     sourceAmount,
+      //     minGmAmount,
+      //     addLiquidityRequest.executionFee,
+      //     { value: addLiquidityRequest.executionFee}
+      // );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
 
-      let tx = await awaitConfirmation(transaction, provider, 'create GM token');
+      // let tx = await awaitConfirmation(transaction, provider, 'create GM token');
 
       const firstAssetBalanceAfterTransaction = Number(state.assetBalances[addLiquidityRequest.sourceAsset]) - Number(addLiquidityRequest.tokenAmount);
       const secondAssetBalanceAfterTransaction = Number(state.gmxV2Balances[addLiquidityRequest.targetAsset]) + Number(addLiquidityRequest.minGmAmount);
@@ -1937,38 +1948,40 @@ export default {
 
       const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
 
-      let gmDecimals = config.LEVEL_LP_ASSETS_CONFIG[removeLiquidityRequest.sourceAsset].decimals;
-      let gmAmount = parseUnits(parseFloat(removeLiquidityRequest.sourceAmount).toFixed(gmDecimals), gmDecimals);
+      console.log('removeLiquidityRequest')
+      console.log(removeLiquidityRequest)
+      let gmDecimals = config.GMX_V2_ASSETS_CONFIG[removeLiquidityRequest.gmToken].decimals;
+      let gmAmount = parseUnits(parseFloat(removeLiquidityRequest.gmAmount).toFixed(gmDecimals), gmDecimals);
 
-      let shortDecimals = config.ASSETS_CONFIG[removeLiquidityRequest.shortAsset].decimals;
+      let shortDecimals = config.ASSETS_CONFIG[removeLiquidityRequest.shortToken].decimals;
       let minShortAmount = parseUnits(removeLiquidityRequest.minShortAmount.toFixed(shortDecimals), shortDecimals);
 
-      let longDecimals = config.ASSETS_CONFIG[removeLiquidityRequest.longAsset].decimals;
+      let longDecimals = config.ASSETS_CONFIG[removeLiquidityRequest.longToken].decimals;
       let minLongAmount = parseUnits(removeLiquidityRequest.minLongAmount.toFixed(longDecimals), longDecimals);
 
-      const transaction = await wrappedContract[removeLiquidityRequest.method](
-          gmAmount,
-          minLongAmount,
-          minShortAmount,
-          toWei(removeLiquidityRequest.executionFee),
-          { value: toWei(removeLiquidityRequest.executionFee)}
-      );
+      // const transaction = await wrappedContract[removeLiquidityRequest.method](
+      //     gmAmount,
+      //     minLongAmount,
+      //     minShortAmount,
+      //     toWei(removeLiquidityRequest.executionFee),
+      //     { value: toWei(removeLiquidityRequest.executionFee)}
+      // );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
 
-      let tx = await awaitConfirmation(transaction, provider, 'remove liquidity from LLp');
+      // let tx = await awaitConfirmation(transaction, provider, 'remove liquidity from LLp');
 
       const gmBalanceAfterTransaction = Number(state.gmxV2Balances[removeLiquidityRequest.gmToken]) - Number(removeLiquidityRequest.gmAmount);
-      const longAssetBalanceAfterTransaction = Number(state.assetBalances[removeLiquidityRequest.sourceAsset]) - Number(removeLiquidityRequest.minLongAmount);
-      const shortAssetBalanceAfterTransaction = Number(state.assetBalances[removeLiquidityRequest.targetAsset]) + Number(removeLiquidityRequest.minShortAmount);
+      const longAssetBalanceAfterTransaction = Number(state.assetBalances[removeLiquidityRequest.longToken]) - Number(removeLiquidityRequest.minLongAmount);
+      const shortAssetBalanceAfterTransaction = Number(state.assetBalances[removeLiquidityRequest.shortToken]) + Number(removeLiquidityRequest.minShortAmount);
 
       rootState.serviceRegistry.assetBalancesExternalUpdateService
           .emitExternalAssetBalanceUpdate(removeLiquidityRequest.gmToken, gmBalanceAfterTransaction, false, false);
       rootState.serviceRegistry.assetBalancesExternalUpdateService
-          .emitExternalAssetBalanceUpdate(removeLiquidityRequest.longAsset, longAssetBalanceAfterTransaction, false, false);
+          .emitExternalAssetBalanceUpdate(removeLiquidityRequest.longToken, longAssetBalanceAfterTransaction, false, false);
       rootState.serviceRegistry.assetBalancesExternalUpdateService
-          .emitExternalAssetBalanceUpdate(removeLiquidityRequest.shortAsset, shortAssetBalanceAfterTransaction, false, false);
+          .emitExternalAssetBalanceUpdate(removeLiquidityRequest.shortToken, shortAssetBalanceAfterTransaction, false, false);
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {

@@ -57,6 +57,7 @@ export default {
             slippageMargin: 0.1
         },
         GmxV2: {
+            availableAssets: [],
             slippageMargin: 0.1
         }
     },
@@ -309,7 +310,7 @@ export default {
     nativeToken: "ETH",
     SLIPPAGE_TOLERANCE: 0.03,
     dataProviderId: "redstone-arbitrum-prod",
-    dataProviderHistoricalPrices: "redstone-arbitrum-prod",
+    dataProviderHistoricalPrices: "redstone",
     redstoneFeedUrl: "https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-arbitrum-prod",
     subgraph: "https://api.thegraph.com/subgraphs/name/keizir/deltaprime",
     readRpcUrl: "https://arbitrum-mainnet.core.chainstack.com/9a30fb13b2159a76c8e143c52d5579bf",

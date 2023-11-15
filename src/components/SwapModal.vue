@@ -228,7 +228,6 @@ export default {
   data() {
     return {
       swapDebtMode: null,
-      levelMode: null,
       sourceAssets: null,
       targetAssets: null,
       sourceAssetOptions: null,
@@ -422,8 +421,6 @@ export default {
         this.receivedAccordingToOracle = this.estimatedNeededTokens * this.sourceAssetData.price / this.targetAssetData.price;
         dexSlippage = (this.receivedAccordingToOracle - estimatedReceivedTokens) / estimatedReceivedTokens;
         this.marketDeviation = parseFloat((100 * dexSlippage).toFixed(3));
-      } else {
-        this.receivedAccordingToOracle = this.estimatedNeededTokens;
       }
 
       let slippageMargin = config.SWAP_DEXS_CONFIG[this.swapDex].slippageMargin;
@@ -451,15 +448,12 @@ export default {
       let sourceAssets;
       if (this.sourceAssets) {
         sourceAssets = this.sourceAssets;
-      } else if (this.levelMode) {
-        sourceAssets = this.sourceAssets.Level;
       } else {
         sourceAssets = this.swapDexsConfig[this.swapDex].availableAssets;
       }
 
       sourceAssets.forEach(assetSymbol => {
         const asset = this.sourceAssetsConfig[assetSymbol];
-        console.log(asset);
         const assetOption = {
           symbol: assetSymbol,
           short: asset.short,
@@ -476,14 +470,11 @@ export default {
       let targetAssets;
       if (this.targetAssets) {
         targetAssets = this.targetAssets;
-      } else if (this.levelMode) {
-        targetAssets = this.targetAssets.Level;
       } else {
         targetAssets = this.swapDexsConfig[this.swapDex].availableAssets;
       }
 
       targetAssets.forEach(assetSymbol => {
-        console.log(assetSymbol);
         const asset = this.targetAssetsConfig[assetSymbol];
         const assetOption = {
           symbol: assetSymbol,
