@@ -168,7 +168,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['PTP', 'QI'],
                 strategy: 'Platypus',
-                banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
+                banner: 'This farm is disabled and underlying assets were returned to your Prime Account.',
                 refreshDelay: 60000,
             },
             {
@@ -188,7 +188,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['PTP', 'QI'],
                 strategy: 'Platypus',
-                banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
+                banner: 'This farm is disabled and underlying assets were returned to your Prime Account.',
                 refreshDelay: 60000
             }
         ],
@@ -233,7 +233,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['PTP', 'QI'],
                 strategy: 'Platypus',
-                banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
+                banner: 'This farm is disabled and underlying assets were returned to your Prime Account.',
                 refreshDelay: 60000
             },
             {
@@ -252,7 +252,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['PTP', 'QI'],
                 strategy: 'Platypus',
-                banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
+                banner: 'This farm is disabled and underlying assets were returned to your Prime Account.',
                 refreshDelay: 60000
             }
         ],
@@ -274,7 +274,7 @@ export default {
                 debtCoverage: 0,
                 rewardTokens: ['PTP'],
                 strategy: 'Platypus',
-                banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
+                banner: 'This farm is disabled and underlying assets were returned to your Prime Account.',
                 refreshDelay: 60000
             },
             {
@@ -293,7 +293,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['PTP'],
                 strategy: 'Platypus',
-                banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
+                banner: 'This farm is disabled and underlying assets were returned to your Prime Account.',
                 refreshDelay: 60000
             },
         ],
@@ -313,7 +313,7 @@ export default {
                 isTokenLp: false,
                 debtCoverage: 0.83333333333,
                 strategy: 'Platypus',
-                banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
+                banner: 'This farm is disabled and underlying assets were returned to your Prime Account.',
                 refreshDelay: 60000
             },
         ],
