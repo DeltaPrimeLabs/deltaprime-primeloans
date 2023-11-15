@@ -178,23 +178,23 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
         BasicMulticall(getGMX_V2_EXCHANGE_ROUTER()).multicall{ value: msg.value }(data);
 
         // Simulate solvency check
-//        {
-//            address longToken = marketToLongToken(gmToken);
-//            address shortToken = marketToShortToken(gmToken);
-//            bytes32[] memory receivedTokensSymbols = new bytes32[](2);
-//            uint256[] memory receivedTokensPrices = new uint256[](2);
-//
-//            receivedTokensSymbols[0] = tokenManager.tokenAddressToSymbol(longToken);
-//            receivedTokensSymbols[1] = tokenManager.tokenAddressToSymbol(shortToken);
-//            receivedTokensPrices = getPrices(receivedTokensSymbols);
-//
-//            uint256 receivedTokensWeightedUsdValue = (
-//                (receivedTokensPrices[0] * minLongTokenAmount * tokenManager.debtCoverage(longToken)) +
-//                (receivedTokensPrices[1] * minShortTokenAmount * tokenManager.debtCoverage(shortToken))
-//            )
-//            / 1e26;
-//            require((SolvencyMethods._getThresholdWeightedValue() + receivedTokensWeightedUsdValue) > _getDebt(), "The action may cause the account to become insolvent");
-//        }
+        {
+            address longToken = marketToLongToken(gmToken);
+            address shortToken = marketToShortToken(gmToken);
+            bytes32[] memory receivedTokensSymbols = new bytes32[](2);
+            uint256[] memory receivedTokensPrices = new uint256[](2);
+
+            receivedTokensSymbols[0] = tokenManager.tokenAddressToSymbol(longToken);
+            receivedTokensSymbols[1] = tokenManager.tokenAddressToSymbol(shortToken);
+            receivedTokensPrices = getPrices(receivedTokensSymbols);
+
+            uint256 receivedTokensWeightedUsdValue = (
+                (receivedTokensPrices[0] * minLongTokenAmount * tokenManager.debtCoverage(longToken)) +
+                (receivedTokensPrices[1] * minShortTokenAmount * tokenManager.debtCoverage(shortToken))
+            )
+            / 1e26;
+            require((SolvencyMethods._getThresholdWeightedValue() + receivedTokensWeightedUsdValue) > _getDebt(), "The action may cause the account to become insolvent");
+        }
 
         // Freeze account
         DiamondStorageLib.freezeAccount(gmToken);
