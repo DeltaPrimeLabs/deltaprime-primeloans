@@ -158,6 +158,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         emit Repaid(msg.sender, _asset, _amount, block.timestamp);
     }
 
+    // TODO: Separate manager for unfreezing - not liquidators
     function unfreezeAccount() external onlyWhitelistedLiquidators {
         DiamondStorageLib.unfreezeAccount(msg.sender);
     }
