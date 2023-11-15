@@ -49,7 +49,6 @@ chai.use(solidity);
 
 const {deployContract, provider} = waffle;
 
-const masterChefAddress = '0xC18c952F800516E1eef6aB482F3d331c84d43d38';
 
 describe('Smart loan', () => {
     before("Synchronize blockchain time", async () => {
@@ -111,7 +110,7 @@ describe('Smart loan', () => {
             paraSwapMin = constructSimpleSDK({ chainId: 42161, axios });
 
             [owner, nonOwner, depositor] = await getFixedGasSigners(10000000);
-            let assetsList = ['ETH', 'BTC', 'USDT', 'USDC'];
+            let assetsList = ['ETH', 'BTC', 'USDT', 'USDC', 'GM_ETH_WETH_USDC'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'ETH', airdropList: [depositor]}
             ];
@@ -168,11 +167,15 @@ describe('Smart loan', () => {
             const loan_proxy_address = await smartLoansFactory.getLoanForOwner(owner.address);
             loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, owner);
 
+
+            for(const mckPrice of MOCK_PRICES){
+                console.log(`MCK PRICE: ${Object.entries(mckPrice)}`)
+            }
             wrappedLoan = WrapperBuilder
                 // @ts-ignore
                 .wrap(loan)
                 .usingSimpleNumericMock({
-                    mockSignersCount: 10,
+                    mockSignersCount: 3,
                     dataPoints: MOCK_PRICES,
                 });
 
@@ -180,7 +183,7 @@ describe('Smart loan', () => {
                 // @ts-ignore
                 .wrap(loan.connect(nonOwner))
                 .usingSimpleNumericMock({
-                    mockSignersCount: 10,
+                    mockSignersCount: 3,
                     dataPoints: MOCK_PRICES,
                 });
         });
@@ -196,21 +199,31 @@ describe('Smart loan', () => {
             let initialTWV = await wrappedLoan.getThresholdWeightedValue();
 
             let swapData = await getSwapData('ETH', 'BTC', 18, 8, toWei('2'));
+            console.log('swap 1')
             await wrappedLoan.paraSwap(swapData);
             btcBalance = await tokenContracts.get('BTC')!.balanceOf(wrappedLoan.address);
             swapData = await getSwapData('ETH', 'USDT', 18, 6, toWei('2'));
+            console.log('swap 2')
             await wrappedLoan.paraSwap(swapData);
             usdtBalance = await tokenContracts.get('USDT')!.balanceOf(wrappedLoan.address);
             swapData = await getSwapData('ETH', 'USDC', 18, 6, toWei('2'));
+            console.log('swap 3')
             await wrappedLoan.paraSwap(swapData);
             usdcBalance = await tokenContracts.get('USDC')!.balanceOf(wrappedLoan.address);
         });
 
         it("should deposit to GMX V2", async () => {
             const tokenAmount = toWei('0.0005');
-            const maxFee = toWei('0.15');
+            const maxFee = toWei('0.01');
 
             await wrappedLoan.depositEthUsdcGmxV2(true, tokenAmount, 0, maxFee, { value: maxFee });
+        });
+
+        it("should deposit to GMX V2", async () => {
+            const gmAmount = await tokenContracts.get('GM_ETH_WETH_USDC')!.balanceOf(wrappedLoan.address);
+            const maxFee = toWei('0.01');
+
+            await wrappedLoan.withdrawEthUsdcGmxV2(gmAmount, 0, 0, maxFee, { value: maxFee });
         });
     });
 });

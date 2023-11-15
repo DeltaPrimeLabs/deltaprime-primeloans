@@ -5,13 +5,13 @@ pragma solidity 0.8.17;
 //This path is updated during deployment
 import "../GmxV2Facet.sol";
 
-abstract contract GmxV2FacetArbitrum is GmxV2Facet {
+contract GmxV2FacetArbitrum is GmxV2Facet {
     using TransferHelper for address;
 
     // https://github.com/gmx-io/gmx-synthetics/blob/main/deployments/arbitrum/
     // GMX contracts
     function getGMX_V2_ROUTER() internal pure virtual override returns (address) {
-        return 0x820F5FfC5b525cD4d88Cd91aCf2c28F16530Cc68;
+        return 0x7452c558d45f8afC8c83dAe62C3f8A5BE19c71f6;
     }
 
     function getGMX_V2_EXCHANGE_ROUTER() internal pure virtual override returns (address) {
@@ -91,78 +91,78 @@ abstract contract GmxV2FacetArbitrum is GmxV2Facet {
         _deposit(GM_ETH_WETH_USDC, _depositedToken, tokenAmount, minGmAmount, executionFee);
     }
 
-    function depositArbUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
-        address _depositedToken = isLongToken ? ARB : USDC;
-
-        _deposit(GM_ARB_ARB_USDC, _depositedToken, tokenAmount, minGmAmount, executionFee);
-    }
-
-    function depositLinkUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
-        address _depositedToken = isLongToken ? LINK : USDC;
-
-        _deposit(GM_LINK_LINK_USDC, _depositedToken, tokenAmount, minGmAmount, executionFee);
-    }
-
-    function depositUniUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
-        address _depositedToken = isLongToken ? UNI : USDC;
-
-        _deposit(GM_UNI_UNI_USDC, _depositedToken, tokenAmount, minGmAmount, executionFee);
-    }
-
-    function depositSolUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
-        address _depositedToken = isLongToken ? SOL : USDC;
-
-        _deposit(GM_SOL_SOL_USDC, _depositedToken, tokenAmount, minGmAmount, executionFee);
-    }
-
-    function depositBtcUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
-        address _depositedToken = isLongToken ? WBTC : USDC;
-
-        _deposit(GM_BTC_WBTC_USDC, _depositedToken, tokenAmount, minGmAmount, executionFee);
-    }
+//    function depositArbUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
+//        address _depositedToken = isLongToken ? ARB : USDC;
+//
+//        _deposit(GM_ARB_ARB_USDC, isLongToken ? ARB : USDC, tokenAmount, minGmAmount, executionFee);
+//    }
+//
+//    function depositLinkUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
+//        address _depositedToken = isLongToken ? LINK : USDC;
+//
+//        _deposit(GM_LINK_LINK_USDC, _depositedToken, tokenAmount, minGmAmount, executionFee);
+//    }
+//
+//    function depositUniUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
+//        address _depositedToken = isLongToken ? UNI : USDC;
+//
+//        _deposit(GM_UNI_UNI_USDC, _depositedToken, tokenAmount, minGmAmount, executionFee);
+//    }
+//
+//    function depositSolUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
+//        address _depositedToken = isLongToken ? SOL : USDC;
+//
+//        _deposit(GM_SOL_SOL_USDC, _depositedToken, tokenAmount, minGmAmount, executionFee);
+//    }
+//
+//    function depositBtcUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
+//        address _depositedToken = isLongToken ? WBTC : USDC;
+//
+//        _deposit(GM_BTC_WBTC_USDC, _depositedToken, tokenAmount, minGmAmount, executionFee);
+//    }
 
     // WITHDRAW
     function withdrawEthUsdcGmxV2(uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
         _withdraw(GM_ETH_WETH_USDC, gmAmount, minLongTokenAmount, minShortTokenAmount, executionFee);
     }
 
-    function withdrawArbUsdcGmxV2(uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
-        _withdraw(GM_ARB_ARB_USDC, gmAmount, minLongTokenAmount, minShortTokenAmount, executionFee);
-    }
-
-    function withdrawLinkUsdcGmxV2(uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
-        _withdraw(GM_LINK_LINK_USDC, gmAmount, minLongTokenAmount, minShortTokenAmount, executionFee);
-    }
-
-    function withdrawUniUsdcGmxV2(uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
-        _withdraw(GM_UNI_UNI_USDC, gmAmount, minLongTokenAmount, minShortTokenAmount, executionFee);
-    }
-
-    function withdrawSolUsdcGmxV2(uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
-        _withdraw(GM_SOL_SOL_USDC, gmAmount, minLongTokenAmount, minShortTokenAmount, executionFee);
-    }
-
-    function withdrawBtcUsdcGmxV2(uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
-        _withdraw(GM_BTC_WBTC_USDC, gmAmount, minLongTokenAmount, minShortTokenAmount, executionFee);
-    }
+//    function withdrawArbUsdcGmxV2(uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
+//        _withdraw(GM_ARB_ARB_USDC, gmAmount, minLongTokenAmount, minShortTokenAmount, executionFee);
+//    }
+//
+//    function withdrawLinkUsdcGmxV2(uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
+//        _withdraw(GM_LINK_LINK_USDC, gmAmount, minLongTokenAmount, minShortTokenAmount, executionFee);
+//    }
+//
+//    function withdrawUniUsdcGmxV2(uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
+//        _withdraw(GM_UNI_UNI_USDC, gmAmount, minLongTokenAmount, minShortTokenAmount, executionFee);
+//    }
+//
+//    function withdrawSolUsdcGmxV2(uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
+//        _withdraw(GM_SOL_SOL_USDC, gmAmount, minLongTokenAmount, minShortTokenAmount, executionFee);
+//    }
+//
+//    function withdrawBtcUsdcGmxV2(uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
+//        _withdraw(GM_BTC_WBTC_USDC, gmAmount, minLongTokenAmount, minShortTokenAmount, executionFee);
+//    }
 
     // MODIFIERS
     modifier onlyWhitelistedAccounts {
-        if(
-            msg.sender == 0x0E5Bad4108a6A5a8b06820f98026a7f3A77466b2 ||
-            msg.sender == 0x2fFA7E9624B923fA811d9B9995Aa34b715Db1945 ||
-            msg.sender == 0x0d7137feA34BC97819f05544Ec7DE5c98617989C ||
-            msg.sender == 0xC6ba6BB819f1Be84EFeB2E3f2697AD9818151e5D ||
-            msg.sender == 0x14f69F9C351b798dF31fC53E33c09dD29bFAb547 ||
-            msg.sender == 0x5C23Bd1BD272D22766eB3708B8f874CB93B75248 ||
-            msg.sender == 0x000000F406CA147030BE7069149e4a7423E3A264 ||
-            msg.sender == 0x5D80a1c0a5084163F1D2620c1B1F43209cd4dB12 ||
-            msg.sender == 0xb79c2A75cd9073d68E75ddF71D53C07747Df7933 ||
-            msg.sender == 0x6C21A841d6f029243AF87EF01f6772F05832144b
-        ){
+//        if(
+//            msg.sender == 0x0E5Bad4108a6A5a8b06820f98026a7f3A77466b2 ||
+//            msg.sender == 0x2fFA7E9624B923fA811d9B9995Aa34b715Db1945 ||
+//            msg.sender == 0x0d7137feA34BC97819f05544Ec7DE5c98617989C ||
+//            msg.sender == 0xC6ba6BB819f1Be84EFeB2E3f2697AD9818151e5D ||
+//            msg.sender == 0x14f69F9C351b798dF31fC53E33c09dD29bFAb547 ||
+//            msg.sender == 0x5C23Bd1BD272D22766eB3708B8f874CB93B75248 ||
+//            msg.sender == 0x000000F406CA147030BE7069149e4a7423E3A264 ||
+//            msg.sender == 0x5D80a1c0a5084163F1D2620c1B1F43209cd4dB12 ||
+//            msg.sender == 0xb79c2A75cd9073d68E75ddF71D53C07747Df7933 ||
+//            msg.sender == 0x6C21A841d6f029243AF87EF01f6772F05832144b
+//        ){
             _;
-        } else {
-            revert("Not whitelisted");
-        }
+//        } else {
+//            revert("Not whitelisted");
+//        }
     }
 }

@@ -29,6 +29,7 @@ import "./facets/avalanche/ITraderJoeV2AutopoolsFacet.sol";
 import "./facets/arbitrum/ISushiSwapDEXFacet.sol";
 import "./facets/arbitrum/IBeefyFinanceArbitrumFacet.sol";
 import "./facets/arbitrum/IGmxV2ArbitrumFacet.sol";
+import "./facets/avalanche/IGmxV2AvalancheFacet.sol";
 import "./facets/arbitrum/ISushiSwapFacet.sol";
 import "./facets/arbitrum/ILevelFinanceFacet.sol";
 
@@ -62,5 +63,6 @@ interface SmartLoanGigaChadInterface is
     IUniswapV3Facet,
     ITraderJoeV2AutopoolsFacet,
     ISushiSwapDEXFacet,
-    IGmxV2ArbitrumFacet
+    IGmxV2ArbitrumFacet,
+    IGmxV2AvalancheFacet
 {}

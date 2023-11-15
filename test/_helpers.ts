@@ -713,6 +713,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                     'getAllPricesForLiquidation',
                     'getDebt',
                     'getDebtWithPrices',
+                    'getPrice',
                     'getPrices',
                     'getTotalAssetsValue',
                     'getThresholdWeightedValue',
@@ -736,6 +737,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                     'getAllPricesForLiquidation',
                     'getDebt',
                     'getDebtWithPrices',
+                    'getPrice',
                     'getPrices',
                     'getTotalAssetsValue',
                     'getThresholdWeightedValue',
@@ -746,6 +748,20 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                 ],
                 hardhatConfig)
         }
+
+        await deployFacet(
+            "GmxV2FacetAvalanche",
+            diamondAddress,
+            [
+                'depositAvaxUsdcGmxV2',
+                'withdrawAvaxUsdcGmxV2',
+                'afterDepositExecution',
+                'afterDepositCancellation',
+                'afterWithdrawalExecution',
+                'afterWithdrawalCancellation'
+            ],
+            hardhatConfig
+        )
 
         await deployFacet(
             "AssetsOperationsFacet",
@@ -873,6 +889,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                     'getAllPricesForLiquidation',
                     'getDebt',
                     'getDebtWithPrices',
+                    'getPrice',
                     'getPrices',
                     'getTotalAssetsValue',
                     'getThresholdWeightedValue',
@@ -896,6 +913,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                     'getAllPricesForLiquidation',
                     'getDebt',
                     'getDebtWithPrices',
+                    'getPrice',
                     'getPrices',
                     'getTotalAssetsValue',
                     'getThresholdWeightedValue',
