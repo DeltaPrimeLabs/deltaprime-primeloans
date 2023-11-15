@@ -347,6 +347,8 @@ export default {
     calculateTotalRewards() {
       let totalRewards = [];
 
+      if (!this.lpToken.rewardTokens) return;
+
       this.lpToken.rewardTokens.map(token => {
         let rewardToken = 0;
 
@@ -529,15 +531,18 @@ export default {
       modalInstance.totalRewards = this.totalRewards;
 
       const merkleEntries = [];
-      this.lpToken.rewardsInfo.rewards.map((reward, id) => {
-        merkleEntries.push({
-          market: this.lpToken.address,
-          epoch: reward.epoch,
-          token: reward.tokenAddress,
-          amount: reward.amount,
-          merkleProof: this.lpToken.rewardsInfo.proofs[id]
+
+      if (this.lpToken.rewardsInfo) {
+        this.lpToken.rewardsInfo.rewards.map((reward, id) => {
+          merkleEntries.push({
+            market: this.lpToken.address,
+            epoch: reward.epoch,
+            token: reward.tokenAddress,
+            amount: reward.amount,
+            merkleProof: this.lpToken.rewardsInfo.proofs[id]
+          });
         });
-      });
+      }
 
       const claimRewardsRequest = {
         merkleEntries
