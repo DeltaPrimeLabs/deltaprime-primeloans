@@ -152,6 +152,8 @@ export default {
       'concentratedLpBalances',
       'levelLpAssets',
       'levelLpBalances',
+      'gmxV2Assets',
+      'gmxV2Balances',
       'traderJoeV2LpAssets',
       'fullLoanStatus',
       'noSmartLoan',
@@ -348,6 +350,8 @@ export default {
             this.concentratedLpBalances,
             this.levelLpAssets,
             this.levelLpBalances,
+            this.gmxV2Assets,
+            this.gmxV2Balances,
             this.traderJoeV2LpAssets,
             this.farms,
         );
