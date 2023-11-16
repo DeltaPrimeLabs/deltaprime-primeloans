@@ -43,21 +43,14 @@
     <Banner v-if="showArbitrumPrimeAccountBanner" background="green-accent" :closable="true">
       Welcome to DeltaPrime Blue! In the coming weeks this page will significantly expand with partner protocols. Stay tuned!
     </Banner>
-    <Banner v-if="showAvalancheDepositorBanner" background="green-accent" :closable="true">
-      No DeltaPrime liquidity pools have been affected by the recent Platypus exploit. Read more in our Discord.
-<!--      <a class="banner-link" href="" target="_blank">-->
-<!--        <b>-->
-<!--          Read more.-->
-<!--        </b>-->
-<!--      </a>-->
-    </Banner>
+<!--    <Banner v-if="showAvalancheDepositorBanner" background="green-accent" :closable="true"></Banner>-->
     <Banner v-if="showAvalanchePrimeAccountBanner" background="green-accent" :closable="true">
-      Platypus has temporarily paused withdrawals from their vaults. Read more in our Discord.
-<!--      <a class="banner-link" href="" target="_blank">-->
-<!--        <b>-->
-<!--          Read more.-->
-<!--        </b>-->
-<!--      </a>-->
+      Yield Yak has temporarily paused deposits in this farm due to
+      <a class="banner-link" href="https://discord.com/channels/889510301421166643/912702114252329060/1173699022914064485" target="_blank">
+        <b>
+          the GLP cap.
+        </b>
+      </a>
     </Banner>
     <div class="content">
       <div class="top-bar">
@@ -233,7 +226,7 @@ export default {
               walletParams = {
                 chainName: 'Avalanche Mainnet C-Chain',
                 chainId: this.toHex(config.chainId),
-                rpcUrls: ['https://api.avax.network/ext/bc/C/rpc'],
+                rpcUrls: ['https://avalanche-mainnet.core.chainstack.com/ext/bc/C/rpc/0968db18a01a90bac990ff00df6f7da1'],
                 nativeCurrency: {
                   name: 'AVAX',
                   symbol: 'AVAX',

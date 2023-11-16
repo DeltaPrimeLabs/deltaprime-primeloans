@@ -75,7 +75,7 @@ export default {
     getPrimeAccountExplorerUrl() {
       switch (window.chain) {
         case 'avalanche': {
-          return `https://snowtrace.io/address/${this.smartLoanContract.address}`;
+          return `https://snowtrace.dev/address/${this.smartLoanContract.address}`;
         }
         case 'arbitrum': {
           return `https://arbiscan.io/address/${this.smartLoanContract.address}`;
@@ -86,7 +86,7 @@ export default {
     getWalletExplorerUrl() {
       switch (window.chain) {
         case 'avalanche': {
-          return `https://snowtrace.io/address/${this.account}`;
+          return `https://snowtrace.dev/address/${this.account}`;
         }
         case 'arbitrum': {
           return `https://arbiscan.io/address/${this.account}`;

@@ -105,7 +105,7 @@ export default {
     getExplorerTxUrl() {
       switch (window.chain) {
         case 'avalanche': {
-          return 'https://snowtrace.io/tx/'
+          return 'https://snowtrace.dev/tx/'
         }
         case 'arbitrum': {
           return 'https://arbiscan.io/tx/'

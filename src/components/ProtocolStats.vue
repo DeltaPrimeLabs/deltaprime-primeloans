@@ -52,7 +52,7 @@
             <div class="liquidators">
               <div class="desc">Liquidators:</div>
               <div class="liquidator-info" v-for="liquidator in liquidators">
-                <div class="account"><a :href="`https://snowtrace.io/address/${liquidator.account}`" target="_blank">{{liquidator.account | tx}}</a></div>
+                <div class="account"><a :href="`https://snowtrace.dev/address/${liquidator.account}`" target="_blank">{{liquidator.account | tx}}</a></div>
                 <div class="balance">{{liquidator.balance.toFixed(2)}}</div>
               </div>
             </div>
@@ -73,7 +73,7 @@
                     'insolvent': loan.health <= 1 || !loan.solvent,
                   }"
               >
-                <div><a :href="`https://snowtrace.io/address/${loan.address}`" target="_blank">{{loan.address | tx}}</a></div>
+                <div><a :href="`https://snowtrace.dev/address/${loan.address}`" target="_blank">{{loan.address | tx}}</a></div>
                 <div>{{parseFloat(loan.health).toFixed(3)}}</div>
                 <div>${{numberWithCommas(parseFloat(loan.totalValue).toFixed(2))}}</div>
                 <div>${{numberWithCommas(parseFloat(loan.debt).toFixed(2))}}</div>

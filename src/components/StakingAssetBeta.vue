@@ -106,7 +106,7 @@
 
         <div v-if="normalFarms.length > 0" class="compounding__divider">
           <span class="divider__title">No auto-compounding</span>
-          <InfoIcon :tooltip="{content: 'These farms require manual claiming of rewards by (un)staking part of the farmed assets.', classes: 'info-tooltip long', placement: 'top'}"></InfoIcon>
+          <InfoIcon :tooltip="{content: 'These farms require manual claiming of rewards by (un)staking part of the farmed assets.', classes: 'info-tooltip long', placement: 'force-top'}"></InfoIcon>
         </div>
 
         <div class="protocols__table protocol__table--no-header">

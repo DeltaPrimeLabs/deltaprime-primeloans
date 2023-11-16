@@ -1,22 +1,28 @@
 <template>
   <div class="lp-tab">
     <div class="lp-tokens">
-          <div class="lp-table" v-if="traderJoeLpTokens">
-            <TableHeader :config="traderJoeLpTableHeaderConfig"></TableHeader>
-            <TraderJoeLpTableRow v-for="(lpToken, index) in traderJoeLpTokens" v-bind:key="index" :index="index" :lp-token="lpToken" :lp-tokens="traderJoeLpTokens"></TraderJoeLpTableRow>
-          </div>
-        </div>
+      <div class="lp-table" v-if="traderJoeLpTokens">
+        <TableHeader :config="traderJoeLpTableHeaderConfig"></TableHeader>
+        <TraderJoeLpTableRow v-for="(lpToken, index) in traderJoeLpTokens" v-bind:key="index" :index="index"
+                             :lp-token="lpToken" :lp-tokens="traderJoeLpTokens"></TraderJoeLpTableRow>
+      </div>
+    </div>
     <div class="lp-tokens" v-if="Object.keys(levelLpTokens).length">
       <div class="lp-table level" v-if="levelLpTokens">
         <TableHeader :config="levelLpTableHeaderConfig"></TableHeader>
-        <LevelLpTableRow v-for="(lpToken, index) in levelLpTokens" v-bind:key="index" :index="index" :lp-token="lpToken"></LevelLpTableRow>
+        <div class="lp-table__warning">
+          Junior and Mezzanine have been deprecated, and Senior is upgraded. Please reallocate funds from the Junior and
+          Mezzanine tranche.
+        </div>
+        <LevelLpTableRow v-for="(lpToken, index) in levelLpTokens" v-bind:key="index" :index="index"
+                         :lp-token="lpToken"></LevelLpTableRow>
       </div>
     </div>
     <div class="lp-tokens" v-if="Object.keys(concentratedLpTokens).length">
       <div class="lp-table">
         <TableHeader :config="concentratedLpTableHeaderConfig"></TableHeader>
         <ConcentratedLpTableRow v-for="(lpToken, index) in concentratedLpTokens" v-bind:key="index" :lp-token="lpToken">
-          {{lpToken}}
+          {{ lpToken }}
         </ConcentratedLpTableRow>
       </div>
     </div>
@@ -28,11 +34,11 @@
       <div class="lp-table" v-if="Object.keys(lpTokens).length && filteredLpTokens">
         <TableHeader :config="lpTableHeaderConfig"></TableHeader>
         <LpTableRow v-for="(lpToken, index) in filteredLpTokens" v-bind:key="index" :lp-token="lpToken"
-                    showFarmed="false">{{lpToken}}
+                    showFarmed="false">{{ lpToken }}
         </LpTableRow>
-<!--          <div class="paginator-container">-->
-<!--            <Paginator :total-elements="50" :page-size="6"></Paginator>-->
-<!--          </div>-->
+        <!--          <div class="paginator-container">-->
+        <!--            <Paginator :total-elements="50" :page-size="6"></Paginator>-->
+        <!--          </div>-->
       </div>
     </div>
   </div>
@@ -53,7 +59,8 @@ export default {
   name: 'LPTab',
   components: {
     LevelLpTableRow,
-    Paginator, TraderJoeLpTableRow, LpTableRow, AssetFilter, ConcentratedLpTableRow, TableHeader},
+    Paginator, TraderJoeLpTableRow, LpTableRow, AssetFilter, ConcentratedLpTableRow, TableHeader
+  },
   data() {
     return {
       concentratedLpTokens: config.CONCENTRATED_LP_ASSETS_CONFIG,
@@ -87,8 +94,8 @@ export default {
     ]),
     filteredLpTokens() {
       return Object.values(this.lpTokens).filter(token =>
-        (this.selectedLpTokens.includes(token.primary) || this.selectedLpTokens.includes(token.secondary))
-        && this.selectedDexes.includes(token.dex)
+          (this.selectedLpTokens.includes(token.primary) || this.selectedLpTokens.includes(token.secondary))
+          && this.selectedDexes.includes(token.dex)
       );
     },
   },
@@ -182,7 +189,7 @@ export default {
     },
     setupTraderJoeLpTableHeaderConfig() {
       this.traderJoeLpTableHeaderConfig = {
-        gridTemplateColumns: '180px 100px 100px 195px 150px 120px 120px 35px 80px',
+        gridTemplateColumns: '180px 100px 100px 180px 100px 90px 120px 120px 35px 80px',
         cells: [
           {
             label: 'TraderJoe V2',
@@ -215,6 +222,13 @@ export default {
             class: 'balance',
             id: 'COMPOSITION',
             tooltip: `Underlying assets`
+          },
+          {
+            label: 'Rewards',
+            sortable: false,
+            class: 'rewards',
+            id: 'REWARDS',
+            tooltip: `Trader Joe has received $1.44M in ARB to distribute to users from Nov-Jan 2023. The majority will be distributed over the 30 largest users of each incentivized pool. Click on a “Rewards” button to see how your Prime Account is performing.`
           },
           {
             label: 'TVL',
@@ -256,11 +270,11 @@ export default {
       //TODO: we have to make sure somehow that it's called in a right moment ->when assets have prices already
       if (this.assets) {
         Object.keys(this.lpTokens).forEach(
-          key => {
-            const lpToken = this.lpTokens[key];
-            lpToken.firstPrice = this.assets[lpToken.primary].price;
-            lpToken.secondPrice = this.assets[lpToken.secondary].price;
-          }
+            key => {
+              const lpToken = this.lpTokens[key];
+              lpToken.firstPrice = this.assets[lpToken.primary].price;
+              lpToken.secondPrice = this.assets[lpToken.secondary].price;
+            }
         );
       }
     },
@@ -344,7 +358,7 @@ export default {
             class: 'balance',
             id: 'BALANCE',
             tooltip: `The balance of this LLP in your Prime Account.`
-          },          {
+          }, {
             label: 'Rewards',
             sortable: false,
             class: 'rewards',
@@ -408,7 +422,11 @@ export default {
         this.assets = config.ASSETS_CONFIG;
         this.updateLpPriceData();
         if (this.concentratedLpBalances) {
-          Object.entries(this.concentratedLpTokens).forEach(([k, v]) => { {  if (v.inactive && (this.concentratedLpBalances && Number(this.concentratedLpBalances[k]) === 0)) delete this.concentratedLpTokens[k] }})
+          Object.entries(this.concentratedLpTokens).forEach(([k, v]) => {
+            {
+              if (v.inactive && (this.concentratedLpBalances && Number(this.concentratedLpBalances[k]) === 0)) delete this.concentratedLpTokens[k]
+            }
+          })
         }
       });
     }
@@ -416,7 +434,9 @@ export default {
 };
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+@import "~@/styles/variables";
+
 
 .lp-tab {
   width: 100%;
@@ -433,6 +453,13 @@ export default {
         flex-direction: row;
         justify-content: flex-end;
         margin-top: 12px;
+      }
+
+      .lp-table__warning {
+        color: $orange;
+        font-weight: 500;
+        font-size: $font-size-xxs;
+        padding-left: 10px;
       }
     }
   }
