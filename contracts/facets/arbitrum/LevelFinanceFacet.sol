@@ -778,6 +778,8 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         uint256 pid,
         IStakingPositions.StakedPosition memory position
     ) private {
+        require(pid == 0, "Jnr and Mze tranches are no longer supported");
+
         if (asset == address(0)) {
             amount = Math.min(
                 IWrappedNativeToken(ETH_TOKEN).balanceOf(address(this)),
@@ -909,7 +911,6 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     }
 
     function unstakeAndWithdrawLLP(uint256 pid, uint256 amount) external nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent{
-        IERC20Metadata llpToken = IERC20Metadata(pidToLLPToken(pid));
         ILevelFinance farmingContract = ILevelFinance(LEVEL_FARMING);
         require(_levelBalance(pid) >= amount, "Insufficient balance");
 
