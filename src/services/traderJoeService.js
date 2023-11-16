@@ -99,12 +99,6 @@ export default class TraderJoeService {
       [tokenXAmount, tokenYAmount]
     );
 
-    let number =  ((BigInt(distributionX[0])) > 0) ? BigInt(distributionX[0]) - BigInt(10) : BigInt(0);
-
-    distributionX = distributionX.map(el => ((BigInt(el)) > BigInt(10)) ? BigInt(el) - BigInt(10) : BigInt(el))
-    distributionY = distributionY.map(el => ((BigInt(el)) > BigInt(10)) ? BigInt(el) - BigInt(10) : BigInt(el))
-
-
     // declare liquidity parameters
     const addLiquidityInput = {
       tokenX: tokenX.address,
