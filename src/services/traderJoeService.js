@@ -251,7 +251,7 @@ export default class TraderJoeService {
       const URL = `https://uophm6e26f.execute-api.us-east-1.amazonaws.com/traderjoe/rewards/claimable?chain=${window.chain}&loan=${loan}&market=${market}`;
       const rewardsInfo = await axios.get(URL);
 
-      return rewardsInfo;
+      return rewardsInfo.data;
     } catch (error) {
       console.log(`fetching rewards info failed. ${error}`);
     }
