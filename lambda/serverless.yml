@@ -119,7 +119,7 @@ functions:
     timeout: 300
     description: Fetch APYs from TraderJoe website.
     events:
-      - schedule: rate(10 minutes)
+      - schedule: rate(12 minutes)
   sushiApyAggregator:
     handler: aggregators/apy.sushiApyAggregator
     memorySize: 2048

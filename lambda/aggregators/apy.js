@@ -424,7 +424,8 @@ const traderJoeApyAggregator = async (event) => {
 
       try {
         const tabs = await page.$$(".chakra-tabs__tab");
-        await tabs[4].click();
+        console.log(await (await tabs[6].getProperty('textContent')).jsonValue());
+        await tabs[6].click();
 
         await new Promise((resolve, reject) => setTimeout(resolve, 5000));
 
@@ -445,7 +446,7 @@ const traderJoeApyAggregator = async (event) => {
           }
         };
         await dynamoDb.update(params).promise();
-        await new Promise((resolve, reject) => setTimeout(resolve, 3000));
+        await new Promise((resolve, reject) => setTimeout(resolve, 15000));
       } catch (error) {
         console.log(error);
       }
