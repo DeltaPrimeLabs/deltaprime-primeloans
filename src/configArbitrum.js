@@ -125,9 +125,9 @@ export default {
         "arbSnrLLP": {name: "Senior", symbol: "arbSnrLLP", pid: 0, short: "Snr", decimals: 18, address: addresses.arbSnrLLP, debtCoverage: 0.83333333333, balanceMethod: "levelSnrBalance", groupIdentifier: 'STKD_SNR_LLP_GROUP', underlyingAssets: ['BTC', 'ETH', 'USDT', 'USDC'], link: 'https://app.level.finance/liquidity/senior-tranche/buy'},
     },
     GMX_V2_ASSETS_CONFIG: {
-        "GM_ETH_WETH_USDC": {name: "ETH-USDC", symbol: "GM_ETH_WETH_USDC", short: "GM", price: 1, decimals: 18, address: addresses.GM_ETH_WETH_USDC, debtCoverage: 0.83333333333, longToken: 'ETH', shortToken: 'USDC', indexTokenAddress: addresses.ETH, groupIdentifier: "GM_ETH_WETH_USDC_GROUP", link: 'https://app.gmx.io/#/stats'},
+        "GM_ETH_WETH_USDC": {name: "ETH-USDC", symbol: "GM_ETH_WETH_USDC", short: "GM", decimals: 18, address: addresses.GM_ETH_WETH_USDC, debtCoverage: 0.83333333333, longToken: 'ETH', shortToken: 'USDC', indexTokenAddress: addresses.ETH, groupIdentifier: "GM_ETH_WETH_USDC_GROUP", link: 'https://app.gmx.io/#/stats'},
         // "GM_BTC_WBTC_USDC": {name: "BTC-USDC", symbol: "GM_BTC_WBTC_USDC", short: "GM", price: 1, decimals: 18, address: addresses.GM_BTC_WBTC_USDC, debtCoverage: 0.83333333333, longToken: 'BTC', shortToken: 'USDC', indexTokenAddress: addresses.BTC, link: 'https://app.gmx.io/#/stats'},
-        // "GM_ARB_ARB_USDC": {name: "ARB-USDC", symbol: "GM_ARB_ARB_USDC", short: "GM", price: 1, decimals: 18, address: addresses.GM_ARB_ARB_USDC, debtCoverage: 0.83333333333, longToken: 'ARB', shortToken: 'USDC', indexTokenAddress: addresses.ARB, link: 'https://app.gmx.io/#/stats'},
+        "GM_ARB_ARB_USDC": {name: "ARB-USDC", symbol: "GM_ARB_ARB_USDC", short: "GM", logoExt: "png", decimals: 18, address: addresses.GM_ARB_ARB_USDC, debtCoverage: 0.83333333333, longToken: 'ARB', shortToken: 'USDC', indexTokenAddress: addresses.ARB, link: 'https://app.gmx.io/#/stats'},
         // "GM_UNI_UNI_USDC": {name: "UNI-USDC", symbol: "GM_UNI_UNI_USDC", short: "GM", price: 1, decimals: 18, address: addresses.GM_UNI_UNI_USDC, debtCoverage: 0.83333333333, longToken: 'UNI', shortToken: 'USDC', indexTokenAddress: addresses.UNI, link: 'https://app.gmx.io/#/stats'},
         // "GM_LINK_LINK_USDC": {name: "LINK-USDC", symbol: "GM_LINK_LINK_USDC", short: "GM", price: 1, decimals: 18, address: addresses.GM_LINK_LINK_USDC, debtCoverage: 0.83333333333, longToken: 'LINK', shortToken: 'USDC', indexTokenAddress: addresses.LINK, link: 'https://app.gmx.io/#/stats'},
     },
@@ -305,8 +305,8 @@ export default {
     gmxV2MarketUtilsAddress: "0x7ffF7ef2fc8Db5159B0046ad49d018A5aB40dB11",
     gmxV2OracleAddress: "0xa11B501c2dd83Acd29F6727570f2502FAaa617F2",
     gmxV2HighExecutionFee: 0,
-    gmxV2DepositCallbackGasLimit: 300000,
-    gmxV2WithdrawalCallbackGasLimit: 300000,
+    gmxV2DepositCallbackGasLimit: 200000,
+    gmxV2WithdrawalCallbackGasLimit: 200000,
     nativeToken: "ETH",
     SLIPPAGE_TOLERANCE: 0.03,
     dataProviderId: "redstone-arbitrum-prod",
@@ -316,4 +316,5 @@ export default {
     readRpcUrl: "https://arbitrum-mainnet.core.chainstack.com/9a30fb13b2159a76c8e143c52d5579bf",
     EMAIL_REGEX: /(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])/,
     refreshDelay: 2000,
+    gmxV2RefreshDelay: 4000,
 }

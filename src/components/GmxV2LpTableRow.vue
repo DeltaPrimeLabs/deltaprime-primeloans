@@ -33,10 +33,10 @@
         <template>
           <div class="table__cell composition">
             <img class="asset__icon" :src="getAssetIcon(lpToken.longToken)">{{
-              formatTokenBalance(longTokenAmount ? longTokenAmount : 0, 4, true)
+              formatTokenBalance(longTokenAmount ? longTokenAmount : 0, 6, true)
             }}
             <img class="asset__icon" :src="getAssetIcon(lpToken.shortToken)">{{
-              formatTokenBalance(shortTokenAmount ? shortTokenAmount : 0, 4, true)
+              formatTokenBalance(shortTokenAmount ? shortTokenAmount : 0, 6, true)
             }}
           </div>
           <div class="double-value__usd">
@@ -63,9 +63,9 @@
         {{ formatTvl(tvl) }}
       </div>
 
-      <div class="table__cell capacity">
-        <bar-gauge-beta v-if="lpToken.maxExposure" :min="0" :max="lpToken.maxExposure" :value="Math.max(lpToken.currentExposure, 0.001)" v-tooltip="{content: `${lpToken.currentExposure ? lpToken.currentExposure.toFixed(2) : 0} ($${lpToken.currentExposure ? (lpToken.currentExposure * this.lpToken.price).toFixed(2) : 0}) out of ${lpToken.maxExposure} ($${lpToken.maxExposure ? (lpToken.maxExposure * this.lpToken.price).toFixed(2) : 0}) is currently used.`, classes: 'info-tooltip'}" :width="80"></bar-gauge-beta>
-      </div>
+<!--      <div class="table__cell capacity">-->
+<!--        <bar-gauge-beta v-if="lpToken.maxExposure" :min="0" :max="lpToken.maxExposure" :value="Math.max(lpToken.currentExposure, 0.001)" v-tooltip="{content: `${lpToken.currentExposure ? lpToken.currentExposure.toFixed(2) : 0} ($${lpToken.currentExposure ? (lpToken.currentExposure * this.lpToken.price).toFixed(2) : 0}) out of ${lpToken.maxExposure} ($${lpToken.maxExposure ? (lpToken.maxExposure * this.lpToken.price).toFixed(2) : 0}) is currently used.`, classes: 'info-tooltip'}" :width="80"></bar-gauge-beta>-->
+<!--      </div>-->
 
       <div class="table__cell table__cell--double-value apr" v-bind:class="{'apr--with-warning': lpToken.aprWarning}">
         {{ apr / 100 | percent }}
@@ -162,6 +162,7 @@ import {
   ESTIMATED_GAS_FEE_MULTIPLIER_FACTOR, WITHDRAWAL_GAS_LIMIT_KEY
 } from "../integrations/contracts/dataStore";
 import zapLong from "./zaps-tiles/ZapLong.vue";
+import {hashData} from "../utils/blockchain";
 
 export default {
   name: 'GmxV2LpTableRow',
@@ -504,14 +505,16 @@ export default {
 
       //TODO: use multicall
 
+      //TODO: withdraw check
+
       const estimatedGasLimit = isDeposit ?
-          fromWei(await dataStore.getUint(DEPOSIT_GAS_LIMIT_KEY)) + config.gmxV2DepositCallbackGasLimit
+          fromWei(await dataStore.getUint(this.depositGasLimitKey(true))) + config.gmxV2DepositCallbackGasLimit
           :
-          fromWei(await dataStore.getUint(WITHDRAWAL_GAS_LIMIT_KEY)) + config.gmxV2DepositCallbackGasLimit;
+          fromWei(await dataStore.getUint(hashData(["bytes32"], [WITHDRAWAL_GAS_LIMIT_KEY]))) + config.gmxV2DepositCallbackGasLimit;
 
       let baseGasLimit = fromWei(await dataStore.getUint(ESTIMATED_GAS_FEE_BASE_AMOUNT));
 
-      let multiplierFactor = fromWei(await dataStore.getUint(ESTIMATED_GAS_FEE_MULTIPLIER_FACTOR)) / 9e12;
+      let multiplierFactor = formatUnits(await dataStore.getUint(ESTIMATED_GAS_FEE_MULTIPLIER_FACTOR), 30);
 
       const adjustedGasLimit = baseGasLimit + estimatedGasLimit * multiplierFactor;
 
@@ -519,7 +522,8 @@ export default {
 
       const feeTokenAmount = adjustedGasLimit * gasPrice;
 
-      return feeTokenAmount;
+      //TODO: fix fee calculation
+      return feeTokenAmount * 100;
     },
 
     async openAddFromWalletModal() {
@@ -638,7 +642,7 @@ export default {
       modalInstance.initiate();
 
       const executionFee = await this.calculateExecutionFee(true);
-      modalInstance.info = `<div>Execution fee: ${executionFee.toFixed(6)}${config.nativeToken}</div>`;
+      modalInstance.info = `<div>Execution fee: ${executionFee.toFixed(6)}${config.nativeToken}. Unused gas will be returned to your account.</div>`;
 
       modalInstance.queryMethods = {
         GmxV2: this.gmxV2Query(),
@@ -658,7 +662,7 @@ export default {
           sourceAmount: swapEvent.sourceAmount,
           minGmAmount: swapEvent.targetAmount,
           executionFee: executionFee,
-          method: `gmxV2Stake${this.capitalize(this.lpToken.longToken)}${this.capitalize(this.lpToken.shortToken)}`
+          method: `deposit${this.capitalize(this.lpToken.longToken)}${this.capitalize(this.lpToken.shortToken)}GmxV2`
         };
 
         this.handleTransaction(this.addLiquidityGmxV2, {addLiquidityRequest: addLiquidityRequest}, () => {
@@ -712,7 +716,7 @@ export default {
       modalInstance.swapDex = 'GmxV2';
 
       const executionFee = await this.calculateExecutionFee(false);
-      modalInstance.info = `<div>Execution fee: ${executionFee.toFixed(6)}${config.nativeToken}</div>`;
+      modalInstance.info = `<div>Execution fee: ${executionFee.toFixed(6)}${config.nativeToken}. Unused gas will be returned to your account.</div>`;
 
       modalInstance.$on('SWAP_TO_MULTIPLE', swapEvent => {
 
@@ -723,7 +727,8 @@ export default {
           gmAmount: swapEvent.sourceAmount,
           minLongAmount: swapEvent.targetAmounts[0],
           minShortAmount: swapEvent.targetAmounts[1],
-          method: `gmxV2Unstake${this.capitalize(this.lpToken.longToken)}${this.capitalize(this.lpToken.shortToken)}`
+          executionFee: executionFee,
+          method: `withdraw${this.capitalize(this.lpToken.longToken)}${this.capitalize(this.lpToken.shortToken)}GmxV2`
         };
 
         this.handleTransaction(this.removeLiquidityGmxV2, {removeLiquidityRequest: removeLiquidityRequest}, () => {
@@ -911,6 +916,10 @@ export default {
 
       this.tvl = longTotalWorth + shortTotalWorth;
     },
+
+    depositGasLimitKey(singleToken) {
+      return hashData(["bytes32", "bool"], [DEPOSIT_GAS_LIMIT_KEY, singleToken]);
+    }
   },
 };
 </script>
@@ -928,7 +937,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: repeat(2, 1fr) 180px 110px 100px 120px 100px 100px 60px 80px 22px;
+    grid-template-columns: repeat(2, 1fr) 240px 130px 100px 120px 100px 60px 80px 22px;
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;

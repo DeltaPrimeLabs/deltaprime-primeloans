@@ -430,7 +430,7 @@ export default {
     },
     setupGmxV2LpTableHeaderConfig() {
       this.gmxV2LpTableHeaderConfig = {
-        gridTemplateColumns: 'repeat(2, 1fr) 180px 110px 100px 120px 100px 100px 60px 80px 22px',
+        gridTemplateColumns: 'repeat(2, 1fr) 240px 130px 100px 120px 100px 60px 80px 22px',
         cells: [
           {
             label: 'GM Token',
@@ -468,15 +468,15 @@ export default {
             tooltip: `The Total Value Locked (TVL) in the underlying pool.<br>
                       <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/pools#tvl' target='_blank'>More information</a>.`
           },
-          {
-            label: 'Capacity',
-            sortable: false,
-            class: 'capacity',
-            id: 'capacity',
-            tooltip: `The global maximum capacity of this LLP. When the capacity is at 100%, this asset can not be created or deposited.
-            <a href='https://docs.deltaprime.io/protocol/security/token-exposure-protection' target='_blank'>More information</a>.
-            `
-          },
+          // {
+          //   label: 'Capacity',
+          //   sortable: false,
+          //   class: 'capacity',
+          //   id: 'capacity',
+          //   tooltip: `The global maximum capacity of this LLP. When the capacity is at 100%, this asset can not be created or deposited.
+          //   <a href='https://docs.deltaprime.io/protocol/security/token-exposure-protection' target='_blank'>More information</a>.
+          //   `
+          // },
           {
             label: 'Min. APR',
             sortable: false,
