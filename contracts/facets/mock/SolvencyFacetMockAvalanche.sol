@@ -23,8 +23,6 @@ contract SolvencyFacetMockAvalanche is SolvencyFacetProdAvalanche, AuthorisedMoc
     }
 
     function validateTimestamp(uint256 receivedTimestampMilliseconds) public view virtual override {
-        if (receivedTimestampMilliseconds < MIN_TIMESTAMP_MILLISECONDS) {
-            revert TimestampIsNotValid();
-        }
+        // Always pass
     }
 }
