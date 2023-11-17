@@ -3,10 +3,6 @@
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
-import "../interfaces/facets/avalanche/IGLPRewarder.sol";
-import "../interfaces/facets/avalanche/IRewardRouterV2.sol";
-import "../interfaces/facets/avalanche/IRewardTracker.sol";
 import "../ReentrancyGuardKeccak.sol";
 import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 import "../OnlyOwnerOrInsolvent.sol";
@@ -71,14 +67,9 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
 
 
     function _deposit(address gmToken, address depositedToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) internal nonReentrant noBorrowInTheSameBlock onlyOwner {
-//        address longToken = marketToLongToken(gmToken);
-//        address shortToken = marketToShortToken(gmToken);
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
-        IERC20(depositedToken).approve(getGMX_V2_ROUTER(), tokenAmount);
-
         bytes[] memory data = new bytes[](3);
-
         data[0] = abi.encodeWithSelector(
             IGmxV2Router.sendWnt.selector,
             getGMX_V2_DEPOSIT_VAULT(),
@@ -108,6 +99,7 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
             })
         );
 
+        IERC20(depositedToken).approve(getGMX_V2_ROUTER(), tokenAmount);
         BasicMulticall(getGMX_V2_EXCHANGE_ROUTER()).multicall{ value: msg.value }(data);
 
         // Simulate solvency check
@@ -122,29 +114,27 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
         // Freeze account
         DiamondStorageLib.freezeAccount(gmToken);
 
-        // Reset assets exposure
-        bytes32[] memory resetExposureAssets = new bytes32[](3);
-        resetExposureAssets[0] = tokenManager.tokenAddressToSymbol(gmToken);
-        resetExposureAssets[1] = tokenManager.tokenAddressToSymbol(marketToLongToken(gmToken));
-        resetExposureAssets[2] = tokenManager.tokenAddressToSymbol(marketToShortToken(gmToken));
-        SolvencyMethods._resetPrimeAccountExposureForChosenAssets(resetExposureAssets);
+        // Update exposures
+        tokenManager.decreaseProtocolExposure(
+            tokenManager.tokenAddressToSymbol(depositedToken),
+            tokenAmount * 1e18 / 10**IERC20Metadata(depositedToken).decimals()
+        );
+        tokenManager.increaseProtocolExposure(
+            tokenManager.tokenAddressToSymbol(gmToken),
+            minGmAmount * 1e18 / 10**IERC20Metadata(gmToken).decimals()
+        );
 
-        // Remove long/short token(s) from owned assets if whole balance(s) was/were used
-        if(IERC20Metadata(marketToLongToken(gmToken)).balanceOf(address(this)) == 0){
-            DiamondStorageLib.removeOwnedAsset(tokenManager.tokenAddressToSymbol(marketToLongToken(gmToken)));
-        }
-        if(IERC20Metadata(marketToShortToken(gmToken)).balanceOf(address(this)) == 0){
-            DiamondStorageLib.removeOwnedAsset(tokenManager.tokenAddressToSymbol(marketToShortToken(gmToken)));
+        // Update owned assets
+        if(IERC20Metadata(depositedToken).balanceOf(address(this)) == 0){
+            DiamondStorageLib.removeOwnedAsset(tokenManager.tokenAddressToSymbol(depositedToken));
         }
     }
 
 
     function _withdraw(address gmToken, uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) internal nonReentrant noBorrowInTheSameBlock onlyOwnerNoStaySolventOrInsolvent {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+
         bytes[] memory data = new bytes[](3);
-
-        IERC20(gmToken).approve(getGMX_V2_ROUTER(), gmAmount);
-
         data[0] = abi.encodeWithSelector(
             IGmxV2Router.sendWnt.selector,
             getGMX_V2_WITHDRAWAL_VAULT(),
@@ -175,6 +165,7 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
             })
         );
 
+        IERC20(gmToken).approve(getGMX_V2_ROUTER(), gmAmount);
         BasicMulticall(getGMX_V2_EXCHANGE_ROUTER()).multicall{ value: msg.value }(data);
 
         // Simulate solvency check
@@ -199,12 +190,19 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
         // Freeze account
         DiamondStorageLib.freezeAccount(gmToken);
 
-        // Reset assets exposure
-        bytes32[] memory resetExposureAssets = new bytes32[](3);
-        resetExposureAssets[0] = tokenManager.tokenAddressToSymbol(gmToken);
-        resetExposureAssets[1] = tokenManager.tokenAddressToSymbol(marketToLongToken(gmToken));
-        resetExposureAssets[2] = tokenManager.tokenAddressToSymbol(marketToShortToken(gmToken));
-        SolvencyMethods._resetPrimeAccountExposureForChosenAssets(resetExposureAssets);
+        // Update exposures
+        tokenManager.decreaseProtocolExposure(
+            tokenManager.tokenAddressToSymbol(gmToken),
+            gmAmount * 1e18 / 10**IERC20Metadata(gmToken).decimals()
+        );
+        tokenManager.increaseProtocolExposure(
+            tokenManager.tokenAddressToSymbol(marketToLongToken(gmToken)),
+            minLongTokenAmount * 1e18 / 10**IERC20Metadata(marketToLongToken(gmToken)).decimals()
+        );
+        tokenManager.increaseProtocolExposure(
+            tokenManager.tokenAddressToSymbol(marketToShortToken(gmToken)),
+            minShortTokenAmount * 1e18 / 10**IERC20Metadata(marketToShortToken(gmToken)).decimals()
+        );
 
         // Remove GM token from owned assets if whole balance was used
         if(IERC20Metadata(gmToken).balanceOf(address(this)) == 0){
@@ -213,14 +211,8 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
     }
 
     function afterDepositExecution(bytes32 key, Deposit.Props memory deposit, EventUtils.EventLogData memory eventData) external onlyGmxV2Keeper nonReentrant override {
-        // Set asset exposure
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        bytes32[] memory resetExposureAssets = new bytes32[](3);
-        resetExposureAssets[0] = tokenManager.tokenAddressToSymbol(deposit.addresses.market);
-        resetExposureAssets[1] = tokenManager.tokenAddressToSymbol(marketToLongToken(deposit.addresses.market));
-        resetExposureAssets[2] = tokenManager.tokenAddressToSymbol(marketToShortToken(deposit.addresses.market));
-        SolvencyMethods._setPrimeAccountExposureForChosenAssets(resetExposureAssets);
-        
+
         // Add owned assets
         if(IERC20Metadata(deposit.addresses.market).balanceOf(address(this)) > 0){
             DiamondStorageLib.addOwnedAsset(tokenManager.tokenAddressToSymbol(deposit.addresses.market), deposit.addresses.market);
@@ -231,15 +223,9 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
     }
 
     function afterDepositCancellation(bytes32 key, Deposit.Props memory deposit, EventUtils.EventLogData memory eventData) external onlyGmxV2Keeper nonReentrant override {
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         address longToken = marketToLongToken(deposit.addresses.market);
         address shortToken = marketToShortToken(deposit.addresses.market);
-        // Set asset exposure
-        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        bytes32[] memory resetExposureAssets = new bytes32[](3);
-        resetExposureAssets[0] = tokenManager.tokenAddressToSymbol(deposit.addresses.market);
-        resetExposureAssets[1] = tokenManager.tokenAddressToSymbol(longToken);
-        resetExposureAssets[2] = tokenManager.tokenAddressToSymbol(shortToken);
-        SolvencyMethods._setPrimeAccountExposureForChosenAssets(resetExposureAssets);
 
         // Add owned assets
         if(IERC20Metadata(longToken).balanceOf(address(this)) > 0){
@@ -253,15 +239,9 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
     }
 
     function afterWithdrawalExecution(bytes32 key, Withdrawal.Props memory withdrawal, EventUtils.EventLogData memory eventData) external onlyGmxV2Keeper nonReentrant override {
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         address longToken = marketToLongToken(withdrawal.addresses.market);
         address shortToken = marketToShortToken(withdrawal.addresses.market);
-        // Set asset exposure
-        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        bytes32[] memory resetExposureAssets = new bytes32[](3);
-        resetExposureAssets[0] = tokenManager.tokenAddressToSymbol(withdrawal.addresses.market);
-        resetExposureAssets[1] = tokenManager.tokenAddressToSymbol(longToken);
-        resetExposureAssets[2] = tokenManager.tokenAddressToSymbol(shortToken);
-        SolvencyMethods._setPrimeAccountExposureForChosenAssets(resetExposureAssets);
 
         // Add owned assets
         if(IERC20Metadata(longToken).balanceOf(address(this)) > 0){
@@ -275,13 +255,7 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
     }
 
     function afterWithdrawalCancellation(bytes32 key, Withdrawal.Props memory withdrawal, EventUtils.EventLogData memory eventData) external onlyGmxV2Keeper nonReentrant override {
-        // Set asset exposure
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        bytes32[] memory resetExposureAssets = new bytes32[](3);
-        resetExposureAssets[0] = tokenManager.tokenAddressToSymbol(withdrawal.addresses.market);
-        resetExposureAssets[1] = tokenManager.tokenAddressToSymbol(marketToLongToken(withdrawal.addresses.market));
-        resetExposureAssets[2] = tokenManager.tokenAddressToSymbol(marketToShortToken(withdrawal.addresses.market));
-        SolvencyMethods._setPrimeAccountExposureForChosenAssets(resetExposureAssets);
 
         // Add owned assets
         if(IERC20Metadata(withdrawal.addresses.market).balanceOf(address(this)) > 0){

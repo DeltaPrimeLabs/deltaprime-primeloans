@@ -218,20 +218,6 @@ contract SolvencyMethods is DiamondHelper, ProxyConnector {
         );
     }
 
-    function _resetPrimeAccountExposureForChosenAssets(bytes32[] memory assetNames) public {
-        proxyDelegateCalldata(
-            DiamondHelper._getFacetAddress(AssetsExposureController.resetPrimeAccountExposureForChosenAssets.selector),
-            abi.encodeWithSelector(AssetsExposureController.resetPrimeAccountExposureForChosenAssets.selector, assetNames)
-        );
-    }
-
-    function _setPrimeAccountExposureForChosenAssets(bytes32[] memory assetNames) public {
-        proxyDelegateCalldata(
-            DiamondHelper._getFacetAddress(AssetsExposureController.setPrimeAccountExposureForChosenAssets.selector),
-            abi.encodeWithSelector(AssetsExposureController.setPrimeAccountExposureForChosenAssets.selector, assetNames)
-        );
-    }
-
     // This function executes AssetsExposureController.decreaseAssetsExposure()
     function _resetPrimeAccountAssetsExposure() public {
         proxyDelegateCalldata(

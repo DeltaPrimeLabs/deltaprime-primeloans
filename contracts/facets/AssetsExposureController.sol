@@ -10,23 +10,6 @@ import "../interfaces/IStakingPositions.sol";
 import "../lib/local/DeploymentConstants.sol";
 
 contract AssetsExposureController {
-
-    function resetPrimeAccountExposureForChosenAssets(bytes32[] memory assetsNames) payable external {
-        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        for(uint i=0; i<assetsNames.length; i++){
-            IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(assetsNames[i], true));
-            tokenManager.decreaseProtocolExposure(assetsNames[i], token.balanceOf(address(this)) * 1e18 / 10**token.decimals());
-        }
-    }
-
-    function setPrimeAccountExposureForChosenAssets(bytes32[] memory assetsNames) payable external {
-        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        for(uint i=0; i<assetsNames.length; i++){
-            IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(assetsNames[i], true));
-            tokenManager.increaseProtocolExposure(assetsNames[i], token.balanceOf(address(this)) * 1e18 / 10**token.decimals());
-        }
-    }
-
     function resetPrimeAccountAssetsExposure() external {
         bytes32[] memory ownedAssets = DeploymentConstants.getAllOwnedAssets();
         IStakingPositions.StakedPosition[] storage positions = DiamondStorageLib.stakedPositions();
