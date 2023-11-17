@@ -9,7 +9,7 @@
         <div class="top-info__label">APY:</div>
         <div class="top-info__value">{{ loanAPY | percent }}</div>
         <div class="top-info__divider"></div>
-        <div class="top-info__label">Available in pool:</div>
+        <div class="top-info__label">Available to borrow:</div>
         <div class="top-info__value">{{ (poolTVL * maxUtilisation) - totalBorrowedFromPool | smartRound }}<span class="top-info__currency"> {{
             asset.symbol
           }}</span></div>
@@ -225,7 +225,7 @@ export default {
         {
           validate: (value) => {
             if (this.totalBorrowedFromPool + this.value > this.maxUtilisation * this.poolTVL) {
-              return `You can borrow up to ${this.maxUtilisation * 100}% of this pool's TVL`;
+              return 'The borrowing cap has been reached. You can invite new depositors to join DeltaPrime\'s Savings side to help increase the cap.';
             }
           }
         }
