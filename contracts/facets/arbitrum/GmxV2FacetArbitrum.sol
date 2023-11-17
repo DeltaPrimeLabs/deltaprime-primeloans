@@ -158,6 +158,7 @@ contract GmxV2FacetArbitrum is GmxV2Facet {
             msg.sender == 0x000000F406CA147030BE7069149e4a7423E3A264 ||
             msg.sender == 0x5D80a1c0a5084163F1D2620c1B1F43209cd4dB12 ||
             msg.sender == 0xb79c2A75cd9073d68E75ddF71D53C07747Df7933 ||
+            msg.sender == 0xE4a6E69E445eB9462FB3E6CB8386C4cCe0832346 ||
             msg.sender == 0xb79c2A75cd9073d68E75ddF71D53C07747Df7933
         ){
             _;
