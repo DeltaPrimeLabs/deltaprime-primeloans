@@ -17,7 +17,7 @@ Chart.controllers.LiquidityBarChart = Chart.controllers.bar.extend({
 
       ctx.save();
       ctx.beginPath();
-      ctx.moveTo(activeLineX, topY + 24);
+      ctx.moveTo(activeLineX, topY + 4);
       ctx.lineTo(activeLineX, bottomY);
       ctx.lineWidth = 1.5;
       ctx.strokeStyle = getThemeVariable('--chart__active-point-line-color');
@@ -27,7 +27,7 @@ Chart.controllers.LiquidityBarChart = Chart.controllers.bar.extend({
       ctx.font = '14px Montserrat'
       ctx.textAlign = "center";
       ctx.fillStyle = getThemeVariable('--chart__active-point-label-color');
-      ctx.fillText(`Active (${this.chart.config.options.currentPrice.toFixed(8)})`, activeLineX, topY + 16)
+      ctx.fillText(`Active (${this.chart.config.options.currentPrice.toFixed(8)})`, activeLineX, topY - 4)
     }
   }
 })
@@ -55,6 +55,8 @@ export default {
   },
   methods: {
     rerender() {
+      this.chartOptions.currentPriceIndex = this.currentPriceIndex
+      this.chartOptions.currentPrice = this.currentPrice
       const newData = []
       const newBackgroundColors = []
       const newHoverColors = []
@@ -109,6 +111,11 @@ export default {
         labels: []
       },
       chartOptions: {
+        layout: {
+          padding: {
+            top: 18,
+          }
+        },
         currentPriceIndex: this.currentPriceIndex,
         currentPrice: this.currentPrice,
         height: 256,
@@ -134,7 +141,8 @@ export default {
             },
             gridLines: {
               color: "rgba(0, 0, 0, 0)",
-              drawBorder: false
+              drawBorder: false,
+              drawTicks: true,
             }
           }],
           yAxes: [{
@@ -147,7 +155,11 @@ export default {
             },
             gridLines: {
               drawTicks: false,
-              drawBorder: false
+              color: "transparent",
+              display: true,
+              drawBorder: false,
+              zeroLineColor: "#ccc",
+              zeroLineWidth: 1
             }
           }]
         },

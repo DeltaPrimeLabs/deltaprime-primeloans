@@ -3,7 +3,7 @@
       class="info-icon"
       :icon-src="'src/assets/icons/info.svg'"
       :size="$props.size"
-      v-tooltip="$props.tooltip"
+      v-tooltip="{...$props.tooltip, trigger: 'hover click'}"
 
   ></DeltaIcon>
 </template>
