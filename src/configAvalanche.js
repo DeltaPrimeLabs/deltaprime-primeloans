@@ -335,7 +335,8 @@ export default {
                 debtCoverage: 0.83333333333,
                 strategy: 'GMX',
                 rewardTokens: ['GLP'],
-                refreshDelay: 60000
+                refreshDelay: 60000,
+                banner: 'Yield Yak has temporarily paused deposits in this farm due to the GLP cap.',
             },
         ],
         PNG_AVAX_USDC_LP: [
