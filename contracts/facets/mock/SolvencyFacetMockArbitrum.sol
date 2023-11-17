@@ -10,8 +10,6 @@ contract SolvencyFacetMockArbitrum is SolvencyFacetProdArbitrum, AuthorisedMockS
 
     uint256 internal constant MIN_TIMESTAMP_MILLISECONDS = 1654353400000;
 
-    error TimestampIsNotValid();
-
     function getAuthorisedSignerIndex(address signerAddress)
     public
     view
@@ -23,8 +21,6 @@ contract SolvencyFacetMockArbitrum is SolvencyFacetProdArbitrum, AuthorisedMockS
     }
 
     function validateTimestamp(uint256 receivedTimestampMilliseconds) public view virtual override {
-        if (receivedTimestampMilliseconds < MIN_TIMESTAMP_MILLISECONDS) {
-            revert TimestampIsNotValid();
-        }
+        // Always pass
     }
 }
