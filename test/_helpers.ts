@@ -684,8 +684,6 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         "AssetsExposureController",
         diamondAddress,
         [
-            'resetPrimeAccountExposureForChosenAssets',
-            'setPrimeAccountExposureForChosenAssets',
             'resetPrimeAccountAssetsExposure',
             'setPrimeAccountAssetsExposure',
         ],
