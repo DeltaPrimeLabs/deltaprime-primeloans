@@ -78,14 +78,17 @@ const sPrimeCalculator = async (event) => {
     availablePools.map(async (pool) => {
       const tokenSymbol = getSymbolFromPoolAddress(network, pool.id);
       let offset = 0;
-      let lastTimestamp;
+      let lastTimestamp = Date.now();
+      let lastPoolTvl = 0;
 
       if (sPrimeValueArray.length > 0 &&
           sPrimeValueArray[0][tokenSymbol] &&
           sPrimeValueArray[0][tokenSymbol].offset &&
-          sPrimeValueArray[0][tokenSymbol].timestamp) {
+          sPrimeValueArray[0][tokenSymbol].timestamp &&
+          sPrimeValueArray[0][tokenSymbol].curPoolTvl) {
         offset = sPrimeValueArray[0][tokenSymbol].offset;
         lastTimestamp = sPrimeValueArray[0][tokenSymbol].timestamp;
+        lastPoolTvl = sPrimeValueArray[0][tokenSymbol].curPoolTvl;
       }
 
       const poolTransfers = await fetchTransfersForPool(network, pool.id, offset);
@@ -115,7 +118,7 @@ const sPrimeCalculator = async (event) => {
 
         const tokenPrice = await getHistoricalTokenPrice(transfer.tokenSymbol, transfer.timestamp)
 
-        const prevTvlInUsd = i > 0 ? tokenPrice * formatUnits(poolTransfers[i - 1].curPoolTvl, Number(decimals)) : 0;
+        const prevTvlInUsd = tokenPrice * (i > 0 ? formatUnits(poolTransfers[i - 1].curPoolTvl, Number(decimals)) : offset > 0 ? lastPoolTvl : 0);
 
         // pool APR for previous timestamp
         let prevApr;
@@ -138,7 +141,7 @@ const sPrimeCalculator = async (event) => {
           };
         }
 
-        let timeInterval = i > 0 ? transfer.timestamp - poolTransfers[i - 1].timestamp : 0;
+        let timeInterval = i > 0 ? transfer.timestamp - poolTransfers[i - 1].timestamp : offset > 0 ? transfer.timestamp - lastTimestamp : 0;
         if (poolTransfersLen == 0) {
           timeInterval = transfer.timestamp - lastTimestamp;
         }
@@ -166,6 +169,7 @@ const sPrimeCalculator = async (event) => {
             }
             sPrimeValue[depositor.id][transfer.tokenSymbol]['timestamp'] = transfer.timestamp;
             sPrimeValue[depositor.id][transfer.tokenSymbol]['offset'] = offset + poolTransfersLen;
+            sPrimeValue[depositor.id][transfer.tokenSymbol]['curPoolTvl'] = transfer.curPoolTvl;
           }
         );
 
@@ -202,4 +206,3 @@ const sPrimeCalculator = async (event) => {
 };
 
 module.exports.handler = sPrimeCalculator;
-sPrimeCalculator();
