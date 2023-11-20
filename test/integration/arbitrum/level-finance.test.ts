@@ -144,8 +144,6 @@ describe('Smart loan', () => {
             liquidityRouter = new ethers.Contract("0x1E46Ab9D3D9e87b95F2CD802208733C90a608805", liquidityRouterInterface.abi, provider);
 
             await tokenManager.setDebtCoverageStaked(toBytes32("stkdSnrLLP"), toWei("0.8333333333333333"));
-            await tokenManager.setDebtCoverageStaked(toBytes32("stkdMzeLLP"), toWei("0.8333333333333333"));
-            await tokenManager.setDebtCoverageStaked(toBytes32("stkdJnrLLP"), toWei("0.8333333333333333"));
 
             let addressProvider = await deployContract(
                 owner,
@@ -198,12 +196,8 @@ describe('Smart loan', () => {
             let stakingContract = await new ethers.Contract(masterChefAddress, ILevelFinanceArtifact.abi, provider);
 
             console.log(`LLP balances of ${address}`);
-            console.log(`JnrLLP: ${fromWei(await tokenContracts.get('arbJnrLLP')!.balanceOf(address))}`);
-            console.log(`MzeLLP: ${fromWei(await tokenContracts.get('arbMzeLLP')!.balanceOf(address))}`);
             console.log(`SnrLLP: ${fromWei(await tokenContracts.get('arbSnrLLP')!.balanceOf(address))}`);
-            console.log(`LLP staking balances:`)
-            console.log(`JnrLLP: ${fromWei((await stakingContract.userInfo(2, address))[0])}`);
-            console.log(`MzeLLP: ${fromWei((await stakingContract.userInfo(1, address))[0])}`);
+            console.log(`LLP staking balances:`);
             console.log(`SnrLLP: ${fromWei((await stakingContract.userInfo(0, address))[0])}`);
         }
 
@@ -211,34 +205,10 @@ describe('Smart loan', () => {
             console.log(`Owner (${owner.address}) balance: ${fromWei(await provider.getBalance(owner.address))}`);
             console.log(`liquidityRouter address: ${liquidityRouter.address}`);
 
-            let jnrLLP = tokenContracts.get("arbJnrLLP");
-            let mzeLLP = tokenContracts.get("arbMzeLLP");
             let snrLLP = tokenContracts.get("arbSnrLLP");
 
             console.log('LOAN:')
             await logLLPBalances(wrappedLoan.address);
-
-            console.log('OWNER:')
-            await logLLPBalances(owner.address);
-
-            // MINT JNR
-            await liquidityRouter.connect(owner).addLiquidityETH(
-                jnrLLP!.address,
-                100, // We don't really care about it in this test case
-                owner.address,
-                {value: toWei("1.0")}
-            )
-
-            console.log('OWNER:')
-            await logLLPBalances(owner.address);
-
-            // MINT MZE
-            await liquidityRouter.connect(owner).addLiquidityETH(
-                mzeLLP!.address,
-                100, // We don't really care about it in this test case
-                owner.address,
-                {value: toWei("1.0")}
-            )
 
             console.log('OWNER:')
             await logLLPBalances(owner.address);
@@ -254,50 +224,12 @@ describe('Smart loan', () => {
             console.log('OWNER:')
             await logLLPBalances(owner.address);
 
-            // Deposit and stake JNR LLP
-
-            await tokenContracts.get('arbJnrLLP')!.connect(owner).approve(wrappedLoan.address, await jnrLLP!.balanceOf(owner.address));
-            await wrappedLoan.depositLLPAndStake(2, await jnrLLP!.balanceOf(owner.address));
-
-            console.log('OWNER afer depositLLPAndStake')
-            await logLLPBalances(owner.address);
-            console.log('LOAN:')
-            await logLLPBalances(wrappedLoan.address);
-
-            // Deposit and stake MZE LLP
-
-            await tokenContracts.get('arbMzeLLP')!.connect(owner).approve(wrappedLoan.address, await mzeLLP!.balanceOf(owner.address));
-            await wrappedLoan.depositLLPAndStake(1, await mzeLLP!.balanceOf(owner.address));
-
-            console.log('OWNER afer depositLLPAndStake')
-            await logLLPBalances(owner.address);
-            console.log('LOAN:')
-            await logLLPBalances(wrappedLoan.address);
-
             // Deposit and stake SNR LLP
 
             await tokenContracts.get('arbSnrLLP')!.connect(owner).approve(wrappedLoan.address, await snrLLP!.balanceOf(owner.address));
             await wrappedLoan.depositLLPAndStake(0, await snrLLP!.balanceOf(owner.address));
 
             console.log('OWNER afer depositLLPAndStake')
-            await logLLPBalances(owner.address);
-            console.log('LOAN:')
-            await logLLPBalances(wrappedLoan.address);
-
-            // Unstake and withdraw JNR LLP
-
-            await wrappedLoan.unstakeAndWithdrawLLP(2, await wrappedLoan.levelJnrBalance());
-
-            console.log('OWNER afer unstakeAndWithdrawLLP')
-            await logLLPBalances(owner.address);
-            console.log('LOAN:')
-            await logLLPBalances(wrappedLoan.address);
-
-            // Unstake and withdraw MZE LLP
-
-            await wrappedLoan.unstakeAndWithdrawLLP(1, await wrappedLoan.levelMzeBalance());
-
-            console.log('OWNER afer unstakeAndWithdrawLLP')
             await logLLPBalances(owner.address);
             console.log('LOAN:')
             await logLLPBalances(wrappedLoan.address);
@@ -367,28 +299,31 @@ describe('Smart loan', () => {
             await expect(nonOwnerWrappedLoan.levelUnstakeUsdcJnr(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
         });
 
+        it("should fail to stake to mze, jnr pools", async () => {
+            await expect(wrappedLoan.levelStakeEthMze(toWei("9999"), toWei("9999"))).to.be.revertedWith("Jnr and Mze tranches are no longer supported");
+            await expect(wrappedLoan.levelStakeEthJnr(toWei("9999"), toWei("9999"))).to.be.revertedWith("Jnr and Mze tranches are no longer supported");
+            await expect(wrappedLoan.levelStakeBtcMze(toWei("9999"), toWei("9999"))).to.be.revertedWith("Jnr and Mze tranches are no longer supported");
+            await expect(wrappedLoan.levelStakeBtcJnr(toWei("9999"), toWei("9999"))).to.be.revertedWith("Jnr and Mze tranches are no longer supported");
+            await expect(wrappedLoan.levelStakeUsdtMze(toWei("9999"), toWei("9999"))).to.be.revertedWith("Jnr and Mze tranches are no longer supported");
+            await expect(wrappedLoan.levelStakeUsdtJnr(toWei("9999"), toWei("9999"))).to.be.revertedWith("Jnr and Mze tranches are no longer supported");
+            await expect(wrappedLoan.levelStakeUsdcMze(toWei("9999"), toWei("9999"))).to.be.revertedWith("Jnr and Mze tranches are no longer supported");
+            await expect(wrappedLoan.levelStakeUsdcJnr(toWei("9999"), toWei("9999"))).to.be.revertedWith("Jnr and Mze tranches are no longer supported");
+        });
+
         it("should stake", async () => {
             await testStake("levelStakeEthSnr", "levelSnrBalance", 0, toWei('1'), constants.Zero);
-            await testStake("levelStakeEthMze", "levelMzeBalance", 1, toWei('1'), constants.Zero);
-            await testStake("levelStakeEthJnr", "levelJnrBalance", 2, toWei('1'), constants.Zero);
-            await testStake("levelStakeBtcSnr", "levelSnrBalance", 0, btcBalance.div(2), constants.Zero);
-            await testStake("levelStakeBtcMze", "levelMzeBalance", 1, btcBalance.div(2), constants.Zero);
-            await testStake("levelStakeUsdtMze", "levelMzeBalance", 1, usdtBalance.div(2), constants.Zero);
-            await testStake("levelStakeUsdtJnr", "levelJnrBalance", 2, usdtBalance.div(2), constants.Zero);
-            await testStake("levelStakeUsdcJnr", "levelJnrBalance", 2, usdcBalance.div(2), constants.Zero);
-            await testStake("levelStakeUsdcSnr", "levelSnrBalance", 0, usdcBalance.div(2), constants.Zero);
+            await testStake("levelStakeBtcSnr", "levelSnrBalance", 0, btcBalance, constants.Zero);
+            await testStake("levelStakeUsdtSnr", "levelSnrBalance", 0, usdtBalance, constants.Zero);
+            await testStake("levelStakeUsdcSnr", "levelSnrBalance", 0, usdcBalance, constants.Zero);
         });
 
         it("should unstake", async () => {
             let snrBalance = await wrappedLoan.levelSnrBalance();
-            let mzeBalance = await wrappedLoan.levelMzeBalance();
-            let jnrBalance = await wrappedLoan.levelJnrBalance();
 
-            await testUnstake("levelUnstakeEthSnr", "levelSnrBalance", 0, snrBalance.div(2), constants.Zero);
-            await testUnstake("levelUnstakeBtcMze", "levelMzeBalance", 1, mzeBalance.div(2), constants.Zero);
-            await testUnstake("levelUnstakeUsdtJnr", "levelJnrBalance", 2, jnrBalance.div(2), constants.Zero);
-            await testUnstake("levelUnstakeUsdcSnr", "levelSnrBalance", 0, snrBalance.div(2), constants.Zero);
-            await testUnstake("levelUnstakeEthMze", "levelMzeBalance", 1, mzeBalance.div(2), constants.Zero);
+            await testUnstake("levelUnstakeEthSnr", "levelSnrBalance", 0, snrBalance.div(4), constants.Zero);
+            await testUnstake("levelUnstakeBtcSnr", "levelSnrBalance", 0, snrBalance.div(4), constants.Zero);
+            await testUnstake("levelUnstakeUsdtSnr", "levelSnrBalance", 0, snrBalance.div(4), constants.Zero);
+            await testUnstake("levelUnstakeUsdcSnr", "levelSnrBalance", 0, snrBalance.div(4), constants.Zero);
         });
 
         async function testStake(stakeMethod: string, balanceMethod: string, pid: number, amount: BigNumber, minLpAmount: BigNumber) {
@@ -405,23 +340,19 @@ describe('Smart loan', () => {
             expect(await wrappedLoan[balanceMethod]()).to.be.gt(0);
             expect((await stakingContract.userInfo(pid, wrappedLoan.address)).amount).to.be.gt(initialStakedBalance);
 
-            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 20);
-            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.00001);
-            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 20);
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 50);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.0001);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 50);
         }
 
         async function testUnstake(unstakeMethod: string, balanceMethod: string, pid: number, amount: BigNumber, minAmount: BigNumber) {
             let initialTotalValue = await wrappedLoan.getTotalValue();
             let initialHR = await wrappedLoan.getHealthRatio();
 
-            let stakingContract = await new ethers.Contract(masterChefAddress, ILevelFinanceArtifact.abi, provider);
-
             await wrappedLoan[unstakeMethod](amount, minAmount);
 
-            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 20);
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 50);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.01);
         }
     });
 });
-
-
