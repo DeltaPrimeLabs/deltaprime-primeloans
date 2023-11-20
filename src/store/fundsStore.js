@@ -279,19 +279,23 @@ export default {
     },
 
     async setupApys({commit}) {
-      let params = {
-        TableName: "apys-prod"
-      };
+      if (config.disableAWSData) {
+        commit('setApys', []);
+      } else {
+        let params = {
+          TableName: "apys-prod"
+        };
 
-      const apyDoc = await docClient.scan(params).promise();
-      const apys = {};
+        const apyDoc = await docClient.scan(params).promise();
+        const apys = {};
 
-      apyDoc.Items.map(apy => {
-        apys[apy.id] = {...apy};
-      });
-      console.log(apys);
+        apyDoc.Items.map(apy => {
+          apys[apy.id] = {...apy};
+        });
+        console.log(apys);
 
-      commit('setApys', apys);
+        commit('setApys', apys);
+      }
     },
 
     async setupAssets({state, commit, rootState}) {

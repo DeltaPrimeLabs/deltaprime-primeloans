@@ -15,10 +15,17 @@ const traderJoeConfig = require("../config/traderJoeApy.json");
 const sushiConfig = require("../config/sushiApy.json");
 const beefyConfig = require("../config/beefyApy.json");
 const levelConfig = require("../config/levelApy.json");
+const {firstValueFrom} = require("rxjs/src");
+const {EMPTY} = require("rxjs");
 
 const formatUnits = (val, decimals) => parseFloat(ethers.utils.formatUnits(val, decimals));
 
+const disableAWSData = true
+
 const levelTvlAggregator = async (event) => {
+  if (disableAWSData) {
+    return firstValueFrom(EMPTY);
+  }
   console.log('fetching TVLs from Level..');
   const levelApiUrl = "https://api.level.finance/v2/stats/liquidity-performance";
 
@@ -52,6 +59,9 @@ const levelTvlAggregator = async (event) => {
 }
 
 const glpAprAggregator = async (event) => {
+  if (disableAWSData) {
+    return firstValueFrom(EMPTY);
+  }
   // parse GLP APR from GMX website
   const URL = "https://gmx.io/";
 
@@ -110,6 +120,9 @@ const glpAprAggregator = async (event) => {
 }
 
 const vectorApyAggregator = async (event) => {
+  if (disableAWSData) {
+    return firstValueFrom(EMPTY);
+  }
   const URL = "https://vectorfinance.io/pools";
 
   const { browser, page } = await newChrome();
@@ -224,6 +237,10 @@ const vectorApyAggregator = async (event) => {
 }
 
 const lpAndFarmApyAggregator = async (event) => {
+  if (disableAWSData) {
+    return firstValueFrom(EMPTY);
+  }
+
   const VECTOR_APY_URL = "https://vector-api-git-overhaul-vectorfinance.vercel.app/api/v1/vtx/apr";
   const YIELDYAK_APY_AVA_URL = "https://staging-api.yieldyak.com/apys";
   const YIELDYAK_APY_ARB_URL = "https://staging-api.yieldyak.com/42161/apys";
@@ -357,6 +374,10 @@ const lpAndFarmApyAggregator = async (event) => {
 }
 
 const steakHutApyAggregator = async (event) => {
+  if (disableAWSData) {
+    return firstValueFrom(EMPTY);
+  }
+
   const URL = "https://app.steakhut.finance/pool/";
 
   const { browser, page } = await newChrome();
@@ -402,6 +423,9 @@ const steakHutApyAggregator = async (event) => {
 }
 
 const traderJoeApyAggregator = async (event) => {
+  if (disableAWSData) {
+    return firstValueFrom(EMPTY);
+  }
 
   const { browser, page } = await newChrome();
 
@@ -459,6 +483,9 @@ const traderJoeApyAggregator = async (event) => {
 }
 
 const sushiApyAggregator = async (event) => {
+  if (disableAWSData) {
+    return firstValueFrom(EMPTY);
+  }
 
   const { browser, page } = await newChrome();
 
@@ -500,6 +527,9 @@ const sushiApyAggregator = async (event) => {
 }
 
 const beefyApyAggregator = async (event) => {
+  if (disableAWSData) {
+    return firstValueFrom(EMPTY);
+  }
 
   const { browser, page } = await newChrome();
 
@@ -555,6 +585,10 @@ const beefyApyAggregator = async (event) => {
 }
 
 const levelApyAggregator = async (event) => {
+  if (disableAWSData) {
+    return firstValueFrom(EMPTY);
+  }
+
   const levelApiUrl = "https://api.level.finance/v2/stats/liquidity-performance";
   const redstoneFeedUrl = "https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-arbitrum-prod";
 

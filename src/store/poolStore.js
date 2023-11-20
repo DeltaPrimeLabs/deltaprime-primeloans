@@ -46,16 +46,22 @@ export default {
     async setupsPrime({rootState, commit, state}) {
       const poolService = rootState.serviceRegistry.poolService;
       let resp = {};
-
-      try {
-        resp = await (await fetch(`https://uophm6e26f.execute-api.us-east-1.amazonaws.com/sprime/${rootState.network.account.toLowerCase()}?network=${config.chainSlug}`)).json();
-      } catch (error) {
-        console.error('fetching sprime failed.');
-      }
-
       let pools = state.pools;
-      for (let pool of pools) {
-        pool.sPrime = resp[pool.asset.symbol] ? resp[pool.asset.symbol].sPrime : '0';
+
+      if (config.disableAWSData) {
+        for (let pool of pools) {
+          pool.sPrime = '0';
+        }
+      } else {
+        try {
+          resp = await (await fetch(`https://uophm6e26f.execute-api.us-east-1.amazonaws.com/sprime/${rootState.network.account.toLowerCase()}?network=${config.chainSlug}`)).json();
+        } catch (error) {
+          console.error('fetching sprime failed.');
+        }
+
+        for (let pool of pools) {
+          pool.sPrime = resp[pool.asset.symbol] ? resp[pool.asset.symbol].sPrime : '0';
+        }
       }
 
       commit('setPools', pools);

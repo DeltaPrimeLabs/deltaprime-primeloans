@@ -17,6 +17,7 @@ export default {
     DECIMALS_PRECISION: 8,
     MAX_BUTTON_MULTIPLIER: 1.01,
     TRANSACTION_HISTORY_PAGE_SIZE: 7,
+    disableAWSData: false,
     chainId: 43114,
     chainSlug: 'avalanche',
     notifiEnabled: true,
