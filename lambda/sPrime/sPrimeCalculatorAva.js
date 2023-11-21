@@ -147,6 +147,12 @@ const sPrimeCalculator = async (event) => {
         }
         totalTime += timeInterval;
 
+        if (transfer.depositor.id !== 'mock') {
+          sPrimeValue[transfer.depositor.id][transfer.tokenSymbol].total = Number(sPrimeValue[transfer.depositor.id][transfer.tokenSymbol].total) +
+                                                                            Number(formatUnits(transfer.amount, Number(decimals)));
+          sPrimeValue[transfer.depositor.id][transfer.tokenSymbol].total = Math.max(sPrimeValue[transfer.depositor.id][transfer.tokenSymbol].total, 0);
+        }
+
         // update sPRIME values for all depositors
         depositors.forEach(
           depositor => {
@@ -163,21 +169,13 @@ const sPrimeCalculator = async (event) => {
 
             const userDepositInUsd = tokenPrice * sPrimeValue[depositor.id][transfer.tokenSymbol].total;
 
-            if (transfer.timestamp > 1693756800) {
-              const newValue = (timeInterval < 0 ? 0 : timeInterval) / 31536000 * (prevApr * userDepositInUsd);
-              sPrimeValue[depositor.id][transfer.tokenSymbol].sPrime = Number(sPrimeValue[depositor.id][transfer.tokenSymbol].sPrime) + newValue;
-            }
+            const newValue = (timeInterval < 0 ? 0 : timeInterval) / 31536000 * (prevApr * userDepositInUsd);
+            sPrimeValue[depositor.id][transfer.tokenSymbol].sPrime = Number(sPrimeValue[depositor.id][transfer.tokenSymbol].sPrime) + newValue;
             sPrimeValue[depositor.id][transfer.tokenSymbol]['timestamp'] = transfer.timestamp;
             sPrimeValue[depositor.id][transfer.tokenSymbol]['offset'] = offset + poolTransfersLen;
             sPrimeValue[depositor.id][transfer.tokenSymbol]['curPoolTvl'] = transfer.curPoolTvl;
           }
         );
-
-        if (transfer.depositor.id !== 'mock') {
-          sPrimeValue[transfer.depositor.id][transfer.tokenSymbol].total = Number(sPrimeValue[transfer.depositor.id][transfer.tokenSymbol].total) +
-                                                                            Number(formatUnits(transfer.amount, Number(decimals)));
-          sPrimeValue[transfer.depositor.id][transfer.tokenSymbol].total = Math.max(sPrimeValue[transfer.depositor.id][transfer.tokenSymbol].total, 0);
-        }
       };
     })
   );
