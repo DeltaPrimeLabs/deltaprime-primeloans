@@ -29,10 +29,6 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
 
     // CONSTANTS
     bytes32 constant public CONTROLLER = keccak256(abi.encode("CONTROLLER"));
-    bytes32 constant public ORDER_KEEPER = keccak256(abi.encode("ORDER_KEEPER"));
-    bytes32 constant public MARKET_KEEPER = keccak256(abi.encode("MARKET_KEEPER"));
-    bytes32 constant public FEE_KEEPER = keccak256(abi.encode("FEE_KEEPER"));
-    bytes32 constant public FROZEN_ORDER_KEEPER = keccak256(abi.encode("FROZEN_ORDER_KEEPER"));
 
     // GMX contracts
     function getGMX_V2_ROUTER() internal pure virtual returns (address);
@@ -53,13 +49,7 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
     function isCallerAuthorized(address _caller) internal view returns (bool){
         IRoleStore roleStore = IRoleStore(getGMX_V2_ROLE_STORE());
         // TODO: Once on prod - verify the roles of authorized signers
-        if(
-            roleStore.hasRole(_caller, CONTROLLER) ||
-            roleStore.hasRole(_caller, ORDER_KEEPER) ||
-            roleStore.hasRole(_caller, MARKET_KEEPER) ||
-            roleStore.hasRole(_caller, FEE_KEEPER) ||
-            roleStore.hasRole(_caller, FROZEN_ORDER_KEEPER)
-        ){
+        if(roleStore.hasRole(_caller, CONTROLLER)){
             return true;
         }
         return false;
@@ -68,6 +58,8 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
 
     function _deposit(address gmToken, address depositedToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) internal nonReentrant noBorrowInTheSameBlock onlyOwner {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+
+        tokenAmount = IERC20(depositedToken).balanceOf(address(this)) < tokenAmount ? IERC20(depositedToken).balanceOf(address(this)) : tokenAmount;
 
         bytes[] memory data = new bytes[](3);
         data[0] = abi.encodeWithSelector(
@@ -131,8 +123,10 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
     }
 
 
-    function _withdraw(address gmToken, uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) internal nonReentrant noBorrowInTheSameBlock onlyOwnerNoStaySolventOrInsolvent {
+    function _withdraw(address gmToken, uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) internal nonReentrant noBorrowInTheSameBlock onlyOwnerNoStaySolventOrInsolventPayable {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+
+        gmAmount = IERC20(gmToken).balanceOf(address(this)) < gmAmount ? IERC20(gmToken).balanceOf(address(this)) : gmAmount;
 
         bytes[] memory data = new bytes[](3);
         data[0] = abi.encodeWithSelector(
