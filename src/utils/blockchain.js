@@ -165,7 +165,7 @@ export async function signMessage(provider, message, wallet, depositor = false) 
   return true;
 }
 
-export function decodeOutput(abi, functionName, returnData) {
+export function decodeOutput(abi, functionName, returnData, comment = '') {
   try {
     let outputs = abi.find(el => el.name === functionName && el.type === 'function').outputs;
     let types = outputs.map(
