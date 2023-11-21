@@ -267,6 +267,7 @@ library DiamondStorageLib {
         require(_address != address(0), "Invalid AddressZero");
         SmartLoanStorage storage sls = smartLoanStorage();
         EnumerableMap.set(sls.ownedAssets, _symbol, _address);
+        emit OwnedAssetAdded(_symbol, block.timestamp);
     }
 
     function hasAsset(bytes32 _symbol) internal view returns (bool){
@@ -277,6 +278,8 @@ library DiamondStorageLib {
     function removeOwnedAsset(bytes32 _symbol) internal {
         SmartLoanStorage storage sls = smartLoanStorage();
         EnumerableMap.remove(sls.ownedAssets, _symbol);
+
+        emit OwnedAssetAdded(_symbol, block.timestamp);
     }
 
     function enforceIsContractOwner() internal view {
@@ -432,4 +435,8 @@ library DiamondStorageLib {
         }
         require(contractSize > 0, _errorMessage);
     }
+
+    event OwnedAssetAdded(bytes32 indexed asset, uint256 timestamp);
+
+    event OwnedAssetRemoved(bytes32 indexed asset, uint256 timestamp);
 }
