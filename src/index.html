@@ -31,14 +31,6 @@
   </script>
 
   <script>
-    window.requestCounter = 0;
-
-    document.addEventListener('keydown', function(event) {
-      if (event.ctrlKey && event.key === 'h') {
-        console.log(window.requestCounter);
-      }
-    });
-
     if (window.ethereum) {
       window.ethereum.request({method: 'eth_chainId'}).then((id) => {
         const chainId = parseInt(id, 16);

@@ -707,8 +707,6 @@ export default {
     },
 
     async fetchTraderJoeV2LpUnderlyingBalances({state}, {lbPairAddress, binIds, lpToken}) {
-      console.log('____________________________fetchTraderJoeV2LpUnderlyingBalances________________________________');
-      console.log(lbPairAddress);
       const poolContract = new ethers.Contract(lbPairAddress, LB_PAIR.abi, provider.getSigner());
 
       let cumulativeTokenXAmount = BigNumber.from(0);
@@ -721,100 +719,60 @@ export default {
       let binBalanceSecondary = [];
       let binTotalSupply = [];
 
-      console.log(binIds);
 
       const requests = [];
-      binIds.forEach(binId => {
-        requests.push(
+      // noinspection ES6MissingAwait
+      binIds.forEach(async binId => {
+        requests.push(...[
           {
             target: poolContract.address,
-            callData: poolContract.interface.encodeFunctionData('balanceOf', [state.smartLoanContract.address, binId])
+            callData: poolContract.interface.encodeFunctionData('balanceOf', [state.smartLoanContract.address, binId]),
+            name: `${binId}.balanceOf`
           },
           {
             target: poolContract.address,
-            callData: poolContract.interface.encodeFunctionData('getBin', [binId])
+            callData: poolContract.interface.encodeFunctionData('getBin', [binId]),
+            name: `${binId}.getBin`
           },
           {
             target: poolContract.address,
-            callData: poolContract.interface.encodeFunctionData('totalSupply', [binId])
-          },
+            callData: poolContract.interface.encodeFunctionData('totalSupply', [binId]),
+            name: `${binId}.totalSupply`
+          }]
         );
+
       })
 
+
       const response = await multicallContract.callStatic.aggregate(requests);
-      console.log('MULIT CALL fetchTraderJoeV2LpUnderlyingBalances');
-      console.log(response);
 
       const binsData = [];
       for (let i = 0; i < response.returnData.length; i += 3) {
-        let decodedReserves = decodeOutput(LB_PAIR.abi, 'getBin', response.returnData[i + 1], 'getBin')[0];
-        console.log('decodedReserves', decodedReserves);
         binsData.push({
-          lbTokenAmount: decodeOutput(LB_PAIR.abi, 'balanceOf', response.returnData[i])[0],
-          reserves: decodedReserves,
-          totalSupply: decodeOutput(LB_PAIR.abi, 'totalSupply', response.returnData[i + 2])[0],
+          lbTokenAmount: decodeOutput(LB_PAIR.abi, 'balanceOf', response.returnData[i]),
+          reserves: decodeOutput(LB_PAIR.abi, 'getBin', response.returnData[i + 1]),
+          totalSupply: decodeOutput(LB_PAIR.abi, 'totalSupply', response.returnData[i + 2]),
         })
       }
 
-      console.log(binsData);
+      binsData.forEach((binData, i) => {
+        const lbTokenAmount = binData.lbTokenAmount[0];
+        const reserves = binData.reserves;
+        const totalSupply = binData.totalSupply[0];
 
-      // binsData.map((binData, i) => {
-      //   console.log(binData);
-      //   console.log(binData.lbTokenAmount);
-      //
-      //   const binTokenXAmount = BigNumber.from(binData.lbTokenAmount).mul(BigNumber.from(binData.reserves[0])).div(BigNumber.from(binData.totalSupply));
-      //   const binTokenYAmount = BigNumber.from(binData.lbTokenAmount).mul(BigNumber.from(binData.reserves[1])).div(BigNumber.from(binData.totalSupply));
-      //
-      //   cumulativeTokenXAmount = cumulativeTokenXAmount.add(binTokenXAmount);
-      //   cumulativeTokenYAmount = cumulativeTokenYAmount.add(binTokenYAmount);
-      //
-      //   accountBalances[i] = fromWei(binData.lbTokenAmount);
-      //   accountBalancesPrimary[i] = formatUnits(binTokenXAmount, state.assets[lpToken.primary].decimals);
-      //   accountBalancesSecondary[i] = formatUnits(binTokenYAmount, state.assets[lpToken.secondary].decimals);
-      //   binBalancePrimary[i] = formatUnits(binData.reserves[0], state.assets[lpToken.primary].decimals);
-      //   binBalanceSecondary[i] = formatUnits(binData.reserves[1], state.assets[lpToken.secondary].decimals);
-      //   binTotalSupply[i] = fromWei(binData.totalSupply);
-      //
-      //   return {
-      //     lbTokenAmount: binData.lbTokenAmount,
-      //     reserveX: binData.reserves[0],
-      //     reserveY: binData.reserves[1]
-      //   };
-      // })
+        const binTokenXAmount = BigNumber.from(lbTokenAmount).mul(BigNumber.from(reserves[0])).div(BigNumber.from(totalSupply));
+        const binTokenYAmount = BigNumber.from(lbTokenAmount).mul(BigNumber.from(reserves[1])).div(BigNumber.from(totalSupply));
 
+        cumulativeTokenXAmount = cumulativeTokenXAmount.add(binTokenXAmount);
+        cumulativeTokenYAmount = cumulativeTokenYAmount.add(binTokenYAmount);
 
-      await Promise.all(
-        binIds.map(async (binId, i) => {
-          const [lbTokenAmount, reserves, totalSupply] = await Promise.all([
-            poolContract.balanceOf(state.smartLoanContract.address, binId),
-            poolContract.getBin(binId),
-            poolContract.totalSupply(binId)
-          ]);
-
-          console.log(lbTokenAmount);
-          console.log('reserves', reserves);
-          console.log(totalSupply);
-
-          const binTokenXAmount = BigNumber.from(lbTokenAmount).mul(BigNumber.from(reserves[0])).div(BigNumber.from(totalSupply));
-          const binTokenYAmount = BigNumber.from(lbTokenAmount).mul(BigNumber.from(reserves[1])).div(BigNumber.from(totalSupply));
-
-          cumulativeTokenXAmount = cumulativeTokenXAmount.add(binTokenXAmount);
-          cumulativeTokenYAmount = cumulativeTokenYAmount.add(binTokenYAmount);
-
-          accountBalances[i] = fromWei(lbTokenAmount);
-          accountBalancesPrimary[i] = formatUnits(binTokenXAmount, state.assets[lpToken.primary].decimals);
-          accountBalancesSecondary[i] = formatUnits(binTokenYAmount, state.assets[lpToken.secondary].decimals);
-          binBalancePrimary[i] = formatUnits(reserves[0], state.assets[lpToken.primary].decimals);
-          binBalanceSecondary[i] = formatUnits(reserves[1], state.assets[lpToken.secondary].decimals);
-          binTotalSupply[i] = fromWei(totalSupply);
-
-          return {
-            lbTokenAmount,
-            reserveX: reserves[0],
-            reserveY: reserves[1]
-          };
-        })
-      );
+        accountBalances[i] = fromWei(lbTokenAmount);
+        accountBalancesPrimary[i] = formatUnits(binTokenXAmount, state.assets[lpToken.primary].decimals);
+        accountBalancesSecondary[i] = formatUnits(binTokenYAmount, state.assets[lpToken.secondary].decimals);
+        binBalancePrimary[i] = formatUnits(reserves[0], state.assets[lpToken.primary].decimals);
+        binBalanceSecondary[i] = formatUnits(reserves[1], state.assets[lpToken.secondary].decimals);
+        binTotalSupply[i] = fromWei(totalSupply);
+      })
 
       return {
         cumulativeTokenXAmount,
