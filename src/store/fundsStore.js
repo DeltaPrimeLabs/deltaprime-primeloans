@@ -20,6 +20,7 @@ import router from '@/router';
 import {constructSimpleSDK, SimpleFetchSDK, SwapSide} from '@paraswap/sdk';
 import axios from 'axios';
 import LB_TOKEN from '/artifacts/contracts/interfaces/joe-v2/ILBToken.sol/ILBToken.json'
+import LB_PAIR from '/artifacts/contracts/interfaces/joe-v2/ILBPair.sol/ILBPair.json'
 import MULTICALL from '/artifacts/contracts/lib/Multicall3.sol/Multicall3.json'
 import {decodeFunctionData} from "viem";
 
@@ -674,12 +675,7 @@ export default {
     },
 
     async fetchTraderJoeV2LpUnderlyingBalances({state}, {lbPairAddress, binIds, lpToken}) {
-      const LBPAIR_ABI = [
-        'function balanceOf(address, uint256) public view returns (uint256)',
-        'function getBin(uint24) public view returns (uint128, uint128)',
-        'function totalSupply(uint256) public view returns (uint256)'
-      ];
-      const poolContract = new ethers.Contract(lbPairAddress, LBPAIR_ABI, provider.getSigner());
+      const poolContract = new ethers.Contract(lbPairAddress, LB_PAIR.abi, provider.getSigner());
 
       let cumulativeTokenXAmount = BigNumber.from(0);
       let cumulativeTokenYAmount = BigNumber.from(0);
@@ -698,6 +694,18 @@ export default {
             poolContract.getBin(binId),
             poolContract.totalSupply(binId)
           ]);
+
+          let result = await state.multicallContract.callStatic.aggregate(
+              [
+                {
+                  target: poolContract.address,
+                  callData: poolContract.interface.encodeFunctionData('getBin', [binId])
+                }
+              ]
+          );
+
+          let decoded = decodeOutput(LB_PAIR.abi, 'getBin', result.returnData[0]);
+          console.log(decoded)
 
           const binTokenXAmount = BigNumber.from(lbTokenAmount).mul(BigNumber.from(reserves[0])).div(BigNumber.from(totalSupply));
           const binTokenYAmount = BigNumber.from(lbTokenAmount).mul(BigNumber.from(reserves[1])).div(BigNumber.from(totalSupply));

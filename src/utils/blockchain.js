@@ -179,7 +179,6 @@ export function decodeOutput(abi, functionName, returnData) {
           }
         }
     )
-    console.log(types)
     return utils.defaultAbiCoder.decode(types, returnData);
   } catch (e) {
     console.log(e)
