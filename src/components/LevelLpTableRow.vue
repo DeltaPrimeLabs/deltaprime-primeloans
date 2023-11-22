@@ -698,7 +698,7 @@ export default {
     },
 
     async setupTvl() {
-      this.tvl = (await (await fetch(`https://uophm6e26f.execute-api.us-east-1.amazonaws.com/levelTvl/${this.lpToken.symbol}`)).json()).tvl;
+      this.tvl = (await (await fetch(`https://cavsise1n4.execute-api.us-east-1.amazonaws.com/levelTvl/${this.lpToken.symbol}`)).json()).tvl;
     },
 
     async setupRewards() {
