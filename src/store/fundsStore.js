@@ -1012,7 +1012,7 @@ export default {
       const provider = rootState.network.provider;
       const amountInWei = parseUnits(fundRequest.value.toString(), fundRequest.assetDecimals);
 
-      const tokenForApprove = fundRequest.asset === 'GLP' ? '0xaE64d55a6f09E4263421737397D1fdFA71896a69' : TOKEN_ADDRESSES[fundRequest.asset];
+      const tokenForApprove = (fundRequest.asset === 'GLP' && config.chainId === 43114) ? '0xaE64d55a6f09E4263421737397D1fdFA71896a69' : TOKEN_ADDRESSES[fundRequest.asset];
       const fundToken = new ethers.Contract(tokenForApprove, erc20ABI, provider.getSigner());
 
       const allowance = formatUnits(await fundToken.allowance(rootState.network.account, state.smartLoanContract.address), fundRequest.assetDecimals);
