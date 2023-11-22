@@ -61,7 +61,6 @@ const sPrimeCalculator = async (event) => {
 
   const availablePools = pools.filter(pool => poolAddresses.indexOf(pool.id.toLowerCase()) !== -1);
   let sPrimeValue = {};
-  let totalTime = 0;
 
   sPrimeValueArray.map((sPrime) => {
     sPrimeValue[sPrime.id] = {};
@@ -80,14 +79,15 @@ const sPrimeCalculator = async (event) => {
       let offset = 0;
       let lastTimestamp = Date.now();
       let lastPoolTvl = 0;
+      let totalTime = 0;
 
       if (sPrimeValueArray.length > 0 &&
           sPrimeValueArray[0][tokenSymbol] &&
           sPrimeValueArray[0][tokenSymbol].offset &&
           sPrimeValueArray[0][tokenSymbol].timestamp &&
           sPrimeValueArray[0][tokenSymbol].curPoolTvl) {
-        offset = sPrimeValueArray[0][tokenSymbol].offset;
-        lastTimestamp = sPrimeValueArray[0][tokenSymbol].timestamp;
+        offset = Number(sPrimeValueArray[0][tokenSymbol].offset);
+        lastTimestamp = Number(sPrimeValueArray[0][tokenSymbol].timestamp);
         lastPoolTvl = sPrimeValueArray[0][tokenSymbol].curPoolTvl;
       }
 
@@ -102,7 +102,7 @@ const sPrimeCalculator = async (event) => {
       const poolTvl = await poolContract.totalSupply();
 
       // add last mock transfer (for the current timestamp)
-      if (poolTransfersLen < 120) { // should be equal to limit param in query
+      if (poolTransfersLen < 100) { // should be equal to limit param in query
         let currentMockTransfer = {
           curPoolTvl: poolTvl.toString(),
           timestamp: Math.floor(Date.now() / 1000),
@@ -118,7 +118,11 @@ const sPrimeCalculator = async (event) => {
 
         const tokenPrice = await getHistoricalTokenPrice(transfer.tokenSymbol, transfer.timestamp)
 
-        const prevTvlInUsd = tokenPrice * (i > 0 ? formatUnits(poolTransfers[i - 1].curPoolTvl, Number(decimals)) : offset > 0 ? lastPoolTvl : 0);
+        const prevTvlInUsd = tokenPrice * (i > 0
+                                          ? formatUnits(poolTransfers[i - 1].curPoolTvl, Number(decimals))
+                                          : offset > 0
+                                            ? formatUnits(lastPoolTvl, Number(decimals))
+                                            : 0);
 
         // pool APR for previous timestamp
         let prevApr;
