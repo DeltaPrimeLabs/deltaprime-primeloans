@@ -271,6 +271,8 @@ export default {
       concentratedLpBalances: {},
       levelLpAssets: {},
       levelLpBalances: {},
+      gmxV2Assets: {},
+      gmxV2Balances: {},
       traderJoeV2LpAssets: {},
       transactionOngoing: false,
       debt: 0,
@@ -670,6 +672,9 @@ export default {
         });
       }
 
+      console.log('here')
+      console.log(this.concentratedLpAssets)
+
       for (const [symbol, data] of Object.entries(this.concentratedLpAssets)) {
         tokens.push({
           price: data.price,
@@ -689,6 +694,15 @@ export default {
         });
       }
 
+      for (const [symbol, data] of Object.entries(this.gmxV2Assets)) {
+        tokens.push({
+          price: data.price,
+          balance: parseFloat(this.gmxV2Balances[symbol]),
+          borrowed: 0,
+          debtCoverage: data.debtCoverage
+        });
+      }
+
       for (const [, farms] of Object.entries(this.farms)) {
         farms.forEach(farm => {
           tokens.push({
@@ -699,6 +713,9 @@ export default {
           });
         });
       }
+
+      console.log('tokens')
+      console.log(tokens)
 
       let lbTokens = Object.values(this.traderJoeV2LpAssets);
 

@@ -234,6 +234,7 @@ export default {
       'smartLoanContract',
       'fullLoanStatus',
       'assetBalances',
+      'concentratedLpBalances',
       'levelLpBalances',
       'gmxV2Balances',
       'assets',
@@ -364,7 +365,7 @@ export default {
     },
 
     async setupGmUnderlyingBalances() {
-      const depositReader = new ethers.Contract(config.gmxV2DepositReaderAddress, IREADER_DEPOSIT_UTILS.abi, this.provider.getSigner());
+      const depositReader = new ethers.Contract(config.gmxV2ReaderAddress, IREADER_DEPOSIT_UTILS.abi, this.provider.getSigner());
 
       const longToken = config.ASSETS_CONFIG[this.lpToken.longToken];
       const shortToken = config.ASSETS_CONFIG[this.lpToken.shortToken];
@@ -376,11 +377,11 @@ export default {
         shortToken: shortToken.address
       }
 
-      const gmxData = await (await fetch('https://arbitrum-api.gmxinfra.io/prices/tickers')).json();
+      const gmxData = await (await fetch(`https://${config.chainSlug}-api.gmxinfra.io/prices/tickers`)).json();
 
       let shortTokenGmxData = gmxData.find(el => el.tokenSymbol === shortToken.symbol);
       let longTokenGmxData = gmxData.find(el => el.tokenSymbol === longToken.symbol);
-      let indexTokenGmxData = gmxData.find(el => el.tokenAddress === this.lpToken.indexTokenAddress);
+      let indexTokenGmxData = gmxData.find(el => el.tokenAddress.toLowerCase() === this.lpToken.indexTokenAddress.toLowerCase());
 
       const prices = {
         indexTokenPrice: { min: BigNumber.from(indexTokenGmxData.minPrice), max: BigNumber.from(indexTokenGmxData.maxPrice) },
@@ -431,12 +432,12 @@ export default {
     },
 
     gmxV2Query() {
-      const depositReader = new ethers.Contract(config.gmxV2DepositReaderAddress, IREADER_DEPOSIT_UTILS.abi, this.provider.getSigner());
+      const depositReader = new ethers.Contract(config.gmxV2ReaderAddress, IREADER_DEPOSIT_UTILS.abi, this.provider.getSigner());
 
       const longToken = config.ASSETS_CONFIG[this.lpToken.longToken];
       const shortToken = config.ASSETS_CONFIG[this.lpToken.shortToken];
 
-
+      console.log('this.lpToken.indexTokenAddress: ', this.lpToken.indexTokenAddress)
       const marketProps = {
           marketToken: this.lpToken.address,
           indexToken: this.lpToken.indexTokenAddress,
@@ -444,18 +445,25 @@ export default {
           shortToken: shortToken.address
         }
 
+
       return async (sourceAsset, targetAsset, amountIn) => {
-        const gmxData = await (await fetch('https://arbitrum-api.gmxinfra.io/prices/tickers')).json();
+        const gmxData = await (await fetch(`https://${config.chainSlug}-api.gmxinfra.io/prices/tickers`)).json();
+
+        console.log('gmxData')
+        console.log(gmxData)
 
         let shortTokenGmxData = gmxData.find(el => el.tokenSymbol === shortToken.symbol);
         let longTokenGmxData = gmxData.find(el => el.tokenSymbol === longToken.symbol);
-        let indexTokenGmxData = gmxData.find(el => el.tokenAddress === this.lpToken.indexTokenAddress);
+        let indexTokenGmxData = gmxData.find(el => el.tokenAddress.toLowerCase() === this.lpToken.indexTokenAddress.toLowerCase());
 
         const prices = {
           indexTokenPrice: { min: BigNumber.from(indexTokenGmxData.minPrice), max: BigNumber.from(indexTokenGmxData.maxPrice) },
           longTokenPrice: { min: BigNumber.from(longTokenGmxData.minPrice) , max: BigNumber.from(longTokenGmxData.maxPrice) },
           shortTokenPrice: { min: BigNumber.from(shortTokenGmxData.minPrice), max: BigNumber.from(shortTokenGmxData.maxPrice) }
         }
+
+        console.log('prices')
+        console.log(prices)
 
         if (config.GMX_V2_ASSETS_CONFIG[sourceAsset]) {
           let [longTokenOut, shortTokenOut] = await depositReader.getWithdrawalAmountOut(
@@ -523,7 +531,7 @@ export default {
       const feeTokenAmount = adjustedGasLimit * gasPrice;
 
       //TODO: fix fee calculation
-      return feeTokenAmount * 100;
+      return feeTokenAmount * config.gmxV2ExecutionFeeMultiplier;
     },
 
     async openAddFromWalletModal() {

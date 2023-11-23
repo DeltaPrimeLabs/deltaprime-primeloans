@@ -1907,6 +1907,7 @@ export default {
 
       let executionFeeWei = toWei(addLiquidityRequest.executionFee.toFixed(18));
 
+      console.log('addLiquidityRequest.method: ', addLiquidityRequest.method)
       const transaction = await wrappedContract[addLiquidityRequest.method](
           addLiquidityRequest.isLongToken,
           sourceAmount,
