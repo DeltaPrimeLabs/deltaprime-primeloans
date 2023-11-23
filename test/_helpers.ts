@@ -751,8 +751,12 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             "GmxV2FacetAvalanche",
             diamondAddress,
             [
+                'depositBtcUsdcGmxV2',
                 'depositAvaxUsdcGmxV2',
+                'depositEthUsdcGmxV2',
+                'withdrawBtcUsdcGmxV2',
                 'withdrawAvaxUsdcGmxV2',
+                'withdrawEthUsdcGmxV2',
                 'afterDepositExecution',
                 'afterDepositCancellation',
                 'afterWithdrawalExecution',
