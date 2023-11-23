@@ -1713,6 +1713,8 @@ export default {
         Object.keys(config.POOLS_CONFIG)
       ]);
 
+      console.log(state.smartLoanContract)
+      console.log(claimRewardsRequest.merkleEntries)
       const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).claimReward(claimRewardsRequest.merkleEntries);
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
