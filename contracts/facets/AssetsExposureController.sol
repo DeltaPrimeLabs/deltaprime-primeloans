@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: ;
+// Last deployed from commit: 80b132047eed3a89d09cda7bcb108a4826c6ed69;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -10,23 +10,6 @@ import "../interfaces/IStakingPositions.sol";
 import "../lib/local/DeploymentConstants.sol";
 
 contract AssetsExposureController {
-
-    function resetPrimeAccountExposureForChosenAssets(bytes32[] memory assetsNames) external {
-        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        for(uint i=0; i<assetsNames.length; i++){
-            IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(assetsNames[i], true));
-            tokenManager.decreaseProtocolExposure(assetsNames[i], token.balanceOf(address(this)) * 1e18 / 10**token.decimals());
-        }
-    }
-
-    function setPrimeAccountExposureForChosenAssets(bytes32[] memory assetsNames) external {
-        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        for(uint i=0; i<assetsNames.length; i++){
-            IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(assetsNames[i], true));
-            tokenManager.increaseProtocolExposure(assetsNames[i], token.balanceOf(address(this)) * 1e18 / 10**token.decimals());
-        }
-    }
-
     function resetPrimeAccountAssetsExposure() external {
         bytes32[] memory ownedAssets = DeploymentConstants.getAllOwnedAssets();
         IStakingPositions.StakedPosition[] storage positions = DiamondStorageLib.stakedPositions();

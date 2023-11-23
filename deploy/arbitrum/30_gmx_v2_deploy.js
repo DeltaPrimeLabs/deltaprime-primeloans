@@ -9,10 +9,13 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deployer, admin } = await getNamedAccounts();
 
     embedCommitHash("GmxV2FacetArbitrum", "./contracts/facets/arbitrum");
+    embedCommitHash("SolvencyFacetProdArbitrum", "./contracts/facets/arbitrum");
+    embedCommitHash("AssetsExposureController", "./contracts/facets");
+    embedCommitHash("AssetsOperationsArbitrumFacet", "./contracts/facets/arbitrum");
 
     let GmxV2FacetArbitrum = await deploy("GmxV2FacetArbitrum", {
         from: deployer,
-        gasLimit: 50000000,
+        gasLimit: 100000000,
         args: [],
     });
 
@@ -28,6 +31,65 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
             constructorArguments: []
         });
     console.log(`Verified GmxV2FacetArbitrum`);
+
+
+
+    let SolvencyFacetProdArbitrum = await deploy("SolvencyFacetProdArbitrum", {
+        from: deployer,
+        gasLimit: 100000000,
+        args: [],
+    });
+
+    console.log(
+        `SolvencyFacetProdArbitrum implementation deployed at address: ${SolvencyFacetProdArbitrum.address}`
+    );
+
+    await verifyContract(hre,
+        {
+            address: SolvencyFacetProdArbitrum.address,
+            contract: `contracts/facets/arbitrum/SolvencyFacetProdArbitrum.sol:SolvencyFacetProdArbitrum`,
+            constructorArguments: []
+        });
+    console.log(`Verified SolvencyFacetProdArbitrum`);
+
+
+
+    let AssetsExposureController = await deploy("AssetsExposureController", {
+        from: deployer,
+        gasLimit: 50000000,
+        args: [],
+    });
+
+    console.log(
+        `AssetsExposureController implementation deployed at address: ${AssetsExposureController.address}`
+    );
+
+    await verifyContract(hre,
+        {
+            address: AssetsExposureController.address,
+            contract: `contracts/facets/AssetsExposureController.sol:AssetsExposureController`,
+            constructorArguments: []
+        });
+    console.log(`Verified AssetsExposureController`);
+
+    let AssetsOperationsArbitrumFacet = await deploy("AssetsOperationsArbitrumFacet", {
+        from: deployer,
+        gasLimit: 50000000,
+        args: [],
+    });
+
+
+    console.log(
+        `AssetsOperationsArbitrumFacet implementation deployed at address: ${AssetsOperationsArbitrumFacet.address}`
+    );
+
+    await verifyContract(hre,
+        {
+            address: AssetsOperationsArbitrumFacet.address,
+            contract: `contracts/facets/arbitrum/AssetsOperationsArbitrumFacet.sol:AssetsOperationsArbitrumFacet`,
+            constructorArguments: []
+        });
+    console.log(`Verified AssetsOperationsArbitrumFacet`);
 
 };
 

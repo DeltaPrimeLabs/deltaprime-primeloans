@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: e9435ff1dc84231437989722d43a5d0ea97e5dd5;
+// Last deployed from commit: 07fb49183dd5739c1982d5f339730cb76186bc8f;
 pragma solidity 0.8.17;
 
 //This path is updated during deployment
@@ -85,29 +85,29 @@ contract GmxV2FacetArbitrum is GmxV2Facet {
     }
 
     // DEPOSIT
-    function depositEthUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
+    function depositEthUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable onlyWhitelistedAccounts  {
         address _depositedToken = isLongToken ? WETH : USDC;
 
         _deposit(GM_ETH_WETH_USDC, _depositedToken, tokenAmount, minGmAmount, executionFee);
     }
 
-//    function depositArbUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
-//        address _depositedToken = isLongToken ? ARB : USDC;
-//
-//        _deposit(GM_ARB_ARB_USDC, isLongToken ? ARB : USDC, tokenAmount, minGmAmount, executionFee);
-//    }
-//
-//    function depositLinkUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
-//        address _depositedToken = isLongToken ? LINK : USDC;
-//
-//        _deposit(GM_LINK_LINK_USDC, _depositedToken, tokenAmount, minGmAmount, executionFee);
-//    }
-//
-//    function depositUniUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
-//        address _depositedToken = isLongToken ? UNI : USDC;
-//
-//        _deposit(GM_UNI_UNI_USDC, _depositedToken, tokenAmount, minGmAmount, executionFee);
-//    }
+    function depositArbUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
+        address _depositedToken = isLongToken ? ARB : USDC;
+
+        _deposit(GM_ARB_ARB_USDC, isLongToken ? ARB : USDC, tokenAmount, minGmAmount, executionFee);
+    }
+
+    function depositLinkUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
+        address _depositedToken = isLongToken ? LINK : USDC;
+
+        _deposit(GM_LINK_LINK_USDC, _depositedToken, tokenAmount, minGmAmount, executionFee);
+    }
+
+    function depositUniUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
+        address _depositedToken = isLongToken ? UNI : USDC;
+
+        _deposit(GM_UNI_UNI_USDC, _depositedToken, tokenAmount, minGmAmount, executionFee);
+    }
 //
 //    function depositSolUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
 //        address _depositedToken = isLongToken ? SOL : USDC;
@@ -126,17 +126,17 @@ contract GmxV2FacetArbitrum is GmxV2Facet {
         _withdraw(GM_ETH_WETH_USDC, gmAmount, minLongTokenAmount, minShortTokenAmount, executionFee);
     }
 
-//    function withdrawArbUsdcGmxV2(uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
-//        _withdraw(GM_ARB_ARB_USDC, gmAmount, minLongTokenAmount, minShortTokenAmount, executionFee);
-//    }
-//
-//    function withdrawLinkUsdcGmxV2(uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
-//        _withdraw(GM_LINK_LINK_USDC, gmAmount, minLongTokenAmount, minShortTokenAmount, executionFee);
-//    }
-//
-//    function withdrawUniUsdcGmxV2(uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
-//        _withdraw(GM_UNI_UNI_USDC, gmAmount, minLongTokenAmount, minShortTokenAmount, executionFee);
-//    }
+    function withdrawArbUsdcGmxV2(uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
+        _withdraw(GM_ARB_ARB_USDC, gmAmount, minLongTokenAmount, minShortTokenAmount, executionFee);
+    }
+
+    function withdrawLinkUsdcGmxV2(uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
+        _withdraw(GM_LINK_LINK_USDC, gmAmount, minLongTokenAmount, minShortTokenAmount, executionFee);
+    }
+
+    function withdrawUniUsdcGmxV2(uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
+        _withdraw(GM_UNI_UNI_USDC, gmAmount, minLongTokenAmount, minShortTokenAmount, executionFee);
+    }
 //
 //    function withdrawSolUsdcGmxV2(uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
 //        _withdraw(GM_SOL_SOL_USDC, gmAmount, minLongTokenAmount, minShortTokenAmount, executionFee);
@@ -158,6 +158,7 @@ contract GmxV2FacetArbitrum is GmxV2Facet {
             msg.sender == 0x000000F406CA147030BE7069149e4a7423E3A264 ||
             msg.sender == 0x5D80a1c0a5084163F1D2620c1B1F43209cd4dB12 ||
             msg.sender == 0xb79c2A75cd9073d68E75ddF71D53C07747Df7933 ||
+            msg.sender == 0xE4a6E69E445eB9462FB3E6CB8386C4cCe0832346 ||
             msg.sender == 0xb79c2A75cd9073d68E75ddF71D53C07747Df7933
         ){
             _;
