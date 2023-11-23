@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 799a1765b64edc5c158198ef84f785af79e234ae;
+// Last deployed from commit: c192482da8ad844970da54d609babb69b9cca2a7;
 pragma solidity 0.8.17;
 
 //This path is updated during deployment
@@ -45,56 +45,45 @@ contract GmxV2FacetAvalanche is GmxV2Facet {
 
     // Mappings
     function marketToLongToken(address market) internal override pure returns (address){
-//        if(market == GM_BTC_BTCb_USDC){
-//            return BTCb;
-//        } else if (market == GM_ETH_WETHe_USDC){
-//            return WETHe;
-//        } else if (market == GM_AVAX_WAVAX_USDC){
-//            return WAVAX;
+        if(market == GM_BTC_BTCb_USDC){
+            return BTCb;
+        } else if (market == GM_ETH_WETHe_USDC){
+            return WETHe;
+        } else if (market == GM_AVAX_WAVAX_USDC){
+            return WAVAX;
 //        } else if (market == GM_SOL_SOL_USDC){
 //            return SOL;
-//        } else {
-//            revert("Market not supported");
-//        }
-
-        if(market == GM_AVAX_WAVAX_USDC){
-            return WAVAX;
         } else {
             revert("Market not supported");
         }
     }
 
     function marketToShortToken(address market) internal override pure returns (address){
-//        if(market == GM_BTC_BTCb_USDC){
-//            return USDC;
-//        } else if (market == GM_ETH_WETHe_USDC){
-//            return USDC;
-//        } else if (market == GM_AVAX_WAVAX_USDC){
-//            return USDC;
+        if(market == GM_BTC_BTCb_USDC){
+            return USDC;
+        } else if (market == GM_ETH_WETHe_USDC){
+            return USDC;
+        } else if (market == GM_AVAX_WAVAX_USDC){
+            return USDC;
 //        } else if (market == GM_SOL_SOL_USDC){
 //            return USDC;
-//        } else {
-//            revert("Market not supported");
-//        }
-        if(market == GM_AVAX_WAVAX_USDC){
-            return USDC;
         } else {
             revert("Market not supported");
         }
     }
 
     // DEPOSIT
-//    function depositBtcUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
-//        address _depositedToken = isLongToken ? BTCb : USDC;
-//
-//        _deposit(GM_BTC_BTCb_USDC, _depositedToken, tokenAmount, minGmAmount, executionFee);
-//    }
+    function depositBtcUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
+        address _depositedToken = isLongToken ? BTCb : USDC;
 
-//    function depositEthUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
-//        address _depositedToken = isLongToken ? WETHe : USDC;
-//
-//        _deposit(GM_ETH_WETHe_USDC, _depositedToken, tokenAmount, minGmAmount, executionFee);
-//    }
+        _deposit(GM_BTC_BTCb_USDC, _depositedToken, tokenAmount, minGmAmount, executionFee);
+    }
+
+    function depositEthUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
+        address _depositedToken = isLongToken ? WETHe : USDC;
+
+        _deposit(GM_ETH_WETHe_USDC, _depositedToken, tokenAmount, minGmAmount, executionFee);
+    }
 
     function depositAvaxUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable {
         address _depositedToken = isLongToken ? WAVAX : USDC;
@@ -109,13 +98,13 @@ contract GmxV2FacetAvalanche is GmxV2Facet {
 //    }
 
     // WITHDRAW
-//    function withdrawBtcUsdcGmxV2(uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
-//        _withdraw(GM_BTC_BTCb_USDC, gmAmount, minLongTokenAmount, minShortTokenAmount, executionFee);
-//    }
+    function withdrawBtcUsdcGmxV2(uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
+        _withdraw(GM_BTC_BTCb_USDC, gmAmount, minLongTokenAmount, minShortTokenAmount, executionFee);
+    }
 
-//    function withdrawEthUsdcGmxV2(uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
-//        _withdraw(GM_ETH_WETHe_USDC, gmAmount, minLongTokenAmount, minShortTokenAmount, executionFee);
-//    }
+    function withdrawEthUsdcGmxV2(uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
+        _withdraw(GM_ETH_WETHe_USDC, gmAmount, minLongTokenAmount, minShortTokenAmount, executionFee);
+    }
 
     function withdrawAvaxUsdcGmxV2(uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) external payable  {
         _withdraw(GM_AVAX_WAVAX_USDC, gmAmount, minLongTokenAmount, minShortTokenAmount, executionFee);
