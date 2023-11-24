@@ -1,22 +1,21 @@
 import config from "../config";
-
-const ethers = require('ethers');
 import IVectorFinanceStakingArtifact
   from '../../artifacts/contracts/interfaces/IVectorFinanceStaking.sol/IVectorFinanceStaking.json';
-import IVectorRewarder
-  from '../../artifacts/contracts/interfaces/IVectorRewarder.sol/IVectorRewarder.json';
-import IYieldYak
-  from '../../artifacts/contracts/interfaces/facets/avalanche/IYieldYak.sol/IYieldYak.json';
-import IBeefyFinance
-  from '../../artifacts/contracts/interfaces/facets/IBeefyFinance.sol/IBeefyFinance.json';
-import IVectorFinanceCompounder from '../../artifacts/contracts/interfaces/IVectorFinanceCompounder.sol/IVectorFinanceCompounder.json';
+import IVectorRewarder from '../../artifacts/contracts/interfaces/IVectorRewarder.sol/IVectorRewarder.json';
+import IYieldYak from '../../artifacts/contracts/interfaces/facets/avalanche/IYieldYak.sol/IYieldYak.json';
+import IBeefyFinance from '../../artifacts/contracts/interfaces/facets/IBeefyFinance.sol/IBeefyFinance.json';
+import IVectorFinanceCompounder
+  from '../../artifacts/contracts/interfaces/IVectorFinanceCompounder.sol/IVectorFinanceCompounder.json';
 import {BigNumber} from "ethers";
 import ApolloClient from "apollo-boost";
 import gql from "graphql-tag";
 import TOKEN_ADDRESSES from '../../common/addresses/avalanche/token_addresses.json';
-import redstone from 'redstone-api';
 import erc20ABI from '../../test/abis/ERC20.json';
-import {TransactionParams} from '@paraswap/sdk';
+
+import MULTICALL from '/artifacts/contracts/lib/Multicall3.sol/Multicall3.json'
+import {decodeOutput} from "./blockchain";
+
+const ethers = require('ethers');
 
 export function minAvaxToBeBought(amount, currentSlippage) {
   return amount / (1 + (currentSlippage ? currentSlippage : 0));
@@ -216,15 +215,35 @@ export async function vectorFinanceRewards(stakingContractAddress, loanAddress) 
   return totalEarned;
 }
 
-export async function yieldYakMaxUnstaked(stakingContractAddress, loanAddress, decimals = 18) {
+export async function yieldYakMaxUnstaked(stakingContractAddress, loanAddress, decimals = 18, comment = '') {
+  const readProvider = new ethers.providers.JsonRpcProvider(config.readRpcUrl);
+  const multicallContract = new ethers.Contract(config.multicallAddress, MULTICALL.abi, readProvider);
+  const stakingContract = new ethers.Contract(stakingContractAddress, IYieldYak.abi, provider.getSigner());
+
   try {
-    const stakingContract = new ethers.Contract(stakingContractAddress, IYieldYak.abi, provider.getSigner());
-    const loanBalance = formatUnits(await stakingContract.balanceOf(loanAddress), BigNumber.from(decimals));
-    const totalDeposits = formatUnits(await stakingContract.totalDeposits(), BigNumber.from(decimals));
-    const totalSupply = formatUnits(await stakingContract.totalSupply(), BigNumber.from(decimals));
+    const response = await multicallContract.callStatic.aggregate([
+      {
+        target: stakingContract.address,
+        callData: stakingContract.interface.encodeFunctionData('balanceOf', [loanAddress])
+      },
+      {
+        target: stakingContract.address,
+        callData: stakingContract.interface.encodeFunctionData('totalDeposits')
+      },
+      {
+        target: stakingContract.address,
+        callData: stakingContract.interface.encodeFunctionData('totalSupply')
+      },
+    ])
+
+    const loanBalance = formatUnits(decodeOutput(IYieldYak.abi, 'balanceOf', response.returnData[0])[0], decimals);
+    const totalDeposits = decodeOutput(IYieldYak.abi, 'totalDeposits', response.returnData[1])[0];
+    const totalSupply = decodeOutput(IYieldYak.abi, 'totalSupply', response.returnData[2])[0];
+
 
     return loanBalance / totalSupply * totalDeposits;
-  } catch (e) {
+  } catch (erorr) {
+    console.error(erorr);
     console.log('yieldYakMaxUnstaked error');
     return 0;
   }
@@ -234,10 +253,29 @@ export async function yieldYakMaxUnstaked(stakingContractAddress, loanAddress, d
 
 export async function beefyMaxUnstaked(stakingContractAddress, loanAddress, decimals = 18) {
   try {
+    const readProvider = new ethers.providers.JsonRpcProvider(config.readRpcUrl);
+    const multicallContract = new ethers.Contract(config.multicallAddress, MULTICALL.abi, readProvider);
     const stakingContract = new ethers.Contract(stakingContractAddress, IBeefyFinance.abi, provider.getSigner());
-    const loanBalance = formatUnits(await stakingContract.balanceOf(loanAddress), BigNumber.from(decimals));
-    const balance = formatUnits(await stakingContract.balance(), BigNumber.from(decimals));
-    const totalSupply = formatUnits(await stakingContract.totalSupply(), BigNumber.from(decimals));
+
+    const response = await multicallContract.callStatic.aggregate([
+      {
+        target: stakingContract.address,
+        callData: stakingContract.interface.encodeFunctionData('balanceOf', [loanAddress])
+      },
+      {
+        target: stakingContract.address,
+        callData: stakingContract.interface.encodeFunctionData('balance')
+      },
+      {
+        target: stakingContract.address,
+        callData: stakingContract.interface.encodeFunctionData('totalSupply')
+      },
+    ]);
+
+    const loanBalance = formatUnits(decodeOutput(IBeefyFinance.abi, 'balanceOf', response.returnData[0])[0], decimals);
+    const balance = decodeOutput(IBeefyFinance.abi, 'balance', response.returnData[1])[0];
+    const totalSupply = decodeOutput(IBeefyFinance.abi, 'totalSupply', response.returnData[2])[0];
+
 
     return loanBalance / totalSupply * balance;
   } catch (e) {
@@ -249,6 +287,7 @@ export async function beefyMaxUnstaked(stakingContractAddress, loanAddress, deci
 }
 
 export async function vectorFinanceMaxUnstaked(assetSymbol, stakingContractAddress, loanAddress) {
+  window.requestCounter++;
   const assetDecimals = config.ASSETS_CONFIG[assetSymbol].decimals;
   const stakingContract = new ethers.Contract(stakingContractAddress, IVectorFinanceCompounder.abi, provider.getSigner());
   let stakedBalance = 0;
