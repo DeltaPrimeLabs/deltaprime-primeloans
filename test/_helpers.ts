@@ -976,19 +976,6 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             hardhatConfig
         )
         await deployFacet(
-            "GmxV2FacetArbitrum",
-            diamondAddress,
-            [
-                'depositEthUsdcGmxV2',
-                'withdrawEthUsdcGmxV2',
-                'afterDepositExecution',
-                'afterDepositCancellation',
-                'afterWithdrawalExecution',
-                'afterWithdrawalCancellation'
-            ],
-            hardhatConfig
-        )
-        await deployFacet(
             "SushiSwapFacet",
             diamondAddress,
             [
@@ -1031,6 +1018,27 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                 'levelJnrBalance',
                 'depositLLPAndStake',
                 'unstakeAndWithdrawLLP',
+            ],
+            hardhatConfig
+        )
+        await deployFacet(
+            "GmxV2FacetArbitrum",
+            diamondAddress,
+            [
+                'depositEthUsdcGmxV2',
+                'depositArbUsdcGmxV2',
+                'depositLinkUsdcGmxV2',
+                'depositUniUsdcGmxV2',
+                'depositBtcUsdcGmxV2',
+                'withdrawEthUsdcGmxV2',
+                'withdrawArbUsdcGmxV2',
+                'withdrawLinkUsdcGmxV2',
+                'withdrawUniUsdcGmxV2',
+                'withdrawBtcUsdcGmxV2',
+                'afterDepositExecution',
+                'afterDepositCancellation',
+                'afterWithdrawalExecution',
+                'afterWithdrawalCancellation'
             ],
             hardhatConfig
         )

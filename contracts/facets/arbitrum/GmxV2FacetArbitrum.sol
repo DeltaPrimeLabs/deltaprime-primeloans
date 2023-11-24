@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 07fb49183dd5739c1982d5f339730cb76186bc8f;
+// Last deployed from commit: bd94fb12a9cfa9603571cf507e6f1fd926f90afb;
 pragma solidity 0.8.17;
 
 //This path is updated during deployment
@@ -115,11 +115,11 @@ contract GmxV2FacetArbitrum is GmxV2Facet {
 //        _deposit(GM_SOL_SOL_USDC, _depositedToken, tokenAmount, minGmAmount, executionFee);
 //    }
 //
-//    function depositBtcUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
-//        address _depositedToken = isLongToken ? WBTC : USDC;
-//
-//        _deposit(GM_BTC_WBTC_USDC, _depositedToken, tokenAmount, minGmAmount, executionFee);
-//    }
+    function depositBtcUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
+        address _depositedToken = isLongToken ? WBTC : USDC;
+
+        _deposit(GM_BTC_WBTC_USDC, _depositedToken, tokenAmount, minGmAmount, executionFee);
+    }
 
     // WITHDRAW
     function withdrawEthUsdcGmxV2(uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
@@ -142,9 +142,9 @@ contract GmxV2FacetArbitrum is GmxV2Facet {
 //        _withdraw(GM_SOL_SOL_USDC, gmAmount, minLongTokenAmount, minShortTokenAmount, executionFee);
 //    }
 //
-//    function withdrawBtcUsdcGmxV2(uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
-//        _withdraw(GM_BTC_WBTC_USDC, gmAmount, minLongTokenAmount, minShortTokenAmount, executionFee);
-//    }
+    function withdrawBtcUsdcGmxV2(uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) external payable onlyWhitelistedAccounts {
+        _withdraw(GM_BTC_WBTC_USDC, gmAmount, minLongTokenAmount, minShortTokenAmount, executionFee);
+    }
 
     // MODIFIERS
     modifier onlyWhitelistedAccounts {
@@ -163,7 +163,7 @@ contract GmxV2FacetArbitrum is GmxV2Facet {
         ){
             _;
         } else {
-            revert("Not whitelisted");
+            revert();
         }
     }
 }

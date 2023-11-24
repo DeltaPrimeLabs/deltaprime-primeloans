@@ -12,6 +12,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     embedCommitHash("SolvencyFacetProdArbitrum", "./contracts/facets/arbitrum");
     embedCommitHash("AssetsExposureController", "./contracts/facets");
     embedCommitHash("AssetsOperationsArbitrumFacet", "./contracts/facets/arbitrum");
+    embedCommitHash("SmartLoanViewFacet", "./contracts/facets");
 
     let GmxV2FacetArbitrum = await deploy("GmxV2FacetArbitrum", {
         from: deployer,
@@ -90,6 +91,25 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
             constructorArguments: []
         });
     console.log(`Verified AssetsOperationsArbitrumFacet`);
+
+    let SmartLoanViewFacet = await deploy("SmartLoanViewFacet", {
+        from: deployer,
+        gasLimit: 50000000,
+        args: [],
+    });
+
+
+    console.log(
+        `SmartLoanViewFacet implementation deployed at address: ${SmartLoanViewFacet.address}`
+    );
+
+    await verifyContract(hre,
+        {
+            address: SmartLoanViewFacet.address,
+            contract: `contracts/facets/SmartLoanViewFacet.sol:SmartLoanViewFacet`,
+            constructorArguments: []
+        });
+    console.log(`Verified SmartLoanViewFacet`);
 
 };
 
