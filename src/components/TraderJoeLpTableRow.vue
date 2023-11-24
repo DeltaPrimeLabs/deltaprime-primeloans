@@ -565,6 +565,7 @@ export default {
             market: this.lpToken.address,
             epoch: reward.epoch,
             token: reward.tokenAddress,
+            user: this.smartLoanContract.address,
             amount: reward.amount,
             merkleProof: this.lpToken.rewardsInfo.proofs[id]
           });
