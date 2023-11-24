@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 32adbcd982a13130a9ad5fb63f8b5dfea8ccb250;
+// Last deployed from commit: 4f2c172091bce3fa281c2815ee20fbd1fa42b766;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -217,16 +217,16 @@ contract SolvencyFacetProdAvalanche is AvalancheDataServiceConsumerBase, Diamond
         AssetPrice[] memory assetsToRepayPrices = new AssetPrice[](assetsToRepay.length);
         for(uint i=0; i<assetsToRepay.length; i++){
             assetsToRepayPrices[i] = AssetPrice({
-            asset: allAssetsSymbols[i+offset],
-            price: allAssetsPrices[i+offset]
+                asset: allAssetsSymbols[i+offset],
+                price: allAssetsPrices[i+offset]
             });
         }
 
         result = CachedPrices({
-        ownedAssetsPrices: ownedAssetsPrices,
-        debtAssetsPrices: debtAssetsPrices,
-        stakedPositionsPrices: stakedPositionsPrices,
-        assetsToRepayPrices: assetsToRepayPrices
+            ownedAssetsPrices: ownedAssetsPrices,
+            debtAssetsPrices: debtAssetsPrices,
+            stakedPositionsPrices: stakedPositionsPrices,
+            assetsToRepayPrices: assetsToRepayPrices
         });
     }
 
@@ -497,9 +497,7 @@ contract SolvencyFacetProdAvalanche is AvalancheDataServiceConsumerBase, Diamond
 
                     price = PriceHelper.convert128x128PriceToDecimal(binInfo.pair.getPriceFromId(binInfo.id)); // how is it denominated (what precision)?
 
-                    liquidity = price * binReserveX
-                        / 10 ** IERC20Metadata(address(binInfo.pair.getTokenX())).decimals()
-                        + binReserveY;
+                    liquidity = price * binReserveX / 10 ** 18 + binReserveY;
                 }
 
 
@@ -509,8 +507,11 @@ contract SolvencyFacetProdAvalanche is AvalancheDataServiceConsumerBase, Diamond
 
                     total = total +
                     Math.min(
-                        debtCoverageX * liquidity * priceInfo.priceX / (price * 10 ** 8),
-                        debtCoverageY * liquidity / 10 ** IERC20Metadata(address(binInfo.pair.getTokenY())).decimals() * priceInfo.priceY / 10 ** 8
+                        price > 10**24 ?
+                            debtCoverageX * liquidity / (price / 10 ** 18) / 10 ** IERC20Metadata(address(binInfo.pair.getTokenX())).decimals() * priceInfo.priceX / 10 ** 8
+                            :
+                            debtCoverageX * liquidity / price * 10**18 / 10 ** IERC20Metadata(address(binInfo.pair.getTokenX())).decimals() * priceInfo.priceX / 10 ** 8,
+                        debtCoverageY * liquidity / 10**(IERC20Metadata(address(binInfo.pair.getTokenY())).decimals()) * priceInfo.priceY / 10 ** 8
                     )
                     .mulDivRoundDown(binInfo.pair.balanceOf(address(this), binInfo.id), 1e18)
                     .mulDivRoundDown(1e18, binInfo.pair.totalSupply(binInfo.id));
@@ -519,7 +520,7 @@ contract SolvencyFacetProdAvalanche is AvalancheDataServiceConsumerBase, Diamond
 
             return total;
         } else {
-        return 0;
+            return 0;
         }
     }
 
@@ -572,7 +573,7 @@ contract SolvencyFacetProdAvalanche is AvalancheDataServiceConsumerBase, Diamond
                     } else if (sqrtMarketPrice < sqrtPrice_b) {
                         positionWorth =
                         position.liquidity * (debtCoverage0 * (sqrtPrice_b - sqrtMarketPrice) * 10 ** IERC20Metadata(position.token0).decimals() / (sqrtMarketPrice * sqrtPrice_b) * prices[0] / 10 ** 8
-                        + debtCoverage1 * (sqrtMarketPrice - sqrtPrice_a) / 10 ** IERC20Metadata(position.token1).decimals() * prices[1] / 10 ** 8) / 10**18;
+                            + debtCoverage1 * (sqrtMarketPrice - sqrtPrice_a) / 10 ** IERC20Metadata(position.token1).decimals() * prices[1] / 10 ** 8) / 10**18;
                     } else {
                         positionWorth = debtCoverage1 * position.liquidity / 1e18 * (sqrtPrice_b - sqrtPrice_a) / 10 ** IERC20Metadata(position.token1).decimals() * prices[1] / 10 ** 8;
                     }

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Deltaprime Cloud Functions",
   "scripts": {
-    "deploy": "sls deploy -s prod",
+    "deploy-prod": "sls deploy -s prod",
     "deploy-dev": "sls deploy -s dev"
   },
   "author": "",

@@ -31,6 +31,7 @@ provider:
     LOAN_AVA_TABLE: loans-ava-${opt:stage, "dev"}
     LOAN_ARB_TABLE: loans-arb-${opt:stage, "dev"}
     APY_TABLE: apys-${opt:stage, "dev"}
+    TJ_API_KEY: ${file(./.secrets/traderJoe.json):apiKey}
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -118,7 +119,7 @@ functions:
     timeout: 300
     description: Fetch APYs from TraderJoe website.
     events:
-      - schedule: rate(5 minutes)
+      - schedule: rate(12 minutes)
   sushiApyAggregator:
     handler: aggregators/apy.sushiApyAggregator
     memorySize: 2048
@@ -132,12 +133,19 @@ functions:
     timeout: 300
     description: Fetch APYs from Beefy website.
     events:
-      - schedule: rate(2 minutes)
+      - schedule: rate(3 minutes)
   levelApyAggregator:
     handler: aggregators/apy.levelApyAggregator
     memorySize: 2048
     timeout: 300
     description: Fetch APYs from Level website.
+    events:
+      - schedule: rate(2 minutes)
+  gmxApyAggregator:
+    handler: aggregators/apy.gmxApyAggregator
+    memorySize: 2048
+    timeout: 300
+    description: Fetch GM token APYs from GMX website.
     events:
       - schedule: rate(2 minutes)
   # loanAggregatorAva:
@@ -154,6 +162,14 @@ functions:
   #   description: upload loan addresses on Arbitrum
   #   events:
   #     - schedule: rate(5 minutes)
+  getRewardsInfoApi:
+    handler: apis/traderJoe.getRewardsInfoApi
+    memorySize: 512
+    description: Fetch claimable rewards and user proofs from TraderJoe V2 pool
+    events:
+      - httpApi:
+          method: get
+          path: /traderjoe/rewards/claimable
 
 resources:
   Resources:

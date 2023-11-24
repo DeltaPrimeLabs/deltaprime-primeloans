@@ -290,23 +290,19 @@ export default {
     },
 
     async setupApys({commit}) {
-      if (config.disableAWSData) {
-        commit('setApys', []);
-      } else {
-        let params = {
-          TableName: "apys-prod"
-        };
+      let params = {
+        TableName: "apys-prod"
+      };
 
-        const apyDoc = await docClient.scan(params).promise();
-        const apys = {};
+      const apyDoc = await docClient.scan(params).promise();
+      const apys = {};
 
-        apyDoc.Items.map(apy => {
-          apys[apy.id] = {...apy};
-        });
-        console.log(apys);
+      apyDoc.Items.map(apy => {
+        apys[apy.id] = {...apy};
+      });
+      console.log(apys);
 
-        commit('setApys', apys);
-      }
+      commit('setApys', apys);
     },
 
     async setupAssets({state, commit, rootState}) {
@@ -411,17 +407,21 @@ export default {
     },
 
     async setupTraderJoeV2LpAssets({state, rootState, commit}) {
-      const lpService = rootState.serviceRegistry.lpService;
+      const traderJoeService = rootState.serviceRegistry.traderJoeService;
       let lpTokens = {};
 
-      Object.values(config.TRADERJOEV2_LP_ASSETS_CONFIG).forEach(
-        asset => {
-          // To-do: check if the assets supported. correct symbols if not.
-          // if (state.supportedAssets.includes(asset.symbol)) {
-          lpTokens[asset.symbol] = asset;
-          // }
+      Object.values(config.TRADERJOEV2_LP_ASSETS_CONFIG).forEach(async asset => {
+        // To-do: check if the assets supported. correct symbols if not.
+        lpTokens[asset.symbol] = asset;
+
+        try {
+          const rewardsInfo = await traderJoeService.getRewardsInfo(state.smartLoanContract.address, asset.address);
+
+          lpTokens[asset.symbol]['rewardsInfo'] = rewardsInfo;
+        } catch (error) {
+          console.log(`fetching climable rewards error: ${error}`);
         }
-      );
+      });
 
       // To-do: request price of TJLB token prices from Redstone
 
@@ -1625,9 +1625,13 @@ export default {
         provider.getSigner()
       );
 
-      const approveTransaction = await lbTokenContract.approveForAll(state.smartLoanContract.address, true);
+      const isApprovedForAll = await lbTokenContract.isApprovedForAll(rootState.network.account, state.smartLoanContract.address);
 
-      await approveTransaction.wait();
+      if (!isApprovedForAll) {
+        const approveTransaction = await lbTokenContract.approveForAll(state.smartLoanContract.address, true);
+
+        await approveTransaction.wait();
+      }
 
       const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
 
@@ -1787,6 +1791,34 @@ export default {
       await dispatch("refreshTraderJoeV2LpUnderlyingBalancesAndLiquidity", {lpAsset});
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, config.refreshDelay);
+    },
+
+    async claimTraderJoeRewards({state, rootState, dispatch}, {claimRewardsRequest}) {
+      const provider = rootState.network.provider;
+
+      const loanAssets = mergeArrays([(
+          await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG)
+      ]);
+
+      console.log(state.smartLoanContract)
+      console.log(claimRewardsRequest.merkleEntries)
+      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).claimReward(claimRewardsRequest.merkleEntries);
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+
+      const tx = await awaitConfirmation(transaction, provider, 'claim rewards from traderjoe v2 pools');
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      rootState.serviceRegistry.modalService.closeModal();
       setTimeout(() => {
         rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
       }, SUCCESS_DELAY_AFTER_TRANSACTION);
