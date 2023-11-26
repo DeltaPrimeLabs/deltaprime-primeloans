@@ -120,6 +120,8 @@ export default {
       levelLpAssets: {},
       levelLpBalances: {},
       traderJoeV2LpAssets: {},
+      gmxV2Assets: {},
+      gmxV2Balances: {},
       farms: {},
       debtsPerAsset: {},
       thresholdWeightedValue: Number,
@@ -242,6 +244,15 @@ export default {
         tokens.push({
           price: data.price,
           balance: parseFloat(this.levelLpBalances[symbol]),
+          borrowed: 0,
+          debtCoverage: data.debtCoverage
+        });
+      }
+
+      for (const [symbol, data] of Object.entries(this.gmxV2Assets)) {
+        tokens.push({
+          price: data.price,
+          balance: parseFloat(this.gmxV2Balances[symbol]),
           borrowed: 0,
           debtCoverage: data.debtCoverage
         });

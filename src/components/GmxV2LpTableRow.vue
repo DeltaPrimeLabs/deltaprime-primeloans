@@ -390,7 +390,7 @@ export default {
       }
 
       let [longTokenOut, shortTokenOut] = await depositReader.getWithdrawalAmountOut(
-          config.gmxV2DataStoreAddress, marketProps, prices, toWei(this.gmxV2Balances[this.lpToken.symbol]), this.nullAddress
+          config.gmxV2DataStoreAddress, marketProps, prices, toWei((this.gmxV2Balances[this.lpToken.symbol] * 100).toString()), this.nullAddress
       );
 
       this.longTokenAmount = formatUnits(longTokenOut, longToken.decimals);

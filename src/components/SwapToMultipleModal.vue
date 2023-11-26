@@ -510,6 +510,15 @@ export default {
         });
       }
 
+      for (const [symbol, data] of Object.entries(this.gmxV2Assets)) {
+        tokens.push({
+          price: data.price,
+          balance: parseFloat(this.gmxV2Balances[symbol]),
+          borrowed: 0,
+          debtCoverage: data.debtCoverage
+        });
+      }
+
       for (const [, farms] of Object.entries(this.farms)) {
         farms.forEach(farm => {
           tokens.push({
