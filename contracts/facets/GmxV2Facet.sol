@@ -22,7 +22,7 @@ import "../interfaces/gmx-v2/IGmxV2Router.sol";
 import "../interfaces/gmx-v2/IWithdrawalCallbackReceiver.sol";
 
 //This path is updated during deployment
-import "../lib/local/DeploymentConstants.sol";
+import "../lib/avalanche/DeploymentConstants.sol";
 
 abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackReceiver, ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     using TransferHelper for address;
@@ -48,7 +48,6 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
 
     function isCallerAuthorized(address _caller) internal view returns (bool){
         IRoleStore roleStore = IRoleStore(getGMX_V2_ROLE_STORE());
-        // TODO: Once on prod - verify the roles of authorized signers
         if(roleStore.hasRole(_caller, CONTROLLER)){
             return true;
         }
@@ -87,7 +86,7 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
                 minMarketTokens: minGmAmount, //minMarketTokens
                 shouldUnwrapNativeToken: false, //shouldUnwrapNativeToken
                 executionFee: executionFee, //executionFee
-                callbackGasLimit: 200000 //callbackGasLimit
+                callbackGasLimit: 300000 //callbackGasLimit
             })
         );
 
