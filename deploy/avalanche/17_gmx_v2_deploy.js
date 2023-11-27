@@ -9,29 +9,29 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deployer, admin } = await getNamedAccounts();
 
     embedCommitHash("GmxV2FacetAvalanche", "./contracts/facets/avalanche");
-    embedCommitHash("SolvencyFacetProdAvalanche", "./contracts/facets/avalanche");
-    embedCommitHash("AssetsOperationsAvalancheFacet", "./contracts/facets/avalanche");
-    embedCommitHash("SmartLoanViewFacet", "./contracts/facets");
+    // embedCommitHash("SolvencyFacetProdAvalanche", "./contracts/facets/avalanche");
+    // embedCommitHash("AssetsOperationsAvalancheFacet", "./contracts/facets/avalanche");
+    // embedCommitHash("SmartLoanViewFacet", "./contracts/facets");
 
-    let SmartLoanViewFacet = await deploy("SmartLoanViewFacet", {
-        from: deployer,
-        gasLimit: 15000000,
-        gasPrice: 450000000000,
-        args: [],
-    });
-
-
-    console.log(
-        `SmartLoanViewFacet implementation deployed at address: ${SmartLoanViewFacet.address}`
-    );
-
-    await verifyContract(hre,
-        {
-            address: SmartLoanViewFacet.address,
-            contract: `contracts/facets/SmartLoanViewFacet.sol:SmartLoanViewFacet`,
-            constructorArguments: []
-        });
-    console.log(`Verified SmartLoanViewFacet`);
+    // let SmartLoanViewFacet = await deploy("SmartLoanViewFacet", {
+    //     from: deployer,
+    //     gasLimit: 15000000,
+    //     gasPrice: 450000000000,
+    //     args: [],
+    // });
+    //
+    //
+    // console.log(
+    //     `SmartLoanViewFacet implementation deployed at address: ${SmartLoanViewFacet.address}`
+    // );
+    //
+    // await verifyContract(hre,
+    //     {
+    //         address: SmartLoanViewFacet.address,
+    //         contract: `contracts/facets/SmartLoanViewFacet.sol:SmartLoanViewFacet`,
+    //         constructorArguments: []
+    //     });
+    // console.log(`Verified SmartLoanViewFacet`);
 
     let GmxV2FacetAvalanche = await deploy("GmxV2FacetAvalanche", {
         from: deployer,
@@ -55,45 +55,45 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
 
 
-    let SolvencyFacetProdAvalanche = await deploy("SolvencyFacetProdAvalanche", {
-        from: deployer,
-        gasLimit: 15000000,
-        gasPrice: 400000000000,
-        args: [],
-    });
-
-    console.log(
-        `SolvencyFacetProdAvalanche implementation deployed at address: ${SolvencyFacetProdAvalanche.address}`
-    );
-
-    await verifyContract(hre,
-        {
-            address: SolvencyFacetProdAvalanche.address,
-            contract: `contracts/facets/avalanche/SolvencyFacetProdAvalanche.sol:SolvencyFacetProdAvalanche`,
-            constructorArguments: []
-        });
-    console.log(`Verified SolvencyFacetProdAvalanche`);
-
-
-    let AssetsOperationsAvalancheFacet = await deploy("AssetsOperationsAvalancheFacet", {
-        from: deployer,
-        gasLimit: 15000000,
-        gasPrice: 400000000000,
-        args: [],
-    });
-
-
-    console.log(
-        `AssetsOperationsAvalancheFacet implementation deployed at address: ${AssetsOperationsAvalancheFacet.address}`
-    );
-
-    await verifyContract(hre,
-        {
-            address: AssetsOperationsAvalancheFacet.address,
-            contract: `contracts/facets/avalanche/AssetsOperationsAvalancheFacet.sol:AssetsOperationsAvalancheFacet`,
-            constructorArguments: []
-        });
-    console.log(`Verified AssetsOperationsAvalancheFacet`);
+    // let SolvencyFacetProdAvalanche = await deploy("SolvencyFacetProdAvalanche", {
+    //     from: deployer,
+    //     gasLimit: 15000000,
+    //     gasPrice: 400000000000,
+    //     args: [],
+    // });
+    //
+    // console.log(
+    //     `SolvencyFacetProdAvalanche implementation deployed at address: ${SolvencyFacetProdAvalanche.address}`
+    // );
+    //
+    // await verifyContract(hre,
+    //     {
+    //         address: SolvencyFacetProdAvalanche.address,
+    //         contract: `contracts/facets/avalanche/SolvencyFacetProdAvalanche.sol:SolvencyFacetProdAvalanche`,
+    //         constructorArguments: []
+    //     });
+    // console.log(`Verified SolvencyFacetProdAvalanche`);
+    //
+    //
+    // let AssetsOperationsAvalancheFacet = await deploy("AssetsOperationsAvalancheFacet", {
+    //     from: deployer,
+    //     gasLimit: 15000000,
+    //     gasPrice: 400000000000,
+    //     args: [],
+    // });
+    //
+    //
+    // console.log(
+    //     `AssetsOperationsAvalancheFacet implementation deployed at address: ${AssetsOperationsAvalancheFacet.address}`
+    // );
+    //
+    // await verifyContract(hre,
+    //     {
+    //         address: AssetsOperationsAvalancheFacet.address,
+    //         contract: `contracts/facets/avalanche/AssetsOperationsAvalancheFacet.sol:AssetsOperationsAvalancheFacet`,
+    //         constructorArguments: []
+    //     });
+    // console.log(`Verified AssetsOperationsAvalancheFacet`);
 
 };
 

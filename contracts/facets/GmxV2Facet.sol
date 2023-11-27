@@ -22,7 +22,7 @@ import "../interfaces/gmx-v2/IGmxV2Router.sol";
 import "../interfaces/gmx-v2/IWithdrawalCallbackReceiver.sol";
 
 //This path is updated during deployment
-import "../lib/avalanche/DeploymentConstants.sol";
+import "../lib/local/DeploymentConstants.sol";
 
 abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackReceiver, ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     using TransferHelper for address;
