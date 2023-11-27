@@ -298,8 +298,11 @@ export default {
 
     assetOptions: {
       handler() {
-        this.setupDisplayedAssetOptions();
-      }
+        if (this.assetOptions) {
+          this.setupDisplayedAssetOptions();
+        }
+      },
+      immediate: true
     },
 
     availableChains: {

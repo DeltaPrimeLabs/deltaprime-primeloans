@@ -198,6 +198,11 @@ export async function signMessageForNotifi(provider, message, wallet, depositor 
   return {signedMessage: utils.arrayify(signedMessage), account: wallet};
 }
 
+export async function hashData(dataTypes, dataValues) {
+  const bytes = ethers.utils.defaultAbiCoder.encode(dataTypes, dataValues);
+  return ethers.utils.keccak256(ethers.utils.arrayify(bytes));
+}
+
 export const loanTermsToSign =
 `By entering DeltaPrime I agree to be bound by the DeltaPrime "TERMS OF USE" and herby further represent and warrant that:
 I am not a citizen of, natural and legal person, having habitual residence, location or their seat of incorporation in the country or territory where transactions with digital

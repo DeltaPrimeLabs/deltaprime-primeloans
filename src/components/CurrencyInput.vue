@@ -22,7 +22,7 @@
         <div v-if="!embedded" class="logo-wrapper">
           <img class="logo" :src="logo ? `src/assets/logo/${logo}` : logoSrc(symbol)"/>
           <img class="logo secondary" v-if="symbolSecondary" :src="logoSrc(symbolSecondary)"/>
-          <span v-if="!isMobile" class="symbol">{{ symbol }}<br>{{ symbolSecondary ? symbolSecondary : '' }}</span>
+          <span v-if="!isMobile" class="symbol">{{ (asset && asset.short) ? asset.short : symbol }}<br>{{ symbolSecondary ? symbolSecondary : '' }}</span>
         </div>
       </div>
     </div>

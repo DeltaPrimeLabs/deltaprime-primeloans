@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: ;
+// Last deployed from commit: c192482da8ad844970da54d609babb69b9cca2a7;
 pragma solidity 0.8.17;
 
 import "../ReentrancyGuardKeccak.sol";
@@ -46,6 +46,11 @@ contract SmartLoanViewFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
     function getPercentagePrecision() public view virtual returns (uint256) {
         return DeploymentConstants.getPercentagePrecision();
+    }
+
+    function getAccountFrozenSince() public view returns (uint256){
+        DiamondStorageLib.SmartLoanStorage storage sls = DiamondStorageLib.smartLoanStorage();
+        return sls.frozenSince;
     }
 
 

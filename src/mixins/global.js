@@ -71,7 +71,14 @@ export default {
     },
     logoSrc(asset) {
       asset = asset ? asset : 'avax';
-      const assetData = config.ASSETS_CONFIG[asset];
+      const assetData = config.ASSETS_CONFIG[asset]
+          ? config.ASSETS_CONFIG[asset]
+          : config.LP_ASSETS_CONFIG[asset]
+          ? config.LP_ASSETS_CONFIG[asset]
+          : config.GMX_V2_ASSETS_CONFIG[asset]
+          ? config.GMX_V2_ASSETS_CONFIG[asset]
+          : config.GMX_V2_ASSETS_CONFIG[asset];
+
       if (assetData) {
         return `src/assets/logo/${asset.toLowerCase()}.${assetData.logoExt ? assetData.logoExt : 'svg'}`;
       }
@@ -114,6 +121,9 @@ export default {
     },
     minAllowedHealth() {
       return config.MIN_ALLOWED_HEALTH;
+    },
+    nullAddress() {
+      return '0x0000000000000000000000000000000000000000';
     }
   },
   data() {

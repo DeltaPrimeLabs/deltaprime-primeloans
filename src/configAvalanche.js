@@ -47,6 +47,10 @@ export default {
         ParaSwap: {
             availableAssets: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'sAVAX', 'QI', 'PNG', 'PTP'],
             slippageMargin: 0.05
+        },
+        GmxV2: {
+            availableAssets: [],
+            slippageMargin: 0.1
         }
     },
     paraSwapDefaultSlippage: 1,
@@ -99,6 +103,11 @@ export default {
         'TJLB_BTC.b-AVAX': { primary: 'BTC', secondary: 'AVAX', name: 'BTC-AVAX', dex: 'TraderJoe', symbol: 'TJLB_BTCB-AVAX', debtCoverage: 0.83333333333, decimals: 18, baseFee: '0.1', address: addresses['TJLB_BTC.b-AVAX'], binStep: 10, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2', link: 'https://traderjoexyz.com/avalanche/pool/v21/0x152b9d0fdc40c096757f570a51e494bd4b943e50/AVAX/10'},
     },
     LEVEL_LP_ASSETS_CONFIG: {},
+    GMX_V2_ASSETS_CONFIG: {
+        "GM_AVAX_WAVAX_USDC": {name: "AVAX-USDC", symbol: "GM_AVAX_WAVAX_USDC", short: "GM", decimals: 18, address: addresses.GM_AVAX_WAVAX_USDC, debtCoverage: 0.83333333333, longToken: 'AVAX', shortToken: 'USDC', indexTokenAddress: addresses.AVAX, groupIdentifier: "GM_AVAX_WAVAX_USDC_GROUP", link: 'https://app.gmx.io/#/stats'},
+        "GM_BTC_BTCb_USDC": {name: "BTC-USDC", symbol: "GM_BTC_BTCb_USDC", logoExt: "png", short: "GM", decimals: 18, address: addresses.GM_BTC_BTCb_USDC, debtCoverage: 0.83333333333, longToken: 'BTC', shortToken: 'USDC', indexTokenAddress: addresses.BTC, groupIdentifier: "GM_BTC_BTCb_USDC_GROUP", link: 'https://app.gmx.io/#/stats'},
+        "GM_ETH_WETHe_USDC": {name: "ETH-USDC", symbol: "GM_ETH_WETHe_USDC", short: "GM", decimals: 18, address: addresses.GM_ETH_WETHe_USDC, debtCoverage: 0.83333333333, longToken: 'ETH', shortToken: 'USDC', indexTokenAddress: addresses.ETH, groupIdentifier: "GM_ETH_WETHe_USDC_GROUP", link: 'https://app.gmx.io/#/stats'},
+    },
     maxTraderJoeV2Bins: 80,
     DEX_CONFIG: {
         'Pangolin': {
@@ -464,7 +473,14 @@ export default {
     yieldYakGlpWrapperAddress: '0x442DB6e78e54449B2a5f08A943Fa8a79041C797b',
     glpRewardsRouterAddress: '0x82147C5A7E850eA4E28155DF107F2590fD4ba327',
     depositSwapAddress: "0x74B5C3499AbDe6D85B6287617195813455051713",
-    levelLiquidityCalculatorAddress: "0xf1e5D6c0ce39fDBb9682F1A3385f0d2067740C61",
+    gmxV2ReaderAddress: "0x73BA021ACF4Bb6741E82690DdB821e7936050f8C",
+    gmxV2DataStoreAddress: "0x2F0b22339414ADeD7D5F06f9D604c7fF5b2fe3f6",
+    gmxV2HighExecutionFee: 0,
+    gmxV2DepositCallbackGasLimit: 300000,
+    gmxV2WithdrawalCallbackGasLimit: 300000,
+    gmxV2GasPriceBuffer: 0.1,
+    gmxV2GasPricePremium: 3000000000,
+    gmxV2UseMaxPriorityFeePerGas: true,
     nativeToken: "AVAX",
     SLIPPAGE_TOLERANCE: 0.03,
     dataProviderId: "redstone-avalanche-prod",
@@ -475,4 +491,5 @@ export default {
     multicallAddress: "0x271BcC10126A0B94EC5FaFf0B4f39A50fC4AC117",
     EMAIL_REGEX: /(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])/,
     refreshDelay: 5000,
+    gmxV2RefreshDelay: 7000
 }

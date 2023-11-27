@@ -1,5 +1,11 @@
 <template>
   <div class="lp-tab">
+    <div class="lp-tokens" v-if="Object.keys(gmxV2LpTokens).length">
+      <div class="lp-table level" v-if="gmxV2LpTokens">
+        <TableHeader :config="gmxV2LpTableHeaderConfig"></TableHeader>
+        <GmxV2LpTableRow v-for="(lpToken, index) in gmxV2LpTokens" v-bind:key="index" :index="index" :lp-token="lpToken"></GmxV2LpTableRow>
+      </div>
+    </div>
     <div class="lp-tokens">
       <div class="lp-table" v-if="traderJoeLpTokens">
         <TableHeader :config="traderJoeLpTableHeaderConfig"></TableHeader>
@@ -54,10 +60,12 @@ import TraderJoeLpTableRow from './TraderJoeLpTableRow.vue';
 import {mapState} from 'vuex';
 import Paginator from "./Paginator.vue";
 import LevelLpTableRow from "./LevelLpTableRow.vue";
+import GmxV2LpTableRow from "./GmxV2LpTableRow.vue";
 
 export default {
   name: 'LPTab',
   components: {
+    GmxV2LpTableRow,
     LevelLpTableRow,
     Paginator, TraderJoeLpTableRow, LpTableRow, AssetFilter, ConcentratedLpTableRow, TableHeader
   },
@@ -70,6 +78,8 @@ export default {
       lpTableHeaderConfig: null,
       traderJoeLpTokens: config.TRADERJOEV2_LP_ASSETS_CONFIG,
       traderJoeLpTableHeaderConfig: null,
+      gmxV2LpTokens: config.GMX_V2_ASSETS_CONFIG,
+      gmxV2LpTableHeaderConfig: null,
       levelLpTokens: config.LEVEL_LP_ASSETS_CONFIG,
       levelLpTableHeaderConfig: null,
       selectedLpTokens: [] = [],
@@ -84,6 +94,7 @@ export default {
     this.setupTraderJoeLpTableHeaderConfig();
     this.setupLpTableHeaderConfig();
     this.setupLevelLpTableHeaderConfig();
+    this.setupGmxV2LpTableHeaderConfig();
   },
   computed: {
     ...mapState('serviceRegistry', [
@@ -389,6 +400,83 @@ export default {
             <a href='https://docs.deltaprime.io/protocol/security/token-exposure-protection' target='_blank'>More information</a>.
             `
           },
+          {
+            label: 'Min. APR',
+            sortable: false,
+            class: 'apr',
+            id: 'APR',
+            tooltip: `All fees, rewards and counterparty PnL collected, divided by TVL of this tranche. This does not take underlying asset price changes or IL into account.`
+          },
+          {
+            label: 'Max. APR',
+            sortable: false,
+            class: 'apr',
+            id: 'MAX-APR',
+            tooltip: `The APR if you would borrow the lowest-interest asset from 100% to 10%, and put your total value into this pool.`
+          },
+          {
+            label: '',
+          },
+          {
+            label: 'Actions',
+            class: 'actions',
+            id: 'ACTIONS',
+            tooltip: `Click
+                      <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/exchange#actions' target='_blank'>here</a>
+                      for more information on the different actions you can perform in your Prime Account.`
+          },
+        ]
+      };
+    },
+    setupGmxV2LpTableHeaderConfig() {
+      this.gmxV2LpTableHeaderConfig = {
+        gridTemplateColumns: 'repeat(2, 1fr) 240px 130px 100px 120px 100px 60px 80px 22px',
+        cells: [
+          {
+            label: 'GM Token',
+            sortable: false,
+            class: 'token',
+            id: 'TOKEN',
+            tooltip: `The GM market name. These names are simplified for a smoother UI.`
+          },
+          {
+            label: 'Balance',
+            sortable: false,
+            class: 'balance',
+            id: 'BALANCE',
+            tooltip: `The balance of this GM token in your Prime Account.`
+          },
+          {
+            label: 'Composition',
+            sortable: false,
+            class: 'composition',
+            id: 'COMPOSITION',
+            tooltip: `Composition ot the GM token.`
+          },
+          {
+            label: 'Trend (7D)',
+            sortable: false,
+            class: 'trend-level',
+            id: 'TREND',
+            tooltip: `7D price change of this GM token.`
+          },
+          {
+            label: 'TVL',
+            sortable: false,
+            class: 'balance',
+            id: 'tvl',
+            tooltip: `The Total Value Locked (TVL) in the underlying pool.<br>
+                      <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/pools#tvl' target='_blank'>More information</a>.`
+          },
+          // {
+          //   label: 'Capacity',
+          //   sortable: false,
+          //   class: 'capacity',
+          //   id: 'capacity',
+          //   tooltip: `The global maximum capacity of this LLP. When the capacity is at 100%, this asset can not be created or deposited.
+          //   <a href='https://docs.deltaprime.io/protocol/security/token-exposure-protection' target='_blank'>More information</a>.
+          //   `
+          // },
           {
             label: 'Min. APR',
             sortable: false,

@@ -569,4 +569,11 @@
   --partner-info-modal__measure-state-indicator-color--disabled: #{$pale-red};
   --partner-info-modal__measure-state-indicator-color--enabled: #{$pale-green};
   // endregion
+
+  // region AppToggle
+  --app-toggle__background: #{$space-fuchsia};
+  --app-toggle__switch-background: linear-gradient(to left, #{$washed-purple} 17%, #{$awesome-blue} 91%);
+  --app-toggle__switch-color: #{$pale-space};
+  --app-toggle__switch-box-shadow: 1px 1px 4px 0 #{$dark-space}99;
+  // endregion
 }

@@ -51,6 +51,7 @@
           <a href="https://deltaprime.io/">
             <img src="src/assets/icons/deltaprime.svg" class="logo">
           </a>
+          <AppToggle class="top-bar__app-toggle"></AppToggle>
           <ThemeToggle class="top-bar__theme-toggle"></ThemeToggle>
         </div>
         <!--      <div class="connect" v-if="!account" v-on:click="initNetwork()">Connect to wallet</div>-->
@@ -77,9 +78,11 @@ import Button from './components/Button';
 import ProgressBar from './components/ProgressBar';
 import ThemeToggle from "./components/ThemeToggle.vue";
 import {getCountdownString} from "./utils/calculate";
+import AppToggle from "./components/AppToggle.vue";
 
 export default {
   components: {
+    AppToggle,
     ThemeToggle,
     ProgressBar,
     Button,
@@ -393,7 +396,8 @@ a {
   align-items: center;
 }
 
-.top-bar__theme-toggle {
+.top-bar__theme-toggle,
+.top-bar__app-toggle, {
   margin-left: 24px;
 }
 

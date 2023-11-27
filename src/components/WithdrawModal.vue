@@ -23,12 +23,14 @@
       <CurrencyInput v-if="isLP"
                      :symbol="asset.primary"
                      :symbol-secondary="asset.secondary"
+                     :asset="asset"
                      v-on:newValue="withdrawValueChange"
                      :validators="validators"
                      :info="() => sourceAssetValue">
       </CurrencyInput>
       <CurrencyInput v-else
-                     :symbol="asset.symbol"
+                     :symbol="asset.short ? asset.short : asset.symbol"
+                     :asset="asset"
                      v-on:newValue="withdrawValueChange"
                      :logo="logo"
                      :validators="validators"
@@ -126,6 +128,8 @@ export default {
     levelLpAssets: {},
     levelLpBalances: {},
     traderJoeV2LpAssets: {},
+    gmxV2Assets: {},
+    gmxV2Balances: {},
   },
 
   data() {
@@ -240,6 +244,15 @@ export default {
         }
 
         tokens.push({ price: data.price, balance: balance, borrowed: 0, debtCoverage: data.debtCoverage});
+      }
+
+      for (const [symbol, data] of Object.entries(this.gmxV2Assets)) {
+        tokens.push({
+          price: data.price,
+          balance: parseFloat(this.gmxV2Balances[symbol]),
+          borrowed: 0,
+          debtCoverage: data.debtCoverage
+        });
       }
 
       for (const [, farms] of Object.entries(this.farms)) {

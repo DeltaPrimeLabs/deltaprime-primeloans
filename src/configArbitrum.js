@@ -55,6 +55,10 @@ export default {
         Level: {
             availableAssets: [],
             slippageMargin: 0.1
+        },
+        GmxV2: {
+            availableAssets: [],
+            slippageMargin: 0.1
         }
     },
     paraSwapDefaultSlippage: 0.02,
@@ -119,6 +123,13 @@ export default {
         "arbJnrLLP": {name: "Junior", symbol: "arbJnrLLP", pid: 2, short: "Jnr", decimals: 18, address: addresses.arbJnrLLP, debtCoverage: 0.83333333333, balanceMethod: "levelJnrBalance", groupIdentifier: 'STKD_JNR_LLP_GROUP', underlyingAssets: ['BTC', 'ETH', 'ARB', 'USDT', 'USDC'], link: 'https://app.level.finance/liquidity/junior-tranche/buy', disableAddTokenButton: true},
         "arbMzeLLP": {name: "Mezzanine", symbol: "arbMzeLLP", pid: 1, short: "Mze", decimals: 18, address: addresses.arbMzeLLP, debtCoverage: 0.83333333333, balanceMethod: "levelMzeBalance", groupIdentifier: 'STKD_MZE_LLP_GROUP', underlyingAssets: ['BTC', 'ETH', 'USDT', 'USDC'], link: 'https://app.level.finance/liquidity/mezzanine-tranche/buy', disableAddTokenButton: true},
         "arbSnrLLP": {name: "Senior", symbol: "arbSnrLLP", pid: 0, short: "Snr", decimals: 18, address: addresses.arbSnrLLP, debtCoverage: 0.83333333333, balanceMethod: "levelSnrBalance", groupIdentifier: 'STKD_SNR_LLP_GROUP', underlyingAssets: ['BTC', 'ETH', 'USDT', 'USDC'], link: 'https://app.level.finance/liquidity/senior-tranche/buy'},
+    },
+    GMX_V2_ASSETS_CONFIG: {
+        "GM_ETH_WETH_USDC": {name: "ETH-USDC", symbol: "GM_ETH_WETH_USDC", short: "GM", decimals: 18, address: addresses.GM_ETH_WETH_USDC, debtCoverage: 0.83333333333, longToken: 'ETH', shortToken: 'USDC', indexTokenAddress: addresses.ETH, groupIdentifier: "GM_ETH_WETH_USDC_GROUP", link: 'https://app.gmx.io/#/stats'},
+        "GM_BTC_WBTC_USDC": {name: "BTC-USDC", symbol: "GM_BTC_WBTC_USDC", short: "GM", logoExt: "png", price: 1, decimals: 18, address: addresses.GM_BTC_WBTC_USDC, debtCoverage: 0.83333333333, longToken: 'BTC', shortToken: 'USDC', indexTokenAddress: addresses.BTC, groupIdentifier: "GM_BTC_WBTC_USDC_GROUP", link: 'https://app.gmx.io/#/stats'},
+        "GM_ARB_ARB_USDC": {name: "ARB-USDC", symbol: "GM_ARB_ARB_USDC", short: "GM", logoExt: "png", decimals: 18, address: addresses.GM_ARB_ARB_USDC, debtCoverage: 0.83333333333, longToken: 'ARB', shortToken: 'USDC', indexTokenAddress: addresses.ARB, groupIdentifier: "GM_ARB_ARB_USDC_GROUP", link: 'https://app.gmx.io/#/stats'},
+        "GM_UNI_UNI_USDC": {name: "UNI-USDC", symbol: "GM_UNI_UNI_USDC", short: "GM", logoExt: "png", price: 1, decimals: 18, address: addresses.GM_UNI_UNI_USDC, debtCoverage: 0.83333333333, longToken: 'UNI', shortToken: 'USDC', indexTokenAddress: addresses.UNI, groupIdentifier: "GM_UNI_UNI_USDC_GROUP", link: 'https://app.gmx.io/#/stats'},
+        "GM_LINK_LINK_USDC": {name: "LINK-USDC", symbol: "GM_LINK_LINK_USDC", short: "GM", price: 1, decimals: 18, address: addresses.GM_LINK_LINK_USDC, debtCoverage: 0.83333333333, longToken: 'LINK', shortToken: 'USDC', indexTokenAddress: addresses.LINK, groupIdentifier: "GM_LINK_LINK_USDC_GROUP", link: 'https://app.gmx.io/#/stats'},
     },
     LP_ASSETS_CONFIG: {
         // "SUSHI_DPX_ETH_LP": {
@@ -288,6 +299,14 @@ export default {
     glpRewardsRouterAddress: '0xA906F338CB21815cBc4Bc87ace9e68c87eF8d8F1', //TODO: needs testing
     depositSwapAddress: "0x889Cfe41a376CFeF8F28E48A848728D5377552b9",
     levelLiquidityCalculatorAddress: "0xf1e5D6c0ce39fDBb9682F1A3385f0d2067740C61",
+    gmxV2ReaderAddress: "0xf60becbba223eea9495da3f606753867ec10d139",
+    gmxV2DataStoreAddress: "0xFD70de6b91282D8017aA4E741e9Ae325CAb992d8",
+    gmxV2HighExecutionFee: 0,
+    gmxV2DepositCallbackGasLimit: 300000,
+    gmxV2WithdrawalCallbackGasLimit: 300000,
+    gmxV2GasPriceBuffer: 0.1,
+    gmxV2GasPricePremium: 0,
+    gmxV2UseMaxPriorityFeePerGas: false,
     nativeToken: "ETH",
     SLIPPAGE_TOLERANCE: 0.03,
     dataProviderId: "redstone-arbitrum-prod",
@@ -298,4 +317,5 @@ export default {
     multicallAddress: "0x0674ee727f74752ea9dc630bd5c5d8a374187e7b",
     EMAIL_REGEX: /(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])/,
     refreshDelay: 2000,
+    gmxV2RefreshDelay: 4000,
 }

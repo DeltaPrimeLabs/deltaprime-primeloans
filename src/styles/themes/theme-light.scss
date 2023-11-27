@@ -568,4 +568,11 @@
   --partner-info-modal__measure-state-indicator-color--disabled: #{$red};
   --partner-info-modal__measure-state-indicator-color--enabled: #{$lime-green};
   // endregion
+
+  // region AppToggle
+  --app-toggle__background: #{$delta-light};
+  --app-toggle__switch-background: #{$white};
+  --app-toggle__switch-color: #{$persian-blue};
+  --app-toggle__switch-box-shadow: 1px 1px 4px 0 #{$smoke-purple}4c;
+  // endregion
 }

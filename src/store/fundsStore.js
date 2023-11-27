@@ -60,6 +60,7 @@ export default {
     concentratedLpAssets: null,
     traderJoeV2LpAssets: null,
     levelLpAssets: null,
+    gmxV2Assets: null,
     supportedAssets: null,
     provider: null,
     readSmartLoanContract: null,
@@ -71,6 +72,7 @@ export default {
     lpBalances: null,
     concentratedLpBalances: null,
     levelLpBalances: null,
+    gmxV2Balances: null,
     accountApr: null,
     debt: null,
     totalValue: null,
@@ -116,6 +118,10 @@ export default {
       state.levelLpAssets = assets;
     },
 
+    setGmxV2Assets(state, assets) {
+      state.gmxV2Assets = assets;
+    },
+
     setSupportedAssets(state, assets) {
       state.supportedAssets = assets;
     },
@@ -154,6 +160,10 @@ export default {
 
     setLevelLpBalances(state, lpBalances) {
       state.levelLpBalances = lpBalances;
+    },
+
+    setGmxV2Balances(state, balances) {
+      state.gmxV2Balances = balances;
     },
 
     setFullLoanStatus(state, status) {
@@ -204,6 +214,7 @@ export default {
       await dispatch('setupConcentratedLpAssets');
       await dispatch('setupTraderJoeV2LpAssets');
       if (config.LEVEL_LP_ASSETS_CONFIG) await dispatch('setupLevelLpAssets');
+      if (config.GMX_V2_ASSETS_CONFIG) await dispatch('setupGmxV2Assets');
       await dispatch('stakeStore/updateStakedPrices', null, {root: true});
       state.assetBalances = [];
 
@@ -256,6 +267,7 @@ export default {
         await dispatch('setupConcentratedLpAssets');
         await dispatch('setupTraderJoeV2LpAssets');
         if (config.LEVEL_LP_ASSETS_CONFIG) await dispatch('setupLevelLpAssets');
+        if (config.GMX_V2_ASSETS_CONFIG) await dispatch('setupGmxV2Assets');
         await dispatch('getAllAssetsBalances');
         await dispatch('getAllAssetsApys');
         await dispatch('getDebtsPerAsset');
@@ -332,6 +344,7 @@ export default {
       const tokenManager = new ethers.Contract(TOKEN_MANAGER_TUP.address, TOKEN_MANAGER.abi, provider.getSigner());
       let allAssets = state.assets;
       let allLevelLpAssets = state.levelLpAssets;
+      let allGmxV2Assets = state.gmxV2Assets;
       const dataRefreshNotificationService = rootState.serviceRegistry.dataRefreshEventService;
 
       async function setExposures(assets) {
@@ -357,6 +370,11 @@ export default {
       if (allLevelLpAssets) {
         await setExposures(allLevelLpAssets);
         commit('setLevelLpAssets', allLevelLpAssets);
+      }
+
+      if (allGmxV2Assets) {
+        await setExposures(allGmxV2Assets);
+        commit('setGmxV2Assets', allGmxV2Assets);
       }
     },
 
@@ -450,6 +468,30 @@ export default {
 
       commit('setLevelLpAssets', lpTokens);
     },
+
+    async setupGmxV2Assets({state, rootState, commit}) {
+      const lpService = rootState.serviceRegistry.lpService;
+      let lpTokens = {};
+
+      Object.values(config.GMX_V2_ASSETS_CONFIG).forEach(
+          asset => {
+            if (state.supportedAssets.includes(asset.symbol)) {
+              lpTokens[asset.symbol] = asset;
+            }
+          }
+      );
+
+      const redstonePriceDataRequest = await fetch(config.redstoneFeedUrl);
+      const redstonePriceData = await redstonePriceDataRequest.json();
+
+      Object.keys(lpTokens).forEach(async assetSymbol => {
+        lpTokens[assetSymbol].price = redstonePriceData[assetSymbol] ? redstonePriceData[assetSymbol][0].dataPoints[0].value : 0;
+        lpService.emitRefreshLp();
+      });
+
+      commit('setGmxV2Assets', lpTokens);
+    },
+
 
     async setupContracts({rootState, commit}) {
       const smartLoanFactoryContract = new ethers.Contract(SMART_LOAN_FACTORY_TUP.address, SMART_LOAN_FACTORY.abi, provider.getSigner());
@@ -623,6 +665,7 @@ export default {
       const balances = {};
       const lpBalances = {};
       const concentratedLpBalances = {};
+      const gmxV2Balances = {};
       const levelLpBalances = {};
       const assetBalances = await state.readSmartLoanContract.getAllAssetsBalances();
       assetBalances.forEach(
@@ -636,6 +679,9 @@ export default {
           }
           if (config.CONCENTRATED_LP_ASSETS_CONFIG[symbol]) {
             concentratedLpBalances[symbol] = formatUnits(asset.balance.toString(), config.CONCENTRATED_LP_ASSETS_CONFIG[symbol].decimals);
+          }
+          if (config.GMX_V2_ASSETS_CONFIG[symbol]) {
+            gmxV2Balances[symbol] = formatUnits(asset.balance.toString(), config.GMX_V2_ASSETS_CONFIG[symbol].decimals);
           }
         }
       );
@@ -664,6 +710,7 @@ export default {
       await commit('setLpBalances', lpBalances);
       await commit('setConcentratedLpBalances', concentratedLpBalances);
       await commit('setLevelLpBalances', levelLpBalances);
+      await commit('setGmxV2Balances', gmxV2Balances);
       await dispatch('setupConcentratedLpUnderlyingBalances');
       await dispatch('setupTraderJoeV2LpUnderlyingBalancesAndLiquidity');
       const refreshEvent = {assetBalances: balances, lpBalances: lpBalances};
@@ -910,6 +957,20 @@ export default {
         commit('setLevelLpAssets', levelLpAssets);
       }
 
+      let gmxV2Assets = state.gmxV2Assets;
+
+      if (gmxV2Assets) {
+        if (Object.keys(gmxV2Assets).length !== 0) {
+          for (let [symbol, asset] of Object.entries(gmxV2Assets)) {
+            if (apys[symbol] && apys[symbol].lp_apy) {
+              gmxV2Assets[symbol].apy = apys[symbol].lp_apy * 100;
+            }
+          }
+        }
+
+        commit('setGmxV2Assets', gmxV2Assets);
+      }
+
       dataRefreshNotificationService.emitAssetApysDataRefresh();
     },
 
@@ -1039,6 +1100,17 @@ export default {
             const apy = lpAsset.apy ? lpAsset.apy / 100 : 0;
 
             yearlyLpInterest += parseFloat(state.levelLpBalances[symbol]) * apy * lpAsset.price;
+          }
+        }
+
+        if (state.gmxV2Assets && state.gmxV2Balances) {
+          for (let entry of Object.entries(state.gmxV2Assets)) {
+            let symbol = entry[0];
+            let lpAsset = entry[1];
+
+            const apy = lpAsset.apy ? lpAsset.apy / 100 : 0;
+
+            yearlyLpInterest += parseFloat(state.gmxV2Balances[symbol]) * apy * lpAsset.price;
           }
         }
 
@@ -1937,6 +2009,118 @@ export default {
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       rootState.serviceRegistry.modalService.closeModal();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, config.refreshDelay);
+    },
+
+    async addLiquidityGmxV2({state, rootState, commit, dispatch}, {addLiquidityRequest}) {
+      const provider = rootState.network.provider;
+
+      const loanAssets = mergeArrays([(
+          await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+        [addLiquidityRequest.sourceAsset, addLiquidityRequest.targetAsset]
+      ]);
+
+      const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
+
+      let sourceDecimals = config.ASSETS_CONFIG[addLiquidityRequest.sourceAsset].decimals;
+      let sourceAmount = parseUnits(parseFloat(addLiquidityRequest.sourceAmount).toFixed(sourceDecimals), sourceDecimals);
+
+      let targetDecimals = config.GMX_V2_ASSETS_CONFIG[addLiquidityRequest.targetAsset].decimals;
+
+      let minGmAmount = parseUnits(addLiquidityRequest.minGmAmount.toFixed(targetDecimals), targetDecimals);
+
+      let executionFeeWei = toWei(addLiquidityRequest.executionFee.toFixed(18));
+
+      console.log('addLiquidityRequest.method: ', addLiquidityRequest.method)
+      const transaction = await wrappedContract[addLiquidityRequest.method](
+          addLiquidityRequest.isLongToken,
+          sourceAmount,
+          minGmAmount,
+          executionFeeWei,
+          { value: executionFeeWei}
+      );
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      let tx = await awaitConfirmation(transaction, provider, 'create GM token');
+
+      const firstAssetBalanceAfterTransaction = Number(state.assetBalances[addLiquidityRequest.sourceAsset]) - Number(addLiquidityRequest.tokenAmount);
+      const secondAssetBalanceAfterTransaction = Number(state.gmxV2Balances[addLiquidityRequest.targetAsset]) + Number(addLiquidityRequest.minGmAmount);
+
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate(addLiquidityRequest.sourceAsset, firstAssetBalanceAfterTransaction, false, false);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate(addLiquidityRequest.targetAsset, secondAssetBalanceAfterTransaction, true, false);
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, config.refreshDelay);
+    },
+
+    async removeLiquidityGmxV2({state, rootState, dispatch}, {removeLiquidityRequest}) {
+      const provider = rootState.network.provider;
+
+      const loanAssets = mergeArrays([(
+          await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+        [removeLiquidityRequest.sourceAsset, removeLiquidityRequest.targetAsset]
+      ]);
+
+      const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
+
+      console.log('removeLiquidityRequest')
+      console.log(removeLiquidityRequest)
+      let gmDecimals = config.GMX_V2_ASSETS_CONFIG[removeLiquidityRequest.gmToken].decimals;
+      let gmAmount = parseUnits(parseFloat(removeLiquidityRequest.gmAmount).toFixed(gmDecimals), gmDecimals);
+
+      let shortDecimals = config.ASSETS_CONFIG[removeLiquidityRequest.shortToken].decimals;
+      let minShortAmount = parseUnits(removeLiquidityRequest.minShortAmount.toFixed(shortDecimals), shortDecimals);
+
+      let longDecimals = config.ASSETS_CONFIG[removeLiquidityRequest.longToken].decimals;
+      let minLongAmount = parseUnits(removeLiquidityRequest.minLongAmount.toFixed(longDecimals), longDecimals);
+
+      let executionFeeWei = toWei(removeLiquidityRequest.executionFee.toFixed(18));
+
+      const transaction = await wrappedContract[removeLiquidityRequest.method](
+          gmAmount,
+          minLongAmount,
+          minShortAmount,
+          executionFeeWei,
+          { value: executionFeeWei}
+      );
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      let tx = await awaitConfirmation(transaction, provider, 'remove liquidity from LLp');
+
+      const gmBalanceAfterTransaction = Number(state.gmxV2Balances[removeLiquidityRequest.gmToken]) - Number(removeLiquidityRequest.gmAmount);
+      const longAssetBalanceAfterTransaction = Number(state.assetBalances[removeLiquidityRequest.longToken]) - Number(removeLiquidityRequest.minLongAmount);
+      const shortAssetBalanceAfterTransaction = Number(state.assetBalances[removeLiquidityRequest.shortToken]) + Number(removeLiquidityRequest.minShortAmount);
+
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate(removeLiquidityRequest.gmToken, gmBalanceAfterTransaction, false, false);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate(removeLiquidityRequest.longToken, longAssetBalanceAfterTransaction, false, false);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate(removeLiquidityRequest.shortToken, shortAssetBalanceAfterTransaction, false, false);
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {
         rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
       }, SUCCESS_DELAY_AFTER_TRANSACTION);

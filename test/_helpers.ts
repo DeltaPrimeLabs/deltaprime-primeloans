@@ -709,6 +709,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                     'getAllPricesForLiquidation',
                     'getDebt',
                     'getDebtWithPrices',
+                    'getPrice',
                     'getPrices',
                     'getTotalAssetsValue',
                     'getThresholdWeightedValue',
@@ -732,6 +733,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                     'getAllPricesForLiquidation',
                     'getDebt',
                     'getDebtWithPrices',
+                    'getPrice',
                     'getPrices',
                     'getTotalAssetsValue',
                     'getThresholdWeightedValue',
@@ -742,6 +744,24 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                 ],
                 hardhatConfig)
         }
+
+        await deployFacet(
+            "GmxV2FacetAvalanche",
+            diamondAddress,
+            [
+                'depositBtcUsdcGmxV2',
+                'depositAvaxUsdcGmxV2',
+                'depositEthUsdcGmxV2',
+                'withdrawBtcUsdcGmxV2',
+                'withdrawAvaxUsdcGmxV2',
+                'withdrawEthUsdcGmxV2',
+                'afterDepositExecution',
+                'afterDepositCancellation',
+                'afterWithdrawalExecution',
+                'afterWithdrawalCancellation'
+            ],
+            hardhatConfig
+        )
 
         await deployFacet(
             "AssetsOperationsFacet",
@@ -859,6 +879,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             await deployFacet("SolvencyFacetMockArbitrum", diamondAddress, [
                     'canRepayDebtFully',
                     'isSolvent',
+                    'isSolventPayable',
                     'isSolventWithPrices',
                     'getOwnedAssetsWithNativePrices',
                     'getTotalValueWithPrices',
@@ -868,10 +889,13 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                     'getStakedPositionsPrices',
                     'getAllPricesForLiquidation',
                     'getDebt',
+                    'getDebtPayable',
                     'getDebtWithPrices',
+                    'getPrice',
                     'getPrices',
                     'getTotalAssetsValue',
                     'getThresholdWeightedValue',
+                    'getThresholdWeightedValuePayable',
                     'getStakedValue',
                     'getTotalValue',
                     'getFullLoanStatus',
@@ -892,6 +916,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                     'getAllPricesForLiquidation',
                     'getDebt',
                     'getDebtWithPrices',
+                    'getPrice',
                     'getPrices',
                     'getTotalAssetsValue',
                     'getThresholdWeightedValue',
@@ -994,6 +1019,19 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             ],
             hardhatConfig
         )
+        await deployFacet(
+            "GmxV2FacetArbitrum",
+            diamondAddress,
+            [
+                'depositEthUsdcGmxV2',
+                'withdrawEthUsdcGmxV2',
+                'afterDepositExecution',
+                'afterDepositCancellation',
+                'afterWithdrawalExecution',
+                'afterWithdrawalCancellation'
+            ],
+            hardhatConfig
+        )
     }
     if (chain == 'ETHEREUM') {
         console.log('here')
@@ -1031,6 +1069,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             'getAllAssetsBalances',
             'getDebts',
             'getPercentagePrecision',
+            'getAccountFrozenSince',
             'getAllAssetsPrices',
             'getBalance',
             'getSupportedTokensAddresses',

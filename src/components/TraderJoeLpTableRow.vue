@@ -358,13 +358,15 @@ export default {
       let addresses = (await import(`/common/addresses/${window.chain}/token_addresses.json`)).default;
 
       if (this.lpToken.rewardsInfo) {
+        let TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
+
         this.lpToken.rewardsInfo.rewards.forEach(reward => {
           const tokenAddress = reward.tokenAddress.toLowerCase();
 
           if (!(tokenAddress in rewardTokens)) {
             let symbol;
 
-            for (const [asset, address] of Object.entries(addresses)) {
+            for (const [asset, address] of Object.entries(TOKEN_ADDRESSES)) {
               if (address.toLowerCase() === tokenAddress) symbol = asset;
             }
 
