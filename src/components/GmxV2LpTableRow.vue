@@ -392,7 +392,7 @@ export default {
       }
 
       let [longTokenOut, shortTokenOut] = await depositReader.getWithdrawalAmountOut(
-          config.gmxV2DataStoreAddress, marketProps, prices, toWei((this.gmxV2Balances[this.lpToken.symbol] * 100).toString()), this.nullAddress
+          config.gmxV2DataStoreAddress, marketProps, prices, toWei((this.gmxV2Balances[this.lpToken.symbol]).toString()), this.nullAddress
       );
 
       this.longTokenAmount = formatUnits(longTokenOut, longToken.decimals);
@@ -451,9 +451,6 @@ export default {
       return async (sourceAsset, targetAsset, amountIn) => {
         const gmxData = await (await fetch(`https://${config.chainSlug}-api.gmxinfra.io/prices/tickers`)).json();
 
-        console.log('gmxData')
-        console.log(gmxData)
-
         let shortTokenGmxData = gmxData.find(el => el.tokenSymbol === shortToken.symbol);
         let longTokenGmxData = gmxData.find(el => el.tokenSymbol === longToken.symbol);
         let indexTokenGmxData = gmxData.find(el => el.tokenAddress.toLowerCase() === this.lpToken.indexTokenAddress.toLowerCase());
@@ -463,9 +460,6 @@ export default {
           longTokenPrice: { min: BigNumber.from(longTokenGmxData.minPrice) , max: BigNumber.from(longTokenGmxData.maxPrice) },
           shortTokenPrice: { min: BigNumber.from(shortTokenGmxData.minPrice), max: BigNumber.from(shortTokenGmxData.maxPrice) }
         }
-
-        console.log('prices')
-        console.log(prices)
 
         if (config.GMX_V2_ASSETS_CONFIG[sourceAsset]) {
           let [longTokenOut, shortTokenOut] = await depositReader.getWithdrawalAmountOut(
