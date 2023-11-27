@@ -199,6 +199,7 @@ export default {
       sourceWarnings: [],
       slippageWarning: '',
       targetValidators: [],
+      customSourceValidators: null,
       sourceInputError: true,
       targetInputError: false,
       checkingPrices: false,
@@ -218,6 +219,7 @@ export default {
       traderJoeV2LpAssets: {},
       gmxV2LpAssets: {},
       gmxV2LpBalances: {},
+
       transactionOngoing: false,
       debt: 0,
       thresholdWeightedValue: 0,
@@ -464,6 +466,10 @@ export default {
           }
         }
       ];
+
+      if (this.customSourceValidators) {
+        this.sourceValidators.push(...this.customSourceValidators);
+      }
     },
 
     calculateHealthAfterTransaction() {

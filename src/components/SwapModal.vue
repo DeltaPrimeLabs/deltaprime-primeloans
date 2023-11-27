@@ -253,6 +253,8 @@ export default {
       sourceWarnings: [],
       slippageWarning: '',
       targetValidators: [],
+      customSourceValidators: null,
+      customTargetValidators: null,
       sourceInputError: true,
       targetInputError: false,
       checkingPrices: false,
@@ -631,6 +633,14 @@ export default {
           }
         }
       ];
+
+      if (this.customSourceValidators) {
+        this.sourceValidators.push(...this.customSourceValidators);
+      }
+
+      if (this.customTargetValidators) {
+        this.targetValidators.push(...this.customTargetValidators);
+      }
     },
 
     calculateHealthAfterTransaction() {

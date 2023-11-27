@@ -595,7 +595,7 @@ export default {
       modalInstance.farms = this.farms;
       modalInstance.health = this.health;
       modalInstance.isLP = false;
-      modalInstance.logo = `${this.lpToken.longToken.toLowerCase()}.svg`;
+      modalInstance.logo = `${this.lpToken.symbol.toLowerCase()}.${this.lpToken.logoExt ? this.lpToken.logoExt : 'svg'}`;
       modalInstance.reverseSwapDisabled = true;
       modalInstance.$on('WITHDRAW', withdrawEvent => {
         const withdrawRequest = {
@@ -646,10 +646,21 @@ export default {
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.checkMarketDeviation = false;
 
-      modalInstance.initiate();
-
       const executionFee = await this.calculateExecutionFee(true);
       modalInstance.info = `<div>Execution fee: ${executionFee.toFixed(6)}${config.nativeToken}. Unused gas will be returned to your account.</div>`;
+
+
+      const nativeBalance = parseFloat(ethers.utils.formatEther(await this.provider.getBalance(this.account)));
+
+      modalInstance.customSourceValidators = [
+        {
+          validate: async (value) => {
+            if (nativeBalance < executionFee) {
+              return `Not enough ${config.nativeToken} to pay execution fee.`;
+            }
+          }
+        }
+      ]
 
       modalInstance.queryMethods = {
         GmxV2: this.gmxV2Query(),
@@ -658,6 +669,9 @@ export default {
       modalInstance.feeMethods = {
         GmxV2: this.gmxV2DepositFee(),
       };
+
+      modalInstance.initiate();
+
 
       modalInstance.$on('SWAP', swapEvent => {
 
@@ -711,8 +725,6 @@ export default {
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.targetAssetAmounts = [0, 0];
 
-      modalInstance.initiate();
-
       // modalInstance.info = `info .`;
       modalInstance.queryMethods = {
         GmxV2: this.gmxV2Query(),
@@ -724,6 +736,20 @@ export default {
 
       const executionFee = await this.calculateExecutionFee(false);
       modalInstance.info = `<div>Execution fee: ${executionFee.toFixed(6)}${config.nativeToken}. Unused gas will be returned to your account.</div>`;
+
+      const nativeBalance = parseFloat(ethers.utils.formatEther(await this.provider.getBalance(this.account)));
+
+      modalInstance.customSourceValidators = [
+        {
+          validate: async (value) => {
+            if (nativeBalance < executionFee) {
+              return `Not enough ${config.nativeToken} to pay execution fee.`;
+            }
+          }
+        }
+      ]
+
+      modalInstance.initiate();
 
       modalInstance.$on('SWAP_TO_MULTIPLE', swapEvent => {
 
