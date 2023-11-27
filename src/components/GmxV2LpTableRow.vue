@@ -350,6 +350,8 @@ export default {
           {
             key: 'CLAIM_GM_REWARDS',
             name: 'Claim GM rewards',
+            disabled: true,
+            disabledInfo: 'Available soon!'
           },
           {
             key: 'PARTNER_PROFILE',
@@ -516,22 +518,25 @@ export default {
       //TODO: withdraw check
 
       const estimatedGasLimit = isDeposit ?
-          fromWei(await dataStore.getUint(this.depositGasLimitKey(true))) + config.gmxV2DepositCallbackGasLimit
+          fromWei(await dataStore.getUint(this.depositGasLimitKey(true))) * 10**18 + config.gmxV2DepositCallbackGasLimit
           :
-          fromWei(await dataStore.getUint(hashData(["bytes32"], [WITHDRAWAL_GAS_LIMIT_KEY]))) + config.gmxV2DepositCallbackGasLimit;
+          fromWei(await dataStore.getUint(hashData(["bytes32"], [WITHDRAWAL_GAS_LIMIT_KEY]))) * 10**18 + config.gmxV2DepositCallbackGasLimit;
 
-      let baseGasLimit = fromWei(await dataStore.getUint(ESTIMATED_GAS_FEE_BASE_AMOUNT));
+      let baseGasLimit = fromWei(await dataStore.getUint(ESTIMATED_GAS_FEE_BASE_AMOUNT)) * 10**18;
 
       let multiplierFactor = formatUnits(await dataStore.getUint(ESTIMATED_GAS_FEE_MULTIPLIER_FACTOR), 30);
 
       const adjustedGasLimit = baseGasLimit + estimatedGasLimit * multiplierFactor;
 
-      const gasPrice = fromWei(await provider.getGasPrice());
+      const maxPriorityFeePerGas = (await provider.getFeeData()).maxPriorityFeePerGas.toNumber();
+      let gasPrice = (await provider.getGasPrice()).toNumber();
 
-      const feeTokenAmount = adjustedGasLimit * gasPrice;
+      if (config.gmxV2UseMaxPriorityFeePerGas) gasPrice += maxPriorityFeePerGas;
+      gasPrice *= (1 + config.gmxV2GasPriceBuffer);
+      gasPrice += config.gmxV2GasPricePremium;
 
-      //TODO: fix fee calculation
-      return feeTokenAmount * config.gmxV2ExecutionFeeMultiplier;
+
+      return adjustedGasLimit * gasPrice / 10**18;
     },
 
     async openAddFromWalletModal() {
@@ -554,7 +559,7 @@ export default {
       modalInstance.loan = this.debt;
       modalInstance.thresholdWeightedValue = this.thresholdWeightedValue;
       modalInstance.isLP = false;
-      modalInstance.logo = `${this.lpToken.symbol.toLowerCase()}.svg`;
+      modalInstance.logo = `${this.lpToken.symbol.toLowerCase()}.${this.lpToken.logoExt ? this.lpToken.logoExt : 'svg'}`;
       modalInstance.walletAssetBalance = await this.getWalletLpTokenBalance();
       modalInstance.reverseSwapDisabled = true;
       modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {

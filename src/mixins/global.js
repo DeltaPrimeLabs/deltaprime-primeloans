@@ -60,7 +60,14 @@ export default {
     },
     logoSrc(asset) {
       asset = asset ? asset : 'avax';
-      const assetData = config.ASSETS_CONFIG[asset];
+      const assetData = config.ASSETS_CONFIG[asset]
+          ? config.ASSETS_CONFIG[asset]
+          : config.LP_ASSETS_CONFIG[asset]
+          ? config.LP_ASSETS_CONFIG[asset]
+          : config.GMX_V2_ASSETS_CONFIG[asset]
+          ? config.GMX_V2_ASSETS_CONFIG[asset]
+          : config.GMX_V2_ASSETS_CONFIG[asset];
+
       if (assetData) {
         return `src/assets/logo/${asset.toLowerCase()}.${assetData.logoExt ? assetData.logoExt : 'svg'}`;
       }
