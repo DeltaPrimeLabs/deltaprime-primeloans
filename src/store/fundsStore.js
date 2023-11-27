@@ -1801,6 +1801,8 @@ export default {
     },
 
     async claimTraderJoeRewards({state, rootState, dispatch}, {claimRewardsRequest}) {
+      console.log('claimRewardsRequest')
+      console.log(claimRewardsRequest)
       const provider = rootState.network.provider;
 
       const loanAssets = mergeArrays([(

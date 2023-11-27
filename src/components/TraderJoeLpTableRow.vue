@@ -142,7 +142,6 @@ import LiquidityChart from "./LiquidityChart.vue";
 import FlatButton from "./FlatButton.vue";
 import SmallBlock from "./SmallBlock.vue";
 import LB_TOKEN from '/artifacts/contracts/interfaces/joe-v2/ILBToken.sol/ILBToken.json'
-import addresses from '../../common/addresses/arbitrum/token_addresses.json';
 const toBytes32 = require('ethers').utils.formatBytes32String;
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -352,9 +351,11 @@ export default {
       this.userValue = this.lpToken.primaryBalance * this.firstAsset.price + this.lpToken.secondaryBalance * this.secondAsset.price;
     },
 
-    calculateTotalRewards() {
+    async calculateTotalRewards() {
       let totalRewards = [];
       const rewardTokens = {};
+
+      let addresses = (await import(`/common/addresses/${window.chain}/token_addresses.json`)).default;
 
       if (this.lpToken.rewardsInfo) {
         this.lpToken.rewardsInfo.rewards.forEach(reward => {
