@@ -41,7 +41,7 @@ import {
 import { IVectorFinanceCompounder__factory } from './../../../typechain/factories/IVectorFinanceCompounder__factory';
 import {BigNumber, BigNumberish, Contract} from "ethers";
 import {deployDiamond, replaceFacet} from '../../../tools/diamond/deploy-diamond';
-import TOKEN_ADDRESSES from '../../../common/addresses/avalanche/token_addresses.json';
+import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
 import * as traderJoeSdk from "@traderjoe-xyz/sdk-v2";
 import {TokenAmount} from "@traderjoe-xyz/sdk-core";
 import {JSBI} from "@traderjoe-xyz/sdk";

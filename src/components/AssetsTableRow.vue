@@ -83,7 +83,7 @@
 
       <div class="table__cell actions">
         <IconButton class="action-button"
-                    :disabled="((disableAllButtons || !healthLoaded) && (!(asset.debtCoverage > 0 && noSmartLoan)) || asset.inactive)"
+                    :disabled="((disableAllButtons) && (!(asset.debtCoverage > 0 && noSmartLoan)) || asset.inactive)"
                     :icon-src="'src/assets/icons/plus.svg'" :size="26"
                     v-tooltip="{content: 'Deposit collateral', classes: 'button-tooltip'}"
                     v-on:click="actionClick('ADD_FROM_WALLET')">
@@ -95,7 +95,7 @@
             buttons and deposit collateral.
           </template>
         </IconButton>
-        <IconButton :disabled="disableAllButtons || !healthLoaded || asset.inactive"
+        <IconButton :disabled="disableAllButtons || asset.inactive"
                     class="action-button"
                     :icon-src="'src/assets/icons/swap.svg'" :size="26"
                     v-tooltip="{content: 'Swap', classes: 'button-tooltip'}"
@@ -105,7 +105,7 @@
             class="actions__icon-button"
             :config="moreActionsConfig"
             v-on:iconButtonClick="actionClick"
-            :disabled="disableAllButtons || !healthLoaded">
+            :disabled="disableAllButtons">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -532,7 +532,7 @@ export default {
     },
 
     actionClick(key) {
-      if (!this.disableAllButtons && this.healthLoaded || (this.noSmartLoan && this.asset.debtCoverage > 0 && key === 'ADD_FROM_WALLET')) {
+      if (!this.disableAllButtons || (this.noSmartLoan && this.asset.debtCoverage > 0 && key === 'ADD_FROM_WALLET')) {
         switch (key) {
           case 'BORROW':
             this.openBorrowModal();

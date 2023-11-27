@@ -9,6 +9,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deployer, admin } = await getNamedAccounts();
 
     embedCommitHash("TraderJoeV2ArbitrumFacet", "./contracts/facets/arbitrum");
+    embedCommitHash("TraderJoeV2Facet", "./contracts/facets");
 
     let TraderJoeV2ArbitrumFacet = await deploy("TraderJoeV2ArbitrumFacet", {
         from: deployer,

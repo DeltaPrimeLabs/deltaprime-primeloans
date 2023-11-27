@@ -409,6 +409,7 @@ export default {
     },
 
     async updateStakedBalances({rootState, state, commit}) {
+      console.warn('______________updateStakedBalances____________');
       const smartLoanContract = rootState.fundsStore.smartLoanContract;
       const readSmartLoanContract = rootState.fundsStore.readSmartLoanContract;
 
@@ -437,6 +438,8 @@ export default {
       } else {
         combineLatest(
           Object.values(config.FARMED_TOKENS_CONFIG).map(tokenFarms => {
+            console.log(tokenFarms);
+            console.log(tokenFarms.balanceMethod);
             return combineLatest(tokenFarms.map(farm => {
               const assetDecimals = config.ASSETS_CONFIG[farm.token] ? config.ASSETS_CONFIG[farm.token].decimals : 18;
               return combineLatest([
@@ -447,7 +450,7 @@ export default {
                   .pipe(map(balanceWei => formatUnits(balanceWei, assetDecimals))) : farm.balance(smartLoanContractAddress),
                 of(apys[farm.token] ? apys[farm.token][farm.protocolIdentifier] : 0),
                 farm.stakingContractAddress.toLowerCase() === '0xb8f531c0d3c53B1760bcb7F57d87762Fd25c4977'.toLowerCase() ? yieldYakBalance(farm.stakingContractAddress, smartLoanContractAddress, assetDecimals) :
-                farm.protocol === 'YIELD_YAK' ? yieldYakMaxUnstaked(farm.stakingContractAddress, smartLoanContractAddress, assetDecimals) :
+                farm.protocol === 'YIELD_YAK' ? yieldYakMaxUnstaked(farm.stakingContractAddress, smartLoanContractAddress, assetDecimals, 'from stakeStore') :
                 farm.protocol === 'BEEFY_FINANCE' ? beefyMaxUnstaked(farm.stakingContractAddress, smartLoanContractAddress, assetDecimals) :
                   farm.autoCompounding ? vectorFinanceMaxUnstaked(farm.token, farm.stakingContractAddress, smartLoanContractAddress) :
                     vectorFinanceRewards(farm.stakingContractAddress, smartLoanContractAddress)
@@ -458,14 +461,16 @@ export default {
           const farmsDataPerFarm = farmsDataPerToken.flat();
 
           Object.values(config.FARMED_TOKENS_CONFIG).forEach(tokenFarms => {
+            console.log(tokenFarms);
             tokenFarms.forEach(farm => {
+              console.log(farm);
               const farmData = farmsDataPerFarm.find(data => data[1] === farm.protocolIdentifier);
               farm.totalBalance = farmData[3];
               farm.currentApy = farmData[4];
 
               if (['YIELD_YAK','BEEFY_FINANCE'].includes(farm.protocol)) {
                 farm.totalStaked = farmData[5];
-                if (farm.stakingContractAddress.toLowerCase() === '0xb8f531c0d3c53B1760bcb7F57d87762Fd25c4977'.toLowerCase()) farm.totalStaked *= farm.price / rootState.fundsStore.assets['sAVAX'].price;
+                if (farm.stakingContractAddress.toLowerCase() === '0xb8f531c0d3c53B1760bcb7F57d87762Fd25c4977'.toLowerCase()) farm.totalStaked *= 0;
               } else if (farm.protocol === 'VECTOR_FINANCE') {
                 if (farm.autoCompounding) {
                   farm.totalStaked = farmData[5];

@@ -49,7 +49,7 @@
 
       <div class="table__cell actions">
         <DeltaIcon class="action-button"
-                   v-bind:class="{'action-button--disabled': disableAllButtons || !healthLoaded || !lpTokenBalances || lpToken.inactive}"
+                   v-bind:class="{'action-button--disabled': disableAllButtons || !lpTokenBalances || lpToken.inactive}"
                    :icon-src="'src/assets/icons/plus.svg'" :size="26"
                    v-tooltip="{content: 'Add LP from wallet', classes: 'button-tooltip'}"
                    v-on:click.native="actionClick('ADD_FROM_WALLET')"></DeltaIcon>
@@ -58,7 +58,7 @@
             class="actions__icon-button"
             :config="moreActionsConfig"
             v-on:iconButtonClick="actionClick"
-            :disabled="disableAllButtons || !healthLoaded">
+            :disabled="disableAllButtons">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -311,7 +311,7 @@ export default {
     },
 
     actionClick(key) {
-      if (!this.disableAllButtons && this.healthLoaded) {
+      if (!this.disableAllButtons) {
         switch (key) {
           case 'ADD_FROM_WALLET':
             this.openAddFromWalletModal();

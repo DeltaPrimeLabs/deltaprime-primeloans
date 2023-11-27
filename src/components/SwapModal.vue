@@ -614,13 +614,13 @@ export default {
         }
       ];
       this.targetValidators = [
-        {
-          validate: async (value) => {
-            if (this.healthAfterTransaction < this.MIN_ALLOWED_HEALTH) {
-              return 'The health is below allowed limit.';
-            }
-          }
-        },
+        // {
+          // validate: async (value) => {
+          //   if (this.healthAfterTransaction < this.MIN_ALLOWED_HEALTH) {
+          //     return 'The health is below allowed limit.';
+          //   }
+          // }
+        // },
         {
           validate: async (value) => {
             const allowed = this.targetAssetsConfig[this.targetAsset].maxExposure - this.targetAssetsConfig[this.targetAsset].currentExposure;

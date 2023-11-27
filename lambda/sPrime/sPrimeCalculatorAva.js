@@ -19,7 +19,7 @@ const tvlThreshold = 4000000;
 const networkConfig = {
   tokenManagerAddress: '0xF3978209B7cfF2b90100C6F87CEC77dE928Ed58e',
   provider: avalancheProvider,
-  database: 'sprime-ava-dev',//process.env.SPRIME_AVA_TABLE,
+  database: process.env.SPRIME_AVA_TABLE,
   poolsUnlocked: true
 };
 const tokenManagerAbi = [
@@ -61,7 +61,6 @@ const sPrimeCalculator = async (event) => {
 
   const availablePools = pools.filter(pool => poolAddresses.indexOf(pool.id.toLowerCase()) !== -1);
   let sPrimeValue = {};
-  let totalTime = 0;
 
   sPrimeValueArray.map((sPrime) => {
     sPrimeValue[sPrime.id] = {};
@@ -78,14 +77,18 @@ const sPrimeCalculator = async (event) => {
     availablePools.map(async (pool) => {
       const tokenSymbol = getSymbolFromPoolAddress(network, pool.id);
       let offset = 0;
-      let lastTimestamp;
+      let lastTimestamp = Date.now();
+      let lastPoolTvl = 0;
+      let totalTime = 0;
 
       if (sPrimeValueArray.length > 0 &&
           sPrimeValueArray[0][tokenSymbol] &&
           sPrimeValueArray[0][tokenSymbol].offset &&
-          sPrimeValueArray[0][tokenSymbol].timestamp) {
-        offset = sPrimeValueArray[0][tokenSymbol].offset;
-        lastTimestamp = sPrimeValueArray[0][tokenSymbol].timestamp;
+          sPrimeValueArray[0][tokenSymbol].timestamp &&
+          sPrimeValueArray[0][tokenSymbol].curPoolTvl) {
+        offset = Number(sPrimeValueArray[0][tokenSymbol].offset);
+        lastTimestamp = Number(sPrimeValueArray[0][tokenSymbol].timestamp);
+        lastPoolTvl = sPrimeValueArray[0][tokenSymbol].curPoolTvl;
       }
 
       const poolTransfers = await fetchTransfersForPool(network, pool.id, offset);
@@ -99,7 +102,7 @@ const sPrimeCalculator = async (event) => {
       const poolTvl = await poolContract.totalSupply();
 
       // add last mock transfer (for the current timestamp)
-      if (poolTransfersLen < 120) { // should be equal to limit param in query
+      if (poolTransfersLen < 100) { // should be equal to limit param in query
         let currentMockTransfer = {
           curPoolTvl: poolTvl.toString(),
           timestamp: Math.floor(Date.now() / 1000),
@@ -115,7 +118,11 @@ const sPrimeCalculator = async (event) => {
 
         const tokenPrice = await getHistoricalTokenPrice(transfer.tokenSymbol, transfer.timestamp)
 
-        const prevTvlInUsd = i > 0 ? tokenPrice * formatUnits(poolTransfers[i - 1].curPoolTvl, Number(decimals)) : 0;
+        const prevTvlInUsd = tokenPrice * (i > 0
+                                          ? formatUnits(poolTransfers[i - 1].curPoolTvl, Number(decimals))
+                                          : offset > 0
+                                            ? formatUnits(lastPoolTvl, Number(decimals))
+                                            : 0);
 
         // pool APR for previous timestamp
         let prevApr;
@@ -138,11 +145,17 @@ const sPrimeCalculator = async (event) => {
           };
         }
 
-        let timeInterval = i > 0 ? transfer.timestamp - poolTransfers[i - 1].timestamp : 0;
+        let timeInterval = i > 0 ? transfer.timestamp - poolTransfers[i - 1].timestamp : offset > 0 ? transfer.timestamp - lastTimestamp : 0;
         if (poolTransfersLen == 0) {
           timeInterval = transfer.timestamp - lastTimestamp;
         }
         totalTime += timeInterval;
+
+        if (transfer.depositor.id !== 'mock') {
+          sPrimeValue[transfer.depositor.id][transfer.tokenSymbol].total = Number(sPrimeValue[transfer.depositor.id][transfer.tokenSymbol].total) +
+                                                                            Number(formatUnits(transfer.amount, Number(decimals)));
+          sPrimeValue[transfer.depositor.id][transfer.tokenSymbol].total = Math.max(sPrimeValue[transfer.depositor.id][transfer.tokenSymbol].total, 0);
+        }
 
         // update sPRIME values for all depositors
         depositors.forEach(
@@ -160,20 +173,13 @@ const sPrimeCalculator = async (event) => {
 
             const userDepositInUsd = tokenPrice * sPrimeValue[depositor.id][transfer.tokenSymbol].total;
 
-            if (transfer.timestamp > 1693756800) {
-              const newValue = (timeInterval < 0 ? 0 : timeInterval) / 31536000 * (prevApr * userDepositInUsd);
-              sPrimeValue[depositor.id][transfer.tokenSymbol].sPrime = Number(sPrimeValue[depositor.id][transfer.tokenSymbol].sPrime) + newValue;
-            }
+            const newValue = (timeInterval < 0 ? 0 : timeInterval) / 31536000 * (prevApr * userDepositInUsd);
+            sPrimeValue[depositor.id][transfer.tokenSymbol].sPrime = Number(sPrimeValue[depositor.id][transfer.tokenSymbol].sPrime) + newValue;
             sPrimeValue[depositor.id][transfer.tokenSymbol]['timestamp'] = transfer.timestamp;
             sPrimeValue[depositor.id][transfer.tokenSymbol]['offset'] = offset + poolTransfersLen;
+            sPrimeValue[depositor.id][transfer.tokenSymbol]['curPoolTvl'] = transfer.curPoolTvl;
           }
         );
-
-        if (transfer.depositor.id !== 'mock') {
-          sPrimeValue[transfer.depositor.id][transfer.tokenSymbol].total = Number(sPrimeValue[transfer.depositor.id][transfer.tokenSymbol].total) +
-                                                                            Number(formatUnits(transfer.amount, Number(decimals)));
-          sPrimeValue[transfer.depositor.id][transfer.tokenSymbol].total = Math.max(sPrimeValue[transfer.depositor.id][transfer.tokenSymbol].total, 0);
-        }
       };
     })
   );
@@ -202,4 +208,3 @@ const sPrimeCalculator = async (event) => {
 };
 
 module.exports.handler = sPrimeCalculator;
-sPrimeCalculator();

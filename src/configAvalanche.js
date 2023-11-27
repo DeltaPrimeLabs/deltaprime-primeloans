@@ -177,7 +177,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['PTP', 'QI'],
                 strategy: 'Platypus',
-                banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
+                banner: 'This farm is disabled and underlying assets were returned to your Prime Account.',
                 refreshDelay: 60000,
             },
             {
@@ -197,7 +197,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['PTP', 'QI'],
                 strategy: 'Platypus',
-                banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
+                banner: 'This farm is disabled and underlying assets were returned to your Prime Account.',
                 refreshDelay: 60000
             }
         ],
@@ -242,7 +242,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['PTP', 'QI'],
                 strategy: 'Platypus',
-                banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
+                banner: 'This farm is disabled and underlying assets were returned to your Prime Account.',
                 refreshDelay: 60000
             },
             {
@@ -261,7 +261,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['PTP', 'QI'],
                 strategy: 'Platypus',
-                banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
+                banner: 'This farm is disabled and underlying assets were returned to your Prime Account.',
                 refreshDelay: 60000
             }
         ],
@@ -283,7 +283,7 @@ export default {
                 debtCoverage: 0,
                 rewardTokens: ['PTP'],
                 strategy: 'Platypus',
-                banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
+                banner: 'This farm is disabled and underlying assets were returned to your Prime Account.',
                 refreshDelay: 60000
             },
             {
@@ -302,7 +302,7 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['PTP'],
                 strategy: 'Platypus',
-                banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
+                banner: 'This farm is disabled and underlying assets were returned to your Prime Account.',
                 refreshDelay: 60000
             },
         ],
@@ -322,7 +322,7 @@ export default {
                 isTokenLp: false,
                 debtCoverage: 0.83333333333,
                 strategy: 'Platypus',
-                banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
+                banner: 'This farm is disabled and underlying assets were returned to your Prime Account.',
                 refreshDelay: 60000
             },
         ],
@@ -488,6 +488,7 @@ export default {
     redstoneFeedUrl: "https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-avalanche-prod",
     subgraph: "https://api.thegraph.com/subgraphs/name/mbare0/deltaprime",
     readRpcUrl: "https://avalanche-mainnet.core.chainstack.com/ext/bc/C/rpc/0968db18a01a90bac990ff00df6f7da1",
+    multicallAddress: "0x271BcC10126A0B94EC5FaFf0B4f39A50fC4AC117",
     EMAIL_REGEX: /(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])/,
     refreshDelay: 5000,
     gmxV2RefreshDelay: 7000

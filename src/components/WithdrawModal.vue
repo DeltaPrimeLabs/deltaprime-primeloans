@@ -279,13 +279,13 @@ export default {
 
     setupValidators() {
       this.validators = [
-        {
-          validate: (value) => {
-            if (this.healthAfterTransaction <= 0) {
-              return `Health should be higher than 0%`;
-            }
-          }
-        },
+        // {
+        //   validate: (value) => {
+        //     if (this.healthAfterTransaction <= 0) {
+        //       return `Health should be higher than 0%`;
+        //     }
+        //   }
+        // },
         {
           validate: (value) => {
             if (this.assetBalance - value < 0) {

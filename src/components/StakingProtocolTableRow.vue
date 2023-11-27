@@ -25,7 +25,7 @@
       <div class="table__cell">
         <div class="double-value staked-balance">
           <div class="double-value__pieces">
-            <span v-if="isStakedBalanceEstimated || farm.stakingContractAddress.toLowerCase() === '0xb8f531c0d3c53B1760bcb7F57d87762Fd25c4977'.toLowerCase()">~</span>{{
+            <span v-if="isStakedBalanceEstimated">~</span>{{
               isLP ? formatTokenBalance(underlyingTokenStaked, 10, true) : formatTokenBalance(underlyingTokenStaked)
             }}
           </div>
@@ -69,14 +69,14 @@
               :config="addActionsConfig"
               v-if="addActionsConfig"
               v-on:iconButtonClick="actionClick"
-              :disabled="disableAllButtons || !healthLoaded || platypusAffected || platypusAffectedDisableDeposit">
+              :disabled="disableAllButtons || platypusAffected || platypusAffectedDisableDeposit">
           </IconButtonMenuBeta>
           <IconButtonMenuBeta
               class="actions__icon-button last"
               :config="removeActionsConfig"
               v-if="removeActionsConfig"
               v-on:iconButtonClick="actionClick"
-              :disabled="disableAllButtons || !healthLoaded || platypusAffected">
+              :disabled="disableAllButtons || platypusAffected">
           </IconButtonMenuBeta>
         </div>
       </div>
@@ -188,7 +188,7 @@ export default {
       return config.PROTOCOLS_CONFIG[this.farm.protocol];
     },
     disabled() {
-      return !this.smartLoanContract || this.smartLoanContract.address === NULL_ADDRESS || this.disableAllButtons || !this.healthLoaded;
+      return !this.smartLoanContract || this.smartLoanContract.address === NULL_ADDRESS || this.disableAllButtons;
     },
     isLP() {
       return this.asset.secondary != null;

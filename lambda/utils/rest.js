@@ -7,7 +7,7 @@ const fetchPangolinLpApr = async (url) => {
     const resp = await fetch(url);
     const json = await resp.json();
 
-    apr = json.swapFeeApr;
+    apr = json[0].swapFeeApr;
   } else {
     apr = null;
   }

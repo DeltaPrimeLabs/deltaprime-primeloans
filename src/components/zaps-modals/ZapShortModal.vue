@@ -184,13 +184,13 @@ export default {
 
     setupValidators() {
       this.validators = [
-        {
-          validate: (value) => {
-            if (this.healthAfterTransaction < this.MIN_ALLOWED_HEALTH) {
-              return `Health should be higher than 0%`;
-            }
-          },
-        }
+        // {
+        //   validate: (value) => {
+        //     if (this.healthAfterTransaction < this.MIN_ALLOWED_HEALTH) {
+        //       return `Health should be higher than 0%`;
+        //     }
+        //   },
+        // }
       ];
     },
 
