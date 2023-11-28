@@ -1,5 +1,5 @@
 <template>
-  <div id="modal" class="deposit-modal-component modal-component">
+  <div id="modal" v-if="pool" class="deposit-modal-component modal-component">
     <Modal :height="getModalHeight">
       <div class="modal__title">
         Deposit
@@ -51,12 +51,12 @@
               </div>
               <div class="value__wrapper">
                 <div class="summary__value">
-                  ≈ {{ calculateDailyApy | smartRound(8, true) }}
+                  ≈ {{ calculateDailyInterest | smartRound(8, true) }}
                   <span class="currency">{{ assetSymbol }}</span>
                 </div>
                 +
                 <div class="summary__value">
-                  ≈ {{ calculateDailyMiningApyInSPrime | smartRound(8, true) }}$
+                  ≈ {{ calculateDailyMiningInterestInSPrime | smartRound(8, true) }}$
                   <span class="currency">sPRIME</span>
                 </div>
               </div>
@@ -128,10 +128,11 @@ export default {
     config() {
       return config;
     },
-    calculateDailyApy() {
+    calculateDailyInterest() {
       return (this.apy) / 365 * (Number(this.deposit) + this.depositValue);
     },
-    calculateDailyMiningApyInSPrime() {
+    calculateDailyMiningInterestInSPrime() {
+      console.log(this.pool);
       return (this.miningApy) / 365 * (Number(this.deposit) + this.depositValue) * this.pool.assetPrice;
     },
 
@@ -167,7 +168,7 @@ export default {
 
     depositValueChange(event) {
       console.log(event);
-      this.depositValue = event.value;
+      this.depositValue = Number(event.value);
       this.inputValidationError = event.error;
     },
 
