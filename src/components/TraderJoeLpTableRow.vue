@@ -568,7 +568,7 @@ export default {
             epoch: reward.epoch,
             token: reward.tokenAddress,
             user: this.smartLoanContract.address,
-            amount: reward.amount,
+            amount: reward.totalAmount,
             merkleProof: this.lpToken.rewardsInfo.proofs[id]
           });
         });
