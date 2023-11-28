@@ -6,6 +6,7 @@ import * as traderJoeSdk from '@traderjoe-xyz/sdk-v2';
 import { JSBI, ERC20ABI } from '@traderjoe-xyz/sdk';
 import { Token, TokenAmount } from '@traderjoe-xyz/sdk-core';
 import { ethers, BigNumber, utils } from 'ethers';
+import axios from 'axios';
 import config from '../config';
 
 const CHAIN_ID = config.chainId;
@@ -243,5 +244,16 @@ export default class TraderJoeService {
     ];
 
     return removeLiquidityParams;
+  }
+
+  async getRewardsInfo(loan, market, token) {
+    try {
+      const URL = `https://cavsise1n4.execute-api.us-east-1.amazonaws.com/traderjoe/rewards/claimable?chain=${window.chain}&loan=${loan}&market=${market}`;
+      const rewardsInfo = await axios.get(URL);
+
+      return rewardsInfo.data;
+    } catch (error) {
+      console.log(`fetching rewards info failed. ${error}`);
+    }
   }
 }

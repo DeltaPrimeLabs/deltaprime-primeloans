@@ -41,7 +41,7 @@ const fetchTransfersForPool = async (network, poolId, offset = 0) => {
 
   // let transfers = [];
   // let page = 0;
-  let limit = 120;
+  let limit = 100;
   let lm_start_date = 1693756800; // LM start date: 3th Sep, 6pm CEST
 
   let response = await client.request(transferQuery(poolId, limit, offset, lm_start_date));

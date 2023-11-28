@@ -30,6 +30,17 @@ export default {
       }
     },
 
+    formatLongNum(value) {
+      if (!value) return 0;
+      if (value < 1000) {
+        return value;
+      } else if (value < 1000000) {
+        return `${(value / 1000).toFixed()}k`;
+      } else {
+        return `${(value / 1000000).toFixed()}M`;
+      }
+    },
+
     formatTvl(value) {
       if (!value) return 0;
       if (value < 1000000) {
@@ -60,7 +71,14 @@ export default {
     },
     logoSrc(asset) {
       asset = asset ? asset : 'avax';
-      const assetData = config.ASSETS_CONFIG[asset];
+      const assetData = config.ASSETS_CONFIG[asset]
+          ? config.ASSETS_CONFIG[asset]
+          : config.LP_ASSETS_CONFIG[asset]
+          ? config.LP_ASSETS_CONFIG[asset]
+          : config.GMX_V2_ASSETS_CONFIG[asset]
+          ? config.GMX_V2_ASSETS_CONFIG[asset]
+          : config.GMX_V2_ASSETS_CONFIG[asset];
+
       if (assetData) {
         return `src/assets/logo/${asset.toLowerCase()}.${assetData.logoExt ? assetData.logoExt : 'svg'}`;
       }
@@ -103,6 +121,9 @@ export default {
     },
     minAllowedHealth() {
       return config.MIN_ALLOWED_HEALTH;
+    },
+    nullAddress() {
+      return '0x0000000000000000000000000000000000000000';
     }
   },
   data() {

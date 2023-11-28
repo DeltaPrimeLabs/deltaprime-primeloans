@@ -165,6 +165,26 @@ export async function signMessage(provider, message, wallet, depositor = false) 
   return true;
 }
 
+export function decodeOutput(abi, functionName, returnData, comment = '') {
+  try {
+    let outputs = abi.find(el => el.name === functionName && el.type === 'function').outputs;
+    let types = outputs.map(
+        output => {
+          if (output.type === 'tuple[]') {
+            return `tuple(${output.components.map(c => c.type)})[]`
+          } else if (output.type === 'tuple') {
+            return `tuple(${output.components.map(c => c.type)})`
+          } else {
+            return output.type;
+          }
+        }
+    )
+    return utils.defaultAbiCoder.decode(types, returnData);
+  } catch (e) {
+    console.log(e)
+  }
+}
+
 export async function signMessageForNotifi(provider, message, wallet, depositor = false) {
   const signer = provider.getSigner();
   let signedMessage = await signer.signMessage(message);
@@ -176,6 +196,11 @@ export async function signMessageForNotifi(provider, message, wallet, depositor 
     return false;
   }
   return {signedMessage: utils.arrayify(signedMessage), account: wallet};
+}
+
+export async function hashData(dataTypes, dataValues) {
+  const bytes = ethers.utils.defaultAbiCoder.encode(dataTypes, dataValues);
+  return ethers.utils.keccak256(ethers.utils.arrayify(bytes));
 }
 
 export const loanTermsToSign =

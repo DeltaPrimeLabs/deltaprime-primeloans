@@ -1,4 +1,4 @@
 {
-  "jsonRpcAva": "https://avax.nirvanalabs.xyz/archiveAvaxMain/ext/bc/C/rpc?apikey=d63168833894bb0dd6677607e358e11c7547",
-  "jsonRpcArb": "https://arb.nirvanalabs.xyz/arbitrumOneMainnet?apikey=d63168833894bb0dd6677607e358e11c7547"
+  "jsonRpcAva": "https://avax.nirvanalabs.xyz/avalanche_aws_ui/ext/bc/C/rpc?apikey=284d7cde-5c20-46a9-abee-2e3932cdb771",
+  "jsonRpcArb": "https://arb.nirvanalabs.xyz/arbitrum_aws_ui?apikey=284d7cde-5c20-46a9-abee-2e3932cdb771"
 }

@@ -28,10 +28,10 @@ const getHistoricalTokenPrice = async (token, timestamp) => {
   let depth = 0;
   while (1) {
     let resp = await redstone.getHistoricalPrice([token], {
-      date: (timestamp + depth * 600) * 1000,
+      date: new Date((Number(timestamp) + depth * 600) * 1000).toISOString(),
     });
 
-    if ('value' in resp[token]) return resp[token].value;
+    if (token in resp && 'value' in resp[token]) return resp[token].value;
     depth++;
   }
 }

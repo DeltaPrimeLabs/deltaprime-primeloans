@@ -225,7 +225,6 @@ export default {
       'smartLoanContract',
       'fullLoanStatus',
       'assetBalances',
-      'levelLpBalances',
       'assets',
       'debtsPerAsset',
       'lpAssets',
@@ -520,15 +519,14 @@ export default {
       modalInstance.swapDex = 'Level';
       modalInstance.dexOptions = ['Level'];
       modalInstance.swapDebtMode = false;
-      modalInstance.levelMode = true;
       modalInstance.slippageMargin = 0.1;
       modalInstance.sourceAsset = initSourceAsset;
       modalInstance.sourceAssetBalance = this.assetBalances[initSourceAsset];
       modalInstance.assets = { ...this.assets, ...this.levelLpAssets };
-      modalInstance.sourceAssets = { Level: [...this.lpToken.underlyingAssets] };
+      modalInstance.sourceAssets = [...this.lpToken.underlyingAssets];
       modalInstance.swapDexsConfig = swapDexsConfig;
       modalInstance.targetAssetsConfig = config.LEVEL_LP_ASSETS_CONFIG;
-      modalInstance.targetAssets = { Level: [this.lpToken.symbol] };
+      modalInstance.targetAssets = [this.lpToken.symbol];
       modalInstance.assetBalances = { ...this.assetBalances, ...this.levelLpBalances };
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
@@ -585,14 +583,13 @@ export default {
       modalInstance.swapDex = 'Level';
       modalInstance.dexOptions = ['Level'];
       modalInstance.swapDebtMode = false;
-      modalInstance.levelMode = true;
       modalInstance.slippageMargin = 0.1;
       modalInstance.sourceAsset = this.lpToken.symbol;
       modalInstance.sourceAssetBalance = this.levelLpBalances[this.lpToken.symbol];
       modalInstance.sourceAssetsConfig = config.LEVEL_LP_ASSETS_CONFIG;
       modalInstance.assets = { ...this.assets, ...this.levelLpAssets };
-      modalInstance.sourceAssets = { Level: [this.lpToken.symbol]} ;
-      modalInstance.targetAssets = { Level: [...this.lpToken.underlyingAssets] };
+      modalInstance.sourceAssets = [this.lpToken.symbol];
+      modalInstance.targetAssets = [...this.lpToken.underlyingAssets];
       modalInstance.swapDexsConfig = swapDexsConfig;
       modalInstance.assetBalances = { ...this.assetBalances, ...this.levelLpBalances };
       modalInstance.debtsPerAsset = this.debtsPerAsset;
@@ -698,7 +695,7 @@ export default {
     },
 
     async setupTvl() {
-      this.tvl = (await (await fetch(`https://uophm6e26f.execute-api.us-east-1.amazonaws.com/levelTvl/${this.lpToken.symbol}`)).json()).tvl;
+      this.tvl = (await (await fetch(`https://cavsise1n4.execute-api.us-east-1.amazonaws.com/levelTvl/${this.lpToken.symbol}`)).json()).tvl;
     },
 
     async setupRewards() {

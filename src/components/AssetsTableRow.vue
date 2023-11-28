@@ -234,6 +234,10 @@ export default {
       'levelLpBalances',
       'concentratedLpBalances',
       'traderJoeV2LpAssets',
+      'traderJoeV2LpAssets',
+      'traderJoeV2LpAssets',
+      'gmxV2Assets',
+      'gmxV2Balances',
       'noSmartLoan'
     ]),
     ...mapState('stakeStore', ['farms']),
@@ -582,9 +586,11 @@ export default {
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.levelLpAssets = this.levelLpAssets;
+      modalInstance.gmxV2Assets = this.gmxV2Assets;
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
+      modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.farms = this.farms;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.assetBalance = Number(this.assetBalances[this.asset.symbol]);
@@ -631,9 +637,11 @@ export default {
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.levelLpAssets = this.levelLpAssets;
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
+      modalInstance.gmxV2Assets = this.gmxV2Assets;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.levelLpBalances = this.levelLpBalances;
+      modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.farms = this.farms;
       modalInstance.targetAsset = Object.keys(config.ASSETS_CONFIG).filter(asset => asset !== this.asset.symbol)[0];
       modalInstance.debt = this.fullLoanStatus.debt;
@@ -679,10 +687,12 @@ export default {
       modalInstance.lpAssets = this.lpAssets;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
+      modalInstance.gmxV2Assets = this.gmxV2Assets;
       modalInstance.levelLpAssets = this.levelLpAssets;
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
+      modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.farms = this.farms;
       modalInstance.targetAsset = this.borrowable.filter(asset => asset !== this.asset.symbol)[0];
       modalInstance.debt = this.fullLoanStatus.debt;
@@ -724,6 +734,8 @@ export default {
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
+      modalInstance.gmxV2Assets = this.gmxV2Assets;
+      modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.farms = this.farms;
       modalInstance.loan = this.fullLoanStatus.debt ? this.fullLoanStatus.debt : 0;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
@@ -804,6 +816,8 @@ export default {
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
+      modalInstance.gmxV2Assets = this.gmxV2Assets;
+      modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.farms = this.farms;
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.debt = this.fullLoanStatus.debt;
@@ -866,6 +880,8 @@ export default {
       modalInstance.levelLpAssets = this.levelLpAssets;
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
+      modalInstance.gmxV2Assets = this.gmxV2Assets;
+      modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.farms = this.farms;
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.debt = this.fullLoanStatus.debt;

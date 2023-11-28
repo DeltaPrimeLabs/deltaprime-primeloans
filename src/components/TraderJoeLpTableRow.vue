@@ -52,11 +52,22 @@
         </template>
       </div>
 
-      <div class="table__cell rewards">
-        <FlatButton :active="false"
-                    v-tooltip="{content: 'This button will show more information about your ranking and collected incentives. While the button is not yet active, your Prime Account is already collecting.', classes: 'info-tooltip'}">
+      <div class="table__cell table__cell--rewards-token balance">
+        <!-- <FlatButton :active="false" v-tooltip="{content: 'This button will show more information about your ranking and collected incentives. While the button is not yet active, your Prime Account is already collecting.', classes: 'info-tooltip'}">
           {{ 'soon!' }}
-        </FlatButton>
+        </FlatButton> -->
+        <div class="table__cell composition">
+          <template v-if="totalRewards.length > 0">
+            <div v-for="reward in totalRewards.slice(0, 2)">
+              <img class="asset__icon" :src="getAssetIcon(reward.symbol)">
+              {{ formatLongNum(reward.amount) }}
+            </div>
+          </template>
+          <template v-else>
+            <div class="no-value-dash"></div>
+          </template>
+        </div>
+        <div v-if="totalRewards.length > 2" class="more-rewards">more...</div>
       </div>
 
       <div class="table__cell table__cell--double-value loan">
@@ -86,6 +97,13 @@
             :config="removeActionsConfig"
             v-on:iconButtonClick="actionClick"
             :disabled="inProcess">
+        </IconButtonMenuBeta>
+        <IconButtonMenuBeta
+            class="actions__icon-button"
+            v-if="moreActionsConfig"
+            :config="moreActionsConfig"
+            v-on:iconButtonClick="actionClick"
+            :disabled="inProcess || !healthLoaded">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -120,6 +138,7 @@ import config from '../config';
 import {mapActions, mapState} from 'vuex';
 import TraderJoeAddLiquidityModal from './TraderJoeAddLiquidityModal.vue';
 import TraderJoeRemoveLiquidityModal from './TraderJoeRemoveLiquidityModal.vue';
+import ClaimTraderJoeRewardsModal from "./ClaimTraderJoeRewardsModal.vue";
 import {calculateMaxApy, formatUnits, getBinPrice, parseUnits} from '../utils/calculate';
 import DeltaIcon from './DeltaIcon.vue';
 import {ethers} from 'ethers';
@@ -154,6 +173,7 @@ export default {
   async mounted() {
     this.setupAddActionsConfiguration();
     this.setupRemoveActionsConfiguration();
+    this.setupMoreActionsConfiguration();
     this.watchRefreshLP();
     this.watchAssetBalancesDataRefreshEvent();
     this.watchHealth();
@@ -170,6 +190,7 @@ export default {
       tokenY: null,
       addActionsConfig: null,
       removeActionsConfig: null,
+      moreActionsConfig: null,
       rowExpanded: false,
       showLiquidityChart: false,
       userBins: null,
@@ -187,6 +208,7 @@ export default {
       userValue: 0,
       currentPriceIndex: 0,
       currentPrice: 0,
+      totalRewards: []
     };
   },
 
@@ -226,7 +248,7 @@ export default {
 
     secondAsset() {
       return config.ASSETS_CONFIG[this.lpToken.secondary];
-    },
+    }
   },
 
   methods: {
@@ -234,7 +256,8 @@ export default {
       'fundLiquidityTraderJoeV2Pool',
       'addLiquidityTraderJoeV2Pool',
       'withdrawLiquidityTraderJoeV2Pool',
-      'removeLiquidityTraderJoeV2Pool'
+      'removeLiquidityTraderJoeV2Pool',
+      'claimTraderJoeRewards'
     ]),
     watchRefreshLP() {
       this.lpService.observeRefreshLp().subscribe(async (lpType) => {
@@ -242,8 +265,10 @@ export default {
         await this.setupPool();
         this.setupAddActionsConfiguration();
         this.setupRemoveActionsConfiguration();
+        this.setupMoreActionsConfiguration();
         this.setupApr();
         this.calculateUserValue();
+        this.calculateTotalRewards();
       })
     },
     setupAddActionsConfiguration() {
@@ -285,6 +310,21 @@ export default {
       }
     },
 
+    setupMoreActionsConfiguration() {
+      this.moreActionsConfig = {
+        iconSrc: 'src/assets/icons/icon_a_more.svg',
+        tooltip: 'More',
+        menuOptions: [
+          {
+            key: 'CLAIM_TRADERJOE_REWARDS',
+            name: 'Claim TraderJoe rewards',
+            disabled: !this.hasSmartLoanContract || this.totalRewards.length == 0,
+            disabledInfo: 'You don\'t have any claimable rewards yet.'
+          }
+        ]
+      };
+    },
+
     initAccount() {
       this.accountService.observeAccountLoaded().subscribe(account => {
         this.account = account;
@@ -318,6 +358,51 @@ export default {
       this.userValue = this.lpToken.primaryBalance * this.firstAsset.price + this.lpToken.secondaryBalance * this.secondAsset.price;
     },
 
+    async calculateTotalRewards() {
+      let totalRewards = [];
+      const rewardTokens = {};
+
+      let addresses = (await import(`/common/addresses/${window.chain}/token_addresses.json`)).default;
+
+      if (this.lpToken.rewardsInfo) {
+
+        this.lpToken.rewardsInfo.rewards.forEach(reward => {
+          const tokenAddress = reward.tokenAddress.toLowerCase();
+
+          if (!(tokenAddress in rewardTokens)) {
+            let symbol;
+
+            for (const [asset, address] of Object.entries(addresses)) {
+              if (address.toLowerCase() === tokenAddress) symbol = asset;
+            }
+
+            rewardTokens[tokenAddress] = {
+              symbol,
+              address: tokenAddress,
+              decimals: config.ASSETS_CONFIG[symbol].decimals
+            }
+          }
+        });
+      }
+
+      Object.values(rewardTokens).map(token => {
+        let rewardToken = 0;
+
+        if (this.lpToken.rewardsInfo) {
+          rewardToken = this.lpToken.rewardsInfo.rewards
+            .filter(rewardToken => rewardToken.tokenAddress.toLowerCase() === token.address.toLowerCase())
+            .reduce((sum, rewardToken) => sum + parseFloat(formatUnits(rewardToken.amount, token.decimals)), 0);
+        }
+
+        totalRewards.push({
+          symbol: token.symbol,
+          amount: rewardToken.toFixed()
+        });
+      });
+
+      this.totalRewards = totalRewards;
+    },
+
     actionClick(key) {
       if (!this.inProcess) {
         switch (key) {
@@ -333,6 +418,8 @@ export default {
           case 'REMOVE_LIQUIDITY':
             this.openRemoveLiquidityModal();
             break;
+          case 'CLAIM_TRADERJOE_REWARDS':
+            this.openClaimRewardsModal();
         }
       }
     },
@@ -469,6 +556,43 @@ export default {
             this.handleTransactionError(error);
           }).then(() => {
             this.closeTraderJoeLpModal();
+          });
+        }
+      });
+    },
+
+    async openClaimRewardsModal() {
+      const modalInstance = this.openModal(ClaimTraderJoeRewardsModal);
+      modalInstance.lpToken = this.lpToken;
+      modalInstance.totalRewards = this.totalRewards;
+
+      const merkleEntries = [];
+
+      if (this.lpToken.rewardsInfo) {
+        this.lpToken.rewardsInfo.rewards.map((reward, id) => {
+          merkleEntries.push({
+            market: this.lpToken.address,
+            epoch: reward.epoch,
+            token: reward.tokenAddress,
+            user: this.smartLoanContract.address,
+            amount: reward.amount,
+            merkleProof: this.lpToken.rewardsInfo.proofs[id]
+          });
+        });
+      }
+
+      const claimRewardsRequest = {
+        merkleEntries
+      };
+
+      modalInstance.$on('CLAIM', addFromWalletEvent => {
+        if (this.smartLoanContract) {
+          this.handleTransaction(this.claimTraderJoeRewards, { claimRewardsRequest: claimRewardsRequest }, () => {
+            this.rewards = 0;
+            this.$forceUpdate();
+          }, (error) => {
+            this.handleTransactionError(error);
+          }).then(() => {
           });
         }
       });
@@ -632,7 +756,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: 180px 100px 100px 180px 100px 90px 120px 120px 35px 80px;
+    grid-template-columns: 180px 100px 100px 180px 140px 70px 110px 115px 30px 80px;
     height: 60px;
     padding-left: 6px;
 
@@ -650,6 +774,18 @@ export default {
         }
 
         .double-value__usd {
+          font-size: $font-size-xxs;
+          color: var(--asset-table-row__double-value-color);
+          font-weight: 500;
+          text-align: right;
+        }
+      }
+
+      &.table__cell--rewards-token {
+        flex-direction: column;
+        justify-content: center;
+
+        .more-rewards {
           font-size: $font-size-xxs;
           color: var(--asset-table-row__double-value-color);
           font-weight: 500;
@@ -790,6 +926,12 @@ export default {
           cursor: default;
           pointer-events: none;
         }
+      }
+
+      .no-value-dash {
+        height: 1px;
+        width: 15px;
+        background-color: var(--asset-table-row__no-value-dash-color);
       }
     }
   }

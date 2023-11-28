@@ -51,6 +51,36 @@
       "assetX": "0x371c7ec6d8039ff7933a2aa28eb827ffe1f52f07",
       "assetY": "ETH",
       "binStep": 20
+    },
+    "TJLB_SWETH_ETH": {
+      "assetX": "0xbc011a12da28e8f0f528d9ee5e7039e22f91cf18",
+      "assetY": "ETH",
+      "binStep": 1
+    },
+    "TJLB_STG_ETH": {
+      "assetX": "0x6694340fc020c5e6b96567843da2df01b2ce1eb6",
+      "assetY": "ETH",
+      "binStep": 50
+    },
+    "TJLB_GRAIL_ETH": {
+      "assetX": "0x3d9907f9a368ad0a51be60f7da3b97cf940982d8",
+      "assetY": "ETH",
+      "binStep": 25
+    },
+    "TJLB_WOO_ETH": {
+      "assetX": "0xcafcd85d8ca7ad1e1c6f82f651fa15e33aefd07b",
+      "assetY": "ETH",
+      "binStep": 25
+    },
+    "TJLB_USDT_USDCe": {
+      "assetX": "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
+      "assetY": "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8",
+      "binStep": 1
+    },
+    "TJLB_ETH_USDC": {
+      "assetX": "ETH",
+      "assetY": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
+      "binStep": 15
     }
   }
 }

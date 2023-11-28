@@ -44,20 +44,14 @@
       Welcome to DeltaPrime Blue! In the coming weeks this page will significantly expand with partner protocols. Stay tuned!
     </Banner>
 <!--    <Banner v-if="showAvalancheDepositorBanner" background="green-accent" :closable="true"></Banner>-->
-    <Banner v-if="showAvalanchePrimeAccountBanner" background="green-accent" :closable="true">
-      Yield Yak has temporarily paused deposits in this farm due to
-      <a class="banner-link" href="https://discord.com/channels/889510301421166643/912702114252329060/1173699022914064485" target="_blank">
-        <b>
-          the GLP cap.
-        </b>
-      </a>
-    </Banner>
+<!--    <Banner v-if="showAvalanchePrimeAccountBanner" background="green-accent" :closable="true"></Banner>-->
     <div class="content">
       <div class="top-bar">
         <div class="top-bar__left-part">
           <a href="https://deltaprime.io/">
             <img src="src/assets/icons/deltaprime.svg" class="logo">
           </a>
+          <AppToggle class="top-bar__app-toggle"></AppToggle>
           <ThemeToggle class="top-bar__theme-toggle"></ThemeToggle>
         </div>
         <!--      <div class="connect" v-if="!account" v-on:click="initNetwork()">Connect to wallet</div>-->
@@ -84,9 +78,11 @@ import Button from './components/Button';
 import ProgressBar from './components/ProgressBar';
 import ThemeToggle from "./components/ThemeToggle.vue";
 import {getCountdownString} from "./utils/calculate";
+import AppToggle from "./components/AppToggle.vue";
 
 export default {
   components: {
+    AppToggle,
     ThemeToggle,
     ProgressBar,
     Button,
@@ -400,7 +396,8 @@ a {
   align-items: center;
 }
 
-.top-bar__theme-toggle {
+.top-bar__theme-toggle,
+.top-bar__app-toggle, {
   margin-left: 24px;
 }
 
