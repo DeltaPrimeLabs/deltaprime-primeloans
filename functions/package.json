@@ -22,7 +22,7 @@
     "ethereum-block-by-date": "^1.4.7",
     "ethers": "5.5.4",
     "firebase-admin": "^10.0.2",
-    "firebase-functions": "^4.2.1",
+    "firebase-functions": "^4.5.0",
     "graphql": "^15.8.0",
     "graphql-request": "^6.0.0",
     "graphql-tag": "^2.12.6",
