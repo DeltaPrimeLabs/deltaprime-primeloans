@@ -1,6 +1,6 @@
 <template>
-  <div class="zap-tile__border" :class="{'disabled': disabled}">
-    <div class="zap-tile" @click="onTileClick()">
+  <div class="zap-tile__border">
+    <div class="zap-tile" :class="{'disabled': disabled}" @click="onTileClick()">
       <div class="label">
         <slot name="label"></slot>
       </div>

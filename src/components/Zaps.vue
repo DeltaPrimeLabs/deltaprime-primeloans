@@ -6,8 +6,10 @@
       Choose your strategy:
     </div>
     <div class="zaps__tiles">
+      <ZapCreateAccount v-if="!hasSmartLoanContract"></ZapCreateAccount>
       <ZapLong></ZapLong>
       <ZapShort></ZapShort>
+      <ZapConvertGlpToGm></ZapConvertGlpToGm>
     </div>
   </div>
 </template>
@@ -16,10 +18,23 @@
 
 import ZapLong from "./zaps-tiles/ZapLong.vue";
 import ZapShort from './zaps-tiles/ZapShort.vue';
+import ZapCreateAccount from "./zaps-tiles/ZapCreateAccount.vue";
+import {mapState} from "vuex";
+import ZapConvertGlpToGm from "./zaps-tiles/ZapConvertGlpToGm.vue";
+
+const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 export default {
   name: "Zaps",
-  components: {ZapLong, ZapShort}
+  components: {ZapConvertGlpToGm, ZapCreateAccount, ZapLong, ZapShort},
+  computed: {
+    ...mapState('fundsStore', [
+      'smartLoanContract',
+    ]),
+    hasSmartLoanContract() {
+      return this.smartLoanContract && this.smartLoanContract.address !== NULL_ADDRESS;
+    },
+  }
 }
 </script>
 
@@ -39,7 +54,7 @@ export default {
 
 .zaps__tiles {
   position: relative;
-  width: 870px;
+  width: 910px;
   margin: 0 auto;
   display: flex;
   flex-direction: row;

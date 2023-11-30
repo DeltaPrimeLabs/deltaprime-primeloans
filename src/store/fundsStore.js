@@ -3,7 +3,7 @@ import {
   isOracleError,
   signMessage,
   loanTermsToSign,
-  wrapContract, getLog, decodeOutput
+  wrapContract, getLog, decodeOutput, capitalize
 } from '../utils/blockchain';
 import SMART_LOAN from '@artifacts/contracts/interfaces/SmartLoanGigaChadInterface.sol/SmartLoanGigaChadInterface.json';
 import {formatUnits, fromWei, parseUnits, toWei} from '@/utils/calculate';
@@ -203,6 +203,7 @@ export default {
 
   actions: {
     async fundsStoreSetup({state, rootState, dispatch, commit}) {
+      console.log('fundsStoreSetup')
       if (!rootState.network.provider) return;
       await dispatch('loadDeployments');
       await dispatch('setupContracts');
@@ -215,6 +216,7 @@ export default {
       await dispatch('setupTraderJoeV2LpAssets');
       if (config.LEVEL_LP_ASSETS_CONFIG) await dispatch('setupLevelLpAssets');
       if (config.GMX_V2_ASSETS_CONFIG) await dispatch('setupGmxV2Assets');
+      await dispatch('getAllAssetsApys');
       await dispatch('stakeStore/updateStakedPrices', null, {root: true});
       state.assetBalances = [];
 
@@ -227,7 +229,6 @@ export default {
 
       if (state.smartLoanContract.address !== NULL_ADDRESS) {
         state.assetBalances = null;
-        await dispatch('getAllAssetsApys');
         await dispatch('getAllAssetsBalances');
         await dispatch('stakeStore/updateStakedBalances', null, {root: true});
         await dispatch('getDebtsPerAsset');
@@ -2039,7 +2040,6 @@ export default {
 
       let executionFeeWei = toWei(addLiquidityRequest.executionFee.toFixed(18));
 
-      console.log('addLiquidityRequest.method: ', addLiquidityRequest.method)
       const transaction = await wrappedContract[addLiquidityRequest.method](
           addLiquidityRequest.isLongToken,
           sourceAmount,
@@ -2557,5 +2557,101 @@ export default {
         await dispatch('updateFunds');
       }, config.refreshDelay);
     },
+
+    async convertGlpToGm({state, rootState, commit, dispatch}, {convertRequest}) {
+      const provider = rootState.network.provider;
+      const gmMarket = config.GMX_V2_ASSETS_CONFIG[convertRequest.targetMarketSymbol]
+
+      const tokenForApprove = (config.chainId === 43114) ? '0xaE64d55a6f09E4263421737397D1fdFA71896a69' : TOKEN_ADDRESSES['GLP'];
+      const glpToken = new ethers.Contract(tokenForApprove, erc20ABI, provider.getSigner());
+      const usdcToken = new ethers.Contract(TOKEN_ADDRESSES['USDC'], erc20ABI, provider.getSigner());
+
+      const usdcBalanceBefore = await usdcToken.balanceOf(state.smartLoanContract.address);
+
+      const walletAmount = await glpToken.balanceOf(rootState.network.account);
+
+      const loanAssets = mergeArrays([(
+          await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+        ['GLP', convertRequest.targetMarketSymbol, 'USDC']
+      ]);
+
+      if (fromWei(walletAmount) > 0) {
+        const allowance = formatUnits(await glpToken.allowance(rootState.network.account, state.smartLoanContract.address), config.ASSETS_CONFIG['GLP'].decimals);
+
+        if (parseFloat(allowance) < fromWei(walletAmount)) {
+          const approveTransaction = await glpToken.connect(provider.getSigner()).approve(state.smartLoanContract.address, walletAmount);
+          await awaitConfirmation(approveTransaction, provider, 'approve');
+        }
+
+        const fundTransaction = await (await wrapContract(state.smartLoanContract, loanAssets)).fundGLP(walletAmount);
+        await awaitConfirmation(fundTransaction, provider, 'approve');
+      }
+
+      const smartLoanGlpAmount = await glpToken.balanceOf(state.smartLoanContract.address);
+
+      const redStonePriceData = await (await fetch(config.redstoneFeedUrl)).json();
+      const glpPrice = redStonePriceData.GLP[0].dataPoints[0].value;
+      const usdcPrice = redStonePriceData.USDC[0].dataPoints[0].value;
+      const gmPrice = redStonePriceData[convertRequest.targetMarketSymbol][0].dataPoints[0].value;
+
+      const unstakeSlippage = 0.01; // 1%
+
+      const minUnstakedUsdc = parseUnits((fromWei(smartLoanGlpAmount) * glpPrice / usdcPrice * (1 - unstakeSlippage)).toFixed(6), 6)//slippage max. = 1%
+
+      const txUnstakeGlp = await (await wrapContract(state.smartLoanContract, loanAssets)).unstakeAndRedeemGlp(
+          TOKEN_ADDRESSES['USDC'],
+          smartLoanGlpAmount,
+          minUnstakedUsdc
+      );
+
+      await awaitConfirmation(txUnstakeGlp, provider, 'unstake Glp');
+
+      const usdcBalanceAfter = await usdcToken.balanceOf(state.smartLoanContract.address);
+
+      const usdcForGm = usdcBalanceAfter.sub(usdcBalanceBefore);
+
+      const addGmSlippage = 0.01; // 1%
+      const minReceivedGm = toWei((formatUnits(usdcForGm, 6) * usdcPrice / gmPrice * (1 - addGmSlippage)).toFixed(18))
+
+      let executionFeeWei = toWei(convertRequest.executionFee.toFixed(18));
+
+      let gmBalanceBefore = state.gmxV2Balances[convertRequest.targetMarketSymbol];
+
+      const txAddGm = await (await wrapContract(state.smartLoanContract, loanAssets))[`deposit${capitalize(gmMarket.longToken)}${capitalize(gmMarket.shortToken)}GmxV2`](
+          false,
+          usdcForGm,
+          minReceivedGm,
+          executionFeeWei,
+          { value: executionFeeWei}
+      );
+
+      await awaitConfirmation(txAddGm, provider, 'deposit to GM');
+
+      commit('setSingleAssetBalance', {asset: 'GLP', balance: 0});
+
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate(convertRequest.targetMarketSymbol, parseFloat(gmBalanceBefore) + fromWei(minReceivedGm), true, false);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate('GLP', 0, true, true);
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('network/updateBalance', {}, {root: true});
+      }, 1000);
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, config.refreshDelay);
+    },
+
   }
 };

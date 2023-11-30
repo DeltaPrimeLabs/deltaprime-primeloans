@@ -183,6 +183,24 @@
   --currency-combo-input__select-dropdown-placeholder-font-color: #{$steel-gray};
   // endregion
 
+  // region AssetDropdown
+  --asset-dropdown-input__box-shadow: inset 3px 3px 8px #{$delta-steel}7f;
+  --asset-dropdown-input__background: linear-gradient(114deg, #{$delta-deep}14 39%, #{$mist-orange}14 62%, #{$raspberry}14 81%);
+  --asset-dropdown-input__divider-color: #{$light-violet};
+  --asset-dropdown-input__chevron-color: #{$delta-accent};
+  --asset-dropdown-input__select-dropdown-input-border: 2px solid #{$smoke-gray};
+  --asset-dropdown-input__select-dropdown-option-background--hover: #{$fog-gray};
+  --asset-dropdown-input__select-dropdown-option-icon-opacity: 1;
+  --asset-dropdown-input__select-dropdown-option-name-color: #{$medium-gray};
+  --asset-dropdown-input__select-dropdown-border-color: #{$delta-light};
+  --asset-dropdown-input__select-dropdown-background: #{$white};
+  --asset-dropdown-input__select-dropdown-select-title-color: #{$steel-gray};
+  --asset-dropdown-input__select-dropdown-chains-border: 2px solid #{$smoke-gray};
+  --asset-dropdown-input__select-dropdown-chain-item-border: 1px solid transparent;
+  --asset-dropdown-input__select-dropdown-chain-item-border-active: 2px solid #{$delta-tertiary};
+  --asset-dropdown-input__select-dropdown-placeholder-font-color: #{$steel-gray};
+  // endregion
+
   // region Bubble
   --bubble__solid-block-wrapper-background: #{$persian-blue};
   --bubble__solid-block-wrapper-color: #{$white};
