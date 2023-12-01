@@ -178,14 +178,22 @@ functions:
     description: Calculate incentives for loans on Arbitrum.
     events:
       - schedule: rate(10 minutes)
-  gmxIncentivesAggregator:
-    handler: apis/gmxIncentives.gmxIncentivesAggregator
+  getGmxIncentivesApi:
+    handler: apis/gmxIncentives.getGmxIncentivesApi
     memorySize: 512
     description: Fetch GMX incentives values for a loan
     events:
       - httpApi:
           method: get
           path: /gmx-incentives/{id}
+  getGmBoostApyApi:
+    handler: apis/gmxIncentives.getGmBoostApyApi
+    memorySize: 512
+    description: Fetch GM Boost APY
+    events:
+      - httpApi:
+          method: get
+          path: /gm-boost-apy
 
 resources:
   Resources:
