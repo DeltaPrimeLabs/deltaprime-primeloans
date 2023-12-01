@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 2afef88a7df5f1a179e771bba0c7163370eb9cca;
+// Last deployed from commit: 0586de75c558e4975c8569b88717b8c991307b9f;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
@@ -396,7 +396,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
     // Returns max. acceptable pool utilisation after borrow action
     function getMaxPoolUtilisationForBorrowing() virtual public view returns (uint256) {
-        return 0.9e18;
+        return 0.925e18;
     }
 
     /**
