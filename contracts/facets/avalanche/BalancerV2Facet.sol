@@ -166,6 +166,56 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     }
 
     /**
+     * Stakes in a gauge
+     * @param poolId balancer pool id
+     * @param amount stake amount
+     **/
+    function stakeBalancerV2(bytes32 poolId, uint256 amount) external nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent {
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+
+        IVault vault = IVault(MASTER_VAULT_ADDRESS);
+
+        (address pool,) = vault.getPool(poolId);
+        if (pool == address(0)) revert ZeroAddressPool();
+
+        //poolToGauge checks as well if the pool is whitelisted
+        IBalancerV2Gauge gauge = IBalancerV2Gauge(poolToGauge(pool));
+
+        uint256 initialGaugeBalance = IERC20(gauge).balanceOf(address(this));
+        amount = Math.min(amount, IERC20(pool).balanceOf(address(this)));
+        require(amount > 0, "Cannot stake 0 tokens");
+
+        IERC20(pool).approve(address(gauge), amount);
+        //stakes everything in a gauge
+        gauge.deposit(amount);
+
+        bytes32 poolSymbol = tokenManager.tokenAddressToSymbol(pool);
+        IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
+            asset : pool,
+            symbol : poolSymbol,
+            identifier : poolToIdentifier(pool),
+            balanceSelector : poolToBalanceSelector(pool),
+            unstakeSelector : bytes4(0)
+        });
+
+        // Add staked position
+        DiamondStorageLib.addStakedPosition(position);
+
+        if (IERC20(pool).balanceOf(address(this)) == 0) {
+            DiamondStorageLib.removeOwnedAsset(poolSymbol);
+        }
+
+        emit BptStaked(
+            msg.sender,
+            poolSymbol,
+            pool,
+            amount,
+            IERC20(gauge).balanceOf(address(this)) - initialGaugeBalance,
+            block.timestamp
+        );
+    }
+
+    /**
      * Unstakes tokens a gauge and exits a pool
      * @param request unstake request
     **/
@@ -245,6 +295,48 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             unstakedAssets,
             pool,
             unstakedAmounts,
+            initialGaugeBalance - newGaugeBalance,
+            block.timestamp
+        );
+    }
+
+    /**
+     * Unstakes tokens a gauge
+     * @param poolId balancer pool id
+     * @param amount unstake amount
+    **/
+    function unstakeBalancerV2(bytes32 poolId, uint256 amount) external nonReentrant onlyOwnerOrInsolvent recalculateAssetsExposure {
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+
+        (address pool,) = IVault(MASTER_VAULT_ADDRESS).getPool(poolId);
+        if (pool == address(0)) revert ZeroAddressPool();
+
+        //poolToGauge checks as well if the pool is whitelisted
+        IBalancerV2Gauge gauge = IBalancerV2Gauge(poolToGauge(pool));
+
+        uint256 initialDepositTokenBalance = IERC20(pool).balanceOf(address(this));
+
+        //checks as well if the pool is whitelisted
+        uint256 initialGaugeBalance = IERC20(gauge).balanceOf(address(this));
+        amount = Math.min(amount, initialGaugeBalance);
+        require(amount > 0, "Cannot unstake 0 tokens");
+
+        //unstakes from the gauge
+        gauge.withdraw(amount);
+
+        uint256 newGaugeBalance = IERC20(gauge).balanceOf(address(this));
+        if (newGaugeBalance == 0) {
+            DiamondStorageLib.removeStakedPosition(poolToIdentifier(pool));
+        }
+
+        bytes32 poolSymbol = tokenManager.tokenAddressToSymbol(pool);
+        DiamondStorageLib.addOwnedAsset(poolSymbol, pool);
+
+        emit BptUnstaked(
+            msg.sender,
+            poolSymbol,
+            pool,
+            IERC20(pool).balanceOf(address(this)) - initialDepositTokenBalance,
             initialGaugeBalance - newGaugeBalance,
             block.timestamp
         );
@@ -417,6 +509,17 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     event Staked(address indexed user, bytes32[] assets, address indexed vault, uint256[] depositTokenAmounts, uint256 receiptTokenAmount, uint256 timestamp);
 
     /**
+        * @dev emitted when user stakes assets
+        * @param user the address executing staking
+        * @param asset the asset that were staked
+        * @param vault address of the vault token
+        * @param depositTokenAmount how much of deposit token was staked
+        * @param receiptTokenAmount how much of receipt token was received
+        * @param timestamp of staking
+    **/
+    event BptStaked(address indexed user, bytes32 asset, address indexed vault, uint256 depositTokenAmount, uint256 receiptTokenAmount, uint256 timestamp);
+
+    /**
         * @dev emitted when user unstakes assets
         * @param user the address executing staking
         * @param assets the assets that were unstaked
@@ -426,5 +529,16 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         * @param timestamp of unstaking
     **/
     event Unstaked(address indexed user, bytes32[] assets, address indexed vault, uint256[] depositTokenAmounts, uint256 receiptTokenAmount, uint256 timestamp);
+
+    /**
+        * @dev emitted when user unstakes assets
+        * @param user the address executing staking
+        * @param asset the assets that were unstaked
+        * @param vault address of the vault token
+        * @param depositTokenAmount how much of deposit token was received
+        * @param receiptTokenAmount how much of receipt token was unstaked
+        * @param timestamp of unstaking
+    **/
+    event BptUnstaked(address indexed user, bytes32 asset, address indexed vault, uint256 depositTokenAmount, uint256 receiptTokenAmount, uint256 timestamp);
 
 }
