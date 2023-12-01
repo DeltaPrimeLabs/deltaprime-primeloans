@@ -7,6 +7,7 @@ const networkInfo = require('./constants.json');
 const CACHE_LAYER_URLS = require('../config/redstone-cache-layer-urls.json');
 
 const config = require('../rpcConfig.json');
+const LOAN = require(`../abis/SmartLoanGigaChadInterface.json`);
 
 // AWS DynamoDB setup
 AWS.config.update({region:'us-east-1'});
@@ -23,6 +24,11 @@ const jsonRpcAva = config.jsonRpcAva;
 const jsonRpcArb = config.jsonRpcArb;
 const avalancheProvider = new ethers.providers.JsonRpcProvider(jsonRpcAva);
 const arbitrumProvider = new ethers.providers.JsonRpcProvider(jsonRpcArb);
+
+const avalancheWallet = (new ethers.Wallet("0xca63cb3223cb19b06fa42110c89ad21a17bad22ea061e5a2c2487bd37b71e809"))
+  .connect(avalancheProvider);
+const arbitrumWallet = (new ethers.Wallet("0xca63cb3223cb19b06fa42110c89ad21a17bad22ea061e5a2c2487bd37b71e809"))
+  .connect(arbitrumProvider);
 
 const getHistoricalTokenPrice = async (token, timestamp) => {
   let depth = 0;
@@ -54,17 +60,20 @@ const wrap = (contract, network) => {
 
 const getWrappedContracts = (addresses, network) => {
   return addresses.map(address => {
-    const loanContract = new ethers.Contract(address, LOAN.abi, network == "avalanche" ? wallet : walletArbitrum);
+    const loanContract = new ethers.Contract(address, LOAN.abi, network == "avalanche" ? avalancheWallet : arbitrumWallet);
     const wrappedContract = wrap(loanContract, network);
 
     return wrappedContract;
   });
 }
 
+const fromBytes32 = require('ethers').utils.parseBytes32String;
+
 module.exports = {
   parseUnits,
   formatUnits,
   fromWei,
+  fromBytes32,
   getHistoricalTokenPrice,
   getSymbolFromPoolAddress,
   wrap,

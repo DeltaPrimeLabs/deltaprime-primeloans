@@ -2,9 +2,9 @@ const AWS = require('aws-sdk');
 AWS.config.setPromisesDependency(require('bluebird'));
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
 
-const sPrimeAggregator = (event, context, callback) => {
+const gmxIncentivesAggregator = (event, context, callback) => {
   const params = {
-    TableName: event.queryStringParameters.network === 'arbitrum' ? process.env.SPRIME_ARB_TABLE : process.env.SPRIME_AVA_TABLE,
+    TableName: event.queryStringParameters.network === 'arbitrum' ? process.env.GMX_INCENTIVES_ARB_TABLE : process.env.GMX_INCENTIVES_AVA_TABLE,
     Key: {
       id: event.pathParameters.id.toLowerCase()
     }
@@ -20,11 +20,11 @@ const sPrimeAggregator = (event, context, callback) => {
     })
     .catch(error => {
       console.error(error);
-      callback(new Error('Couldn\'t fetch sPRIME values for depositor.'));
+      callback(new Error('Couldn\'t fetch GMX Incentives values.'));
       return;
     });
 };
 
 module.exports = {
-  sPrimeAggregator
+  gmxIncentivesAggregator
 }

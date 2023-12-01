@@ -31,6 +31,7 @@ provider:
     LOAN_AVA_TABLE: loans-ava-${opt:stage, "dev"}
     LOAN_ARB_TABLE: loans-arb-${opt:stage, "dev"}
     APY_TABLE: apys-${opt:stage, "dev"}
+    GMX_INCENTIVES_ARB_TABLE: gmx-incentives-arb-${opt:stage, "dev"}
     TJ_API_KEY: ${file(./.secrets/traderJoe.json):apiKey}
   iamRoleStatements:
     - Effect: Allow
@@ -170,6 +171,21 @@ functions:
       - httpApi:
           method: get
           path: /traderjoe/rewards/claimable
+  gmxIncentivesCalculatorArb:
+    handler: gmxIncentives/gmxIncentivesCalculatorArb.handler
+    memorySize: 1024
+    timeout: 600
+    description: Calculate incentives for loans on Arbitrum.
+    events:
+      - schedule: rate(10 minutes)
+  gmxIncentivesAggregator:
+    handler: apis/gmxIncentives.gmxIncentivesAggregator
+    memorySize: 512
+    description: Fetch GMX incentives values for a loan
+    events:
+      - httpApi:
+          method: get
+          path: /gmx-incentives/{id}
 
 resources:
   Resources:
@@ -205,6 +221,22 @@ resources:
         StreamSpecification:
           StreamViewType: "NEW_AND_OLD_IMAGES"
         TableName: ${self:provider.environment.SPRIME_ARB_TABLE}
+    gmxIncentivesArbTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: "id"
+            AttributeType: "S"
+        KeySchema:
+          -
+            AttributeName: "id"
+            KeyType: "HASH"
+        BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: "NEW_AND_OLD_IMAGES"
+        TableName: ${self:provider.environment.GMX_INCENTIVES_ARB_TABLE}
     # loansAvaTable:
     #   Type: AWS::DynamoDB::Table
     #   DeletionPolicy: Retain

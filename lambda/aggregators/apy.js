@@ -76,8 +76,8 @@ const glpAprAggregator = async (event) => {
     const items = document.querySelectorAll(".Home-token-card-option-apr");
 
     // parse APR of GLP on Avalanche
-    const avaApy = parseFloat(items[1].innerText.split(':').at(-1).trim().replaceAll('%', ''));
-    const arbApy = parseFloat(items[1].innerText.split(',')[0].split(':').at(-1).trim().replaceAll('%', ''));
+    const avaApy = parseFloat(items[items.length-1].innerText.split(':').at(-1).trim().replaceAll('%', ''));
+    const arbApy = parseFloat(items[items.length-1].innerText.split(',')[0].split(':').at(-1).trim().replaceAll('%', ''));
     return {
       avaApy,
       arbApy

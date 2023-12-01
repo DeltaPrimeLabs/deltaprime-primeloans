@@ -1,0 +1,10 @@
+{
+  "avalanche": {
+    "factory": "0x3Ea9D480295A73fd2aF95b4D96c2afF88b21B03D",
+    "redstoneFeedUrl": "https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-avalanche-prod"
+  },
+  "arbitrum": {
+    "factory": "0xFf5e3dDaefF411a1dC6CcE00014e4Bca39265c20",
+    "redstoneFeedUrl": "https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-arbitrum-prod"
+  }
+}
