@@ -872,7 +872,9 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
 
         await deployFacet("BalancerV2Facet", diamondAddress, [
             'joinPoolAndStakeBalancerV2',
+            'stakeBalancerV2',
             'unstakeAndExitPoolBalancerV2',
+            'unstakeBalancerV2',
             'claimRewardsBalancerV2',
         ],
         hardhatConfig);

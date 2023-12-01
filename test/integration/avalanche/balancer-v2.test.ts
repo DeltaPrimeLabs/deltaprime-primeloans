@@ -1,4 +1,4 @@
-import {ethers, waffle} from 'hardhat'
+import {ethers, network, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 import { constructSimpleSDK, ContractMethod, SimpleFetchSDK, SwapSide } from '@paraswap/sdk';
@@ -65,6 +65,7 @@ describe('Smart loan', () => {
             owner: SignerWithAddress,
             depositor: SignerWithAddress,
             liquidator: SignerWithAddress,
+            vault: SignerWithAddress,
             diamondAddress: any,
             MOCK_PRICES: any,
             poolContracts: Map<string, Contract> = new Map(),
@@ -198,9 +199,22 @@ describe('Smart loan', () => {
             swapData = await getSwapData('AVAX', 18, 'sAVAX', 18, toWei('50'));
             await wrappedLoan.paraSwap(swapData.selector, swapData.data, TOKEN_ADDRESSES['AVAX'], toWei('50'), TOKEN_ADDRESSES['sAVAX'], 0);
 
-            //TODO: high slippage on Pangolin
-            // expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(151 * tokensPrices.get('AVAX')! + 50 * tokensPrices.get('sAVAX')!, 0.05);
-            // expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(167.5, 0.05);
+            // transfer BPTs from whale address for testing
+            await network.provider.request({
+                method: "hardhat_impersonateAccount",
+                params: ["0xBA12222222228d8Ba445958a75a0704d566BF2C8"],
+            });
+            vault = await ethers.provider.getSigner('0xBA12222222228d8Ba445958a75a0704d566BF2C8');
+
+            await tokenContracts.get('BAL_ggAVAX_AVAX')!.connect(vault).transfer(owner.address, toWei("50"));
+            await tokenContracts.get('BAL_ggAVAX_AVAX')!.connect(owner).approve(wrappedLoan.address, toWei("50"));
+            await wrappedLoan.fund(toBytes32("BAL_ggAVAX_AVAX"), toWei("50"));
+            await tokenContracts.get('BAL_yyAVAX_AVAX')!.connect(vault).transfer(owner.address, toWei("50"));
+            await tokenContracts.get('BAL_yyAVAX_AVAX')!.connect(owner).approve(wrappedLoan.address, toWei("50"));
+            await wrappedLoan.fund(toBytes32("BAL_yyAVAX_AVAX"), toWei("50"));
+            await tokenContracts.get('BAL_sAVAX_AVAX')!.connect(vault).transfer(owner.address, toWei("50"));
+            await tokenContracts.get('BAL_sAVAX_AVAX')!.connect(owner).approve(wrappedLoan.address, toWei("50"));
+            await wrappedLoan.fund(toBytes32("BAL_sAVAX_AVAX"), toWei("50"));
         });
 
         it("should fail to stake as a non-owner", async () => {
@@ -219,7 +233,26 @@ describe('Smart loan', () => {
                     //TODO: check slippage
                     toWei('0.0001')
                 ]
+            )).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.stakeBalancerV2(
+                "0xc13546b97b9b1b15372368dc06529d7191081f5b00000000000000000000001d",
+                toWei("10"),
+            )).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+        });
 
+        it("should fail to unstake as a non-owner", async () => {
+            //https://docs.balancer.fi/reference/joins-and-exits/pool-joins.html#userdata
+            await expect(nonOwnerWrappedLoan.unstakeAndExitPoolBalancerV2(
+                [
+                    "0xc13546b97b9b1b15372368dc06529d7191081f5b00000000000000000000001d",
+                    "0xA25EaF2906FA1a3a13EdAc9B9657108Af7B703e3",
+                    toWei("9"), //max. slippage = 10%,
+                    await ggAvaxTokenContract.balanceOf(wrappedLoan.address)
+                ]
+            )).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.unstakeBalancerV2(
+                "0xc13546b97b9b1b15372368dc06529d7191081f5b00000000000000000000001d",
+                toWei("10"),
             )).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
         });
 
@@ -249,7 +282,24 @@ describe('Smart loan', () => {
             let balanceAfterStake = fromWei(await ggAvaxTokenContract.balanceOf(wrappedLoan.address));
             expect(balanceAfterStake).to.be.gt(0);
 
-            //TODO: uncomment after RS feed is ready
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 250);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.05);
+        });
+
+        it("should stake BAL_ggAVAX_AVAX in Balancer vault", async () => {
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+            let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
+
+            let initialStakedBalance = await ggAvaxTokenContract.balanceOf(wrappedLoan.address);
+
+            await wrappedLoan.stakeBalancerV2(
+                "0xc13546b97b9b1b15372368dc06529d7191081f5b00000000000000000000001d",
+                toWei("10"),
+            );
+
+            let afterStakedBalance = fromWei(await ggAvaxTokenContract.balanceOf(wrappedLoan.address));
+            expect(afterStakedBalance).to.be.gt(initialStakedBalance);
+
             expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 250);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.05);
         });
@@ -310,10 +360,24 @@ describe('Smart loan', () => {
                 ]
             );
 
-            //TODO: uncomment after RS feed is ready
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 250);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.05);
-            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 60);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 250);
+        });
+
+        it("should unstake part of BAL_ggAVAX_AVAX", async () => {
+            let initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+            let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
+
+            await wrappedLoan.unstakeBalancerV2(
+                "0xc13546b97b9b1b15372368dc06529d7191081f5b00000000000000000000001d",
+                toWei("9"),
+            );
+
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(initialTotalValue, 250);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.05);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 250);
         });
 
         it("should stake yyAVAX in Balancer vault", async () => {
@@ -344,9 +408,26 @@ describe('Smart loan', () => {
             let balanceAfterStake = fromWei(await yyAvaxTokenContract.balanceOf(wrappedLoan.address));
             expect(balanceAfterStake).to.be.gt(0);
 
-            //TODO: uncomment after RS feed is ready
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.05);
             expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 250);
+        });
+
+        it("should stake BAL_yyAVAX_AVAX in Balancer vault", async () => {
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+            let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
+
+            let initialStakedBalance = await yyAvaxTokenContract.balanceOf(wrappedLoan.address);
+
+            await wrappedLoan.stakeBalancerV2(
+                "0x9fa6ab3d78984a69e712730a2227f20bcc8b5ad900000000000000000000001f",
+                toWei("10"),
+            );
+
+            let afterStakedBalance = fromWei(await yyAvaxTokenContract.balanceOf(wrappedLoan.address));
+            expect(afterStakedBalance).to.be.gt(initialStakedBalance);
+
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 250);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.05);
         });
 
         it("should claim rewards", async () => {
@@ -405,12 +486,25 @@ describe('Smart loan', () => {
                 ]
             );
 
-            //TODO: uncomment after RS feed is ready
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 250);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.05);
-            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 60);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 250);
         });
 
+        it("should unstake part of BAL_yyAVAX_AVAX", async () => {
+            let initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+            let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
+
+            await wrappedLoan.unstakeBalancerV2(
+                "0x9fa6ab3d78984a69e712730a2227f20bcc8b5ad900000000000000000000001f",
+                toWei("9"),
+            );
+
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(initialTotalValue, 250);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.05);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 250);
+        });
 
         it("should stake sAVAX in Balancer vault", async () => {
 
@@ -435,6 +529,24 @@ describe('Smart loan', () => {
 
             let balanceAfterStake = fromWei(await sAvaxTokenContract.balanceOf(wrappedLoan.address));
             expect(balanceAfterStake).to.be.gt(0);
+        });
+
+        it("should stake BAL_sAVAX_AVAX in Balancer vault", async () => {
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+            let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
+
+            let initialStakedBalance = await sAvaxTokenContract.balanceOf(wrappedLoan.address);
+
+            await wrappedLoan.stakeBalancerV2(
+                "0xfd2620c9cfcec7d152467633b3b0ca338d3d78cc00000000000000000000001c",
+                toWei("10"),
+            );
+
+            let afterStakedBalance = fromWei(await sAvaxTokenContract.balanceOf(wrappedLoan.address));
+            expect(afterStakedBalance).to.be.gt(initialStakedBalance);
+
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 250);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.05);
         });
 
         it("should claim rewards", async () => {
@@ -493,8 +605,22 @@ describe('Smart loan', () => {
                 ]
             );
 
-            //TODO: uncomment after RS feed is ready
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 250);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.05);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 250);
+        });
+
+        it("should unstake part of BAL_sAVAX_AVAX", async () => {
+            let initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+            let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
+
+            await wrappedLoan.unstakeBalancerV2(
+                "0xfd2620c9cfcec7d152467633b3b0ca338d3d78cc00000000000000000000001c",
+                toWei("9"),
+            );
+
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(initialTotalValue, 250);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.05);
             expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 250);
         });

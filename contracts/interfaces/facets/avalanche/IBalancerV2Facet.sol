@@ -19,7 +19,11 @@ interface IBalancerV2Facet {
 
     function joinPoolAndStakeBalancerV2(StakeRequest memory request) external;
 
+    function stakeBalancerV2(bytes32 poolId, uint256 amount) external;
+
     function unstakeAndExitPoolBalancerV2(UnstakeRequest memory request) external;
+
+    function unstakeBalancerV2(bytes32 poolId, uint256 amount) external;
 
     function claimRewardsBalancerV2(bytes32 poolId) external;
 
