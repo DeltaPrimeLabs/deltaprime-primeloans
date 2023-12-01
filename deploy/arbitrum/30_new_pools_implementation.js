@@ -7,72 +7,72 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deploy } = deployments;
     const { deployer } = await getNamedAccounts();
 
-    // embedCommitHash('Pool', './contracts');
-    //
-    // embedCommitHash('WethPool', './contracts/deployment/arbitrum');
-    // embedCommitHash('BtcPool', './contracts/deployment/arbitrum');
-    // embedCommitHash('UsdcPool', './contracts/deployment/arbitrum');
-    // embedCommitHash('ArbPool', './contracts/deployment/arbitrum');
+    embedCommitHash('Pool', './contracts');
+
+    embedCommitHash('WethPool', './contracts/deployment/arbitrum');
+    embedCommitHash('BtcPool', './contracts/deployment/arbitrum');
+    embedCommitHash('UsdcPool', './contracts/deployment/arbitrum');
+    embedCommitHash('ArbPool', './contracts/deployment/arbitrum');
 
     let pools = {}
 
-    // let wethPool = await deploy("WethPool", {
-    //     contract: "contracts/deployment/arbitrum/WethPool.sol:WethPool",
-    //     from: deployer,
-    //     gasLimit: 100000000,
-    //     args: [],
-    // });
-    //
-    // pools["ETH"] = wethPool.address;
-    // console.log(`Deployed WethPool at address: ${wethPool.address}`);
-    //
-    // await verifyContract(hre,
-    //     {
-    //         address: wethPool.address,
-    //         contract: `contracts/deployment/arbitrum/WethPool.sol:WethPool`,
-    //         constructorArguments: []
-    //     });
-    // console.log(`Verified WethPool`)
+    let wethPool = await deploy("WethPool", {
+        contract: "contracts/deployment/arbitrum/WethPool.sol:WethPool",
+        from: deployer,
+        gasLimit: 100000000,
+        args: [],
+    });
+
+    pools["ETH"] = wethPool.address;
+    console.log(`Deployed WethPool at address: ${wethPool.address}`);
+
+    await verifyContract(hre,
+        {
+            address: wethPool.address,
+            contract: `contracts/deployment/arbitrum/WethPool.sol:WethPool`,
+            constructorArguments: []
+        });
+    console.log(`Verified WethPool`)
 
 
 
-    // let btcPool = await deploy("BtcPool", {
-    //     contract: "contracts/deployment/arbitrum/BtcPool.sol:BtcPool",
-    //     from: deployer,
-    //     gasLimit: 100000000,
-    //     args: [],
-    // });
-    //
-    // pools["BTC"] = btcPool.address;
-    // console.log(`Deployed BtcPool at address: ${btcPool.address}`);
-    //
-    // await verifyContract(hre,
-    //     {
-    //         address: btcPool.address,
-    //         contract: `contracts/deployment/arbitrum/BtcPool.sol:BtcPool`,
-    //         constructorArguments: []
-    //     });
-    // console.log(`Verified BtcPool`)
-    //
-    //
-    //
-    // let usdcPool = await deploy("UsdcPool", {
-    //     contract: "contracts/deployment/arbitrum/UsdcPool.sol:UsdcPool",
-    //     from: deployer,
-    //     gasLimit: 100000000,
-    //     args: [],
-    // });
-    //
-    // pools["USDC"] = usdcPool.address;
-    // console.log(`Deployed UsdcPool at address: ${usdcPool.address}`);
-    //
-    // await verifyContract(hre,
-    //     {
-    //         address: usdcPool.address,
-    //         contract: `contracts/deployment/arbitrum/UsdcPool.sol:UsdcPool`,
-    //         constructorArguments: []
-    //     });
-    // console.log(`Verified UsdcPool`)
+    let btcPool = await deploy("BtcPool", {
+        contract: "contracts/deployment/arbitrum/BtcPool.sol:BtcPool",
+        from: deployer,
+        gasLimit: 100000000,
+        args: [],
+    });
+
+    pools["BTC"] = btcPool.address;
+    console.log(`Deployed BtcPool at address: ${btcPool.address}`);
+
+    await verifyContract(hre,
+        {
+            address: btcPool.address,
+            contract: `contracts/deployment/arbitrum/BtcPool.sol:BtcPool`,
+            constructorArguments: []
+        });
+    console.log(`Verified BtcPool`)
+
+
+
+    let usdcPool = await deploy("UsdcPool", {
+        contract: "contracts/deployment/arbitrum/UsdcPool.sol:UsdcPool",
+        from: deployer,
+        gasLimit: 100000000,
+        args: [],
+    });
+
+    pools["USDC"] = usdcPool.address;
+    console.log(`Deployed UsdcPool at address: ${usdcPool.address}`);
+
+    await verifyContract(hre,
+        {
+            address: usdcPool.address,
+            contract: `contracts/deployment/arbitrum/UsdcPool.sol:UsdcPool`,
+            constructorArguments: []
+        });
+    console.log(`Verified UsdcPool`)
 
 
     let arbPool = await deploy("ArbPool", {
