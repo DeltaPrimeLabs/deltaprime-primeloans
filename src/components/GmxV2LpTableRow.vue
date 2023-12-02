@@ -75,7 +75,7 @@
       </div>
 
       <div class="table__cell table__cell--double-value max-apr">
-        {{ maxApr | percent }}
+        <span>{{ maxApr | percent }}<img src="src/assets/icons/stars.png" class="stars-icon"></span>
       </div>
 
       <div class="table__cell"></div>
@@ -243,7 +243,8 @@ export default {
       'concentratedLpAssets',
       'levelLpAssets',
       'gmxV2Assets',
-      'traderJoeV2LpAssets'
+      'traderJoeV2LpAssets',
+      'apys',
     ]),
     ...mapState('poolStore', ['pools']),
     ...mapState('network', ['account', 'provider']),
@@ -262,7 +263,8 @@ export default {
     },
 
     maxApr() {
-      return calculateMaxApy(this.pools, this.apr / 100);
+      if (!this.apys) return;
+      return calculateMaxApy(this.pools, this.apr / 100) + 4.5 * this.apys['GM_BOOST'].arbApy;
     },
   },
 
@@ -1059,6 +1061,12 @@ export default {
 
       &.apr, &.max-apr, &.tvl {
         align-items: flex-end;
+
+        .stars-icon {
+          width: 20px;
+          margin-left: 2px;
+          transform: translateY(-2px);
+        }
       }
 
       &.max-apr {

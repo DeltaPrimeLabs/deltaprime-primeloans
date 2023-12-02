@@ -312,7 +312,6 @@ export default {
       apyDoc.Items.map(apy => {
         apys[apy.id] = {...apy};
       });
-      console.log(apys);
 
       commit('setApys', apys);
     },
@@ -1112,6 +1111,16 @@ export default {
 
             yearlyLpInterest += parseFloat(state.gmxV2Balances[symbol]) * apy * lpAsset.price;
           }
+
+          let gmWorth = 0;
+
+          Object.keys(config.GMX_V2_ASSETS_CONFIG).forEach(
+              gmSymbol => gmWorth += state.gmxV2Balances[gmSymbol] * state.gmxV2Assets[gmSymbol].price
+          );
+
+          let leveragedGm = gmWorth - state.getCollateral > 0 ? gmWorth - state.getCollateral : 0;
+
+          yearlyLpInterest += leveragedGm * state.apys['GM_BOOST'].arbApy;
         }
 
         let yearlyTraderJoeV2Interest = 0;
