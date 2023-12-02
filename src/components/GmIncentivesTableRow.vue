@@ -4,6 +4,9 @@
       <div class="table__cell table__cell--double-value tvl">
         {{ formatTvl(totalLeveragedGm) }}
       </div>
+      <div class="table__cell table__cell--double-value mission">
+        <bar-gauge-beta v-if="totalLeveragedGm" :min="0" :max="3000000" :value="totalLeveragedGm" v-tooltip="{content: `Grant milestone completion`, classes: 'info-tooltip'}" :width="80"></bar-gauge-beta>
+      </div>
       <div class="table__cell table__cell--double-value leveraged">
         {{ leveragedGm | usd}}
       </div>
@@ -38,12 +41,14 @@ import {calculateMaxApy, fromWei} from '../utils/calculate';
 import addresses from '../../common/addresses/avalanche/token_addresses.json';
 import {formatUnits, parseUnits} from 'ethers/lib/utils';
 import DeltaIcon from "./DeltaIcon.vue";
+import BarGaugeBeta from "./BarGaugeBeta.vue";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 export default {
   name: 'GmIncentivesTableRow',
   components: {
+    BarGaugeBeta,
     DeltaIcon,
     DoubleAssetIcon,
     LoadedValue,
@@ -90,7 +95,7 @@ export default {
       return apy ? 10000 / (7 * 24 * 6) / apy * 6 * 24 * 365 : 0;
     },
     leveragedGm() {
-      if (!this.gmxV2Balances || !this.gmxV2Assets || !this.getCollateral) return;
+      if (!this.gmxV2Balances || !this.gmxV2Assets || !this.getCollateral) return 0;
 
       let gmWorth = 0;
 
@@ -132,7 +137,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: 160px repeat(3, 1fr) 50px;
+    grid-template-columns: 160px repeat(4, 1fr) 50px;
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;
@@ -144,7 +149,7 @@ export default {
       display: flex;
       flex-direction: row;
 
-      &.tvl, &.leveraged, &.boost-apy, &.arb-collected {
+      &.tvl, &.leveraged, &.boost-apy, &.mission, &.arb-collected {
         align-items: center;
         justify-content: flex-end;
       }

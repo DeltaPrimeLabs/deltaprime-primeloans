@@ -521,7 +521,7 @@ export default {
     },
     setupGmIncentivesTableHeaderConfig() {
       this.gmIncentivesTableHeaderConfig = {
-        gridTemplateColumns: '160px repeat(3, 1fr) 50px',
+        gridTemplateColumns: '160px repeat(4, 1fr) 50px',
         cells: [
           {
             label: 'Total eligible TVL',
@@ -529,6 +529,13 @@ export default {
             class: 'token',
             id: 'TOKEN',
             tooltip: `The GM market name. These names are simplified for a smoother UI.`
+          },
+          {
+            label: 'Mission completion',
+            sortable: false,
+            class: 'composition',
+            id: 'COMPOSITION',
+            tooltip: `Composition ot the GM token.`
           },
           {
             label: 'Your eligible GM',

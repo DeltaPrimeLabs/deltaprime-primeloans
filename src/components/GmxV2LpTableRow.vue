@@ -75,7 +75,7 @@
       </div>
 
       <div class="table__cell table__cell--double-value max-apr">
-        <span>{{ maxApr | percent }}<img src="src/assets/icons/stars.png" class="stars-icon"></span>
+        <span>{{ maxApr | percent }}<img v-if="hasGmIncentives" src="src/assets/icons/stars.png" class="stars-icon"></span>
       </div>
 
       <div class="table__cell"></div>
@@ -264,8 +264,12 @@ export default {
 
     maxApr() {
       if (!this.apys) return;
-      return calculateMaxApy(this.pools, this.apr / 100) + 4.5 * this.apys['GM_BOOST'].arbApy;
+      return calculateMaxApy(this.pools, this.apr / 100) + (this.hasGmIncentives ? 4.5 * this.apys['GM_BOOST'].arbApy : 0);
     },
+
+    hasGmIncentives() {
+      return config.chainId === 42161;
+    }
   },
 
   watch: {
