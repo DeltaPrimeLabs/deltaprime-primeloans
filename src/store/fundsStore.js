@@ -938,6 +938,10 @@ export default {
           if (apys[symbol] && apys[symbol].lp_apy) {
             traderJoeV2LpAssets[symbol].apy = apys[symbol].lp_apy * 100;
           }
+
+          if (traderJoeV2LpAssets['TJLB_MAGIC_ETH']) {
+            traderJoeV2LpAssets['TJLB_MAGIC_ETH'].apy = 11.42;
+          }
         }
       }
       commit('setTraderJoeV2LpAssets', traderJoeV2LpAssets);
