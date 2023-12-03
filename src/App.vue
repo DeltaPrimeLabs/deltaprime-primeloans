@@ -102,7 +102,7 @@ export default {
       gasPriceIntervalId: null,
       showGlpBanner: false,
       showDepositBanner: false,
-      showInterestRateBanner: true,
+      showInterestRateBanner: false,
       showPrimeAccountBanner: false,
       showArbitrumDepositorBanner: false,
       showArbitrumPrimeAccountBanner: false,
