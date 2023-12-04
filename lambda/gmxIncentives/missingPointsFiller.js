@@ -14,6 +14,12 @@ const FACTORY = require('../abis/SmartLoansFactory.json');
 const EthDater = require("ethereum-block-by-date");
 const redstone = require("redstone-api");
 const config = require("../../src/config");
+const key = fs.readFileSync("./.secret").toString().trim();
+
+const Web3 = require('web3');
+const fs = require("fs");
+
+let provider = new ethers.providers.JsonRpcProvider('https://arbitrum-mainnet.core.chainstack.com/79a835e86be634e1e02f7bfd107763b9');
 
 const factoryAddress = constants.arbitrum.factory;
 
@@ -29,7 +35,7 @@ const getLatestIncentives = async () => {
 
 const getBlockForTimestamp = async (timestamp) => {
     const dater = new EthDater(
-        this.provider // ethers provider, required.
+        provider // ethers provider, required.
     );
 
     return await dater.getDate(
@@ -40,19 +46,27 @@ const getBlockForTimestamp = async (timestamp) => {
 
 const missingPointsFiller = async (event) => {
  //in seconds
-  let blockTimestamp = event.blockTimestampStart;
+  let timestampInSeconds = event.blockTimestampStart;
 
-    //in miliseconds
-    const priceResponse = await redstone.getHistoricalPrice(Object.keys(gmTokens.arbitrum), {
-        startDate: event.blockTimestampStart * 1000,
-        interval: 10 * 60 * 1000,
-        endDate: event.blockTimestampStart * 1000,
-        provider: "redstone"
-    });
+    let prices = {};
 
+    for (let gmSymbol of Object.keys(gmTokens.arbitrum)) {
+        const resp = await redstone.getHistoricalPrice(gmSymbol, {
+            startDate: event.blockTimestampStart * 1000,
+            interval: 10 * 60 * 1000,
+            endDate: event.blockTimestampEnd * 1000,
+            provider: "redstone"
+        });
 
-    while (blockTimestamp <= event.blockTimestampEnd) {
-      let blockNumber = getBlockForTimestamp(blockTimestamp * 1000);
+        prices[gmSymbol] = resp;
+    }
+
+    console.log('Prices:');
+    console.log(prices);
+
+    while (timestampInSeconds <= event.blockTimestampEnd) {
+      console.log(`Processed timestamp: ${timestampInSeconds}`)
+      let blockNumber = (await getBlockForTimestamp(timestampInSeconds * 1000)).block;
       const factoryContract = new ethers.Contract(factoryAddress, FACTORY.abi, arbitrumProvider);
       let loanAddresses = await factoryContract.getAllLoans({ blockTag:  blockNumber});
       const totalLoans = loanAddresses.length;
@@ -103,10 +117,10 @@ const missingPointsFiller = async (event) => {
                           Object.entries(gmTokens.arbitrum).map(async ([symbol, token]) => {
                               let price = 0;
 
-                              if (priceResponse[symbol]) {
+                              if (prices[symbol]) {
                                   let i = 0;
                                   while (!price) {
-                                      price = priceResponse[symbol][blockTimestamp * 1000 - 60 * 10 * 1000 * i]
+                                      price = prices[symbol].find(price => price.timestamp === timestampInSeconds * 1000)
                                       i++;
                                   }
                               }
@@ -159,7 +173,7 @@ const missingPointsFiller = async (event) => {
           })
       );
 
-      console.log("GMX incentives successfully updated.")
+      console.log(`GMX incentives updated for timestamp ${timestampInSeconds}.`)
 
       // save boost APY to DB
       const boostApy = incentivesPerInterval / totalLeveragedGM * 6 * 24 * 365;
@@ -182,9 +196,9 @@ const missingPointsFiller = async (event) => {
 
       await dynamoDb.update(params).promise();
 
-       console.log(`Updated timestamp: ${blockTimestamp}, block number: ${blockNumber}.`);
+       console.log(`Updated timestamp: ${timestampInSeconds}, block number: ${blockNumber}.`);
 
-      blockTimestamp += 10 * 60;
+      timestampInSeconds += 10 * 60;
     }
 
     console.log(`GM boost APY on Arbitrum updated from ${event.blockTimestampStart} to ${event.blockTimestampEnd}.`);
@@ -192,4 +206,4 @@ const missingPointsFiller = async (event) => {
     return event;
 }
 
-module.exports.handler = getBlockForTimestamp;
+module.exports.handler = missingPointsFiller;
