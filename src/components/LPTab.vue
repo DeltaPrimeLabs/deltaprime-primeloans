@@ -1,6 +1,13 @@
 <template>
   <div class="lp-tab">
     <div class="lp-tokens" v-if="Object.keys(gmxV2LpTokens).length">
+      <div class="lp-table" v-if="gmxV2LpTokens && hasGmIncentives">
+        <div class="incentives-program-title">GM Incentives Program</div>
+        <TableHeader :config="gmIncentivesTableHeaderConfig"></TableHeader>
+        <GmIncentivesTableRow></GmIncentivesTableRow>
+      </div>
+    </div>
+    <div class="lp-tokens" v-if="Object.keys(gmxV2LpTokens).length">
       <div class="lp-table level" v-if="gmxV2LpTokens">
         <TableHeader :config="gmxV2LpTableHeaderConfig"></TableHeader>
         <GmxV2LpTableRow v-for="(lpToken, index) in gmxV2LpTokens" v-bind:key="index" :index="index" :lp-token="lpToken"></GmxV2LpTableRow>
@@ -61,10 +68,12 @@ import {mapState} from 'vuex';
 import Paginator from "./Paginator.vue";
 import LevelLpTableRow from "./LevelLpTableRow.vue";
 import GmxV2LpTableRow from "./GmxV2LpTableRow.vue";
+import GmIncentivesTableRow from "./GmIncentivesTableRow.vue";
 
 export default {
   name: 'LPTab',
   components: {
+    GmIncentivesTableRow,
     GmxV2LpTableRow,
     LevelLpTableRow,
     Paginator, TraderJoeLpTableRow, LpTableRow, AssetFilter, ConcentratedLpTableRow, TableHeader
@@ -82,6 +91,7 @@ export default {
       gmxV2LpTableHeaderConfig: null,
       levelLpTokens: config.LEVEL_LP_ASSETS_CONFIG,
       levelLpTableHeaderConfig: null,
+      gmIncentivesTableHeaderConfig: null,
       selectedLpTokens: [] = [],
       assets: null
     };
@@ -95,6 +105,7 @@ export default {
     this.setupLpTableHeaderConfig();
     this.setupLevelLpTableHeaderConfig();
     this.setupGmxV2LpTableHeaderConfig();
+    this.setupGmIncentivesTableHeaderConfig();
   },
   computed: {
     ...mapState('serviceRegistry', [
@@ -109,6 +120,9 @@ export default {
           && this.selectedDexes.includes(token.dex)
       );
     },
+    hasGmIncentives() {
+      return config.chainId === 42161;
+    }
   },
   methods: {
     setLpFilter(filter) {
@@ -505,6 +519,48 @@ export default {
         ]
       };
     },
+    setupGmIncentivesTableHeaderConfig() {
+      this.gmIncentivesTableHeaderConfig = {
+        gridTemplateColumns: '160px repeat(4, 1fr) 50px',
+        cells: [
+          {
+            label: 'Total eligible TVL',
+            sortable: false,
+            class: 'token',
+            id: 'TOKEN',
+            tooltip: `The GM market name. These names are simplified for a smoother UI.`
+          },
+          {
+            label: 'Mission completion',
+            sortable: false,
+            class: 'composition',
+            id: 'COMPOSITION',
+            tooltip: `Composition ot the GM token.`
+          },
+          {
+            label: 'Your eligible GM',
+            sortable: false,
+            class: 'composition',
+            id: 'COMPOSITION',
+            tooltip: `Composition ot the GM token.`
+          },
+          {
+            label: 'Boost APR',
+            sortable: false,
+            class: 'balance',
+            id: 'BALANCE',
+            tooltip: `The balance of this GM token in your Prime Account.`
+          },
+          {
+            label: 'ARB collected',
+            sortable: false,
+            class: 'trend-level',
+            id: 'TREND',
+            tooltip: `7D price change of this GM token.`
+          },
+        ]
+      };
+    },
     watchAssetPricesUpdate() {
       this.priceService.observeRefreshPrices().subscribe((updateEvent) => {
         this.assets = config.ASSETS_CONFIG;
@@ -536,6 +592,13 @@ export default {
     width: 100%;
 
     .lp-table {
+      .incentives-program-title {
+        font-size: $font-size-xxl;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
       .paginator-container {
         display: flex;
         flex-direction: row;

@@ -75,7 +75,7 @@
       </div>
 
       <div class="table__cell table__cell--double-value max-apr">
-        {{ maxApr | percent }}
+        <span>{{ maxApr | percent }}<img v-if="hasGmIncentives" v-tooltip="{content: `Including boost APR from the GM grant.`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span>
       </div>
 
       <div class="table__cell"></div>
@@ -243,7 +243,8 @@ export default {
       'concentratedLpAssets',
       'levelLpAssets',
       'gmxV2Assets',
-      'traderJoeV2LpAssets'
+      'traderJoeV2LpAssets',
+      'apys',
     ]),
     ...mapState('poolStore', ['pools']),
     ...mapState('network', ['account', 'provider']),
@@ -262,8 +263,13 @@ export default {
     },
 
     maxApr() {
-      return calculateMaxApy(this.pools, this.apr / 100);
+      if (!this.apys) return;
+      return calculateMaxApy(this.pools, this.apr / 100) + (this.hasGmIncentives ? 4.5 * this.apys['GM_BOOST'].arbApy : 0);
     },
+
+    hasGmIncentives() {
+      return config.chainId === 42161;
+    }
   },
 
   watch: {
@@ -347,12 +353,6 @@ export default {
         iconSrc: 'src/assets/icons/icon_a_more.svg',
         tooltip: 'More',
         menuOptions: [
-          {
-            key: 'CLAIM_GM_REWARDS',
-            name: 'Claim GM rewards',
-            disabled: true,
-            disabledInfo: 'Available soon!'
-          },
           {
             key: 'PARTNER_PROFILE',
             name: 'Show profile',
@@ -1059,6 +1059,16 @@ export default {
 
       &.apr, &.max-apr, &.tvl {
         align-items: flex-end;
+
+        .stars-icon {
+          width: 20px;
+          margin-left: 2px;
+          transform: translateY(-2px);
+        }
+      }
+
+      &.apr {
+        padding-right: 24px;
       }
 
       &.max-apr {
