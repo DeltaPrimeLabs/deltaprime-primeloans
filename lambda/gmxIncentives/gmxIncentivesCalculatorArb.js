@@ -41,10 +41,7 @@ const gmxIncentivesCalculatorArb = async (event) => {
   const loanIncentivesArray = await getLatestIncentives();
 
   loanIncentivesArray.map((loan) => {
-    loanIncentives[loan.id] = {};
-    for (const [key, value] of Object.entries(loan)) {
-      if (key != 'id') loanIncentives[loan.id][key] = value;
-    }
+    loanIncentives[loan.id] = loan.arbCollected;
   })
 
   // calculate gm leveraged by the loan
@@ -101,34 +98,23 @@ const gmxIncentivesCalculatorArb = async (event) => {
 
   // update incentives based on gm leveraged
   Object.entries(loanQualifications).map(([loanId, loanData]) => {
-    const initIncentives = {};
-
-    Object.entries(gmTokens.arbitrum).map(([symbol, token]) => {
-      initIncentives[symbol] = 0;
-    })
-
-    const prevLoanIncentives = {
-      ...initIncentives,
-      ...(loanIncentives[loanId] ? loanIncentives[loanId] : {})
-    }
+    const prevLoanIncentives = loanIncentives[loanId] ? loanIncentives[loanId] : 0;
 
     loanIncentives[loanId] = prevLoanIncentives;
 
     if (loanData.loanLeveragedGM > 0) {
       const intervalIncentivesForLoan = incentivesPerInterval * loanData.loanLeveragedGM / totalLeveragedGM;
 
-      Object.entries(loanData.gmTokens).map(([symbol, poolGM]) => {
-        loanIncentives[loanId][symbol] = Number(prevLoanIncentives[symbol]) + intervalIncentivesForLoan * poolGM / loanData.loanLeveragedGM;
-      });
+      loanIncentives[loanId] = Number(prevLoanIncentives) + intervalIncentivesForLoan;
     }
   })
 
   // save/update incentives values to DB
   await Promise.all(
-    Object.entries(loanIncentives).map(async ([loanId, values]) => {
+    Object.entries(loanIncentives).map(async ([loanId, value]) => {
       const data = {
         id: loanId,
-        ...values
+        arbCollected: value
       };
 
       const params = {
