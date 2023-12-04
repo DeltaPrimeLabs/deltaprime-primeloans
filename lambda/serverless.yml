@@ -178,6 +178,13 @@ functions:
     description: Calculate incentives for loans on Arbitrum.
     events:
       - schedule: rate(10 minutes)
+  missingPointsFiller:
+    handler: gmxIncentives/missingPointsFiller.handler
+    memorySize: 1024
+    timeout: 600
+    description: Fill missing points for gmx incentives calculation.
+    events:
+      - schedule: rate(10 minutes)
   getGmxIncentivesApi:
     handler: apis/gmxIncentives.getGmxIncentivesApi
     memorySize: 512
