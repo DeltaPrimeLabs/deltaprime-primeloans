@@ -11,10 +11,10 @@
         {{ leveragedGm | usd}}
       </div>
       <div class="table__cell table__cell--double-value boost-apy">
-        <span><b>{{ gmBoostApy | percent }}</b><img src="src/assets/icons/stars.png" class="stars-icon"></span>
+        <span><b>{{ gmBoostApy | percent }}</b><img v-tooltip="{content: `Including boost APR from the GM grant.`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span>
       </div>
       <div class="table__cell table__cell--double-value arb-collected">
-        {{ collectedArb }}
+        {{ collectedArb ? collectedArb.toFixed(2) : 0 }}
       </div>
     </div>
   </div>
@@ -152,6 +152,14 @@ export default {
       &.tvl, &.leveraged, &.boost-apy, &.mission, &.arb-collected {
         align-items: center;
         justify-content: flex-end;
+      }
+
+      &.tvl, &.arb-collected, &.leveraged {
+        padding-right: 24px;
+      }
+
+      &.mission {
+        padding-right: 28px;
       }
 
       .no-value-dash {

@@ -75,7 +75,7 @@
       </div>
 
       <div class="table__cell table__cell--double-value max-apr">
-        <span>{{ maxApr | percent }}<img v-if="hasGmIncentives" src="src/assets/icons/stars.png" class="stars-icon"></span>
+        <span>{{ maxApr | percent }}<img v-if="hasGmIncentives" v-tooltip="{content: `Including boost APR from the GM grant.`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span>
       </div>
 
       <div class="table__cell"></div>
@@ -353,12 +353,6 @@ export default {
         iconSrc: 'src/assets/icons/icon_a_more.svg',
         tooltip: 'More',
         menuOptions: [
-          {
-            key: 'CLAIM_GM_REWARDS',
-            name: 'Claim GM rewards',
-            disabled: true,
-            disabledInfo: 'Available soon!'
-          },
           {
             key: 'PARTNER_PROFILE',
             name: 'Show profile',
@@ -1071,6 +1065,10 @@ export default {
           margin-left: 2px;
           transform: translateY(-2px);
         }
+      }
+
+      &.apr {
+        padding-right: 24px;
       }
 
       &.max-apr {

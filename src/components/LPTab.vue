@@ -545,7 +545,7 @@ export default {
             tooltip: `Composition ot the GM token.`
           },
           {
-            label: 'Boost APY',
+            label: 'Boost APR',
             sortable: false,
             class: 'balance',
             id: 'BALANCE',
