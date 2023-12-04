@@ -1118,7 +1118,9 @@ export default {
               gmSymbol => gmWorth += state.gmxV2Balances[gmSymbol] * state.gmxV2Assets[gmSymbol].price
           );
 
-          let leveragedGm = gmWorth - state.getCollateral > 0 ? gmWorth - state.getCollateral : 0;
+          let collateral = state.fullLoanStatus.totalValue - state.fullLoanStatus.debt;
+
+          let leveragedGm = gmWorth - collateral > 0 ? gmWorth - collateral : 0;
 
           yearlyLpInterest += leveragedGm * state.apys['GM_BOOST'].arbApy;
         }
