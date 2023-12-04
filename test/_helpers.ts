@@ -876,6 +876,9 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             'unstakeAndExitPoolBalancerV2',
             'unstakeBalancerV2',
             'claimRewardsBalancerV2',
+            'balancerGgAvaxBalance',
+            'balancerYyAvaxBalance',
+            'balancerSAvaxBalance',
         ],
         hardhatConfig);
 

@@ -13,7 +13,6 @@ import "../../interfaces/IStakingPositions.sol";
 import "../../interfaces/balancer-v2/IBalancerV2Vault.sol";
 import "../../interfaces/balancer-v2/IBalancerV2Gauge.sol";
 import "../../interfaces/facets/avalanche/IBalancerV2Facet.sol";
-import "hardhat/console.sol";
 
 //This path is updated during deployment
 import "../../lib/local/DeploymentConstants.sol";
@@ -49,26 +48,29 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             if (request.stakedTokens[i] == address(gauge)) revert DepositingWrongToken();
         }
 
-        bool allZero = true;
-
         uint256[] memory initialDepositTokenBalances = new uint256[](stakedTokensLength);
 
-        for (uint256 i; i < stakedTokensLength; ++i) {
-            if (request.stakedAmounts[i] > 0) {
-                IERC20 depositToken = IERC20Metadata(request.stakedTokens[i]);
-                initialDepositTokenBalances[i] = depositToken.balanceOf(address(this));
+        {
+            bool allZero = true;
+
+            for (uint256 i; i < stakedTokensLength; ++i) {
+                if (request.stakedAmounts[i] > 0) {
+                    IERC20 depositToken = IERC20Metadata(request.stakedTokens[i]);
+                    initialDepositTokenBalances[i] = depositToken.balanceOf(address(this));
+                }
             }
+
+            for (uint256 i; i < stakedTokensLength; ++i ) {
+                if (request.stakedAmounts[i] > 0) {
+                    allZero = false;
+                    request.stakedTokens[i].safeApprove(MASTER_VAULT_ADDRESS, 0);
+                    request.stakedTokens[i].safeApprove(MASTER_VAULT_ADDRESS, request.stakedAmounts[i]);
+                }
+            }
+            require(!allZero, "Cannot joinPoolAndStakeBalancerV2 0 tokens");
         }
 
-        for (uint256 i; i < stakedTokensLength; ++i ) {
-            if (request.stakedAmounts[i] > 0) {
-                allZero = false;
-                request.stakedTokens[i].safeApprove(MASTER_VAULT_ADDRESS, 0);
-                request.stakedTokens[i].safeApprove(MASTER_VAULT_ADDRESS, request.stakedAmounts[i]);
-            }
-        }
-        require(!allZero, "Cannot joinPoolAndStakeBalancerV2 0 tokens");
-
+        uint256 beforePoolBalance = IERC20(pool).balanceOf(address(this));
         {
             IAsset[] memory tokens;
             uint256[] memory amounts;
@@ -115,11 +117,9 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             IVault(MASTER_VAULT_ADDRESS).joinPool(request.poolId, address(this), address(this), joinRequest);
         }
 
-
-
         uint256 initialGaugeBalance = IERC20(gauge).balanceOf(address(this));
         {
-            uint256 poolBalance = IERC20(pool).balanceOf(address(this));
+            uint256 poolBalance = IERC20(pool).balanceOf(address(this)) - beforePoolBalance;
 
             IERC20(pool).approve(address(gauge), poolBalance);
             //stakes everything in a gauge
