@@ -783,10 +783,14 @@ export default {
         name: 'GMX V2',
         iconSrc: 'src/assets/logo/gmx.png',
         launchDate: moment(Date.parse('23 Nov 2022')).format('DD.MM.YYYY'),
-        introduction: '',
+        introduction: `GMX is the leading decentralized perpetual exchange available on Avalanche and Arbitrum allowing users to trade a number of different tokens with up to 50x leverage.<br><br>
+            It helped to pioneer the real yield narrative, sharing protocol revenue between GMX, the native token, and GLP, their innovative liquidity providing token. Now with GMX 2.0, protocol revenue is shared with GM minters.<br><br>
+            Since launch, it has attracted significant volume and liquidity, currently sitting in x position on [current chain] with $y in TVL. (NOTE: This should be changed based on the chain)`,
         banner: '',
         mainFeatures: [
-            'Perpetual Derivative Trading'
+          'Up to 50x leveraged synthetic trading',
+          'Simple swaps for standard exchanges',
+          'Strong focus on revenue sharing'
         ],
         securityMeasures: [
           {name: 'Upgradeability', state: 'ENABLED'},
@@ -797,8 +801,12 @@ export default {
           `},
           {name: 'Doxxed team', state: 'DISABLED', tooltip: `The team is anonymous and has not performed KYC <br>with the DeltaPrime team.<br><br>`},
         ],
-        chainImpact: '',
-        yieldCalculation: '',
+        chainImpact: `GMX has garnered significant attention since first launching, both for providing an excellent environment for traders to open leveraged positions, and for sharing significant protocol revenue with their liquidity providers.<br><br>
+        Where initially the vast majority of protocol fees went to GLP minters (those who provided an index of assets to GMX v1), this now goes to GM minters. GM are liquidity providing tokens for GMX’s new synthetics protocol, which, due to its design, has minimal price divergence (usually known as slippage).<br><br>
+        Through its popularity, GMX has attracted many new users as well as builders to both Avalanche and Arbitrum, significantly benefitting both chains over the past two years. GMX itself has since inception done over 130 billion dollars in volume.`,
+        yieldCalculation: `GM accrues 63% of the fees collected in the v2 markets, with the remaining 27% being distributed to GMX holders. GM yield consists of two numbers: Base APR and Bonus APR.<br><br>
+        The Base APR automatically compounds in the GM token itself. Where the value of GM is influenced by price-changes of the underlying assets, fees accumulated and counterparty PnL, the APR is influenced solely by the fees accumulated and counterparty PnL.<br><br>
+        The Bonus APR are incentives. Incentives from the STIP are airdropped weekly to your Prime Account.`,
         chartData: [{x: new Date(), y: 5}, {x: new Date(), y: 15}, {x: new Date(), y: 25}, {x: new Date(), y: 20}, {x: new Date(), y: 15}, {x: new Date(), y: 25}, {x: new Date(), y: 5}]
       }
     },
