@@ -165,12 +165,14 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
         {
             address longToken = marketToLongToken(gmToken);
             address shortToken = marketToShortToken(gmToken);
-            bytes32[] memory receivedTokensSymbols = new bytes32[](2);
             uint256[] memory receivedTokensPrices = new uint256[](2);
 
-            receivedTokensSymbols[0] = tokenManager.tokenAddressToSymbol(longToken);
-            receivedTokensSymbols[1] = tokenManager.tokenAddressToSymbol(shortToken);
-            receivedTokensPrices = getPrices(receivedTokensSymbols);
+            {
+                bytes32[] memory receivedTokensSymbols = new bytes32[](2);
+                receivedTokensSymbols[0] = tokenManager.tokenAddressToSymbol(longToken);
+                receivedTokensSymbols[1] = tokenManager.tokenAddressToSymbol(shortToken);
+                receivedTokensPrices = getPrices(receivedTokensSymbols);
+            }
 
             uint256 receivedTokensWeightedUsdValue = (
                 (receivedTokensPrices[0] * minLongTokenAmount * tokenManager.debtCoverage(longToken) * 1e18 / 10**IERC20Metadata(longToken).decimals()) +
