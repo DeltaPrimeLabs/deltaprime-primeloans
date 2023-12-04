@@ -545,7 +545,7 @@ export default {
             tooltip: `The dollarvalue you receive ARB emissions over. This is calculated as: Total GM deposits - Collateral value.`
           },
           {
-            label: 'Boost APR',
+            label: 'APR Boost',
             sortable: false,
             class: 'balance',
             id: 'BALANCE',

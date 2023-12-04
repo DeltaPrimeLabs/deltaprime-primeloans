@@ -75,7 +75,7 @@
       </div>
 
       <div class="table__cell table__cell--double-value max-apr">
-        <span>{{ maxApr | percent }}<img v-if="hasGmIncentives" v-tooltip="{content: `Including boost APR from the GM grant.`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span>
+        <span>{{ maxApr + gmBoost | percent }}<img v-if="hasGmIncentives" v-tooltip="{content: `This pool is incentivized!<br>⁃ up to ${maxApr ? (maxApr * 100).toFixed(2) : 0}% Pool APR<br>⁃ up to ${gmBoost ? (gmBoost * 100).toFixed(2) : 0}% ARB incentives`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span>
       </div>
 
       <div class="table__cell"></div>
@@ -264,7 +264,11 @@ export default {
 
     maxApr() {
       if (!this.apys) return;
-      return calculateMaxApy(this.pools, this.apr / 100) + (this.hasGmIncentives ? 4.5 * this.apys['GM_BOOST'].arbApy : 0);
+      return calculateMaxApy(this.pools, this.apr / 100);
+    },
+
+    gmBoost() {
+      return this.hasGmIncentives ? 4.5 * this.apys['GM_BOOST'].arbApy : 0;
     },
 
     hasGmIncentives() {

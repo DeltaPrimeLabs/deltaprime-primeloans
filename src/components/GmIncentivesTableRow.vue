@@ -1,11 +1,11 @@
 <template>
-  <div class="lp-table-row-component">
+  <div class="lp-table-row-component gm-incentives">
     <div class="table__row">
       <div class="table__cell table__cell--double-value tvl">
         {{ formatTvl(totalLeveragedGm) }}
       </div>
       <div class="table__cell table__cell--double-value mission">
-        <bar-gauge-beta v-if="totalLeveragedGm" :min="0" :max="3000000" :value="totalLeveragedGm" v-tooltip="{content: `Grant milestone completion`, classes: 'info-tooltip'}" :width="80"></bar-gauge-beta>
+        <bar-gauge-beta v-if="true" :min="0" :max="3000000" :value="960000" v-tooltip="{content: `Grant milestone completion: 30%`, classes: 'info-tooltip'}" :width="108"></bar-gauge-beta>
       </div>
       <div class="table__cell table__cell--double-value leveraged">
         {{ leveragedGm | usd}}
@@ -177,4 +177,13 @@ export default {
   }
 }
 
+</style>
+<style>
+.lp-table-row-component.gm-incentives {
+  .table__row {
+    .bar-gauge-beta-component .bar-gauge .bar {
+      width: 108px;
+    }
+  }
+}
 </style>
