@@ -35,6 +35,7 @@ const gmxIncentivesCalculatorArb = async (event) => {
 
   const loanQualifications = {};
   let totalLeveragedGM = 0;
+  let gmTvl = 0;
 
   // get latest incentives for loans
   const loanIncentives = {};
@@ -89,6 +90,7 @@ const gmxIncentivesCalculatorArb = async (event) => {
           const loanLeveragedGM = loanTotalGMValue - collateral > 0 ? loanTotalGMValue - collateral : 0;
           loanQualifications[loanId].loanLeveragedGM = loanLeveragedGM;
           totalLeveragedGM += loanLeveragedGM;
+          gmTvl += loanTotalGMValue;
         })
       );
     }
@@ -137,6 +139,10 @@ const gmxIncentivesCalculatorArb = async (event) => {
     AttributeUpdates: {
       arbApy: {
         Value: Number(boostApy) ? boostApy : null,
+        Action: "PUT"
+      },
+      tvl: {
+        Value: Number(gmTvl) ? gmTvl : null,
         Action: "PUT"
       }
     }
