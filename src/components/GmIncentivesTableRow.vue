@@ -112,7 +112,7 @@ export default {
       async handler(smartLoanContract) {
         if (smartLoanContract) {
           const collected = await (await fetch(`https://cavsise1n4.execute-api.us-east-1.amazonaws.com/gmx-incentives/${smartLoanContract.address}?network=arbitrum`)).json();
-          this.collectedArb = Object.entries(collected).filter(([k, v]) => k !== 'id').map(v => v[1]).reduce((a, b) => a + b, 0);
+          this.collectedArb = collected.arbCollected;
         }
       },
     },
