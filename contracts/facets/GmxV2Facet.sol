@@ -173,8 +173,8 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
             receivedTokensPrices = getPrices(receivedTokensSymbols);
 
             uint256 receivedTokensWeightedUsdValue = (
-                (receivedTokensPrices[0] * minLongTokenAmount * tokenManager.debtCoverage(longToken)) +
-                (receivedTokensPrices[1] * minShortTokenAmount * tokenManager.debtCoverage(shortToken))
+                (receivedTokensPrices[0] * minLongTokenAmount * tokenManager.debtCoverage(longToken) * 1e18 / IERC20Metadata(longToken).decimals()) +
+                (receivedTokensPrices[1] * minShortTokenAmount * tokenManager.debtCoverage(shortToken) * 1e18 / IERC20Metadata(shortToken).decimals())
             )
             / 1e26;
             require((_getThresholdWeightedValuePayable() + receivedTokensWeightedUsdValue) > _getDebtPayable(), "The action may cause the account to become insolvent");
