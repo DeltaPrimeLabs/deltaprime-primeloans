@@ -528,35 +528,35 @@ export default {
             sortable: false,
             class: 'token',
             id: 'TOKEN',
-            tooltip: `The GM market name. These names are simplified for a smoother UI.`
+            tooltip: `The total dollar value of GM tokens that are eligible for incentives.`
           },
           {
             label: 'Mission completion',
             sortable: false,
             class: 'composition',
             id: 'COMPOSITION',
-            tooltip: `Composition ot the GM token.`
+            tooltip: `How close we are to completing the protocol mission: $3M GM TVL. Deadline: December 25, 12pm CET. Failing the mission results in reduced incentives.`
           },
           {
             label: 'Your eligible GM',
             sortable: false,
             class: 'composition',
             id: 'COMPOSITION',
-            tooltip: `Composition ot the GM token.`
+            tooltip: `The dollarvalue you receive ARB emissions over. This is calculated as: Total GM deposits - Collateral value.`
           },
           {
             label: 'Boost APR',
             sortable: false,
             class: 'balance',
             id: 'BALANCE',
-            tooltip: `The balance of this GM token in your Prime Account.`
+            tooltip: `The APR you receive over your eligible TVL.`
           },
           {
             label: 'ARB collected',
             sortable: false,
             class: 'trend-level',
             id: 'TREND',
-            tooltip: `7D price change of this GM token.`
+            tooltip: `The total amount of ARB you have collected this week. Collected ARB will be distributed weekly. This number is not included in your collateral value, until the ARB is distributed to all Prime Accounts.`
           },
         ]
       };
