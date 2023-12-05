@@ -42,6 +42,13 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         emit Funded(msg.sender, _fundedAsset, _amount, block.timestamp);
     }
 
+    function addOwnedAsset(bytes32 _asset, address _address) external onlyWhitelistedLiquidators {
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        require(tokenManager.isTokenAssetActive(_address), "Asset not supported");
+
+        DiamondStorageLib.addOwnedAsset(_asset, _address);
+    }
+
     /**
     * Funds the loan with a specified amount of a GLP
     * @dev Requires approval for stakedGLP token on frontend side
