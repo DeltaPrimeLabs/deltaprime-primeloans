@@ -534,7 +534,9 @@ export default {
       gasPrice += config.gmxV2GasPricePremium;
 
 
-      return adjustedGasLimit * gasPrice / 10**18;
+      const deltaPrimeMultiplicator = 1.5;
+
+      return deltaPrimeMultiplicator * adjustedGasLimit * gasPrice / 10**18;
     },
 
     async openAddFromWalletModal() {

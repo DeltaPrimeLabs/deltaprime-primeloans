@@ -2,10 +2,10 @@
   <div class="lp-table-row-component gm-incentives">
     <div class="table__row">
       <div class="table__cell table__cell--double-value tvl">
-        {{ formatTvl(totalLeveragedGm) }}
+        {{ totalLeveragedGm | usd }}
       </div>
       <div class="table__cell table__cell--double-value mission">
-        <bar-gauge-beta v-if="true" :min="0" :max="3000000" :value="1000000" :width="108"></bar-gauge-beta>
+        <bar-gauge-beta v-if="gmTvl" v-tooltip="{content: `Grant milestone completion: $${(gmTvl / 1000000).toFixed(1)}M / $3M`, classes: 'info-tooltip'}" :min="0" :max="3000000" :value="gmTvl" :width="108"></bar-gauge-beta>
       </div>
       <div class="table__cell table__cell--double-value leveraged">
         {{ leveragedGm | usd}}
@@ -14,7 +14,7 @@
         <span><b>{{ gmBoostApy | percent }}</b><img v-tooltip="{content: `Including boost APR from the GM grant.`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span>
       </div>
       <div class="table__cell table__cell--double-value arb-collected">
-        <vue-loaders-ball-beat color="#A6A3FF" scale="0.5"></vue-loaders-ball-beat>
+        {{collectedArb ? collectedArb.toFixed(2) : 0}}
       </div>
     </div>
   </div>
@@ -60,10 +60,12 @@ export default {
   },
   props: {
     lpToken: null,
-    collectedArb: 0
+    collectedArb: 0,
+    gmTvl: 0
   },
 
   async mounted() {
+    this.setGmTvl();
   },
 
   data() {
@@ -120,6 +122,9 @@ export default {
 
   methods: {
     ...mapActions('fundsStore', ['fund', 'withdraw', 'provideLiquidity', 'removeLiquidity']),
+    async setGmTvl() {
+      this.gmTvl = (await (await fetch('https://cavsise1n4.execute-api.us-east-1.amazonaws.com/gm-boost-apy')).json()).tvl;
+    }
   },
 };
 </script>

@@ -939,7 +939,7 @@ export default {
           }
 
           if (traderJoeV2LpAssets['TJLB_MAGIC_ETH']) {
-            traderJoeV2LpAssets['TJLB_MAGIC_ETH'].apy = 11.42;
+            traderJoeV2LpAssets['TJLB_MAGIC_ETH'].apy = 114.81;
           }
         }
       }
