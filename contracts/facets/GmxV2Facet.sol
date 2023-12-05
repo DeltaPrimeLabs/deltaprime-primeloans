@@ -154,7 +154,7 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
                 minShortTokenAmount: minShortTokenAmount,
                 shouldUnwrapNativeToken: false, //shouldUnwrapNativeToken
                 executionFee: executionFee, //executionFee
-                callbackGasLimit: 200000 //callbackGasLimit
+                callbackGasLimit: 300000 //callbackGasLimit
             })
         );
 
