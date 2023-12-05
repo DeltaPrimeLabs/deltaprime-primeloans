@@ -18,8 +18,8 @@ const redstone = require("redstone-api");
 
 // const Web3 = require('web3');
 // const fs = require("fs");
-const blockTimestampStart = 1701691200;
-const blockTimestampEnd = 1701740400;
+const blockTimestampStart = 1701747600;
+const blockTimestampEnd = 1701754800;
 
 let provider = new ethers.providers.JsonRpcProvider('https://arbitrum-mainnet.core.chainstack.com/79a835e86be634e1e02f7bfd107763b9');
 
@@ -54,7 +54,7 @@ const missingPointsFiller = async (event) => {
 
   for (let gmSymbol of Object.keys(gmTokens.arbitrum)) {
     const resp = await redstone.getHistoricalPrice(gmSymbol, {
-      startDate: blockTimestampStart * 1000,
+      startDate: (blockTimestampStart - 60 * 10) * 1000,
       interval: 10 * 60 * 1000,
       endDate: blockTimestampEnd * 1000,
       provider: "redstone"
@@ -90,7 +90,7 @@ const missingPointsFiller = async (event) => {
 
     // calculate gm leveraged by the loan
     for (let i = 0; i < Math.ceil(totalLoans / batchSize); i++) {
-      console.log(`processing ${i * batchSize} - ${(i + 1) * batchSize > totalLoans ? totalLoans : (i + 1) * batchSize} loans`);
+      console.log(`processing ${i * batchSize} - ${(i + 1) * batchSize > totalLoans ? totalLoans : (i + 1) * batchSize} loans. ${timestampInSeconds}`);
 
       const batchLoanAddresses = loanAddresses.slice(i * batchSize, (i + 1) * batchSize);
       const wrappedContracts = getWrappedContracts(batchLoanAddresses, 'arbitrum');
@@ -117,12 +117,12 @@ const missingPointsFiller = async (event) => {
 
             await Promise.all(
               Object.entries(gmTokens.arbitrum).map(async ([symbol, token]) => {
-                let price = 0;
+                let price;
 
                 if (prices[symbol]) {
                   let i = 0;
                   while (!price) {
-                    price = prices[symbol].find(price => price.timestamp === timestampInSeconds * 1000)
+                    price = prices[symbol].find(price => Math.abs(Number(price.timestamp) - timestampInSeconds * 1000) <= 70 * 1000)
                     i++;
                   }
                 }
@@ -130,8 +130,8 @@ const missingPointsFiller = async (event) => {
                 const asset = assetBalances.find(asset => fromBytes32(asset.name) == symbol);
                 const balance = formatUnits(asset.balance.toString(), token.decimals);
 
-                loanQualifications[loanId].gmTokens[symbol] = balance * price;
-                loanTotalGMValue += balance * price;
+                loanQualifications[loanId].gmTokens[symbol] = balance * price.value;
+                loanTotalGMValue += balance * price.value;
               })
             );
 
@@ -204,6 +204,8 @@ const missingPointsFiller = async (event) => {
   }
 
   console.log(`GM boost APY on Arbitrum updated from ${blockTimestampStart} to ${blockTimestampEnd}.`);
+
+  console.log(Object.values(prices)[0][Object.values(prices)[0].length - 1])
 
   return event;
 }
