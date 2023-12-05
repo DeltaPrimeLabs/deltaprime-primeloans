@@ -5,7 +5,7 @@
         {{ formatTvl(totalLeveragedGm) }}
       </div>
       <div class="table__cell table__cell--double-value mission">
-        <bar-gauge-beta v-if="true" :min="0" :max="3000000" :value="960000" v-tooltip="{content: `Grant milestone completion: 30%`, classes: 'info-tooltip'}" :width="108"></bar-gauge-beta>
+        <bar-gauge-beta v-if="true" :min="0" :max="3000000" :value="1000000" :width="108"></bar-gauge-beta>
       </div>
       <div class="table__cell table__cell--double-value leveraged">
         {{ leveragedGm | usd}}
@@ -14,7 +14,7 @@
         <span><b>{{ gmBoostApy | percent }}</b><img v-tooltip="{content: `Including boost APR from the GM grant.`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span>
       </div>
       <div class="table__cell table__cell--double-value arb-collected">
-        {{ collectedArb ? collectedArb.toFixed(2) : 0 }}
+        <vue-loaders-ball-beat color="#A6A3FF" scale="0.5"></vue-loaders-ball-beat>
       </div>
     </div>
   </div>
