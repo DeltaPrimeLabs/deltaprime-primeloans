@@ -11,7 +11,10 @@
         {{ leveragedGm | usd}}
       </div>
       <div class="table__cell table__cell--double-value boost-apy">
-        <span><b>{{ gmBoostApy | percent }}</b><img v-tooltip="{content: `Including boost APR from the GM grant.`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span>
+        <span><b>{{ gmBoostApy | percent }}</b><img v-tooltip="{content: `Boost APR from the GM grant.`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span>
+      </div>
+      <div class="table__cell table__cell--double-value boost-apy">
+        <span><b>{{ maxBoostApr | percent }}</b><img src="src/assets/icons/stars.png" class="stars-icon"></span>
       </div>
       <div class="table__cell table__cell--double-value arb-collected">
         {{collectedArb ? collectedArb.toFixed(2) : 0}}
@@ -96,6 +99,10 @@ export default {
 
       return apy ? 10000 / (7 * 24 * 6) / apy * 6 * 24 * 365 : 0;
     },
+    maxBoostApr() {
+      if (!this.gmBoostApy) return;
+      return calculateMaxApy(this.pools, this.gmBoostApy);
+    },
     leveragedGm() {
       if (!this.gmxV2Balances || !this.gmxV2Assets || !this.getCollateral) return 0;
 
@@ -142,7 +149,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: 160px repeat(4, 1fr) 50px;
+    grid-template-columns: 160px repeat(5, 1fr) 50px;
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;
