@@ -708,7 +708,6 @@ const balanerApyAggregator = async (event) => {
     const poolInnerTexts = await Promise.all(Array.from(poolRows).map(async pool => {
       return (await (await pool.getProperty("textContent")).jsonValue()).replace(/\s+/g, "").replace('Inyourwallet...0', '').replace('$0.00', '');
     }));
-    console.log(poolInnerTexts);
 
     for (const [identifier, keyword] of Object.entries(pools)) {
       try {
