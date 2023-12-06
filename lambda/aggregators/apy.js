@@ -16,6 +16,7 @@ const sushiConfig = require("../config/sushiApy.json");
 const beefyConfig = require("../config/beefyApy.json");
 const levelConfig = require("../config/levelApy.json");
 const gmxApyConfig = require("../config/gmxApy.json");
+const balancerApyConfig = require("../config/balancerApy.json");
 
 const formatUnits = (val, decimals) => parseFloat(ethers.utils.formatUnits(val, decimals));
 
@@ -684,6 +685,64 @@ const gmxApyAggregator = async (event) => {
   return event;
 }
 
+const balanerApyAggregator = async (event) => {
+  const { page } = await newChrome();
+
+  // navigate pools page and wait till javascript fully load.
+  const BASE_URL = "https://app.balancer.fi/#";
+
+  await page.setViewport({
+    width: 1920,
+    height: 1080
+  });
+
+  // fetch GM tokens' APYs on Arbitrum and Avalanche
+  for (const [network, pools] of Object.entries(balancerApyConfig)) {
+    const PAGE_URL = `${BASE_URL}/${network}`;
+    await page.goto(PAGE_URL, {
+      waitUntil: "networkidle0",
+      timeout: 60000
+    });
+
+    const poolRows = await page.$$("table > tr");
+    const poolInnerTexts = await Promise.all(Array.from(poolRows).map(async pool => {
+      return (await (await pool.getProperty("textContent")).jsonValue()).replace(/\s+/g, "").replace('Inyourwallet...0', '').replace('$0.00', '');
+    }));
+    console.log(poolInnerTexts);
+
+    for (const [identifier, keyword] of Object.entries(pools)) {
+      try {
+        const matchId = poolInnerTexts.findIndex(innerText => innerText.toLowerCase().startsWith(keyword));
+        const pool = poolRows[matchId];
+        const poolColumns = await pool.$$("td");
+        const poolApy = parseFloat((await (await poolColumns[4].getProperty("textContent")).jsonValue()).split('%')[0].trim());
+
+        console.log(identifier, poolApy);
+
+        const params = {
+          TableName: process.env.APY_TABLE,
+          Key: {
+            id: identifier
+          },
+          AttributeUpdates: {
+            lp_apy: {
+              Value: Number(poolApy) ? poolApy / 100 : null,
+              Action: "PUT"
+            }
+          }
+        };
+        await dynamoDb.update(params).promise();
+      } catch (error) {
+        console.log(error);
+      }
+    }
+  }
+
+  console.log('fetching done.');
+
+  return event;
+}
+
 module.exports = {
   levelTvlAggregator,
   glpAprAggregator,
@@ -694,5 +753,6 @@ module.exports = {
   sushiApyAggregator,
   beefyApyAggregator,
   levelApyAggregator,
-  gmxApyAggregator
+  gmxApyAggregator,
+  balanerApyAggregator
 }
