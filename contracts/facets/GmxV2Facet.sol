@@ -162,7 +162,7 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
         BasicMulticall(getGMX_V2_EXCHANGE_ROUTER()).multicall{ value: msg.value }(data);
 
         // Simulate solvency check
-        {
+        if(msg.sender == DiamondStorageLib.contractOwner()){    // Only owner can call this method or else it's liquidator when the account is already insolvent
             address longToken = marketToLongToken(gmToken);
             address shortToken = marketToShortToken(gmToken);
             uint256[] memory receivedTokensPrices = new uint256[](2);
@@ -179,9 +179,7 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
                 (receivedTokensPrices[1] * minShortTokenAmount * tokenManager.debtCoverage(shortToken) * 1e18 / 10**IERC20Metadata(shortToken).decimals())
             )
             / 1e26;
-            if(msg.sender == DiamondStorageLib.contractOwner()){
-                require((_getThresholdWeightedValuePayable() + receivedTokensWeightedUsdValue) > _getDebtPayable(), "The action may cause the account to become insolvent");
-            }
+            require((_getThresholdWeightedValuePayable() + receivedTokensWeightedUsdValue) > _getDebtPayable(), "The action may cause the account to become insolvent");
         }
 
         // Freeze account
