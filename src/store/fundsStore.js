@@ -59,6 +59,7 @@ export default {
     lpAssets: null,
     concentratedLpAssets: null,
     traderJoeV2LpAssets: null,
+    balancerLpAssets: null,
     levelLpAssets: null,
     gmxV2Assets: null,
     supportedAssets: null,
@@ -69,6 +70,7 @@ export default {
     wrappedTokenContract: null,
     multicallContract: null,
     assetBalances: null,
+    balancerLpBalances: null,
     lpBalances: null,
     concentratedLpBalances: null,
     levelLpBalances: null,
@@ -114,6 +116,10 @@ export default {
       state.traderJoeV2LpAssets = assets;
     },
 
+    setBalancerLpAssets(state, assets) {
+      state.balancerLpAssets = assets;
+    },
+
     setLevelLpAssets(state, assets) {
       state.levelLpAssets = assets;
     },
@@ -156,6 +162,10 @@ export default {
 
     setConcentratedLpBalances(state, lpBalances) {
       state.concentratedLpBalances = lpBalances;
+    },
+
+    setBalancerLpBalances(state, lpBalances) {
+      state.balancerLpBalances = lpBalances;
     },
 
     setLevelLpBalances(state, lpBalances) {
@@ -213,6 +223,7 @@ export default {
       await dispatch('setupLpAssets');
       await dispatch('setupConcentratedLpAssets');
       await dispatch('setupTraderJoeV2LpAssets');
+      if (config.BALANCER_LP_ASSETS_CONFIG) await dispatch('setupBalancerLpAssets');
       if (config.LEVEL_LP_ASSETS_CONFIG) await dispatch('setupLevelLpAssets');
       if (config.GMX_V2_ASSETS_CONFIG) await dispatch('setupGmxV2Assets');
       await dispatch('stakeStore/updateStakedPrices', null, {root: true});
@@ -266,6 +277,7 @@ export default {
         await dispatch('setupLpAssets');
         await dispatch('setupConcentratedLpAssets');
         await dispatch('setupTraderJoeV2LpAssets');
+        if (config.BALANCER_LP_ASSETS_CONFIG) await dispatch('setupBalancerLpAssets');
         if (config.LEVEL_LP_ASSETS_CONFIG) await dispatch('setupLevelLpAssets');
         if (config.GMX_V2_ASSETS_CONFIG) await dispatch('setupGmxV2Assets');
         await dispatch('getAllAssetsBalances');
@@ -343,6 +355,7 @@ export default {
       const tokenManager = new ethers.Contract(TOKEN_MANAGER_TUP.address, TOKEN_MANAGER.abi, provider.getSigner());
       let allAssets = state.assets;
       let allLevelLpAssets = state.levelLpAssets;
+      let allBalancerLpAssets = state.balancerLpAssets;
       let allGmxV2Assets = state.gmxV2Assets;
       const dataRefreshNotificationService = rootState.serviceRegistry.dataRefreshEventService;
 
@@ -365,6 +378,11 @@ export default {
 
       await setExposures(allAssets);
       commit('setAssets', allAssets);
+
+      if (allBalancerLpAssets) {
+        await setExposures(allBalancerLpAssets);
+        commit('setBalancerLpAssets', allBalancerLpAssets);
+      }
 
       if (allLevelLpAssets) {
         await setExposures(allLevelLpAssets);
@@ -466,6 +484,30 @@ export default {
       });
 
       commit('setLevelLpAssets', lpTokens);
+    },
+
+    async setupBalancerLpAssets({state, rootState, commit}) {
+      const lpService = rootState.serviceRegistry.lpService;
+      let lpTokens = {};
+
+      Object.values(config.BALANCER_LP_ASSETS_CONFIG).forEach(
+          asset => {
+            //TODO: bring back
+            // if (state.supportedAssets.includes(asset.symbol)) {
+              lpTokens[asset.symbol] = asset;
+            // }
+          }
+      );
+
+      const redstonePriceDataRequest = await fetch(config.redstoneFeedUrl);
+      const redstonePriceData = await redstonePriceDataRequest.json();
+
+      Object.keys(lpTokens).forEach(async assetSymbol => {
+        lpTokens[assetSymbol].price = redstonePriceData[assetSymbol] ? redstonePriceData[assetSymbol][0].dataPoints[0].value : 0;
+        lpService.emitRefreshLp();
+      });
+
+      commit('setBalancerLpAssets', lpTokens);
     },
 
     async setupGmxV2Assets({state, rootState, commit}) {
@@ -665,6 +707,7 @@ export default {
       const lpBalances = {};
       const concentratedLpBalances = {};
       const gmxV2Balances = {};
+      const balancerLpBalances = {};
       const levelLpBalances = {};
       const assetBalances = await state.readSmartLoanContract.getAllAssetsBalances();
       assetBalances.forEach(
@@ -678,6 +721,9 @@ export default {
           }
           if (config.CONCENTRATED_LP_ASSETS_CONFIG[symbol]) {
             concentratedLpBalances[symbol] = formatUnits(asset.balance.toString(), config.CONCENTRATED_LP_ASSETS_CONFIG[symbol].decimals);
+          }
+          if (config.BALANCER_LP_ASSETS_CONFIG[symbol]) {
+            balancerLpBalances[symbol] = formatUnits(asset.balance.toString(), config.BALANCER_LP_ASSETS_CONFIG[symbol].decimals);
           }
           if (config.GMX_V2_ASSETS_CONFIG[symbol]) {
             gmxV2Balances[symbol] = formatUnits(asset.balance.toString(), config.GMX_V2_ASSETS_CONFIG[symbol].decimals);
@@ -708,6 +754,7 @@ export default {
       await commit('setAssetBalances', balances);
       await commit('setLpBalances', lpBalances);
       await commit('setConcentratedLpBalances', concentratedLpBalances);
+      await commit('setBalancerLpBalances', balancerLpBalances);
       await commit('setLevelLpBalances', levelLpBalances);
       await commit('setGmxV2Balances', gmxV2Balances);
       await dispatch('setupConcentratedLpUnderlyingBalances');
@@ -944,6 +991,24 @@ export default {
         }
       }
       commit('setTraderJoeV2LpAssets', traderJoeV2LpAssets);
+
+      let balancerLpAssets = state.balancerLpAssets;
+
+      console.log('apys')
+      console.log(apys)
+      console.log(balancerLpAssets)
+      if (balancerLpAssets) {
+        if (Object.keys(balancerLpAssets).length !== 0) {
+          for (let [symbol, asset] of Object.entries(balancerLpAssets)) {
+            // we don't use getApy method anymore, but fetch APYs from db
+            if (apys[symbol] && apys[symbol].lp_apy) {
+              balancerLpAssets[symbol].apy = apys[symbol].lp_apy * 100;
+            }
+          }
+        }
+
+        commit('setBalancerLpAssets', balancerLpAssets);
+      }
 
       let levelLpAssets = state.levelLpAssets;
 
