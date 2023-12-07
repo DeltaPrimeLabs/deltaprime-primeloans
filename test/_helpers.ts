@@ -10,6 +10,7 @@ import {
     RecoveryManager,
     VectorFinanceHelper,
     YieldYakHelper,
+    PangolinHelper,
 } from "../typechain";
 import AVAX_TOKEN_ADDRESSES from '../common/addresses/avax/token_addresses.json';
 import CELO_TOKEN_ADDRESSES from '../common/addresses/celo/token_addresses.json';
@@ -22,9 +23,6 @@ import UsdcPoolArtifact from '../artifacts/contracts/deployment/avalanche/UsdcPo
 import LinearIndexArtifact from '../artifacts/contracts/LinearIndex.sol/LinearIndex.json';
 import MockTokenArtifact from "../artifacts/contracts/mock/MockToken.sol/MockToken.json";
 import IDiamondCutArtifact from "../artifacts/contracts/interfaces/IDiamondCut.sol/IDiamondCut.json";
-import RecoveryManagerArtifact from '../artifacts/contracts/RecoveryManager.sol/RecoveryManager.json';
-import VectorFinanceHelperArtifact from '../artifacts/contracts/helpers/avalanche/VectorFinanceHelper.sol/VectorFinanceHelper.json';
-import YieldYakHelperArtifact from '../artifacts/contracts/helpers/avalanche/YieldYakHelper.sol/YieldYakHelper.json';
 import fetch from "node-fetch";
 import {execSync} from "child_process";
 import updateConstants from "../tools/scripts/update-constants"
@@ -459,14 +457,16 @@ export const getDeliveredAmounts = function (
 export const deployRecoveryManager = async function (
     owner: SignerWithAddress | JsonRpcSigner,
 ) {
-    let recoveryManager = await deployContract(
-        owner,
-        RecoveryManagerArtifact,
-        []
-    ) as RecoveryManager;
+    let recoveryManagerFactory = await ethers.getContractFactory("RecoveryManager");
+    let recoveryManager = await recoveryManagerFactory.connect(owner).deploy() as RecoveryManager;
+    await recoveryManager.deployed();
 
-    let vectorFinanceHelper = await deployContract(owner, VectorFinanceHelperArtifact, []) as VectorFinanceHelper;
-    let yieldYakHelper = await deployContract(owner, YieldYakHelperArtifact, []) as YieldYakHelper;
+    let VectorFinanceHelperFactory = await ethers.getContractFactory("VectorFinanceHelper");
+    let vectorFinanceHelper = await VectorFinanceHelperFactory.connect(owner).deploy([]) as VectorFinanceHelper;
+    let YieldYakHelperFactory = await ethers.getContractFactory("YieldYakHelper");
+    let yieldYakHelper = await YieldYakHelperFactory.connect(owner).deploy() as YieldYakHelper;
+    let PangolinHelperFactory = await ethers.getContractFactory("PangolinHelper");
+    let pangolinHelper = await PangolinHelperFactory.connect(owner).deploy() as PangolinHelper;
 
     let assets = [
         "VF_USDC_MAIN_AUTO",
@@ -481,7 +481,7 @@ export const deployRecoveryManager = async function (
         "vectorUnstakeSAVAX",
     ];
     for (let i = 0; i < assets.length; i++) {
-        await recoveryManager.connect(owner).addHelper(
+        await recoveryManager.connect(owner).addRecoveryHelper(
             toBytes32(assets[i]),
             vectorFinanceHelper.address,
             (getSelectors(vectorFinanceHelper) as any).get([functions[i]])[0],
@@ -509,10 +509,23 @@ export const deployRecoveryManager = async function (
         "unstakeTJAVAXSAVAXYak",
     ];
     for (let i = 0; i < assets.length; i++) {
-        await recoveryManager.connect(owner).addHelper(
+        await recoveryManager.connect(owner).addRecoveryHelper(
             toBytes32(assets[i]),
             yieldYakHelper.address,
             (getSelectors(yieldYakHelper) as any).get([functions[i]])[0],
+        );
+    }
+
+    assets = [
+        "PNG_AVAX_USDC_LP",
+        "PNG_AVAX_USDT_LP",
+        "PNG_AVAX_ETH_LP",
+    ];
+    for (let i = 0; i < assets.length; i++) {
+        await recoveryManager.connect(owner).addRecoveryHelper(
+            toBytes32(assets[i]),
+            pangolinHelper.address,
+            (getSelectors(pangolinHelper) as any).get(["removeLiquidity"])[0],
         );
     }
 

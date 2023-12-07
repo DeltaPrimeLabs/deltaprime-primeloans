@@ -157,4 +157,7 @@ contract YieldYakHelper {
             initialDepositTokenBalance;
         require(unstaked >= minAmount, "too little received");
     }
+
+    /* ========== RECEIVE AVAX FUNCTION ========== */
+    receive() external payable {}
 }
