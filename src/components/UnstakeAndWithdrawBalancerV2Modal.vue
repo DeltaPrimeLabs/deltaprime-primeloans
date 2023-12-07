@@ -2,7 +2,7 @@
   <div id="modal" class="unstake-modal-component modal-component">
     <Modal>
       <div class="modal__title">
-        Unstake
+        Export LP position
       </div>
 
       <div class="modal-top-desc">
@@ -18,10 +18,14 @@
           BPT
         </span>
       </div>
+      <div v-if="canRepayAllDebts === false">
+        Not all 'borrowed' is covered by its 'balance'. Update missing balance(s) to withdraw. <a target="_blank" style="color: var(--currency-input__error-color)" href="https://docs.deltaprime.io/protocol/security/withdrawal-guard">Read more</a>.
+      </div>
 
       <div class="button-wrapper">
-        <Button :label="'Unstake'"
+        <Button :label="'Export'"
                 v-on:click="submit()"
+                :disabled="!canRepayAllDebts"
                 :waiting="transactionOngoing">
         </Button>
       </div>
@@ -46,17 +50,16 @@ export default {
   },
 
   props: {
+    assetBalances: null,
+    debtsPerAsset: null,
     balance: 0,
     transactionOngoing: false
   },
 
   data() {
     return {
+      canRepayAllDebts: null
     }
-  },
-
-  mounted() {
-    this.setupValidators();
   },
 
   computed: {
@@ -73,7 +76,19 @@ export default {
       this.$emit('UNSTAKE_AND_WITHDRAW', unstakeEvent);
     },
 
+    initiate() {
+      this.setupValidators();
+    },
+
     setupValidators() {
+      console.log('setupValidators')
+      this.canRepayAllDebts = Object.values(this.debtsPerAsset).every(
+          debt => {
+            let balance = parseFloat(this.assetBalances[debt.asset]);
+            return parseFloat(debt.debt) <= balance;
+          }
+      );
+      console.log('this.canRepayAllDebts: ', this.canRepayAllDebts)
     },
   }
 };

@@ -326,6 +326,10 @@ export default {
     async openExportModal() {
       const modalInstance = this.openModal(UnstakeAndWithdrawBalancerV2Modal);
       modalInstance.balance = this.balancerLpBalances[this.lpToken.symbol];
+      modalInstance.debtsPerAsset = this.debtsPerAsset;
+      modalInstance.assetBalances = this.assetBalances;
+
+      modalInstance.initiate();
 
       modalInstance.$on('UNSTAKE_AND_WITHDRAW', provideLiquidityEvent => {
         if (this.smartLoanContract) {

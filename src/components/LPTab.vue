@@ -486,7 +486,7 @@ export default {
             sortable: false,
             class: 'apr',
             id: 'APR',
-            tooltip: `All fees, rewards and counterparty PnL collected, divided by TVL of this tranche. This does not take underlying asset price changes or IL into account.`
+            tooltip: `All fees, rewards and counterparty PnL collected, divided by this GM's TVL. \n\nThis does not take underlying asset price changes into account.`
           },
           {
             label: 'Max. APR',
