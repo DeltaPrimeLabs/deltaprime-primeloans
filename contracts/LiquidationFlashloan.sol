@@ -10,6 +10,9 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "./interfaces/IWrappedNativeToken.sol";
 import "./interfaces/facets/IYieldYakRouter.sol";
+import "./interfaces/balancer-v2/IBalancerV2Vault.sol";
+import "./interfaces/balancer-v2/IAsset.sol";
+import "./mock/WAVAX.sol";
 
 contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
   using TransferHelper for address payable;
@@ -85,6 +88,53 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
     return result;
   }
 
+  function balancerSwapToWAVAX(address tokenIn) internal {
+    IVault balancerVault = IVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8); // MASTER_VAULT_ADDRESS
+
+    bytes32 _poolId;
+    if (tokenIn == 0xA25EaF2906FA1a3a13EdAc9B9657108Af7B703e3) {
+      _poolId = 0xc13546b97b9b1b15372368dc06529d7191081f5b00000000000000000000001d;
+    } else if (tokenIn == 0xF7D9281e8e363584973F946201b82ba72C965D27) {
+      _poolId = 0x9fa6ab3d78984a69e712730a2227f20bcc8b5ad900000000000000000000001f;
+    } else {
+      revert("Unsupported swap");
+    }
+
+    uint256 balanceToSwap = IERC20Metadata(tokenIn).balanceOf(address(this));
+
+    if(balanceToSwap > 0){
+      IVault.SingleSwap memory singleSwap = IVault.SingleSwap({
+        poolId: _poolId,
+        kind: IVault.SwapKind.GIVEN_IN, // OUT GIVEN EXACT IN
+        assetIn: IAsset(tokenIn),
+        assetOut: IAsset(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7), // WAVAX
+        amount: balanceToSwap,
+        userData: ""
+      });
+      IVault.FundManagement memory fundManagement = IVault.FundManagement({
+        sender: address(this),
+        fromInternalBalance: false,
+        recipient: payable(address(this)),
+        toInternalBalance: false
+      });
+
+      balancerVault.swap(
+        singleSwap,
+        fundManagement,
+        balanceToSwap, // yy/ggAvax to AVAX price ratio serves as an good-enough slippage control ~10%
+        block.timestamp
+      );
+    }
+  }
+
+  function balancerSwapYyAvaxToWAVAX() internal {
+    balancerSwapToWAVAX(0xF7D9281e8e363584973F946201b82ba72C965D27);
+  }
+
+  function balancerSwapGgAvaxToWAVAX() internal {
+    balancerSwapToWAVAX(0xA25EaF2906FA1a3a13EdAc9B9657108Af7B703e3);
+  }
+
   // --------------------------------------
 
   /**
@@ -119,10 +169,20 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
       assets[i].safeApprove(lep.loan, amounts[i]);
     }
 
+    // Only liquidate
+    liquidateLoan(_params, lep, amounts);
+
+    // Swap yyavax/ggavax via Balancer to WAVAX
+    balancerSwapYyAvaxToWAVAX();
+    balancerSwapGgAvaxToWAVAX();
+
+    // getSurplusDeficitAssets
     (
-      AssetAmount[] memory assetSurplus,
-      AssetAmount[] memory assetDeficit
-    ) = liquidateLoanAndGetSurplusDeficitAssets(_params, lep, assets, amounts, premiums);
+    AssetAmount[] memory assetSurplus,
+    AssetAmount[] memory assetDeficit
+    ) = getSurplusDeficitAssets(assets, premiums, amounts, lep.tokenManager);
+
+    // Continue with the flow - make sure to have yakswap offers for AVAX -> borrowableTokens for the amount of yyavax/ggavax unwound
 
     // Swap to negate deficits
     for (uint32 i = 0; i < assetDeficit.length; i++) {
@@ -150,12 +210,12 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
                 // There was enough of `assetSurplus[j].amount` to swap for `assetDeficit[i].amount` and potentially even a bit more; namely `remainDeficitAmount` more.
                 // We send it to the liquidator if `remainDeficitAmount` > 0
                 if (deficitPaidInFull && remainDeficitAmount > 0) {
-                    address(assetDeficit[i].asset).safeTransfer(
-                      lep.liquidator,
-                      remainDeficitAmount
-                    );
+                  address(assetDeficit[i].asset).safeTransfer(
+                    lep.liquidator,
+                    remainDeficitAmount
+                  );
                 }
-                break;  // Breaks out of offers-loop once one matching offer is found.
+                break; // Breaks out of offers-loop once one matching offer is found.
               }
             }
             if (deficitPaidInFull) {
@@ -219,15 +279,15 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
     uint256 length;
     IYieldYakRouter.FormattedOffer[] memory _offers;
     assembly {
-      // Read 32 bytes from _enrichedParams ptr + 32 bytes offset, shift right 12 bytes
+    // Read 32 bytes from _enrichedParams ptr + 32 bytes offset, shift right 12 bytes
       _loan := shr(mul(0x0c, 0x08), mload(add(_enrichedParams, 0x20)))
-      // Read 32 bytes from _enrichedParams ptr + 52 bytes offset, shift right 12 bytes
+    // Read 32 bytes from _enrichedParams ptr + 52 bytes offset, shift right 12 bytes
       _liquidator := shr(mul(0x0c, 0x08), mload(add(_enrichedParams, 0x34)))
-      // Read 32 bytes from _enrichedParams ptr + 72 bytes offset, shift right 12 bytes
+    // Read 32 bytes from _enrichedParams ptr + 72 bytes offset, shift right 12 bytes
       _tokenManager := shr(mul(0x0c, 0x08), mload(add(_enrichedParams, 0x48)))
-      // Read 32 bytes from _enrichedParams ptr + 92 bytes offset
+    // Read 32 bytes from _enrichedParams ptr + 92 bytes offset
       _bonus := mload(add(_enrichedParams, 0x5c))
-      // Read 32 bytes from _enrichedParams ptr + 124 bytes offset
+    // Read 32 bytes from _enrichedParams ptr + 124 bytes offset
       length := mload(add(_enrichedParams, 0x7c))
     }
     bytes memory encoded = new bytes(length);
@@ -237,37 +297,60 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
     }
     _offers = abi.decode(encoded, (IYieldYakRouter.FormattedOffer[]));
     return
-      LiqEnrichedParams({
-        loan: _loan,
-        liquidator: _liquidator,
-        tokenManager: _tokenManager,
-        bonus: _bonus,
-        offers: _offers
-      });
+    LiqEnrichedParams({
+      loan: _loan,
+      liquidator: _liquidator,
+      tokenManager: _tokenManager,
+      bonus: _bonus,
+      offers: _offers
+    });
   }
 
-  function liquidateLoanAndGetSurplusDeficitAssets(
-    bytes calldata _params,
-    LiqEnrichedParams memory lep,
-    address[] calldata assets,
-    uint256[] calldata amounts,
-    uint256[] calldata premiums
-  )
-    internal
-    returns (
-      AssetAmount[] memory assetSurplus,
-      AssetAmount[] memory assetDeficit
-    )
-  {
-    address[] memory supportedTokens = ITokenManager(lep.tokenManager)
-      .getSupportedTokensAddresses();
-
+  function getSurplusDeficitAssets(address[] calldata assets, uint256[] calldata premiums, uint256[] calldata amounts, address tokenManager) internal returns (
+    AssetAmount[] memory assetSurplus,
+    AssetAmount[] memory assetDeficit
+  ){
+    address[] memory supportedTokens = ITokenManager(tokenManager)
+    .getSupportedTokensAddresses();
     assetSurplus = new AssetAmount[](supportedTokens.length);
     assetDeficit = new AssetAmount[](supportedTokens.length);
 
+    // Calculate surpluses & deficits
+    for (uint32 i = 0; i < supportedTokens.length; i++) {
+      int256 index = findIndex(supportedTokens[i], assets);
+      uint256 balance = IERC20(supportedTokens[i]).balanceOf(address(this));
+
+      if (index != - 1) {
+        int256 amount = int256(balance) -
+        int256(amounts[uint256(index)]) -
+        int256(premiums[uint256(index)]);
+        if (amount > 0) {
+          assetSurplus[i] = AssetAmount(
+            supportedTokens[i],
+            uint256(amount)
+          );
+        } else if (amount < 0) {
+          assetDeficit[i] = AssetAmount(
+            supportedTokens[i],
+            uint256(amount * - 1)
+          );
+        }
+      } else if (balance > 0) {
+        assetSurplus[i] = AssetAmount(supportedTokens[i], balance);
+      }
+    }
+  }
+
+  function liquidateLoan(
+    bytes calldata _params,
+    LiqEnrichedParams memory lep,
+    uint256[] calldata amounts
+  )
+  internal
+  {
     // Liquidate loan
     {
-      (bool success, ) = lep.loan.call(
+      (bool success,) = lep.loan.call(
         abi.encodePacked(
           abi.encodeWithSelector(
             SmartLoanLiquidationFacet.liquidateLoan.selector,
@@ -280,31 +363,6 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
       );
       require(success, "Liquidation failed");
     }
-
-    // Calculate surpluses & deficits
-    for (uint32 i = 0; i < supportedTokens.length; i++) {
-      int256 index = findIndex(supportedTokens[i], assets);
-      uint256 balance = IERC20(supportedTokens[i]).balanceOf(address(this));
-
-      if (index != -1) {
-        int256 amount = int256(balance) -
-          int256(amounts[uint256(index)]) -
-          int256(premiums[uint256(index)]);
-        if (amount > 0) {
-          assetSurplus[i] = AssetAmount(
-            supportedTokens[i],
-            uint256(amount)
-          );
-        } else if (amount < 0) {
-          assetDeficit[i] = AssetAmount(
-            supportedTokens[i],
-            uint256(amount * -1)
-          );
-        }
-      } else if (balance > 0) {
-        assetSurplus[i] = AssetAmount(supportedTokens[i], balance);
-      }
-    }
   }
 
   function swapToNegateDeficits(
@@ -315,9 +373,9 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
     require(_offer.amounts[0] > 0, "YieldYak path, adapter is not initialized");
 
     uint256 expectedBuyTokenReturned = (_offer.amounts[
-      _offer.amounts.length - 1
+    _offer.amounts.length - 1
     ] *
-      _surplus.amount *
+    _surplus.amount *
       98) / (_offer.amounts[0] * 100);
 
     uint256 amountIn = expectedBuyTokenReturned > _deficit.amount
@@ -341,7 +399,7 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
     router.swapNoSplit(trade, address(this), 0);
 
     uint256 swapAmount = IERC20(_deficit.asset).balanceOf(address(this)) -
-      beforeDeficitAmount;
+    beforeDeficitAmount;
 
     _surplus.amount = _surplus.amount - amountIn;
 
@@ -360,7 +418,7 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
     address addr,
     address[] memory array
   ) internal pure returns (int256) {
-    int256 index = -1;
+    int256 index = - 1;
     for (uint256 i; i < array.length; i++) {
       if (array[i] == addr) {
         index = int256(i);
