@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 7b832791a5af7532ad0460c0e3aea360d417755c;
+// Last deployed from commit: 9c525b01c55550683683414765d03d23afe9798f;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -70,7 +70,7 @@ contract ParaSwapFacet is ReentrancyGuardKeccak, SolvencyMethods {
             });
     }
 
-    function paraSwap(
+    function paraSwapV2(
         bytes4 selector,
         bytes memory data,
         address fromToken,
