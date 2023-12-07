@@ -56,7 +56,7 @@ export function calculateHealth(tokens, lbTokens) {
 
 export function calculateMaxApy(pools, apy) {
   if (!pools) return;
-  return Math.max(apy * 5.5 - 4.5 * Math.min(...Object.values(pools).map(pool => pool.borrowingAPY)), apy);
+  return Math.max(apy * 5.5 - 4.5 * Math.min(...Object.values(pools.filter(pool => !pool.disabled)).map(pool => pool.borrowingAPY)), apy);
 }
 
 export function mergeArrays(arrays) {

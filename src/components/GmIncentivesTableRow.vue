@@ -101,7 +101,7 @@ export default {
     },
     maxBoostApr() {
       if (!this.gmBoostApy) return;
-      return calculateMaxApy(this.pools, this.gmBoostApy);
+      return 4.5 * this.gmBoostApy;
     },
     leveragedGm() {
       if (!this.gmxV2Balances || !this.gmxV2Assets || !this.getCollateral) return 0;

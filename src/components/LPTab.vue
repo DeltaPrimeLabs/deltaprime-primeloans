@@ -556,7 +556,7 @@ export default {
             sortable: false,
             class: 'balance',
             id: 'BALANCE',
-            tooltip: `The max APR achievable on your collateral based on the borrowing rates and current APR boost .`
+            tooltip: `The boost APR received if you would borrow enough to get health to 10%, and put your total value into GM pools.`
           },
           {
             label: 'ARB collected',
