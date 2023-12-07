@@ -448,9 +448,7 @@ export default {
             destDecimals: config.ASSETS_CONFIG[targetAsset].decimals,
             amount: amountIn,
             userAddress: this.smartLoanContract.address,
-            side: SwapSide.SELL,
-            includeContractMethods: [ContractMethod.simpleSwap],
-            excludeContractMethods: [ContractMethod.directUniV3Swap],
+            side: SwapSide.SELL
           });
 
           const sourceAmountWei = parseUnits(Number(`${swapRate.srcAmount}e-${swapRate.srcDecimals}`).toFixed(swapRate.srcDecimals), swapRate.srcDecimals);

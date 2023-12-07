@@ -1896,9 +1896,9 @@ export default {
       const bptToken = new ethers.Contract(config.BALANCER_LP_ASSETS_CONFIG[withdrawRequest.symbol].address, erc20ABI, provider.getSigner());
       const bptBalance = await bptToken.balanceOf(state.smartLoanContract.address);
 
-      const transaction = await wrappedContract.withdraw(withdrawRequest.poolId, bptBalance);
+      const transaction = await wrappedContract.withdraw(toBytes32(withdrawRequest.symbol), bptBalance);
 
-      let tx = await awaitConfirmation(transaction, provider, 'unstake LP token');
+      let tx = await awaitConfirmation(transaction, provider, 'withdraw LP token');
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
