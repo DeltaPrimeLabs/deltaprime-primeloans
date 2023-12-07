@@ -15,7 +15,7 @@
         <template
             v-if="balancerLpBalances">
           <div class="double-value__pieces">
-            <img v-if="hasNonStakedLp" src="src/assets/icons/error.svg" v-tooltip="{content: 'Your Prime Account has unstaked LP tokens. Please use `Stake` function to show them in your balance.', classes: 'info-tooltip long'}"/>
+            <img v-if="hasNonStakedLp" src="src/assets/icons/error.svg" v-tooltip="{content: 'Your Prime Account has unstaked LP tokens. Don\'t worry! Soon we will add `Stake` function to add them to your Balance.', classes: 'info-tooltip long'}"/>
             {{ balancerLpBalances[lpToken.symbol] | smartRound }}
           </div>
           <div class="double-value__usd">
@@ -126,7 +126,6 @@ export default {
     this.watchAssetApysRefresh();
     this.watchExternalAssetBalanceUpdate();
     this.setupApr();
-    this.setupHasNonStakedLp();
   },
 
   data() {
@@ -192,8 +191,6 @@ export default {
     smartLoanContract: {
       handler(smartLoanContract) {
         if (smartLoanContract) {
-          this.setupAddActionsConfiguration();
-          this.setupRemoveActionsConfiguration();
         }
       },
     },
@@ -413,7 +410,9 @@ export default {
 
     async setupHasNonStakedLp() {
       const tokenContract = new ethers.Contract(this.lpToken.address, erc20ABI, this.provider.getSigner());
-      this.hasNonStakedLp = fromWei(await tokenContract.balanceOf(this.smartLoanContract.address, this.lpToken.symbol, tokenContract, this.lpToken.decimals)) > 0;
+      this.hasNonStakedLp = fromWei(await tokenContract.balanceOf(this.smartLoanContract.address)) > 0;
+      this.setupAddActionsConfiguration();
+      this.setupRemoveActionsConfiguration();
     },
 
     watchAssetBalancesDataRefreshEvent() {
@@ -434,6 +433,7 @@ export default {
     watchHealth() {
       this.healthService.observeHealth().subscribe(health => {
         this.healthLoaded = true;
+        this.setupHasNonStakedLp();
       });
     },
 

@@ -394,7 +394,7 @@ export default {
             sortable: false,
             class: 'balance',
             id: 'BALANCE',
-            tooltip: `The number and value of unstaked assets in your Prime Account.`
+            tooltip: `The number and value of staked Balancer LP tokens in your Prime Account.`
           },
           {
             label: 'TVL',

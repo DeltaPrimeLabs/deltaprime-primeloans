@@ -54,7 +54,7 @@
       >
       </CurrencyComboInput>
 
-      <div class="reverse-swap-button" v-on:click="reverseSwap && !reverseSwapDisabled">
+      <div class="reverse-swap-button" v-on:click="reverseSwap">
         <DeltaIcon class="reverse-swap-icon" :size="22" :icon-src="'src/assets/icons/swap-arrow.svg'"></DeltaIcon>
       </div>
 
@@ -276,6 +276,8 @@ export default {
       gmxV2Assets: {},
       gmxV2Balances: {},
       traderJoeV2LpAssets: {},
+      balancerLpAssets: {},
+      balancerLpBalances: {},
       transactionOngoing: false,
       debt: 0,
       thresholdWeightedValue: 0,
@@ -327,7 +329,8 @@ export default {
 
     submit() {
       this.transactionOngoing = true;
-      const sourceAssetAmount = this.maxButtonUsed ? this.sourceAssetAmount * config.MAX_BUTTON_MULTIPLIER : this.sourceAssetAmount;
+      console.log('submit this.swapDex: ', this.swapDex)
+      const sourceAssetAmount = this.maxButtonUsed && this.swapDex !== 'ParaSwapV2' ? this.sourceAssetAmount * config.MAX_BUTTON_MULTIPLIER : this.sourceAssetAmount;
       this.$emit('SWAP', {
         sourceAsset: this.sourceAsset,
         targetAsset: this.targetAsset,
@@ -580,6 +583,7 @@ export default {
     },
 
     reverseSwap() {
+      if (this.reverseSwapDisabled) return;
       const tempSource = this.sourceAsset;
       this.sourceAssetData = this.sourceAssetsConfig[this.targetAsset];
       this.targetAssetData = this.targetAssetsConfig[this.sourceAsset];
@@ -702,6 +706,14 @@ export default {
           borrowed: 0,
           debtCoverage: data.debtCoverage
         });
+      }
+
+      for (const [symbol, data] of Object.entries(this.balancerLpAssets)) {
+        if (this.balancerLpBalances) {
+          let balance = parseFloat(this.balancerLpBalances[symbol]);
+
+          tokens.push({price: data.price, balance: balance ? balance : 0, borrowed: 0, debtCoverage: data.debtCoverage});
+        }
       }
 
       for (const [symbol, data] of Object.entries(this.gmxV2Assets)) {

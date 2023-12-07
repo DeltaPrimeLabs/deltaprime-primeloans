@@ -2703,6 +2703,85 @@ export default {
       console.log(tx);
     },
 
+    async paraSwapV2({state, rootState, commit, dispatch}, {swapRequest}) {
+      console.log('paraSwapV2')
+      const provider = rootState.network.provider;
+
+      console.log(swapRequest);
+
+      let sourceDecimals = config.ASSETS_CONFIG[swapRequest.sourceAsset].decimals;
+      let sourceAmount = parseUnits(parseFloat(swapRequest.sourceAmount).toFixed(sourceDecimals), sourceDecimals);
+
+      let targetDecimals = config.ASSETS_CONFIG[swapRequest.targetAsset].decimals;
+      let targetAmount = parseUnits(swapRequest.targetAmount.toFixed(targetDecimals), targetDecimals);
+
+      const loanAssets = mergeArrays([(
+          await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+        [swapRequest.targetAsset]
+      ]);
+
+      const wrappedLoan = await wrapContract(state.smartLoanContract, loanAssets);
+
+      const paraSwapSDK = constructSimpleSDK({chainId: config.chainId, axios});
+
+      const priceRoute = swapRequest.paraSwapRate;
+      console.log('swapRequest.paraSwapRate.srcAmount: ', swapRequest.paraSwapRate.srcAmount)
+      console.log(swapRequest.paraSwapRate)
+      const txParams = await paraSwapSDK.swap.buildTx({
+        srcToken: swapRequest.paraSwapRate.srcToken,
+        destToken: swapRequest.paraSwapRate.destToken,
+        srcAmount: swapRequest.paraSwapRate.srcAmount,
+        slippage: 1000,
+        priceRoute,
+        userAddress: state.smartLoanContract.address,
+        partner: 'anon',
+      }, {
+        ignoreChecks: true,
+      });
+
+      const selector = txParams.data.substr(0, 10);
+      const data = "0x" + txParams.data.substr(10);
+
+      const transaction = await wrappedLoan.paraSwapV2(
+          selector,
+          data,
+          swapRequest.paraSwapRate.srcToken,
+          sourceAmount ,
+          swapRequest.paraSwapRate.destToken,
+          targetAmount
+      );
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      const tx = await awaitConfirmation(transaction, provider, 'paraSwap');
+
+      console.log('SWAP LOG');
+      console.log(getLog(tx, SMART_LOAN.abi, 'Swap'));
+
+      const amountSold = formatUnits(getLog(tx, SMART_LOAN.abi, 'Swap').args.maximumSold, config.ASSETS_CONFIG[swapRequest.sourceAsset].decimals);
+      const amountBought = formatUnits(getLog(tx, SMART_LOAN.abi, 'Swap').args.minimumBought, config.ASSETS_CONFIG[swapRequest.targetAsset].decimals);
+      const sourceBalanceAfterSwap = Number(state.assetBalances[swapRequest.sourceAsset]) - Number(amountSold);
+      const targetBalanceAfterSwap = Number(state.assetBalances[swapRequest.targetAsset]) + Number(amountBought);
+
+      commit('setSingleAssetBalance', {asset: swapRequest.sourceAsset, balance: sourceBalanceAfterSwap});
+      commit('setSingleAssetBalance', {asset: swapRequest.targetAsset, balance: targetBalanceAfterSwap});
+
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate(swapRequest.sourceAsset, sourceBalanceAfterSwap, false, true);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate(swapRequest.targetAsset, targetBalanceAfterSwap, false, true);
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      console.log(tx);
+    },
+
     async swapDebt({state, rootState, commit, dispatch}, {swapDebtRequest}) {
       const provider = rootState.network.provider;
       console.log('swapDebtRequest', swapDebtRequest);

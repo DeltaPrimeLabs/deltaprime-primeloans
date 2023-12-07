@@ -140,6 +140,8 @@ export default {
     gmxV2Assets: {},
     gmxV2Balances: {},
     traderJoeV2LpAssets: {},
+    balancerLpAssets: {},
+    balancerLpBalances: {},
     farms: {},
     thresholdWeightedValue: Number,
     loan: Number,
@@ -258,6 +260,14 @@ export default {
           if (symbol === this.asset.symbol) {
             balance += added;
           }
+
+          tokens.push({price: data.price, balance: balance ? balance : 0, borrowed: 0, debtCoverage: data.debtCoverage});
+        }
+      }
+
+      for (const [symbol, data] of Object.entries(this.balancerLpAssets)) {
+        if (this.balancerLpBalances) {
+          let balance = parseFloat(this.balancerLpBalances[symbol]);
 
           tokens.push({price: data.price, balance: balance ? balance : 0, borrowed: 0, debtCoverage: data.debtCoverage});
         }

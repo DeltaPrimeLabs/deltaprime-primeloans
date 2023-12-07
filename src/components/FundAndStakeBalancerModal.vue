@@ -7,7 +7,7 @@
 
       <div class="modal-top-desc">
         <div class="rewards-info">
-          Your Balancer position will be imported to your Prime Account. If you don't see your BPT tokens here, please unstake them first from Balancer gauge.
+          Your Balancer position will be imported to your Prime Account. If you don't see your BPT tokens here, please unstake them first on the Balancer website.
         </div>
       </div>
 
