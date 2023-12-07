@@ -53,10 +53,6 @@ export default {
         GmxV2: {
             availableAssets: [],
             slippageMargin: 0.1
-        },
-        ggAVAX: {
-            availableAssets: ['AVAX'],
-            slippageMargin: 0.1
         }
     },
     paraSwapDefaultSlippage: 1,

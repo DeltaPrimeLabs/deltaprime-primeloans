@@ -1768,10 +1768,6 @@ export default {
 
       const provider = rootState.network.provider;
 
-      const firstDecimals = config.ASSETS_CONFIG[removeLiquidityRequest.firstAsset].decimals;
-      const secondDecimals = config.ASSETS_CONFIG[removeLiquidityRequest.secondAsset].decimals;
-      // const lpTokenDecimals = config.LP_ASSETS_CONFIG[removeLiquidityRequest.symbol].decimals;
-
       const loanAssets = mergeArrays([(
           await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
         (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
@@ -1784,10 +1780,10 @@ export default {
       const transaction = await wrappedContract.unstakeAndExitPoolBalancerV2(
           [
             removeLiquidityRequest.poolId,
-            removeLiquidityRequest.unstakedAsset,
+            config.ASSETS_CONFIG[removeLiquidityRequest.targetAsset].address,
             //TODO: slippage
             0,
-            removeLiquidityRequest.amount
+            toWei(removeLiquidityRequest.amount)
           ]
       );
 

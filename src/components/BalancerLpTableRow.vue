@@ -15,7 +15,7 @@
         <template
             v-if="balancerLpBalances">
           <div class="double-value__pieces">
-            <img v-if="true" src="src/assets/icons/error.svg" v-tooltip="{content: 'Your Prime Account has unstaked LP tokens. Please use `Stake` function to show them in your balance.', classes: 'info-tooltip long'}"/>
+            <img v-if="hasNonStakedLp" src="src/assets/icons/error.svg" v-tooltip="{content: 'Your Prime Account has unstaked LP tokens. Please use `Stake` function to show them in your balance.', classes: 'info-tooltip long'}"/>
             {{ balancerLpBalances[lpToken.symbol] | smartRound }}
           </div>
           <div class="double-value__usd">
@@ -325,7 +325,7 @@ export default {
 
     async openExportModal() {
       const modalInstance = this.openModal(UnstakeAndWithdrawBalancerV2Modal);
-      modalInstance.balance = this.totalStaked;
+      modalInstance.balance = this.balancerLpBalances[this.lpToken.symbol];
 
       modalInstance.$on('UNSTAKE_AND_WITHDRAW', provideLiquidityEvent => {
         if (this.smartLoanContract) {
@@ -375,13 +375,15 @@ export default {
     openRemoveLiquidityModal() {
       const modalInstance = this.openModal(RemoveLiquidityModal);
       modalInstance.lpToken = this.lpToken;
-      modalInstance.lpTokenBalance = Number(this.totalStaked);
+      modalInstance.lpTokenDecimals = this.lpToken.decimals;
+      modalInstance.lpTokenBalance = Number(this.balancerLpBalances[this.lpToken.symbol]);
       modalInstance.firstBalance = Number(this.assetBalances[this.lpToken.primary]);
       modalInstance.secondBalance = Number(this.assetBalances[this.lpToken.secondary]);
       modalInstance.$on('REMOVE_LIQUIDITY', removeEvent => {
         const removeLiquidityRequest = {
           poolId: this.lpToken.poolId,
           symbol: this.lpToken.symbol,
+          targetAsset: this.lpToken.primary,
           amount: removeEvent.amount
         };
         this.handleTransaction(this.unstakeAndRemoveLiquidityBalancerV2, {removeLiquidityRequest: removeLiquidityRequest}, () => {
