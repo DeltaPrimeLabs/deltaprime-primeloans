@@ -236,6 +236,8 @@ export default {
       'traderJoeV2LpAssets',
       'traderJoeV2LpAssets',
       'traderJoeV2LpAssets',
+      'balancerLpAssets',
+      'balancerLpBalances',
       'gmxV2Assets',
       'gmxV2Balances',
       'noSmartLoan'
@@ -589,6 +591,8 @@ export default {
       modalInstance.gmxV2Assets = this.gmxV2Assets;
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.lpBalances = this.lpBalances;
+      modalInstance.balancerLpBalances = this.balancerLpBalances;
+      modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.farms = this.farms;
@@ -617,15 +621,23 @@ export default {
     },
 
     openSwapModal() {
-      const swapDexSwapMethodMap = {
-        YakSwap: this.swap,
-        ParaSwap: this.paraSwap
-      };
+      let swapDexSwapMethodMap = {};
+      console.log(config.SWAP_DEXS_CONFIG)
+      console.log(config.SWAP_DEXS_CONFIG.YakSwap)
+      console.log(config.SWAP_DEXS_CONFIG.YakSwap.availableAssets)
+
+      console.log(config.SWAP_DEXS_CONFIG)
+      console.log(config.SWAP_DEXS_CONFIG.ParaSwap)
+      console.log(config.SWAP_DEXS_CONFIG.ParaSwap.availableAssets)
+
+      if (config.SWAP_DEXS_CONFIG.YakSwap.availableAssets.includes(this.asset.symbol)) swapDexSwapMethodMap.YakSwap = this.swap;
+      if (config.SWAP_DEXS_CONFIG.ParaSwap.availableAssets.includes(this.asset.symbol)) swapDexSwapMethodMap.ParaSwap = this.paraSwap;
+
       const modalInstance = this.openModal(SwapModal);
       modalInstance.dexOptions = Object.entries(config.SWAP_DEXS_CONFIG)
           .filter(([dexName, dexConfig]) => dexConfig.availableAssets.includes(this.asset.symbol))
           .map(([dexName, dexConfig]) => dexName);
-      modalInstance.swapDex = Object.keys(config.SWAP_DEXS_CONFIG)[0];
+      modalInstance.swapDex = Object.entries(config.SWAP_DEXS_CONFIG).filter(([k,v]) => v.availableAssets.includes(this.asset.symbol))[0][0];
       console.log(modalInstance.swapDex);
       modalInstance.swapDebtMode = false;
       modalInstance.sourceAsset = this.asset.symbol;
@@ -639,6 +651,8 @@ export default {
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.gmxV2Assets = this.gmxV2Assets;
       modalInstance.lpBalances = this.lpBalances;
+      modalInstance.balancerLpBalances = this.balancerLpBalances;
+      modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
@@ -693,6 +707,8 @@ export default {
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.balancerLpBalances = this.balancerLpBalances;
+      modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
       modalInstance.targetAsset = this.borrowable.filter(asset => asset !== this.asset.symbol)[0];
       modalInstance.debt = this.fullLoanStatus.debt;
@@ -736,6 +752,8 @@ export default {
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.gmxV2Assets = this.gmxV2Assets;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.balancerLpBalances = this.balancerLpBalances;
+      modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
       modalInstance.loan = this.fullLoanStatus.debt ? this.fullLoanStatus.debt : 0;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
@@ -818,6 +836,8 @@ export default {
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.gmxV2Assets = this.gmxV2Assets;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.balancerLpBalances = this.balancerLpBalances;
+      modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.debt = this.fullLoanStatus.debt;
@@ -882,6 +902,8 @@ export default {
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.gmxV2Assets = this.gmxV2Assets;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.balancerLpBalances = this.balancerLpBalances;
+      modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.debt = this.fullLoanStatus.debt;

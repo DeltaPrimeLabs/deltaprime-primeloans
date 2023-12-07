@@ -11,31 +11,15 @@
         </div>
       </div>
 
-      <div class="table__cell table__cell--double-value balance">
-        <template v-if="lpBalances && parseFloat(lpBalances[lpToken.symbol])">
-          <div class="double-value__pieces">
-            <span v-if="isLpBalanceEstimated">~</span>
-            {{ formatTokenBalance(lpBalances[lpToken.symbol], 10, true) }}
-          </div>
-          <div class="double-value__usd">
-            <span v-if="lpBalances[lpToken.symbol]">
-              {{ lpBalances[lpToken.symbol] * lpToken.price | usd }}
-            </span>
-          </div>
-        </template>
-        <template v-else>
-          <div class="no-value-dash"></div>
-        </template>
-      </div>
-
       <div class="table__cell table__cell--double-value farmed">
         <template
-            v-if="totalStaked">
+            v-if="balancerLpBalances">
           <div class="double-value__pieces">
-            {{ totalStaked | smartRound }}
+            <img v-if="true" src="src/assets/icons/error.svg" v-tooltip="{content: 'Your Prime Account has unstaked LP tokens. Please use `Stake` function to show them in your balance.', classes: 'info-tooltip long'}"/>
+            {{ balancerLpBalances[lpToken.symbol] | smartRound }}
           </div>
           <div class="double-value__usd">
-            <span v-if="totalStaked">{{ totalStaked * lpToken.price | usd }}</span>
+            <span v-if="balancerLpBalances">{{ balancerLpBalances[lpToken.symbol] * lpToken.price | usd }}</span>
           </div>
         </template>
         <template v-else>
@@ -111,6 +95,8 @@ import {calculateMaxApy, fromWei} from '../utils/calculate';
 import addresses from '../../common/addresses/avalanche/token_addresses.json';
 import {formatUnits, parseUnits} from 'ethers/lib/utils';
 import DeltaIcon from "./DeltaIcon.vue";
+import FundAndStakeBalancerModal from "./FundAndStakeBalancerModal.vue";
+import UnstakeAndWithdrawBalancerV2Modal from "./UnstakeAndWithdrawBalancerV2Modal.vue";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -131,7 +117,6 @@ export default {
   },
 
   async mounted() {
-    this.setupAvailableFarms();
     this.setupAddActionsConfiguration();
     this.setupRemoveActionsConfiguration();
     this.watchAssetBalancesDataRefreshEvent();
@@ -140,9 +125,8 @@ export default {
     this.watchProgressBarState();
     this.watchAssetApysRefresh();
     this.watchExternalAssetBalanceUpdate();
-    this.watchExternalTotalStakedUpdate();
-    this.watchFarmRefreshEvent();
-    await this.setupApr();
+    this.setupApr();
+    this.setupHasNonStakedLp();
   },
 
   data() {
@@ -159,6 +143,7 @@ export default {
       disableAllButtons: false,
       healthLoaded: false,
       totalStaked: null,
+      hasNonStakedLp: false,
       availableFarms: [],
     };
   },
@@ -173,6 +158,7 @@ export default {
       'assets',
       'debtsPerAsset',
       'lpAssets',
+      'concentratedLpBalances',
       'concentratedLpAssets',
       'traderJoeV2LpAssets',
       'levelLpAssets',
@@ -214,14 +200,12 @@ export default {
     provider: {
       async handler(provider) {
         if (provider) {
-          await this.setupPoolBalance();
         }
       }
     },
     assets: {
       handler(assets) {
         if (assets) {
-          this.setupTvl();
         }
       },
       immediate: true
@@ -237,7 +221,12 @@ export default {
   },
 
   methods: {
-    ...mapActions('fundsStore', ['fund', 'withdraw', 'provideLiquidity', 'removeLiquidity']),
+    ...mapActions('fundsStore', [
+       'fundAndStakeBalancerV2',
+       'unstakeAndWithdrawBalancerV2',
+       'provideLiquidityAndStakeBalancerV2',
+       'unstakeAndRemoveLiquidityBalancerV2'
+    ]),
     setupAddActionsConfiguration() {
       this.addActionsConfig =
           {
@@ -245,17 +234,13 @@ export default {
             tooltip: 'Add',
             menuOptions: [
               {
-                key: 'ADD_FROM_WALLET',
+                key: 'FUND_AND_STAKE',
                 name: 'Import existing LP position'
               },
               {
-                key: 'STAKE',
-                name: 'Stake LP position'
-              },
-              {
                 key: 'PROVIDE_LIQUIDITY',
-                name: 'Create and Stake LP position',
-                disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
+                name: 'Create LP position',
+                disabled: !this.hasSmartLoanContract,
                 disabledInfo: 'To create LP token, you need to add some funds from you wallet first'
               }
             ]
@@ -264,27 +249,22 @@ export default {
 
     setupRemoveActionsConfiguration() {
       this.removeActionsConfig =
-          {
-            iconSrc: 'src/assets/icons/minus.svg',
-            tooltip: 'Remove',
-            menuOptions: [
-              {
-                key: 'WITHDRAW',
-                name: 'Export LP position',
-                disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
-              },
-              {
-                key: 'UNSTAKE',
-                name: 'Unstake LP position',
-                disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
-              },
-              {
-                key: 'REMOVE_LIQUIDITY',
-                name: 'Unstake and Remove LP position',
-                disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
-              }
-            ]
-          }
+        {
+          iconSrc: 'src/assets/icons/minus.svg',
+          tooltip: 'Remove',
+          menuOptions: [
+            {
+              key: 'UNSTAKE_AND_WITHDRAW',
+              name: 'Export LP position',
+              disabled: !this.hasSmartLoanContract,
+            },
+            {
+              key: 'REMOVE_LIQUIDITY',
+              name: 'Unwind LP position',
+              disabled: !this.hasSmartLoanContract,
+            }
+          ]
+        }
     },
 
     async setupApr() {
@@ -307,20 +287,14 @@ export default {
     actionClick(key) {
       if (!this.disableAllButtons) {
         switch (key) {
-          case 'ADD_FROM_WALLET':
-            this.openAddFromWalletModal();
-            break;
-          case 'STAKE':
-            this.openStakeModal();
+          case 'FUND_AND_STAKE':
+            this.openImportModal();
             break;
           case 'PROVIDE_LIQUIDITY':
             this.openProvideLiquidityModal();
             break;
-          case 'WITHDRAW':
-            this.openWithdrawModal();
-            break;
-          case 'UNSTAKE':
-            this.openUnstakeModal();
+          case 'UNSTAKE_AND_WITHDRAW':
+            this.openExportModal();
             break;
           case 'REMOVE_LIQUIDITY':
             this.openRemoveLiquidityModal();
@@ -329,33 +303,17 @@ export default {
       }
     },
 
-    //TODO: duplicated code
-    async openAddFromWalletModal() {
-      const modalInstance = this.openModal(AddFromWalletModal);
-      modalInstance.asset = this.lpToken;
-      modalInstance.assetBalance = this.lpBalances && this.lpBalances[this.lpToken.symbol] ? this.lpBalances[this.lpToken.symbol] : 0;
-      modalInstance.assets = this.assets;
-      modalInstance.assetBalances = this.assetBalances;
-      modalInstance.lpAssets = this.lpAssets;
-      modalInstance.lpBalances = this.lpBalances;
-      modalInstance.balancerLpAssets = this.balancerLpAssets;
-      modalInstance.balancerLpBalances = this.balancerLpBalances;
-      modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
-      modalInstance.farms = this.farms;
-      modalInstance.debtsPerAsset = this.debtsPerAsset;
-      modalInstance.loan = this.debt;
-      modalInstance.thresholdWeightedValue = this.thresholdWeightedValue;
-      modalInstance.isLP = true;
+    async openImportModal() {
+      const modalInstance = this.openModal(FundAndStakeBalancerModal);
       modalInstance.walletAssetBalance = await this.getWalletLpTokenBalance();
-      modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
+
+      modalInstance.$on('FUND_AND_STAKE', provideLiquidityEvent => {
         if (this.smartLoanContract) {
           const fundRequest = {
-            value: addFromWalletEvent.value.toString(),
-            asset: this.lpToken.symbol,
-            assetDecimals: config.BALANCER_LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
-            type: 'LP',
+            symbol: this.lpToken.symbol,
+            poolId: this.lpToken.poolId
           };
-          this.handleTransaction(this.fund, {fundRequest: fundRequest}, () => {
+          this.handleTransaction(this.fundAndStakeBalancerV2, {fundRequest: fundRequest}, () => {
             this.$forceUpdate();
           }, (error) => {
             this.handleTransactionError(error);
@@ -365,39 +323,23 @@ export default {
       });
     },
 
-    //TODO: duplicated code
-    openWithdrawModal() {
-      const modalInstance = this.openModal(WithdrawModal);
-      modalInstance.asset = this.lpToken;
-      modalInstance.assetBalance = this.lpBalances[this.lpToken.symbol];
-      modalInstance.assets = this.assets;
-      modalInstance.assetBalances = this.assetBalances;
-      modalInstance.lpAssets = this.lpAssets;
-      modalInstance.concentratedLpAssets = this.concentratedLpAssets;
-      modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
-      modalInstance.levelLpAssets = this.levelLpAssets;
-      modalInstance.levelLpBalances = this.levelLpBalances;
-      modalInstance.lpBalances = this.lpBalances;
-      modalInstance.balancerLpAssets = this.balancerLpAssets;
-      modalInstance.balancerLpBalances = this.balancerLpBalances;
-      modalInstance.concentratedLpBalances = this.concentratedLpBalances;
-      modalInstance.debtsPerAsset = this.debtsPerAsset;
-      modalInstance.farms = this.farms;
-      modalInstance.health = this.health;
-      modalInstance.isLP = true;
-      modalInstance.$on('WITHDRAW', withdrawEvent => {
-        const withdrawRequest = {
-          value: withdrawEvent.value.toString(),
-          asset: this.lpToken.symbol,
-          assetDecimals: config.BALANCER_LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
-          type: 'LP',
-        };
-        this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
-          this.$forceUpdate();
-        }, (error) => {
-          this.handleTransactionError(error);
-        }).then(() => {
-        });
+    async openExportModal() {
+      const modalInstance = this.openModal(UnstakeAndWithdrawBalancerV2Modal);
+      modalInstance.balance = this.totalStaked;
+
+      modalInstance.$on('UNSTAKE_AND_WITHDRAW', provideLiquidityEvent => {
+        if (this.smartLoanContract) {
+          const withdrawRequest = {
+            symbol: this.lpToken.symbol,
+            poolId: this.lpToken.poolId
+          };
+          this.handleTransaction(this.unstakeAndWithdrawBalancerV2, {withdrawRequest: withdrawRequest}, () => {
+            this.$forceUpdate();
+          }, (error) => {
+            this.handleTransactionError(error);
+          }).then(() => {
+          });
+        }
       });
     },
 
@@ -411,15 +353,15 @@ export default {
       modalInstance.$on('PROVIDE_LIQUIDITY', provideLiquidityEvent => {
         if (this.smartLoanContract) {
           const provideLiquidityRequest = {
+            poolId: this.lpToken.poolId,
             symbol: this.lpToken.symbol,
             firstAsset: this.lpToken.primary,
             secondAsset: this.lpToken.secondary,
-            firstAmount: provideLiquidityEvent.firstAmount.toString(),
-            secondAmount: provideLiquidityEvent.secondAmount.toString(),
-            dex: this.lpToken.dex,
+            firstAmount: provideLiquidityEvent.firstAmount ? provideLiquidityEvent.firstAmount.toString() : '0',
+            secondAmount: provideLiquidityEvent.secondAmount ?provideLiquidityEvent.secondAmount.toString() : '0',
             addedLiquidity: provideLiquidityEvent.addedLiquidity,
           };
-          this.handleTransaction(this.provideLiquidity, {provideLiquidityRequest: provideLiquidityRequest}, () => {
+          this.handleTransaction(this.provideLiquidityAndStakeBalancerV2, {provideLiquidityRequest: provideLiquidityRequest}, () => {
             this.$forceUpdate();
           }, (error) => {
             this.handleTransactionError(error);
@@ -433,21 +375,16 @@ export default {
     openRemoveLiquidityModal() {
       const modalInstance = this.openModal(RemoveLiquidityModal);
       modalInstance.lpToken = this.lpToken;
-      modalInstance.lpTokenBalance = Number(this.balancerLpBalances[this.lpToken.symbol]);
+      modalInstance.lpTokenBalance = Number(this.totalStaked);
       modalInstance.firstBalance = Number(this.assetBalances[this.lpToken.primary]);
       modalInstance.secondBalance = Number(this.assetBalances[this.lpToken.secondary]);
       modalInstance.$on('REMOVE_LIQUIDITY', removeEvent => {
         const removeLiquidityRequest = {
-          value: removeEvent.amount,
+          poolId: this.lpToken.poolId,
           symbol: this.lpToken.symbol,
-          firstAsset: this.lpToken.primary,
-          secondAsset: this.lpToken.secondary,
-          minFirstAmount: removeEvent.minReceivedFirst.toString(),
-          minSecondAmount: removeEvent.minReceivedSecond.toString(),
-          assetDecimals: config.BALANCER_LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
-          dex: this.lpToken.dex
+          amount: removeEvent.amount
         };
-        this.handleTransaction(this.removeLiquidity, {removeLiquidityRequest: removeLiquidityRequest}, () => {
+        this.handleTransaction(this.unstakeAndRemoveLiquidityBalancerV2, {removeLiquidityRequest: removeLiquidityRequest}, () => {
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
@@ -457,29 +394,20 @@ export default {
     },
 
     async setupPoolBalance() {
-      const lpTokenContract = new ethers.Contract(this.lpToken.address, erc20ABI, provider);
-      this.poolBalance = fromWei(await lpTokenContract.totalSupply());
-    },
-
-    async setupTvl() {
-      const firstTokenContract = new ethers.Contract(addresses[this.lpToken.primary], erc20ABI, this.provider);
-      const secondTokenContract = new ethers.Contract(addresses[this.lpToken.secondary], erc20ABI, this.provider);
-
-      let priceFirst = this.assets[this.lpToken.primary].price;
-      let priceSecond = this.assets[this.lpToken.secondary].price;
-
-      if (priceFirst && priceSecond) {
-        let valueOfFirst = formatUnits(await firstTokenContract.balanceOf(this.lpToken.address), config.ASSETS_CONFIG[this.lpToken.primary].decimals) * config.ASSETS_CONFIG[this.lpToken.primary].price;
-        let valueOfSecond = formatUnits(await secondTokenContract.balanceOf(this.lpToken.address), config.ASSETS_CONFIG[this.lpToken.primary].secondary) * config.ASSETS_CONFIG[this.lpToken.secondary].price;
-
-        this.tvl = valueOfFirst + valueOfSecond;
-        this.lpToken.tvl = valueOfFirst + valueOfSecond;
-      }
+      const gaugeContract = new ethers.Contract(this.lpToken.gaugeAddress, erc20ABI, provider);
+      const bptContract = new ethers.Contract(this.lpToken.address, erc20ABI, provider);
+      //TODO: multicall
+      this.bptBalance = fromWei(await bptContract.totalSupply());
     },
 
     async getWalletLpTokenBalance() {
       const tokenContract = new ethers.Contract(this.lpToken.address, erc20ABI, this.provider.getSigner());
       return await this.getWalletTokenBalance(this.account, this.lpToken.symbol, tokenContract, this.lpToken.decimals);
+    },
+
+    async setupHasNonStakedLp() {
+      const tokenContract = new ethers.Contract(this.lpToken.address, erc20ABI, this.provider.getSigner());
+      this.hasNonStakedLp = fromWei(await tokenContract.balanceOf(this.smartLoanContract.address, this.lpToken.symbol, tokenContract, this.lpToken.decimals)) > 0;
     },
 
     watchAssetBalancesDataRefreshEvent() {
@@ -561,31 +489,6 @@ export default {
       this.disableAllButtons = false;
       this.isBalanceEstimated = false;
     },
-
-    watchExternalTotalStakedUpdate() {
-      this.stakedExternalUpdateService.observeExternalTotalStakedUpdate().subscribe((updateEvent) => {
-        if (updateEvent.assetSymbol === this.lpToken.symbol) {
-          if (updateEvent.action === 'STAKE') {
-            this.totalStaked = Number(this.totalStaked) + Number(updateEvent.stakedChange);
-          } else if (updateEvent.action === 'UNSTAKE') {
-            this.totalStaked = Number(this.totalStaked) - Number(updateEvent.stakedChange);
-          }
-          this.$forceUpdate();
-        }
-      });
-    },
-
-    watchFarmRefreshEvent() {
-      this.farmService.observeRefreshFarm().subscribe(async () => {
-        if (this.availableFarms) {
-          this.totalStaked = this.availableFarms.reduce((acc, farm) => acc + parseFloat(farm.totalStaked), 0);
-        }
-      });
-    },
-
-    setupAvailableFarms() {
-      this.availableFarms = config.FARMED_TOKENS_CONFIG[this.lpToken.symbol];
-    },
   },
 };
 </script>
@@ -603,7 +506,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: repeat(4, 1fr) 12% 135px 60px 80px 22px;
+    grid-template-columns: repeat(3, 1fr) 12% 135px 60px 80px 22px;
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;

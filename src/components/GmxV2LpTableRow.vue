@@ -244,6 +244,8 @@ export default {
       'levelLpAssets',
       'gmxV2Assets',
       'traderJoeV2LpAssets',
+      'balancerLpAssets',
+      'balancerLpBalances',
       'apys',
     ]),
     ...mapState('poolStore', ['pools']),
@@ -554,6 +556,8 @@ export default {
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
+      modalInstance.balancerLpBalances = this.balancerLpBalances;
+      modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.loan = this.debt;
@@ -597,6 +601,8 @@ export default {
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
       modalInstance.levelLpBalances = this.levelLpBalances;
+      modalInstance.balancerLpBalances = this.balancerLpBalances;
+      modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.farms = this.farms;
       modalInstance.health = this.health;
@@ -645,6 +651,8 @@ export default {
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
       modalInstance.levelLpBalances = this.levelLpBalances;
+      modalInstance.balancerLpBalances = this.balancerLpBalances;
+      modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
       modalInstance.targetAsset = this.lpToken.symbol;
       modalInstance.debt = this.fullLoanStatus.debt;
@@ -724,6 +732,8 @@ export default {
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
       modalInstance.levelLpBalances = this.levelLpBalances;
+      modalInstance.balancerLpBalances = this.balancerLpBalances;
+      modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
       modalInstance.targetAsset = this.lpToken.longToken;
       modalInstance.debt = this.fullLoanStatus.debt;

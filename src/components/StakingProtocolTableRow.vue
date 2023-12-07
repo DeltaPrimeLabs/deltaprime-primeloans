@@ -175,6 +175,8 @@ export default {
       'traderJoeV2LpAssets',
       'levelLpAssets',
       'levelLpBalances',
+      'balancerLpAssets',
+      'balancerLpBalances',
       'noSmartLoan'
     ]),
     ...mapState('serviceRegistry', [
@@ -228,6 +230,8 @@ export default {
       modalInstance.levelLpAssets = this.levelLpAssets;
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
+      modalInstance.balancerLpBalances = this.balancerLpBalances;
+      modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.loan = this.debt;
@@ -271,6 +275,8 @@ export default {
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
       modalInstance.levelLpBalances = this.levelLpBalances;
+      modalInstance.balancerLpBalances = this.balancerLpBalances;
+      modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.loan = this.debt;

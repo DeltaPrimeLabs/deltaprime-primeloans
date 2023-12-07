@@ -154,6 +154,8 @@ export default {
       'levelLpBalances',
       'gmxV2Assets',
       'gmxV2Balances',
+      'balancerLpAssets',
+      'balancerLpBalances',
       'traderJoeV2LpAssets',
       'fullLoanStatus',
       'noSmartLoan',

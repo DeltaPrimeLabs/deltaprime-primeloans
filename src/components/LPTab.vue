@@ -379,7 +379,7 @@ export default {
     },
     setupBalancerLpTableHeaderConfig() {
       this.balancerLpTableHeaderConfig = {
-        gridTemplateColumns: 'repeat(4, 1fr) 12% 135px 60px 80px 22px',
+        gridTemplateColumns: 'repeat(3, 1fr) 12% 135px 60px 80px 22px',
         cells: [
           {
             label: 'Balancer vault',
@@ -395,13 +395,6 @@ export default {
             class: 'balance',
             id: 'BALANCE',
             tooltip: `The number and value of unstaked assets in your Prime Account.`
-          },
-          {
-            label: 'Staked',
-            sortable: false,
-            class: 'farmed',
-            id: 'STAKED',
-            tooltip: `The number and value of staked assets in your Prime Account.`
           },
           {
             label: 'TVL',
