@@ -69,7 +69,7 @@
       <div class="target-asset-info">
         <div class="usd-info">
           Price:&nbsp;<span
-            class="price-info__value">1 {{
+          class="price-info__value">1 {{
             (targetAssetData && targetAssetData.short) ? targetAssetData.short : targetAsset
           }} = {{ estimatedNeededTokens / estimatedReceivedTokens | smartRound }} {{ sourceAsset }}</span>
         </div>
@@ -87,8 +87,8 @@
           <span class="deviation-value">{{ fee | percent }}</span>
           <div class="info__icon__wrapper">
             <InfoIcon
-                class="info__icon"
-                :tooltip="{content: 'The fee of underlying protocol.', placement: 'top', classes: 'info-tooltip'}"
+              class="info__icon"
+              :tooltip="{content: 'The fee of underlying protocol.', placement: 'top', classes: 'info-tooltip'}"
             ></InfoIcon>
           </div>
         </div>
@@ -97,8 +97,8 @@
           <span class="deviation-value">{{ marketDeviation }}<span class="percent">%</span></span>
           <div class="info__icon__wrapper">
             <InfoIcon
-                class="info__icon"
-                :tooltip="{content: 'The difference between DEX and market prices.', placement: 'top', classes: 'info-tooltip'}"
+              class="info__icon"
+              :tooltip="{content: 'The difference between DEX and market prices.', placement: 'top', classes: 'info-tooltip'}"
             ></InfoIcon>
           </div>
         </div>
@@ -136,7 +136,7 @@
 
             <div class="summary__value__pair" v-if="!swapDebtMode">
               <div class="summary__label">
-                {{ (sourceAssetData && sourceAssetData.short) ? sourceAssetData.short: sourceAsset }} balance:
+                {{ (sourceAssetData && sourceAssetData.short) ? sourceAssetData.short : sourceAsset }} balance:
               </div>
               <div class="summary__value">
                 {{
@@ -621,11 +621,11 @@ export default {
       ];
       this.targetValidators = [
         // {
-          // validate: async (value) => {
-          //   if (this.healthAfterTransaction < this.MIN_ALLOWED_HEALTH) {
-          //     return 'The health is below allowed limit.';
-          //   }
-          // }
+        // validate: async (value) => {
+        //   if (this.healthAfterTransaction < this.MIN_ALLOWED_HEALTH) {
+        //     return 'The health is below allowed limit.';
+        //   }
+        // }
         // },
         {
           validate: async (value) => {
@@ -712,7 +712,12 @@ export default {
         if (this.balancerLpBalances) {
           let balance = parseFloat(this.balancerLpBalances[symbol]);
 
-          tokens.push({price: data.price, balance: balance ? balance : 0, borrowed: 0, debtCoverage: data.debtCoverage});
+          tokens.push({
+            price: data.price,
+            balance: balance ? balance : 0,
+            borrowed: 0,
+            debtCoverage: data.debtCoverage
+          });
         }
       }
 

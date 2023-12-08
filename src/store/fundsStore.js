@@ -1683,10 +1683,12 @@ export default {
     },
 
     async provideLiquidityAndStakeBalancerV2({state, rootState, commit, dispatch}, {provideLiquidityRequest}) {
+
       const provider = rootState.network.provider;
 
       const firstDecimals = config.ASSETS_CONFIG[provideLiquidityRequest.firstAsset].decimals;
       const secondDecimals = config.ASSETS_CONFIG[provideLiquidityRequest.secondAsset].decimals;
+      const lpTokenDecimals = config.BALANCER_LP_ASSETS_CONFIG[provideLiquidityRequest.symbol].decimals;
 
       const loanAssets = mergeArrays([(
           await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
@@ -1740,19 +1742,35 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'create LP token');
 
-      // const firstAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'AddLiquidity').args.firstAmount, firstDecimals); // how much of tokenA was used
-      // const secondAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'AddLiquidity').args.secondAmount, secondDecimals); //how much of tokenB was used
-      // const lpTokenCreated = formatUnits(getLog(tx, SMART_LOAN.abi, 'AddLiquidity').args.liquidity, lpTokenDecimals); //how much LP was created
-      // const firstAssetBalanceAfterTransaction = Number(state.assetBalances[provideLiquidityRequest.firstAsset]) - Number(firstAssetAmount);
-      // const secondAssetBalanceAfterTransaction = Number(state.assetBalances[provideLiquidityRequest.secondAsset]) - Number(secondAssetAmount);
-      // const lpTokenBalanceAfterTransaction = Number(state.lpBalances[provideLiquidityRequest.symbol]) + Number(lpTokenCreated);
+      console.warn('provideLiquidityAndStakeBalancerV2');
 
-      // rootState.serviceRegistry.assetBalancesExternalUpdateService
-      //     .emitExternalAssetBalanceUpdate(provideLiquidityRequest.firstAsset, firstAssetBalanceAfterTransaction, false, true);
-      // rootState.serviceRegistry.assetBalancesExternalUpdateService
-      //     .emitExternalAssetBalanceUpdate(provideLiquidityRequest.secondAsset, secondAssetBalanceAfterTransaction, false, true);
-      // rootState.serviceRegistry.assetBalancesExternalUpdateService
-      //     .emitExternalAssetBalanceUpdate(provideLiquidityRequest.symbol, lpTokenBalanceAfterTransaction, true, true);
+
+      console.log(getLog(tx, SMART_LOAN.abi, 'Staked').args);
+      console.log(JSON.stringify(getLog(tx, SMART_LOAN.abi, 'Staked').args));
+      console.log(getLog(tx, SMART_LOAN.abi, 'Staked'));
+
+      const firstAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Staked').args.depositTokenAmounts[0], firstDecimals); // how much of tokenA was used
+      const secondAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Staked').args.depositTokenAmounts[1], secondDecimals); //how much of tokenB was used
+      const lpTokenCreated = formatUnits(getLog(tx, SMART_LOAN.abi, 'Staked').args.receiptTokenAmount, lpTokenDecimals); //how much LP was created
+
+      console.log('firstAssetAmount', firstAssetAmount);
+      console.log('secondAssetAmount', secondAssetAmount);
+      console.log('lpTokenCreated', lpTokenCreated);
+
+      const firstAssetBalanceAfterTransaction = Number(state.assetBalances[provideLiquidityRequest.firstAsset]) - Number(firstAssetAmount);
+      const secondAssetBalanceAfterTransaction = Number(state.assetBalances[provideLiquidityRequest.secondAsset]) - Number(secondAssetAmount);
+      const lpTokenBalanceAfterTransaction = Number(state.balancerLpBalances[provideLiquidityRequest.symbol]) + Number(lpTokenCreated);
+
+      console.log('firstAssetBalanceAfterTransaction', firstAssetBalanceAfterTransaction);
+      console.log('secondAssetBalanceAfterTransaction', secondAssetBalanceAfterTransaction);
+      console.log('lpTokenBalanceAfterTransaction', lpTokenBalanceAfterTransaction);
+
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate(provideLiquidityRequest.firstAsset, firstAssetBalanceAfterTransaction, false, true);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate(provideLiquidityRequest.secondAsset, secondAssetBalanceAfterTransaction, false, true);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate(provideLiquidityRequest.symbol, lpTokenBalanceAfterTransaction, true, true);
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {
@@ -1765,6 +1783,10 @@ export default {
     },
 
     async unstakeAndRemoveLiquidityBalancerV2({state, rootState, commit, dispatch}, {removeLiquidityRequest}) {
+      console.log(removeLiquidityRequest);
+
+      const targetAssetDecimals = config.ASSETS_CONFIG[removeLiquidityRequest.targetAsset].decimals;
+      const lpTokenDecimals = config.BALANCER_LP_ASSETS_CONFIG[removeLiquidityRequest.symbol].decimals;
 
       const provider = rootState.network.provider;
 
@@ -1792,19 +1814,29 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'unwind LP token');
 
-      // const firstAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'RemoveLiquidity').args.firstAmount, firstDecimals); // how much of tokenA was received
-      // const secondAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'RemoveLiquidity').args.secondAmount, secondDecimals); //how much of tokenB was received
-      // const lpTokenRemoved = formatUnits(getLog(tx, SMART_LOAN.abi, 'RemoveLiquidity').args.liquidity, lpTokenDecimals); //how much LP was removed
-      // const firstAssetBalanceAfterTransaction = Number(state.assetBalances[removeLiquidityRequest.firstAsset]) + Number(firstAssetAmount);
-      // const secondAssetBalanceAfterTransaction = Number(state.assetBalances[removeLiquidityRequest.secondAsset]) + Number(secondAssetAmount);
-      // const lpTokenBalanceAfterTransaction = Number(state.lpBalances[removeLiquidityRequest.symbol]) - Number(lpTokenRemoved);
+      console.warn('provideLiquidityAndStakeBalancerV2');
 
-      // rootState.serviceRegistry.assetBalancesExternalUpdateService
-      //     .emitExternalAssetBalanceUpdate(removeLiquidityRequest.firstAsset, firstAssetBalanceAfterTransaction, false, true);
-      // rootState.serviceRegistry.assetBalancesExternalUpdateService
-      //     .emitExternalAssetBalanceUpdate(removeLiquidityRequest.secondAsset, secondAssetBalanceAfterTransaction, false, true);
-      // rootState.serviceRegistry.assetBalancesExternalUpdateService
-      //     .emitExternalAssetBalanceUpdate(removeLiquidityRequest.symbol, lpTokenBalanceAfterTransaction, true, true);
+
+      console.log(getLog(tx, SMART_LOAN.abi, 'Unstaked').args);
+      console.log(JSON.stringify(getLog(tx, SMART_LOAN.abi, 'Unstaked').args));
+      console.log(getLog(tx, SMART_LOAN.abi, 'Unstaked'));
+
+      const targetAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Unstaked').args.depositTokenAmounts[0], targetAssetDecimals); // how much of tokenA was used
+      const lpTokenUnwound = formatUnits(getLog(tx, SMART_LOAN.abi, 'Unstaked').args.receiptTokenAmount, lpTokenDecimals); //how much LP was created
+
+      console.log('targetAssetAmount', targetAssetAmount);
+      console.log('lpTokenUnwound', lpTokenUnwound);
+
+      const targetAssetBalanceAfterTransaction = Number(state.assetBalances[removeLiquidityRequest.targetAsset]) + Number(targetAssetAmount);
+      const lpTokenBalanceAfterTransaction = Number(state.balancerLpBalances[removeLiquidityRequest.symbol]) - Number(lpTokenUnwound);
+
+      console.log('targetAssetBalanceAfterTransaction', targetAssetBalanceAfterTransaction);
+      console.log('lpTokenBalanceAfterTransaction', lpTokenBalanceAfterTransaction);
+
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate(removeLiquidityRequest.targetAsset, targetAssetBalanceAfterTransaction, false, true);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate(removeLiquidityRequest.symbol, lpTokenBalanceAfterTransaction, true, true);
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {
@@ -1817,6 +1849,9 @@ export default {
     },
 
     async fundAndStakeBalancerV2({state, rootState, commit, dispatch}, {fundRequest}) {
+
+      console.log(fundRequest);
+      const lpTokenDecimals = config.BALANCER_LP_ASSETS_CONFIG[fundRequest.symbol].decimals;
       const provider = rootState.network.provider;
 
       const loanAssets = mergeArrays([(
@@ -1850,19 +1885,13 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'stake LP token');
 
-      // const firstAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'AddLiquidity').args.firstAmount, firstDecimals); // how much of tokenA was used
-      // const secondAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'AddLiquidity').args.secondAmount, secondDecimals); //how much of tokenB was used
-      // const lpTokenCreated = formatUnits(getLog(tx, SMART_LOAN.abi, 'AddLiquidity').args.liquidity, lpTokenDecimals); //how much LP was created
-      // const firstAssetBalanceAfterTransaction = Number(state.assetBalances[provideLiquidityRequest.firstAsset]) - Number(firstAssetAmount);
-      // const secondAssetBalanceAfterTransaction = Number(state.assetBalances[provideLiquidityRequest.secondAsset]) - Number(secondAssetAmount);
-      // const lpTokenBalanceAfterTransaction = Number(state.lpBalances[provideLiquidityRequest.symbol]) + Number(lpTokenCreated);
+      console.log(getLog(tx, SMART_LOAN.abi, 'BptStaked'));
 
-      // rootState.serviceRegistry.assetBalancesExternalUpdateService
-      //     .emitExternalAssetBalanceUpdate(provideLiquidityRequest.firstAsset, firstAssetBalanceAfterTransaction, false, true);
-      // rootState.serviceRegistry.assetBalancesExternalUpdateService
-      //     .emitExternalAssetBalanceUpdate(provideLiquidityRequest.secondAsset, secondAssetBalanceAfterTransaction, false, true);
-      // rootState.serviceRegistry.assetBalancesExternalUpdateService
-      //     .emitExternalAssetBalanceUpdate(provideLiquidityRequest.symbol, lpTokenBalanceAfterTransaction, true, true);
+      const lpTokenAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'BptStaked').args.receiptTokenAmount, lpTokenDecimals);
+
+      console.log('lpTokenAmount', lpTokenAmount);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate(fundRequest.symbol, lpTokenAmount, true, true);
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {
@@ -1903,19 +1932,8 @@ export default {
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
 
-      // const firstAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'AddLiquidity').args.firstAmount, firstDecimals); // how much of tokenA was used
-      // const secondAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'AddLiquidity').args.secondAmount, secondDecimals); //how much of tokenB was used
-      // const lpTokenCreated = formatUnits(getLog(tx, SMART_LOAN.abi, 'AddLiquidity').args.liquidity, lpTokenDecimals); //how much LP was created
-      // const firstAssetBalanceAfterTransaction = Number(state.assetBalances[provideLiquidityRequest.firstAsset]) - Number(firstAssetAmount);
-      // const secondAssetBalanceAfterTransaction = Number(state.assetBalances[provideLiquidityRequest.secondAsset]) - Number(secondAssetAmount);
-      // const lpTokenBalanceAfterTransaction = Number(state.lpBalances[provideLiquidityRequest.symbol]) + Number(lpTokenCreated);
-
-      // rootState.serviceRegistry.assetBalancesExternalUpdateService
-      //     .emitExternalAssetBalanceUpdate(provideLiquidityRequest.firstAsset, firstAssetBalanceAfterTransaction, false, true);
-      // rootState.serviceRegistry.assetBalancesExternalUpdateService
-      //     .emitExternalAssetBalanceUpdate(provideLiquidityRequest.secondAsset, secondAssetBalanceAfterTransaction, false, true);
-      // rootState.serviceRegistry.assetBalancesExternalUpdateService
-      //     .emitExternalAssetBalanceUpdate(provideLiquidityRequest.symbol, lpTokenBalanceAfterTransaction, true, true);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+          .emitExternalAssetBalanceUpdate(withdrawRequest.symbol, 0, true, true);
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {

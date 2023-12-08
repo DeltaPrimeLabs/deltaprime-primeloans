@@ -1,5 +1,5 @@
 <template>
-  <div class="lp-table-row-component" :class="{'expanded': rowExpanded}">
+  <div v-if="provider" class="lp-table-row-component" :class="{'expanded': rowExpanded}">
     <div class="table__row" v-if="lpToken">
       <div class="table__cell asset">
         <DoubleAssetIcon :primary="lpToken.primary" :secondary="lpToken.secondary"></DoubleAssetIcon>
@@ -13,7 +13,7 @@
 
       <div class="table__cell table__cell--double-value farmed">
         <template
-            v-if="balancerLpBalances">
+          v-if="balancerLpBalances">
           <div class="double-value__pieces">
             <img v-if="hasNonStakedLp" src="src/assets/icons/error.svg" v-tooltip="{content: 'Your Prime Account has unstaked LP tokens. Don\'t worry! Soon we will add `Stake` function to add them to your Balance.', classes: 'info-tooltip long'}"/>
             {{ balancerLpBalances[lpToken.symbol] | smartRound }}
@@ -34,7 +34,8 @@
       <div class="table__cell table__cell--double-value apr" v-bind:class="{'apr--with-warning': lpToken.aprWarning}">
         {{ apr / 100 | percent }}
         <div class="apr-warning" v-if="lpToken.aprWarning">
-          <img src="src/assets/icons/warning.svg" v-tooltip="{content: lpToken.aprWarning, classes: 'info-tooltip long'}">
+          <img src="src/assets/icons/warning.svg"
+               v-tooltip="{content: lpToken.aprWarning, classes: 'info-tooltip long'}">
         </div>
       </div>
 
@@ -46,18 +47,18 @@
 
       <div class="table__cell actions">
         <IconButtonMenuBeta
-            class="actions__icon-button"
-            :config="addActionsConfig"
-            v-if="addActionsConfig"
-            v-on:iconButtonClick="actionClick"
-            :disabled="disableAllButtons">
+          class="actions__icon-button"
+          :config="addActionsConfig"
+          v-if="addActionsConfig"
+          v-on:iconButtonClick="actionClick"
+          :disabled="disableAllButtons">
         </IconButtonMenuBeta>
         <IconButtonMenuBeta
-            class="actions__icon-button last"
-            :config="removeActionsConfig"
-            v-if="removeActionsConfig"
-            v-on:iconButtonClick="actionClick"
-            :disabled="disableAllButtons">
+          class="actions__icon-button last"
+          :config="removeActionsConfig"
+          v-if="removeActionsConfig"
+          v-on:iconButtonClick="actionClick"
+          :disabled="disableAllButtons">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -97,6 +98,7 @@ import {formatUnits, parseUnits} from 'ethers/lib/utils';
 import DeltaIcon from "./DeltaIcon.vue";
 import FundAndStakeBalancerModal from "./FundAndStakeBalancerModal.vue";
 import UnstakeAndWithdrawBalancerV2Modal from "./UnstakeAndWithdrawBalancerV2Modal.vue";
+import {forkJoin} from "rxjs";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -117,15 +119,17 @@ export default {
   },
 
   async mounted() {
-    this.setupAddActionsConfiguration();
-    this.setupRemoveActionsConfiguration();
-    this.watchAssetBalancesDataRefreshEvent();
-    this.watchHardRefreshScheduledEvent();
-    this.watchHealth();
-    this.watchProgressBarState();
-    this.watchAssetApysRefresh();
-    this.watchExternalAssetBalanceUpdate();
-    this.setupApr();
+    this.providerService.observeProviderCreated().subscribe(() => {
+      this.setupAddActionsConfiguration();
+      this.setupRemoveActionsConfiguration();
+      this.watchAssetBalancesDataRefreshEvent();
+      this.watchHardRefreshScheduledEvent();
+      this.watchHealth();
+      this.watchProgressBarState();
+      this.watchAssetApysRefresh();
+      this.watchExternalAssetBalanceUpdate();
+      this.setupApr();
+    })
   },
 
   data() {
@@ -175,7 +179,9 @@ export default {
       'lpService',
       'healthService',
       'stakedExternalUpdateService',
-      'farmService'
+      'farmService',
+      'providerService',
+      'accountService'
     ]),
 
     hasSmartLoanContract() {
@@ -219,29 +225,29 @@ export default {
 
   methods: {
     ...mapActions('fundsStore', [
-       'fundAndStakeBalancerV2',
-       'unstakeAndWithdrawBalancerV2',
-       'provideLiquidityAndStakeBalancerV2',
-       'unstakeAndRemoveLiquidityBalancerV2'
+      'fundAndStakeBalancerV2',
+      'unstakeAndWithdrawBalancerV2',
+      'provideLiquidityAndStakeBalancerV2',
+      'unstakeAndRemoveLiquidityBalancerV2'
     ]),
     setupAddActionsConfiguration() {
       this.addActionsConfig =
-          {
-            iconSrc: 'src/assets/icons/plus.svg',
-            tooltip: 'Add',
-            menuOptions: [
-              {
-                key: 'FUND_AND_STAKE',
-                name: 'Import existing LP position'
-              },
-              {
-                key: 'PROVIDE_LIQUIDITY',
-                name: 'Create LP position',
-                disabled: !this.hasSmartLoanContract,
-                disabledInfo: 'To create LP token, you need to add some funds from you wallet first'
-              }
-            ]
-          }
+        {
+          iconSrc: 'src/assets/icons/plus.svg',
+          tooltip: 'Add',
+          menuOptions: [
+            {
+              key: 'FUND_AND_STAKE',
+              name: 'Import existing LP position'
+            },
+            {
+              key: 'PROVIDE_LIQUIDITY',
+              name: 'Create LP position',
+              disabled: !this.hasSmartLoanContract,
+              disabledInfo: 'To create LP token, you need to add some funds from you wallet first'
+            }
+          ]
+        }
     },
 
     setupRemoveActionsConfiguration() {
@@ -347,6 +353,7 @@ export default {
     openProvideLiquidityModal() {
       const modalInstance = this.openModal(ProvideLiquidityModal);
       modalInstance.lpToken = this.lpToken;
+      console.log(this.balancerLpBalances);
       modalInstance.lpTokenBalance = Number(this.balancerLpBalances[this.lpToken.symbol]);
       modalInstance.firstAssetBalance = this.assetBalances[this.lpToken.primary];
       modalInstance.secondAssetBalance = this.assetBalances[this.lpToken.secondary];
@@ -359,7 +366,7 @@ export default {
             firstAsset: this.lpToken.primary,
             secondAsset: this.lpToken.secondary,
             firstAmount: provideLiquidityEvent.firstAmount ? provideLiquidityEvent.firstAmount.toString() : '0',
-            secondAmount: provideLiquidityEvent.secondAmount ?provideLiquidityEvent.secondAmount.toString() : '0',
+            secondAmount: provideLiquidityEvent.secondAmount ? provideLiquidityEvent.secondAmount.toString() : '0',
             addedLiquidity: provideLiquidityEvent.addedLiquidity,
           };
           this.handleTransaction(this.provideLiquidityAndStakeBalancerV2, {provideLiquidityRequest: provideLiquidityRequest}, () => {
@@ -445,8 +452,10 @@ export default {
 
     watchExternalAssetBalanceUpdate() {
       this.assetBalancesExternalUpdateService.observeExternalAssetBalanceUpdate().subscribe(updateEvent => {
+        console.warn('BalancerLPTableRow.watchExternalAssetBalanceUpdate subscribe');
+        console.log(updateEvent);
         if (updateEvent.assetSymbol === this.lpToken.symbol) {
-          this.lpBalances[this.lpToken.symbol] = updateEvent.balance;
+          this.balancerLpBalances[this.lpToken.symbol] = updateEvent.balance;
           this.isBalanceEstimated = !updateEvent.isTrueData;
           this.$forceUpdate();
         }
