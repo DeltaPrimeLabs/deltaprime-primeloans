@@ -10,23 +10,23 @@ contract GmxV2FacetAvalanche is GmxV2Facet {
 
     // https://github.com/gmx-io/gmx-synthetics/blob/main/deployments/avalanche/
     // GMX contracts
-    function getGMX_V2_ROUTER() internal pure virtual override returns (address) {
+    function getGmxV2Router() internal pure virtual override returns (address) {
         return 0x820F5FfC5b525cD4d88Cd91aCf2c28F16530Cc68;
     }
 
-    function getGMX_V2_EXCHANGE_ROUTER() internal pure virtual override returns (address) {
+    function getGmxV2ExchangeRouter() internal pure virtual override returns (address) {
         return 0x11E590f6092D557bF71BaDEd50D81521674F8275;
     }
 
-    function getGMX_V2_DEPOSIT_VAULT() internal pure virtual override returns (address) {
+    function getGmxV2DepositVault() internal pure virtual override returns (address) {
         return 0x90c670825d0C62ede1c5ee9571d6d9a17A722DFF;
     }
 
-    function getGMX_V2_WITHDRAWAL_VAULT() internal pure virtual override returns (address) {
+    function getGmxV2WithdrawalVault() internal pure virtual override returns (address) {
         return 0xf5F30B10141E1F63FC11eD772931A8294a591996;
     }
 
-    function getGMX_V2_ROLE_STORE() internal pure virtual override returns (address){
+    function getGmxV2RoleStore() internal pure virtual override returns (address){
         return 0xA44F830B6a2B6fa76657a3B92C1fe74fcB7C6AfD;
     }
 

@@ -10,23 +10,23 @@ contract GmxV2FacetArbitrum is GmxV2Facet {
 
     // https://github.com/gmx-io/gmx-synthetics/blob/main/deployments/arbitrum/
     // GMX contracts
-    function getGMX_V2_ROUTER() internal pure virtual override returns (address) {
+    function getGmxV2Router() internal pure virtual override returns (address) {
         return 0x7452c558d45f8afC8c83dAe62C3f8A5BE19c71f6;
     }
 
-    function getGMX_V2_EXCHANGE_ROUTER() internal pure virtual override returns (address) {
+    function getGmxV2ExchangeRouter() internal pure virtual override returns (address) {
         return 0x7C68C7866A64FA2160F78EEaE12217FFbf871fa8;
     }
 
-    function getGMX_V2_DEPOSIT_VAULT() internal pure virtual override returns (address) {
+    function getGmxV2DepositVault() internal pure virtual override returns (address) {
         return 0xF89e77e8Dc11691C9e8757e84aaFbCD8A67d7A55;
     }
 
-    function getGMX_V2_WITHDRAWAL_VAULT() internal pure virtual override returns (address) {
+    function getGmxV2WithdrawalVault() internal pure virtual override returns (address) {
         return 0x0628D46b5D145f183AdB6Ef1f2c97eD1C4701C55;
     }
 
-    function getGMX_V2_ROLE_STORE() internal pure virtual override returns (address){
+    function getGmxV2RoleStore() internal pure virtual override returns (address){
         return 0x3c3d99FD298f679DBC2CEcd132b4eC4d0F5e6e72;
     }
 

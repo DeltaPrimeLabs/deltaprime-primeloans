@@ -31,15 +31,15 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
     bytes32 constant public CONTROLLER = keccak256(abi.encode("CONTROLLER"));
 
     // GMX contracts
-    function getGMX_V2_ROUTER() internal pure virtual returns (address);
+    function getGmxV2Router() internal pure virtual returns (address);
 
-    function getGMX_V2_EXCHANGE_ROUTER() internal pure virtual returns (address);
+    function getGmxV2ExchangeRouter() internal pure virtual returns (address);
 
-    function getGMX_V2_DEPOSIT_VAULT() internal pure virtual returns (address);
+    function getGmxV2DepositVault() internal pure virtual returns (address);
 
-    function getGMX_V2_WITHDRAWAL_VAULT() internal pure virtual returns (address);
+    function getGmxV2WithdrawalVault() internal pure virtual returns (address);
 
-    function getGMX_V2_ROLE_STORE() internal pure virtual returns (address);
+    function getGmxV2RoleStore() internal pure virtual returns (address);
 
     // Mappings
     function marketToLongToken(address market) internal virtual pure returns (address);
@@ -47,7 +47,7 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
     function marketToShortToken(address market) internal virtual pure returns (address);
 
     function isCallerAuthorized(address _caller) internal view returns (bool){
-        IRoleStore roleStore = IRoleStore(getGMX_V2_ROLE_STORE());
+        IRoleStore roleStore = IRoleStore(getGmxV2RoleStore());
         if(roleStore.hasRole(_caller, CONTROLLER)){
             return true;
         }
@@ -63,13 +63,13 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
         bytes[] memory data = new bytes[](3);
         data[0] = abi.encodeWithSelector(
             IGmxV2Router.sendWnt.selector,
-            getGMX_V2_DEPOSIT_VAULT(),
+            getGmxV2DepositVault(),
             executionFee
         );
         data[1] = abi.encodeWithSelector(
             IGmxV2Router.sendTokens.selector,
             depositedToken,
-            getGMX_V2_DEPOSIT_VAULT(),
+            getGmxV2DepositVault(),
             tokenAmount
         );
         data[2] = abi.encodeWithSelector(
@@ -90,8 +90,8 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
             })
         );
 
-        IERC20(depositedToken).approve(getGMX_V2_ROUTER(), tokenAmount);
-        BasicMulticall(getGMX_V2_EXCHANGE_ROUTER()).multicall{ value: msg.value }(data);
+        IERC20(depositedToken).approve(getGmxV2Router(), tokenAmount);
+        BasicMulticall(getGmxV2ExchangeRouter()).multicall{ value: msg.value }(data);
 
         // Simulate solvency check
         {
@@ -130,14 +130,14 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
         bytes[] memory data = new bytes[](3);
         data[0] = abi.encodeWithSelector(
             IGmxV2Router.sendWnt.selector,
-            getGMX_V2_WITHDRAWAL_VAULT(),
+            getGmxV2WithdrawalVault(),
             executionFee
         );
 
         data[1] = abi.encodeWithSelector(
             IGmxV2Router.sendTokens.selector,
             gmToken,
-            getGMX_V2_WITHDRAWAL_VAULT(),
+            getGmxV2WithdrawalVault(),
             gmAmount
         );
 
@@ -158,8 +158,8 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
             })
         );
 
-        IERC20(gmToken).approve(getGMX_V2_ROUTER(), gmAmount);
-        BasicMulticall(getGMX_V2_EXCHANGE_ROUTER()).multicall{ value: msg.value }(data);
+        IERC20(gmToken).approve(getGmxV2Router(), gmAmount);
+        BasicMulticall(getGmxV2ExchangeRouter()).multicall{ value: msg.value }(data);
 
         // Simulate solvency check
         if(msg.sender == DiamondStorageLib.contractOwner()){    // Only owner can call this method or else it's liquidator when the account is already insolvent
