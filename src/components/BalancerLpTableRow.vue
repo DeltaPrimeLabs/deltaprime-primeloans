@@ -83,22 +83,16 @@ import Chart from './Chart';
 import IconButtonMenuBeta from './IconButtonMenuBeta';
 import ColoredValueBeta from './ColoredValueBeta';
 import SmallChartBeta from './SmallChartBeta';
-import AddFromWalletModal from './AddFromWalletModal';
-import config from '../config';
 import {mapActions, mapState} from 'vuex';
 import ProvideLiquidityModal from './ProvideLiquidityModal';
 import RemoveLiquidityModal from './RemoveLiquidityModal';
-import WithdrawModal from './WithdrawModal';
 
 const ethers = require('ethers');
 import erc20ABI from '../../test/abis/ERC20.json';
 import {calculateMaxApy, fromWei} from '../utils/calculate';
-import addresses from '../../common/addresses/avalanche/token_addresses.json';
-import {formatUnits, parseUnits} from 'ethers/lib/utils';
 import DeltaIcon from "./DeltaIcon.vue";
 import StakeBalancerV2Modal from "./StakeBalancerV2Modal.vue";
 import WithdrawBalancerV2Modal from "./WithdrawBalancerV2Modal.vue";
-import {forkJoin} from "rxjs";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -148,6 +142,7 @@ export default {
       totalStaked: null,
       hasNonStakedLp: false,
       availableFarms: [],
+      nonStakedLpBalance: 0,
     };
   },
 
@@ -228,9 +223,11 @@ export default {
       'fundAndStakeBalancerV2',
       'unstakeAndWithdrawBalancerV2',
       'provideLiquidityAndStakeBalancerV2',
-      'unstakeAndRemoveLiquidityBalancerV2'
+      'unstakeAndRemoveLiquidityBalancerV2',
+      'stakeBalancerV2',
+      'withdrawBalancerV2'
     ]),
-    setupAddActionsConfiguration() {
+    setupAddActionsConfiguration(hasNonStakedLP = false) {
       this.addActionsConfig =
         {
           iconSrc: 'src/assets/icons/plus.svg',
@@ -248,9 +245,15 @@ export default {
             }
           ]
         }
+      if (hasNonStakedLP) {
+        this.addActionsConfig.menuOptions.push({
+          key: 'STAKE',
+          name: 'Stake LP tokens'
+        })
+      }
     },
 
-    setupRemoveActionsConfiguration() {
+    setupRemoveActionsConfiguration(hasNoStakedLP = false) {
       this.removeActionsConfig =
         {
           iconSrc: 'src/assets/icons/minus.svg',
@@ -268,6 +271,12 @@ export default {
             }
           ]
         }
+      if (hasNonStakedLP) {
+        this.addActionsConfig.menuOptions.push({
+          key: 'WITHDRAW',
+          name: 'Withdraw unstaked LP tokens'
+        })
+      }
     },
 
     async setupApr() {
@@ -476,22 +485,11 @@ export default {
 
     async setupHasNonStakedLp() {
       const tokenContract = new ethers.Contract(this.lpToken.address, erc20ABI, this.provider.getSigner());
-      this.hasNonStakedLp = fromWei(await tokenContract.balanceOf(this.smartLoanContract.address)) > 0;
-      if (this.hasNonStakedLp) {
-        this.addActionsConfig.menuOptions.push(
-            {
-              key: 'STAKE',
-              name: 'Stake LP tokens'
-            },
-        );
-
-        this.removeActionsConfig.menuOptions.push(
-            {
-              key: 'WITHDRAW',
-              name: 'Withdraw unstaked LP tokens'
-            },
-        );
-      }
+      let nonStakedLpBalance = fromWei(await tokenContract.balanceOf(this.smartLoanContract.address));
+      this.hasNonStakedLp = nonStakedLpBalance > 0;
+      this.nonStakedLpBalance = nonStakedLpBalance;
+      this.setupAddActionsConfiguration(this.hasNonStakedLp);
+      this.setupRemoveActionsConfiguration(this.hasNonStakedLp);
     },
 
     watchAssetBalancesDataRefreshEvent() {
@@ -529,6 +527,7 @@ export default {
         if (updateEvent.assetSymbol === this.lpToken.symbol) {
           this.balancerLpBalances[this.lpToken.symbol] = updateEvent.balance;
           this.isBalanceEstimated = !updateEvent.isTrueData;
+          this.setupHasNonStakedLp();
           this.$forceUpdate();
         }
       })

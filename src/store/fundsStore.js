@@ -714,7 +714,6 @@ export default {
       assetBalances.forEach(
         asset => {
           let symbol = fromBytes32(asset.name);
-          console.log(symbol)
           if (config.ASSETS_CONFIG[symbol]) {
             balances[symbol] = formatUnits(asset.balance.toString(), config.ASSETS_CONFIG[symbol].decimals);
           }
@@ -789,7 +788,6 @@ export default {
 
       const requests = []
       const abi = ['function getUnderlyingAssets(uint256) public view returns (uint256, uint256)'];
-      console.log(state.concentratedLpAssets);
       // noinspection ES6MissingAwait
       Object.keys(state.concentratedLpAssets).forEach(async assetSymbol => {
         const poolContract = await new ethers.Contract(concentratedLpAssets[assetSymbol].address, abi, provider.getSigner());
@@ -1753,28 +1751,13 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'create LP token');
 
-      console.warn('provideLiquidityAndStakeBalancerV2');
-
-
-      console.log(getLog(tx, SMART_LOAN.abi, 'Staked').args);
-      console.log(JSON.stringify(getLog(tx, SMART_LOAN.abi, 'Staked').args));
-      console.log(getLog(tx, SMART_LOAN.abi, 'Staked'));
-
       const firstAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Staked').args.depositTokenAmounts[0], firstDecimals); // how much of tokenA was used
       const secondAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Staked').args.depositTokenAmounts[1], secondDecimals); //how much of tokenB was used
       const lpTokenCreated = formatUnits(getLog(tx, SMART_LOAN.abi, 'Staked').args.receiptTokenAmount, lpTokenDecimals); //how much LP was created
 
-      console.log('firstAssetAmount', firstAssetAmount);
-      console.log('secondAssetAmount', secondAssetAmount);
-      console.log('lpTokenCreated', lpTokenCreated);
-
       const firstAssetBalanceAfterTransaction = Number(state.assetBalances[provideLiquidityRequest.firstAsset]) - Number(firstAssetAmount);
       const secondAssetBalanceAfterTransaction = Number(state.assetBalances[provideLiquidityRequest.secondAsset]) - Number(secondAssetAmount);
       const lpTokenBalanceAfterTransaction = Number(state.balancerLpBalances[provideLiquidityRequest.symbol]) + Number(lpTokenCreated);
-
-      console.log('firstAssetBalanceAfterTransaction', firstAssetBalanceAfterTransaction);
-      console.log('secondAssetBalanceAfterTransaction', secondAssetBalanceAfterTransaction);
-      console.log('lpTokenBalanceAfterTransaction', lpTokenBalanceAfterTransaction);
 
       rootState.serviceRegistry.assetBalancesExternalUpdateService
           .emitExternalAssetBalanceUpdate(provideLiquidityRequest.firstAsset, firstAssetBalanceAfterTransaction, false, true);
@@ -1794,7 +1777,6 @@ export default {
     },
 
     async unstakeAndRemoveLiquidityBalancerV2({state, rootState, commit, dispatch}, {removeLiquidityRequest}) {
-      console.log(removeLiquidityRequest);
 
       const targetAssetDecimals = config.ASSETS_CONFIG[removeLiquidityRequest.targetAsset].decimals;
       const lpTokenDecimals = config.BALANCER_LP_ASSETS_CONFIG[removeLiquidityRequest.symbol].decimals;
@@ -1825,24 +1807,11 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'unwind LP token');
 
-      console.warn('provideLiquidityAndStakeBalancerV2');
-
-
-      console.log(getLog(tx, SMART_LOAN.abi, 'Unstaked').args);
-      console.log(JSON.stringify(getLog(tx, SMART_LOAN.abi, 'Unstaked').args));
-      console.log(getLog(tx, SMART_LOAN.abi, 'Unstaked'));
-
       const targetAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Unstaked').args.depositTokenAmounts[0], targetAssetDecimals); // how much of tokenA was used
       const lpTokenUnwound = formatUnits(getLog(tx, SMART_LOAN.abi, 'Unstaked').args.receiptTokenAmount, lpTokenDecimals); //how much LP was created
 
-      console.log('targetAssetAmount', targetAssetAmount);
-      console.log('lpTokenUnwound', lpTokenUnwound);
-
       const targetAssetBalanceAfterTransaction = Number(state.assetBalances[removeLiquidityRequest.targetAsset]) + Number(targetAssetAmount);
       const lpTokenBalanceAfterTransaction = Number(state.balancerLpBalances[removeLiquidityRequest.symbol]) - Number(lpTokenUnwound);
-
-      console.log('targetAssetBalanceAfterTransaction', targetAssetBalanceAfterTransaction);
-      console.log('lpTokenBalanceAfterTransaction', lpTokenBalanceAfterTransaction);
 
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate(removeLiquidityRequest.targetAsset, targetAssetBalanceAfterTransaction, false, true);
@@ -1861,7 +1830,6 @@ export default {
 
     async fundAndStakeBalancerV2({state, rootState, commit, dispatch}, {fundRequest}) {
 
-      console.log(fundRequest);
       const lpTokenDecimals = config.BALANCER_LP_ASSETS_CONFIG[fundRequest.symbol].decimals;
       const provider = rootState.network.provider;
 
@@ -1896,11 +1864,9 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'stake LP token');
 
-      console.log(getLog(tx, SMART_LOAN.abi, 'BptStaked'));
 
       const lpTokenAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'BptStaked').args.receiptTokenAmount, lpTokenDecimals);
 
-      console.log('lpTokenAmount', lpTokenAmount);
       rootState.serviceRegistry.assetBalancesExternalUpdateService
           .emitExternalAssetBalanceUpdate(fundRequest.symbol, lpTokenAmount, true, true);
 
@@ -1974,23 +1940,25 @@ export default {
       const transaction = await wrappedContract.withdraw(toBytes32(withdrawRequest.symbol), bptBalance);
       let tx = await awaitConfirmation(transaction, provider, 'withdraw LP token');
 
-      // rootState.serviceRegistry.progressBarService.requestProgressBar();
-      // rootState.serviceRegistry.modalService.closeModal();
-      //
-      // rootState.serviceRegistry.assetBalancesExternalUpdateService
-      //     .emitExternalAssetBalanceUpdate(withdrawRequest.symbol, 0, true, true);
-      //
-      // rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
-      // setTimeout(() => {
-      //   rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
-      // }, SUCCESS_DELAY_AFTER_TRANSACTION);
-      //
-      // setTimeout(async () => {
-      //   await dispatch('updateFunds');
-      // }, config.refreshDelay);
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate(withdrawRequest.symbol, 0, true, true);
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, config.refreshDelay);
     },
 
     async stakeBalancerV2({state, rootState, commit, dispatch}, {fundRequest}) {
+      const lpTokenDecimals = config.BALANCER_LP_ASSETS_CONFIG[fundRequest.symbol].decimals;
+
       const provider = rootState.network.provider;
 
       const loanAssets = mergeArrays([(
@@ -2003,7 +1971,7 @@ export default {
       const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
 
       const bptToken = new ethers.Contract(config.BALANCER_LP_ASSETS_CONFIG[fundRequest.symbol].address, erc20ABI, provider.getSigner());
-      let bptBalance = await bptToken.balanceOf(state.smartLoanContract.address);
+      const bptBalance = await bptToken.balanceOf(state.smartLoanContract.address);
 
       const transaction = await wrappedContract.stakeBalancerV2(fundRequest.poolId, bptBalance);
 
@@ -2012,21 +1980,18 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'stake LP token');
 
-      // console.log(getLog(tx, SMART_LOAN.abi, 'BptStaked'));
-      //
-      // const lpTokenAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'BptStaked').args.receiptTokenAmount, lpTokenDecimals);
-      //
-      // rootState.serviceRegistry.assetBalancesExternalUpdateService
-      //     .emitExternalAssetBalanceUpdate(fundRequest.symbol, lpTokenAmount, true, true);
-      //
-      // rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
-      // setTimeout(() => {
-      //   rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
-      // }, SUCCESS_DELAY_AFTER_TRANSACTION);
-      //
-      // setTimeout(async () => {
-      //   await dispatch('updateFunds');
-      // }, config.refreshDelay);
+      const lpTokenBalanceAfterTransaction = formatUnits(bptBalance, lpTokenDecimals)
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate(fundRequest.symbol, lpTokenBalanceAfterTransaction, true, true);
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, config.refreshDelay);
     },
 
     async provideLiquidityConcentratedPool({state, rootState, commit, dispatch}, {provideLiquidityRequest}) {
@@ -2328,8 +2293,6 @@ export default {
     },
 
     async claimTraderJoeRewards({state, rootState, dispatch}, {claimRewardsRequest}) {
-      console.log('claimRewardsRequest')
-      console.log(claimRewardsRequest)
       const provider = rootState.network.provider;
 
       const loanAssets = mergeArrays([(
@@ -2494,7 +2457,6 @@ export default {
 
       let executionFeeWei = toWei(addLiquidityRequest.executionFee.toFixed(18));
 
-      console.log('addLiquidityRequest.method: ', addLiquidityRequest.method)
       const transaction = await wrappedContract[addLiquidityRequest.method](
           addLiquidityRequest.isLongToken,
           sourceAmount,
@@ -2538,8 +2500,6 @@ export default {
 
       const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
 
-      console.log('removeLiquidityRequest')
-      console.log(removeLiquidityRequest)
       let gmDecimals = config.GMX_V2_ASSETS_CONFIG[removeLiquidityRequest.gmToken].decimals;
       let gmAmount = parseUnits(parseFloat(removeLiquidityRequest.gmAmount).toFixed(gmDecimals), gmDecimals);
 
@@ -2586,7 +2546,6 @@ export default {
     },
 
     async borrow({state, rootState, commit, dispatch}, {borrowRequest}) {
-      console.log('borrowRequest', borrowRequest);
       const provider = rootState.network.provider;
 
       const loanAssets = mergeArrays([(
@@ -2681,7 +2640,6 @@ export default {
     },
 
     async swap({state, rootState, commit, dispatch}, {swapRequest}) {
-      console.log('swapRequest', swapRequest);
       const provider = rootState.network.provider;
 
       const loanAssets = mergeArrays([(
