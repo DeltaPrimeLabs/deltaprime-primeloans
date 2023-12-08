@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 import "../lib/SolvencyMethods.sol";
 import "../interfaces/ITokenManager.sol";
+import "./SmartLoanLiquidationFacet.sol";
 import "../interfaces/facets/IYieldYakRouter.sol";
 
 //this path is updated during deployment
@@ -39,6 +40,13 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         tokenManager.increaseProtocolExposure(_fundedAsset, _amount * 1e18 / 10 ** token.decimals());
 
         emit Funded(msg.sender, _fundedAsset, _amount, block.timestamp);
+    }
+
+    function addOwnedAsset(bytes32 _asset, address _address) external onlyWhitelistedLiquidators {
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        require(tokenManager.isTokenAssetActive(_address), "Asset not supported");
+
+        DiamondStorageLib.addOwnedAsset(_asset, _address);
     }
 
     /**
@@ -155,6 +163,17 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         }
 
         emit Repaid(msg.sender, _asset, _amount, block.timestamp);
+    }
+
+    // TODO: Separate manager for unfreezing - not liquidators
+    function unfreezeAccount() external onlyWhitelistedLiquidators {
+        DiamondStorageLib.unfreezeAccount(msg.sender);
+    }
+
+    modifier onlyWhitelistedLiquidators() {
+        // External call in order to execute this method in the SmartLoanDiamondBeacon contract storage
+        require(SmartLoanLiquidationFacet(DeploymentConstants.getDiamondAddress()).isLiquidatorWhitelisted(msg.sender), "Only whitelisted liquidators can execute this method");
+        _;
     }
 
     /**
