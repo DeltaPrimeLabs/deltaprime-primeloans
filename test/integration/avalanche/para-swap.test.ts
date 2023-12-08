@@ -2,7 +2,7 @@ import {ethers, waffle} from 'hardhat';
 import chai from 'chai';
 import {BigNumber, Contract} from 'ethers';
 import {solidity} from "ethereum-waffle";
-import { constructSimpleSDK, SimpleFetchSDK, SwapSide } from '@paraswap/sdk';
+import { constructSimpleSDK, ContractMethod, SimpleFetchSDK, SwapSide } from '@paraswap/sdk';
 import axios from 'axios';
 
 import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json';
@@ -36,7 +36,7 @@ import {
     PoolAsset,
     PoolInitializationObject,
     recompileConstantsFile,
-    paraSwapRouteToSimpleData
+    parseParaSwapRouteData
 } from "../../_helpers";
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import {parseUnits} from "ethers/lib/utils";
@@ -70,13 +70,16 @@ describe('ParaSwap', () => {
             MOCK_PRICES: any,
             diamondAddress: any;
 
-        const getSwapData = async (srcToken: keyof typeof TOKEN_ADDRESSES, destToken: keyof typeof TOKEN_ADDRESSES, srcAmount: any) => {
+        const getSwapData = async (srcToken: keyof typeof TOKEN_ADDRESSES, destToken: keyof typeof TOKEN_ADDRESSES, srcAmount: any, swapMethod: ContractMethod) => {
             const priceRoute = await paraSwapMin.swap.getRate({
                 srcToken: TOKEN_ADDRESSES[srcToken],
                 destToken: TOKEN_ADDRESSES[destToken],
                 amount: srcAmount.toString(),
                 userAddress: wrappedLoan.address,
                 side: SwapSide.SELL,
+                options: {
+                    includeContractMethods: [swapMethod]
+                }
             });
             const txParams = await paraSwapMin.swap.buildTx({
                 srcToken: priceRoute.srcToken,
@@ -89,7 +92,7 @@ describe('ParaSwap', () => {
             }, {
                 ignoreChecks: true,
             });
-            const swapData = paraSwapRouteToSimpleData(txParams);
+            const swapData = parseParaSwapRouteData(txParams);
             return swapData;
         };
 
@@ -174,8 +177,8 @@ describe('ParaSwap', () => {
         });
 
         it("should fail to swap as a non-owner", async () => {
-            const swapData = await getSwapData('AVAX', 'USDC', toWei('10'));
-            await expect(nonOwnerWrappedLoan.paraSwap(swapData)).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            const swapData = await getSwapData('AVAX', 'USDC', toWei('10'), ContractMethod.simpleSwap);
+            await expect(nonOwnerWrappedLoan.paraSwap(swapData.selector, swapData.data, TOKEN_ADDRESSES['AVAX'], toWei('10'), TOKEN_ADDRESSES['USDC'], 0)).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
         });
 
         it('should swap funds: AVAX -> USDC', async () => {
@@ -185,8 +188,8 @@ describe('ParaSwap', () => {
 
             expect(await loanOwnsAsset("USDC")).to.be.false;
 
-            const swapData = await getSwapData('AVAX', 'USDC', toWei('10'));
-            await wrappedLoan.paraSwap(swapData);
+            const swapData = await getSwapData('AVAX', 'USDC', toWei('10'), ContractMethod.simpleSwap);
+            await wrappedLoan.paraSwap(swapData.selector, swapData.data, TOKEN_ADDRESSES['AVAX'], toWei('10'), TOKEN_ADDRESSES['USDC'], parseUnits((tokensPrices.get("AVAX")! * 9.8).toFixed(6), 6));
 
             expect(await loanOwnsAsset("USDC")).to.be.true;
 
@@ -203,8 +206,9 @@ describe('ParaSwap', () => {
             expect(await loanOwnsAsset("ETH")).to.be.false;
             let usdcBalance = await wrappedLoan.getBalance(toBytes32('USDC'));
 
-            const swapData = await getSwapData('USDC', 'ETH', usdcBalance);
-            await wrappedLoan.paraSwap(swapData);
+            const swapData = await getSwapData('USDC', 'ETH', usdcBalance, ContractMethod.megaSwap);
+            const minOut = formatUnits(usdcBalance, 6) * tokensPrices.get("USDC")! / tokensPrices.get("ETH")!;
+            await wrappedLoan.paraSwap(swapData.selector, swapData.data, TOKEN_ADDRESSES['USDC'], usdcBalance, TOKEN_ADDRESSES['ETH'], toWei((minOut * 0.98).toString()));
 
             expect(await loanOwnsAsset("USDC")).to.be.false;
             expect(await loanOwnsAsset("ETH")).to.be.true;
@@ -214,16 +218,38 @@ describe('ParaSwap', () => {
             expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 0.5);
         });
 
-        it('should swap funds: ETH -> USDC', async () => {
+        it('should swap half funds: ETH -> USDC', async () => {
             let initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
             let initialHR = fromWei(await wrappedLoan.getHealthRatio());
             let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
 
             expect(await loanOwnsAsset("USDC")).to.be.false;
             let ethBalance = await wrappedLoan.getBalance(toBytes32('ETH'));
+            let swapAmount = ethBalance.div(2);
 
-            const swapData = await getSwapData('ETH', 'USDC', ethBalance);
-            await wrappedLoan.paraSwap(swapData);
+            const swapData = await getSwapData('ETH', 'USDC', swapAmount, ContractMethod.multiSwap);
+            const minOut = formatUnits(swapAmount, 18) * tokensPrices.get("ETH")!;
+            await wrappedLoan.paraSwap(swapData.selector, swapData.data, TOKEN_ADDRESSES['ETH'], swapAmount, TOKEN_ADDRESSES['USDC'], parseUnits((minOut * 0.98).toFixed(6), 6));
+
+            expect(await loanOwnsAsset("ETH")).to.be.true;
+            expect(await loanOwnsAsset("USDC")).to.be.true;
+
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(initialTotalValue, 0.5);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.eq(initialHR);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 0.5);
+        });
+
+        it('should swap half funds: ETH -> USDC', async () => {
+            let initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+            let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
+
+            expect(await loanOwnsAsset("USDC")).to.be.true;
+            let ethBalance = await wrappedLoan.getBalance(toBytes32('ETH'));
+
+            const swapData = await getSwapData('ETH', 'USDC', ethBalance, ContractMethod.directUniV3Swap);
+            const minOut = formatUnits(ethBalance, 18) * tokensPrices.get("ETH")!;
+            await wrappedLoan.paraSwap(swapData.selector, swapData.data, TOKEN_ADDRESSES['ETH'], ethBalance, TOKEN_ADDRESSES['USDC'], parseUnits((minOut * 0.98).toFixed(6), 6));
 
             expect(await loanOwnsAsset("ETH")).to.be.false;
             expect(await loanOwnsAsset("USDC")).to.be.true;
