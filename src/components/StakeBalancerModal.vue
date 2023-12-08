@@ -35,7 +35,7 @@ import TransactionResultSummaryBeta from './TransactionResultSummaryBeta';
 import Button from './Button';
 
 export default {
-  name: 'StakeBalancerModal',
+  name: 'StakeBalancerV2Modal',
   components: {
     Button,
     TransactionResultSummaryBeta,

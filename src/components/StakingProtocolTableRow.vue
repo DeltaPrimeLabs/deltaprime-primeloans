@@ -98,7 +98,7 @@ import InfoIcon from "./InfoIcon.vue";
 import AddFromWalletModal from "./AddFromWalletModal.vue";
 import erc20ABI from "../../test/abis/ERC20.json";
 import WithdrawModal from "./WithdrawModal.vue";
-import StakeBalancerModal from "./StakeBalancerModal.vue";
+import StakeBalancerV2Modal from "./StakeBalancerV2Modal.vue";
 
 const ethers = require('ethers');
 
@@ -312,7 +312,7 @@ export default {
         return;
       }
 
-      const modalInstance = this.openModal(StakeBalancerModal);
+      const modalInstance = this.openModal(StakeBalancerV2Modal);
       modalInstance.unstake = false;
 
       modalInstance.$on('STAKE', (stakeValue) => {
@@ -330,7 +330,7 @@ export default {
         return;
       }
 
-      const modalInstance = this.openModal(StakeBalancerModal);
+      const modalInstance = this.openModal(StakeBalancerV2Modal);
       modalInstance.unstake = true;
 
       modalInstance.$on('UNSTAKE', (stakeValue) => {

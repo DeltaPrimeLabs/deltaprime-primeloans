@@ -2,12 +2,12 @@
   <div id="modal" class="claim-traderjoe-rewards-modal-component modal-component">
     <Modal>
       <div class="modal__title">
-        Import Balancer LP tokens
+        {{ title }}
       </div>
 
       <div class="modal-top-desc">
         <div class="rewards-info">
-          Your Balancer position will be imported to your Prime Account. If you don't see your BPT tokens here, please unstake them first on the Balancer website.
+          {{ description }}
         </div>
       </div>
 
@@ -34,7 +34,7 @@ import TransactionResultSummaryBeta from './TransactionResultSummaryBeta';
 import Button from './Button';
 
 export default {
-  name: 'FundAndStakeBalancerModal',
+  name: 'StakeBalancerV2Modal',
   components: {
     Button,
     TransactionResultSummaryBeta,
@@ -42,6 +42,8 @@ export default {
   },
 
   props: {
+    title: null,
+    description: null,
     walletAssetBalance: 0
   },
 
@@ -54,7 +56,7 @@ export default {
   methods: {
     submit() {
       this.transactionOngoing = true;
-      this.$emit('FUND_AND_STAKE', true);
+      this.$emit('STAKE', true);
     },
   }
 };

@@ -1701,6 +1701,17 @@ export default {
 
       let txData;
 
+      const firstTokenContract = new ethers.Contract(TOKEN_ADDRESSES[provideLiquidityRequest.firstAsset], erc20ABI, provider.getSigner());
+      const secondTokenContract = new ethers.Contract(TOKEN_ADDRESSES[provideLiquidityRequest.secondAsset], erc20ABI, provider.getSigner());
+
+      let firstAmountWei = parseUnits(parseFloat(provideLiquidityRequest.firstAmount).toFixed(firstDecimals), BigNumber.from(firstDecimals.toString()));
+      let secondAmountWei = parseUnits(parseFloat(provideLiquidityRequest.secondAmount).toFixed(secondDecimals), BigNumber.from(secondDecimals.toString()));
+      let firstBalance = await firstTokenContract.balanceOf(state.smartLoanContract.address);
+      let secondBalance = await secondTokenContract.balanceOf(state.smartLoanContract.address);
+
+      firstAmountWei = firstAmountWei.gt(firstBalance) ? firstBalance : firstAmountWei;
+      secondAmountWei = secondAmountWei.gt(secondBalance) ? secondBalance : secondAmountWei;
+
       if ( config.BALANCER_LP_ASSETS_CONFIG[provideLiquidityRequest.symbol].firstOfTokensIsPool) {
         txData = [
           provideLiquidityRequest.poolId,
@@ -1712,7 +1723,7 @@ export default {
           [
             0,
             0,
-            parseUnits(parseFloat(provideLiquidityRequest.secondAmount).toFixed(secondDecimals), BigNumber.from(secondDecimals.toString())),
+            secondAmountWei
           ],
           //TODO: check slippage
           // toWei('0.0001')
@@ -1726,8 +1737,8 @@ export default {
             config.ASSETS_CONFIG[provideLiquidityRequest.secondAsset].address
           ],
           [
-            parseUnits(parseFloat(provideLiquidityRequest.firstAmount).toFixed(firstDecimals), BigNumber.from(firstDecimals.toString())),
-            parseUnits(parseFloat(provideLiquidityRequest.secondAmount).toFixed(secondDecimals), BigNumber.from(secondDecimals.toString())),
+            firstAmountWei,
+            secondAmountWei
           ],
           //TODO: check slippage
           // toWei('0.0001')
@@ -1945,6 +1956,78 @@ export default {
       }, config.refreshDelay);
     },
 
+    async withdrawBalancerV2({state, rootState, commit, dispatch}, {withdrawRequest}) {
+      const provider = rootState.network.provider;
+
+      const loanAssets = mergeArrays([(
+          await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+        [withdrawRequest.symbol]
+      ]);
+
+      const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
+
+      const bptToken = new ethers.Contract(config.BALANCER_LP_ASSETS_CONFIG[withdrawRequest.symbol].address, erc20ABI, provider.getSigner());
+      const bptBalance =  await bptToken.balanceOf(state.smartLoanContract.address);
+
+      const transaction = await wrappedContract.withdraw(toBytes32(withdrawRequest.symbol), bptBalance);
+      let tx = await awaitConfirmation(transaction, provider, 'withdraw LP token');
+
+      // rootState.serviceRegistry.progressBarService.requestProgressBar();
+      // rootState.serviceRegistry.modalService.closeModal();
+      //
+      // rootState.serviceRegistry.assetBalancesExternalUpdateService
+      //     .emitExternalAssetBalanceUpdate(withdrawRequest.symbol, 0, true, true);
+      //
+      // rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      // setTimeout(() => {
+      //   rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      // }, SUCCESS_DELAY_AFTER_TRANSACTION);
+      //
+      // setTimeout(async () => {
+      //   await dispatch('updateFunds');
+      // }, config.refreshDelay);
+    },
+
+    async stakeBalancerV2({state, rootState, commit, dispatch}, {fundRequest}) {
+      const provider = rootState.network.provider;
+
+      const loanAssets = mergeArrays([(
+          await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+        [fundRequest.symbol]
+      ]);
+
+      const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
+
+      const bptToken = new ethers.Contract(config.BALANCER_LP_ASSETS_CONFIG[fundRequest.symbol].address, erc20ABI, provider.getSigner());
+      let bptBalance = await bptToken.balanceOf(state.smartLoanContract.address);
+
+      const transaction = await wrappedContract.stakeBalancerV2(fundRequest.poolId, bptBalance);
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      let tx = await awaitConfirmation(transaction, provider, 'stake LP token');
+
+      // console.log(getLog(tx, SMART_LOAN.abi, 'BptStaked'));
+      //
+      // const lpTokenAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'BptStaked').args.receiptTokenAmount, lpTokenDecimals);
+      //
+      // rootState.serviceRegistry.assetBalancesExternalUpdateService
+      //     .emitExternalAssetBalanceUpdate(fundRequest.symbol, lpTokenAmount, true, true);
+      //
+      // rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      // setTimeout(() => {
+      //   rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      // }, SUCCESS_DELAY_AFTER_TRANSACTION);
+      //
+      // setTimeout(async () => {
+      //   await dispatch('updateFunds');
+      // }, config.refreshDelay);
+    },
 
     async provideLiquidityConcentratedPool({state, rootState, commit, dispatch}, {provideLiquidityRequest}) {
       const provider = rootState.network.provider;

@@ -7,7 +7,7 @@
 
       <div class="modal-top-desc">
         <div class="rewards-info">
-          Your Balancer position will be unstaked and exported to your wallet.
+          {{description}}
         </div>
       </div>
 
@@ -50,6 +50,8 @@ export default {
   },
 
   props: {
+    title: null,
+    description: null,
     assetBalances: null,
     debtsPerAsset: null,
     balance: 0,
@@ -73,7 +75,7 @@ export default {
       const unstakeEvent = {
       };
 
-      this.$emit('UNSTAKE_AND_WITHDRAW', unstakeEvent);
+      this.$emit('WITHDRAW', unstakeEvent);
     },
 
     initiate() {
@@ -81,14 +83,12 @@ export default {
     },
 
     setupValidators() {
-      console.log('setupValidators')
       this.canRepayAllDebts = Object.values(this.debtsPerAsset).every(
           debt => {
             let balance = parseFloat(this.assetBalances[debt.asset]);
             return parseFloat(debt.debt) <= balance;
           }
       );
-      console.log('this.canRepayAllDebts: ', this.canRepayAllDebts)
     },
   }
 };
