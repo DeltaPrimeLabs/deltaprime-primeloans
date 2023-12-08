@@ -243,8 +243,8 @@ export default {
             {
               key: 'PROVIDE_LIQUIDITY',
               name: 'Create LP position',
-              disabled: !this.hasSmartLoanContract,
-              disabledInfo: 'To create LP token, you need to add some funds from you wallet first'
+              // disabled: !this.hasSmartLoanContract,
+              // disabledInfo: 'To create LP token, you need to add some funds from you wallet first'
             }
           ]
         }
@@ -259,12 +259,12 @@ export default {
             {
               key: 'UNSTAKE_AND_WITHDRAW',
               name: 'Export LP position',
-              disabled: !this.hasSmartLoanContract,
+              // disabled: !this.hasSmartLoanContract,
             },
             {
               key: 'REMOVE_LIQUIDITY',
               name: 'Unwind LP position',
-              disabled: !this.hasSmartLoanContract,
+              // disabled: !this.hasSmartLoanContract,
             }
           ]
         }
