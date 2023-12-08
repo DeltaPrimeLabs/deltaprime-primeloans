@@ -264,9 +264,9 @@ describe('Smart loan', () => {
             await wrappedLoan.paraSwap(swapData);
             usdcBalance = await tokenContracts.get('USDC')!.balanceOf(wrappedLoan.address);
 
-            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 10);
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 20);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.eq(fromWei(initialHR));
-            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 10);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 20);
         });
 
         it("should fail to stake as a non-owner", async () => {

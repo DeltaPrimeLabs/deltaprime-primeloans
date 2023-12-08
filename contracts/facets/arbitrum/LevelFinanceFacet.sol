@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: efca9304e9053397d6f95875b33c7dfe2935f72b;
+// Last deployed from commit: 600afd729b3c98da58e0b3371833b7184bb99bc8;
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -937,6 +937,7 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         IERC20Metadata llpToken = IERC20Metadata(pidToLLPToken(pid));
         ILevelFinance farmingContract = ILevelFinance(LEVEL_FARMING);
 
+        require(pid == 0, "Jnr and Mze tranches are no longer supported");
         require(llpToken.balanceOf(msg.sender) >= amount, "amount > balanceOf LLP");
         require(llpToken.allowance(msg.sender, address(this)) >= amount, "insufficient ERC20 allowance");
 
