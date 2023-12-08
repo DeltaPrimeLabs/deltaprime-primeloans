@@ -253,7 +253,7 @@ export default {
       }
     },
 
-    setupRemoveActionsConfiguration(hasNoStakedLP = false) {
+    setupRemoveActionsConfiguration(hasNonStakedLP = false) {
       this.removeActionsConfig =
         {
           iconSrc: 'src/assets/icons/minus.svg',
