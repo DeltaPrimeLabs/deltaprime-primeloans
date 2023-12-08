@@ -11,4 +11,11 @@ interface IRatesCalculator {
     function calculateBorrowingRate(uint256 totalLoans, uint256 totalDeposits) external view returns (uint256);
 
     function calculateDepositRate(uint256 totalLoans, uint256 totalDeposits) external view returns (uint256);
+
+    function setUtilisationValues(
+        uint256[4] memory slopes,
+        uint256[4] memory offsets,
+        uint256[3] memory breakpoints,
+        uint256 maxRate
+    ) external;
 }
