@@ -588,7 +588,7 @@ export default {
     },
     setupGmIncentivesTableHeaderConfig() {
       this.gmIncentivesTableHeaderConfig = {
-        gridTemplateColumns: '160px repeat(4, 1fr) 50px',
+        gridTemplateColumns: '160px repeat(5, 1fr) 50px',
         cells: [
           {
             label: 'Total eligible TVL',
@@ -612,11 +612,18 @@ export default {
             tooltip: `The dollarvalue you receive ARB emissions over. This is calculated as: Total GM deposits - Collateral value.`
           },
           {
-            label: 'APR Boost',
+            label: '1x APR Boost',
             sortable: false,
             class: 'balance',
             id: 'BALANCE',
             tooltip: `The APR you receive over your eligible TVL.`
+          },
+          {
+            label: 'Max APR boost',
+            sortable: false,
+            class: 'balance',
+            id: 'BALANCE',
+            tooltip: `The boost APR received if you would borrow enough to get health to 10%, and put your total value into GM pools.`
           },
           {
             label: 'ARB collected',

@@ -5,13 +5,17 @@
         {{ totalLeveragedGm | usd }}
       </div>
       <div class="table__cell table__cell--double-value mission">
+        <img v-if="gmTvl && gmTvl > 1000000" class="milestone-tick" width="16px" src="src/assets/icons/check.png" v-tooltip="{content: 'Milestone completed!', classes: 'info-tooltip long'}"/>
         <bar-gauge-beta v-if="gmTvl" v-tooltip="{content: `Grant milestone completion: $${(gmTvl / 1000000).toFixed(1)}M / $3M`, classes: 'info-tooltip'}" :min="0" :max="3000000" :value="gmTvl" :width="108"></bar-gauge-beta>
       </div>
       <div class="table__cell table__cell--double-value leveraged">
         {{ leveragedGm | usd}}
       </div>
       <div class="table__cell table__cell--double-value boost-apy">
-        <span><b>{{ gmBoostApy | percent }}</b><img v-tooltip="{content: `Including boost APR from the GM grant.`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span>
+        <span><b>{{ gmBoostApy | percent }}</b><img v-tooltip="{content: `Boost APR from the GM grant.`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span>
+      </div>
+      <div class="table__cell table__cell--double-value boost-apy">
+        <span><b>{{ maxBoostApr | percent }}</b><img src="src/assets/icons/stars.png" class="stars-icon"></span>
       </div>
       <div class="table__cell table__cell--double-value arb-collected">
         {{collectedArb ? collectedArb.toFixed(2) : 0}}
@@ -96,6 +100,10 @@ export default {
 
       return apy ? 10000 / (7 * 24 * 6) / apy * 6 * 24 * 365 : 0;
     },
+    maxBoostApr() {
+      if (!this.gmBoostApy) return;
+      return 4.5 * this.gmBoostApy;
+    },
     leveragedGm() {
       if (!this.gmxV2Balances || !this.gmxV2Assets || !this.getCollateral) return 0;
 
@@ -142,7 +150,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: 160px repeat(4, 1fr) 50px;
+    grid-template-columns: 160px repeat(5, 1fr) 50px;
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;
@@ -179,6 +187,10 @@ export default {
     width: 20px;
     margin-left: 2px;
     transform: translateY(-2px);
+  }
+
+  .milestone-tick {
+    margin-right: 10px;
   }
 }
 
