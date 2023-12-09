@@ -127,8 +127,8 @@ export default {
 
     miningApy() {
       if (!this.pool || this.pool.tvl === 0) return 0;
-      return (config.chainId === 42161) ?  1000 * 365 / 4 / (this.pool.tvl * this.pool.assetPrice)
-          : Math.max((1 - this.pool.tvl * this.pool.assetPrice / 4000000) * 0.1, 0);
+      return (config.chainId === 42161) ?  0.75 * 1000 * 365 / 4 / (this.pool.tvl * this.pool.assetPrice)
+          : 0.75 * Math.max((1 - this.pool.tvl * this.pool.assetPrice / 4000000) * 0.1, 0);
       },
 
     getModalHeight() {
