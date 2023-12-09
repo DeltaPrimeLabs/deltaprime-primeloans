@@ -350,6 +350,8 @@ export default {
             this.lpBalances,
             this.concentratedLpAssets,
             this.concentratedLpBalances,
+            this.balancerLpAssets,
+            this.balancerLpBalances,
             this.levelLpAssets,
             this.levelLpBalances,
             this.gmxV2Assets,
