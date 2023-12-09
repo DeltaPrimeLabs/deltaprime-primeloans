@@ -27,4 +27,12 @@ interface IBalancerV2Facet {
 
     function claimRewardsBalancerV2(bytes32 poolId) external;
 
+    event Staked(address indexed user, bytes32[] assets, address indexed vault, uint256[] depositTokenAmounts, uint256 receiptTokenAmount, uint256 timestamp);
+
+    event BptUnstaked(address indexed user, bytes32 asset, address indexed vault, uint256 depositTokenAmount, uint256 receiptTokenAmount, uint256 timestamp);
+
+    event Unstaked(address indexed user, bytes32[] assets, address indexed vault, uint256[] depositTokenAmounts, uint256 receiptTokenAmount, uint256 timestamp);
+
+    event BptStaked(address indexed user, bytes32 asset, address indexed vault, uint256 depositTokenAmount, uint256 receiptTokenAmount, uint256 timestamp);
+
 }
