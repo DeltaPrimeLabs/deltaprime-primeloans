@@ -93,6 +93,7 @@ import {calculateMaxApy, fromWei} from '../utils/calculate';
 import DeltaIcon from "./DeltaIcon.vue";
 import StakeBalancerV2Modal from "./StakeBalancerV2Modal.vue";
 import WithdrawBalancerV2Modal from "./WithdrawBalancerV2Modal.vue";
+import {formatUnits} from "ethers/lib/utils";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -348,7 +349,9 @@ export default {
       modalInstance.title = 'Stake Balancer LP tokens';
       modalInstance.description = 'Your unstaked Balancer tokens will be staked through your Prime Account.';
 
-      modalInstance.walletAssetBalance = await this.getWalletLpTokenBalance();
+      const bptContract = new ethers.Contract(this.lpToken.address, erc20ABI, provider);
+
+      modalInstance.balance = formatUnits(await bptContract.balanceOf(this.smartLoanContract.address), this.lpToken.decimals);
 
       modalInstance.$on('STAKE', provideLiquidityEvent => {
         if (this.smartLoanContract) {
@@ -396,9 +399,12 @@ export default {
       const modalInstance = this.openModal(WithdrawBalancerV2Modal);
       modalInstance.title = 'Export unstaked LP token';
       modalInstance.description = 'Your unstaked Balancer tokens will be exported to your wallet.';
-      modalInstance.balance = this.balancerLpBalances[this.lpToken.symbol];
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.assetBalances = this.assetBalances;
+
+      const bptContract = new ethers.Contract(this.lpToken.address, erc20ABI, provider);
+
+      modalInstance.balance = formatUnits(await bptContract.balanceOf(this.smartLoanContract.address), this.lpToken.decimals);
 
       modalInstance.initiate();
 

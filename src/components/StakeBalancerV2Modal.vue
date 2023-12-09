@@ -13,15 +13,15 @@
 
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>
-        <div class="top-info__value"> {{walletAssetBalance | smartRound(10, true)}}</div>
+        <div class="top-info__value"> {{balance | smartRound(10, true)}}</div>
         <span class="top-info__currency">
           BPT
         </span>
       </div>
 
       <div class="button-wrapper">
-        <Button :label="'IMPORT'" v-on:click="submit()"
-                :disabled="!walletAssetBalance || parseFloat(walletAssetBalance) === 0"
+        <Button :label="'STAKE'" v-on:click="submit()"
+                :disabled="!balance || parseFloat(balance) === 0"
                 :waiting="transactionOngoing"></Button>
       </div>
     </Modal>
@@ -44,7 +44,7 @@ export default {
   props: {
     title: null,
     description: null,
-    walletAssetBalance: 0
+    balance: 0
   },
 
   data() {

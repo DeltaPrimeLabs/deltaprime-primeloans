@@ -1182,7 +1182,7 @@ export default {
 
             const apy = lpAsset.apy ? lpAsset.apy / 100 : 0;
 
-            yearlyLpInterest += parseFloat(state.balancerLpBalances[symbol + '_GAUGE']) * apy * lpAsset.price;
+            yearlyLpInterest += parseFloat(state.balancerLpBalances[symbol]) * apy * lpAsset.price;
           }
         }
 
@@ -1263,6 +1263,13 @@ export default {
         }
 
         const collateral = getters.getCollateral;
+
+        console.log('yearlyAssetInterest: ', yearlyAssetInterest)
+        console.log('yearlyLpInterest: ', yearlyLpInterest)
+        console.log('yearlyFarmInterest: ', yearlyFarmInterest)
+        console.log('yearlyTraderJoeV2Interest: ', yearlyTraderJoeV2Interest)
+        console.log('yearlyDebtInterest: ', yearlyDebtInterest)
+        console.log('collateral: ', collateral)
 
         if (collateral) {
           apr = (yearlyAssetInterest + yearlyLpInterest + yearlyFarmInterest + yearlyTraderJoeV2Interest - yearlyDebtInterest) / collateral;
