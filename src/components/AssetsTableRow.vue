@@ -697,13 +697,11 @@ export default {
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.queryMethods = {
-        YakSwap: this.yakSwapQueryMethod()
+        YakSwap: this.yakSwapQueryMethod(),
+        ParaSwap: this.paraSwapQueryMethod(),
+        ParaSwapV2: this.paraSwapV2QueryMethod(),
       };
-      if (this.asset.useParaSwapV2) {
-        modalInstance.queryMethods.ParaSwapV2 = this.paraSwapV2QueryMethod()
-      } else {
-        modalInstance.queryMethods.ParaSwap = this.paraSwapQueryMethod()
-      }
+
       modalInstance.$on('SWAP', swapEvent => {
         const swapRequest = {
           ...swapEvent,

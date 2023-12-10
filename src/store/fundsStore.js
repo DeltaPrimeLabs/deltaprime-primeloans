@@ -1722,12 +1722,12 @@ export default {
           provideLiquidityRequest.poolId,
           [
             config.BALANCER_LP_ASSETS_CONFIG[provideLiquidityRequest.symbol].address,
-            NULL_ADDRESS,
+            config.ASSETS_CONFIG[provideLiquidityRequest.firstAsset].address,
             config.ASSETS_CONFIG[provideLiquidityRequest.secondAsset].address
           ],
           [
             0,
-            0,
+            firstAmountWei,
             secondAmountWei
           ],
           //TODO: check slippage
@@ -1758,9 +1758,9 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'create LP token');
 
-      const firstAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Staked').args.depositTokenAmounts[0], firstDecimals); // how much of tokenA was used
-      const secondAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Staked').args.depositTokenAmounts[1], secondDecimals); //how much of tokenB was used
-      const lpTokenCreated = formatUnits(getLog(tx, SMART_LOAN.abi, 'Staked').args.receiptTokenAmount, lpTokenDecimals); //how much LP was created
+      const firstAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'StakedBalancerV2').args.depositTokenAmounts[0], firstDecimals); // how much of tokenA was used
+      const secondAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'StakedBalancerV2').args.depositTokenAmounts[1], secondDecimals); //how much of tokenB was used
+      const lpTokenCreated = formatUnits(getLog(tx, SMART_LOAN.abi, 'StakedBalancerV2').args.receiptTokenAmount, lpTokenDecimals); //how much LP was created
 
       const firstAssetBalanceAfterTransaction = Number(state.assetBalances[provideLiquidityRequest.firstAsset]) - Number(firstAssetAmount);
       const secondAssetBalanceAfterTransaction = Number(state.assetBalances[provideLiquidityRequest.secondAsset]) - Number(secondAssetAmount);
@@ -1814,8 +1814,8 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'unwind LP token');
 
-      const targetAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'Unstaked').args.depositTokenAmounts[0], targetAssetDecimals); // how much of tokenA was used
-      const lpTokenUnwound = formatUnits(getLog(tx, SMART_LOAN.abi, 'Unstaked').args.receiptTokenAmount, lpTokenDecimals); //how much LP was created
+      const targetAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'UnstakedBalancerV2').args.depositTokenAmounts[0], targetAssetDecimals); // how much of tokenA was used
+      const lpTokenUnwound = formatUnits(getLog(tx, SMART_LOAN.abi, 'UnstakedBalancerV2').args.receiptTokenAmount, lpTokenDecimals); //how much LP was created
 
       const targetAssetBalanceAfterTransaction = Number(state.assetBalances[removeLiquidityRequest.targetAsset]) + Number(targetAssetAmount);
       const lpTokenBalanceAfterTransaction = Number(state.balancerLpBalances[removeLiquidityRequest.symbol]) - Number(lpTokenUnwound);

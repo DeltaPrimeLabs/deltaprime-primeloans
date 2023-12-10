@@ -47,7 +47,7 @@ export default {
             slippageMargin: 0.02
         },
         ParaSwap: {
-            availableAssets: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'sAVAX', 'QI', 'PNG', 'PTP', 'yyAVAX'],
+            availableAssets: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'sAVAX', 'QI', 'PNG', 'PTP', 'yyAVAX', 'ggAVAX'],
             slippageMargin: 0.05
         },
         ParaSwapV2: {

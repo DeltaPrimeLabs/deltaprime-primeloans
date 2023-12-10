@@ -356,6 +356,11 @@ export default {
       if (this.swapDebtMode) {
         return await this.queryMethod(sourceAsset, targetAsset, amountIn);
       } else {
+        console.log('queryMethods')
+        console.log(this.queryMethods)
+        console.log('this.swapDex')
+        console.log(this.swapDex)
+
         return await this.queryMethods[this.swapDex](sourceAsset, targetAsset, amountIn);
       }
     },
