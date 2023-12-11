@@ -866,14 +866,17 @@ export default {
 
       lpAsset.primaryBalance = formatUnits(cumulativeTokenXAmount, primaryToken.decimals);
       lpAsset.secondaryBalance = formatUnits(cumulativeTokenYAmount, secondaryToken.decimals);
-      lpAsset.binIds = loanBinIds; // bin Ids where loan has liquidity for a LB pair
-      lpAsset.accountBalances = accountBalances; // balances of account owned bins (the same order as binIds)
-      lpAsset.accountBalancesPrimary = accountBalancesPrimary; // balances of account owned bins (the same order as binIds)
-      lpAsset.accountBalancesSecondary = accountBalancesSecondary; // balances of account owned bins (the same order as binIds)
-      lpAsset.binPrices = binPrices; // price assigned to each bin
-      lpAsset.binBalancePrimary = binBalancePrimary; // price assigned to each bin
-      lpAsset.binBalanceSecondary = binBalanceSecondary; // price assigned to each bin
-      lpAsset.binTotalSupply = binTotalSupply; // price assigned to each bin
+
+      const isLiquidityValuable = Number(lpAsset.primaryBalance) > 0 || Number(lpAsset.secondaryBalance) > 0;
+
+      lpAsset.binIds = isLiquidityValuable ? loanBinIds : []; // bin Ids where loan has liquidity for a LB pair
+      lpAsset.accountBalances = isLiquidityValuable ? accountBalances : []; // balances of account owned bins (the same order as binIds)
+      lpAsset.accountBalancesPrimary = isLiquidityValuable ? accountBalancesPrimary : []; // balances of account owned bins (the same order as binIds)
+      lpAsset.accountBalancesSecondary = isLiquidityValuable ? accountBalancesSecondary : []; // balances of account owned bins (the same order as binIds)
+      lpAsset.binPrices = isLiquidityValuable ? binPrices : []; // price assigned to each bin
+      lpAsset.binBalancePrimary = isLiquidityValuable ? binBalancePrimary : []; // price assigned to each bin
+      lpAsset.binBalanceSecondary = isLiquidityValuable ? binBalanceSecondary : []; // price assigned to each bin
+      lpAsset.binTotalSupply = isLiquidityValuable ? binTotalSupply : []; // price assigned to each bin
 
       const lpService = rootState.serviceRegistry.lpService;
       lpService.emitRefreshLp('TJV2');
