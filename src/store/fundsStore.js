@@ -1734,6 +1734,10 @@ export default {
       firstAmountWei = firstAmountWei.gt(firstBalance) ? firstBalance : firstAmountWei;
       secondAmountWei = secondAmountWei.gt(secondBalance) ? secondBalance : secondAmountWei;
 
+      let minAmount = 0.95;
+      let gaugeDecimals = config.BALANCER_LP_ASSETS_CONFIG[provideLiquidityRequest.symbol].decimals;
+      let minGaugeAmountWei = parseUnits((parseFloat(provideLiquidityRequest.addedLiquidity) * minAmount).toFixed(gaugeDecimals), gaugeDecimals);
+
       if ( config.BALANCER_LP_ASSETS_CONFIG[provideLiquidityRequest.symbol].firstOfTokensIsPool) {
         txData = [
           provideLiquidityRequest.poolId,
@@ -1747,9 +1751,7 @@ export default {
             firstAmountWei,
             secondAmountWei
           ],
-          //TODO: check slippage
-          // toWei('0.0001')
-          0
+          minGaugeAmountWei
         ];
       } else {
         txData =    [
@@ -1762,9 +1764,7 @@ export default {
             firstAmountWei,
             secondAmountWei
           ],
-          //TODO: check slippage
-          // toWei('0.0001')
-          0
+          minGaugeAmountWei
         ];
       }
 
@@ -1822,12 +1822,16 @@ export default {
       let amountWei = toWei(removeLiquidityRequest.amount);
       amountWei = amountWei.gt(gaugeBalance) ? gaugeBalance : amountWei;
 
+      //TODO: now the logic is simplified so we always unstake to the first asset
+      let minReceivedFirstAmount = 0.95;
+      let minReceivedFirstAmountWei = parseUnits((parseFloat(removeLiquidityRequest.minReceivedFirst) * minReceivedFirstAmount).toFixed(targetAssetDecimals), targetAssetDecimals);
+
       const transaction = await wrappedContract.unstakeAndExitPoolBalancerV2(
           [
             removeLiquidityRequest.poolId,
             config.ASSETS_CONFIG[removeLiquidityRequest.targetAsset].address,
             //TODO: slippage
-            0,
+            minReceivedFirstAmountWei,
             amountWei
           ]
       );

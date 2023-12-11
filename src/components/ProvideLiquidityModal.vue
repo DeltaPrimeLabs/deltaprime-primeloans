@@ -43,7 +43,7 @@
           </div>
           <div class="summary__horizontal__divider"></div>
           <div class="summary__values">
-            <div class="summary__value__pair" v-if="areAmountsLinked">
+            <div class="summary__value__pair">
               <div class="summary__label">
                 LP balance:
               </div>
@@ -51,7 +51,7 @@
                 {{ formatTokenBalance(Number(lpTokenBalance) + Number(addedLiquidity), 10, true) }}
               </div>
             </div>
-            <div class="summary__divider divider--long" v-if="areAmountsLinked"></div>
+            <div class="summary__divider divider--long"></div>
             <div class="summary__value__pair">
               <div class="summary__label">
                 {{ firstAsset.symbol }} balance:
@@ -171,9 +171,8 @@ export default {
       this.firstInputError = await this.$refs.firstInput.forceValidationCheck();
       console.log('this.firstInputError: ', this.firstInputError)
       this.secondInputError = await this.$refs.secondInput.forceValidationCheck();
-      if (this.areAmountsLinked) {
-        await this.calculateLpBalance();
-      }
+      await this.calculateLpBalance();
+
     },
 
     async secondInputChange(change) {
@@ -184,9 +183,8 @@ export default {
       }
       this.firstInputError = await this.$refs.firstInput.forceValidationCheck();
       this.secondInputError = await this.$refs.secondInput.forceValidationCheck();
-      if (this.areAmountsLinked) {
-        await this.calculateLpBalance();
-      }
+      await this.calculateLpBalance();
+      console.log('secondInputChange')
     },
 
     async calculateLpBalance() {
@@ -198,8 +196,12 @@ export default {
       const firstTokenBalance = formatUnits(await firstToken.balanceOf(this.lpToken.address), BigNumber.from(this.firstAsset.decimals));
       const secondTokenBalance = formatUnits(await secondToken.balanceOf(this.lpToken.address), BigNumber.from(this.secondAsset.decimals));
 
-      this.addedLiquidity = (Math.min(this.firstAmount * totalSupply / firstTokenBalance,
-        this.secondAmount * totalSupply / secondTokenBalance)).toFixed(18);
+      this.addedLiquidity =
+          (this.firstAmount ? this.firstAmount * this.firstAsset.price / this.lpToken.price : 0)
+          +
+          (this.secondAmount ? this.secondAmount * this.secondAsset.price / this.lpToken.price : 0);
+
+      this.addedLiquidity = this.addedLiquidity.toFixed(18)
     },
 
     setupValidators() {

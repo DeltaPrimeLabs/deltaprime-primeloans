@@ -466,7 +466,10 @@ export default {
           poolId: this.lpToken.poolId,
           symbol: this.lpToken.symbol,
           targetAsset: this.lpToken.primary,
-          amount: removeEvent.amount
+          amount: removeEvent.amount,
+          //TODO: should provide targetReceived here and have this logic in modal
+          minReceivedFirst: removeEvent.minReceivedFirst,
+          minReceivedSecond: removeEvent.minReceivedSecond
         };
         this.handleTransaction(this.unstakeAndRemoveLiquidityBalancerV2, {removeLiquidityRequest: removeLiquidityRequest}, () => {
           this.$forceUpdate();
