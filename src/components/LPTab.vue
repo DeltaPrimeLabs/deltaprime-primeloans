@@ -563,7 +563,7 @@ export default {
             sortable: false,
             class: 'trend-level',
             id: 'TREND',
-            tooltip: `The total amount of ARB you have collected this week. Collected ARB will be distributed weekly. This number is not included in your collateral value, until the ARB is distributed to all Prime Accounts.`
+            tooltip: `The total amount of ARB you have collected this week. Collected ARB will be distributed weekly. This number is not included in your collateral value, until the ARB is distributed to all Prime Accounts. This number resets to 0 after the collected ARB is added to your assets on Monday.`
           },
         ]
       };
