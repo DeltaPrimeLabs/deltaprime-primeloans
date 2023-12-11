@@ -630,7 +630,7 @@ export default {
       modalInstance.slippageMargin = 0.1;
       modalInstance.sourceAsset = initSourceAsset;
       modalInstance.sourceAssetBalance = this.assetBalances[initSourceAsset];
-      modalInstance.assets = { ...this.assets, ...this.gmxV2Assets };
+      modalInstance.assets = { ...this.assets };
       modalInstance.sourceAssets = [this.lpToken.shortToken, this.lpToken.longToken];
       modalInstance.targetAssetsConfig = config.GMX_V2_ASSETS_CONFIG;
       modalInstance.targetAssets = [this.lpToken.symbol];
@@ -710,7 +710,7 @@ export default {
       modalInstance.sourceAsset = this.lpToken.symbol;
       modalInstance.sourceAssetBalance = this.gmxV2Balances[this.lpToken.symbol];
       modalInstance.sourceAssetsConfig = config.GMX_V2_ASSETS_CONFIG;
-      modalInstance.assets = { ...this.assets, ...this.gmxV2Assets };
+      modalInstance.assets = this.assets;
       modalInstance.sourceAssets = { GmxV2: [this.lpToken.symbol]} ;
       modalInstance.targetAssets = { GmxV2: [this.lpToken.longToken, this.lpToken.shortToken] };
       modalInstance.assetBalances = { ...this.assetBalances, ...this.gmxV2Balances };
