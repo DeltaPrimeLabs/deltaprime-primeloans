@@ -2,9 +2,9 @@
   <div v-if="provider" class="lp-table-row-component" :class="{'expanded': rowExpanded}">
     <div class="table__row" v-if="lpToken">
       <div class="table__cell asset">
-        <DoubleAssetIcon :primary="lpToken.primary" :secondary="lpToken.secondary"></DoubleAssetIcon>
+        <DoubleAssetIcon :primary="lpToken.reverseOrder ? lpToken.secondary : lpToken.primary" :secondary="lpToken.reverseOrder ? lpToken.primary : lpToken.secondary"></DoubleAssetIcon>
         <div class="asset__info">
-          <div class="asset__name">{{ lpToken.primary }} - {{ lpToken.secondary }}</div>
+          <div class="asset__name">{{ lpToken.reverseOrder ? `${lpToken.secondary} - ${lpToken.primary}` : `${lpToken.primary} - ${lpToken.secondary}` }}</div>
           <div class="asset__dex">
             by {{ lpToken.dex }}
           </div>

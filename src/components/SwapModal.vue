@@ -22,6 +22,12 @@
         </div>
       </div>
 
+      <div class="modal-top-desc" v-if="['YakSwap', 'ParaSwap', 'ParaSwapV2'].includes(swapDex)">
+        <div>
+          <b>If you don't see your token on the list, choose another aggregator.</b>
+        </div>
+      </div>
+
       <div class="modal-top-desc" v-if="info">
         <div>
           <b v-html="info"></b>

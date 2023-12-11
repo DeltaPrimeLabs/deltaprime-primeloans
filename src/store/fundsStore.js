@@ -1156,11 +1156,15 @@ export default {
             let symbol = entry[0];
             let lpAsset = entry[1];
 
+            let assetAppreciation = 0;
             //TODO: take from API
-            let assetAppreciation = (lpAsset.primary === 'sAVAX' || lpAsset.secondary === 'sAVAX') ? 1.036 : 1;
+            if (state.assets[lpAsset.primary].apy || state.assets[lpAsset.secondary].apy) {
+              if(state.assets[lpAsset.primary].apy) assetAppreciation += state.assets[lpAsset.primary].apy / 100 / 2;
+              if(state.assets[lpAsset.secondary].apy) assetAppreciation += state.assets[lpAsset.secondary].apy / 100 / 2;
+            }
             const apy = lpAsset.apy ? lpAsset.apy / 100 : 0;
 
-            yearlyLpInterest += parseFloat(state.lpBalances[symbol]) * (((1 + apy) * assetAppreciation) - 1) * lpAsset.price;
+            yearlyLpInterest += parseFloat(state.lpBalances[symbol]) * ((1 + apy) * (1 + assetAppreciation) - 1) * lpAsset.price;
           }
         }
 
@@ -1182,7 +1186,14 @@ export default {
 
             const apy = lpAsset.apy ? lpAsset.apy / 100 : 0;
 
-            yearlyLpInterest += parseFloat(state.balancerLpBalances[symbol]) * apy * lpAsset.price;
+            let assetAppreciation = 0;
+
+            if (state.assets[lpAsset.primary].apy || state.assets[lpAsset.secondary].apy) {
+              if(state.assets[lpAsset.primary].apy) assetAppreciation += state.assets[lpAsset.primary].apy / 100 / 2;
+              if(state.assets[lpAsset.secondary].apy) assetAppreciation += state.assets[lpAsset.secondary].apy / 100 / 2;
+            }
+
+            yearlyLpInterest += parseFloat(state.balancerLpBalances[symbol]) * ((1 + apy) * (1 + assetAppreciation) - 1) * lpAsset.price;
           }
         }
 
@@ -1650,10 +1661,16 @@ export default {
 
       const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
 
+      const lpContract = new ethers.Contract(config.LP_ASSETS_CONFIG[removeLiquidityRequest.symbol].address, erc20ABI, provider.getSigner());
+      const lpBalance = await lpContract.balanceOf(state.smartLoanContract.address);
+
+      let amountWei = toWei(removeLiquidityRequest.value);
+      amountWei = amountWei.gt(lpBalance) ? lpBalance : amountWei;
+
       const transaction = await wrappedContract[config.DEX_CONFIG[removeLiquidityRequest.dex].removeLiquidityMethod](
         toBytes32(removeLiquidityRequest.firstAsset),
         toBytes32(removeLiquidityRequest.secondAsset),
-        parseUnits(removePaddedTrailingZeros(removeLiquidityRequest.value), BigNumber.from(removeLiquidityRequest.assetDecimals.toString())),
+        amountWei,
         parseUnits((removeLiquidityRequest.minFirstAmount), BigNumber.from(firstDecimals.toString())),
         parseUnits((removeLiquidityRequest.minSecondAmount), BigNumber.from(secondDecimals.toString()))
       );
@@ -1758,9 +1775,9 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'create LP token');
 
-      const firstAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'StakedBalancerV2').args.depositTokenAmounts[0], firstDecimals); // how much of tokenA was used
-      const secondAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'StakedBalancerV2').args.depositTokenAmounts[1], secondDecimals); //how much of tokenB was used
-      const lpTokenCreated = formatUnits(getLog(tx, SMART_LOAN.abi, 'StakedBalancerV2').args.receiptTokenAmount, lpTokenDecimals); //how much LP was created
+      const firstAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'StakeBalancerV2').args.depositTokenAmounts[0], firstDecimals); // how much of tokenA was used
+      const secondAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'StakeBalancerV2').args.depositTokenAmounts[1], secondDecimals); //how much of tokenB was used
+      const lpTokenCreated = formatUnits(getLog(tx, SMART_LOAN.abi, 'StakeBalancerV2').args.receiptTokenAmount, lpTokenDecimals); //how much LP was created
 
       const firstAssetBalanceAfterTransaction = Number(state.assetBalances[provideLiquidityRequest.firstAsset]) - Number(firstAssetAmount);
       const secondAssetBalanceAfterTransaction = Number(state.assetBalances[provideLiquidityRequest.secondAsset]) - Number(secondAssetAmount);
@@ -1799,13 +1816,19 @@ export default {
 
       const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
 
+      const gaugeContract = new ethers.Contract(config.BALANCER_LP_ASSETS_CONFIG[removeLiquidityRequest.symbol].gaugeAddress, erc20ABI, provider.getSigner());
+      const gaugeBalance = await gaugeContract.balanceOf(state.smartLoanContract.address);
+
+      let amountWei = toWei(removeLiquidityRequest.amount);
+      amountWei = amountWei.gt(gaugeBalance) ? gaugeBalance : amountWei;
+
       const transaction = await wrappedContract.unstakeAndExitPoolBalancerV2(
           [
             removeLiquidityRequest.poolId,
             config.ASSETS_CONFIG[removeLiquidityRequest.targetAsset].address,
             //TODO: slippage
             0,
-            toWei(removeLiquidityRequest.amount)
+            amountWei
           ]
       );
 
@@ -1814,8 +1837,8 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'unwind LP token');
 
-      const targetAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'UnstakedBalancerV2').args.depositTokenAmounts[0], targetAssetDecimals); // how much of tokenA was used
-      const lpTokenUnwound = formatUnits(getLog(tx, SMART_LOAN.abi, 'UnstakedBalancerV2').args.receiptTokenAmount, lpTokenDecimals); //how much LP was created
+      const targetAssetAmount = formatUnits(getLog(tx, SMART_LOAN.abi, 'UnstakeBalancerV2').args.depositTokenAmounts[0], targetAssetDecimals); // how much of tokenA was used
+      const lpTokenUnwound = formatUnits(getLog(tx, SMART_LOAN.abi, 'UnstakeBalancerV2').args.receiptTokenAmount, lpTokenDecimals); //how much LP was created
 
       const targetAssetBalanceAfterTransaction = Number(state.assetBalances[removeLiquidityRequest.targetAsset]) + Number(targetAssetAmount);
       const lpTokenBalanceAfterTransaction = Number(state.balancerLpBalances[removeLiquidityRequest.symbol]) - Number(lpTokenUnwound);

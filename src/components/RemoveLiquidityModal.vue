@@ -16,6 +16,7 @@
       <CurrencyInput :symbol="lpToken.primary"
                      :symbol-secondary="lpToken.secondary"
                      v-on:newValue="inputChange"
+                     :max="lpTokenBalance"
                      :validators="validators">
       </CurrencyInput>
 
