@@ -705,9 +705,19 @@ export default {
       }
 
       for (const [symbol, data] of Object.entries(this.gmxV2Assets)) {
+        let balance = parseFloat(this.gmxV2Balances[symbol]);
+
+        if (symbol === this.sourceAsset) {
+          balance -= this.sourceAssetAmount;
+        }
+
+        if (symbol === this.targetAsset) {
+          balance += this.targetAssetAmount;
+        }
+
         tokens.push({
           price: data.price,
-          balance: parseFloat(this.gmxV2Balances[symbol]),
+          balance: balance,
           borrowed: 0,
           debtCoverage: data.debtCoverage
         });
