@@ -32,7 +32,7 @@
       </div>
 
       <div class="table__cell table__cell--double-value apr" v-bind:class="{'apr--with-warning': lpToken.aprWarning}">
-        {{ apr / 100 | percent }}
+        {{ lpToken.tempApy / 100 | percent }}
         <div class="apr-warning" v-if="lpToken.aprWarning">
           <img src="src/assets/icons/warning.svg"
                v-tooltip="{content: lpToken.aprWarning, classes: 'info-tooltip long'}">
