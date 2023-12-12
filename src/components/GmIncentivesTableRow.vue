@@ -196,6 +196,10 @@ export default {
   }
 }
 
+.milestone-tick {
+  margin-right: 10px;
+}
+
 </style>
 <style>
 .lp-table-row-component.gm-incentives {

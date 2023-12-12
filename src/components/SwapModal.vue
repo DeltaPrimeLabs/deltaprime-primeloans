@@ -22,6 +22,12 @@
         </div>
       </div>
 
+      <div class="modal-top-desc" v-if="['YakSwap', 'ParaSwap', 'ParaSwapV2'].includes(swapDex)">
+        <div>
+          <b>Token availability might change with different aggregators.</b>
+        </div>
+      </div>
+
       <div class="modal-top-desc" v-if="info">
         <div>
           <b v-html="info"></b>
@@ -54,7 +60,7 @@
       >
       </CurrencyComboInput>
 
-      <div class="reverse-swap-button" v-on:click="reverseSwap && !reverseSwapDisabled">
+      <div class="reverse-swap-button" v-on:click="reverseSwap">
         <DeltaIcon class="reverse-swap-icon" :size="22" :icon-src="'src/assets/icons/swap-arrow.svg'"></DeltaIcon>
       </div>
 
@@ -69,7 +75,7 @@
       <div class="target-asset-info">
         <div class="usd-info">
           Price:&nbsp;<span
-            class="price-info__value">1 {{
+          class="price-info__value">1 {{
             (targetAssetData && targetAssetData.short) ? targetAssetData.short : targetAsset
           }} = {{ estimatedNeededTokens / estimatedReceivedTokens | smartRound }} {{ sourceAsset }}</span>
         </div>
@@ -87,8 +93,8 @@
           <span class="deviation-value">{{ fee | percent }}</span>
           <div class="info__icon__wrapper">
             <InfoIcon
-                class="info__icon"
-                :tooltip="{content: 'The fee of underlying protocol.', placement: 'top', classes: 'info-tooltip'}"
+              class="info__icon"
+              :tooltip="{content: 'The fee of underlying protocol.', placement: 'top', classes: 'info-tooltip'}"
             ></InfoIcon>
           </div>
         </div>
@@ -97,8 +103,8 @@
           <span class="deviation-value">{{ marketDeviation }}<span class="percent">%</span></span>
           <div class="info__icon__wrapper">
             <InfoIcon
-                class="info__icon"
-                :tooltip="{content: 'The difference between DEX and market prices.', placement: 'top', classes: 'info-tooltip'}"
+              class="info__icon"
+              :tooltip="{content: 'The difference between DEX and market prices.', placement: 'top', classes: 'info-tooltip'}"
             ></InfoIcon>
           </div>
         </div>
@@ -136,7 +142,7 @@
 
             <div class="summary__value__pair" v-if="!swapDebtMode">
               <div class="summary__label">
-                {{ (sourceAssetData && sourceAssetData.short) ? sourceAssetData.short: sourceAsset }} balance:
+                {{ (sourceAssetData && sourceAssetData.short) ? sourceAssetData.short : sourceAsset }} balance:
               </div>
               <div class="summary__value">
                 {{
@@ -276,6 +282,8 @@ export default {
       gmxV2Assets: {},
       gmxV2Balances: {},
       traderJoeV2LpAssets: {},
+      balancerLpAssets: {},
+      balancerLpBalances: {},
       transactionOngoing: false,
       debt: 0,
       thresholdWeightedValue: 0,
@@ -327,7 +335,8 @@ export default {
 
     submit() {
       this.transactionOngoing = true;
-      const sourceAssetAmount = this.maxButtonUsed ? this.sourceAssetAmount * config.MAX_BUTTON_MULTIPLIER : this.sourceAssetAmount;
+      console.log('submit this.swapDex: ', this.swapDex)
+      const sourceAssetAmount = this.maxButtonUsed && this.swapDex !== 'ParaSwapV2' ? this.sourceAssetAmount * config.MAX_BUTTON_MULTIPLIER : this.sourceAssetAmount;
       this.$emit('SWAP', {
         sourceAsset: this.sourceAsset,
         targetAsset: this.targetAsset,
@@ -353,6 +362,11 @@ export default {
       if (this.swapDebtMode) {
         return await this.queryMethod(sourceAsset, targetAsset, amountIn);
       } else {
+        console.log('queryMethods')
+        console.log(this.queryMethods)
+        console.log('this.swapDex')
+        console.log(this.swapDex)
+
         return await this.queryMethods[this.swapDex](sourceAsset, targetAsset, amountIn);
       }
     },
@@ -580,6 +594,7 @@ export default {
     },
 
     reverseSwap() {
+      if (this.reverseSwapDisabled) return;
       const tempSource = this.sourceAsset;
       this.sourceAssetData = this.sourceAssetsConfig[this.targetAsset];
       this.targetAssetData = this.targetAssetsConfig[this.sourceAsset];
@@ -617,11 +632,11 @@ export default {
       ];
       this.targetValidators = [
         // {
-          // validate: async (value) => {
-          //   if (this.healthAfterTransaction < this.MIN_ALLOWED_HEALTH) {
-          //     return 'The health is below allowed limit.';
-          //   }
-          // }
+        // validate: async (value) => {
+        //   if (this.healthAfterTransaction < this.MIN_ALLOWED_HEALTH) {
+        //     return 'The health is below allowed limit.';
+        //   }
+        // }
         // },
         {
           validate: async (value) => {
@@ -702,6 +717,19 @@ export default {
           borrowed: 0,
           debtCoverage: data.debtCoverage
         });
+      }
+
+      for (const [symbol, data] of Object.entries(this.balancerLpAssets)) {
+        if (this.balancerLpBalances) {
+          let balance = parseFloat(this.balancerLpBalances[symbol]);
+
+          tokens.push({
+            price: data.price,
+            balance: balance ? balance : 0,
+            borrowed: 0,
+            debtCoverage: data.debtCoverage
+          });
+        }
       }
 
       for (const [symbol, data] of Object.entries(this.gmxV2Assets)) {

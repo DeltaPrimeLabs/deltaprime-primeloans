@@ -20,6 +20,13 @@
                              :lp-token="lpToken" :lp-tokens="traderJoeLpTokens"></TraderJoeLpTableRow>
       </div>
     </div>
+    <div class="lp-tokens" v-if="Object.keys(balancerLpTokens).length">
+      <div class="lp-table">
+        <TableHeader :config="balancerLpTableHeaderConfig"></TableHeader>
+        <BalancerLpTableRow v-for="(lpToken, index) in balancerLpTokens" v-bind:key="index" :index="index"
+                             :lp-token="lpToken" :lp-tokens="balancerLpTokens"></BalancerLpTableRow>
+      </div>
+    </div>
     <div class="lp-tokens" v-if="Object.keys(levelLpTokens).length">
       <div class="lp-table level" v-if="levelLpTokens">
         <TableHeader :config="levelLpTableHeaderConfig"></TableHeader>
@@ -69,10 +76,12 @@ import Paginator from "./Paginator.vue";
 import LevelLpTableRow from "./LevelLpTableRow.vue";
 import GmxV2LpTableRow from "./GmxV2LpTableRow.vue";
 import GmIncentivesTableRow from "./GmIncentivesTableRow.vue";
+import BalancerLpTableRow from "./BalancerLpTableRow.vue";
 
 export default {
   name: 'LPTab',
   components: {
+    BalancerLpTableRow,
     GmIncentivesTableRow,
     GmxV2LpTableRow,
     LevelLpTableRow,
@@ -89,6 +98,8 @@ export default {
       traderJoeLpTableHeaderConfig: null,
       gmxV2LpTokens: config.GMX_V2_ASSETS_CONFIG,
       gmxV2LpTableHeaderConfig: null,
+      balancerLpTokens: config.BALANCER_LP_ASSETS_CONFIG,
+      balancerLpTableHeaderConfig: null,
       levelLpTokens: config.LEVEL_LP_ASSETS_CONFIG,
       levelLpTableHeaderConfig: null,
       gmIncentivesTableHeaderConfig: null,
@@ -106,6 +117,7 @@ export default {
     this.setupLevelLpTableHeaderConfig();
     this.setupGmxV2LpTableHeaderConfig();
     this.setupGmIncentivesTableHeaderConfig();
+    this.setupBalancerLpTableHeaderConfig();
   },
   computed: {
     ...mapState('serviceRegistry', [
@@ -168,7 +180,7 @@ export default {
             sortable: false,
             class: 'apr',
             id: 'APR',
-            tooltip: `The APR of the pool. This number includes 6.06% sAVAX price appreciation if the pool includes that asset.`
+            tooltip: `The APR of the pool. This number includes any inherent price appreciation of underlying assets.`
           },
           {
             label: 'Max. APR',
@@ -342,7 +354,62 @@ export default {
             sortable: false,
             class: 'apr',
             id: 'APR',
-            tooltip: `The APR of the pool. This number includes 6.06% sAVAX price appreciation if the pool includes that asset.`
+            tooltip: `The APR of the pool. This number includes any inherent price appreciation of underlying assets.`
+          },
+          {
+            label: 'Max. APR',
+            sortable: false,
+            class: 'apr',
+            id: 'MAX-APR',
+            tooltip: `The APR if you would borrow the lowest-interest asset from 100% to 10%, and put your total value into this pool.`
+          },
+          {
+            label: '',
+          },
+          {
+            label: 'Actions',
+            class: 'actions',
+            id: 'ACTIONS',
+            tooltip: `Click
+                      <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/exchange#actions' target='_blank'>here</a>
+                      for more information on the different actions you can perform in your Prime Account.`
+          },
+        ]
+      };
+    },
+    setupBalancerLpTableHeaderConfig() {
+      this.balancerLpTableHeaderConfig = {
+        gridTemplateColumns: 'repeat(3, 1fr) 12% 135px 60px 80px 22px',
+        cells: [
+          {
+            label: 'Balancer vault',
+            sortable: false,
+            class: 'token',
+            id: 'TOKEN',
+            tooltip: `The LP-asset name. These names are simplified for a smoother UI.
+                                       <a href='https://docs.deltaprime.io/integrations/tokens' target='_blank'>More information</a>.`
+          },
+          {
+            label: 'Balance',
+            sortable: false,
+            class: 'balance',
+            id: 'BALANCE',
+            tooltip: `The number and value of staked Balancer LP tokens in your Prime Account.`
+          },
+          {
+            label: 'TVL',
+            sortable: false,
+            class: 'balance',
+            id: 'tvl',
+            tooltip: `The Total Value Locked (TVL) in the underlying pool.<br>
+                      <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/pools#tvl' target='_blank'>More information</a>.`
+          },
+          {
+            label: 'Min. APR',
+            sortable: false,
+            class: 'apr',
+            id: 'APR',
+            tooltip: `The APR of the pool. This number includes any inherent price appreciation of underlying assets.`
           },
           {
             label: 'Max. APR',
@@ -419,7 +486,7 @@ export default {
             sortable: false,
             class: 'apr',
             id: 'APR',
-            tooltip: `All fees, rewards and counterparty PnL collected, divided by TVL of this tranche. This does not take underlying asset price changes or IL into account.`
+            tooltip: `All fees, rewards and counterparty PnL collected, divided by this GM's TVL. \n\nThis does not take underlying asset price changes into account.`
           },
           {
             label: 'Max. APR',

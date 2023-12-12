@@ -184,6 +184,24 @@
   --currency-combo-input__select-dropdown-placeholder-font-color: #{$mist-blue};
   // endregion
 
+  // region AssetDropdown
+  --asset-dropdown__box-shadow: inset 3px 3px 8px 0 #{$dark-space}7f;
+  --asset-dropdown__background: linear-gradient(to right, #{$deep-navy} 9%, #{$deep-teal} 50%, #{$eggplant} 92%);
+  --asset-dropdown__divider-color: #{$mist-space};
+  --asset-dropdown__chevron-color: #{$pale-lilac};
+  --asset-dropdown__select-dropdown-input-border: 2px solid #{$deep-space};
+  --asset-dropdown__select-dropdown-option-background--hover: #{$cloud-navy};
+  --asset-dropdown__select-dropdown-option-icon-opacity: 0.95;
+  --asset-dropdown__select-dropdown-option-name-color: #{$washed-blue};
+  --asset-dropdown__select-dropdown-border-color: #{$washed-space};
+  --asset-dropdown__select-dropdown-background: #{$mist-navy};
+  --asset-dropdown__select-dropdown-select-title-color: #{$mist-blue};
+  --asset-dropdown__select-dropdown-chains-border: 2px solid #{$deep-space};
+  --asset-dropdown__select-dropdown-chain-item-border: 1px solid transparent;
+  --asset-dropdown__select-dropdown-chain-item-border-active: 2px solid #{$dark-lilac};
+  --asset-dropdown__select-dropdown-placeholder-font-color: #{$mist-blue};
+  // endregion
+
   // region Bubble
   --bubble__solid-block-wrapper-background: #{$pale-fuchsia};
   --bubble__solid-block-wrapper-color: #{$mist-blue};
