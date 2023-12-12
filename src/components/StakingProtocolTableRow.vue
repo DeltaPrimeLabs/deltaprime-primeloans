@@ -69,14 +69,14 @@
             :config="addActionsConfig"
             v-if="addActionsConfig"
             v-on:iconButtonClick="actionClick"
-            :disabled="disableAllButtons || platypusAffected || platypusAffectedDisableDeposit">
+            :disabled="disableAllButtons || platypusAffected || platypusAffectedDisableDeposit || noSmartLoan">
           </IconButtonMenuBeta>
           <IconButtonMenuBeta
             class="actions__icon-button last"
             :config="removeActionsConfig"
             v-if="removeActionsConfig"
             v-on:iconButtonClick="actionClick"
-            :disabled="disableAllButtons || platypusAffected">
+            :disabled="disableAllButtons || platypusAffected || noSmartLoan">
           </IconButtonMenuBeta>
         </div>
       </div>

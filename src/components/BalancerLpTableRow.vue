@@ -51,14 +51,14 @@
           :config="addActionsConfig"
           v-if="addActionsConfig"
           v-on:iconButtonClick="actionClick"
-          :disabled="disableAllButtons">
+          :disabled="disableAllButtons || noSmartLoan">
         </IconButtonMenuBeta>
         <IconButtonMenuBeta
           class="actions__icon-button last"
           :config="removeActionsConfig"
           v-if="removeActionsConfig"
           v-on:iconButtonClick="actionClick"
-          :disabled="disableAllButtons">
+          :disabled="disableAllButtons || noSmartLoan">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -166,6 +166,7 @@ export default {
       'levelLpBalances',
       'balancerLpAssets',
       'balancerLpBalances',
+      'noSmartLoan'
     ]),
     ...mapState('stakeStore', ['farms']),
     ...mapState('poolStore', ['pools']),

@@ -49,7 +49,7 @@
 
       <div class="table__cell actions">
         <DeltaIcon class="action-button"
-                   v-bind:class="{'action-button--disabled': disableAllButtons || !lpTokenBalances || lpToken.inactive}"
+                   v-bind:class="{'action-button--disabled': disableAllButtons || !lpTokenBalances || lpToken.inactive || noSmartLoan}"
                    :icon-src="'src/assets/icons/plus.svg'" :size="26"
                    v-tooltip="{content: 'Add LP from wallet', classes: 'button-tooltip'}"
                    v-on:click.native="actionClick('ADD_FROM_WALLET')"></DeltaIcon>
@@ -58,7 +58,7 @@
             class="actions__icon-button"
             :config="moreActionsConfig"
             v-on:iconButtonClick="actionClick"
-            :disabled="disableAllButtons">
+            :disabled="noSmartLoan || disableAllButtons">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -167,6 +167,7 @@ export default {
       'levelLpBalances',
       'balancerLpAssets',
       'balancerLpBalances',
+      'noSmartLoan'
     ]),
     ...mapState('stakeStore', ['farms']),
     ...mapState('poolStore', ['pools']),
@@ -234,18 +235,18 @@ export default {
             {
               key: 'PROVIDE_LIQUIDITY',
               name: 'Create Concentrated LP token',
-              disabled: !this.hasSmartLoanContract || !this.lpTokenBalances || this.lpToken.inactive,
+              disabled: this.noSmartLoan || !this.lpTokenBalances || this.lpToken.inactive,
               disabledInfo: 'To create LP token, you need to add some funds from you wallet first'
             },
             {
               key: 'REMOVE_LIQUIDITY',
               name: 'Unwind Concentrated LP token',
-              disabled: !this.hasSmartLoanContract || !this.lpTokenBalances || this.lpToken.inactive,
+              disabled: this.noSmartLoan || !this.lpTokenBalances || this.lpToken.inactive,
             },
             {
               key: 'WITHDRAW',
               name: 'Withdraw LP to wallet',
-              disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
+              disabled: this.noSmartLoan || !this.lpTokenBalances
             }
           ]
         }

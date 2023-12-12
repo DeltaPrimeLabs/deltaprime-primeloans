@@ -95,7 +95,7 @@
             buttons and deposit collateral.
           </template>
         </IconButton>
-        <IconButton :disabled="disableAllButtons || asset.inactive"
+        <IconButton :disabled="disableAllButtons || asset.inactive || noSmartLoan"
                     class="action-button"
                     :icon-src="'src/assets/icons/swap.svg'" :size="26"
                     v-tooltip="{content: 'Swap', classes: 'button-tooltip'}"
@@ -105,7 +105,7 @@
             class="actions__icon-button"
             :config="moreActionsConfig"
             v-on:iconButtonClick="actionClick"
-            :disabled="disableAllButtons">
+            :disabled="disableAllButtons || asset.inactive || noSmartLoan">
         </IconButtonMenuBeta>
       </div>
     </div>
