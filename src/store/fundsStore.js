@@ -1801,6 +1801,7 @@ export default {
     },
 
     async unstakeAndRemoveLiquidityBalancerV2({state, rootState, commit, dispatch}, {removeLiquidityRequest}) {
+      console.log(removeLiquidityRequest);
 
       const targetAssetDecimals = config.ASSETS_CONFIG[removeLiquidityRequest.targetAsset].decimals;
       const lpTokenDecimals = config.BALANCER_LP_ASSETS_CONFIG[removeLiquidityRequest.symbol].decimals;

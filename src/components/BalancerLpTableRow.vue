@@ -94,6 +94,7 @@ import DeltaIcon from "./DeltaIcon.vue";
 import StakeBalancerV2Modal from "./StakeBalancerV2Modal.vue";
 import WithdrawBalancerV2Modal from "./WithdrawBalancerV2Modal.vue";
 import {formatUnits} from "ethers/lib/utils";
+import config from "../config";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -461,11 +462,12 @@ export default {
       modalInstance.lpTokenBalance = Number(this.balancerLpBalances[this.lpToken.symbol]);
       modalInstance.firstBalance = Number(this.assetBalances[this.lpToken.primary]);
       modalInstance.secondBalance = Number(this.assetBalances[this.lpToken.secondary]);
+      modalInstance.unwindAssetOptions = [config.ASSETS_CONFIG[this.lpToken.primary], config.ASSETS_CONFIG[this.lpToken.secondary]]
       modalInstance.$on('REMOVE_LIQUIDITY', removeEvent => {
         const removeLiquidityRequest = {
           poolId: this.lpToken.poolId,
           symbol: this.lpToken.symbol,
-          targetAsset: this.lpToken.primary,
+          targetAsset: removeEvent.targetAsset,
           amount: removeEvent.amount,
           //TODO: should provide targetReceived here and have this logic in modal
           minReceivedFirst: removeEvent.minReceivedFirst,
