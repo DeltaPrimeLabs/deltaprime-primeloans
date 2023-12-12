@@ -156,6 +156,13 @@ functions:
     description: Fetch pool APYs from Balancer website.
     events:
       - schedule: rate(2 minutes)
+  assetStakingApyAggregator:
+    handler: aggregators/apy.assetStakingApyAggregator
+    memorySize: 2048
+    timeout: 300
+    description: Fetch staking APYs of various assets.
+    events:
+      - schedule: rate(2 minutes)
   # loanAggregatorAva:
   #   handler: aggregators/loan.loanAggregatorAva
   #   memorySize: 1024

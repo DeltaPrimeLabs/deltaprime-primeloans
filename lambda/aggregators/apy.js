@@ -742,6 +742,88 @@ const balanerApyAggregator = async (event) => {
   return event;
 }
 
+const assetStakingApyAggregator = async (event) => {
+  // fetch staking APR of sAVAX and yyAVAX
+  const sAvaxApiUrl = "https://api.benqi.fi/liquidstaking/apr";
+  const yyAvaxApiUrl = "https://staging-api.yieldyak.com/yyavax";
+
+  const apiUrls = [
+    sAvaxApiUrl,
+    yyAvaxApiUrl
+  ];
+
+  const [sAvaxApiRes, yyAvaxApiRes] = await Promise.all(
+    apiUrls.map(url => fetch(url).then(resp => resp.json())
+  ));
+
+  const sAvaxApr = sAvaxApiRes["apr"] * 100;
+  const yyAvaxApr = yyAvaxApiRes["yyAVAX"]['apr'];
+  console.log("sAVAX APR: ", sAvaxApr);
+  console.log("yyAVAX APR: ", yyAvaxApr);
+
+  // fetch staking APR of ggAVAX
+  const { page } = await newChrome();
+  const GGP_URL = "https://multisiglabs.grafana.net/public-dashboards/4d21b06344684b8ab05ddd2828898ec8?orgId=1";
+
+  await page.setViewport({
+    width: 1920,
+    height: 1080
+  });
+
+  await page.goto(GGP_URL, {
+    waitUntil: "networkidle0",
+    timeout: 60000
+  });
+
+  const panels = await page.$$(".react-grid-layout > .react-grid-item");
+  const ggAvaxApr = parseFloat((await (await panels[2].getProperty("textContent")).jsonValue()).split('APR')[1].split('%')[0].trim());
+  console.log("ggAVAX APR: ", ggAvaxApr);
+
+  let params = {
+    TableName: process.env.APY_TABLE,
+    Key: {
+      id: "sAVAX"
+    },
+    AttributeUpdates: {
+      apy: {
+        Value: Number(sAvaxApr) ? sAvaxApr : null,
+        Action: "PUT"
+      }
+    }
+  };
+  await dynamoDb.update(params).promise();
+
+  params = {
+    TableName: process.env.APY_TABLE,
+    Key: {
+      id: "yyAVAX"
+    },
+    AttributeUpdates: {
+      apy: {
+        Value: Number(yyAvaxApr) ? yyAvaxApr : null,
+        Action: "PUT"
+      }
+    }
+  };
+  await dynamoDb.update(params).promise();
+
+  params = {
+    TableName: process.env.APY_TABLE,
+    Key: {
+      id: "ggAVAX"
+    },
+    AttributeUpdates: {
+      apy: {
+        Value: Number(ggAvaxApr) ? ggAvaxApr : null,
+        Action: "PUT"
+      }
+    }
+  };
+  await dynamoDb.update(params).promise();
+
+  return event;
+}
+
 module.exports = {
   levelTvlAggregator,
   glpAprAggregator,
@@ -753,5 +835,6 @@ module.exports = {
   beefyApyAggregator,
   levelApyAggregator,
   gmxApyAggregator,
-  balanerApyAggregator
+  balanerApyAggregator,
+  assetStakingApyAggregator
 }
