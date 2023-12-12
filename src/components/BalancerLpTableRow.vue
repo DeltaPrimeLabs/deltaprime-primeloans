@@ -328,7 +328,7 @@ export default {
       const modalInstance = this.openModal(StakeBalancerV2Modal);
       modalInstance.balance = await this.getWalletLpTokenBalance();
       modalInstance.title = 'Import Balancer LP tokens';
-      modalInstance.description = 'Your Balancer position will be imported to your Prime Account. If you don\'t see your BPT tokens here, please unstake them first on the Balancer website.';
+      modalInstance.description = 'Your Balancer position will be imported to your Prime Account. This requires 3 transactions (approval, depositing and staking). If you don\'t see your BPT tokens here, please unstake them first on the Balancer website.';
 
       modalInstance.$on('STAKE', provideLiquidityEvent => {
         if (this.smartLoanContract) {
