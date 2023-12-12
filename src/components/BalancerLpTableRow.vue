@@ -324,7 +324,7 @@ export default {
 
     async openImportModal() {
       const modalInstance = this.openModal(StakeBalancerV2Modal);
-      modalInstance.walletAssetBalance = await this.getWalletLpTokenBalance();
+      modalInstance.balance = await this.getWalletLpTokenBalance();
       modalInstance.title = 'Import Balancer LP tokens';
       modalInstance.description = 'Your Balancer position will be imported to your Prime Account. If you don\'t see your BPT tokens here, please unstake them first on the Balancer website.';
 
