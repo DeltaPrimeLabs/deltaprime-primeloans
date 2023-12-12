@@ -20,8 +20,8 @@
                              :lp-token="lpToken" :lp-tokens="traderJoeLpTokens"></TraderJoeLpTableRow>
       </div>
     </div>
-    <div class="lp-tokens">
-      <div class="lp-table" v-if="balancerLpTokens">
+    <div class="lp-tokens" v-if="Object.keys(balancerLpTokens).length">
+      <div class="lp-table">
         <TableHeader :config="balancerLpTableHeaderConfig"></TableHeader>
         <BalancerLpTableRow v-for="(lpToken, index) in balancerLpTokens" v-bind:key="index" :index="index"
                              :lp-token="lpToken" :lp-tokens="balancerLpTokens"></BalancerLpTableRow>
