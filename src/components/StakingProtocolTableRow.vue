@@ -12,9 +12,9 @@
             <div class="asset-name">
               {{ asset.name }}
               <InfoIcon
-                  class="info__icon"
-                  v-if="farm.info"
-                  :tooltip="{content: farm.info, classes: 'info-tooltip long', placement: 'right'}"
+                class="info__icon"
+                v-if="farm.info"
+                :tooltip="{content: farm.info, classes: 'info-tooltip long', placement: 'right'}"
               ></InfoIcon>
             </div>
             <div class="by-farm">{{ protocol.name }} -> {{ farm.strategy }}</div>
@@ -45,9 +45,9 @@
             </div>
           </div>
           <InfoIcon
-              class="info__icon"
-              v-if="farm.rewardsInfo"
-              :tooltip="{content: farm.rewardsInfo, classes: 'info-tooltip long', placement: 'right'}"
+            class="info__icon"
+            v-if="farm.rewardsInfo"
+            :tooltip="{content: farm.rewardsInfo, classes: 'info-tooltip long', placement: 'right'}"
           ></InfoIcon>
         </div>
       </div>
@@ -65,18 +65,18 @@
           <FlatButton v-if="farm.migrateMethod" :tooltip="'Migrates assets from the manual pool to the autocompounding pool'" v-on:buttonClick="migrateButtonClick()">Migrate
           </FlatButton>
           <IconButtonMenuBeta
-              class="actions__icon-button"
-              :config="addActionsConfig"
-              v-if="addActionsConfig"
-              v-on:iconButtonClick="actionClick"
-              :disabled="disableAllButtons || platypusAffected || platypusAffectedDisableDeposit">
+            class="actions__icon-button"
+            :config="addActionsConfig"
+            v-if="addActionsConfig"
+            v-on:iconButtonClick="actionClick"
+            :disabled="disableAllButtons || platypusAffected || platypusAffectedDisableDeposit">
           </IconButtonMenuBeta>
           <IconButtonMenuBeta
-              class="actions__icon-button last"
-              :config="removeActionsConfig"
-              v-if="removeActionsConfig"
-              v-on:iconButtonClick="actionClick"
-              :disabled="disableAllButtons || platypusAffected">
+            class="actions__icon-button last"
+            :config="removeActionsConfig"
+            v-if="removeActionsConfig"
+            v-on:iconButtonClick="actionClick"
+            :disabled="disableAllButtons || platypusAffected">
           </IconButtonMenuBeta>
         </div>
       </div>
@@ -98,7 +98,6 @@ import InfoIcon from "./InfoIcon.vue";
 import AddFromWalletModal from "./AddFromWalletModal.vue";
 import erc20ABI from "../../test/abis/ERC20.json";
 import WithdrawModal from "./WithdrawModal.vue";
-import StakeBalancerV2Modal from "./StakeBalancerV2Modal.vue";
 
 const ethers = require('ethers');
 
@@ -175,8 +174,6 @@ export default {
       'traderJoeV2LpAssets',
       'levelLpAssets',
       'levelLpBalances',
-      'balancerLpAssets',
-      'balancerLpBalances',
       'noSmartLoan'
     ]),
     ...mapState('serviceRegistry', [
@@ -230,8 +227,6 @@ export default {
       modalInstance.levelLpAssets = this.levelLpAssets;
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
-      modalInstance.balancerLpBalances = this.balancerLpBalances;
-      modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.loan = this.debt;
@@ -275,8 +270,6 @@ export default {
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
       modalInstance.levelLpBalances = this.levelLpBalances;
-      modalInstance.balancerLpBalances = this.balancerLpBalances;
-      modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.loan = this.debt;
@@ -312,12 +305,28 @@ export default {
         return;
       }
 
-      const modalInstance = this.openModal(StakeBalancerV2Modal);
-      modalInstance.unstake = false;
-
+      const modalInstance = this.openModal(StakeModal);
+      modalInstance.apy = this.apy;
+      modalInstance.available = this.asset.secondary ? this.lpBalances[this.asset.symbol] : this.assetBalances[this.asset.symbol];
+      modalInstance.underlyingTokenStaked = this.underlyingTokenStaked;
+      modalInstance.rewards = this.rewards;
+      modalInstance.asset = this.asset;
+      modalInstance.protocol = this.protocol;
+      modalInstance.isLP = this.isLP;
       modalInstance.$on('STAKE', (stakeValue) => {
-
-        this.handleTransaction(this.stakeBalancerV2, {unstakeRequest: unstakeRequest}, () => {
+        const stakeRequest = {
+          feedSymbol: this.farm.feedSymbol,
+          assetSymbol: this.asset.symbol,
+          protocol: this.farm.protocol,
+          protocolIdentifier: this.farm.protocolIdentifier,
+          amount: stakeValue.toString(),
+          method: this.farm.stakeMethod,
+          decimals: this.asset.decimals,
+          gas: this.farm.gasStake,
+          refreshDelay: this.farm.refreshDelay ? this.farm.refreshDelay : 30000,
+          isLP: this.isLP,
+        };
+        this.handleTransaction(this.stake, {stakeRequest: stakeRequest}, () => {
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
@@ -325,17 +334,36 @@ export default {
       });
     },
 
-    async openUnstakeModal() {
+    openUnstakeModal() {
       if (this.disabled) {
         return;
       }
 
-      const modalInstance = this.openModal(StakeBalancerV2Modal);
-      modalInstance.unstake = true;
-
-      modalInstance.$on('UNSTAKE', (stakeValue) => {
-
-        this.handleTransaction(this.stake, {unstakeRequest: unstakeRequest}, () => {
+      const modalInstance = this.openModal(UnstakeModal);
+      modalInstance.apy = this.apy;
+      modalInstance.staked = this.underlyingTokenStaked;
+      modalInstance.asset = this.asset;
+      modalInstance.receiptTokenBalance = this.farm.totalBalance;
+      modalInstance.protocol = this.protocol;
+      modalInstance.isLP = this.isLP;
+      modalInstance.$on('UNSTAKE', unstakeEvent => {
+        const unstakeRequest = {
+          receiptTokenUnstaked: unstakeEvent.receiptTokenUnstaked.toString(),
+          minReceiptTokenUnstaked: this.farm.minAmount * parseFloat(unstakeEvent.receiptTokenUnstaked),
+          underlyingTokenUnstaked: unstakeEvent.underlyingTokenUnstaked.toString(),
+          assetSymbol: this.asset.symbol,
+          feedSymbol: this.farm.feedSymbol,
+          protocol: this.farm.protocol,
+          protocolIdentifier: this.farm.protocolIdentifier,
+          method: this.farm.unstakeMethod,
+          decimals: this.asset.decimals,
+          gas: this.farm.gasUnstake,
+          rewardTokens: this.farm.rewardTokens ? this.farm.rewardTokens : [],
+          refreshDelay: this.farm.refreshDelay ? this.farm.refreshDelay : 30000,
+          isLP: this.isLP,
+          isMax: unstakeEvent.isMax
+        };
+        this.handleTransaction(this.unstake, {unstakeRequest: unstakeRequest}, () => {
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
