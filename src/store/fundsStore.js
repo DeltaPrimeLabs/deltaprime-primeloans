@@ -1889,8 +1889,6 @@ export default {
       let fundTx = await wrappedContract.fund(toBytes32(fundRequest.symbol), bptBalance);
       await awaitConfirmation(fundTx, provider, 'fund LP token');
 
-      bptBalance = await bptToken.balanceOf(state.smartLoanContract.address);
-
       const transaction = await wrappedContract.stakeBalancerV2(fundRequest.poolId, bptBalance);
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
