@@ -188,7 +188,7 @@ export default {
     },
 
     maxApr() {
-      return calculateMaxApy(this.pools, this.apr / 100);
+      return calculateMaxApy(this.pools, this.lpToken.tempApy / 100);
     }
   },
 
