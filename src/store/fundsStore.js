@@ -215,6 +215,7 @@ export default {
       await dispatch('setupTraderJoeV2LpAssets');
       if (config.LEVEL_LP_ASSETS_CONFIG) await dispatch('setupLevelLpAssets');
       if (config.GMX_V2_ASSETS_CONFIG) await dispatch('setupGmxV2Assets');
+      await dispatch('getAllAssetsApys');
       await dispatch('stakeStore/updateStakedPrices', null, {root: true});
       state.assetBalances = [];
 
@@ -227,7 +228,6 @@ export default {
 
       if (state.smartLoanContract.address !== NULL_ADDRESS) {
         state.assetBalances = null;
-        await dispatch('getAllAssetsApys');
         await dispatch('getAllAssetsBalances');
         await dispatch('stakeStore/updateStakedBalances', null, {root: true});
         await dispatch('getDebtsPerAsset');
