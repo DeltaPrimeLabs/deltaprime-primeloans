@@ -211,8 +211,8 @@ export default {
         const minReceivedTargetAsset = (this.lpToken.price * lpRemoved / this.assets[this.targetAsset].price) * (1 - slippage);
         console.log(minReceivedTargetAsset);
 
-        this.minReceivedFirst = this.targetAsset === this.lpToken.primary ? minReceivedTargetAsset : 0;
-        this.minReceivedSecond = this.targetAsset === this.lpToken.secondary ? minReceivedTargetAsset : 0;
+        this.minReceivedFirst = !Number.isNaN(minReceivedTargetAsset) && this.targetAsset === this.lpToken.primary ? minReceivedTargetAsset : 0;
+        this.minReceivedSecond = !Number.isNaN(minReceivedTargetAsset) && this.targetAsset === this.lpToken.secondary ? minReceivedTargetAsset : 0;
 
         this.$forceUpdate();
 
