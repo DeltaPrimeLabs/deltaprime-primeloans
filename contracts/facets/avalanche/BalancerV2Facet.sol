@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 40832472a72e17e0bc32b62f321c73a7a14e116b;
+// Last deployed from commit: f1f319fc0eb63159db16e913a87d78c8c7bf732b;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -17,7 +17,7 @@ import "../../interfaces/facets/avalanche/IBalancerV2Facet.sol";
 //This path is updated during deployment
 import "../../lib/local/DeploymentConstants.sol";
 
-contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
+contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent, IBalancerV2Facet {
     using TransferHelper for address;
 
     // Used to deposit/withdraw tokens
@@ -28,7 +28,7 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * Joins a pool and stakes in a gauge
      * @param request stake request
      **/
-    function joinPoolAndStakeBalancerV2(IBalancerV2Facet.StakeRequest memory request) external onlyWhitelistedAccounts nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent {
+    function joinPoolAndStakeBalancerV2(IBalancerV2Facet.StakeRequest memory request) external nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent {
         uint256 stakedTokensLength = request.stakedTokens.length;
 
         if (stakedTokensLength != request.stakedAmounts.length) revert ArgArrayLengthsDiffer();
@@ -155,7 +155,7 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             }
         }
 
-        emit Staked(
+        emit StakeBalancerV2(
             msg.sender,
             stakedAssets,
             pool,
@@ -170,7 +170,7 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * @param poolId balancer pool id
      * @param amount stake amount
      **/
-    function stakeBalancerV2(bytes32 poolId, uint256 amount) external onlyWhitelistedAccounts nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent {
+    function stakeBalancerV2(bytes32 poolId, uint256 amount) external nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         IVault vault = IVault(MASTER_VAULT_ADDRESS);
@@ -219,7 +219,7 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * Unstakes tokens a gauge and exits a pool
      * @param request unstake request
     **/
-    function unstakeAndExitPoolBalancerV2(IBalancerV2Facet.UnstakeRequest memory request) external onlyWhitelistedAccounts nonReentrant onlyOwnerOrInsolvent recalculateAssetsExposure {
+    function unstakeAndExitPoolBalancerV2(IBalancerV2Facet.UnstakeRequest memory request) external nonReentrant onlyOwnerOrInsolvent recalculateAssetsExposure {
         (address pool,) = IVault(MASTER_VAULT_ADDRESS).getPool(request.poolId);
         if (pool == address(0)) revert ZeroAddressPool();
 
@@ -290,7 +290,7 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             DiamondStorageLib.removeStakedPosition(poolToIdentifier(pool));
         }
 
-        emit Unstaked(
+        emit UnstakeBalancerV2(
             msg.sender,
             unstakedAssets,
             pool,
@@ -305,7 +305,7 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * @param poolId balancer pool id
      * @param amount unstake amount
     **/
-    function unstakeBalancerV2(bytes32 poolId, uint256 amount) external onlyWhitelistedAccounts nonReentrant onlyOwnerOrInsolvent recalculateAssetsExposure {
+    function unstakeBalancerV2(bytes32 poolId, uint256 amount) external nonReentrant onlyOwnerOrInsolvent recalculateAssetsExposure {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         (address pool,) = IVault(MASTER_VAULT_ADDRESS).getPool(poolId);
@@ -342,7 +342,7 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         );
     }
 
-    function claimRewardsBalancerV2(bytes32 poolId) external nonReentrant onlyWhitelistedAccounts onlyOwner recalculateAssetsExposure remainsSolvent {
+    function claimRewardsBalancerV2(bytes32 poolId) external nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         (address pool,) = IVault(MASTER_VAULT_ADDRESS).getPool(poolId);
@@ -477,26 +477,6 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         _;
     }
 
-    modifier onlyWhitelistedAccounts {
-        if(
-            msg.sender == 0x0E5Bad4108a6A5a8b06820f98026a7f3A77466b2 ||
-            msg.sender == 0x2fFA7E9624B923fA811d9B9995Aa34b715Db1945 ||
-            msg.sender == 0x0d7137feA34BC97819f05544Ec7DE5c98617989C ||
-            msg.sender == 0xC6ba6BB819f1Be84EFeB2E3f2697AD9818151e5D ||
-            msg.sender == 0x14f69F9C351b798dF31fC53E33c09dD29bFAb547 ||
-            msg.sender == 0x5C23Bd1BD272D22766eB3708B8f874CB93B75248 ||
-            msg.sender == 0x000000F406CA147030BE7069149e4a7423E3A264 ||
-            msg.sender == 0x5D80a1c0a5084163F1D2620c1B1F43209cd4dB12 ||
-            msg.sender == 0xb79c2A75cd9073d68E75ddF71D53C07747Df7933 ||
-            msg.sender == 0xE4a6E69E445eB9462FB3E6CB8386C4cCe0832346 ||
-            msg.sender == 0xb79c2A75cd9073d68E75ddF71D53C07747Df7933
-        ){
-            _;
-        } else {
-            revert();
-        }
-    }
-
 
     // ERRORS
     error BalancerV2PoolNotWhitelisted();
@@ -514,51 +494,4 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     error UnstakingWrongToken();
 
     error ZeroAddressPool();
-
-    // EVENTS
-
-    /**
-        * @dev emitted when user stakes assets
-        * @param user the address executing staking
-        * @param assets the assets that were staked
-        * @param vault address of the vault token
-        * @param depositTokenAmounts how much of deposit tokens was staked
-        * @param receiptTokenAmount how much of receipt token was received
-        * @param timestamp of staking
-    **/
-    event Staked(address indexed user, bytes32[] assets, address indexed vault, uint256[] depositTokenAmounts, uint256 receiptTokenAmount, uint256 timestamp);
-
-    /**
-        * @dev emitted when user stakes assets
-        * @param user the address executing staking
-        * @param asset the asset that were staked
-        * @param vault address of the vault token
-        * @param depositTokenAmount how much of deposit token was staked
-        * @param receiptTokenAmount how much of receipt token was received
-        * @param timestamp of staking
-    **/
-    event BptStaked(address indexed user, bytes32 asset, address indexed vault, uint256 depositTokenAmount, uint256 receiptTokenAmount, uint256 timestamp);
-
-    /**
-        * @dev emitted when user unstakes assets
-        * @param user the address executing staking
-        * @param assets the assets that were unstaked
-        * @param vault address of the vault token
-        * @param depositTokenAmounts how much of deposit tokens was received
-        * @param receiptTokenAmount how much of receipt token was unstaked
-        * @param timestamp of unstaking
-    **/
-    event Unstaked(address indexed user, bytes32[] assets, address indexed vault, uint256[] depositTokenAmounts, uint256 receiptTokenAmount, uint256 timestamp);
-
-    /**
-        * @dev emitted when user unstakes assets
-        * @param user the address executing staking
-        * @param asset the assets that were unstaked
-        * @param vault address of the vault token
-        * @param depositTokenAmount how much of deposit token was received
-        * @param receiptTokenAmount how much of receipt token was unstaked
-        * @param timestamp of unstaking
-    **/
-    event BptUnstaked(address indexed user, bytes32 asset, address indexed vault, uint256 depositTokenAmount, uint256 receiptTokenAmount, uint256 timestamp);
-
 }
