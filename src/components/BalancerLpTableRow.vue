@@ -95,6 +95,7 @@ import StakeBalancerV2Modal from "./StakeBalancerV2Modal.vue";
 import WithdrawBalancerV2Modal from "./WithdrawBalancerV2Modal.vue";
 import {formatUnits} from "ethers/lib/utils";
 import config from "../config";
+import BalancerUnwindLpModal from "./BalancerUnwindLpModal.vue";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -456,13 +457,15 @@ export default {
 
     //TODO: duplicated code
     openRemoveLiquidityModal() {
-      const modalInstance = this.openModal(RemoveLiquidityModal);
+      const modalInstance = this.openModal(BalancerUnwindLpModal);
+      modalInstance.assets = this.assets;
       modalInstance.lpToken = this.lpToken;
       modalInstance.lpTokenDecimals = this.lpToken.decimals;
       modalInstance.lpTokenBalance = Number(this.balancerLpBalances[this.lpToken.symbol]);
       modalInstance.firstBalance = Number(this.assetBalances[this.lpToken.primary]);
       modalInstance.secondBalance = Number(this.assetBalances[this.lpToken.secondary]);
       modalInstance.unwindAssetOptions = [config.ASSETS_CONFIG[this.lpToken.primary], config.ASSETS_CONFIG[this.lpToken.secondary]]
+      modalInstance.smartLoanContract = this.smartLoanContract;
       modalInstance.$on('REMOVE_LIQUIDITY', removeEvent => {
         const removeLiquidityRequest = {
           poolId: this.lpToken.poolId,

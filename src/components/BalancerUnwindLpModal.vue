@@ -1,5 +1,5 @@
 <template>
-  <div id="modal" v-if="lpToken" class="remove-liquidity-modal-component modal-component">
+  <div id="modal" v-if="lpToken" class="balancer-unwind-lp-modal-component modal-component">
     <Modal>
       <div class="modal__title">
         Unwind LP token
@@ -7,9 +7,9 @@
 
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>
-        <div class="top-info__value"> {{formatTokenBalance(lpTokenBalance, 10, true)}}</div>
+        <div class="top-info__value"> {{ formatTokenBalance(lpTokenBalance, 10, true) }}</div>
         <span class="top-info__currency">
-          {{lpToken.name}}
+          {{ lpToken.name }}
         </span>
       </div>
 
@@ -19,6 +19,20 @@
                      :max="lpTokenBalance"
                      :validators="validators">
       </CurrencyInput>
+
+      <AssetDropdown v-if="unwindAssetOptions"
+                     :asset-options="unwindAssetOptions"
+                     :default-asset="Object.keys(unwindAssetOptions)[0]"
+                     v-on:valueChange="unwindAssetChange">
+      </AssetDropdown>
+
+      <div class="slippage-bar">
+        <div class="slippage-info">
+          <span class="slippage-label">Max. acceptable slippage:</span>
+          <SimpleInput :percent="true" :default-value="defaultSlippage" v-on:newValue="slippageChange"></SimpleInput>
+          <span class="percent">%</span>
+        </div>
+      </div>
 
       <div class="transaction-summary-wrapper">
         <TransactionResultSummaryBeta>
@@ -78,12 +92,18 @@ import BarGaugeBeta from './BarGaugeBeta';
 import config from '../config';
 import erc20ABI from '../../test/abis/ERC20.json';
 import {parseUnits, formatUnits} from 'ethers/lib/utils';
+import AssetDropdown from "./AssetDropdown.vue";
+import SimpleInput from "./SimpleInput.vue";
 
 const ethers = require('ethers');
 
+const DEFAULT_SLIPPAGE = 0.5 // 0.5%
+
 export default {
-  name: 'RemoveLiquidityModal',
+  name: 'BalancerUnwindLpModal',
   components: {
+    SimpleInput,
+    AssetDropdown,
     Button,
     CurrencyInput,
     TransactionResultSummaryBeta,
@@ -108,6 +128,11 @@ export default {
       minReceivedSecond: 0,
       transactionOngoing: false,
       currencyInputError: true,
+      unwindAssetOptions: [],
+      targetAsset: null,
+      defaultSlippage: DEFAULT_SLIPPAGE,
+      slippage: DEFAULT_SLIPPAGE,
+      assets: [],
     };
   },
 
@@ -141,7 +166,8 @@ export default {
         asset: this.lpToken.symbol,
         amount: Number(this.amount).toFixed(lpTokenDecimals),
         minReceivedFirst: minReceivedAmounts.minReceivedFirst,
-        minReceivedSecond: minReceivedAmounts.minReceivedSecond
+        minReceivedSecond: minReceivedAmounts.minReceivedSecond,
+        targetAsset: this.targetAsset,
       });
     },
 
@@ -174,46 +200,43 @@ export default {
         this.minReceivedSecond = 0;
       } else {
         //TODO: hardcoded slippage
-        const slippage = 0.005; // 0.5% slippage
+        const slippage = this.slippage / 100
+        console.log(slippage);
 
-        const firstTokenContract = new ethers.Contract(this.firstAsset.address, erc20ABI, provider.getSigner());
-        const secondTokenContract = new ethers.Contract(this.secondAsset.address, erc20ABI, provider.getSigner());
-        const lpTokenContract = new ethers.Contract(this.lpToken.address, erc20ABI, provider.getSigner());
+        console.log(this.lpToken.price);
+        console.log(this.lpTokenBalance);
+        console.log(this.assets);
+        console.log(this.assets[this.targetAsset]);
 
-        const lpTokenDecimals = this.lpTokenDecimals ? this.lpTokenDecimals : config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals;
+        const minReceivedTargetAsset = (this.lpToken.price * lpRemoved / this.assets[this.targetAsset].price) * (1 - slippage);
+        console.log(minReceivedTargetAsset);
 
-        const firstTokenBalance = await firstTokenContract.balanceOf(this.lpToken.address);
-        const secondTokenBalance = await secondTokenContract.balanceOf(this.lpToken.address);
-        const totalSupply = await lpTokenContract.totalSupply();
-
-        this.$forceUpdate();
-
-        const firstAmount =
-          parseUnits(Number(lpRemoved).toFixed(lpTokenDecimals), lpTokenDecimals)
-            .mul(firstTokenBalance)
-            .div(totalSupply)
-            .mul((1 - slippage) * 1000)
-            .div(1000);
-        const secondAmount =
-          parseUnits(Number(lpRemoved).toFixed(lpTokenDecimals), lpTokenDecimals)
-            .mul(secondTokenBalance)
-            .div(totalSupply)
-            .mul((1 - slippage) * 1000)
-            .div(1000);
-
-        const minReceivedFirst = Number(formatUnits(firstAmount, this.firstAsset.decimals));
-        this.minReceivedFirst = minReceivedFirst;
-        const minReceivedSecond = Number(formatUnits(secondAmount, this.secondAsset.decimals));
-        this.minReceivedSecond = minReceivedSecond;
+        this.minReceivedFirst = this.targetAsset === this.lpToken.primary ? minReceivedTargetAsset : 0;
+        this.minReceivedSecond = this.targetAsset === this.lpToken.secondary ? minReceivedTargetAsset : 0;
 
         this.$forceUpdate();
 
-        return {
-          minReceivedFirst: minReceivedFirst,
-          minReceivedSecond: minReceivedSecond,
+        const receivedValues = {
+          minReceivedFirst: this.minReceivedFirst,
+          minReceivedSecond: this.minReceivedSecond,
         };
+
+        console.log(receivedValues);
+        return receivedValues;
       }
-    }
+    },
+
+    unwindAssetChange(asset) {
+      console.log(asset.chosen);
+      this.targetAsset = asset.chosen;
+      this.calculateReceivedAmounts(this.amount);
+    },
+
+    slippageChange(slippageChange) {
+      console.log(slippageChange);
+      this.slippage = slippageChange.value;
+      this.calculateReceivedAmounts(this.amount);
+    },
   }
 };
 </script>
