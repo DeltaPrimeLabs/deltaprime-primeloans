@@ -163,6 +163,13 @@ functions:
     description: Fetch staking APYs of various assets.
     events:
       - schedule: rate(2 minutes)
+  gmOpenInterestAggregator:
+    handler: gmOpenInterest/gmOpenInterestAggregator.handler
+    memorySize: 2048
+    timeout: 300
+    description: fetch long and short Open Interest of GM pool.
+    events:
+      - schedule: rate(3 hours)
   # loanAggregatorAva:
   #   handler: aggregators/loan.loanAggregatorAva
   #   memorySize: 1024

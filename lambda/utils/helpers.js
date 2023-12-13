@@ -19,6 +19,7 @@ const parseUnits = ethers.utils.parseUnits;
 // BigNumber -> String
 const formatUnits = ethers.utils.formatUnits;
 const fromWei = val => parseFloat(ethers.utils.formatEther(val));
+const toWei = val => ethers.utils.parseEther(val.toString());
 
 const jsonRpcAva = config.jsonRpcAva;
 const jsonRpcArb = config.jsonRpcArb;
@@ -67,13 +68,16 @@ const getWrappedContracts = (addresses, network) => {
   });
 }
 
-const fromBytes32 = require('ethers').utils.parseBytes32String;
+const fromBytes32 = ethers.utils.parseBytes32String;
+const toBytes32 = ethers.utils.formatBytes32String;
 
 module.exports = {
   parseUnits,
   formatUnits,
   fromWei,
+  toWei,
   fromBytes32,
+  toBytes32,
   getHistoricalTokenPrice,
   getSymbolFromPoolAddress,
   wrap,
