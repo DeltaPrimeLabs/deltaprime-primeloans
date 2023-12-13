@@ -685,64 +685,7 @@ const gmxApyAggregator = async (event) => {
   return event;
 }
 
-const balanerApyAggregator = async (event) => {
-  const { page } = await newChrome();
-
-  // navigate pools page and wait till javascript fully load.
-  const BASE_URL = "https://app.balancer.fi/#";
-
-  await page.setViewport({
-    width: 1920,
-    height: 1080
-  });
-
-  // fetch GM tokens' APYs on Arbitrum and Avalanche
-  for (const [network, pools] of Object.entries(balancerApyConfig)) {
-    const PAGE_URL = `${BASE_URL}/${network}`;
-    await page.goto(PAGE_URL, {
-      waitUntil: "networkidle0",
-      timeout: 60000
-    });
-
-    const poolRows = await page.$$("table > tr");
-    const poolInnerTexts = await Promise.all(Array.from(poolRows).map(async pool => {
-      return (await (await pool.getProperty("textContent")).jsonValue()).replace(/\s+/g, "").replace('Inyourwallet...0', '').replace('$0.00', '');
-    }));
-
-    for (const [identifier, keyword] of Object.entries(pools)) {
-      try {
-        const matchId = poolInnerTexts.findIndex(innerText => innerText.toLowerCase().startsWith(keyword));
-        const pool = poolRows[matchId];
-        const poolColumns = await pool.$$("td");
-        const poolApy = parseFloat((await (await poolColumns[4].getProperty("textContent")).jsonValue()).split('%')[0].trim());
-
-        console.log(identifier, poolApy);
-
-        const params = {
-          TableName: process.env.APY_TABLE,
-          Key: {
-            id: identifier
-          },
-          AttributeUpdates: {
-            lp_apy: {
-              Value: Number(poolApy) ? poolApy / 100 : null,
-              Action: "PUT"
-            }
-          }
-        };
-        await dynamoDb.update(params).promise();
-      } catch (error) {
-        console.log(error);
-      }
-    }
-  }
-
-  console.log('fetching done.');
-
-  return event;
-}
-
-const assetStakingApyAggregator = async (event) => {
+const fetchAssetApy = async () => {
   // fetch staking APR of sAVAX and yyAVAX
   const sAvaxApiUrl = "https://api.benqi.fi/liquidstaking/apr";
   const yyAvaxApiUrl = "https://staging-api.yieldyak.com/yyavax";
@@ -778,6 +721,85 @@ const assetStakingApyAggregator = async (event) => {
   const panels = await page.$$(".react-grid-layout > .react-grid-item");
   const ggAvaxApr = parseFloat((await (await panels[2].getProperty("textContent")).jsonValue()).split('APR')[1].split('%')[0].trim());
   console.log("ggAVAX APR: ", ggAvaxApr);
+
+  return {
+    sAvaxApr,
+    yyAvaxApr,
+    ggAvaxApr
+  }
+}
+
+const balanerApyAggregator = async (event) => {
+  const { sAvaxApr, yyAvaxApr, ggAvaxApr } = await fetchAssetApy();
+  const assetAprs = {
+    "avalanche": {
+      "BAL_ggAVAX_AVAX": ggAvaxApr,
+      "BAL_yyAVAX_AVAX": yyAvaxApr,
+      "BAL_sAVAX_AVAX": sAvaxApr
+    }
+  };
+
+  const { page } = await newChrome();
+
+  // navigate pools page and wait till javascript fully load.
+  const BASE_URL = "https://app.balancer.fi/#";
+
+  await page.setViewport({
+    width: 1920,
+    height: 1080
+  });
+
+  // fetch GM tokens' APYs on Arbitrum and Avalanche
+  for (const [network, pools] of Object.entries(balancerApyConfig)) {
+    const PAGE_URL = `${BASE_URL}/${network}`;
+    await page.goto(PAGE_URL, {
+      waitUntil: "networkidle0",
+      timeout: 60000
+    });
+
+    const poolRows = await page.$$("table > tr");
+    const poolInnerTexts = await Promise.all(Array.from(poolRows).map(async pool => {
+      return (await (await pool.getProperty("textContent")).jsonValue()).replace(/\s+/g, "").replace('Inyourwallet...0', '').replace('$0.00', '');
+    }));
+
+    for (const [identifier, keyword] of Object.entries(pools)) {
+      try {
+        const matchId = poolInnerTexts.findIndex(innerText => innerText.toLowerCase().startsWith(keyword));
+        const pool = poolRows[matchId];
+        const poolColumns = await pool.$$("td");
+
+        const assetAppreciation = assetAprs[network][identifier] / 2;
+        const vaultApy = parseFloat((await (await poolColumns[4].getProperty("textContent")).jsonValue()).split('%')[0].trim());
+        const poolApy = (1 + vaultApy) * (1 + assetAppreciation) - 1;
+
+        console.log(identifier, vaultApy, poolApy);
+
+        const params = {
+          TableName: process.env.APY_TABLE,
+          Key: {
+            id: identifier
+          },
+          AttributeUpdates: {
+            lp_apy: {
+              Value: Number(poolApy) ? poolApy / 100 : null,
+              Action: "PUT"
+            }
+          }
+        };
+        await dynamoDb.update(params).promise();
+      } catch (error) {
+        console.log(error);
+      }
+    }
+  }
+
+  console.log('fetching done.');
+
+  return event;
+}
+
+const assetStakingApyAggregator = async (event) => {
+  const { sAvaxApr, yyAvaxApr, ggAvaxApr } = await fetchAssetApy();
 
   let params = {
     TableName: process.env.APY_TABLE,
