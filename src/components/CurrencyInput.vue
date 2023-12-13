@@ -10,6 +10,9 @@
                v-on:input="typeWatch"
                placeholder="0" min="0" maxlength="20" lang="en-US">
       </span>
+      <div class="disabled-input-text" v-bind:class="{'visible': disabled}">
+        {{ disabledStringifiedValue }}
+      </div>
       <div class="input-extras-wrapper">
         <div v-if="max != null" class="max-wrapper" v-on:click="setMax()">
           <div class="max">MAX</div>
@@ -56,6 +59,7 @@
 import config from '@/config';
 import {mapState} from 'vuex';
 import InfoIcon from "./InfoIcon.vue";
+import {smartRound} from "../utils/calculate";
 
 export default {
   name: 'CurrencyInput',
@@ -91,6 +95,7 @@ export default {
     return {
       error: '',
       warning: '',
+      disabledStringifiedValue: null,
       timer: 0,
       value: this.defaultValue,
       defaultValidators: [],
@@ -206,6 +211,7 @@ export default {
     async setValue(value) {
       this.value = value;
       this.internalValue = String(value);
+      this.disabledStringifiedValue = smartRound(value, 20, true)
       const checkErrorsResult = await this.checkErrors(this.value);
       const hasError = checkErrorsResult !== '';
       return {value: this.value, error: hasError};
@@ -282,6 +288,7 @@ export default {
 }
 
 .input-wrapper {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -322,6 +329,7 @@ input {
 
   &:disabled {
     opacity: 77%;
+    color: transparent;
   }
 
   @media screen and (min-width: $md) {
@@ -463,6 +471,22 @@ img {
   .slash {
     height: 24px;
     width: 12px;
+  }
+}
+
+.disabled-input-text {
+  position: absolute;
+  font-weight: 600;
+  font-size: 24px;
+  letter-spacing: normal;
+  color: var(--currency-input__input-color);
+  max-width: 290px;
+  opacity: 0;
+  padding-left: 2px;
+  overflow: hidden;
+
+  &.visible {
+    opacity: 77%;
   }
 }
 </style>
