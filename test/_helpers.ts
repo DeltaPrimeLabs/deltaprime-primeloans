@@ -870,6 +870,23 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         ],
         hardhatConfig);
 
+        await deployFacet("BalancerV2Facet", diamondAddress, [
+            'joinPoolAndStakeBalancerV2',
+            'stakeBalancerV2',
+            'unstakeAndExitPoolBalancerV2',
+            'unstakeBalancerV2',
+            'claimRewardsBalancerV2',
+            'balancerGgAvaxBalance',
+            'balancerYyAvaxBalance',
+            'balancerSAvaxBalance',
+        ],
+        hardhatConfig);
+
+        await deployFacet("GogoPoolFacet", diamondAddress, [
+            'swapToGgAvax',
+        ],
+        hardhatConfig);
+
         if (mock) {
             await deployFacet("UniswapV3FacetMock", diamondAddress, ['mintLiquidityUniswapV3', 'increaseLiquidityUniswapV3', 'decreaseLiquidityUniswapV3', 'burnLiquidityUniswapV3', 'getOwnedUniswapV3TokenIds'], hardhatConfig)
         } else {
