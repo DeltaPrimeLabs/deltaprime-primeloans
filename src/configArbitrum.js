@@ -53,6 +53,10 @@ export default {
             availableAssets: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH', 'GRAIL', 'WOO', 'MAGIC', 'JOE'],
             slippageMargin: 0.05
         },
+        ParaSwapV2: {
+            availableAssets: [],
+            slippageMargin: 0.05
+        },
         Level: {
             availableAssets: [],
             slippageMargin: 0.1
