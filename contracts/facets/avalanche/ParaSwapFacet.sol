@@ -91,6 +91,7 @@ contract ParaSwapFacet is ReentrancyGuardKeccak, SolvencyMethods {
         );
 
         require(swapTokensDetails.soldToken.balanceOf(address(this)) >= fromAmount, "Insufficient balance");
+        require(minOut > 0, "minOut needs to be > 0");
         require(fromAmount > 0, "Amount of tokens to sell has to be greater than 0");
 
         address(swapTokensDetails.soldToken).safeApprove(PARA_TRANSFER_PROXY, 0);
