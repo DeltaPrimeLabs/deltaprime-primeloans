@@ -770,7 +770,7 @@ const balanerApyAggregator = async (event) => {
 
         const assetAppreciation = assetAprs[network][identifier] / 2;
         const vaultApy = parseFloat((await (await poolColumns[4].getProperty("textContent")).jsonValue()).split('%')[0].trim());
-        const poolApy = (1 + vaultApy) * (1 + assetAppreciation) - 1;
+        const poolApy = ((1 + vaultApy / 100.0) * (1 + assetAppreciation / 100.0) - 1) * 100;
 
         console.log(identifier, vaultApy, poolApy);
 
