@@ -24,24 +24,6 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     })
 
     console.log('Verified DepositSwapArbitrum.')
-
-    let depositSwapArbitrumTUP = await deploy("DepositSwapArbitrumTUP", {
-        from: deployer,
-        gasLimit: 50000000,
-        args: [depositSwapArbitrum.address, admin, []],
-    });
-
-    console.log(
-        `Deployed DepositSwapArbitrumTUP at address: ${depositSwapArbitrumTUP.address}`
-    );
-
-    await verifyContract(hre, {
-        address: depositSwapArbitrumTUP.address,
-        contract: "contracts/proxies/tup/arbitrum/DepositSwapArbitrumTUP.sol:DepositSwapArbitrumTUP",
-        constructorArguments: [depositSwapArbitrum.address, admin, []]
-    })
-
-    console.log('Verified DepositSwapArbitrumTUP.')
 };
 
 module.exports.tags = ["arbitrum-deposit-swap"];
