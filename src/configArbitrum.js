@@ -92,7 +92,6 @@ export default {
         DAI: {
             address: DAI_POOL_TUP.address,
             tokenAddress: addresses.DAI,
-            disabled: true
         },
         USDT: {
             address: USDT_POOL_TUP.address,
