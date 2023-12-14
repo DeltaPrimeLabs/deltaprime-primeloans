@@ -1187,14 +1187,9 @@ export default {
             let symbol = entry[0];
             let lpAsset = entry[1];
 
-            const apy = lpAsset.apy ? lpAsset.apy / 100 : 0;
+            const apy = lpAsset.tempApy ? lpAsset.tempApy / 100 : 0;
 
             let assetAppreciation = 0;
-
-            if (state.assets[lpAsset.primary].apy || state.assets[lpAsset.secondary].apy) {
-              if(state.assets[lpAsset.primary].apy) assetAppreciation += state.assets[lpAsset.primary].apy / 100 / 2;
-              if(state.assets[lpAsset.secondary].apy) assetAppreciation += state.assets[lpAsset.secondary].apy / 100 / 2;
-            }
 
             yearlyLpInterest += parseFloat(state.balancerLpBalances[symbol]) * ((1 + apy) * (1 + assetAppreciation) - 1) * lpAsset.price;
           }
