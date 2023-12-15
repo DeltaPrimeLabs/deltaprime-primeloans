@@ -154,7 +154,7 @@ import YAK_ROUTER_ABI
   from '../../test/abis/YakRouter.json';
 import YAK_WRAP_ROUTER
   from '../../artifacts/contracts/interfaces/IYakWrapRouter.sol/IYakWrapRouter.json';
-import {formatUnits, parseUnits} from '../utils/calculate';
+import {formatUnits, fromWei, parseUnits} from '../utils/calculate';
 import GLP_REWARD_ROUTER
   from '../../artifacts/contracts/interfaces/facets/avalanche/IRewardRouterV2.sol/IRewardRouterV2.json';
 import GLP_REWARD_TRACKER
@@ -520,59 +520,45 @@ export default {
     },
 
     swapDebtQueryMethod() {
-      return async (sourceAsset, targetAsset, amountIn) => {
+      return async (sourceAsset, targetAsset, amountIn, amountOut) => {
         const tknFrom = TOKEN_ADDRESSES[sourceAsset];
         const tknTo = TOKEN_ADDRESSES[targetAsset];
 
-        if (sourceAsset !== 'GLP' && targetAsset !== 'GLP') {
           const yakRouter = new ethers.Contract(config.yakRouterAddress, YAK_ROUTER_ABI, provider.getSigner());
 
-          const maxHops = 1;
-          const gasPrice = ethers.utils.parseUnits('225', 'gwei');
+          const maxHops = 3;
+          const gasPrice = ethers.utils.parseUnits('0', 'gwei');
 
-          try {
-            return await yakRouter.findBestPathWithGas(
-                amountIn,
-                tknFrom,
-                tknTo,
-                maxHops,
-                gasPrice,
-                {gasLimit: 1e9}
-            );
-          } catch (e) {
-            this.handleTransactionError(e);
-          }
-        } else {
-          const yakWrapRouter = new ethers.Contract(config.yakWrapRouterAddress, YAK_WRAP_ROUTER.abi, provider.getSigner());
+          const MAX_TRY_AMOUNT = 10;
 
-          const maxHops = 1;
-          const gasPrice = ethers.utils.parseUnits('225', 'gwei');
+          let i = 0;
+          let targetBorrowedAmount = amountOut;
 
-          if (targetAsset === 'GLP') {
+          while (i < MAX_TRY_AMOUNT) {
             try {
-              return await yakWrapRouter.findBestPathAndWrap(
-                  amountIn,
+              let path = await yakRouter.findBestPathWithGas(
+                  targetBorrowedAmount,
                   tknFrom,
-                  config.yieldYakGlpWrapperAddress,
-                  maxHops,
-                  gasPrice);
-            } catch (e) {
-              this.handleTransactionError(e);
-            }
-          } else {
-            try {
-              return await yakWrapRouter.unwrapAndFindBestPath(
-                  amountIn,
                   tknTo,
-                  config.yieldYakGlpWrapperAddress,
                   maxHops,
-                  gasPrice);
+                  gasPrice,
+                  {gasLimit: 1e12}
+              );
+
+              if (path.amounts[path.amounts.length - 1].gt(amountIn)) {
+                return path;
+              }
+
+              targetBorrowedAmount = targetBorrowedAmount.mul(BigNumber.from('10005')).div(BigNumber.from('10000'));
             } catch (e) {
               this.handleTransactionError(e);
+            } finally {
+              i++;
             }
           }
-        }
-      };
+
+        this.handleTransactionError(Error('Could not find a path.'));
+      }
     },
 
     actionClick(key) {

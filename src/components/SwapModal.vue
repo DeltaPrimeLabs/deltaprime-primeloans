@@ -289,7 +289,6 @@ export default {
       thresholdWeightedValue: 0,
       estimatedReceivedTokens: 0,
       estimatedNeededTokens: 0,
-      receivedAccordingToOracle: 0,
       neededAccordingToOracle: 0,
       path: null,
       adapters: null,
@@ -317,6 +316,13 @@ export default {
         return this.sourceAssetBalance;
       }
     },
+    receivedAccordingToOracle() {
+      return (this.estimatedNeededTokens && this.sourceAssetData && this.targetAssetData)
+          ?
+          this.estimatedNeededTokens * this.sourceAssetData.price / this.targetAssetData.price
+          :
+          0;
+    }
   },
 
   methods: {
@@ -336,7 +342,9 @@ export default {
     submit() {
       this.transactionOngoing = true;
       console.log('submit this.swapDex: ', this.swapDex)
-      const sourceAssetAmount = this.maxButtonUsed && this.swapDex !== 'ParaSwapV2' ? this.sourceAssetAmount * config.MAX_BUTTON_MULTIPLIER : this.sourceAssetAmount;
+      console.log('sourceAssetAmount: ', sourceAssetAmount)
+      const sourceAssetAmount = (this.maxButtonUsed && this.swapDex !== 'ParaSwapV2' && !this.swapDebtMode) ? this.sourceAssetAmount * config.MAX_BUTTON_MULTIPLIER : this.sourceAssetAmount;
+      console.log('sourceAssetAmount: ', sourceAssetAmount)
       this.$emit('SWAP', {
         sourceAsset: this.sourceAsset,
         targetAsset: this.targetAsset,
@@ -358,15 +366,15 @@ export default {
       }
     },
 
-    async query(sourceAsset, targetAsset, amountIn) {
+    async query(sourceAsset, targetAsset, amountIn, amountOut) {
       if (this.swapDebtMode) {
-        return await this.queryMethod(sourceAsset, targetAsset, amountIn);
-      } else {
+        console.log('heeereeee')
         console.log('queryMethods')
         console.log(this.queryMethods)
         console.log('this.swapDex')
         console.log(this.swapDex)
-
+        return await this.queryMethod(sourceAsset, targetAsset, amountIn, amountOut);
+      } else {
         return await this.queryMethods[this.swapDex](sourceAsset, targetAsset, amountIn);
       }
     },
@@ -379,48 +387,67 @@ export default {
       }
 
       this.lastChangedSource = true;
-      let decimals = this.sourceAssetData.decimals;
-      let amountInWei = parseUnits(this.sourceAssetAmount.toFixed(decimals), BigNumber.from(decimals));
+      let sourceDecimals = this.sourceAssetData.decimals;
+      let sourceAmountInWei = parseUnits(this.sourceAssetAmount.toFixed(sourceDecimals), BigNumber.from(sourceDecimals));
+      let targetDecimals = this.targetAssetData.decimals;
+      let oracleReceivedAmountInWei = parseUnits(this.receivedAccordingToOracle.toFixed(targetDecimals), BigNumber.from(targetDecimals));
 
-      const queryResponse = await this.query(this.sourceAsset, this.targetAsset, amountInWei);
+      console.log('receivedAccordingToOracle: ', this.receivedAccordingToOracle)
+      console.log('estimatedNeededTokens: ', this.estimatedNeededTokens)
+      const queryResponse =
+          this.swapDebtMode
+          ?
+          await this.query(this.targetAsset, this.sourceAsset, sourceAmountInWei, oracleReceivedAmountInWei)
+          :
+          await this.query(this.sourceAsset, this.targetAsset, sourceAmountInWei);
+
 
       let estimated;
       if (queryResponse) {
-        if (queryResponse.dex === 'PARA_SWAP') {
-          estimated = queryResponse.amounts[queryResponse.amounts.length - 1];
-          this.paraSwapRate = queryResponse.swapRate;
+        if (this.swapDebtMode) {
+          estimated = queryResponse.amounts[0];
+          console.log('estimated')
+          console.log(fromWei(estimated))
+          this.path = queryResponse.path;
+          this.adapters = queryResponse.adapters;
+          this.updateSlippageWithAmounts(parseFloat(formatUnits(estimated, BigNumber.from(this.targetAssetData.decimals))));
         } else {
-          if (queryResponse instanceof BigNumber) {
-            estimated = queryResponse;
-          } else {
-            this.path = queryResponse.path;
-            this.adapters = queryResponse.adapters;
+          if (queryResponse.dex === 'PARA_SWAP') {
             estimated = queryResponse.amounts[queryResponse.amounts.length - 1];
+            this.paraSwapRate = queryResponse.swapRate;
+          } else {
+            if (queryResponse instanceof BigNumber) {
+              estimated = queryResponse;
+            } else {
+              this.path = queryResponse.path;
+              this.adapters = queryResponse.adapters;
+              estimated = queryResponse.amounts[queryResponse.amounts.length - 1];
+            }
           }
+
+          let estimatedReceived = parseFloat(formatUnits(estimated, BigNumber.from(this.targetAssetData.decimals)));
+
+          if (this.feeMethods && this.feeMethods[this.swapDex]) {
+            this.fee = fromWei(await this.feeMethods[this.swapDex](this.sourceAsset, this.targetAsset, sourceAmountInWei, estimated));
+
+            estimatedReceived -= this.fee * estimatedReceived;
+          }
+
+          this.updateSlippageWithAmounts(estimatedReceived);
         }
-
-        let estimatedReceived = parseFloat(formatUnits(estimated, BigNumber.from(this.targetAssetData.decimals)));
-
-
-        if (this.feeMethods && this.feeMethods[this.swapDex]) {
-          this.fee = fromWei(await this.feeMethods[this.swapDex](this.sourceAsset, this.targetAsset, amountInWei, estimated));
-
-          estimatedReceived -= this.fee * estimatedReceived;
-        }
-
-        this.updateSlippageWithAmounts(estimatedReceived);
-
 
         this.calculateHealthAfterTransaction();
       }
     },
 
     async updateAmountsWithSlippage() {
-      if (!this.swapDebtMode) {
-        this.targetAssetAmount = this.receivedAccordingToOracle * (1 - (this.userSlippage / 100 + (this.fee ? this.fee : 0)));
-      } else {
-        this.targetAssetAmount = this.receivedAccordingToOracle * (1 + (this.userSlippage / 100 + (this.fee ? this.fee : 0)));
-      }
+      this.targetAssetAmount =
+          this.swapDebtMode
+          ?
+          this.receivedAccordingToOracle * (1 + (this.userSlippage / 100 + (this.fee ? this.fee : 0)))
+          :
+          this.receivedAccordingToOracle * (1 - (this.userSlippage / 100 + (this.fee ? this.fee : 0)));
+
 
       const targetInputChangeEvent = await this.$refs.targetInput.setCurrencyInputValue(this.targetAssetAmount);
 
@@ -431,17 +458,15 @@ export default {
 
     async updateSlippageWithAmounts(estimatedReceivedTokens) {
       let dexSlippage = 0;
-      this.receivedAccordingToOracle = this.estimatedNeededTokens * this.sourceAssetData.price / this.targetAssetData.price;
       dexSlippage = (this.receivedAccordingToOracle - estimatedReceivedTokens) / estimatedReceivedTokens;
 
 
       if (this.checkMarketDeviation) {
-        this.receivedAccordingToOracle = this.estimatedNeededTokens * this.sourceAssetData.price / this.targetAssetData.price;
         dexSlippage = (this.receivedAccordingToOracle - estimatedReceivedTokens) / estimatedReceivedTokens;
         this.marketDeviation = parseFloat((100 * dexSlippage).toFixed(3));
       }
 
-      let slippageMargin = config.SWAP_DEXS_CONFIG[this.swapDex].slippageMargin;
+      let slippageMargin = this.slippageMargin ? this.slippageMargin : config.SWAP_DEXS_CONFIG[this.swapDex].slippageMargin;
 
       let updatedSlippage = slippageMargin + 100 * dexSlippage;
 

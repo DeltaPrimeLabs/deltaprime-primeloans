@@ -2889,14 +2889,12 @@ export default {
       let targetDecimals = config.ASSETS_CONFIG[swapDebtRequest.targetAsset].decimals;
       let targetAmount = parseUnits(parseFloat(swapDebtRequest.targetAmount).toFixed(targetDecimals), targetDecimals);
 
-      const reversedSwapPath = [...swapDebtRequest.path].reverse();
-
       const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).swapDebt(
         toBytes32(swapDebtRequest.sourceAsset),
         toBytes32(swapDebtRequest.targetAsset),
         sourceAmount,
         targetAmount,
-        reversedSwapPath,
+        swapDebtRequest.path,
         swapDebtRequest.adapters
       );
 
