@@ -2,7 +2,7 @@
 pragma solidity ^0.8.17;
 
 interface IParaSwapFacet {
-    function paraSwap(
+    function paraSwapV2(
         bytes4 selector,
         bytes memory data,
         address fromToken,
