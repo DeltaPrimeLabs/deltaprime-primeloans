@@ -3,13 +3,16 @@
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
-import "../ReentrancyGuardKeccak.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
+import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
+import "./SmartLoanLiquidationFacet.sol";
+import "../ReentrancyGuardKeccak.sol";
 import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 import "../lib/SolvencyMethods.sol";
 import "../interfaces/ITokenManager.sol";
-import "./SmartLoanLiquidationFacet.sol";
+import "../interfaces/IAddressProvider.sol";
+import "../interfaces/IDustConverter.sol";
 import "../interfaces/facets/IYieldYakRouter.sol";
 
 //this path is updated during deployment
@@ -18,6 +21,7 @@ import "../lib/local/DeploymentConstants.sol";
 contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
     using TransferHelper for address payable;
     using TransferHelper for address;
+    using SafeERC20 for IERC20Metadata;
 
     /* ========== PUBLIC AND EXTERNAL MUTATIVE FUNCTIONS ========== */
 
@@ -226,6 +230,60 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         }
 
         emit DebtSwap(msg.sender, address(fromToken), address(toToken), _repayAmount, _borrowAmount, block.timestamp);
+    }
+
+    /// @notice Convert dust assets
+    /// @param threshold $ value threshold
+    function convertDustAssets(uint256 threshold) external onlyOwner remainsSolvent nonReentrant {
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        IDustConverter dustConverter;
+        {
+            IAddressProvider addressProvider = IAddressProvider(DeploymentConstants.getAddressProvider());
+            dustConverter = IDustConverter(addressProvider.getDustConverter());
+        }
+
+        SolvencyFacetProdAvalanche.AssetPrice[] memory ownedAssetsPrices = _getOwnedAssetsWithNativePrices();
+
+        uint256 length = ownedAssetsPrices.length;
+        uint256 dustAssetCount;
+        bool[] memory isDust = new bool[](length);
+        address[] memory tokens = new address[](length);
+        for (uint256 i; i != length; ++i) {
+            SolvencyFacetProdAvalanche.AssetPrice memory assetPrice = ownedAssetsPrices[i];
+            IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(assetPrice.asset, true));
+            uint256 assetBalance = token.balanceOf(address(this));
+            uint256 value = (assetPrice.price * 10 ** 10 * assetBalance / (10 ** token.decimals()));
+            if (value <= threshold) {
+                ++dustAssetCount;
+                isDust[i] = true;
+                tokens[i] = address(token);
+
+                token.safeApprove(address(dustConverter), assetBalance);
+            }
+        }
+
+        IDustConverter.AssetInfo[] memory dustAssets = new IDustConverter.AssetInfo[](dustAssetCount);
+        uint256 idx;
+        for (uint256 i; i != length; ++i) {
+            if (isDust[i]) {
+                bytes32 asset = ownedAssetsPrices[i].asset;
+                dustAssets[idx++] = IDustConverter.AssetInfo({
+                    symbol: asset,
+                    asset: tokens[i]
+                });
+                DiamondStorageLib.removeOwnedAsset(asset);
+            }
+        }
+
+        IDustConverter.AssetInfo memory returnAsset = abi.decode(
+            proxyCalldata(
+                address(dustConverter),
+                abi.encodeWithSelector(IDustConverter.convert.selector, dustAssets),
+                false
+            ),
+            (IDustConverter.AssetInfo)
+        );
+        DiamondStorageLib.addOwnedAsset(returnAsset.symbol, returnAsset.asset);
     }
 
     /* ======= VIEW FUNCTIONS ======*/

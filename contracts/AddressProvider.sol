@@ -10,7 +10,11 @@ contract AddressProvider is OwnableUpgradeable {
 
     bytes32 public constant RECOVERY_CONTRACT = "RECOVERY_CONTRACT";
 
+    bytes32 public constant DUST_CONVERTER = "DUST_CONVERTER";
+
     event RecoveryContractUpdated(address indexed rc);
+
+    event DustConverterUpdated(address indexed dc);
 
     function initialize() external initializer {
         __Ownable_init();
@@ -27,6 +31,19 @@ contract AddressProvider is OwnableUpgradeable {
     /// @notice Get recovery contract address
     function getRecoveryContract() external view returns (address) {
         return _getAddress(RECOVERY_CONTRACT);
+    }
+
+    /// @notice Set dust covnerter contract address
+    /// @param dc New recovery contract address
+    function setDustConverter(address dc) external onlyOwner {
+        _setAddress(DUST_CONVERTER, dc);
+
+        emit DustConverterUpdated(dc);
+    }
+
+    /// @notice Get recovery contract address
+    function getDustConverter() external view returns (address) {
+        return _getAddress(DUST_CONVERTER);
     }
 
     /// @dev Set address
