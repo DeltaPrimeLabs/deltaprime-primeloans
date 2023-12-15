@@ -8,23 +8,24 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deploy } = deployments;
     const { deployer, admin } = await getNamedAccounts();
 
-    // embedCommitHash("ParaSwapFacet", "./contracts/facets/avalanche");
-    //
-    // let ParaSwapFacet = await deploy("ParaSwapFacet", {
-    //     from: deployer,
-    //     gasLimit: 15000000,
-    //     args: [],
-    // });
-    //
-    //
-    // console.log(
-    //     `ParaSwapFacet implementation deployed at address: ${ParaSwapFacet.address}`
-    // );
+    embedCommitHash("ParaSwapFacet", "./contracts/facets");
+
+    let ParaSwapFacet = await deploy("ParaSwapFacet", {
+        from: deployer,
+        gasLimit: 3_000_000,
+        gasPrice: 600_000_000_000,
+        args: [],
+    });
+
+
+    console.log(
+        `ParaSwapFacet implementation deployed at address: ${ParaSwapFacet.address}`
+    );
 
     await verifyContract(hre,
         {
-            address: "0x3d85B55CB005D2D5D499b531D9d60150f0d5a630",
-            contract: `contracts/facets/avalanche/ParaSwapFacet.sol:ParaSwapFacet`,
+            address: ParaSwapFacet.address,
+            contract: `contracts/facets/ParaSwapFacet.sol:ParaSwapFacet`,
             constructorArguments: []
         });
     console.log(`Verified ParaSwapFacet`);
