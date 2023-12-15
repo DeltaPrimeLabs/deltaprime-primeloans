@@ -270,6 +270,7 @@ export default {
     },
 
     gmBoost() {
+      if (!this.apys) return;
       return this.hasGmIncentives ? 4.5 * this.apys['GM_BOOST'].arbApy : 0;
     },
 
