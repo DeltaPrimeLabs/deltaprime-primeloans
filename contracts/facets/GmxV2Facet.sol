@@ -7,6 +7,7 @@ import "../ReentrancyGuardKeccak.sol";
 import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 import "../OnlyOwnerOrInsolvent.sol";
 import "../interfaces/ITokenManager.sol";
+import "../interfaces/IWrappedNativeToken.sol";
 
 import "../interfaces/gmx-v2/Deposit.sol";
 import "../interfaces/gmx-v2/Withdrawal.sol";
@@ -205,6 +206,14 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
         }
     }
 
+    function wrapNativeToken() internal {
+        if(address(this).balance > 0){
+            IWrappedNativeToken nativeToken = IWrappedNativeToken(DeploymentConstants.getNativeToken());
+            nativeToken.deposit{value : address(this).balance}();
+            DiamondStorageLib.addOwnedAsset(DeploymentConstants.getNativeTokenSymbol(), DeploymentConstants.getNativeToken());
+        }
+    }
+
     function afterDepositExecution(bytes32 key, Deposit.Props memory deposit, EventUtils.EventLogData memory eventData) external onlyGmxV2Keeper nonReentrant override {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
@@ -212,6 +221,8 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
         if(IERC20Metadata(deposit.addresses.market).balanceOf(address(this)) > 0){
             DiamondStorageLib.addOwnedAsset(tokenManager.tokenAddressToSymbol(deposit.addresses.market), deposit.addresses.market);
         }
+
+        wrapNativeToken();
 
         // Unfreeze account
         DiamondStorageLib.unfreezeAccount(msg.sender);
@@ -230,6 +241,8 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
             DiamondStorageLib.addOwnedAsset(tokenManager.tokenAddressToSymbol(shortToken), shortToken);
         }
 
+        wrapNativeToken();
+
         DiamondStorageLib.unfreezeAccount(msg.sender);
     }
 
@@ -246,6 +259,8 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
             DiamondStorageLib.addOwnedAsset(tokenManager.tokenAddressToSymbol(shortToken), shortToken);
         }
 
+        wrapNativeToken();
+
         DiamondStorageLib.unfreezeAccount(msg.sender);
     }
 
@@ -256,6 +271,8 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
         if(IERC20Metadata(withdrawal.addresses.market).balanceOf(address(this)) > 0){
             DiamondStorageLib.addOwnedAsset(tokenManager.tokenAddressToSymbol(withdrawal.addresses.market), withdrawal.addresses.market);
         }
+
+        wrapNativeToken();
 
         DiamondStorageLib.unfreezeAccount(msg.sender);
     }
