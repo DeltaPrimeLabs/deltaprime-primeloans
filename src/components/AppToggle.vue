@@ -42,18 +42,18 @@ export default {
   background-color: var(--app-toggle__background);
   transition: padding 300ms ease-in-out, width 300ms ease-in-out;
 
-  &.app-toggle--pa {
+  &.app-toggle--savings {
     padding-right: 22.5px;
 
     .app-toggle__switch {
-      width: 130px;
-    }
-
-    .app-name__name--pa {
-      opacity: 1;
+      width: 76px;
     }
 
     .app-name__name--savings {
+      opacity: 1;
+    }
+
+    .app-name__name--pa {
       opacity: 0;
     }
 
@@ -74,18 +74,18 @@ export default {
     }
   }
 
-  &.app-toggle--savings {
+  &.app-toggle--pa {
     padding-left: 22.5px;
 
     .app-toggle__switch {
-      width: 76px;
-    }
-
-    .app-name__name--pa {
-      opacity: 0;
+      width: 130px;
     }
 
     .app-name__name--savings {
+      opacity: 0;
+    }
+
+    .app-name__name--pa {
       opacity: 1;
     }
 

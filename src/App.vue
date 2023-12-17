@@ -158,7 +158,6 @@ export default {
       if (window.location.href.includes('prime-account')) {
         this.remainingTime = getCountdownString(1695218400000);
       }
-      this.showArbitrumCongestionBanner = true;
     }
 
     if (config.chainId === 43114) {
