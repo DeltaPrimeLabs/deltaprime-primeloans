@@ -41,7 +41,7 @@ import WithdrawModal from './WithdrawModal';
 
 const ethers = require('ethers');
 import erc20ABI from '../../test/abis/ERC20.json';
-import GM_EPOCH_1 from '../data/arbitrum/GM_EPOCH_1.json';
+import GM_DISTRIBUTED from '../data/arbitrum/GM_EPOCH_2.json';
 import {calculateMaxApy, fromWei} from '../utils/calculate';
 import addresses from '../../common/addresses/avalanche/token_addresses.json';
 import {formatUnits, parseUnits} from 'ethers/lib/utils';
@@ -123,7 +123,7 @@ export default {
       async handler(smartLoanContract) {
         if (smartLoanContract) {
           const collected = await (await fetch(`https://cavsise1n4.execute-api.us-east-1.amazonaws.com/gmx-incentives/${smartLoanContract.address}?network=arbitrum`)).json();
-          let harvestedArb = GM_EPOCH_1[this.smartLoanContract.address.toLowerCase()] ? GM_EPOCH_1[this.smartLoanContract.address.toLowerCase()] : 0;
+          let harvestedArb = GM_DISTRIBUTED[this.smartLoanContract.address.toLowerCase()] ? GM_DISTRIBUTED[this.smartLoanContract.address.toLowerCase()] : 0;
           this.collectedArb = collected.arbCollected - harvestedArb;
         }
       },
