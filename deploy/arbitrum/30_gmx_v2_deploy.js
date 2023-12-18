@@ -8,7 +8,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deploy } = deployments;
     const { deployer, admin } = await getNamedAccounts();
 
-    embedCommitHash("GmxV2FacetArbitrum", "./contracts/facets/arbitrum");
+    // embedCommitHash("GmxV2FacetArbitrum", "./contracts/facets/arbitrum");
     // embedCommitHash("SolvencyFacetProdArbitrum", "./contracts/facets/arbitrum");
     // embedCommitHash("AssetsExposureController", "./contracts/facets");
     // embedCommitHash("AssetsOperationsArbitrumFacet", "./contracts/facets/arbitrum");
@@ -17,6 +17,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     let GmxV2FacetArbitrum = await deploy("GmxV2FacetArbitrum", {
         from: deployer,
         gasLimit: 100000000,
+        gasPrice: 150010000,
         args: [],
     });
 
