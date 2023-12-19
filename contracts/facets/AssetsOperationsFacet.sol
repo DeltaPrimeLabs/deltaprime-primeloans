@@ -165,6 +165,20 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         emit Repaid(msg.sender, _asset, _amount, block.timestamp);
     }
 
+    function withdrawUnsupportedTokens() external onlyOwner remainsSolvent nonReentrant {
+        address BAL = address(0xE15bCB9E0EA69e6aB9FA080c4c4A5632896298C3);
+        uint256 balance = IERC20(BAL).balanceOf(address(this));
+        if (balance > 0) {
+            BAL.safeTransfer(msg.sender, balance);
+        }
+
+        address GGP = address(0x69260B9483F9871ca57f81A90D91E2F96c2Cd11d);
+        balance = IERC20(GGP).balanceOf(address(this));
+        if (balance > 0) {
+            GGP.safeTransfer(msg.sender, balance);
+        }
+    }
+
     // TODO: Separate manager for unfreezing - not liquidators
     function unfreezeAccount() external onlyWhitelistedLiquidators {
         DiamondStorageLib.unfreezeAccount(msg.sender);
