@@ -17,9 +17,9 @@
 
       <div class="table__cell table__cell--double-value balance">
         <template
-          v-if="assetBalances !== null && assetBalances !== undefined && parseFloat(assetBalances[asset.symbol])">
+            v-if="assetBalances !== null && assetBalances !== undefined && parseFloat(assetBalances[asset.symbol])">
           <div class="double-value__pieces">
-            <span v-if="isBalanceEstimated">~</span>{{ assetBalances[asset.symbol] | smartRound(8, true) }}
+            <span v-if="isBalanceEstimated">~</span>{{ assetBalances[asset.symbol] | smartRound }}
           </div>
           <div class="double-value__usd">
             <span v-if="assetBalances[asset.symbol]">{{ assetBalances[asset.symbol] * asset.price | usd }}</span>
@@ -32,7 +32,7 @@
 
       <div class="table__cell table__cell--double-value farmed">
         <template
-          v-if="totalStaked">
+            v-if="totalStaked">
           <div class="double-value__pieces">
             {{ totalStaked | smartRound }}
           </div>
@@ -95,17 +95,17 @@
             buttons and deposit collateral.
           </template>
         </IconButton>
-        <IconButton :disabled="disableAllButtons || asset.inactive"
+        <IconButton :disabled="disableAllButtons || asset.inactive || noSmartLoan"
                     class="action-button"
                     :icon-src="'src/assets/icons/swap.svg'" :size="26"
                     v-tooltip="{content: 'Swap', classes: 'button-tooltip'}"
                     v-on:click="actionClick('SWAP')">
         </IconButton>
         <IconButtonMenuBeta
-          class="actions__icon-button"
-          :config="moreActionsConfig"
-          v-on:iconButtonClick="actionClick"
-          :disabled="disableAllButtons">
+            class="actions__icon-button"
+            :config="moreActionsConfig"
+            v-on:iconButtonClick="actionClick"
+            :disabled="disableAllButtons || asset.inactive || noSmartLoan">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -147,18 +147,20 @@ import SwapModal from './SwapModal';
 import AddFromWalletModal from './AddFromWalletModal';
 import WithdrawModal from './WithdrawModal';
 import RepayModal from './RepayModal';
+import addresses from '../../common/addresses/avalanche/token_addresses.json';
 import erc20ABI from '../../test/abis/ERC20.json';
 import WrapModal from './WrapModal';
 import YAK_ROUTER_ABI
   from '../../test/abis/YakRouter.json';
 import YAK_WRAP_ROUTER
   from '../../artifacts/contracts/interfaces/IYakWrapRouter.sol/IYakWrapRouter.json';
-import {formatUnits, parseUnits} from '../utils/calculate';
+import {formatUnits, fromWei, parseUnits} from '../utils/calculate';
 import GLP_REWARD_ROUTER
   from '../../artifacts/contracts/interfaces/facets/avalanche/IRewardRouterV2.sol/IRewardRouterV2.json';
 import GLP_REWARD_TRACKER
   from '../../artifacts/contracts/interfaces/facets/avalanche/IRewardTracker.sol/IRewardTracker.json';
 import ClaimGLPRewardsModal from './ClaimGLPRewardsModal';
+import {BigNumber} from 'ethers';
 import DeltaIcon from './DeltaIcon.vue';
 import IconButton from './IconButton.vue';
 import {constructSimpleSDK, ContractMethod, SwapSide} from '@paraswap/sdk';
@@ -234,6 +236,8 @@ export default {
       'traderJoeV2LpAssets',
       'traderJoeV2LpAssets',
       'traderJoeV2LpAssets',
+      'balancerLpAssets',
+      'balancerLpBalances',
       'gmxV2Assets',
       'gmxV2Balances',
       'noSmartLoan'
@@ -266,23 +270,24 @@ export default {
   },
   methods: {
     ...mapActions('fundsStore',
-      [
-        'swap',
-        'paraSwap',
-        'swapDebt',
-        'fund',
-        'borrow',
-        'withdraw',
-        'withdrawNativeToken',
-        'repay',
-        'createAndFundLoan',
-        'createLoanAndDeposit',
-        'fundNativeToken',
-        'wrapNativeToken',
-        'mintAndStakeGlp',
-        'unstakeAndRedeemGlp',
-        'claimGLPRewards'
-      ]),
+        [
+          'swap',
+          'paraSwap',
+          'paraSwapV2',
+          'swapDebt',
+          'fund',
+          'borrow',
+          'withdraw',
+          'withdrawNativeToken',
+          'repay',
+          'createAndFundLoan',
+          'createLoanAndDeposit',
+          'fundNativeToken',
+          'wrapNativeToken',
+          'mintAndStakeGlp',
+          'unstakeAndRedeemGlp',
+          'claimGLPRewards'
+        ]),
     ...mapActions('network', ['updateBalance']),
     async setupFiles() {
       TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
@@ -306,23 +311,23 @@ export default {
         tooltip: 'More',
         menuOptions: [
           ...(this.borrowable.includes(this.asset.symbol) ?
-            [
-              {
-                key: 'BORROW',
-                name: 'Borrow',
-                disabled: this.borrowDisabled(),
-                disabledInfo: 'To borrow, you need to add some funds from you wallet first'
-              },
-              {
-                key: 'REPAY',
-                name: 'Repay',
-              },
-              {
-                key: 'SWAP_DEBT',
-                name: 'Swap debt',
-              }
-            ]
-            : []),
+              [
+                {
+                  key: 'BORROW',
+                  name: 'Borrow',
+                  disabled: this.borrowDisabled(),
+                  disabledInfo: 'To borrow, you need to add some funds from you wallet first'
+                },
+                {
+                  key: 'REPAY',
+                  name: 'Repay',
+                },
+                {
+                  key: 'SWAP_DEBT',
+                  name: 'Swap debt',
+                }
+              ]
+              : []),
           this.asset.symbol === this.nativeAssetOptions[0] ? {
             key: 'WRAP',
             name: `Wrap native ${this.nativeAssetOptions[0]}`,
@@ -375,14 +380,15 @@ export default {
           try {
             const route = {
               ...(await yakRouter.findBestPathWithGas(
-                amountIn,
-                tknFrom,
-                tknTo,
-                maxHops,
-                gasPrice,
-                {gasLimit: 1e9}
+                  amountIn,
+                  tknFrom,
+                  tknTo,
+                  maxHops,
+                  gasPrice,
+                  {gasLimit: 1e9}
               ))
             }
+            console.log(route);
             if (route[0].length === 0 && route[1].length === 0 && route[2].length === 0) {
               this.progressBarService.emitProgressBarErrorState('The selected aggregator could not find a route. Please switch aggregator, or try again later.')
               this.cleanupAfterError();
@@ -403,11 +409,11 @@ export default {
           if (targetAsset === 'GLP') {
             try {
               return await yakWrapRouter.findBestPathAndWrap(
-                amountIn,
-                tknFrom,
-                config.yieldYakGlpWrapperAddress,
-                maxHops,
-                gasPrice);
+                  amountIn,
+                  tknFrom,
+                  config.yieldYakGlpWrapperAddress,
+                  maxHops,
+                  gasPrice);
             } catch (e) {
               this.handleTransactionError(e);
             }
@@ -415,11 +421,11 @@ export default {
             try {
               return {
                 ...(await yakWrapRouter.unwrapAndFindBestPath(
-                  amountIn,
-                  tknTo,
-                  config.yieldYakGlpWrapperAddress,
-                  maxHops,
-                  gasPrice)),
+                    amountIn,
+                    tknTo,
+                    config.yieldYakGlpWrapperAddress,
+                    maxHops,
+                    gasPrice)),
                 dex: 'YAK_SWAP'
               }
             } catch (e) {
@@ -430,8 +436,10 @@ export default {
       };
     },
 
+
     paraSwapQueryMethod() {
       return async (sourceAsset, targetAsset, amountIn) => {
+        console.warn('PARA SWAP QUERY METHOD');
         const paraSwapSDK = constructSimpleSDK({chainId: config.chainId, axios});
 
         try {
@@ -456,6 +464,47 @@ export default {
             swapRate: swapRate
           };
 
+          console.log('queryResponse', queryResponse);
+          return queryResponse;
+        } catch (error) {
+          console.warn('para swap query method error');
+          console.log(error);
+          console.log(typeof error);
+          console.log(String(error));
+          if (String(error).includes('No routes found with enough liquidity')) {
+            this.progressBarService.emitProgressBarErrorState('The selected aggregator could not find a route. Please switch aggregator, or try again later.')
+            this.cleanupAfterError();
+          }
+        }
+      };
+    },
+
+    paraSwapV2QueryMethod() {
+      return async (sourceAsset, targetAsset, amountIn) => {
+        console.warn('PARA SWAP 2 QUERY METHOD');
+        const paraSwapSDK = constructSimpleSDK({chainId: config.chainId, axios});
+
+        try {
+          const swapRate = await paraSwapSDK.swap.getRate({
+            srcToken: TOKEN_ADDRESSES[sourceAsset],
+            srcDecimals: config.ASSETS_CONFIG[sourceAsset].decimals,
+            destToken: TOKEN_ADDRESSES[targetAsset],
+            destDecimals: config.ASSETS_CONFIG[targetAsset].decimals,
+            amount: amountIn,
+            userAddress: this.smartLoanContract.address,
+            side: SwapSide.SELL
+          });
+
+          const sourceAmountWei = parseUnits(Number(`${swapRate.srcAmount}e-${swapRate.srcDecimals}`).toFixed(swapRate.srcDecimals), swapRate.srcDecimals);
+          const targetAmountWei = parseUnits(Number(`${swapRate.destAmount}e-${swapRate.destDecimals}`).toFixed(swapRate.destDecimals), swapRate.destDecimals);
+
+          const queryResponse = {
+            amounts: [sourceAmountWei, targetAmountWei],
+            dex: 'PARA_SWAP',
+            swapRate: swapRate
+          };
+
+          console.log('queryResponse', queryResponse);
           return queryResponse;
         } catch (error) {
           console.warn('para swap query method error');
@@ -471,59 +520,45 @@ export default {
     },
 
     swapDebtQueryMethod() {
-      return async (sourceAsset, targetAsset, amountIn) => {
+      return async (sourceAsset, targetAsset, amountIn, amountOut) => {
         const tknFrom = TOKEN_ADDRESSES[sourceAsset];
         const tknTo = TOKEN_ADDRESSES[targetAsset];
 
-        if (sourceAsset !== 'GLP' && targetAsset !== 'GLP') {
           const yakRouter = new ethers.Contract(config.yakRouterAddress, YAK_ROUTER_ABI, provider.getSigner());
 
-          const maxHops = 1;
-          const gasPrice = ethers.utils.parseUnits('225', 'gwei');
+          const maxHops = 3;
+          const gasPrice = ethers.utils.parseUnits('0', 'gwei');
 
-          try {
-            return await yakRouter.findBestPathWithGas(
-              amountIn,
-              tknFrom,
-              tknTo,
-              maxHops,
-              gasPrice,
-              {gasLimit: 1e9}
-            );
-          } catch (e) {
-            this.handleTransactionError(e);
-          }
-        } else {
-          const yakWrapRouter = new ethers.Contract(config.yakWrapRouterAddress, YAK_WRAP_ROUTER.abi, provider.getSigner());
+          const MAX_TRY_AMOUNT = 10;
 
-          const maxHops = 1;
-          const gasPrice = ethers.utils.parseUnits('225', 'gwei');
+          let i = 0;
+          let targetBorrowedAmount = amountOut;
 
-          if (targetAsset === 'GLP') {
+          while (i < MAX_TRY_AMOUNT) {
             try {
-              return await yakWrapRouter.findBestPathAndWrap(
-                amountIn,
-                tknFrom,
-                config.yieldYakGlpWrapperAddress,
-                maxHops,
-                gasPrice);
+              let path = await yakRouter.findBestPathWithGas(
+                  targetBorrowedAmount,
+                  tknFrom,
+                  tknTo,
+                  maxHops,
+                  gasPrice,
+                  {gasLimit: 1e12}
+              );
+
+              if (path.amounts[path.amounts.length - 1].gt(amountIn)) {
+                return path;
+              }
+
+              targetBorrowedAmount = targetBorrowedAmount.mul(BigNumber.from('10005')).div(BigNumber.from('10000'));
             } catch (e) {
               this.handleTransactionError(e);
-            }
-          } else {
-            try {
-              return await yakWrapRouter.unwrapAndFindBestPath(
-                amountIn,
-                tknTo,
-                config.yieldYakGlpWrapperAddress,
-                maxHops,
-                gasPrice);
-            } catch (e) {
-              this.handleTransactionError(e);
+            } finally {
+              i++;
             }
           }
-        }
-      };
+
+        this.handleTransactionError(Error('Could not find a path.'));
+      }
     },
 
     actionClick(key) {
@@ -584,6 +619,8 @@ export default {
       modalInstance.gmxV2Assets = this.gmxV2Assets;
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.lpBalances = this.lpBalances;
+      modalInstance.balancerLpBalances = this.balancerLpBalances;
+      modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.farms = this.farms;
@@ -606,21 +643,23 @@ export default {
         }, (error) => {
           this.handleTransactionError(error);
         })
-          .then(() => {
-          });
+            .then(() => {
+            });
       });
     },
 
     openSwapModal() {
-      const swapDexSwapMethodMap = {
-        YakSwap: this.swap,
-        ParaSwap: this.paraSwap
-      };
+      let swapDexSwapMethodMap = {};
+
+      if (config.SWAP_DEXS_CONFIG.YakSwap.availableAssets && config.SWAP_DEXS_CONFIG.YakSwap.availableAssets.includes(this.asset.symbol)) swapDexSwapMethodMap.YakSwap = this.swap;
+      if (config.SWAP_DEXS_CONFIG.YakSwap.availableAssets && config.SWAP_DEXS_CONFIG.ParaSwap.availableAssets.includes(this.asset.symbol)) swapDexSwapMethodMap.ParaSwap = this.paraSwap;
+      if (config.SWAP_DEXS_CONFIG.YakSwap.availableAssets && config.SWAP_DEXS_CONFIG.ParaSwapV2.availableAssets.includes(this.asset.symbol)) swapDexSwapMethodMap.ParaSwapV2 = this.paraSwapV2;
+
       const modalInstance = this.openModal(SwapModal);
       modalInstance.dexOptions = Object.entries(config.SWAP_DEXS_CONFIG)
-        .filter(([dexName, dexConfig]) => dexConfig.availableAssets.includes(this.asset.symbol))
-        .map(([dexName, dexConfig]) => dexName);
-      modalInstance.swapDex = Object.keys(config.SWAP_DEXS_CONFIG)[0];
+          .filter(([dexName, dexConfig]) => dexConfig.availableAssets.includes(this.asset.symbol))
+          .map(([dexName, dexConfig]) => dexName);
+      modalInstance.swapDex = Object.entries(config.SWAP_DEXS_CONFIG).filter(([k,v]) => v.availableAssets.includes(this.asset.symbol))[0][0];
       modalInstance.swapDebtMode = false;
       modalInstance.sourceAsset = this.asset.symbol;
       modalInstance.sourceAssetBalance = this.assetBalances[this.asset.symbol];
@@ -633,6 +672,8 @@ export default {
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.gmxV2Assets = this.gmxV2Assets;
       modalInstance.lpBalances = this.lpBalances;
+      modalInstance.balancerLpBalances = this.balancerLpBalances;
+      modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
@@ -643,13 +684,16 @@ export default {
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.queryMethods = {
         YakSwap: this.yakSwapQueryMethod(),
-        ParaSwap: this.paraSwapQueryMethod()
+        ParaSwap: this.paraSwapQueryMethod(),
+        ParaSwapV2: this.paraSwapV2QueryMethod(),
       };
+
       modalInstance.$on('SWAP', swapEvent => {
         const swapRequest = {
           ...swapEvent,
           sourceAmount: swapEvent.sourceAmount.toString()
         };
+
         this.handleTransaction(swapDexSwapMethodMap[swapRequest.swapDex], {swapRequest: swapRequest}, () => {
           this.$forceUpdate();
         }, (error) => {
@@ -664,8 +708,8 @@ export default {
     openDebtSwapModal() {
       const modalInstance = this.openModal(SwapModal);
       modalInstance.dexOptions = Object.entries(config.SWAP_DEXS_CONFIG)
-        .filter(([dexName, dexConfig]) => dexConfig.availableAssets.includes(this.asset.symbol))
-        .map(([dexName, dexConfig]) => dexName);
+          .filter(([dexName, dexConfig]) => dexConfig.availableAssets.includes(this.asset.symbol))
+          .map(([dexName, dexConfig]) => dexName);
       modalInstance.swapDex = Object.keys(config.SWAP_DEXS_CONFIG)[0];
       modalInstance.title = 'Swap debt';
       modalInstance.swapDebtMode = true;
@@ -687,6 +731,8 @@ export default {
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.balancerLpBalances = this.balancerLpBalances;
+      modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
       modalInstance.targetAsset = this.borrowable.filter(asset => asset !== this.asset.symbol)[0];
       modalInstance.debt = this.fullLoanStatus.debt;
@@ -730,6 +776,8 @@ export default {
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.gmxV2Assets = this.gmxV2Assets;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.balancerLpBalances = this.balancerLpBalances;
+      modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
       modalInstance.loan = this.fullLoanStatus.debt ? this.fullLoanStatus.debt : 0;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
@@ -749,24 +797,25 @@ export default {
               };
 
               this.handleTransaction(this.createLoanAndDeposit, {request: request}, () => {
-                  this.scheduleHardRefresh();
-                  this.$forceUpdate();
-                },
-                (error) => {
-                  this.handleTransactionError(error);
-                });
+                    this.scheduleHardRefresh();
+                    this.$forceUpdate();
+                  },
+                  (error) => {
+                    this.handleTransactionError(error);
+                  });
             } else {
+              console.log('createAndFundLoan');
               this.handleTransaction(this.createAndFundLoan, {
-                  asset: addFromWalletEvent.asset,
-                  value: value,
-                  isLP: false
-                }, () => {
-                  this.scheduleHardRefresh();
-                  this.$forceUpdate();
-                },
-                (error) => {
-                  this.handleTransactionError(error);
-                });
+                    asset: addFromWalletEvent.asset,
+                    value: value,
+                    isLP: false
+                  }, () => {
+                    this.scheduleHardRefresh();
+                    this.$forceUpdate();
+                  },
+                  (error) => {
+                    this.handleTransactionError(error);
+                  });
             }
           } else {
             if (addFromWalletEvent.asset === this.nativeAssetOptions[0]) {
@@ -811,6 +860,8 @@ export default {
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.gmxV2Assets = this.gmxV2Assets;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.balancerLpBalances = this.balancerLpBalances;
+      modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.debt = this.fullLoanStatus.debt;
@@ -830,8 +881,8 @@ export default {
           }, (error) => {
             this.handleTransactionError(error);
           })
-            .then(() => {
-            });
+              .then(() => {
+              });
         } else {
           const withdrawRequest = {
             asset: this.asset.symbol,
@@ -844,8 +895,8 @@ export default {
           }, (error) => {
             this.handleTransactionError(error);
           })
-            .then(() => {
-            });
+              .then(() => {
+              });
         }
       });
     },
@@ -875,6 +926,8 @@ export default {
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.gmxV2Assets = this.gmxV2Assets;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.balancerLpBalances = this.balancerLpBalances;
+      modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.debt = this.fullLoanStatus.debt;
@@ -892,8 +945,8 @@ export default {
         }, (error) => {
           this.handleTransactionError(error);
         })
-          .then(() => {
-          });
+            .then(() => {
+            });
       });
     },
 
@@ -943,6 +996,7 @@ export default {
     async getWalletAssetBalance() {
       const tokenContract = new ethers.Contract(config.ASSETS_CONFIG[this.asset.symbol].address, erc20ABI, this.provider.getSigner());
       const walletTokenBalance = await this.getWalletTokenBalance(this.account, this.asset.symbol, tokenContract, config.ASSETS_CONFIG[this.asset.symbol].decimals);
+      console.log('walletTokenBalance', this.asset.symbol, walletTokenBalance);
       return walletTokenBalance;
     },
 
@@ -1078,13 +1132,8 @@ export default {
       }
 
       if (String(error) === '[object Object]') {
-        switch (error.code) {
-          case -32000:
-            this.progressBarService.emitProgressBarErrorState('The selected aggregator could not find a route. Please switch aggregator, or try again later.')
-            break;
-          case 4001:
-            this.progressBarService.emitProgressBarCancelledState()
-            break;
+        if (error.code === -32000) {
+          this.progressBarService.emitProgressBarErrorState('The selected aggregator could not find a route. Please switch aggregator, or try again later.')
         }
       } else {
         const parsedError = String(error);

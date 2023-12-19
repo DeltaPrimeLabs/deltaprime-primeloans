@@ -12,9 +12,9 @@
             <div class="asset-name">
               {{ asset.name }}
               <InfoIcon
-                  class="info__icon"
-                  v-if="farm.info"
-                  :tooltip="{content: farm.info, classes: 'info-tooltip long', placement: 'right'}"
+                class="info__icon"
+                v-if="farm.info"
+                :tooltip="{content: farm.info, classes: 'info-tooltip long', placement: 'right'}"
               ></InfoIcon>
             </div>
             <div class="by-farm">{{ protocol.name }} -> {{ farm.strategy }}</div>
@@ -45,9 +45,9 @@
             </div>
           </div>
           <InfoIcon
-              class="info__icon"
-              v-if="farm.rewardsInfo"
-              :tooltip="{content: farm.rewardsInfo, classes: 'info-tooltip long', placement: 'right'}"
+            class="info__icon"
+            v-if="farm.rewardsInfo"
+            :tooltip="{content: farm.rewardsInfo, classes: 'info-tooltip long', placement: 'right'}"
           ></InfoIcon>
         </div>
       </div>
@@ -65,18 +65,18 @@
           <FlatButton v-if="farm.migrateMethod" :tooltip="'Migrates assets from the manual pool to the autocompounding pool'" v-on:buttonClick="migrateButtonClick()">Migrate
           </FlatButton>
           <IconButtonMenuBeta
-              class="actions__icon-button"
-              :config="addActionsConfig"
-              v-if="addActionsConfig"
-              v-on:iconButtonClick="actionClick"
-              :disabled="disableAllButtons || platypusAffected || platypusAffectedDisableDeposit">
+            class="actions__icon-button"
+            :config="addActionsConfig"
+            v-if="addActionsConfig"
+            v-on:iconButtonClick="actionClick"
+            :disabled="disableAllButtons || platypusAffected || platypusAffectedDisableDeposit || noSmartLoan">
           </IconButtonMenuBeta>
           <IconButtonMenuBeta
-              class="actions__icon-button last"
-              :config="removeActionsConfig"
-              v-if="removeActionsConfig"
-              v-on:iconButtonClick="actionClick"
-              :disabled="disableAllButtons || platypusAffected">
+            class="actions__icon-button last"
+            :config="removeActionsConfig"
+            v-if="removeActionsConfig"
+            v-on:iconButtonClick="actionClick"
+            :disabled="disableAllButtons || platypusAffected || noSmartLoan">
           </IconButtonMenuBeta>
         </div>
       </div>

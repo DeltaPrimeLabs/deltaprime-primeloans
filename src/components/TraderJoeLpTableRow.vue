@@ -89,21 +89,21 @@
             v-if="addActionsConfig"
             :config="addActionsConfig"
             v-on:iconButtonClick="actionClick"
-            :disabled="inProcess">
+            :disabled="inProcess || noSmartLoan">
         </IconButtonMenuBeta>
         <IconButtonMenuBeta
             class="actions__icon-button"
             v-if="removeActionsConfig"
             :config="removeActionsConfig"
             v-on:iconButtonClick="actionClick"
-            :disabled="inProcess">
+            :disabled="inProcess || noSmartLoan">
         </IconButtonMenuBeta>
         <IconButtonMenuBeta
             class="actions__icon-button"
             v-if="moreActionsConfig"
             :config="moreActionsConfig"
             v-on:iconButtonClick="actionClick"
-            :disabled="inProcess || !healthLoaded">
+            :disabled="inProcess || noSmartLoan || !healthLoaded">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -220,7 +220,8 @@ export default {
       'assetBalances',
       'smartLoanContract',
       'readSmartLoanContract',
-      'debtsPerAsset'
+      'debtsPerAsset',
+      'noSmartLoan'
     ]),
     ...mapState('stakeStore', ['farms']),
     ...mapState('poolStore', ['pools']),
@@ -575,7 +576,7 @@ export default {
             epoch: reward.epoch,
             token: reward.tokenAddress,
             user: this.smartLoanContract.address,
-            amount: reward.amount,
+            amount: reward.totalAmount,
             merkleProof: this.lpToken.rewardsInfo.proofs[id]
           });
         });

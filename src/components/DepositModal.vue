@@ -1,5 +1,5 @@
 <template>
-  <div id="modal" v-if="pool" class="deposit-modal-component modal-component">
+  <div id="modal" class="deposit-modal-component modal-component">
     <Modal :height="getModalHeight">
       <div class="modal__title">
         Deposit
@@ -49,16 +49,9 @@
               <div class="summary__label">
                 Mean daily interest (365D):
               </div>
-              <div class="value__wrapper">
-                <div class="summary__value">
-                  ≈ {{ calculateDailyInterest | smartRound(8, true) }}
-                  <span class="currency">{{ assetSymbol }}</span>
-                </div>
-                +
-                <div class="summary__value">
-                  ≈ {{ calculateDailyMiningInterestInSPrime | smartRound(8, true) }}$
-                  <span class="currency">sPRIME</span>
-                </div>
+              <div class="summary__value">
+                ≈ {{ calculateDailyInterest | smartRound(8, true) }}
+                <span class="currency">{{ assetSymbol }}</span>
               </div>
             </div>
           </div>
@@ -129,18 +122,14 @@ export default {
       return config;
     },
     calculateDailyInterest() {
-      return (this.apy) / 365 * (Number(this.deposit) + this.depositValue);
-    },
-    calculateDailyMiningInterestInSPrime() {
-      console.log(this.pool);
-      return (this.miningApy) / 365 * (Number(this.deposit) + this.depositValue) * this.pool.assetPrice;
+      return (this.apy + this.miningApy) / 365 * (Number(this.deposit) + this.depositValue);
     },
 
     miningApy() {
       if (!this.pool || this.pool.tvl === 0) return 0;
-      return (config.chainId === 42161) ? 1000 * 365 / 4 / (this.pool.tvl * this.pool.assetPrice)
-          : Math.max((1 - this.pool.tvl * this.pool.assetPrice / 4000000) * 0.1, 0);
-    },
+      return (config.chainId === 42161) ?  0 * 1000 * 365 / 4 / (this.pool.tvl * this.pool.assetPrice)
+          : 0 * Math.max((1 - this.pool.tvl * this.pool.assetPrice / 4000000) * 0.1, 0);
+      },
 
     getModalHeight() {
       return this.assetSymbol === config.nativeToken ? '561px' : null;
@@ -148,7 +137,7 @@ export default {
 
     available() {
       return (this.assetSymbol === config.nativeToken && this.selectedDepositAsset === config.nativeToken)
-          ? this.accountBalance : this.walletAssetBalance;
+        ? this.accountBalance : this.walletAssetBalance;
     },
 
     symbol() {
@@ -168,7 +157,7 @@ export default {
 
     depositValueChange(event) {
       console.log(event);
-      this.depositValue = Number(event.value);
+      this.depositValue = event.value;
       this.inputValidationError = event.error;
     },
 
@@ -194,15 +183,5 @@ export default {
 <style lang="scss" scoped>
 @import "~@/styles/variables";
 @import "~@/styles/modal";
-
-.value__wrapper {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-
-  .summary__value:last-child {
-    margin-left: 5px;
-  }
-}
 
 </style>

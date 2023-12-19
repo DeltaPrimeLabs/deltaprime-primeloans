@@ -18,7 +18,7 @@ export default class HealthService {
     return this.health$.asObservable();
   }
 
-  async calculateHealth(noSmartLoan, debtsPerAsset, assets, assetBalances, lpAssets, lpBalances, concentratedLpAssets, concentratedLpBalances, levelAssets, levelBalances, gmxV2Assets, gmxV2Balances, traderJoeV2LpAssets, stakeStoreFarms) {
+  async calculateHealth(noSmartLoan, debtsPerAsset, assets, assetBalances, lpAssets, lpBalances, concentratedLpAssets, concentratedLpBalances, balancerLpAssets, balancerLpBalances, levelAssets, levelBalances, gmxV2Assets, gmxV2Balances, traderJoeV2LpAssets, stakeStoreFarms) {
     if (noSmartLoan) {
       return 1;
     }
@@ -81,6 +81,18 @@ export default class HealthService {
         }
       }
 
+      if (balancerLpAssets) {
+        for (const [symbol, data] of Object.entries(balancerLpAssets)) {
+          tokens.push({
+            price: redstonePriceData[symbol] ? redstonePriceData[symbol][0].dataPoints[0].value : 0,
+            balance: parseFloat(balancerLpBalances[symbol]),
+            borrowed: 0,
+            debtCoverage: data.debtCoverage,
+            symbol: symbol
+          });
+        }
+      }
+
       if (gmxV2Assets) {
         for (const [symbol, data] of Object.entries(gmxV2Assets)) {
           tokens.push({
@@ -109,8 +121,6 @@ export default class HealthService {
 
       let lbTokens = Object.values(traderJoeV2LpAssets);
 
-      console.log('tokens')
-      console.log(tokens)
       const health = calculateHealth(tokens, lbTokens);
       this.health$.next(health >= 0 ? health : 0);
 

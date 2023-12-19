@@ -20,14 +20,27 @@ const getRewardsInfoApi = async (event, context, callback) => {
       }
     });
 
+    const historyRes = await fetch(`${BASE_URL}/rewards/history/${chain}/${loan}?market=${market}`, {
+      method: "GET",
+      headers: {
+        "x-traderjoe-api-key": process.env.TJ_API_KEY
+      }
+    });
+    const rewardsHistory = await historyRes.json();
+
     const rewards = [];
     const batch = [];
     (await rewardsRes.json()).map(reward => {
+      const history = rewardsHistory.find(history => history.epoch == reward.epoch);
+
       reward.claimableRewards.map(claimable => {
+        const tokenHistory = history ? history.rewards.find(reward => reward.tokenAddress == claimable.tokenAddress) : null;
+
         rewards.push({
           epoch: reward.epoch,
           amount: claimable.amount,
-          tokenAddress: claimable.tokenAddress
+          tokenAddress: claimable.tokenAddress,
+          totalAmount: tokenHistory ? tokenHistory.amount : 0
         });
 
         batch.push({

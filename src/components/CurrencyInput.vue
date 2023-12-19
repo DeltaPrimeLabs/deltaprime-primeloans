@@ -81,6 +81,7 @@ export default {
     waiting: false,
     disabled: false,
     denominationButtons: false,
+    allowZeroValue: false,
     slippage: {type: Number, default: 0},
     embedded: false,
     delayErrorCheckAfterValuePropagation: {type: Boolean, default: false},
@@ -223,6 +224,14 @@ export default {
           }
         }
       };
+      const nonNegativeValidator = {
+        validate: (value) => {
+          if (this.disabled) return;
+          if (this.internalValue < 0) {
+            return `Value can't be negative`;
+          }
+        }
+      };
       const wrongFormatValidator = {
         validate: (value) => {
           if (this.disabled) return;
@@ -231,7 +240,12 @@ export default {
           }
         }
       };
-      this.defaultValidators.push(positiveValidator, wrongFormatValidator);
+      if (!this.allowZeroValue) {
+        this.defaultValidators.push(positiveValidator);
+      } else {
+        this.defaultValidators.push(nonNegativeValidator);
+      }
+      this.defaultValidators.push(wrongFormatValidator);
     },
 
     setMax() {

@@ -219,7 +219,8 @@ export default {
       traderJoeV2LpAssets: {},
       gmxV2LpAssets: {},
       gmxV2LpBalances: {},
-
+      balancerLpAssets: {},
+      balancerLpBalances: {},
       transactionOngoing: false,
       debt: 0,
       thresholdWeightedValue: 0,
@@ -477,12 +478,18 @@ export default {
       for (const [symbol, data] of Object.entries(this.assets)) {
         let borrowed = this.debtsPerAsset[symbol] ? parseFloat(this.debtsPerAsset[symbol].debt) : 0;
         let balance = parseFloat(this.assetBalances[symbol]);
+        console.log('this.sourceAsset: ', this.sourceAsset)
+        console.log('symbol: ', symbol)
         if (symbol === this.sourceAsset) {
+          console.log('decreasing')
+          console.log('this.sourceAssetAmount: ', this.sourceAssetAmount)
+          console.log('this.sourceAsset: ', this.sourceAsset)
+          console.log(this.sourceAsset)
           balance -= this.sourceAssetAmount;
         }
 
-        if (symbol === this.targetAsset) {
-          balance += this.targetAssetAmount;
+        if (this.targetAssets[this.swapDex].includes(symbol)) {
+          balance += this.targetAssetAmounts[this.targetAssets[this.swapDex].indexOf(symbol)];
         }
 
         tokens.push({price: data.price, balance: balance, borrowed: borrowed, debtCoverage: data.debtCoverage});
@@ -516,10 +523,23 @@ export default {
         });
       }
 
+      for (const [symbol, data] of Object.entries(this.balancerLpAssets)) {
+        if (this.balancerLpBalances) {
+          let balance = parseFloat(this.balancerLpBalances[symbol]);
+
+          tokens.push({price: data.price, balance: balance ? balance : 0, borrowed: 0, debtCoverage: data.debtCoverage});
+        }
+      }
+
       for (const [symbol, data] of Object.entries(this.gmxV2Assets)) {
+        let balance = parseFloat(this.gmxV2Balances[symbol])
+        if (symbol === this.sourceAsset) {
+          balance -= this.sourceAssetAmount;
+        }
+
         tokens.push({
           price: data.price,
-          balance: parseFloat(this.gmxV2Balances[symbol]),
+          balance: balance,
           borrowed: 0,
           debtCoverage: data.debtCoverage
         });
@@ -535,6 +555,8 @@ export default {
           });
         });
       }
+
+      console.log(tokens)
 
       let lbTokens = Object.values(this.traderJoeV2LpAssets);
 

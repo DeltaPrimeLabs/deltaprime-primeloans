@@ -21,12 +21,15 @@
     <Banner v-if="showConnectBanner">
       You are not connected to Metamask. <a class="banner-link" @click="initNetwork"><b>Click here</b></a> to connect.
     </Banner>
+    <Banner v-if="showInterestRateBanner" background="green-accent"  :closable="true">
+      Interest rate model will be updated at 12:00 CET. <a class="banner-link" href="https://discord.com/channels/889510301421166643/912702114252329060/1180080211254050897"><b>Read more</b></a>.
+    </Banner>
     <Banner v-if="showMetamaskBanner">
       Please download and activate
       <a class="banner-link" href="https://chrome.google.com/webstore/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn" target="_blank"><b>Metamask
         plugin</b></a>.
     </Banner>
-    <Banner v-if="highGasPrice && !showMetamaskBanner && !showNetworkBanner && !showUpgradeBanner" :closable="true">
+    <Banner v-if="highGasPrice && !showMetamaskBanner && !showNetworkBanner && !showUpgradeBanner && !showArbitrumCongestionBanner" :closable="true">
       Gas prices are high at the moment. Be careful with your transactions.
     </Banner>
     <Banner v-if="oracleError">
@@ -40,8 +43,11 @@
         </b>
       </a>
     </Banner>
-    <Banner v-if="showArbitrumPrimeAccountBanner" background="green-accent" :closable="true">
-      Welcome to DeltaPrime Blue! In the coming weeks this page will significantly expand with partner protocols. Stay tuned!
+<!--    <Banner v-if="showArbitrumPrimeAccountBanner" background="green-accent" :closable="true">-->
+<!--      Welcome to DeltaPrime Blue! In the coming weeks this page will significantly expand with partner protocols. Stay tuned!-->
+<!--    </Banner>    -->
+    <Banner v-if="showArbitrumCongestionBanner" :closable="true">
+      The Arbitrum chain is fully congested resulting in failed transactions across apps. Please join our <a href='https://discord.gg/57EdDsvhxK' target='_blank'><b>Discord</b></a> to learn more
     </Banner>
 <!--    <Banner v-if="showAvalancheDepositorBanner" background="green-accent" :closable="true"></Banner>-->
 <!--    <Banner v-if="showAvalanchePrimeAccountBanner" background="green-accent" :closable="true"></Banner>-->
@@ -99,11 +105,13 @@ export default {
       gasPriceIntervalId: null,
       showGlpBanner: false,
       showDepositBanner: false,
+      showInterestRateBanner: false,
       showPrimeAccountBanner: false,
       showArbitrumDepositorBanner: false,
       showArbitrumPrimeAccountBanner: false,
       showAvalancheDepositorBanner: false,
       showAvalanchePrimeAccountBanner: false,
+      showArbitrumCongestionBanner: false,
       remainingTime: "",
       darkMode: false,
       showNoWalletBanner: window.noWalletInstalled,
@@ -145,20 +153,19 @@ export default {
 
     if (config.chainId === 42161) {
       if (window.location.href.includes('pools')) {
-        this.showArbitrumDepositorBanner = true;
+        // this.showArbitrumDepositorBanner = true;
       }
       if (window.location.href.includes('prime-account')) {
         this.remainingTime = getCountdownString(1695218400000);
-        this.showArbitrumPrimeAccountBanner = true;
       }
     }
 
     if (config.chainId === 43114) {
       if (window.location.href.includes('pools')) {
-        this.showAvalancheDepositorBanner = true;
+        // this.showAvalancheDepositorBanner = true;
       }
       if (window.location.href.includes('prime-account')) {
-        this.showAvalanchePrimeAccountBanner = true;
+        // this.showAvalanchePrimeAccountBanner = true;
       }
     }
   },

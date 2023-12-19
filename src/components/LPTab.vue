@@ -1,6 +1,13 @@
 <template>
   <div class="lp-tab">
     <div class="lp-tokens" v-if="Object.keys(gmxV2LpTokens).length">
+      <div class="lp-table" v-if="gmxV2LpTokens && hasGmIncentives">
+        <div class="incentives-program-title">GM Incentives Program</div>
+        <TableHeader :config="gmIncentivesTableHeaderConfig"></TableHeader>
+        <GmIncentivesTableRow></GmIncentivesTableRow>
+      </div>
+    </div>
+    <div class="lp-tokens" v-if="Object.keys(gmxV2LpTokens).length">
       <div class="lp-table level" v-if="gmxV2LpTokens">
         <TableHeader :config="gmxV2LpTableHeaderConfig"></TableHeader>
         <GmxV2LpTableRow v-for="(lpToken, index) in gmxV2LpTokens" v-bind:key="index" :index="index" :lp-token="lpToken"></GmxV2LpTableRow>
@@ -11,6 +18,13 @@
         <TableHeader :config="traderJoeLpTableHeaderConfig"></TableHeader>
         <TraderJoeLpTableRow v-for="(lpToken, index) in traderJoeLpTokens" v-bind:key="index" :index="index"
                              :lp-token="lpToken" :lp-tokens="traderJoeLpTokens"></TraderJoeLpTableRow>
+      </div>
+    </div>
+    <div class="lp-tokens" v-if="Object.keys(balancerLpTokens).length">
+      <div class="lp-table">
+        <TableHeader :config="balancerLpTableHeaderConfig"></TableHeader>
+        <BalancerLpTableRow v-for="(lpToken, index) in balancerLpTokens" v-bind:key="index" :index="index"
+                             :lp-token="lpToken" :lp-tokens="balancerLpTokens"></BalancerLpTableRow>
       </div>
     </div>
     <div class="lp-tokens" v-if="Object.keys(levelLpTokens).length">
@@ -61,10 +75,14 @@ import {mapState} from 'vuex';
 import Paginator from "./Paginator.vue";
 import LevelLpTableRow from "./LevelLpTableRow.vue";
 import GmxV2LpTableRow from "./GmxV2LpTableRow.vue";
+import GmIncentivesTableRow from "./GmIncentivesTableRow.vue";
+import BalancerLpTableRow from "./BalancerLpTableRow.vue";
 
 export default {
   name: 'LPTab',
   components: {
+    BalancerLpTableRow,
+    GmIncentivesTableRow,
     GmxV2LpTableRow,
     LevelLpTableRow,
     Paginator, TraderJoeLpTableRow, LpTableRow, AssetFilter, ConcentratedLpTableRow, TableHeader
@@ -80,8 +98,11 @@ export default {
       traderJoeLpTableHeaderConfig: null,
       gmxV2LpTokens: config.GMX_V2_ASSETS_CONFIG,
       gmxV2LpTableHeaderConfig: null,
+      balancerLpTokens: config.BALANCER_LP_ASSETS_CONFIG,
+      balancerLpTableHeaderConfig: null,
       levelLpTokens: config.LEVEL_LP_ASSETS_CONFIG,
       levelLpTableHeaderConfig: null,
+      gmIncentivesTableHeaderConfig: null,
       selectedLpTokens: [] = [],
       assets: null
     };
@@ -95,6 +116,8 @@ export default {
     this.setupLpTableHeaderConfig();
     this.setupLevelLpTableHeaderConfig();
     this.setupGmxV2LpTableHeaderConfig();
+    this.setupGmIncentivesTableHeaderConfig();
+    this.setupBalancerLpTableHeaderConfig();
   },
   computed: {
     ...mapState('serviceRegistry', [
@@ -109,6 +132,9 @@ export default {
           && this.selectedDexes.includes(token.dex)
       );
     },
+    hasGmIncentives() {
+      return config.chainId === 42161;
+    }
   },
   methods: {
     setLpFilter(filter) {
@@ -154,7 +180,7 @@ export default {
             sortable: false,
             class: 'apr',
             id: 'APR',
-            tooltip: `The APR of the pool. This number includes 6.06% sAVAX price appreciation if the pool includes that asset.`
+            tooltip: `The APR of the pool. This number includes any inherent price appreciation of underlying assets.`
           },
           {
             label: 'Max. APR',
@@ -328,7 +354,62 @@ export default {
             sortable: false,
             class: 'apr',
             id: 'APR',
-            tooltip: `The APR of the pool. This number includes 6.06% sAVAX price appreciation if the pool includes that asset.`
+            tooltip: `The APR of the pool. This number includes any inherent price appreciation of underlying assets.`
+          },
+          {
+            label: 'Max. APR',
+            sortable: false,
+            class: 'apr',
+            id: 'MAX-APR',
+            tooltip: `The APR if you would borrow the lowest-interest asset from 100% to 10%, and put your total value into this pool.`
+          },
+          {
+            label: '',
+          },
+          {
+            label: 'Actions',
+            class: 'actions',
+            id: 'ACTIONS',
+            tooltip: `Click
+                      <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/exchange#actions' target='_blank'>here</a>
+                      for more information on the different actions you can perform in your Prime Account.`
+          },
+        ]
+      };
+    },
+    setupBalancerLpTableHeaderConfig() {
+      this.balancerLpTableHeaderConfig = {
+        gridTemplateColumns: 'repeat(3, 1fr) 12% 135px 60px 80px 22px',
+        cells: [
+          {
+            label: 'Balancer vault',
+            sortable: false,
+            class: 'token',
+            id: 'TOKEN',
+            tooltip: `The LP-asset name. These names are simplified for a smoother UI.
+                                       <a href='https://docs.deltaprime.io/integrations/tokens' target='_blank'>More information</a>.`
+          },
+          {
+            label: 'Balance',
+            sortable: false,
+            class: 'balance',
+            id: 'BALANCE',
+            tooltip: `The number and value of staked Balancer LP tokens in your Prime Account.`
+          },
+          {
+            label: 'TVL',
+            sortable: false,
+            class: 'balance',
+            id: 'tvl',
+            tooltip: `The Total Value Locked (TVL) in the underlying pool.<br>
+                      <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/pools#tvl' target='_blank'>More information</a>.`
+          },
+          {
+            label: 'Min. APR',
+            sortable: false,
+            class: 'apr',
+            id: 'APR',
+            tooltip: `The APR of the pool. This number includes any inherent price appreciation of underlying assets.`
           },
           {
             label: 'Max. APR',
@@ -405,7 +486,7 @@ export default {
             sortable: false,
             class: 'apr',
             id: 'APR',
-            tooltip: `All fees, rewards and counterparty PnL collected, divided by TVL of this tranche. This does not take underlying asset price changes or IL into account.`
+            tooltip: `All fees, rewards and counterparty PnL collected, divided by this GM's TVL. \n\nThis does not take underlying asset price changes into account.`
           },
           {
             label: 'Max. APR',
@@ -505,6 +586,55 @@ export default {
         ]
       };
     },
+    setupGmIncentivesTableHeaderConfig() {
+      this.gmIncentivesTableHeaderConfig = {
+        gridTemplateColumns: '160px repeat(5, 1fr) 50px',
+        cells: [
+          {
+            label: 'Total eligible TVL',
+            sortable: false,
+            class: 'token',
+            id: 'TOKEN',
+            tooltip: `The total dollar value of GM tokens that are eligible for incentives.`
+          },
+          {
+            label: 'Mission completion',
+            sortable: false,
+            class: 'composition',
+            id: 'COMPOSITION',
+            tooltip: `How close we are to completing the protocol mission: $3M GM TVL. Deadline: December 25, 12pm CET. Failing the mission results in reduced incentives.`
+          },
+          {
+            label: 'Your eligible GM',
+            sortable: false,
+            class: 'composition',
+            id: 'COMPOSITION',
+            tooltip: `The dollarvalue you receive ARB emissions over. This is calculated as: Total GM deposits - Collateral value.`
+          },
+          {
+            label: '1x APR Boost',
+            sortable: false,
+            class: 'balance',
+            id: 'BALANCE',
+            tooltip: `The APR you receive over your eligible TVL.`
+          },
+          {
+            label: 'Max APR boost',
+            sortable: false,
+            class: 'balance',
+            id: 'BALANCE',
+            tooltip: `The boost APR received if you would borrow enough to get health to 10%, and put your total value into GM pools.`
+          },
+          {
+            label: 'ARB collected',
+            sortable: false,
+            class: 'trend-level',
+            id: 'TREND',
+            tooltip: `The total amount of ARB you have collected this week. Collected ARB will be distributed weekly. This number is not included in your collateral value, until the ARB is distributed to all Prime Accounts. This number resets to 0 after the collected ARB is added to your assets on Monday.`
+          },
+        ]
+      };
+    },
     watchAssetPricesUpdate() {
       this.priceService.observeRefreshPrices().subscribe((updateEvent) => {
         this.assets = config.ASSETS_CONFIG;
@@ -536,6 +666,13 @@ export default {
     width: 100%;
 
     .lp-table {
+      .incentives-program-title {
+        font-size: $font-size-xxl;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
       .paginator-container {
         display: flex;
         flex-direction: row;
