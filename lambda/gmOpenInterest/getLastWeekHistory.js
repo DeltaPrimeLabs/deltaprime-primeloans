@@ -15,13 +15,13 @@ const gmConfig = require("../config/gmConfig.json");
 
 const getLastWeekHistory = async (event) => {
   let params = {
-    TableName: process.env.GM_OPEN_INTEREST_TABLE,
+    TableName: 'gm-open-interest-prod',
   };
 
   const res = await dynamoDb.scan(params).promise();
 
-  // fill the last week history
   if (res.Items.length == 0) {
+    // fill the last week history
     const now = Date.now();
     let timestampInSeconds = now - 7 * 24 * 60 * 60 * 1000;
 
@@ -89,7 +89,7 @@ const getLastWeekHistory = async (event) => {
       console.log(data);
 
       const params = {
-        TableName: process.env.GM_OPEN_INTEREST_TABLE,
+        TableName: 'gm-open-interest-prod',
         Item: data
       };
       await dynamoDb.put(params).promise();
@@ -101,4 +101,4 @@ const getLastWeekHistory = async (event) => {
   return event;
 }
 
-module.exports.handler = getLastWeekHistory;
+getLastWeekHistory();

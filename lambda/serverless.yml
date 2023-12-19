@@ -54,20 +54,20 @@ provider:
 #    variable1: value1
 
 functions:
-  sPrimeCalculatorAva:
-    handler: sPrime/sPrimeCalculatorAva.handler
-    memorySize: 1024
-    timeout: 600
-    description: Calculate sPRIME Value for depositors on Avalanche.
-    events:
-      - schedule: rate(5 minutes)
-  sPrimeCalculatorArb:
-    handler: sPrime/sPrimeCalculatorArb.handler
-    memorySize: 1024
-    timeout: 600
-    description: Calculate sPRIME Value for depositors on Arbitrum.
-    events:
-      - schedule: rate(5 minutes)
+  # sPrimeCalculatorAva:
+  #   handler: sPrime/sPrimeCalculatorAva.handler
+  #   memorySize: 1024
+  #   timeout: 600
+  #   description: Calculate sPRIME Value for depositors on Avalanche.
+  #   events:
+  #     - schedule: rate(5 minutes)
+  # sPrimeCalculatorArb:
+  #   handler: sPrime/sPrimeCalculatorArb.handler
+  #   memorySize: 1024
+  #   timeout: 600
+  #   description: Calculate sPRIME Value for depositors on Arbitrum.
+  #   events:
+  #     - schedule: rate(5 minutes)
   sPrimeAggregator:
     handler: apis/sPrimeValue.sPrimeAggregator
     memorySize: 512
@@ -175,13 +175,6 @@ functions:
     description: fetch Open Interests of GM pool.
     events:
       - schedule: rate(3 hours)
-  getLastWeekHistory:
-    handler: gmOpenInterest/getLastWeekHistory.handler
-    memorySize: 2048
-    timeout: 300
-    description: fetch  Open Interests of GM pool for last 7 days.
-    events:
-      - schedule: rate(1 minute)
   # loanAggregatorAva:
   #   handler: aggregators/loan.loanAggregatorAva
   #   memorySize: 1024
@@ -228,7 +221,7 @@ functions:
           method: get
           path: /gm-boost-apy
   getGmOpenInterestsApi:
-    handler: apis/gmxIncentives.getGmOpenInterestsApi
+    handler: apis/gmOpenInterests.getGmOpenInterestsApi
     memorySize: 512
     description: Fetch Open Interest of GM pools
     events:

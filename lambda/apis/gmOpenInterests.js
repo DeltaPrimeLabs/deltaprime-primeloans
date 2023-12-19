@@ -7,9 +7,10 @@ const getGmOpenInterestsApi = (event, context, callback) => {
 
   dynamoDb.scan(params).promise()
     .then(result => {
+      const openInterests = result.Items.sort((a, b) => a.id - b.id);
       const response = {
         statusCode: 200,
-        body: JSON.stringify(result.Item),
+        body: JSON.stringify(openInterests),
       };
       callback(null, response);
     })
