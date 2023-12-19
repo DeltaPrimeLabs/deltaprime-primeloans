@@ -23,6 +23,10 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
     using TransferHelper for address;
     using SafeERC20 for IERC20Metadata;
 
+    /* ========== CONSTANTS ========== */
+
+    uint256 public constant DUST_THRESHOLD = 20e18; // $20
+
     /* ========== PUBLIC AND EXTERNAL MUTATIVE FUNCTIONS ========== */
 
     /**
@@ -233,8 +237,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
     }
 
     /// @notice Convert dust assets
-    /// @param threshold $ value threshold
-    function convertDustAssets(uint256 threshold) external onlyOwner remainsSolvent nonReentrant {
+    function convertDustAssets() external onlyOwner remainsSolvent nonReentrant {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         IDustConverter dustConverter = IDustConverter(DeploymentConstants.getDustConverter());
 
@@ -249,7 +252,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
             IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(assetPrice.asset, true));
             uint256 assetBalance = token.balanceOf(address(this));
             uint256 value = (assetPrice.price * 10 ** 10 * assetBalance / (10 ** token.decimals()));
-            if (value <= threshold) {
+            if (value <= DUST_THRESHOLD) {
                 ++dustAssetCount;
                 isDust[i] = true;
                 tokens[i] = address(token);

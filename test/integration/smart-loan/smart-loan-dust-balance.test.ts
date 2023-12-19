@@ -242,16 +242,14 @@ describe("Smart loan", () => {
                 .connect(depositor)
                 .transfer(dustConverter.address, usdcAmount);
 
-            await wrappedLoan.swapPangolin(toBytes32("AVAX"), toBytes32("ETH"), toWei("1.5"), 0);
-            await wrappedLoan.swapPangolin(toBytes32("AVAX"), toBytes32("USDT"), toWei("1"), 0);
-            await wrappedLoan.swapPangolin(toBytes32("AVAX"), toBytes32("USDC"), toWei("0.5"), 0);
+            await wrappedLoan.swapPangolin(toBytes32("AVAX"), toBytes32("ETH"), toWei("0.8"), 0);
+            await wrappedLoan.swapPangolin(toBytes32("AVAX"), toBytes32("USDT"), toWei("0.6"), 0);
+            await wrappedLoan.swapPangolin(toBytes32("AVAX"), toBytes32("USDC"), toWei("0.4"), 0);
         });
 
         it("should fail to convert dust as a non-owner", async () => {
             await expect(
-                nonOwnerWrappedLoan.convertDustAssets(
-                    toWei("10")
-                )
+                nonOwnerWrappedLoan.convertDustAssets()
             ).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
         });
 
@@ -260,7 +258,7 @@ describe("Smart loan", () => {
             let initialHR = await wrappedLoan.getHealthRatio();
             let initialTWV = await wrappedLoan.getThresholdWeightedValue();
 
-            await wrappedLoan.convertDustAssets(toWei("40"));
+            await wrappedLoan.convertDustAssets();
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 0.01);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.eq(fromWei(initialHR));
