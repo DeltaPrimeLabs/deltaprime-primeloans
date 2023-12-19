@@ -139,21 +139,20 @@ describe("Smart loan", () => {
                     [smartLoansFactory.address, { symbol: toBytes32("USDC"), asset: "0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e" }]
                 ) as DustConverterMock;
 
-                await addressProvider.connect(owner).setDustConverter(dustConverter.address);
-
                 await recompileConstantsFile(
                     'local',
                     "DeploymentConstants",
                     [],
                     tokenManager.address,
                     addressProvider.address,
+                    dustConverter.address,
                     diamondAddress,
                     smartLoansFactory.address,
                     'lib'
                 );
-    
+
                 exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, tokenManager.address, supportedAssets, "PangolinIntermediary");
-    
+
                 await recompileConstantsFile(
                     'local',
                     "DeploymentConstants",
@@ -165,6 +164,7 @@ describe("Smart loan", () => {
                     ],
                     tokenManager.address,
                     addressProvider.address,
+                    dustConverter.address,
                     diamondAddress,
                     smartLoansFactory.address,
                     'lib'

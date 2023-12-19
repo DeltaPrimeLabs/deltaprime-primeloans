@@ -1,4 +1,4 @@
-export default function updateConstants(chain, exchanges, tokenManager, addressProviderAddress, diamondBeaconAddress, smartLoansFactoryAddress, maxLTV, maxSelloutHealthRatio, maxLiquidationBonus, nativeAssetSymbol, nativeAssetAddress) {
+export default function updateConstants(chain, exchanges, tokenManager, addressProviderAddress, dustConverterAddress, diamondBeaconAddress, smartLoansFactoryAddress, maxLTV, maxSelloutHealthRatio, maxLiquidationBonus, nativeAssetSymbol, nativeAssetAddress) {
     var fs = require('fs')
     const replace = require('replace-in-file');
 
@@ -41,6 +41,16 @@ export default function updateConstants(chain, exchanges, tokenManager, addressP
     );
 
     newLine = `    address private constant _ADDRESS_PROVIDER = ${addressProviderAddress};`;
+
+    fileArray.splice(lineWithFunctionDeclaration, 1, newLine);
+
+    // Dust Converter
+
+    lineWithFunctionDeclaration = fileArray.findIndex(
+        line => line.includes('_DUST_CONVERTER')
+    );
+
+    newLine = `    address private constant _DUST_CONVERTER = ${dustConverterAddress};`;
 
     fileArray.splice(lineWithFunctionDeclaration, 1, newLine);
 

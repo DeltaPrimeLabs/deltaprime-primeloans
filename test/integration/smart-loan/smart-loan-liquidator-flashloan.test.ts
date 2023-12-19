@@ -120,6 +120,7 @@ describe('Test liquidator with a flashloan', () => {
                 [],
                 tokenManager.address,
                 addressProvider.address,
+                ethers.constants.AddressZero,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -140,6 +141,7 @@ describe('Test liquidator with a flashloan', () => {
                 ],
                 tokenManager.address,
                 addressProvider.address,
+                ethers.constants.AddressZero,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -299,6 +301,7 @@ describe('Test liquidator with a flashloan', () => {
                 [],
                 tokenManager.address,
                 addressProvider.address,
+                ethers.constants.AddressZero,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -319,6 +322,7 @@ describe('Test liquidator with a flashloan', () => {
                 ],
                 tokenManager.address,
                 addressProvider.address,
+                ethers.constants.AddressZero,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -465,6 +469,7 @@ describe('Test liquidator with a flashloan', () => {
                 [],
                 tokenManager.address,
                 addressProvider.address,
+                ethers.constants.AddressZero,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -485,6 +490,7 @@ describe('Test liquidator with a flashloan', () => {
                 ],
                 tokenManager.address,
                 addressProvider.address,
+                ethers.constants.AddressZero,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -642,6 +648,7 @@ describe('Test liquidator with a flashloan', () => {
                 [],
                 tokenManager.address,
                 addressProvider.address,
+                ethers.constants.AddressZero,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -662,6 +669,7 @@ describe('Test liquidator with a flashloan', () => {
                 ],
                 tokenManager.address,
                 addressProvider.address,
+                ethers.constants.AddressZero,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -857,6 +865,7 @@ describe('Test liquidator with a flashloan', () => {
                 ],
                 tokenManager.address,
                 addressProvider.address,
+                ethers.constants.AddressZero,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -1048,6 +1057,7 @@ describe('Test liquidator with a flashloan', () => {
                 ],
                 tokenManager.address,
                 addressProvider.address,
+                ethers.constants.AddressZero,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -1226,6 +1236,7 @@ describe('Test liquidator with a flashloan', () => {
                 [],
                 tokenManager.address,
                 addressProvider.address,
+                ethers.constants.AddressZero,
                 diamondAddress,
                 ethers.constants.AddressZero,
                 'lib'
@@ -1244,6 +1255,7 @@ describe('Test liquidator with a flashloan', () => {
                 ],
                 tokenManager.address,
                 addressProvider.address,
+                ethers.constants.AddressZero,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'

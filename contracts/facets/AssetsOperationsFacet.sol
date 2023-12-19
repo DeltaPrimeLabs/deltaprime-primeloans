@@ -236,11 +236,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
     /// @param threshold $ value threshold
     function convertDustAssets(uint256 threshold) external onlyOwner remainsSolvent nonReentrant {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        IDustConverter dustConverter;
-        {
-            IAddressProvider addressProvider = IAddressProvider(DeploymentConstants.getAddressProvider());
-            dustConverter = IDustConverter(addressProvider.getDustConverter());
-        }
+        IDustConverter dustConverter = IDustConverter(DeploymentConstants.getDustConverter());
 
         SolvencyFacetProdAvalanche.AssetPrice[] memory ownedAssetsPrices = _getOwnedAssetsWithNativePrices();
 
