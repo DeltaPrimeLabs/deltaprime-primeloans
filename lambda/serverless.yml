@@ -34,6 +34,10 @@ provider:
     GMX_INCENTIVES_ARB_TABLE: gmx-incentives-arb-${opt:stage, "dev"}
     GM_OPEN_INTEREST_TABLE: gm-open-interest-${opt:stage, "dev"}
     TJ_API_KEY: ${file(./.secrets/traderJoe.json):apiKey}
+    FUNC_RPC_AVA: ${file(./.secrets/funcRpc.json):avalanche}
+    FUNC_RPC_ARB: ${file(./.secrets/funcRpc.json):arbitrum}
+    EXT_RPC_AVA: ${file(./.secrets/extRpc.json):avalanche}
+    EXT_RPC_ARB: ${file(./.secrets/extRpc.json):arbitrum}
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -168,9 +172,16 @@ functions:
     handler: gmOpenInterest/gmOpenInterestAggregator.handler
     memorySize: 2048
     timeout: 300
-    description: fetch long and short Open Interest of GM pool.
+    description: fetch Open Interests of GM pool.
     events:
       - schedule: rate(3 hours)
+  getLastWeekHistory:
+    handler: gmOpenInterest/getLastWeekHistory.handler
+    memorySize: 2048
+    timeout: 300
+    description: fetch  Open Interests of GM pool for last 7 days.
+    events:
+      - schedule: rate(1 minute)
   # loanAggregatorAva:
   #   handler: aggregators/loan.loanAggregatorAva
   #   memorySize: 1024
@@ -216,6 +227,14 @@ functions:
       - httpApi:
           method: get
           path: /gm-boost-apy
+  getGmOpenInterestsApi:
+    handler: apis/gmxIncentives.getGmOpenInterestsApi
+    memorySize: 512
+    description: Fetch Open Interest of GM pools
+    events:
+      - httpApi:
+          method: get
+          path: /gm-open-interests
 
 resources:
   Resources:

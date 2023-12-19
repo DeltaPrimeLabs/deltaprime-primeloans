@@ -7,7 +7,6 @@ const EthDater = require("ethereum-block-by-date");
 const networkInfo = require('./constants.json');
 const CACHE_LAYER_URLS = require('../config/redstone-cache-layer-urls.json');
 
-const config = require('../rpcConfig.json');
 const LOAN = require(`../abis/SmartLoanGigaChadInterface.json`);
 
 // AWS DynamoDB setup
@@ -22,10 +21,8 @@ const formatUnits = ethers.utils.formatUnits;
 const fromWei = val => parseFloat(ethers.utils.formatEther(val));
 const toWei = val => ethers.utils.parseEther(val.toString());
 
-const jsonRpcAva = config.jsonRpcAva;
-const jsonRpcArb = config.jsonRpcArb;
-const avalancheProvider = new ethers.providers.JsonRpcProvider(jsonRpcAva);
-const arbitrumProvider = new ethers.providers.JsonRpcProvider(jsonRpcArb);
+const avalancheProvider = new ethers.providers.JsonRpcProvider(process.env.FUNC_RPC_AVA);
+const arbitrumProvider = new ethers.providers.JsonRpcProvider(process.env.FUNC_RPC_ARB);
 
 const avalancheWallet = (new ethers.Wallet("0xca63cb3223cb19b06fa42110c89ad21a17bad22ea061e5a2c2487bd37b71e809"))
   .connect(avalancheProvider);
@@ -73,8 +70,9 @@ const fromBytes32 = ethers.utils.parseBytes32String;
 const toBytes32 = ethers.utils.formatBytes32String;
 
 const getBlockForTimestamp = async (network, timestamp) => {
+  let provider = new ethers.providers.JsonRpcProvider(network == "avalanche" ? process.env.EXT_RPC_AVA : process.env.EXT_RPC_ARB);
   const dater = new EthDater(
-    network === "avalanche" ? avalancheProvider : arbitrumProvider // ethers provider, required.
+    provider // ethers provider, required.
   );
 
   return await dater.getDate(
