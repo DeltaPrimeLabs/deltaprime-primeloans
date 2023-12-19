@@ -2,6 +2,7 @@ const AWS = require('aws-sdk');
 const ethers = require('ethers');
 const redstone = require('redstone-api');
 const WrapperBuilder = require('@redstone-finance/evm-connector').WrapperBuilder;
+const EthDater = require("ethereum-block-by-date");
 
 const networkInfo = require('./constants.json');
 const CACHE_LAYER_URLS = require('../config/redstone-cache-layer-urls.json');
@@ -71,6 +72,17 @@ const getWrappedContracts = (addresses, network) => {
 const fromBytes32 = ethers.utils.parseBytes32String;
 const toBytes32 = ethers.utils.formatBytes32String;
 
+const getBlockForTimestamp = async (network, timestamp) => {
+  const dater = new EthDater(
+    network === "avalanche" ? avalancheProvider : arbitrumProvider // ethers provider, required.
+  );
+
+  return await dater.getDate(
+    timestamp, // Date, required. Any valid moment.js value: string, milliseconds, Date() object, moment() object.
+    true // Block after, optional. Search for the nearest block before or after the given date. By default true.
+  );
+}
+
 module.exports = {
   parseUnits,
   formatUnits,
@@ -84,5 +96,6 @@ module.exports = {
   avalancheProvider,
   arbitrumProvider,
   dynamoDb,
-  getWrappedContracts
+  getWrappedContracts,
+  getBlockForTimestamp
 }

@@ -32,6 +32,7 @@ provider:
     LOAN_ARB_TABLE: loans-arb-${opt:stage, "dev"}
     APY_TABLE: apys-${opt:stage, "dev"}
     GMX_INCENTIVES_ARB_TABLE: gmx-incentives-arb-${opt:stage, "dev"}
+    GM_OPEN_INTEREST_TABLE: gm-open-interest-${opt:stage, "dev"}
     TJ_API_KEY: ${file(./.secrets/traderJoe.json):apiKey}
   iamRoleStatements:
     - Effect: Allow
@@ -266,6 +267,38 @@ resources:
         StreamSpecification:
           StreamViewType: "NEW_AND_OLD_IMAGES"
         TableName: ${self:provider.environment.GMX_INCENTIVES_ARB_TABLE}
+    ApysTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: "id"
+            AttributeType: "S"
+        KeySchema:
+          -
+            AttributeName: "id"
+            KeyType: "HASH"
+        BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: "NEW_AND_OLD_IMAGES"
+        TableName: ${self:provider.environment.APY_TABLE}
+    gmOpenInterestTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: "id"
+            AttributeType: "S"
+        KeySchema:
+          -
+            AttributeName: "id"
+            KeyType: "HASH"
+        BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: "NEW_AND_OLD_IMAGES"
+        TableName: ${self:provider.environment.GM_OPEN_INTEREST_TABLE}
     # loansAvaTable:
     #   Type: AWS::DynamoDB::Table
     #   DeletionPolicy: Retain
@@ -302,20 +335,4 @@ resources:
     #     StreamSpecification:
     #       StreamViewType: "NEW_AND_OLD_IMAGES"
     #     TableName: ${self:provider.environment.LOAN_ARB_TABLE}
-    ApysTable:
-      Type: AWS::DynamoDB::Table
-      DeletionPolicy: Retain
-      Properties:
-        AttributeDefinitions:
-          -
-            AttributeName: "id"
-            AttributeType: "S"
-        KeySchema:
-          -
-            AttributeName: "id"
-            KeyType: "HASH"
-        BillingMode: PAY_PER_REQUEST
-        StreamSpecification:
-          StreamViewType: "NEW_AND_OLD_IMAGES"
-        TableName: ${self:provider.environment.APY_TABLE}
 
