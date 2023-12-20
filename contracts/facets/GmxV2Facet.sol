@@ -216,9 +216,9 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
 
     function afterDepositExecution(bytes32 key, Deposit.Props memory deposit, EventUtils.EventLogData memory eventData) external onlyGmxV2Keeper nonReentrant override {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-
+        uint256 gmTokenInitialBalance = IERC20Metadata(deposit.addresses.market).balanceOf(address(this));
         // Add owned assets
-        if(IERC20Metadata(deposit.addresses.market).balanceOf(address(this)) > 0){
+        if( gmTokenInitialBalance > 0){
             DiamondStorageLib.addOwnedAsset(tokenManager.tokenAddressToSymbol(deposit.addresses.market), deposit.addresses.market);
         }
 
@@ -226,6 +226,13 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
 
         // Unfreeze account
         DiamondStorageLib.unfreezeAccount(msg.sender);
+
+        emit DepositExecuted(
+            msg.sender,
+            deposit.addresses.market,
+            IERC20Metadata(deposit.addresses.market).balanceOf(address(this)) - gmTokenInitialBalance,
+            deposit.numbers.executionFee
+        );
     }
 
     function afterDepositCancellation(bytes32 key, Deposit.Props memory deposit, EventUtils.EventLogData memory eventData) external onlyGmxV2Keeper nonReentrant override {
@@ -244,12 +251,19 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
         wrapNativeToken();
 
         DiamondStorageLib.unfreezeAccount(msg.sender);
+        emit DepositCancelled(
+            msg.sender,
+            deposit.addresses.market,
+            deposit.numbers.executionFee
+        );
     }
 
     function afterWithdrawalExecution(bytes32 key, Withdrawal.Props memory withdrawal, EventUtils.EventLogData memory eventData) external onlyGmxV2Keeper nonReentrant override {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         address longToken = marketToLongToken(withdrawal.addresses.market);
         address shortToken = marketToShortToken(withdrawal.addresses.market);
+        uint256 longTokenInitialBalance = IERC20Metadata(longToken).balanceOf(address(this));
+        uint256 shortTokenInitialBalance = IERC20Metadata(shortToken).balanceOf(address(this));
 
         // Add owned assets
         if(IERC20Metadata(longToken).balanceOf(address(this)) > 0){
@@ -262,6 +276,13 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
         wrapNativeToken();
 
         DiamondStorageLib.unfreezeAccount(msg.sender);
+        emit WithdrawalExecuted(
+            msg.sender,
+            withdrawal.addresses.market,
+            IERC20Metadata(longToken).balanceOf(address(this)) - longTokenInitialBalance,
+            IERC20Metadata(shortToken).balanceOf(address(this)) - shortTokenInitialBalance,
+            withdrawal.numbers.executionFee
+        );
     }
 
     function afterWithdrawalCancellation(bytes32 key, Withdrawal.Props memory withdrawal, EventUtils.EventLogData memory eventData) external onlyGmxV2Keeper nonReentrant override {
@@ -275,6 +296,11 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
         wrapNativeToken();
 
         DiamondStorageLib.unfreezeAccount(msg.sender);
+        emit WithdrawalCancelled(
+            msg.sender,
+            withdrawal.addresses.market,
+            withdrawal.numbers.executionFee
+        );
     }
 
     // MODIFIERS
@@ -287,4 +313,39 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
         DiamondStorageLib.enforceIsContractOwner();
         _;
     }
+
+    /**
+     * @dev emitted after depositing collateral to gm market
+     * @param accountAddress address of a SmartLoanDiamondBeacon
+     * @param market address of a gm market
+     * @param gmAmount amount of gm tokens received
+     * @param executionFee amount of execution fee paid
+    **/
+    event DepositExecuted(address indexed accountAddress, address indexed market, uint256 gmAmount, uint256 executionFee);
+
+    /**
+     * @dev emitted after gm market deposit order was cancelled
+     * @param accountAddress address of a SmartLoanDiamondBeacon
+     * @param market address of a gm market
+     * @param executionFee amount of execution fee paid
+    **/
+    event DepositCancelled(address indexed accountAddress, address indexed market, uint256 executionFee);
+
+    /**
+     * @dev emitted after withdrawing collateral from gm market
+     * @param accountAddress address of a SmartLoanDiamondBeacon
+     * @param market address of a gm market
+     * @param longTokenAmount amount of long tokens received
+     * @param shortTokenAmount amount of short tokens received
+     * @param executionFee amount of execution fee paid
+    **/
+    event WithdrawalExecuted(address indexed accountAddress, address indexed market, uint256 longTokenAmount, uint256 shortTokenAmount, uint256 executionFee);
+
+    /**
+     * @dev emitted after gm market withdrawal order was cancelled
+     * @param accountAddress address of a SmartLoanDiamondBeacon
+     * @param market address of a gm market
+     * @param executionFee amount of execution fee paid
+    **/
+    event WithdrawalCancelled(address indexed accountAddress, address indexed market, uint256 executionFee);
 }
