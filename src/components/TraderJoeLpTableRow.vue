@@ -706,7 +706,11 @@ export default {
         const newChartData = []
         let index = 0
         let indexBin = this.lpToken.binIds[index]
+        this.currentPriceIndex = -1
         while (indexBin <= this.lpToken.binIds[this.lpToken.binIds.length - 1]) {
+          if (indexBin === this.activeId) {
+            this.currentPriceIndex = newChartData.length
+          }
           if (this.lpToken.binIds.findIndex(binId => binId === indexBin) > -1) {
             newChartData.push({
               isPrimary: this.lpToken.accountBalancesPrimary[index] > this.lpToken.accountBalancesSecondary[index],
@@ -730,7 +734,6 @@ export default {
         }
         this.chartData = newChartData
         this.currentPrice = this.getPriceOfBin(this.activeId)
-        this.currentPriceIndex = this.lpToken.binIds.findIndex(binId => binId === this.activeId)
       }
     },
     getPriceOfBin(binId) {

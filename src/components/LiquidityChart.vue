@@ -28,6 +28,9 @@ Chart.controllers.LiquidityBarChart = Chart.controllers.bar.extend({
       ctx.textAlign = "center";
       ctx.fillStyle = getThemeVariable('--chart__active-point-label-color');
       ctx.fillText(`Active (${this.chart.config.options.currentPrice.toFixed(8)})`, activeLineX, topY - 4)
+    } else {
+      const ctx = this.chart.ctx;
+      ctx.save();
     }
   }
 })

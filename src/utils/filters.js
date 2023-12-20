@@ -2,7 +2,7 @@ import Vue from 'vue';
 import TimeAgo from 'javascript-time-ago';
 import en from 'javascript-time-ago/locale/en.json';
 import moment from 'moment';
-import {removePaddedTrailingZeros} from './calculate';
+import {smartRound} from './calculate';
 
 TimeAgo.addDefaultLocale(en);
 
@@ -74,20 +74,7 @@ export default function setupFilters() {
   });
 
   Vue.filter('smartRound', function (value, precision = 8, toFixed = false) {
-    if (Number.isNaN(value)) {
-      return '0';
-    }
-    if (value < 0) {
-      value = Math.abs(value);
-    }
-    const valueOrderOfMagnitudeExponent = String(value).split('.')[0].length - 1;
-    const precisionMultiplierExponent = precision - valueOrderOfMagnitudeExponent;
-    const precisionMultiplier = Math.pow(10, precisionMultiplierExponent >= 0 ? precisionMultiplierExponent : 0);
-    if (!toFixed) {
-      return value !== null ? String(Math.round(value * precisionMultiplier) / precisionMultiplier) : '';
-    } else {
-      return value !== null ? removePaddedTrailingZeros((Math.round(value * precisionMultiplier) / precisionMultiplier).toFixed(precision)) : '';
-    }
+    return smartRound(value, precision, toFixed)
   });
 
   Vue.filter('formatWithSpaces', function (value) {

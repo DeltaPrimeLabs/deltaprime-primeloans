@@ -1,5 +1,5 @@
 <template>
-  <div id="modal" class="deposit-modal-component modal-component">
+  <div id="modal" v-if="pool" class="deposit-modal-component modal-component">
     <Modal :height="getModalHeight">
       <div class="modal__title">
         Deposit
@@ -49,9 +49,16 @@
               <div class="summary__label">
                 Mean daily interest (365D):
               </div>
-              <div class="summary__value">
-                ≈ {{ calculateDailyInterest | smartRound(8, true) }}
-                <span class="currency">{{ assetSymbol }}</span>
+              <div class="value__wrapper">
+                <div class="summary__value">
+                  ≈ {{ calculateDailyInterest | smartRound(8, true) }}
+                  <span class="currency">{{ assetSymbol }}</span>
+                </div>
+                +
+                <div class="summary__value">
+                  ≈ {{ calculateDailyMiningInterestInSPrime | smartRound(8, true) }}$
+                  <span class="currency">sPRIME</span>
+                </div>
               </div>
             </div>
           </div>
@@ -122,7 +129,11 @@ export default {
       return config;
     },
     calculateDailyInterest() {
-      return (this.apy + this.miningApy) / 365 * (Number(this.deposit) + this.depositValue);
+      return (this.apy) / 365 * (Number(this.deposit) + this.depositValue);
+    },
+    calculateDailyMiningInterestInSPrime() {
+      console.log(this.pool);
+      return (this.miningApy) / 365 * (Number(this.deposit) + this.depositValue) * this.pool.assetPrice;
     },
 
     miningApy() {
@@ -137,7 +148,7 @@ export default {
 
     available() {
       return (this.assetSymbol === config.nativeToken && this.selectedDepositAsset === config.nativeToken)
-        ? this.accountBalance : this.walletAssetBalance;
+          ? this.accountBalance : this.walletAssetBalance;
     },
 
     symbol() {
@@ -157,7 +168,7 @@ export default {
 
     depositValueChange(event) {
       console.log(event);
-      this.depositValue = event.value;
+      this.depositValue = Number(event.value);
       this.inputValidationError = event.error;
     },
 
@@ -183,5 +194,15 @@ export default {
 <style lang="scss" scoped>
 @import "~@/styles/variables";
 @import "~@/styles/modal";
+
+.value__wrapper {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+
+  .summary__value:last-child {
+    margin-left: 5px;
+  }
+}
 
 </style>

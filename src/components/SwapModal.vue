@@ -207,7 +207,6 @@ import config from '../config';
 import {calculateHealth, formatUnits, fromWei, parseUnits} from '../utils/calculate';
 import {BigNumber} from 'ethers';
 import SimpleInput from './SimpleInput';
-import TOKEN_ADDRESSES from '../../common/addresses/avalanche/token_addresses.json';
 import DeltaIcon from "./DeltaIcon.vue";
 import InfoIcon from "./InfoIcon.vue";
 import Toggle from './Toggle.vue';
@@ -722,9 +721,6 @@ export default {
         });
       }
 
-      console.log('here')
-      console.log(this.concentratedLpAssets)
-
       for (const [symbol, data] of Object.entries(this.concentratedLpAssets)) {
         tokens.push({
           price: data.price,
@@ -786,9 +782,6 @@ export default {
           });
         });
       }
-
-      console.log('tokens')
-      console.log(tokens)
 
       let lbTokens = Object.values(this.traderJoeV2LpAssets);
 
