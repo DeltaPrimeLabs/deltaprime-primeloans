@@ -27,6 +27,18 @@
         </template>
       </div>
 
+      <div class="table__cell table__cell--double-value">
+        <template>
+          <div class="table__cell rewards">
+            <span v-for="symbol in lpToken.rewardTokens">
+              <img class="asset__icon" :src="getAssetIcon(symbol)">{{
+                formatTokenBalance((lpToken.rewardBalances && lpToken.rewardBalances[symbol]) ? lpToken.rewardBalances[symbol]  : 0, 4, true)
+              }}
+            </span>
+          </div>
+        </template>
+      </div>
+
       <div class="table__cell table__cell--double-value loan">
         {{ formatTvl(lpToken.tvl) }}
       </div>
@@ -59,6 +71,13 @@
           v-if="removeActionsConfig"
           v-on:iconButtonClick="actionClick"
           :disabled="disableAllButtons || noSmartLoan">
+        </IconButtonMenuBeta>
+        <IconButtonMenuBeta
+            class="actions__icon-button"
+            v-if="moreActionsConfig"
+            :config="moreActionsConfig"
+            v-on:iconButtonClick="actionClick"
+            :disabled="disableAllButtons || !healthLoaded">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -96,6 +115,7 @@ import WithdrawBalancerV2Modal from "./WithdrawBalancerV2Modal.vue";
 import {formatUnits} from "ethers/lib/utils";
 import config from "../config";
 import BalancerUnwindLpModal from "./BalancerUnwindLpModal.vue";
+import ClaimBalancerRewardsModal from "./ClaimBalancerRewardsModal.vue";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -119,6 +139,7 @@ export default {
     this.providerService.observeProviderCreated().subscribe(() => {
       this.setupAddActionsConfiguration();
       this.setupRemoveActionsConfiguration();
+      this.setupMoreActionsConfiguration();
       this.watchAssetBalancesDataRefreshEvent();
       this.watchHardRefreshScheduledEvent();
       this.watchHealth();
@@ -281,6 +302,21 @@ export default {
           name: 'Withdraw unstaked LP tokens'
         })
       }
+    },
+
+    setupMoreActionsConfiguration() {
+      this.moreActionsConfig = {
+        iconSrc: 'src/assets/icons/icon_a_more.svg',
+        tooltip: 'More',
+        menuOptions: [
+          {
+            key: 'CLAIM_REWARDS',
+            name: 'Claim rewards',
+            disabled: true,
+            disabledInfo: 'Coming soon!'
+          }
+        ]
+      };
     },
 
     async setupApr() {
@@ -486,6 +522,23 @@ export default {
       });
     },
 
+    async openClaimRewardsModal() {
+      const modalInstance = this.openModal(ClaimBalancerRewardsModal);
+
+      modalInstance.$on('CLAIM', provideLiquidityEvent => {
+        if (this.smartLoanContract) {
+          const claimRequest = {
+          };
+          this.handleTransaction(this.stakeBalancerV2, {claimRequest: claimRequest}, () => {
+            this.$forceUpdate();
+          }, (error) => {
+            this.handleTransactionError(error);
+          }).then(() => {
+          });
+        }
+      });
+    },
+
     async setupPoolBalance() {
       const gaugeContract = new ethers.Contract(this.lpToken.gaugeAddress, erc20ABI, provider);
       const bptContract = new ethers.Contract(this.lpToken.address, erc20ABI, provider);
@@ -607,7 +660,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: repeat(3, 1fr) 12% 135px 60px 80px 22px;
+    grid-template-columns: repeat(2, 1fr) 300px 10% 10% 10% 60px 80px 22px;
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;
@@ -652,6 +705,20 @@ export default {
 
       &.loan, &.apr, &.max-apr {
         align-items: flex-end;
+      }
+
+      &.rewards {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+
+        .asset__icon {
+          margin-left: 5px;
+          height: 22px;
+          width: 22px;
+          border-radius: 50%;
+          margin-right: 9px;
+        }
       }
 
       &.apr.apr--with-warning {
