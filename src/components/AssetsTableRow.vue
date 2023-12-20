@@ -17,15 +17,13 @@
 
       <div class="table__cell table__cell--double-value balance">
         <template
-            v-if="assetBalances !== null && assetBalances !== undefined && parseFloat(assetBalances[asset.symbol])">
-          <template v-if="Number(smartRound(assetBalances[asset.symbol], 8, true)) > 0">
-            <div class="double-value__pieces">
-              <span v-if="isBalanceEstimated">~</span>{{ smartRound(assetBalances[asset.symbol], 8, true) }}
-            </div>
-            <div class="double-value__usd">
-              <span v-if="assetBalances[asset.symbol]">{{ assetBalances[asset.symbol] * asset.price | usd }}</span>
-            </div>
-          </template>
+          v-if="assetBalances !== null && assetBalances !== undefined && parseFloat(assetBalances[asset.symbol]) && Number(smartRound(assetBalances[asset.symbol], 8, true)) > 0">
+          <div class="double-value__pieces">
+            <span v-if="isBalanceEstimated">~</span>{{ smartRound(assetBalances[asset.symbol], 8, true) }}
+          </div>
+          <div class="double-value__usd">
+            <span v-if="assetBalances[asset.symbol]">{{ assetBalances[asset.symbol] * asset.price | usd }}</span>
+          </div>
         </template>
         <template v-else>
           <div class="no-value-dash"></div>
