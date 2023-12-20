@@ -10,8 +10,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "./interfaces/IWrappedNativeToken.sol";
 import "./interfaces/facets/IYieldYakRouter.sol";
-import "./interfaces/balancer-v2/IBalancerV2Vault.sol";
-import "./interfaces/balancer-v2/IAsset.sol";
 import "./mock/WAVAX.sol";
 
 contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
@@ -88,53 +86,6 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
     return result;
   }
 
-  function balancerSwapToWAVAX(address tokenIn) internal {
-    IVault balancerVault = IVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8); // MASTER_VAULT_ADDRESS
-
-    bytes32 _poolId;
-    if (tokenIn == 0xA25EaF2906FA1a3a13EdAc9B9657108Af7B703e3) {
-      _poolId = 0xc13546b97b9b1b15372368dc06529d7191081f5b00000000000000000000001d;
-    } else if (tokenIn == 0xF7D9281e8e363584973F946201b82ba72C965D27) {
-      _poolId = 0x9fa6ab3d78984a69e712730a2227f20bcc8b5ad900000000000000000000001f;
-    } else {
-      revert("Unsupported swap");
-    }
-
-    uint256 balanceToSwap = IERC20Metadata(tokenIn).balanceOf(address(this));
-
-    if(balanceToSwap > 0){
-      IVault.SingleSwap memory singleSwap = IVault.SingleSwap({
-        poolId: _poolId,
-        kind: IVault.SwapKind.GIVEN_IN, // OUT GIVEN EXACT IN
-        assetIn: IAsset(tokenIn),
-        assetOut: IAsset(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7), // WAVAX
-        amount: balanceToSwap,
-        userData: ""
-      });
-      IVault.FundManagement memory fundManagement = IVault.FundManagement({
-        sender: address(this),
-        fromInternalBalance: false,
-        recipient: payable(address(this)),
-        toInternalBalance: false
-      });
-
-      balancerVault.swap(
-        singleSwap,
-        fundManagement,
-        balanceToSwap, // yy/ggAvax to AVAX price ratio serves as an good-enough slippage control ~10%
-        block.timestamp
-      );
-    }
-  }
-
-  function balancerSwapYyAvaxToWAVAX() internal {
-    balancerSwapToWAVAX(0xF7D9281e8e363584973F946201b82ba72C965D27);
-  }
-
-  function balancerSwapGgAvaxToWAVAX() internal {
-    balancerSwapToWAVAX(0xA25EaF2906FA1a3a13EdAc9B9657108Af7B703e3);
-  }
-
   // --------------------------------------
 
   /**
@@ -171,10 +122,6 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
 
     // Only liquidate
     liquidateLoan(_params, lep, amounts);
-
-    // Swap yyavax/ggavax via Balancer to WAVAX
-    balancerSwapYyAvaxToWAVAX();
-    balancerSwapGgAvaxToWAVAX();
 
     // getSurplusDeficitAssets
     (
@@ -390,7 +337,7 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
 
     IYieldYakRouter.Trade memory trade = IYieldYakRouter.Trade({
       amountIn: amountIn,
-      amountOut: 0,
+      amountOut: expectedBuyTokenReturned * 92 / 100,
       path: _offer.path,
       adapters: _offer.adapters
     });
