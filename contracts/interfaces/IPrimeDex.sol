@@ -9,5 +9,5 @@ interface IPrimeDex {
 
     function targetAsset() external view returns (AssetInfo memory);
 
-    function convert(AssetInfo[] memory, uint256[] memory) external returns (AssetInfo memory);
+    function convert(AssetInfo[] memory, uint256[] memory) external returns (AssetInfo memory, uint256);
 }

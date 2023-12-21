@@ -256,6 +256,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         uint256 dustAssetCount;
         bool[] memory isDust = new bool[](length);
         address[] memory tokens = new address[](length);
+        uint256[] memory balances = new uint256[](length);
         for (uint256 i; i != length; ++i) {
             SolvencyFacetProdAvalanche.AssetPrice memory assetPrice = ownedAssetsPrices[i];
             if (assetPrice.asset == targetAsset.symbol) {
@@ -268,6 +269,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
                     ++dustAssetCount;
                     isDust[i] = true;
                     tokens[i] = address(token);
+                    balances[i] = assetBalance;
 
                     token.safeApprove(address(primeDex), assetBalance);
                 }
@@ -275,12 +277,16 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         }
 
         IPrimeDex.AssetInfo[] memory dustAssets = new IPrimeDex.AssetInfo[](dustAssetCount);
+        address[] memory dustAssetAddrs = new address[](dustAssetCount);
+        uint256[] memory dustAssetAmounts = new uint256[](dustAssetCount);
         uint256[] memory dustAssetsPrices = new uint256[](dustAssetCount + 1);
         uint256 idx;
         for (uint256 i; i != length; ++i) {
             if (isDust[i]) {
                 bytes32 asset = ownedAssetsPrices[i].asset;
                 dustAssetsPrices[idx] = ownedAssetsPrices[i].price;
+                dustAssetAddrs[idx] = tokens[i];
+                dustAssetAmounts[idx] = balances[i];
                 dustAssets[idx++] = IPrimeDex.AssetInfo({
                     symbol: asset,
                     asset: tokens[i]
@@ -290,8 +296,10 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         }
         dustAssetsPrices[dustAssetCount] = targetPrice;
 
-        IPrimeDex.AssetInfo memory returnAsset = primeDex.convert(dustAssets, dustAssetsPrices);
+        (IPrimeDex.AssetInfo memory returnAsset, uint256 returnAmount) = primeDex.convert(dustAssets, dustAssetsPrices);
         DiamondStorageLib.addOwnedAsset(returnAsset.symbol, returnAsset.asset);
+
+        emit DustConverted(msg.sender, block.timestamp, dustAssetAddrs, dustAssetAmounts, returnAsset.asset, returnAmount);
     }
 
     /* ======= VIEW FUNCTIONS ======*/
@@ -364,4 +372,6 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
      * @param timestamp of the repayment
      **/
     event Repaid(address indexed user, bytes32 indexed asset, uint256 amount, uint256 timestamp);
+
+    event DustConverted(address indexed user, uint256 timestamp, address[] dustAssets, uint256[] dustAmounts, address tokenReceived, uint256 amountReceived);
 }

@@ -35,7 +35,7 @@ contract PrimeDex is Ownable, ReentrancyGuard {
         targetAsset = targetAsset_;
     }
 
-    function convert(IPrimeDex.AssetInfo[] memory assets, uint256[] memory prices) external returns (IPrimeDex.AssetInfo memory) {
+    function convert(IPrimeDex.AssetInfo[] memory assets, uint256[] memory prices) external returns (IPrimeDex.AssetInfo memory, uint256) {
         bytes32 targetSymbol = targetAsset.symbol;
         uint256 length = assets.length;
         bytes32[] memory symbols = new bytes32[](length + 1);
@@ -58,7 +58,7 @@ contract PrimeDex is Ownable, ReentrancyGuard {
 
         target.safeTransfer(msg.sender, returnAmount);
 
-        return targetAsset;
+        return (targetAsset, returnAmount);
     }
 
     /// @notice Transfer out dust tokens
