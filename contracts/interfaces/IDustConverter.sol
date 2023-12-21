@@ -7,6 +7,7 @@ interface IDustConverter {
         address asset;
     }
 
-    /// @notice convert dust assets to $PRIME
-    function convert(AssetInfo[] memory) external returns (AssetInfo memory);
+    function targetAsset() external view returns (AssetInfo memory);
+
+    function convert(AssetInfo[] memory, uint256[] memory) external returns (AssetInfo memory);
 }

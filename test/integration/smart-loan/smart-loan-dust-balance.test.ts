@@ -6,10 +6,9 @@ import { parseUnits } from "ethers/lib/utils";
 import SmartLoansFactoryArtifact from "../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json";
 import MockTokenManagerArtifact from "../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json";
 import AddressProviderArtifact from '../../../artifacts/contracts/AddressProvider.sol/AddressProvider.json';
-import DustConverterMockArtifact from '../../../artifacts/contracts/mock/DustConverterMock.sol/DustConverterMock.json';
+import DustConverterArtifact from '../../../artifacts/contracts/DustConverter.sol/DustConverter.json';
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { WrapperBuilder } from "@redstone-finance/evm-connector";
-import CACHE_LAYER_URLS from "../../../common/redstone-cache-layer-urls.json";
 import TOKEN_ADDRESSES from "../../../common/addresses/avax/token_addresses.json";
 import {
     addMissingTokenContracts,
@@ -28,12 +27,11 @@ import {
     recompileConstantsFile,
     toBytes32,
     toWei,
-    yakRouterAbi,
 } from "../../_helpers";
 import { syncTime } from "../../_syncTime";
 import {
     AddressProvider,
-    DustConverterMock,
+    DustConverter,
     MockTokenManager,
     SmartLoanGigaChadInterface,
     SmartLoansFactory,
@@ -61,7 +59,7 @@ describe("Smart loan", () => {
         let smartLoansFactory: SmartLoansFactory,
             loan: SmartLoanGigaChadInterface,
             exchange: PangolinIntermediary,
-            dustConverter: DustConverterMock,
+            dustConverter: DustConverter,
             wrappedLoan: any,
             nonOwnerWrappedLoan: any,
             owner: SignerWithAddress,
@@ -135,9 +133,9 @@ describe("Smart loan", () => {
 
                 dustConverter = await deployContract(
                     owner,
-                    DustConverterMockArtifact,
+                    DustConverterArtifact,
                     [smartLoansFactory.address, { symbol: toBytes32("USDC"), asset: "0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e" }]
-                ) as DustConverterMock;
+                ) as DustConverter;
 
                 await recompileConstantsFile(
                     'local',
