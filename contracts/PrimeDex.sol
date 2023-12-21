@@ -22,10 +22,14 @@ contract PrimeDex is Ownable, ReentrancyGuard {
 
     IPrimeDex.AssetInfo public targetAsset;
 
+    // ---------- Errors ----------
+
+    error ZeroAddress();
+
     // ---------- Constructor ----------
 
     constructor(address smartLoanFactory_, IPrimeDex.AssetInfo memory targetAsset_) {
-        require(smartLoanFactory_ != address(0));
+        if (smartLoanFactory_ == address(0)) revert ZeroAddress();
 
         smartLoanFactory = ISmartLoanFactory(smartLoanFactory_);
         targetAsset = targetAsset_;
