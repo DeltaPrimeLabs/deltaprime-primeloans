@@ -208,7 +208,7 @@ export default {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .icons {
     display: grid;
     grid-template-columns: repeat(3, 1fr);

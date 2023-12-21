@@ -31,14 +31,17 @@ export default {
   display: inline-block;
   vertical-align: middle;
   -webkit-mask-size: contain;
-  mask-size: cover;
-  -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
   -webkit-mask-position: center;
   mask-position: center;
 
   &.delta-icon--no-hover {
     pointer-events: none;
+  }
+
+  &.delta-icon--mask-cover {
+    mask-size: cover;
+    -webkit-mask-repeat: no-repeat;
   }
 }
 </style>
