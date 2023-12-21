@@ -379,7 +379,7 @@ export default {
     },
     setupBalancerLpTableHeaderConfig() {
       this.balancerLpTableHeaderConfig = {
-        gridTemplateColumns: 'repeat(3, 1fr) 12% 135px 60px 80px 22px',
+        gridTemplateColumns: 'repeat(2, 1fr) 300px 10% 10% 10% 60px 80px 22px',
         cells: [
           {
             label: 'Balancer vault',
@@ -395,6 +395,13 @@ export default {
             class: 'balance',
             id: 'BALANCE',
             tooltip: `The number and value of staked Balancer LP tokens in your Prime Account.`
+          },
+          {
+            label: 'Rewards',
+            sortable: false,
+            class: 'rewards',
+            id: 'REWARDS',
+            tooltip: `Staking incentives.`
           },
           {
             label: 'TVL',
@@ -450,7 +457,8 @@ export default {
             class: 'balance',
             id: 'BALANCE',
             tooltip: `The balance of this LLP in your Prime Account.`
-          }, {
+          },
+          {
             label: 'Rewards',
             sortable: false,
             class: 'rewards',

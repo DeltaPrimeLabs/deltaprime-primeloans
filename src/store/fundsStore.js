@@ -23,8 +23,10 @@ import {constructSimpleSDK, SimpleFetchSDK, SwapSide} from '@paraswap/sdk';
 import axios from 'axios';
 import LB_TOKEN from '/artifacts/contracts/interfaces/joe-v2/ILBToken.sol/ILBToken.json'
 import MULTICALL from '/artifacts/contracts/lib/Multicall3.sol/Multicall3.json'
+import IBALANCER_V2_GAUGE from '/artifacts/contracts/interfaces/balancer-v2/IBalancerV2Gauge.sol/IBalancerV2Gauge.json'
 import {decodeFunctionData} from "viem";
 import {expect} from "chai";
+import YAK_ROUTER_ABI from "../../test/abis/YakRouter.json";
 
 const toBytes32 = require('ethers').utils.formatBytes32String;
 const fromBytes32 = require('ethers').utils.parseBytes32String;
@@ -703,12 +705,14 @@ export default {
     },
 
     async getAllAssetsBalances({state, commit, rootState, dispatch}) {
+      console.log('getAllAssetsBalances')
       const dataRefreshNotificationService = rootState.serviceRegistry.dataRefreshEventService;
       const balances = {};
       const lpBalances = {};
       const concentratedLpBalances = {};
       const gmxV2Balances = {};
       const balancerLpBalances = {};
+      const balancerLpAssets = state.balancerLpAssets;
       const levelLpBalances = {};
       const assetBalances = await state.readSmartLoanContract.getAllAssetsBalances();
       assetBalances.forEach(
@@ -753,6 +757,7 @@ export default {
       }
 
       if (config.BALANCER_LP_ASSETS_CONFIG) {
+        //balances
         let result = await state.multicallContract.callStatic.aggregate(
             Object.entries(config.BALANCER_LP_ASSETS_CONFIG).map(
                 ([key, value]) => {
@@ -768,12 +773,47 @@ export default {
               balancerLpBalances[key] = fromWei(result.returnData[index]);
             }
         )
+
+
+        //TODO: optimize
+
+        console.log('here')
+        console.log(balancerLpAssets)
+        for (let [k, lpToken] of Object.entries(balancerLpAssets)) {
+          let gauge= new ethers.Contract(lpToken.gaugeAddress, IBALANCER_V2_GAUGE.abi, provider.getSigner())
+
+          console.log(lpToken.rewardTokens)
+
+          console.log('here2')
+          await state.multicallContract.callStatic.aggregate(
+            lpToken.rewardTokens.map(
+              (symbol) => {
+                return {
+                  target: gauge.address,
+                  callData: gauge.interface.encodeFunctionData('claimable_reward', [state.smartLoanContract.address, TOKEN_ADDRESSES[symbol]])
+                }
+              })
+          );
+
+          lpToken.rewardBalances = {};
+
+          lpToken.rewardTokens.forEach(
+              (symbol, index) => {
+                lpToken.rewardBalances[symbol] = formatUnits(result.returnData[index], config.ASSETS_CONFIG[symbol].decimals);
+              }
+          )
+        }
       }
+
+      console.log('balancerLpAssets')
+      console.log(balancerLpAssets)
+
 
       await commit('setAssetBalances', balances);
       await commit('setLpBalances', lpBalances);
       await commit('setConcentratedLpBalances', concentratedLpBalances);
       await commit('setBalancerLpBalances', balancerLpBalances);
+      await commit('setBalancerLpAssets', balancerLpAssets);
       await commit('setLevelLpBalances', levelLpBalances);
       await commit('setGmxV2Balances', gmxV2Balances);
       await dispatch('setupConcentratedLpUnderlyingBalances');
@@ -1148,7 +1188,9 @@ export default {
 
             //TODO: take from API
             const apy = asset.apy ? asset.apy / 100 : 0;
-            yearlyAssetInterest += parseFloat(state.assetBalances[symbol]) * apy * asset.price;
+            if (state.assetBalances[symbol]) {
+              yearlyAssetInterest += parseFloat(state.assetBalances[symbol]) * apy * asset.price;
+            }
           }
         }
 
