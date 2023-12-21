@@ -261,7 +261,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
             if (assetPrice.asset == targetAsset.symbol) {
                 targetPrice = assetPrice.price;
             } else {
-                IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(assetPrice.asset, true));
+                IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(assetPrice.asset, false));
                 uint256 assetBalance = token.balanceOf(address(this));
                 uint256 value = (assetPrice.price * 10 ** 10 * assetBalance / (10 ** token.decimals()));
                 if (value <= DUST_THRESHOLD) {
