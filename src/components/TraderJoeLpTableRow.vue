@@ -4,27 +4,32 @@
       <div class="table__cell asset">
         <DoubleAssetIcon :primary="lpToken.primary" :secondary="lpToken.secondary"></DoubleAssetIcon>
         <div class="asset__info">
-          <a class="asset__name" :href="lpToken.link" target=”_blank”>{{ lpToken.primary }} - {{ lpToken.secondary }}</a>
+          <a class="asset__name" :href="lpToken.link" target=”_blank”>{{ lpToken.primary }} - {{
+              lpToken.secondary
+            }}</a>
           <div class="asset__dex">
             by {{ lpToken.dex }}
           </div>
         </div>
         <div class="bin-step"
              v-tooltip="{content: 'Bin step', classes: 'info-tooltip'}">
-        {{lpToken.binStep}}</div>
+          {{ lpToken.binStep }}
+        </div>
       </div>
       <!-- To-do: Show price graph or similar one on click -->
       <div class="table__cell liquidity">
         <div v-if="lpToken.binIds && lpToken.binIds.length" class="active-indicator">
-          <img v-if="lpToken.binIds.includes(activeId)" width="16px" src="src/assets/icons/check.png" v-tooltip="{content: 'The active bin is in your range.', classes: 'info-tooltip long'}"/>
-          <img v-else src="src/assets/icons/error.svg" v-tooltip="{content: 'Your position does not include the active bin.', classes: 'info-tooltip long'}"/>
+          <img v-if="lpToken.binIds.includes(activeId)" width="16px" src="src/assets/icons/check.png"
+               v-tooltip="{content: 'The active bin is in your range.', classes: 'info-tooltip long'}"/>
+          <img v-else src="src/assets/icons/error.svg"
+               v-tooltip="{content: 'Your position does not include the active bin.', classes: 'info-tooltip long'}"/>
         </div>
         <FlatButton :active="lpToken.binIds && lpToken.binIds.length" v-on:buttonClick="toggleLiquidityChart()">
           {{ rowExpanded ? 'Hide' : 'Show' }}
         </FlatButton>
       </div>
       <div class="table__cell liquidity">
-        <FlatButton :active="false" >
+        <FlatButton :active="false">
           {{ 'SHOW' }}
         </FlatButton>
       </div>
@@ -41,7 +46,7 @@
           </div>
           <div class="double-value__usd">
             <span>
-              {{userValue ? userValue : 0 | usd}}
+              {{ userValue ? userValue : 0 | usd }}
             </span>
           </div>
         </template>
@@ -118,7 +123,8 @@
             </div>
           </div>
           <LiquidityChart :tokens-data="chartData" :primary="lpToken.primary"
-                          :secondary="lpToken.secondary" :index="index" :current-price-index="currentPriceIndex" :current-price="currentPrice"></LiquidityChart>
+                          :secondary="lpToken.secondary" :index="index" :current-price-index="currentPriceIndex"
+                          :current-price="currentPrice"></LiquidityChart>
         </div>
       </SmallBlock>
     </div>
@@ -142,6 +148,7 @@ import LiquidityChart from "./LiquidityChart.vue";
 import FlatButton from "./FlatButton.vue";
 import SmallBlock from "./SmallBlock.vue";
 import LB_TOKEN from '/artifacts/contracts/interfaces/joe-v2/ILBToken.sol/ILBToken.json'
+
 const toBytes32 = require('ethers').utils.formatBytes32String;
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -403,7 +410,7 @@ export default {
           case 'ADD_FROM_WALLET':
             this.openAddTraderJoeV2FromWalletModal();
             break;
-            case 'WITHDRAW':
+          case 'WITHDRAW':
             this.openWithdrawTraderJoeV2Modal();
             break;
           case 'ADD_LIQUIDITY':
@@ -453,7 +460,7 @@ export default {
       modalInstance.$on('WITHDRAW', addFromWalletEvent => {
         const withdrawLiquidityRequest = {
           ids: this.lpToken.binIds,
-          amounts: this.lpToken.accountBalances.map(el => el.toLocaleString('fullwide', {useGrouping:false})),
+          amounts: this.lpToken.accountBalances.map(el => el.toLocaleString('fullwide', {useGrouping: false})),
           pair: this.lpToken.address,
           lpToken: this.lpToken
         };
@@ -699,13 +706,17 @@ export default {
         const newChartData = []
         let index = 0
         let indexBin = this.lpToken.binIds[index]
+        this.currentPriceIndex = -1
         while (indexBin <= this.lpToken.binIds[this.lpToken.binIds.length - 1]) {
+          if (indexBin === this.activeId) {
+            this.currentPriceIndex = newChartData.length
+          }
           if (this.lpToken.binIds.findIndex(binId => binId === indexBin) > -1) {
             newChartData.push({
               isPrimary: this.lpToken.accountBalancesPrimary[index] > this.lpToken.accountBalancesSecondary[index],
               primaryTokenBalance: this.lpToken.accountBalancesPrimary[index],
               secondaryTokenBalance: this.lpToken.accountBalancesSecondary[index],
-              price: ((1 + this.lpToken.binStep / 10000) ** (indexBin - 8388608) * 10 ** (this.firstAsset.decimals - this.secondAsset.decimals)),
+              price: this.getPriceOfBin(indexBin),
               value: this.lpToken.accountBalancesPrimary[index] * this.firstAsset.price + this.lpToken.accountBalancesSecondary[index] * this.secondAsset.price
             })
             index++;
@@ -715,16 +726,18 @@ export default {
               isPrimary: false,
               primaryTokenBalance: 0,
               secondaryTokenBalance: 0,
-              price: ((1 + this.lpToken.binStep / 10000) ** (indexBin - 8388608) * 10 ** (this.firstAsset.decimals - this.secondAsset.decimals)),
+              price: this.getPriceOfBin(indexBin),
               value: newChartData[newChartData.length - 1] ? newChartData[newChartData.length - 1].value : newChartData.find(data => data.value > 0).value,
             })
           }
           indexBin++;
         }
         this.chartData = newChartData
-        this.currentPrice = (1 + this.lpToken.binStep / 10000) ** (this.activeId - 8388608) * 10 ** (this.firstAsset.decimals - this.secondAsset.decimals)
-        this.currentPriceIndex = this.lpToken.binIds.findIndex(binId => binId === this.activeId)
+        this.currentPrice = this.getPriceOfBin(this.activeId)
       }
+    },
+    getPriceOfBin(binId) {
+      return ((1 + this.lpToken.binStep / 10000) ** (binId - 8388608) * 10 ** (this.firstAsset.decimals - this.secondAsset.decimals))
     }
   },
 };

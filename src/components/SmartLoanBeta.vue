@@ -366,7 +366,9 @@ export default {
 
     watchAprRefresh() {
       this.aprService.observeRefreshApr().subscribe(async () => {
-        this.apr = this.accountApr;
+        setTimeout(() => {
+          this.apr = this.accountApr;
+        })
       });
     },
 

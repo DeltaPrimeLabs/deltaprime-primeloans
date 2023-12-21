@@ -500,7 +500,7 @@ export default {
           },
           {
             key: 'UNSTAKE',
-            name: 'Unstake from vault',
+            name: 'Withdraw to assets',
           },
         ]
       }
