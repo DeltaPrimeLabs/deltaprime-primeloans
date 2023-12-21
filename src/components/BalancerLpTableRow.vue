@@ -31,9 +31,11 @@
         <template>
           <div class="table__cell rewards">
             <span v-for="symbol in lpToken.rewardTokens">
-              <img class="asset__icon" :src="getAssetIcon(symbol)">{{
-                formatTokenBalance((lpToken.rewardBalances && lpToken.rewardBalances[symbol]) ? lpToken.rewardBalances[symbol]  : 0, 4, true)
-              }}
+              <img class="asset__icon" :src="getAssetIcon(symbol)">
+              <span v-if="lpToken.rewardBalances && lpToken.rewardBalances[symbol] && parseFloat(lpToken.rewardBalances[symbol]) !== 0">{{
+                formatTokenBalance((lpToken.rewardBalances && lpToken.rewardBalances[symbol]) ? lpToken.rewardBalances[symbol]  : 0, 6, true)
+              }}</span>
+              <vue-loaders-ball-beat v-else color="#A6A3FF" scale="0.5"></vue-loaders-ball-beat>
             </span>
           </div>
         </template>
@@ -44,7 +46,7 @@
       </div>
 
       <div class="table__cell table__cell--double-value apr" v-bind:class="{'apr--with-warning': lpToken.aprWarning}">
-        {{ lpToken.tempApy / 100 | percent }}
+        {{ lpToken.apy / 100 | percent }}
         <div class="apr-warning" v-if="lpToken.aprWarning">
           <img src="src/assets/icons/warning.svg"
                v-tooltip="{content: lpToken.aprWarning, classes: 'info-tooltip long'}">
@@ -209,7 +211,7 @@ export default {
     },
 
     maxApr() {
-      return calculateMaxApy(this.pools, this.lpToken.tempApy / 100);
+      return calculateMaxApy(this.pools, this.apr / 100);
     }
   },
 

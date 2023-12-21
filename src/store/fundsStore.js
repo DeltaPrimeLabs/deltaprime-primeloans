@@ -776,16 +776,10 @@ export default {
 
 
         //TODO: optimize
-
-        console.log('here')
-        console.log(balancerLpAssets)
         for (let [k, lpToken] of Object.entries(balancerLpAssets)) {
           let gauge= new ethers.Contract(lpToken.gaugeAddress, IBALANCER_V2_GAUGE.abi, provider.getSigner())
 
-          console.log(lpToken.rewardTokens)
-
-          console.log('here2')
-          await state.multicallContract.callStatic.aggregate(
+          let result = await state.multicallContract.callStatic.aggregate(
             lpToken.rewardTokens.map(
               (symbol) => {
                 return {
@@ -804,10 +798,6 @@ export default {
           )
         }
       }
-
-      console.log('balancerLpAssets')
-      console.log(balancerLpAssets)
-
 
       await commit('setAssetBalances', balances);
       await commit('setLpBalances', lpBalances);
@@ -1229,7 +1219,7 @@ export default {
             let symbol = entry[0];
             let lpAsset = entry[1];
 
-            const apy = lpAsset.tempApy ? lpAsset.tempApy / 100 : 0;
+            const apy = lpAsset.apy ? lpAsset.apy / 100 : 0;
 
             let assetAppreciation = 0;
 

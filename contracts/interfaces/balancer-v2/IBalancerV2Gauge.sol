@@ -24,5 +24,5 @@ interface IBalancerV2Gauge is IERC20 {
 
     function claim_rewards() external;
 
-    function claimable_reward(address _user, address _reward_token) external returns (uint256);
+    function claimable_reward(address _user, address _reward_token) external view returns (uint256);
 }
