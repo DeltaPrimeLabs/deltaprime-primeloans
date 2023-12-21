@@ -64,6 +64,8 @@ library DiamondStorageLib {
         address proposedOwner;
         // Proposed pauseAdmin of the contract
         address proposedPauseAdmin;
+        // Referrer
+        address referrer;
         // Is contract initialized?
         bool _initialized;
         // TODO: mock staking tokens until redstone oracle supports them
@@ -151,6 +153,11 @@ library DiamondStorageLib {
         address previousOwner = sls.contractOwner;
         sls.contractOwner = _newOwner;
         emit OwnershipTransferred(previousOwner, _newOwner);
+    }
+
+    function setReferrer(address _referrer) internal {
+        SmartLoanStorage storage sls = smartLoanStorage();
+        sls.referrer = _referrer;
     }
 
     function freezeAccount(address freezeToken) internal {

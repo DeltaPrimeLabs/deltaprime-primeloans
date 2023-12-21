@@ -237,6 +237,7 @@ abstract contract SolvencyFacetProd is RedstoneConsumerNumericBase, DiamondHelpe
     }
 
     // Check whether there is enough debt-denominated tokens to fully repaid what was previously borrowed
+    // and protocol fees are repaid
     function canRepayDebtFully() external view returns(bool) {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         bytes32[] memory poolAssets = tokenManager.getAllPoolAssets();
@@ -244,7 +245,10 @@ abstract contract SolvencyFacetProd is RedstoneConsumerNumericBase, DiamondHelpe
         for(uint i; i< poolAssets.length; i++) {
             Pool pool = Pool(DeploymentConstants.getTokenManager().getPoolAddress(poolAssets[i]));
             IERC20 token = IERC20(pool.tokenAddress());
-            if(token.balanceOf(address(this)) < pool.getBorrowed(address(this))) {
+            if( token.balanceOf(address(this)) < pool.getBorrowed(address(this))
+               || pool.referralFee(address(this)) > 0
+               || pool.protocolFee(address(this)) > 0
+            ) {
                 return false;
             }
         }
