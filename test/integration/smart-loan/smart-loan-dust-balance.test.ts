@@ -6,7 +6,7 @@ import { parseUnits } from "ethers/lib/utils";
 import SmartLoansFactoryArtifact from "../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json";
 import MockTokenManagerArtifact from "../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json";
 import AddressProviderArtifact from '../../../artifacts/contracts/AddressProvider.sol/AddressProvider.json';
-import DustConverterArtifact from '../../../artifacts/contracts/DustConverter.sol/DustConverter.json';
+import PrimeDexArtifact from '../../../artifacts/contracts/PrimeDex.sol/PrimeDex.json';
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { WrapperBuilder } from "@redstone-finance/evm-connector";
 import TOKEN_ADDRESSES from "../../../common/addresses/avax/token_addresses.json";
@@ -31,7 +31,7 @@ import {
 import { syncTime } from "../../_syncTime";
 import {
     AddressProvider,
-    DustConverter,
+    PrimeDex,
     MockTokenManager,
     SmartLoanGigaChadInterface,
     SmartLoansFactory,
@@ -59,7 +59,7 @@ describe("Smart loan", () => {
         let smartLoansFactory: SmartLoansFactory,
             loan: SmartLoanGigaChadInterface,
             exchange: PangolinIntermediary,
-            dustConverter: DustConverter,
+            primeDex: PrimeDex,
             wrappedLoan: any,
             nonOwnerWrappedLoan: any,
             owner: SignerWithAddress,
@@ -131,11 +131,11 @@ describe("Smart loan", () => {
                 ) as AddressProvider;
                 await addressProvider.connect(owner).initialize();
 
-                dustConverter = await deployContract(
+                primeDex = await deployContract(
                     owner,
-                    DustConverterArtifact,
+                    PrimeDexArtifact,
                     [smartLoansFactory.address, { symbol: toBytes32("USDC"), asset: "0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e" }]
-                ) as DustConverter;
+                ) as PrimeDex;
 
                 await recompileConstantsFile(
                     'local',
@@ -143,7 +143,7 @@ describe("Smart loan", () => {
                     [],
                     tokenManager.address,
                     addressProvider.address,
-                    dustConverter.address,
+                    primeDex.address,
                     diamondAddress,
                     smartLoansFactory.address,
                     'lib'
@@ -162,7 +162,7 @@ describe("Smart loan", () => {
                     ],
                     tokenManager.address,
                     addressProvider.address,
-                    dustConverter.address,
+                    primeDex.address,
                     diamondAddress,
                     smartLoansFactory.address,
                     'lib'
@@ -238,7 +238,7 @@ describe("Smart loan", () => {
             await tokenContracts
                 .get("USDC")!
                 .connect(depositor)
-                .transfer(dustConverter.address, usdcAmount);
+                .transfer(primeDex.address, usdcAmount);
 
             await wrappedLoan.swapPangolin(toBytes32("AVAX"), toBytes32("ETH"), toWei("0.8"), 0);
             await wrappedLoan.swapPangolin(toBytes32("AVAX"), toBytes32("USDT"), toWei("0.6"), 0);

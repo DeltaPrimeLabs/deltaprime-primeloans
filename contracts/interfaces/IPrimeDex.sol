@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-interface IDustConverter {
+interface IPrimeDex {
     struct AssetInfo {
         bytes32 symbol;
         address asset;

@@ -7,31 +7,31 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-import {IDustConverter} from "./interfaces/IDustConverter.sol";
+import {IPrimeDex} from "./interfaces/IPrimeDex.sol";
 import {ISmartLoanFactory} from "./interfaces/ISmartLoanFactory.sol";
 
 /// @title DeltaPrime Dust Converter
 /// @notice PrimeAccounts will interact with this contract to send dust balances and
 ///         receive equivalent $ amount of $PRIME in return
-contract DustConverter is Ownable, ReentrancyGuard {
+contract PrimeDex is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20Metadata;
 
     // ---------- Storage ----------
 
     ISmartLoanFactory public immutable smartLoanFactory;
 
-    IDustConverter.AssetInfo public targetAsset;
+    IPrimeDex.AssetInfo public targetAsset;
 
     // ---------- Constructor ----------
 
-    constructor(address smartLoanFactory_, IDustConverter.AssetInfo memory targetAsset_) {
+    constructor(address smartLoanFactory_, IPrimeDex.AssetInfo memory targetAsset_) {
         require(smartLoanFactory_ != address(0));
 
         smartLoanFactory = ISmartLoanFactory(smartLoanFactory_);
         targetAsset = targetAsset_;
     }
 
-    function convert(IDustConverter.AssetInfo[] memory assets, uint256[] memory prices) external returns (IDustConverter.AssetInfo memory) {
+    function convert(IPrimeDex.AssetInfo[] memory assets, uint256[] memory prices) external returns (IPrimeDex.AssetInfo memory) {
         bytes32 targetSymbol = targetAsset.symbol;
         uint256 length = assets.length;
         bytes32[] memory symbols = new bytes32[](length + 1);

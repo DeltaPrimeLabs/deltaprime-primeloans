@@ -28,7 +28,7 @@ library DeploymentConstants {
 
     address private constant _ADDRESS_PROVIDER = 0x870526b7973b56163a6997bB7C886F5E4EA53638;
 
-    address private constant _DUST_CONVERTER = address(0);
+    address private constant _PRIME_DEX = address(0);
 
     //implementation-specific
 
@@ -64,8 +64,8 @@ library DeploymentConstants {
         return _ADDRESS_PROVIDER;
     }
 
-    function getDustConverter() internal pure returns (address) {
-        return _DUST_CONVERTER;
+    function getPrimeDex() internal pure returns (address) {
+        return _PRIME_DEX;
     }
 
     /**

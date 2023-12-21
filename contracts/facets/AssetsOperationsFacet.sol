@@ -12,7 +12,7 @@ import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 import "../lib/SolvencyMethods.sol";
 import "../interfaces/ITokenManager.sol";
 import "../interfaces/IAddressProvider.sol";
-import "../interfaces/IDustConverter.sol";
+import "../interfaces/IPrimeDex.sol";
 import "../interfaces/facets/IYieldYakRouter.sol";
 
 //this path is updated during deployment
@@ -239,9 +239,9 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
     /// @notice Convert dust assets
     function convertDustAssets() external onlyOwner remainsSolvent nonReentrant {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        IDustConverter dustConverter = IDustConverter(DeploymentConstants.getDustConverter());
+        IPrimeDex primeDex = IPrimeDex(DeploymentConstants.getPrimeDex());
 
-        IDustConverter.AssetInfo memory targetAsset = dustConverter.targetAsset();
+        IPrimeDex.AssetInfo memory targetAsset = primeDex.targetAsset();
 
         SolvencyFacetProdAvalanche.AssetPrice[] memory ownedAssetsPrices = _getOwnedAssetsWithNativePrices();
 
@@ -269,19 +269,19 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
                     isDust[i] = true;
                     tokens[i] = address(token);
 
-                    token.safeApprove(address(dustConverter), assetBalance);
+                    token.safeApprove(address(primeDex), assetBalance);
                 }
             }
         }
 
-        IDustConverter.AssetInfo[] memory dustAssets = new IDustConverter.AssetInfo[](dustAssetCount);
+        IPrimeDex.AssetInfo[] memory dustAssets = new IPrimeDex.AssetInfo[](dustAssetCount);
         uint256[] memory dustAssetsPrices = new uint256[](dustAssetCount + 1);
         uint256 idx;
         for (uint256 i; i != length; ++i) {
             if (isDust[i]) {
                 bytes32 asset = ownedAssetsPrices[i].asset;
                 dustAssetsPrices[idx] = ownedAssetsPrices[i].price;
-                dustAssets[idx++] = IDustConverter.AssetInfo({
+                dustAssets[idx++] = IPrimeDex.AssetInfo({
                     symbol: asset,
                     asset: tokens[i]
                 });
@@ -290,7 +290,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         }
         dustAssetsPrices[dustAssetCount] = targetPrice;
 
-        IDustConverter.AssetInfo memory returnAsset = dustConverter.convert(dustAssets, dustAssetsPrices);
+        IPrimeDex.AssetInfo memory returnAsset = primeDex.convert(dustAssets, dustAssetsPrices);
         DiamondStorageLib.addOwnedAsset(returnAsset.symbol, returnAsset.asset);
     }
 
