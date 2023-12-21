@@ -106,13 +106,29 @@
     </div>
     <div class="chart-container" v-if="showChart">
       <SmallBlock v-on:close="toggleChart()">
-        <Toggle class="chart-container__toggle" v-on:change="weekly = !weekly" :options="['7D', '24h']"
-                :initial-option="0"></Toggle>
-        <Chart :data-points="weekly ? weeklyPrices : dailyPrices"
+        <div class="chart-toggles">
+          <Dropdown class="chart-dropdown" v-if="openInterestData"
+                    :options="[{name: 'Price', value: 'PRICE'}, {name: 'Open Interest', value: 'OPEN_INTEREST'}]"
+                    @dropdownSelected="handleDropdownOption"></Dropdown>
+          <Toggle v-bind:style="{ 'visibility': selectedChart === 'PRICE' ? 'visible' : 'hidden' }"
+                  class="chart-container__toggle" v-on:change="weekly = !weekly"
+                  :options="['7D', '24h']"
+                  :initial-option="0"></Toggle>
+        </div>
+        <Chart v-if="selectedChart === 'PRICE'"
+               :data-points="weekly ? weeklyPrices : dailyPrices"
                :line-width="3"
                :min-y="weekly ? weeklyMinPrice : dailyMinPrice"
                :max-y="weekly ? weeklyMaxPrice : dailyMaxPrice"
                :positive-change="weekly ? weeklyPriceChange > 0 : dailyPriceChange > 0">
+        </Chart>
+        <Chart v-if="selectedChart === 'OPEN_INTEREST'"
+               :data-points="openInterestData"
+               :line-width="3"
+               :min-y="0"
+               :max-y="99"
+               :values-type="'PERCENTAGE'"
+               :positive-change="true">
         </Chart>
       </SmallBlock>
     </div>
@@ -163,10 +179,12 @@ import {
 } from "../integrations/contracts/dataStore";
 import zapLong from "./zaps-tiles/ZapLong.vue";
 import {hashData} from "../utils/blockchain";
+import Dropdown from "./notifi/settings/Dropdown.vue";
 
 export default {
   name: 'GmxV2LpTableRow',
   components: {
+    Dropdown,
     BarGaugeBeta,
     TradingViewChart, Toggle,
     DeltaIcon,
@@ -179,7 +197,8 @@ export default {
     SmallChartBeta
   },
   props: {
-    lpToken: null
+    lpToken: null,
+    openInterestData: null,
   },
 
   async mounted() {
@@ -223,7 +242,8 @@ export default {
       healthLoaded: false,
       showChart: false,
       longTokenAmount: 0,
-      shortTokenAmount: 0
+      shortTokenAmount: 0,
+      selectedChart: 'PRICE',
     };
   },
 
@@ -333,6 +353,9 @@ export default {
             ]
           }
     },
+    handleDropdownOption(option) {
+      this.selectedChart = option.value;
+    },
 
     setupRemoveActionsConfiguration() {
       this.removeActionsConfig =
@@ -393,9 +416,18 @@ export default {
       let indexTokenGmxData = gmxData.find(el => el.tokenAddress.toLowerCase() === this.lpToken.indexTokenAddress.toLowerCase());
 
       const prices = {
-        indexTokenPrice: { min: BigNumber.from(indexTokenGmxData.minPrice), max: BigNumber.from(indexTokenGmxData.maxPrice) },
-        longTokenPrice: { min: BigNumber.from(longTokenGmxData.minPrice) , max: BigNumber.from(longTokenGmxData.maxPrice) },
-        shortTokenPrice: { min: BigNumber.from(shortTokenGmxData.minPrice), max: BigNumber.from(shortTokenGmxData.maxPrice) }
+        indexTokenPrice: {
+          min: BigNumber.from(indexTokenGmxData.minPrice),
+          max: BigNumber.from(indexTokenGmxData.maxPrice)
+        },
+        longTokenPrice: {
+          min: BigNumber.from(longTokenGmxData.minPrice),
+          max: BigNumber.from(longTokenGmxData.maxPrice)
+        },
+        shortTokenPrice: {
+          min: BigNumber.from(shortTokenGmxData.minPrice),
+          max: BigNumber.from(shortTokenGmxData.maxPrice)
+        }
       }
 
       let [longTokenOut, shortTokenOut] = await depositReader.getWithdrawalAmountOut(
@@ -410,6 +442,7 @@ export default {
       if (this.rowExpanded) {
         this.showChart = false;
         this.rowExpanded = false;
+        this.selectedChart = 'PRICE';
       } else {
         this.rowExpanded = true;
         setTimeout(() => {
@@ -448,11 +481,11 @@ export default {
 
       console.log('this.lpToken.indexTokenAddress: ', this.lpToken.indexTokenAddress)
       const marketProps = {
-          marketToken: this.lpToken.address,
-          indexToken: this.lpToken.indexTokenAddress,
-          longToken: longToken.address,
-          shortToken: shortToken.address
-        }
+        marketToken: this.lpToken.address,
+        indexToken: this.lpToken.indexTokenAddress,
+        longToken: longToken.address,
+        shortToken: shortToken.address
+      }
 
 
       return async (sourceAsset, targetAsset, amountIn) => {
@@ -463,9 +496,18 @@ export default {
         let indexTokenGmxData = gmxData.find(el => el.tokenAddress.toLowerCase() === this.lpToken.indexTokenAddress.toLowerCase());
 
         const prices = {
-          indexTokenPrice: { min: BigNumber.from(indexTokenGmxData.minPrice), max: BigNumber.from(indexTokenGmxData.maxPrice) },
-          longTokenPrice: { min: BigNumber.from(longTokenGmxData.minPrice) , max: BigNumber.from(longTokenGmxData.maxPrice) },
-          shortTokenPrice: { min: BigNumber.from(shortTokenGmxData.minPrice), max: BigNumber.from(shortTokenGmxData.maxPrice) }
+          indexTokenPrice: {
+            min: BigNumber.from(indexTokenGmxData.minPrice),
+            max: BigNumber.from(indexTokenGmxData.maxPrice)
+          },
+          longTokenPrice: {
+            min: BigNumber.from(longTokenGmxData.minPrice),
+            max: BigNumber.from(longTokenGmxData.maxPrice)
+          },
+          shortTokenPrice: {
+            min: BigNumber.from(shortTokenGmxData.minPrice),
+            max: BigNumber.from(shortTokenGmxData.maxPrice)
+          }
         }
 
         if (config.GMX_V2_ASSETS_CONFIG[sourceAsset]) {
@@ -519,11 +561,11 @@ export default {
       //TODO: withdraw check
 
       const estimatedGasLimit = isDeposit ?
-          fromWei(await dataStore.getUint(this.depositGasLimitKey(true))) * 10**18 + config.gmxV2DepositCallbackGasLimit
+          fromWei(await dataStore.getUint(this.depositGasLimitKey(true))) * 10 ** 18 + config.gmxV2DepositCallbackGasLimit
           :
-          fromWei(await dataStore.getUint(hashData(["bytes32"], [WITHDRAWAL_GAS_LIMIT_KEY]))) * 10**18 + config.gmxV2DepositCallbackGasLimit;
+          fromWei(await dataStore.getUint(hashData(["bytes32"], [WITHDRAWAL_GAS_LIMIT_KEY]))) * 10 ** 18 + config.gmxV2DepositCallbackGasLimit;
 
-      let baseGasLimit = fromWei(await dataStore.getUint(ESTIMATED_GAS_FEE_BASE_AMOUNT)) * 10**18;
+      let baseGasLimit = fromWei(await dataStore.getUint(ESTIMATED_GAS_FEE_BASE_AMOUNT)) * 10 ** 18;
 
       let multiplierFactor = formatUnits(await dataStore.getUint(ESTIMATED_GAS_FEE_MULTIPLIER_FACTOR), 30);
 
@@ -539,7 +581,7 @@ export default {
 
       const deltaPrimeMultiplicator = 1.5;
 
-      return deltaPrimeMultiplicator * adjustedGasLimit * gasPrice / 10**18;
+      return deltaPrimeMultiplicator * adjustedGasLimit * gasPrice / 10 ** 18;
     },
 
     async openAddFromWalletModal() {
@@ -637,11 +679,11 @@ export default {
       modalInstance.slippageMargin = 0.1;
       modalInstance.sourceAsset = initSourceAsset;
       modalInstance.sourceAssetBalance = this.assetBalances[initSourceAsset];
-      modalInstance.assets = { ...this.assets };
+      modalInstance.assets = {...this.assets};
       modalInstance.sourceAssets = [this.lpToken.shortToken, this.lpToken.longToken];
       modalInstance.targetAssetsConfig = config.GMX_V2_ASSETS_CONFIG;
       modalInstance.targetAssets = [this.lpToken.symbol];
-      modalInstance.assetBalances = { ...this.assetBalances, ...this.gmxV2Balances };
+      modalInstance.assetBalances = {...this.assetBalances, ...this.gmxV2Balances};
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
@@ -720,9 +762,9 @@ export default {
       modalInstance.sourceAssetBalance = this.gmxV2Balances[this.lpToken.symbol];
       modalInstance.sourceAssetsConfig = config.GMX_V2_ASSETS_CONFIG;
       modalInstance.assets = this.assets;
-      modalInstance.sourceAssets = { GmxV2: [this.lpToken.symbol]} ;
-      modalInstance.targetAssets = { GmxV2: [this.lpToken.longToken, this.lpToken.shortToken] };
-      modalInstance.assetBalances = { ...this.assetBalances, ...this.gmxV2Balances };
+      modalInstance.sourceAssets = {GmxV2: [this.lpToken.symbol]};
+      modalInstance.targetAssets = {GmxV2: [this.lpToken.longToken, this.lpToken.shortToken]};
+      modalInstance.assetBalances = {...this.assetBalances, ...this.gmxV2Balances};
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
@@ -809,10 +851,16 @@ export default {
           {name: 'Upgradeability', state: 'ENABLED'},
           {name: 'Timelock (12h)', state: 'ENABLED'},
           {name: 'Multisig', state: 'ENABLED'},
-          {name: `Audits `, state: 'ENABLED', tooltip:
+          {
+            name: `Audits `, state: 'ENABLED', tooltip:
                 `
-          `},
-          {name: 'Doxxed team', state: 'DISABLED', tooltip: `The team is anonymous and has not performed KYC <br>with the DeltaPrime team.<br><br>`},
+          `
+          },
+          {
+            name: 'Doxxed team',
+            state: 'DISABLED',
+            tooltip: `The team is anonymous and has not performed KYC <br>with the DeltaPrime team.<br><br>`
+          },
         ],
         chainImpact: `GMX has garnered significant attention since first launching, both for providing an excellent environment for traders to open leveraged positions, and for sharing significant protocol revenue with their liquidity providers.<br><br>
         Where initially the vast majority of protocol fees went to GLP minters (those who provided an index of assets to GMX v1), this now goes to GM minters. GM are liquidity providing tokens for GMX’s new synthetics protocol, which, due to its design, has minimal price divergence (usually known as slippage).<br><br>
@@ -820,7 +868,10 @@ export default {
         yieldCalculation: `GM accrues 63% of the fees collected in the v2 markets, with the remaining 27% being distributed to GMX holders. GM yield consists of two numbers: Base APR and Bonus APR.<br><br>
         The Base APR automatically compounds in the GM token itself. Where the value of GM is influenced by price-changes of the underlying assets, fees accumulated and counterparty PnL, the APR is influenced solely by the fees accumulated and counterparty PnL.<br><br>
         The Bonus APR are incentives. Incentives from the STIP are airdropped weekly to your Prime Account.`,
-        chartData: [{x: new Date(), y: 5}, {x: new Date(), y: 15}, {x: new Date(), y: 25}, {x: new Date(), y: 20}, {x: new Date(), y: 15}, {x: new Date(), y: 25}, {x: new Date(), y: 5}]
+        chartData: [{x: new Date(), y: 5}, {x: new Date(), y: 15}, {x: new Date(), y: 25}, {
+          x: new Date(),
+          y: 20
+        }, {x: new Date(), y: 15}, {x: new Date(), y: 25}, {x: new Date(), y: 5}]
       }
     },
 
@@ -1145,6 +1196,28 @@ export default {
 
     .small-block-wrapper {
       height: unset;
+    }
+
+    .chart-toggles {
+      position: relative;
+      margin: -16px 0 16px 0;
+      pointer-events: none;
+      height: 28px;
+
+      & > * {
+        pointer-events: all;
+      }
+    }
+
+    .chart-dropdown {
+      position: absolute;
+      width: 200px;
+    }
+
+    .chart-container__toggle {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
     }
   }
 }
