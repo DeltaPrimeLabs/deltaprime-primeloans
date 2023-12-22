@@ -35,8 +35,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
     let GmxV2FacetAvalanche = await deploy("GmxV2FacetAvalanche", {
         from: deployer,
-        gasLimit: 5000000,
-        gasPrice: 670000000000,
+        gasLimit: 8000000,
         args: [],
     });
 

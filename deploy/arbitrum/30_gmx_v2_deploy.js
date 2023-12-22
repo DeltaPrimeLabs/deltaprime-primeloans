@@ -17,7 +17,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     let GmxV2FacetArbitrum = await deploy("GmxV2FacetArbitrum", {
         from: deployer,
         gasLimit: 100000000,
-        gasPrice: 150010000,
+        // gasPrice: 150010000,
         args: [],
     });
 
