@@ -27,6 +27,8 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
     uint256 public constant DUST_THRESHOLD = 20e18; // $20
 
+    bytes32 public constant TARGET_ASSET = bytes32("USDC");
+
     /* ========== PUBLIC AND EXTERNAL MUTATIVE FUNCTIONS ========== */
 
     /**
@@ -238,40 +240,47 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
     /// @notice Convert dust assets
     function convertDustAssets() external onlyOwner remainsSolvent nonReentrant {
-        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        IPrimeDex primeDex = IPrimeDex(DeploymentConstants.getPrimeDex());
-
-        IPrimeDex.AssetInfo memory targetAsset = primeDex.targetAsset();
-
         SolvencyFacetProdAvalanche.AssetPrice[] memory ownedAssetsPrices = _getOwnedAssetsWithNativePrices();
-
-        uint256 targetPrice;
-        if (!DiamondStorageLib.hasAsset(targetAsset.symbol)) {
-            bytes32[] memory assets = new bytes32[](1);
-            assets[0] = targetAsset.symbol;
-            targetPrice = getPrices(assets)[0];
-        }
 
         uint256 length = ownedAssetsPrices.length;
         uint256 dustAssetCount;
         bool[] memory isDust = new bool[](length);
         address[] memory tokens = new address[](length);
         uint256[] memory balances = new uint256[](length);
-        for (uint256 i; i != length; ++i) {
-            SolvencyFacetProdAvalanche.AssetPrice memory assetPrice = ownedAssetsPrices[i];
-            if (assetPrice.asset == targetAsset.symbol) {
-                targetPrice = assetPrice.price;
-            } else {
-                IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(assetPrice.asset, false));
-                uint256 assetBalance = token.balanceOf(address(this));
-                uint256 value = (assetPrice.price * 10 ** 10 * assetBalance / (10 ** token.decimals()));
-                if (value <= DUST_THRESHOLD) {
-                    ++dustAssetCount;
-                    isDust[i] = true;
-                    tokens[i] = address(token);
-                    balances[i] = assetBalance;
+        IPrimeDex primeDex;
+        IPrimeDex.AssetInfo memory targetAsset;
+        uint256 targetPrice;
 
-                    token.safeApprove(address(primeDex), assetBalance);
+        {
+            ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+            primeDex = IPrimeDex(DeploymentConstants.getPrimeDex());
+
+            targetAsset.symbol = TARGET_ASSET;
+            targetAsset.asset = tokenManager.getAssetAddress(TARGET_ASSET, false);
+
+
+            if (!DiamondStorageLib.hasAsset(TARGET_ASSET)) {
+                bytes32[] memory assets = new bytes32[](1);
+                assets[0] = TARGET_ASSET;
+                targetPrice = getPrices(assets)[0];
+            }
+
+            for (uint256 i; i != length; ++i) {
+                SolvencyFacetProdAvalanche.AssetPrice memory assetPrice = ownedAssetsPrices[i];
+                if (assetPrice.asset == TARGET_ASSET) {
+                    targetPrice = assetPrice.price;
+                } else {
+                    IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(assetPrice.asset, false));
+                    uint256 assetBalance = token.balanceOf(address(this));
+                    uint256 value = (assetPrice.price * 10 ** 10 * assetBalance / (10 ** token.decimals()));
+                    if (value <= DUST_THRESHOLD) {
+                        ++dustAssetCount;
+                        isDust[i] = true;
+                        tokens[i] = address(token);
+                        balances[i] = assetBalance;
+
+                        token.safeApprove(address(primeDex), assetBalance);
+                    }
                 }
             }
         }
@@ -279,7 +288,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         IPrimeDex.AssetInfo[] memory dustAssets = new IPrimeDex.AssetInfo[](dustAssetCount);
         address[] memory dustAssetAddrs = new address[](dustAssetCount);
         uint256[] memory dustAssetAmounts = new uint256[](dustAssetCount);
-        uint256[] memory dustAssetsPrices = new uint256[](dustAssetCount + 1);
+        uint256[] memory dustAssetsPrices = new uint256[](dustAssetCount);
         uint256 idx;
         for (uint256 i; i != length; ++i) {
             if (isDust[i]) {
@@ -294,12 +303,17 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
                 DiamondStorageLib.removeOwnedAsset(asset);
             }
         }
-        dustAssetsPrices[dustAssetCount] = targetPrice;
 
-        (IPrimeDex.AssetInfo memory returnAsset, uint256 returnAmount) = primeDex.convert(dustAssets, dustAssetsPrices);
-        DiamondStorageLib.addOwnedAsset(returnAsset.symbol, returnAsset.asset);
+        uint256 returnAmount = primeDex.convert(
+            dustAssets,
+            balances,
+            dustAssetsPrices,
+            targetAsset,
+            targetPrice
+        );
+        DiamondStorageLib.addOwnedAsset(targetAsset.symbol, targetAsset.asset);
 
-        emit DustConverted(msg.sender, block.timestamp, dustAssetAddrs, dustAssetAmounts, returnAsset.asset, returnAmount);
+        emit DustConverted(msg.sender, block.timestamp, dustAssetAddrs, dustAssetAmounts, targetAsset.asset, returnAmount);
     }
 
     /* ======= VIEW FUNCTIONS ======*/

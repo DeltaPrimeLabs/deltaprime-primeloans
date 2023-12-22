@@ -134,7 +134,7 @@ describe("Smart loan", () => {
                 primeDex = await deployContract(
                     owner,
                     PrimeDexArtifact,
-                    [smartLoansFactory.address, { symbol: toBytes32("USDC"), asset: "0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e" }]
+                    [smartLoansFactory.address]
                 ) as PrimeDex;
 
                 await recompileConstantsFile(

@@ -7,7 +7,11 @@ interface IPrimeDex {
         address asset;
     }
 
-    function targetAsset() external view returns (AssetInfo memory);
-
-    function convert(AssetInfo[] memory, uint256[] memory) external returns (AssetInfo memory, uint256);
+    function convert(
+        AssetInfo[] memory assets,
+        uint256[] memory amounts,
+        uint256[] memory prices,
+        AssetInfo memory targetAsset,
+        uint256 targetPrice
+    ) external returns (uint256);
 }
