@@ -513,8 +513,10 @@ export default {
           amount: removeEvent.amount,
           //TODO: should provide targetReceived here and have this logic in modal
           minReceivedFirst: removeEvent.minReceivedFirst,
-          minReceivedSecond: removeEvent.minReceivedSecond
+          minReceivedSecond: removeEvent.minReceivedSecond,
+          isFirstUnstaked: removeEvent.targetAsset === this.lpToken.primary
         };
+
         this.handleTransaction(this.unstakeAndRemoveLiquidityBalancerV2, {removeLiquidityRequest: removeLiquidityRequest}, () => {
           this.$forceUpdate();
         }, (error) => {

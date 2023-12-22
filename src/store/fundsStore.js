@@ -1853,16 +1853,16 @@ export default {
       let amountWei = toWei(removeLiquidityRequest.amount);
       amountWei = amountWei.gt(gaugeBalance) ? gaugeBalance : amountWei;
 
+      let minTargetReceived = removeLiquidityRequest.isFirstUnstaked ? removeLiquidityRequest.minReceivedFirst : removeLiquidityRequest.minReceivedSecond;
       //TODO: now the logic is simplified so we always unstake to the first asset
-      let minReceivedFirstAmount = 0.95;
-      let minReceivedFirstAmountWei = parseUnits((parseFloat(removeLiquidityRequest.minReceivedFirst) * minReceivedFirstAmount).toFixed(targetAssetDecimals), targetAssetDecimals);
+      let minReceivedWei = parseUnits((parseFloat(minTargetReceived)).toFixed(targetAssetDecimals), targetAssetDecimals);
 
       const transaction = await wrappedContract.unstakeAndExitPoolBalancerV2(
           [
             removeLiquidityRequest.poolId,
             config.ASSETS_CONFIG[removeLiquidityRequest.targetAsset].address,
             //TODO: slippage
-            minReceivedFirstAmountWei,
+            minReceivedWei,
             amountWei
           ]
       );
