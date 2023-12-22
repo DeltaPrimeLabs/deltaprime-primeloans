@@ -1625,7 +1625,7 @@ export default {
       const secondDecimals = config.ASSETS_CONFIG[provideLiquidityRequest.secondAsset].decimals;
       const lpTokenDecimals = config.LP_ASSETS_CONFIG[provideLiquidityRequest.symbol].decimals;
 
-      let minAmount = 0.9;
+      let minAmount = 0.99;
 
       const loanAssets = mergeArrays([(
         await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
@@ -1764,7 +1764,7 @@ export default {
       firstAmountWei = firstAmountWei.gt(firstBalance) ? firstBalance : firstAmountWei;
       secondAmountWei = secondAmountWei.gt(secondBalance) ? secondBalance : secondAmountWei;
 
-      let minAmount = 0.95;
+      let minAmount = 0.99;
       let gaugeDecimals = config.BALANCER_LP_ASSETS_CONFIG[provideLiquidityRequest.symbol].decimals;
       let minGaugeAmountWei = parseUnits((parseFloat(provideLiquidityRequest.addedLiquidity) * minAmount).toFixed(gaugeDecimals), gaugeDecimals);
 
