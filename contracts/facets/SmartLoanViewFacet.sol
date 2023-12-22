@@ -12,24 +12,9 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 //This path is updated during deployment
 import "../lib/local/DeploymentConstants.sol";
 
-contract SmartLoanViewFacet is ReentrancyGuardKeccak, SolvencyMethods {
+contract SmartLoanViewFacet is ISmartLoanViewFacet, ReentrancyGuardKeccak, SolvencyMethods {
     using TransferHelper for address payable;
     using TransferHelper for address;
-
-    struct AssetNameBalance {
-        bytes32 name;
-        uint256 balance;
-    }
-
-    struct AssetNameDebt {
-        bytes32 name;
-        uint256 debt;
-    }
-
-    struct AssetNamePrice {
-        bytes32 name;
-        uint256 price;
-    }
 
     /* ========== PUBLIC AND EXTERNAL MUTATIVE FUNCTIONS ========== */
 

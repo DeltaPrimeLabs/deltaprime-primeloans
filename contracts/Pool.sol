@@ -393,7 +393,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         if(amount > borrowed[msg.sender] + protocolFee[msg.sender] + referralFee[msg.sender]) revert RepayingMoreThanWasBorrowed();
 
         if (referralFee[msg.sender] > 0) {
-            address referrer = SmartLoanViewFacet(msg.sender).getReferrer();
+            address referrer = ISmartLoanViewFacet(msg.sender).getReferrer();
             //TODO: swap with PrimeDEX to referrer chosen token and repay this amount
             uint256 fee = Math.min(referralFee[msg.sender], amount);
             fee = Math.min(fee, getBorrowed(referrer));
@@ -436,15 +436,6 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     **/
     function getBorrowed(address _user) public view returns (uint256) {
         return borrowIndex.getIndexedValue(borrowed[_user], _user);
-    }
-
-    /**
-     * Returns the current borrowed amount with fees for the given user
-     * The value includes the interest rates owned at the current moment
-     * @dev _user the address of queried borrower
-    **/
-    function getBorrowedWithFees(address _user) public view returns (uint256) {
-        return getBorrowed(_user) + referralFee(_user) + protocolFee(_user);
     }
 
     function name() public virtual pure returns(string memory _name){
@@ -507,31 +498,15 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     }
 
     /**
-     * Returns the current interest rate for borrowings for referees
-     **/
-    function getBorrowingRateWithReferralFee() public view returns (uint256) {
-        //TODO: check if it's correct
-        return ratesCalculator.calculateBorrowingRate(totalBorrowed(), totalSupply()) + referralBorrowingFee + referralProtocolBorrowingFee;
-    }
-
-    /**
-     * Returns the current interest rate for borrowings including protocol fee
-     **/
-    function getBorrowingRateWithReferralFee() public view returns (uint256) {
-        //TODO: check if it's correct
-        return ratesCalculator.calculateBorrowingRate(totalBorrowed(), totalSupply()) + noReferralProtocolBorrowingFee;
-    }
-
-    /**
      * Returns full pool status
      */
     function getFullPoolStatus() public view returns (uint256[5] memory) {
         return [
-            totalSupply(),
-            getDepositRate(),
-            getBorrowingRate(),
-            totalBorrowed(),
-            getMaxPoolUtilisationForBorrowing()
+        totalSupply(),
+        getDepositRate(),
+        getBorrowingRate(),
+        totalBorrowed(),
+        getMaxPoolUtilisationForBorrowing()
         ];
     }
 
@@ -618,13 +593,6 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         borrowed[user] += accumulatedInterest;
         borrowed[address(this)] = getBorrowed(address(this));
 
-        if (ISmartLoanViewFacet(user).getReferrer() != address(0)) {
-            referralFee[user] += referralBorrowingFee * accumulatedInterest / 1e18;
-            protocolFee[user] += referralProtocolBorrowingFee * accumulatedInterest / 1e18;
-        } else {
-            protocolFee[user] += noReferralProtocolBorrowingFee * accumulatedInterest / 1e18;
-        }
-
         borrowIndex.updateUser(user);
         borrowIndex.updateUser(address(this));
     }
@@ -634,10 +602,10 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
  * It updates user borrowed balance, total borrowed amount and rates
  * @dev It is only meant to be used by a SmartLoanDiamondProxy
      **/
-    function _repayOtherUser(uint256 amount, address user) internal nonReentrant {
+    function _repayOtherUser( address user, uint256 amount) internal nonReentrant {
         _accumulateBorrowingInterest(user);
 
-        if(amount > user) revert RepayingMoreThanWasBorrowed();
+        if(amount > borrowed[user]) revert RepayingMoreThanWasBorrowed();
         _transferToPool(msg.sender, amount);
 
         borrowed[user] -= amount;
