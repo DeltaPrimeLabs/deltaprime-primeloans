@@ -42,9 +42,11 @@
       </div>
       <div class="asset-info" v-if="swapDebtMode">
         Borrowed:
-        <span v-if="sourceAssetDebt && sourceAssetData" class="asset-info__value">{{
-            Number(sourceAssetDebt) | smartRound(sourceAssetData.decimals, true)
-          }}</span>
+        <span v-if="sourceAssetDebt && sourceAssetData" class="asset-info__value">
+          {{
+            Number(debtsPerAsset[sourceAsset].debt) | smartRound(sourceAssetData.decimals, true)
+          }}
+        </span>
       </div>
 
 
