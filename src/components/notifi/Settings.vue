@@ -62,7 +62,7 @@
             </div>
           </div>
 
-          <div v-if="alert.type === 'DELTA_PRIME_BORROW_RATE_EVENTS' || alert.type === 'DELTA_PRIME_SUPPLY_RATE_EVENTS'">
+          <div v-if="alert.type === 'borrowRate' || alert.type === 'lendingRate'">
             <AddInterestRate
               :notifiClient="client"
               :alertType="alert.type"
@@ -141,7 +141,7 @@ export default ({
   mounted() {
     if (this.$route.name === 'Pools') return;
 
-    const currentHealthRate = this.alertSettings['DELTA_PRIME_LENDING_HEALTH_EVENTS'];
+    const currentHealthRate = this.alertSettings['loanHealth'];
     const healthRates = notifiConfig.HEALTH_RATES_CONFIG;
     this.selectedHealthRate = healthRates[1]; // default health rate: 20%
 
@@ -170,13 +170,14 @@ export default ({
       if (!this.healthRateToggle) return;
 
       const alert = {
-        alertType: 'DELTA_PRIME_LENDING_HEALTH_EVENTS',
-        toggle: this.alertSettings['DELTA_PRIME_LENDING_HEALTH_EVENTS'].toggle
+        alertType: 'loanHealth',
+        toggle: this.alertSettings['loanHealth'].toggle
       };
       const payload = {
         client: this.client,
         walletAddress: this.account,
-        healthRatio: parseFloat((this.selectedHealthRate.value / 100.0).toFixed(4))
+        healthRatio: parseFloat((this.selectedHealthRate.value / 100.0).toFixed(4)),
+        network: window.chain
       };
 
       this.notifiService.handleCreateAlert(alert, payload);
@@ -186,16 +187,16 @@ export default ({
       let payload = {};
 
       switch (alert.alertType) {
-        case "BROADCAST_MESSAGES":
+        case "announcement":
           payload = { client: this.client };
           break;
-        case "LIQUIDATIONS":
+        case "liquidation":
           payload = {
             client: this.client,
             walletAddress: this.account
           };
           break;
-        case "DELTA_PRIME_LENDING_HEALTH_EVENTS":
+        case "loanHealth":
           this.healthRateToggle = alert.toggle;
 
           if (!this.selectedHealthRate) break;
@@ -208,6 +209,11 @@ export default ({
           break;
       }
 
+      payload = {
+        ...payload,
+        network: window.chain
+      }
+
       this.notifiService.handleCreateAlert(alert, payload);
     },
 
@@ -218,7 +224,8 @@ export default ({
         alertId
       };
       const payload = {
-        client: this.client
+        client: this.client,
+        network: window.chain
       }
 
       this.notifiService.handleCreateAlert(alert, payload);

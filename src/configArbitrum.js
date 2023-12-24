@@ -299,6 +299,13 @@ export default {
             distributionMethod: "getBidAskDistributionFromBinRange"
         },
     },
+    fusionEventIds: {
+        announcement: '8wwbhggwzord7a1n842d3h853ltobrcy',
+        liquidation: '0c4d89ff2a3e4c7fb5745629bb9f6593',
+        loanHealth: 'e4579eb840444c6d861ca150b0b96e57',
+        borrowRate: '0d3997ffa82d4690a7c78574fe392769',
+        lendingRate: '480cce24ab174f31b29ce1eb5f11e512'
+    },
     yakRouterAddress: '0xb32C79a25291265eF240Eb32E9faBbc6DcEE3cE3',
     yakWrapRouterAddress: '0x16f90031000d48ce2bc6577788282c232060c547',
     yieldYakGlpWrapperAddress: '0x80F2d9652Ed7F5306dB095882FA9Ff882003F6D1',

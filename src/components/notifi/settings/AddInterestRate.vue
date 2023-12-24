@@ -126,7 +126,8 @@ export default ({
         client: this.notifiClient,
         poolAddress: this.poolAddress,
         thresholdDirection: this.thresholdDirection,
-        threshold: this.threshold
+        threshold: this.threshold,
+        network: window.chain
       };
 
       await this.notifiService.handleCreateAlert(alert, payload);

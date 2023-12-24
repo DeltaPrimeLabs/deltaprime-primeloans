@@ -1,6 +1,7 @@
 import { Subject } from 'rxjs';
-const { newEvmClient, newEvmConfig } = require('@notifi-network/notifi-frontend-client');
+const { newFrontendClient } = require('@notifi-network/notifi-frontend-client');
 import { signMessageForNotifi } from '../utils/blockchain';
+import config from '../config';
 
 export default class notifiService {
   notifi$ = new Subject();
@@ -44,18 +45,21 @@ export default class notifiService {
   // we call this only once to set up notifi client
   async setupNotifi(account, alertsConfig) {
 
-    const walletBlockchain = 'AVALANCHE';
+    const walletBlockchain = window.chain.toUpperCase();
     const walletPublicKey = account;
     const tenantId = 'deltaprime';
     const blockchainEnv = 'Production';
 
-    const config = newEvmConfig(
+    const newFrontendConfig = {
+      account: {
+        publicKey: walletPublicKey
+      },
       walletBlockchain,
-      walletPublicKey,
       tenantId,
-      blockchainEnv
-    );
-    const client = newEvmClient(config);
+      env: blockchainEnv
+    };
+
+    const client = newFrontendClient(newFrontendConfig);
     const notifi = await this.refreshClientInfo(client);
 
     // alerts states for setting screen
@@ -64,20 +68,28 @@ export default class notifiService {
     if (notifi.alerts) {
       for (const alert of notifi.alerts) {
         // get alerts statuses for initialization on settings screen
-        if (this.alertSettings[alert.filter.filterType]) {
-          this.alertSettings[alert.filter.filterType]['created'] = true;
+        let fusionEvent;
 
-          if (alert.filter.filterType === 'DELTA_PRIME_BORROW_RATE_EVENTS' || alert.filter.filterType === 'DELTA_PRIME_SUPPLY_RATE_EVENTS') {
+        if (alert.filter.filterType == 'BROADCAST_MESSAGES') {
+          fusionEvent = ['announcement'];
+        } else {
+          fusionEvent = Object.entries(config.fusionEventIds).find(([name, eventId]) => eventId == alert.sourceGroup.sources[0].fusionEventTypeId);
+        }
+
+        if (this.alertSettings[fusionEvent[0]]) {
+          this.alertSettings[fusionEvent[0]]['created'] = true;
+
+          if (fusionEvent[0] === 'borrowRate' || fusionEvent[0] === 'lendingRate') {
             // we can have multiple borrow rate alerts with differnt thresholds
-            if (!this.alertSettings[alert.filter.filterType]['filterOptions']) this.alertSettings[alert.filter.filterType]['filterOptions'] = [];
-            this.alertSettings[alert.filter.filterType]['filterOptions'].push({
+            if (!this.alertSettings[fusionEvent[0]]['filterOptions']) this.alertSettings[fusionEvent[0]]['filterOptions'] = [];
+            this.alertSettings[fusionEvent[0]]['filterOptions'].push({
               ...JSON.parse(alert.filterOptions),
               poolAddress: alert.sourceGroup.sources[0].blockchainAddress,
               id: alert.id
             });
           } else {
-            this.alertSettings[alert.filter.filterType]['id'] = alert.id;
-            this.alertSettings[alert.filter.filterType]['filterOptions'] = JSON.parse(alert.filterOptions);
+            this.alertSettings[fusionEvent[0]]['id'] = alert.id;
+            this.alertSettings[fusionEvent[0]]['filterOptions'] = JSON.parse(alert.filterOptions);
           }
         }
       }
@@ -138,7 +150,7 @@ export default class notifiService {
     this.alertSettings[alert.alertType]['created'] = alert.toggle;
 
     if (!alert.toggle) {
-      if (alert.alertType === 'DELTA_PRIME_BORROW_RATE_EVENTS' || alert.alertType === 'DELTA_PRIME_SUPPLY_RATE_EVENTS') {
+      if (alert.alertType === 'borrowRate' || alert.alertType === 'lendingRate') {
         this.alertSettings[alert.alertType]['filterOptions'] =
           this.alertSettings[alert.alertType]['filterOptions'].filter((option) => option.id != alert.alertId);
       }
@@ -149,7 +161,7 @@ export default class notifiService {
       if (!alertRes.id) return;
 
       // update alerts states for settings screen
-      if (alert.alertType === 'DELTA_PRIME_BORROW_RATE_EVENTS' || alert.alertType === 'DELTA_PRIME_SUPPLY_RATE_EVENTS') {
+      if (alert.alertType === 'borrowRate' || alert.alertType === 'lendingRate') {
         if (!this.alertSettings[alert.alertType]['filterOptions']) this.alertSettings[alert.alertType]['filterOptions'] = [];
         this.alertSettings[alert.alertType]['filterOptions'].push({
           ...JSON.parse(alertRes.filterOptions),
@@ -174,12 +186,12 @@ export default class notifiService {
         value: 'deltaprime__announcements'
       },
     }
-  
+
     const result = await client.ensureAlert({
       eventType,
       inputs: {},
     });
-  
+
     return result;
   }
 
@@ -192,18 +204,23 @@ export default class notifiService {
   - DAILY
   */
 
-  async createLiquidationAlerts({ client, walletAddress }) {
+  async createLiquidationAlerts({ client, walletAddress, network }) {
     const eventType = {
-      type: "custom",
-      name: "Liquidation Alerts",
-      sourceType: "DELTA_PRIME",
-      filterType: "LIQUIDATIONS",
+      type: 'fusion',
+      name: 'Liquidation Alerts',
+      // sourceType: 'DELTA_PRIME',
+      // filterType: 'LIQUIDATIONS',
       sourceAddress: {
-        type: "ref",
-        ref: "walletAddress",
+        type: 'ref',
+        ref: 'walletAddress',
       },
-      selectedUIType: "TOGGLE",
-      filterOptions: {},
+      selectedUIType: 'TOGGLE',
+      fusionEventId: {
+        type: 'value',
+        value: config.fusionEventIds.liquidation
+      },
+      alertFrequency: 'DAILY',
+      // filterOptions: {},
     };
   
     const result = await client.ensureAlert({
@@ -216,19 +233,28 @@ export default class notifiService {
     return result;
   }
 
-  async createLoanHealthAlerts({ client, walletAddress, healthRatio }) {
+  async createLoanHealthAlerts({ client, walletAddress, healthRatio, network }) {
     const eventType = {
-      type: 'custom',
+      type: 'fusion',
       name: 'Loan Health Alerts',
-      sourceType: 'DELTA_PRIME',
-      filterType: 'DELTA_PRIME_LENDING_HEALTH_EVENTS',
-      sourceAddress: {
-        type: "ref",
-        ref: "walletAddress",
+      fusionEventId: {
+        type: 'value',
+        value: config.fusionEventIds.loanHealth
       },
-      selectedUIType: "HEALTH_CHECK",
+      // sourceType: 'DELTA_PRIME',
+      // filterType: 'DELTA_PRIME_LENDING_HEALTH_EVENTS',
+      sourceAddress: {
+        type: 'ref',
+        ref: 'walletAddress',
+      },
+      selectedUIType: 'HEALTH_CHECK',
       alertFrequency: 'DAILY',
-      checkRatios: [{ type: 'below', value: 100 }],
+      checkRatios: [
+        { type: 'below', ratio: 1 },
+        { type: 'above', ratio: 0 }
+      ], // fallback number
+      healthCheckSubtitle: '', // mandatory but unused field
+      numberType: 'integer',
     }
   
     const result = await client.ensureAlert({
@@ -242,55 +268,85 @@ export default class notifiService {
     return result;
   }
 
-  async createBorrowRateAlerts({ client, poolAddress, thresholdDirection, threshold }) {
-    const name = `Borrow Rate Alerts: ${poolAddress} ${thresholdDirection} ${threshold}`;
+  async createBorrowRateAlerts({ client, poolAddress, thresholdDirection, threshold, network }) {
+    // const name = `Borrow Rate Alerts: ${poolAddress} ${thresholdDirection} ${threshold}`;
     const eventType = {
-      type: 'custom',
-      name,
-      sourceType: 'DELTA_PRIME_LENDING_RATES',
-      filterType: 'DELTA_PRIME_BORROW_RATE_EVENTS',
+      type: 'fusion',
+      name: 'Borrow Rate Alerts',
+      fusionEventId: {
+        type: 'value',
+        value: config.fusionEventIds.borrowRate
+      },
+      // sourceType: 'DELTA_PRIME_LENDING_RATES',
+      // filterType: 'DELTA_PRIME_BORROW_RATE_EVENTS',
       sourceAddress: {
-        type: "value",
+        type: 'value',
         value: poolAddress,
       },
-      selectedUIType: "TOGGLE",
-      filterOptions: {
-        alertFrequency: 'DAILY',
-        threshold,
-        thresholdDirection,
-      },
+      // selectedUIType: 'TOGGLE',
+      // filterOptions: {
+      //   alertFrequency: 'DAILY',
+      //   threshold,
+      //   thresholdDirection,
+      // },
+      selectedUIType: 'HEALTH_CHECK',
+      healthCheckSubtitle: '', // mandatory but unused field
+      numberType: 'integer',
+      checkRatios: [
+        { type: 'below', ratio: 1 },
+        { type: 'above', ratio: 0 }
+      ], // fallback number
+      alertFrequency: 'DAILY', // optional
     }
 
     const result = await client.ensureAlert({
       eventType,
-      inputs: {},
+      inputs: {
+        ['Borrow Rate Alerts__healthRatio']: threshold,
+        ['Borrow Rate Alerts__healthThresholdDirection']: thresholdDirection,
+      },
     });
 
     return result;
   }
 
-  async createLendingRateAlerts({ client, poolAddress, thresholdDirection, threshold }) {
-    const name = `Lending Rate Alerts: ${poolAddress} ${thresholdDirection} ${threshold}`;
+  async createLendingRateAlerts({ client, poolAddress, thresholdDirection, threshold, network }) {
+    // const name = `Lending Rate Alerts: ${poolAddress} ${thresholdDirection} ${threshold}`;
     const eventType = {
-      type: 'custom',
-      name,
-      sourceType: 'DELTA_PRIME_LENDING_RATES',
-      filterType: 'DELTA_PRIME_SUPPLY_RATE_EVENTS',
+      type: 'fusion',
+      name: 'Lending Rate Alerts',
+      fusionEventId: {
+        type: 'value',
+        value: config.fusionEventIds.lendingRate
+      },
+      // sourceType: 'DELTA_PRIME_LENDING_RATES',
+      // filterType: 'DELTA_PRIME_SUPPLY_RATE_EVENTS',
       sourceAddress: {
-        type: "value",
+        type: 'value',
         value: poolAddress,
       },
-      selectedUIType: "TOGGLE",
-      filterOptions: {
-        alertFrequency: 'DAILY',
-        threshold,
-        thresholdDirection,
-      },
+      // selectedUIType: 'TOGGLE',
+      // filterOptions: {
+      //   alertFrequency: 'DAILY',
+      //   threshold,
+      //   thresholdDirection,
+      // },
+      selectedUIType: 'HEALTH_CHECK',
+      healthCheckSubtitle: '', // mandatory but unused field
+      numberType: 'integer',
+      checkRatios: [
+        { type: 'below', ratio: 1 },
+        { type: 'above', ratio: 0 }
+      ], // fallback number
+      alertFrequency: 'DAILY', // optional
     }
 
     const result = await client.ensureAlert({
       eventType,
-      inputs: {},
+      inputs: {
+        ['Lending Rate Alerts__healthRatio']: threshold,
+        ['Lending Rate Alerts__healthThresholdDirection']: thresholdDirection,
+      },
     });
 
     return result;

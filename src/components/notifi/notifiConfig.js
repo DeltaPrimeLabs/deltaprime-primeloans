@@ -35,21 +35,21 @@ export default {
   },
   ALERTS_CONFIG: {
     primeAccount: {
-      "BROADCAST_MESSAGES": {
-        type: "BROADCAST_MESSAGES",
+      "announcement": {
+        type: "announcement",
         label: "DeltaPrime Announcements",
         toggle: true,
         createMethod: "createAnnouncements"
       },
-      "LIQUIDATIONS": {
-        type: "LIQUIDATIONS",
+      "liquidation": {
+        type: "liquidation",
         label: "Liquidation Alerts",
         tooltip: "Liquidation Alerts",
         toggle: true,
         createMethod: "createLiquidationAlerts"
       },
-      "DELTA_PRIME_LENDING_HEALTH_EVENTS": {
-        type: "DELTA_PRIME_LENDING_HEALTH_EVENTS",
+      "loanHealth": {
+        type: "loanHealth",
         label: "Loan Health Alerts",
         tooltip: "Loan Health Alerts",
         toggle: true,
@@ -57,22 +57,22 @@ export default {
         thresholdOptions: true,
         settingsNote: "Alert me when my health goes below this threshold"
       },
-      "DELTA_PRIME_BORROW_RATE_EVENTS": {
-        type: "DELTA_PRIME_BORROW_RATE_EVENTS",
+      "borrowRate": {
+        type: "borrowRate",
         label: "Borrowing Interest Rate Alerts",
         tooltip: "Borrowing Interest Rate Alerts",
         createMethod: "createBorrowRateAlerts"
       }
     },
     pools: {
-      "BROADCAST_MESSAGES": {
-        type: "BROADCAST_MESSAGES",
+      "announcement": {
+        type: "announcement",
         label: "DeltaPrime Announcements",
         toggle: true,
         createMethod: "createAnnouncements"
       },
-      "DELTA_PRIME_SUPPLY_RATE_EVENTS": {
-        type: "DELTA_PRIME_SUPPLY_RATE_EVENTS",
+      "lendingRate": {
+        type: "lendingRate",
         label: "Lending Interest Rate Alerts",
         tooltip: "Lending Interest Rate Alerts",
         createMethod: "createLendingRateAlerts"
