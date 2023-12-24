@@ -32,7 +32,7 @@
           <div class="table__cell rewards">
             <span v-for="symbol in lpToken.rewardTokens">
               <img class="asset__icon" :src="getAssetIcon(symbol)">
-              <span v-if="lpToken.rewardBalances && lpToken.rewardBalances[symbol] && parseFloat(lpToken.rewardBalances[symbol]) !== 0">{{
+              <span v-if="lpToken.rewardBalances && lpToken.rewardBalances[symbol] && parseFloat(lpToken.rewardBalances[symbol]) !== null">{{
                 formatTokenBalance((lpToken.rewardBalances && lpToken.rewardBalances[symbol]) ? lpToken.rewardBalances[symbol]  : 0, 6, true)
               }}</span>
               <vue-loaders-ball-beat v-else color="#A6A3FF" scale="0.5"></vue-loaders-ball-beat>
