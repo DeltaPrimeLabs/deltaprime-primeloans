@@ -274,7 +274,7 @@ abstract contract SolvencyFacetProd is RedstoneConsumerNumericBase, DiamondHelpe
         bytes32 nativeTokenSymbol = DeploymentConstants.getNativeTokenSymbol();
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
-        uint256 weightedValueOfTokens = ownedAssetsPrices[0].price * address(this).balance * tokenManager.debtCoverage(tokenManager.getAssetAddress(nativeTokenSymbol, true)) / (10 ** 26);
+        uint256 weightedValueOfTokens = ownedAssetsPrices[0].price * (address(this).balance - msg.value) * tokenManager.debtCoverage(tokenManager.getAssetAddress(nativeTokenSymbol, true)) / (10 ** 26);
 
         if (ownedAssetsPrices.length > 0) {
 

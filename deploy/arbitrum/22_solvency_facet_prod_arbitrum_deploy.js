@@ -9,12 +9,6 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deploy } = deployments;
     const { deployer, admin } = await getNamedAccounts();
 
-    const FacetCutAction = {
-        Add: 0,
-        Replace: 1,
-        Remove: 2
-    }
-
     embedCommitHash("SolvencyFacetProdArbitrum", "./contracts/facets/arbitrum");
 
     let SolvencyFacetProdArbitrum = await deploy("SolvencyFacetProdArbitrum", {
