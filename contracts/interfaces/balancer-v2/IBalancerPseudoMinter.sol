@@ -14,17 +14,7 @@
 
 pragma solidity >=0.7.0 <0.9.0;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+interface IBalancerPseudoMinter {
 
-interface IBalancerV2Gauge is IERC20 {
-
-    function deposit(uint256 _value) external;
-
-    function withdraw(uint256 _value) external;
-
-    function claim_rewards() external;
-
-    function bal_token() external view returns (address);
-
-    function bal_pseudo_minter() external view returns (address);
+    function mint(address _gauge_addr) external;
 }
