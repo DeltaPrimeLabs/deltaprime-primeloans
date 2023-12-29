@@ -30,10 +30,14 @@
       <div class="table__cell table__cell--double-value">
         <template>
           <div class="table__cell rewards">
+            <span>
+              <img class="asset__icon" :src="getAssetIcon('BAL')">
+              <img v-tooltip="{content: `Your accumulated BAL rewards will be visible soon.`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon">
+            </span>
             <span v-for="symbol in lpToken.rewardTokens">
               <img class="asset__icon" :src="getAssetIcon(symbol)">
               <span v-if="lpToken.rewardBalances && lpToken.rewardBalances[symbol] && parseFloat(lpToken.rewardBalances[symbol]) !== null">{{
-                formatTokenBalance((lpToken.rewardBalances && lpToken.rewardBalances[symbol]) ? lpToken.rewardBalances[symbol]  : 0, 6, true)
+                formatTokenBalance((lpToken.rewardBalances && lpToken.rewardBalances[symbol] && !rewardsReset) ? lpToken.rewardBalances[symbol]  : 0, 6, true)
               }}</span>
               <vue-loaders-ball-beat v-else color="#A6A3FF" scale="0.5"></vue-loaders-ball-beat>
             </span>
@@ -148,6 +152,7 @@ export default {
       this.watchProgressBarState();
       this.watchAssetApysRefresh();
       this.watchExternalAssetBalanceUpdate();
+      this.watchRefreshLP();
       this.setupApr();
     })
   },
@@ -169,6 +174,7 @@ export default {
       hasNonStakedLp: false,
       availableFarms: [],
       nonStakedLpBalance: 0,
+      rewardsReset: false,
     };
   },
 
@@ -252,7 +258,8 @@ export default {
       'provideLiquidityAndStakeBalancerV2',
       'unstakeAndRemoveLiquidityBalancerV2',
       'stakeBalancerV2',
-      'withdrawBalancerV2'
+      'withdrawBalancerV2',
+      'claimRewardsBalancerV2'
     ]),
     setupAddActionsConfiguration(hasNonStakedLP = false) {
       this.addActionsConfig =
@@ -313,9 +320,7 @@ export default {
         menuOptions: [
           {
             key: 'CLAIM_REWARDS',
-            name: 'Claim rewards',
-            disabled: true,
-            disabledInfo: 'Coming soon!'
+            name: 'Claim rewards'
           }
         ]
       };
@@ -358,6 +363,9 @@ export default {
             break;
           case 'REMOVE_LIQUIDITY':
             this.openRemoveLiquidityModal();
+            break;
+          case 'CLAIM_REWARDS':
+            this.openClaimRewardsModal();
             break;
         }
       }
@@ -529,11 +537,12 @@ export default {
     async openClaimRewardsModal() {
       const modalInstance = this.openModal(ClaimBalancerRewardsModal);
 
-      modalInstance.$on('CLAIM', provideLiquidityEvent => {
+      modalInstance.$on('CLAIM', claimEvent => {
         if (this.smartLoanContract) {
           const claimRequest = {
+            poolId: this.lpToken.poolId
           };
-          this.handleTransaction(this.stakeBalancerV2, {claimRequest: claimRequest}, () => {
+          this.handleTransaction(this.claimRewardsBalancerV2, {claimRequest: claimRequest}, () => {
             this.$forceUpdate();
           }, (error) => {
             this.handleTransactionError(error);
@@ -601,6 +610,14 @@ export default {
           this.isBalanceEstimated = !updateEvent.isTrueData;
           this.setupHasNonStakedLp();
           this.$forceUpdate();
+        }
+      })
+    },
+
+    watchRefreshLP() {
+      this.lpService.observeRefreshLp().subscribe(async (lpType) => {
+        if (lpType === 'BALANCER_V2_REWARDS_CLAIMED') {
+          this.rewardsReset = true;
         }
       })
     },
@@ -754,6 +771,12 @@ export default {
         .chart__icon-button {
           margin-left: 7px;
         }
+      }
+
+      .stars-icon {
+        width: 20px;
+        margin-right: 10px;
+        transform: translateY(-2px);
       }
 
       &.price {

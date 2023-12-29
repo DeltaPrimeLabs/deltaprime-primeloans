@@ -11,16 +11,6 @@
         </div>
       </div>
 
-      <div class="rewards">
-        <span class="rewards__label">Rewards to claim:</span>
-        <span class="rewards__value">
-          <div class="rewards__reward-token" v-for="reward in totalRewards">
-            <img class="asset__icon" :src="getAssetIcon(reward.symbol)">
-            {{ reward.amount | smartRound(10, true) }} {{ reward.symbol }}
-          </div>
-        </span>
-      </div>
-
       <div class="button-wrapper">
         <Button :label="'Claim'" v-on:click="submit()"
                 :waiting="transactionOngoing"></Button>
