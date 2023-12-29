@@ -1050,7 +1050,10 @@ export default {
           for (let [symbol, asset] of Object.entries(balancerLpAssets)) {
             // we don't use getApy method anymore, but fetch APYs from db
             if (apys[symbol] && apys[symbol].lp_apy) {
-              balancerLpAssets[symbol].apy = apys[symbol].lp_apy * 100;
+              //TODO: correct in AWS
+              let appreciation = (apys[asset.primary] && apys[asset.primary].apy) || (apys[asset.secondary] && apys[asset.secondary].apy);
+
+              balancerLpAssets[symbol].apy = (apys[symbol].lp_apy - appreciation / 2 / 100) * 100;
             }
           }
         }
@@ -2057,7 +2060,7 @@ export default {
       }, config.refreshDelay);
     },
 
-    async claimRewardsBalancerV2({state, rootState, dispatch}, {claimRewardsRequest}) {
+    async claimRewardsBalancerV2({state, rootState, dispatch}, {claimRequest}) {
       console.log('claimRewardsBalancerV2')
       const provider = rootState.network.provider;
 
@@ -2069,7 +2072,7 @@ export default {
 
       const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
 
-      const transaction = await wrappedContract.claimRewards();
+      const transaction = await wrappedContract.claimRewardsBalancerV2(claimRequest.poolId);
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       const tx = await awaitConfirmation(transaction, provider, 'claim Balancer rewards');
 

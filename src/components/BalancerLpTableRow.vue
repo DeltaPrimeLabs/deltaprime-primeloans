@@ -540,6 +540,7 @@ export default {
       modalInstance.$on('CLAIM', claimEvent => {
         if (this.smartLoanContract) {
           const claimRequest = {
+            poolId: this.lpToken.poolId
           };
           this.handleTransaction(this.claimRewardsBalancerV2, {claimRequest: claimRequest}, () => {
             this.$forceUpdate();
