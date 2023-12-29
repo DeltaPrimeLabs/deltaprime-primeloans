@@ -321,14 +321,14 @@ export default {
         TableName: "apys-prod"
       };
 
-      // const apyDoc = await docClient.scan(params).promise();
-      // const apys = {};
-      //
-      // apyDoc.Items.map(apy => {
-      //   apys[apy.id] = {...apy};
-      // });
-      //
-      // commit('setApys', apys);
+      const apyDoc = await docClient.scan(params).promise();
+      const apys = {};
+
+      apyDoc.Items.map(apy => {
+        apys[apy.id] = {...apy};
+      });
+
+      commit('setApys', apys);
     },
 
     async setupAssets({state, commit, rootState}) {
@@ -988,106 +988,106 @@ export default {
     },
 
     async getAllAssetsApys({state, commit, rootState}) {
-      // const dataRefreshNotificationService = rootState.serviceRegistry.dataRefreshEventService;
-      //
-      // let assets = state.assets;
-      // const apys = state.apys;
-      //
-      // for (let [symbol, asset] of Object.entries(assets)) {
-      //   // we don't use getApy method anymore, but fetch APYs from db
-      //   if (apys[symbol] && apys[symbol].apy) {
-      //     assets[symbol].apy = window.chain == 'arbitrum' ? apys[symbol].arbApy : apys[symbol].apy;
-      //   }
-      // }
-      //
-      // commit('setAssets', assets);
-      //
-      // let lpAssets = state.lpAssets;
-      //
-      // for (let [symbol, lpAsset] of Object.entries(lpAssets)) {
-      //   // we don't use getApy method anymore, but fetch APYs from db
-      //   if (apys[symbol] && apys[symbol].lp_apy) {
-      //     lpAssets[symbol].apy = apys[symbol].lp_apy;
-      //   }
-      // }
-      //
-      // commit('setLpAssets', lpAssets);
-      //
-      // let concentratedLpAssets = state.concentratedLpAssets;
-      //
-      // //TODO: replace with for logic
-      // try {
-      //   concentratedLpAssets['SHLB_AVAX-USDC_B'].apy = apys['AVAX_USDC'].apy * 100;
-      //   concentratedLpAssets['SHLB_USDT.e-USDt_C'].apy = apys['USDT.e_USDt'].apy * 100;
-      //   concentratedLpAssets['SHLB_BTC.b-AVAX_B'].apy = 0;
-      //   concentratedLpAssets['SHLB_EUROC-USDC_V2_1_B'].apy = apys['EUROC_USDC'].apy * 100;
-      // } catch (e) {
-      //   console.log(e);
-      // }
-      //
-      // commit('setConcentratedLpAssets', concentratedLpAssets);
-      //
-      // let traderJoeV2LpAssets = state.traderJoeV2LpAssets;
-      //
-      // if (Object.keys(traderJoeV2LpAssets).length !== 0) {
-      //   for (let [symbol, traderJoeV2LpAsset] of Object.entries(traderJoeV2LpAssets)) {
-      //     // we don't use getApy method anymore, but fetch APYs from db
-      //     if (apys[symbol] && apys[symbol].lp_apy) {
-      //       traderJoeV2LpAssets[symbol].apy = apys[symbol].lp_apy * 100;
-      //     }
-      //
-      //     if (traderJoeV2LpAssets['TJLB_MAGIC_ETH']) {
-      //       traderJoeV2LpAssets['TJLB_MAGIC_ETH'].apy = 114.81;
-      //     }
-      //   }
-      // }
-      // commit('setTraderJoeV2LpAssets', traderJoeV2LpAssets);
-      //
-      // let balancerLpAssets = state.balancerLpAssets;
-      //
-      // if (balancerLpAssets) {
-      //   if (Object.keys(balancerLpAssets).length !== 0) {
-      //     for (let [symbol, asset] of Object.entries(balancerLpAssets)) {
-      //       // we don't use getApy method anymore, but fetch APYs from db
-      //       if (apys[symbol] && apys[symbol].lp_apy) {
-      //         balancerLpAssets[symbol].apy = apys[symbol].lp_apy * 100;
-      //       }
-      //     }
-      //   }
-      //
-      //   commit('setBalancerLpAssets', balancerLpAssets);
-      // }
-      //
-      // let levelLpAssets = state.levelLpAssets;
-      //
-      // if (levelLpAssets) {
-      //   if (Object.keys(levelLpAssets).length !== 0) {
-      //     for (let [symbol, asset] of Object.entries(levelLpAssets)) {
-      //       // we don't use getApy method anymore, but fetch APYs from db
-      //       if (apys[symbol] && apys[symbol][symbol]) {
-      //         levelLpAssets[symbol].apy = apys[symbol][symbol];
-      //       }
-      //     }
-      //   }
-      //
-      //   commit('setLevelLpAssets', levelLpAssets);
-      // }
-      //
-      // let gmxV2Assets = state.gmxV2Assets;
-      //
-      // if (gmxV2Assets) {
-      //   if (Object.keys(gmxV2Assets).length !== 0) {
-      //     for (let [symbol, asset] of Object.entries(gmxV2Assets)) {
-      //       if (apys[symbol] && apys[symbol].lp_apy) {
-      //         gmxV2Assets[symbol].apy = apys[symbol].lp_apy * 100;
-      //       }
-      //     }
-      //   }
-      //
-      //   commit('setGmxV2Assets', gmxV2Assets);
-      // }
-      //
-      // dataRefreshNotificationService.emitAssetApysDataRefresh();
+      const dataRefreshNotificationService = rootState.serviceRegistry.dataRefreshEventService;
+
+      let assets = state.assets;
+      const apys = state.apys;
+
+      for (let [symbol, asset] of Object.entries(assets)) {
+        // we don't use getApy method anymore, but fetch APYs from db
+        if (apys[symbol] && apys[symbol].apy) {
+          assets[symbol].apy = window.chain == 'arbitrum' ? apys[symbol].arbApy : apys[symbol].apy;
+        }
+      }
+
+      commit('setAssets', assets);
+
+      let lpAssets = state.lpAssets;
+
+      for (let [symbol, lpAsset] of Object.entries(lpAssets)) {
+        // we don't use getApy method anymore, but fetch APYs from db
+        if (apys[symbol] && apys[symbol].lp_apy) {
+          lpAssets[symbol].apy = apys[symbol].lp_apy;
+        }
+      }
+
+      commit('setLpAssets', lpAssets);
+
+      let concentratedLpAssets = state.concentratedLpAssets;
+
+      //TODO: replace with for logic
+      try {
+        concentratedLpAssets['SHLB_AVAX-USDC_B'].apy = apys['AVAX_USDC'].apy * 100;
+        concentratedLpAssets['SHLB_USDT.e-USDt_C'].apy = apys['USDT.e_USDt'].apy * 100;
+        concentratedLpAssets['SHLB_BTC.b-AVAX_B'].apy = 0;
+        concentratedLpAssets['SHLB_EUROC-USDC_V2_1_B'].apy = apys['EUROC_USDC'].apy * 100;
+      } catch (e) {
+        console.log(e);
+      }
+
+      commit('setConcentratedLpAssets', concentratedLpAssets);
+
+      let traderJoeV2LpAssets = state.traderJoeV2LpAssets;
+
+      if (Object.keys(traderJoeV2LpAssets).length !== 0) {
+        for (let [symbol, traderJoeV2LpAsset] of Object.entries(traderJoeV2LpAssets)) {
+          // we don't use getApy method anymore, but fetch APYs from db
+          if (apys[symbol] && apys[symbol].lp_apy) {
+            traderJoeV2LpAssets[symbol].apy = apys[symbol].lp_apy * 100;
+          }
+
+          if (traderJoeV2LpAssets['TJLB_MAGIC_ETH']) {
+            traderJoeV2LpAssets['TJLB_MAGIC_ETH'].apy = 114.81;
+          }
+        }
+      }
+      commit('setTraderJoeV2LpAssets', traderJoeV2LpAssets);
+
+      let balancerLpAssets = state.balancerLpAssets;
+
+      if (balancerLpAssets) {
+        if (Object.keys(balancerLpAssets).length !== 0) {
+          for (let [symbol, asset] of Object.entries(balancerLpAssets)) {
+            // we don't use getApy method anymore, but fetch APYs from db
+            if (apys[symbol] && apys[symbol].lp_apy) {
+              balancerLpAssets[symbol].apy = apys[symbol].lp_apy * 100;
+            }
+          }
+        }
+
+        commit('setBalancerLpAssets', balancerLpAssets);
+      }
+
+      let levelLpAssets = state.levelLpAssets;
+
+      if (levelLpAssets) {
+        if (Object.keys(levelLpAssets).length !== 0) {
+          for (let [symbol, asset] of Object.entries(levelLpAssets)) {
+            // we don't use getApy method anymore, but fetch APYs from db
+            if (apys[symbol] && apys[symbol][symbol]) {
+              levelLpAssets[symbol].apy = apys[symbol][symbol];
+            }
+          }
+        }
+
+        commit('setLevelLpAssets', levelLpAssets);
+      }
+
+      let gmxV2Assets = state.gmxV2Assets;
+
+      if (gmxV2Assets) {
+        if (Object.keys(gmxV2Assets).length !== 0) {
+          for (let [symbol, asset] of Object.entries(gmxV2Assets)) {
+            if (apys[symbol] && apys[symbol].lp_apy) {
+              gmxV2Assets[symbol].apy = apys[symbol].lp_apy * 100;
+            }
+          }
+        }
+
+        commit('setGmxV2Assets', gmxV2Assets);
+      }
+
+      dataRefreshNotificationService.emitAssetApysDataRefresh();
     },
 
     async getDebtsPerAsset({state, commit, rootState}) {
