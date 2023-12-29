@@ -122,9 +122,9 @@ export default {
     smartLoanContract: {
       async handler(smartLoanContract) {
         if (smartLoanContract) {
-          const collected = await (await fetch(`https://cavsise1n4.execute-api.us-east-1.amazonaws.com/gmx-incentives/${smartLoanContract.address}?network=arbitrum`)).json();
-          let harvestedArb = GM_DISTRIBUTED[this.smartLoanContract.address.toLowerCase()] ? GM_DISTRIBUTED[this.smartLoanContract.address.toLowerCase()] : 0;
-          this.collectedArb = collected.arbCollected - harvestedArb;
+          // const collected = await (await fetch(`https://cavsise1n4.execute-api.us-east-1.amazonaws.com/gmx-incentives/${smartLoanContract.address}?network=arbitrum`)).json();
+          // let harvestedArb = GM_DISTRIBUTED[this.smartLoanContract.address.toLowerCase()] ? GM_DISTRIBUTED[this.smartLoanContract.address.toLowerCase()] : 0;
+          // this.collectedArb = collected.arbCollected - harvestedArb;
         }
       },
     },
@@ -133,7 +133,7 @@ export default {
   methods: {
     ...mapActions('fundsStore', ['fund', 'withdraw', 'provideLiquidity', 'removeLiquidity']),
     async setGmTvl() {
-      this.gmTvl = (await (await fetch('https://cavsise1n4.execute-api.us-east-1.amazonaws.com/gm-boost-apy')).json()).tvl;
+      // this.gmTvl = (await (await fetch('https://cavsise1n4.execute-api.us-east-1.amazonaws.com/gm-boost-apy')).json()).tvl;
     }
   },
 };
