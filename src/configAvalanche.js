@@ -32,20 +32,28 @@ export default {
       "EUROC": {name: "EUROC", symbol: "EUROC", logoExt: "png", decimals: 6, address: addresses.EUROC, debtCoverage: 0.83333333333, groupIdentifier: "EUROC_GROUP", tradingViewSymbol: "COINBASE:EUROCUSD"},
       "GLP": {name: "GLP", symbol: "GLP", logoExt: "png", decimals: 18, address: addresses.GLP, debtCoverage: 0.83333333333, swappableAssets: ['BTC', 'ETH', 'USDC'], tradingViewSymbol: ""},
       "sAVAX": {name: "sAVAX", symbol: "sAVAX", decimals: 18, address: addresses.sAVAX, debtCoverage: 0.83333333333, apy: 6.06, tradingViewSymbol: "TRADERJOE:SAVAXWAVAX_4B946C.USD"},
+      "yyAVAX": {name: "yyAVAX", symbol: "yyAVAX", logoExt: "png", decimals: 18, address: addresses.yyAVAX, debtCoverage: 0.83333333333, apy: 4.86, tradingViewSymbol: "TRADERJOE:YYAVAXUSDC_0512AB.USD"},
+      "ggAVAX": {name: "ggAVAX", symbol: "ggAVAX", logoExt: "png", decimals: 18, address: addresses.ggAVAX, debtCoverage: 0.83333333333, apy: 5.04, useParaSwapV2: true },
       "GMX": {name: "GMX", symbol: "GMX", logoExt: "png", decimals: 18, address: addresses.GMX, debtCoverage: 0.83333333333, groupIdentifier: "GMX_GROUP", tradingViewSymbol: "BINANCE:GMXUSDT"},
       "JOE": {name: "JOE", symbol: "JOE", logoExt: "png", decimals: 18, address: addresses.JOE, debtCoverage: 0.8, groupIdentifier: "JOE_GROUP", tradingViewSymbol: "BINANCE:JOEUSDT"},
       "QI": {name: "QI", symbol: "QI", decimals: 18, address: addresses.QI, debtCoverage: 0, tradingViewSymbol: "BINANCE:QIUSDT"},
       "PNG": {name: "PNG", symbol: "PNG", logoExt: "png", decimals: 18, address: addresses.PNG, debtCoverage: 0, tradingViewSymbol: "COINBASE:PNGUSD"},
       "PTP": {name: "PTP", symbol: "PTP", logoExt: "png", decimals: 18, address: addresses.PTP, debtCoverage: 0, tradingViewSymbol: "COINEX:PTPUSDT"},
+      "BAL": {unsupported: true, name: "BAL", symbol: "BAL", logoExt: "png", decimals: 18, address: addresses.BAL, debtCoverage: 0, tradingViewSymbol: "BINANCE:BALUSDT"},
+      "GGP": {unsupported: true, name: "GGP", symbol: "GGP", logoExt: "png", decimals: 18, address: addresses.GGP, debtCoverage: 0, tradingViewSymbol: "TRADERJOE:GGPWAVAX_AE671E.USD"},
     },
 
     SWAP_DEXS_CONFIG: {
         YakSwap: {
-            availableAssets: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'EUROC', 'GLP', 'sAVAX', 'GMX', 'JOE', 'QI', 'PNG', 'PTP'],
+            availableAssets: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'EUROC', 'GLP', 'sAVAX', 'GMX', 'JOE', 'QI', 'PNG', 'PTP', 'yyAVAX'],
             slippageMargin: 0.02
         },
         ParaSwap: {
-            availableAssets: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'sAVAX', 'QI', 'PNG', 'PTP'],
+            availableAssets: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'sAVAX', 'QI', 'PNG', 'PTP', 'yyAVAX', 'ggAVAX'],
+            slippageMargin: 0.05
+        },
+        ParaSwapV2: {
+            availableAssets: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'sAVAX', 'QI', 'PNG', 'PTP', 'yyAVAX', 'ggAVAX'],
             slippageMargin: 0.05
         },
         GmxV2: {
@@ -96,6 +104,11 @@ export default {
         "SHLB_BTC.b-AVAX_B": { primary: 'BTC', secondary: 'AVAX', name: "BTC.b-AVAX", dex: 'SteakHut',  symbol: 'SHLB_BTC.b-AVAX_B', addMethod: 'stakeSteakHutBTCAVAX', removeMethod: 'unstakeSteakHutBTCAVAX', decimals: 18, address: addresses["SHLB_BTC.b-AVAX_B"], tvl: 44000, debtCoverage: 0.83333333333},
         "SHLB_USDT.e-USDt_C": { inactive: true, primary: 'USDT.e', secondary: 'USDT', name: "USDT.e-USDT", dex: 'SteakHut',  symbol: 'SHLB_USDT.e-USDt_C', addMethod: 'stakeSteakHutUSDTeUSDT', removeMethod: 'unstakeSteakHutUSDTeUSDT', decimals: 18, address: addresses["SHLB_USDT.e-USDt_C"], tvl: 513000, debtCoverage: 0.83333333333},
         "SHLB_EUROC-USDC_V2_1_B": { primary: 'EUROC', secondary: 'USDC', name: "EUROC-USDC", dex: 'SteakHut',  symbol: 'SHLB_EUROC-USDC_V2_1_B', addMethod: 'stakeSteakHutEUROCUSDC', removeMethod: 'unstakeSteakHutEUROCUSDC', decimals: 18, address: addresses["SHLB_EUROC-USDC_V2_1_B"], tvl: 1985000, debtCoverage: 0.83333333333},
+    },
+    BALANCER_LP_ASSETS_CONFIG: {
+        'BAL_sAVAX_AVAX': { primary: 'sAVAX', secondary: 'AVAX', name: 'sAVAX-AVAX', dex: 'Balancer', symbol: 'BAL_sAVAX_AVAX', debtCoverage: 0.83333333333, decimals: 18, tvl: 5350000, address: addresses['BAL_sAVAX_AVAX'], gaugeAddress: addresses['BAL_S_AVAX_MAIN'], rewardTokens: ['BAL', 'QI'], addMethod: 'joinPoolAndStakeBalancerV2', removeMethod: 'unstakeAndExitPoolBalancerV2', gaugeBalanceMethod: 'balancerSAvaxBalance', poolId: '0xfd2620c9cfcec7d152467633b3b0ca338d3d78cc00000000000000000000001c'},
+        'BAL_yyAVAX_AVAX': { primary: 'AVAX', secondary: 'yyAVAX', name: 'yyAVAX-AVAX', reverseOrder: true, dex: 'Balancer', symbol: 'BAL_yyAVAX_AVAX', debtCoverage: 0.83333333333, decimals: 18, tvl: 1680000, address: addresses['BAL_yyAVAX_AVAX'], gaugeAddress: addresses['BAL_YY_AVAX_MAIN'], rewardTokens: ['BAL'], addMethod: 'joinPoolAndStakeBalancerV2', removeMethod: 'unstakeAndExitPoolBalancerV2', gaugeBalanceMethod: 'balancerYyAvaxBalance', poolId: '0x9fa6ab3d78984a69e712730a2227f20bcc8b5ad900000000000000000000001f', firstOfTokensIsPool: true},
+        'BAL_ggAVAX_AVAX': { primary: 'ggAVAX', secondary: 'AVAX', name: 'ggAVAX-AVAX', dex: 'Balancer', symbol: 'BAL_ggAVAX_AVAX', debtCoverage: 0.83333333333, decimals: 18, tvl: 3700000, address: addresses['BAL_ggAVAX_AVAX'], gaugeAddress: addresses['BAL_GG_AVAX_MAIN'], rewardTokens: ['BAL', 'GGP'], addMethod: 'joinPoolAndStakeBalancerV2', removeMethod: 'unstakeAndExitPoolBalancerV2', gaugeBalanceMethod: 'balancerGgAvaxBalance', poolId: '0xc13546b97b9b1b15372368dc06529d7191081f5b00000000000000000000001d'}
     },
     TRADERJOEV2_LP_ASSETS_CONFIG: {
         'TJLB_AVAX-USDC': { primary: 'AVAX', secondary: 'USDC', name: 'AVAX-USDC', dex: 'TraderJoe', symbol: 'TJLB_AVAX-USDC', debtCoverage: 0.83333333333, decimals: 18, baseFee: '0.002', address: addresses['TJLB_AVAX-USDC'], binStep: 20, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2', link: "https://traderjoexyz.com/avalanche/pool/v21/AVAX/0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e/20"},
@@ -174,7 +187,7 @@ export default {
                 token: 'AVAX',
                 isTokenLp: false,
                 info: 'Uses Vector Finance strategy on Platypus. Deposit/withdrawal fees may apply. Check <a href="https://docs.platypus.finance/platypus-finance-docs/our-innovative-concepts/fees/withdrawal-fee" target="_blank">docs</a>.',
-                debtCoverage: 0.83333333333,
+                debtCoverage: 0,
                 rewardTokens: ['PTP', 'QI'],
                 strategy: 'Platypus',
                 banner: 'This farm is disabled and underlying assets were returned to your Prime Account.',
@@ -194,7 +207,7 @@ export default {
                 token: 'AVAX',
                 isTokenLp: false,
                 info: 'Uses Vector Finance strategy on Platypus. Withdrawal fees may apply. Check <a href="https://docs.platypus.finance/platypus-finance-docs/our-innovative-concepts/fees/withdrawal-fee" target="_blank">docs</a>.',
-                debtCoverage: 0.83333333333,
+                debtCoverage: 0,
                 rewardTokens: ['PTP', 'QI'],
                 strategy: 'Platypus',
                 banner: 'This farm is disabled and underlying assets were returned to your Prime Account.',
@@ -217,7 +230,7 @@ export default {
                 isTokenLp: false,
                 info: 'Uses Yield Yak strategy on Platypus. Deposit/withdrawal fees may apply. Check <a href="https://docs.platypus.finance/platypus-finance-docs/our-innovative-concepts/fees/withdrawal-fee" target="_blank">docs</a>.',
                 rewardsInfo: 'These are the rewards that you accumulated. These are staked too.',
-                debtCoverage: 0.83333333333,
+                debtCoverage: 0,
                 rewardTokens: ['sAVAX'],
                 strategy: 'Platypus',
                 banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
@@ -239,7 +252,7 @@ export default {
                 token: 'sAVAX',
                 isTokenLp: false,
                 info: 'Uses Vector Finance strategy on Platypus. Deposit/withdrawal fees may apply. Check <a href="https://docs.platypus.finance/platypus-finance-docs/our-innovative-concepts/fees/withdrawal-fee" target="_blank">docs</a>.',
-                debtCoverage: 0.83333333333,
+                debtCoverage: 0,
                 rewardTokens: ['PTP', 'QI'],
                 strategy: 'Platypus',
                 banner: 'This farm is disabled and underlying assets were returned to your Prime Account.',
@@ -258,7 +271,7 @@ export default {
                 token: 'sAVAX',
                 isTokenLp: false,
                 info: 'Uses Vector Finance strategy on Platypus. Withdrawal fees may apply. Check <a href="https://docs.platypus.finance/platypus-finance-docs/our-innovative-concepts/fees/withdrawal-fee" target="_blank">docs</a>.',
-                debtCoverage: 0.83333333333,
+                debtCoverage: 0,
                 rewardTokens: ['PTP', 'QI'],
                 strategy: 'Platypus',
                 banner: 'This farm is disabled and underlying assets were returned to your Prime Account.',
@@ -299,7 +312,7 @@ export default {
                 symbol: 'USDC ACR',
                 token: 'USDC',
                 isTokenLp: false,
-                debtCoverage: 0.83333333333,
+                debtCoverage: 0,
                 rewardTokens: ['PTP'],
                 strategy: 'Platypus',
                 banner: 'This farm is disabled and underlying assets were returned to your Prime Account.',
@@ -320,7 +333,7 @@ export default {
                 symbol: 'USDT ACR',
                 token: 'USDT',
                 isTokenLp: false,
-                debtCoverage: 0.83333333333,
+                debtCoverage: 0,
                 strategy: 'Platypus',
                 banner: 'This farm is disabled and underlying assets were returned to your Prime Account.',
                 refreshDelay: 60000

@@ -13,9 +13,7 @@
         </div>
       </div>
 
-      <div class="description-section">
-        {{ partner.introduction }}
-      </div>
+      <div class="description-section" v-html="partner.introduction"></div>
 
       <div class="description-section">
         <div class="section-header">Main features:</div>
@@ -47,12 +45,12 @@
 
       <div class="description-section">
         <div class="section-header">Chain impact:</div>
-        <div class="section">{{ partner.chainImpact }}</div>
+        <div class="section" v-html="partner.chainImpact"></div>
       </div>
 
       <div class="description-section">
         <div class="section-header">Yield calculation:</div>
-        <div class="section">{{ partner.yieldCalculation }}</div>
+        <div class="section" v-html="partner.yieldCalculation"></div>
       </div>
     </Modal>
   </div>

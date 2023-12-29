@@ -56,7 +56,7 @@ export function calculateHealth(tokens, lbTokens) {
 
 export function calculateMaxApy(pools, apy) {
   if (!pools) return;
-  return Math.max(apy * 5.5 - 4.5 * Math.min(...Object.values(pools).map(pool => pool.borrowingAPY)), apy);
+  return Math.max(apy * 5.5 - 4.5 * Math.min(...Object.values(pools.filter(pool => !pool.disabled)).map(pool => pool.borrowingAPY)), apy);
 }
 
 export function mergeArrays(arrays) {
@@ -95,6 +95,23 @@ export function roundWithPrecision(num, precision) {
 
 export function round(num) {
   return roundWithPrecision(num, 18);
+}
+
+export function smartRound(value, precision = 8, toFixed = false) {
+  if (Number.isNaN(value)) {
+    return '0';
+  }
+  if (value < 0) {
+    value = Math.abs(value);
+  }
+  const valueOrderOfMagnitudeExponent = String(value).split('.')[0].length - 1;
+  const precisionMultiplierExponent = precision - valueOrderOfMagnitudeExponent;
+  const precisionMultiplier = Math.pow(10, precisionMultiplierExponent >= 0 ? precisionMultiplierExponent : 0);
+  if (!toFixed) {
+    return value !== null ? String(Math.round(value * precisionMultiplier) / precisionMultiplier) : '';
+  } else {
+    return value !== null ? removePaddedTrailingZeros((Math.round(value * precisionMultiplier) / precisionMultiplier).toFixed(precision)) : '';
+  }
 }
 
 export function aprToApy(apr) {

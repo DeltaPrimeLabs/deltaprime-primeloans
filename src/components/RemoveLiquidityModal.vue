@@ -16,6 +16,7 @@
       <CurrencyInput :symbol="lpToken.primary"
                      :symbol-secondary="lpToken.secondary"
                      v-on:newValue="inputChange"
+                     :max="lpTokenBalance"
                      :validators="validators">
       </CurrencyInput>
 
@@ -94,6 +95,7 @@ export default {
   props: {
     lpToken: {},
     lpTokenBalance: Number,
+    lpTokenDecimals: null,
     firstBalance: Number,
     secondBalance: Number,
   },
@@ -132,7 +134,7 @@ export default {
 
   methods: {
     async submit() {
-      const lpTokenDecimals = config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals;
+      const lpTokenDecimals = this.lpTokenDecimals ? this.lpTokenDecimals : config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals;
       this.transactionOngoing = true;
       const minReceivedAmounts = await this.calculateReceivedAmounts(this.amount);
       this.$emit('REMOVE_LIQUIDITY', {
@@ -178,7 +180,7 @@ export default {
         const secondTokenContract = new ethers.Contract(this.secondAsset.address, erc20ABI, provider.getSigner());
         const lpTokenContract = new ethers.Contract(this.lpToken.address, erc20ABI, provider.getSigner());
 
-        const lpTokenDecimals = config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals;
+        const lpTokenDecimals = this.lpTokenDecimals ? this.lpTokenDecimals : config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals;
 
         const firstTokenBalance = await firstTokenContract.balanceOf(this.lpToken.address);
         const secondTokenBalance = await secondTokenContract.balanceOf(this.lpToken.address);

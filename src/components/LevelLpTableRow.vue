@@ -12,7 +12,7 @@
       </div>
 
       <div class="table__cell table__cell--double-value balance">
-        <template v-if="levelLpBalances && parseFloat(levelLpBalances[lpToken.symbol])">
+        <template v-if="levelLpBalances && parseFloat(levelLpBalances[lpToken.symbol]) && formatTokenBalance(levelLpBalances[lpToken.symbol], 10, true) > 0">
           <div class="double-value__pieces">
             <span v-if="isLpBalanceEstimated">~</span>
             {{ formatTokenBalance(levelLpBalances[lpToken.symbol], 10, true) }}
@@ -230,7 +230,9 @@ export default {
       'lpAssets',
       'concentratedLpAssets',
       'levelLpAssets',
-      'traderJoeV2LpAssets'
+      'traderJoeV2LpAssets',
+      'balancerLpAssets',
+      'balancerLpBalances',
     ]),
     ...mapState('poolStore', ['pools']),
     ...mapState('network', ['account', 'provider']),
@@ -444,6 +446,8 @@ export default {
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
+      modalInstance.balancerLpBalances = this.balancerLpBalances;
+      modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.loan = this.debt;
@@ -484,6 +488,8 @@ export default {
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
+      modalInstance.balancerLpBalances = this.balancerLpBalances;
+      modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.farms = this.farms;
       modalInstance.health = this.health;
@@ -536,6 +542,8 @@ export default {
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
+      modalInstance.balancerLpBalances = this.balancerLpBalances;
+      modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
       modalInstance.targetAsset = this.lpToken.symbol;
       modalInstance.debt = this.fullLoanStatus.debt;
@@ -600,6 +608,8 @@ export default {
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
+      modalInstance.balancerLpBalances = this.balancerLpBalances;
+      modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
       modalInstance.targetAsset = this.lpToken.underlyingAssets[0];
       modalInstance.debt = this.fullLoanStatus.debt;

@@ -97,6 +97,8 @@ export default {
     traderJoeV2LpAssets: {},
     gmxV2Assets: {},
     gmxV2Balances: {},
+    balancerLpAssets: {},
+    balancerLpBalances: {},
     farms: {},
     debtsPerAsset: {},
     assetBalance: Number,
@@ -199,6 +201,14 @@ export default {
         });
       }
 
+      for (const [symbol, data] of Object.entries(this.balancerLpAssets)) {
+        if (this.balancerLpBalances) {
+          let balance = parseFloat(this.balancerLpBalances[symbol]);
+
+          tokens.push({price: data.price, balance: balance ? balance : 0, borrowed: 0, debtCoverage: data.debtCoverage});
+        }
+      }
+
       for (const [symbol, data] of Object.entries(this.gmxV2Assets)) {
         tokens.push({
           price: data.price,
@@ -226,13 +236,13 @@ export default {
 
     setupValidators() {
       this.validators = [
-        // {
-          // validate: (value) => {
-          //   if (this.healthAfterTransaction < this.MIN_ALLOWED_HEALTH) {
-          //     return `Health should be higher than 0%`;
-          //   }
-          // },
-        // },
+        {
+          validate: (value) => {
+            if (this.healthAfterTransaction < this.MIN_ALLOWED_HEALTH) {
+              return `Health should be higher than 0%`;
+            }
+          },
+        },
         {
           validate: (value) => {
             if (this.totalBorrowedFromPool + this.value > this.maxUtilisation * this.poolTVL) {

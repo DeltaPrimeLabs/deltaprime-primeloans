@@ -1,5 +1,5 @@
 <template>
-  <div id="modal" class="pool-withdraw-modal-component modal-component">
+  <div id="modal" v-if="pool" class="pool-withdraw-modal-component modal-component">
     <Modal :height="getModalHeight">
       <div class="modal__title">
         Withdraw
@@ -44,8 +44,16 @@
               <div class="summary__label">
                 Mean daily interest (365D):
               </div>
-              <div class="summary__value">
-                ≈ {{ calculateDailyInterest | smartRound(8, true) }} <span class="currency">{{ assetSymbol }}</span>
+              <div class="value__wrapper">
+                <div class="summary__value">
+                  ≈ {{ calculateDailyInterest | smartRound(8, true) }}
+                  <span class="currency">{{ assetSymbol }}</span>
+                </div>
+                +
+                <div class="summary__value">
+                  ≈ {{ calculateDailyMiningInterestInSPrime | smartRound(8, true) }}$
+                  <span class="currency">sPRIME</span>
+                </div>
               </div>
             </div>
           </div>
@@ -111,9 +119,15 @@ export default {
 
   computed: {
     calculateDailyInterest() {
-      const value = this.deposit - this.withdrawValue;
-      if (value > 0) {
-        return (this.apy + this.miningApy) / 365 * (Number(this.deposit) + this.depositValue);
+      if (this.withdrawValue <= Number(this.deposit)) {
+        return (this.apy) / 365 * (Number(this.deposit) - this.withdrawValue);
+      } else {
+        return 0;
+      }
+    },
+    calculateDailyMiningInterestInSPrime() {
+      if (this.withdrawValue <= Number(this.deposit)) {
+        return (this.miningApy) / 365 * (Number(this.deposit) - this.withdrawValue) * this.pool.assetPrice;
       } else {
         return 0;
       }
@@ -125,8 +139,8 @@ export default {
 
     miningApy() {
       if (!this.pool || this.pool.tvl === 0) return 0;
-      return (config.chainId === 42161) ?  1000 * 365 / 4 / (this.pool.tvl * this.pool.assetPrice)
-          : Math.max((1 - this.pool.tvl * this.pool.assetPrice / 4000000) * 0.1, 0);
+      return (config.chainId === 42161) ?  0 * 1000 * 365 / 4 / (this.pool.tvl * this.pool.assetPrice)
+          : 0 * Math.max((1 - this.pool.tvl * this.pool.assetPrice / 4000000) * 0.1, 0);
     },
   },
 
@@ -142,7 +156,7 @@ export default {
 
 
     withdrawValueChange(event) {
-      this.withdrawValue = event.value;
+      this.withdrawValue = Number(event.value);
       this.inputValidationError = event.error;
     },
 

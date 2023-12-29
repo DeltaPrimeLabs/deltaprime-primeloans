@@ -75,7 +75,7 @@
       </div>
 
       <div class="table__cell table__cell--double-value max-apr">
-        {{ maxApr | percent }}
+        <span>{{ maxApr + gmBoost | percent }}<img v-if="hasGmIncentives" v-tooltip="{content: `This pool is incentivized!<br>⁃ up to ${maxApr ? (maxApr * 100).toFixed(2) : 0}% Pool APR<br>⁃ up to ${gmBoost ? (gmBoost * 100).toFixed(2) : 0}% ARB incentives`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span>
       </div>
 
       <div class="table__cell"></div>
@@ -243,7 +243,10 @@ export default {
       'concentratedLpAssets',
       'levelLpAssets',
       'gmxV2Assets',
-      'traderJoeV2LpAssets'
+      'traderJoeV2LpAssets',
+      'balancerLpAssets',
+      'balancerLpBalances',
+      'apys',
     ]),
     ...mapState('poolStore', ['pools']),
     ...mapState('network', ['account', 'provider']),
@@ -262,8 +265,18 @@ export default {
     },
 
     maxApr() {
+      if (!this.apys) return;
       return calculateMaxApy(this.pools, this.apr / 100);
     },
+
+    gmBoost() {
+      if (!this.apys) return;
+      return this.hasGmIncentives ? 4.5 * this.apys['GM_BOOST'].arbApy : 0;
+    },
+
+    hasGmIncentives() {
+      return config.chainId === 42161;
+    }
   },
 
   watch: {
@@ -347,12 +360,6 @@ export default {
         iconSrc: 'src/assets/icons/icon_a_more.svg',
         tooltip: 'More',
         menuOptions: [
-          {
-            key: 'CLAIM_GM_REWARDS',
-            name: 'Claim GM rewards',
-            disabled: true,
-            disabledInfo: 'Available soon!'
-          },
           {
             key: 'PARTNER_PROFILE',
             name: 'Show profile',
@@ -503,6 +510,37 @@ export default {
       }
     },
 
+    async calculateExecutionFee(isDeposit) {
+      const dataStore = new ethers.Contract(config.gmxV2DataStoreAddress, IDATA_STORE.abi, this.provider.getSigner());
+
+      //TODO: use multicall
+
+      //TODO: withdraw check
+
+      const estimatedGasLimit = isDeposit ?
+          fromWei(await dataStore.getUint(this.depositGasLimitKey(true))) * 10**18 + config.gmxV2DepositCallbackGasLimit
+          :
+          fromWei(await dataStore.getUint(hashData(["bytes32"], [WITHDRAWAL_GAS_LIMIT_KEY]))) * 10**18 + config.gmxV2DepositCallbackGasLimit;
+
+      let baseGasLimit = fromWei(await dataStore.getUint(ESTIMATED_GAS_FEE_BASE_AMOUNT)) * 10**18;
+
+      let multiplierFactor = formatUnits(await dataStore.getUint(ESTIMATED_GAS_FEE_MULTIPLIER_FACTOR), 30);
+
+      const adjustedGasLimit = baseGasLimit + estimatedGasLimit * multiplierFactor;
+
+      const maxPriorityFeePerGas = (await provider.getFeeData()).maxPriorityFeePerGas.toNumber();
+      let gasPrice = (await provider.getGasPrice()).toNumber();
+
+      if (config.gmxV2UseMaxPriorityFeePerGas) gasPrice += maxPriorityFeePerGas;
+      gasPrice *= (1 + config.gmxV2GasPriceBuffer);
+      gasPrice += config.gmxV2GasPricePremium;
+
+
+      const deltaPrimeMultiplicator = 1.5;
+
+      return deltaPrimeMultiplicator * adjustedGasLimit * gasPrice / 10**18;
+    },
+
     async openAddFromWalletModal() {
       const modalInstance = this.openModal(AddFromWalletModal);
       modalInstance.asset = this.lpToken;
@@ -518,6 +556,8 @@ export default {
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
+      modalInstance.balancerLpBalances = this.balancerLpBalances;
+      modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.loan = this.debt;
@@ -561,6 +601,8 @@ export default {
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
       modalInstance.levelLpBalances = this.levelLpBalances;
+      modalInstance.balancerLpBalances = this.balancerLpBalances;
+      modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.farms = this.farms;
       modalInstance.health = this.health;
@@ -594,7 +636,7 @@ export default {
       modalInstance.slippageMargin = 0.1;
       modalInstance.sourceAsset = initSourceAsset;
       modalInstance.sourceAssetBalance = this.assetBalances[initSourceAsset];
-      modalInstance.assets = { ...this.assets, ...this.gmxV2Assets };
+      modalInstance.assets = { ...this.assets };
       modalInstance.sourceAssets = [this.lpToken.shortToken, this.lpToken.longToken];
       modalInstance.targetAssetsConfig = config.GMX_V2_ASSETS_CONFIG;
       modalInstance.targetAssets = [this.lpToken.symbol];
@@ -609,6 +651,8 @@ export default {
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
       modalInstance.levelLpBalances = this.levelLpBalances;
+      modalInstance.balancerLpBalances = this.balancerLpBalances;
+      modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
       modalInstance.targetAsset = this.lpToken.symbol;
       modalInstance.debt = this.fullLoanStatus.debt;
@@ -680,7 +724,7 @@ export default {
       modalInstance.sourceAsset = this.lpToken.symbol;
       modalInstance.sourceAssetBalance = this.gmxV2Balances[this.lpToken.symbol];
       modalInstance.sourceAssetsConfig = config.GMX_V2_ASSETS_CONFIG;
-      modalInstance.assets = { ...this.assets, ...this.gmxV2Assets };
+      modalInstance.assets = this.assets;
       modalInstance.sourceAssets = { GmxV2: [this.lpToken.symbol]} ;
       modalInstance.targetAssets = { GmxV2: [this.lpToken.longToken, this.lpToken.shortToken] };
       modalInstance.assetBalances = { ...this.assetBalances, ...this.gmxV2Balances };
@@ -694,6 +738,8 @@ export default {
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
       modalInstance.levelLpBalances = this.levelLpBalances;
+      modalInstance.balancerLpBalances = this.balancerLpBalances;
+      modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
       modalInstance.targetAsset = this.lpToken.longToken;
       modalInstance.debt = this.fullLoanStatus.debt;
@@ -761,10 +807,14 @@ export default {
         name: 'GMX V2',
         iconSrc: 'src/assets/logo/gmx.png',
         launchDate: moment(Date.parse('23 Nov 2022')).format('DD.MM.YYYY'),
-        introduction: '',
+        introduction: `GMX is the leading decentralized perpetual exchange available on Avalanche and Arbitrum allowing users to trade a number of different tokens with up to 50x leverage.<br><br>
+            It helped to pioneer the real yield narrative, sharing protocol revenue between GMX, the native token, and GLP, their innovative liquidity providing token. Now with GMX 2.0, protocol revenue is shared with GM minters.<br><br>
+            Since launch, it has attracted significant volume and liquidity, currently sitting in x position on [current chain] with $y in TVL. (NOTE: This should be changed based on the chain)`,
         banner: '',
         mainFeatures: [
-            'Perpetual Derivative Trading'
+          'Up to 50x leveraged synthetic trading',
+          'Simple swaps for standard exchanges',
+          'Strong focus on revenue sharing'
         ],
         securityMeasures: [
           {name: 'Upgradeability', state: 'ENABLED'},
@@ -775,8 +825,12 @@ export default {
           `},
           {name: 'Doxxed team', state: 'DISABLED', tooltip: `The team is anonymous and has not performed KYC <br>with the DeltaPrime team.<br><br>`},
         ],
-        chainImpact: '',
-        yieldCalculation: '',
+        chainImpact: `GMX has garnered significant attention since first launching, both for providing an excellent environment for traders to open leveraged positions, and for sharing significant protocol revenue with their liquidity providers.<br><br>
+        Where initially the vast majority of protocol fees went to GLP minters (those who provided an index of assets to GMX v1), this now goes to GM minters. GM are liquidity providing tokens for GMX’s new synthetics protocol, which, due to its design, has minimal price divergence (usually known as slippage).<br><br>
+        Through its popularity, GMX has attracted many new users as well as builders to both Avalanche and Arbitrum, significantly benefitting both chains over the past two years. GMX itself has since inception done over 130 billion dollars in volume.`,
+        yieldCalculation: `GM accrues 63% of the fees collected in the v2 markets, with the remaining 27% being distributed to GMX holders. GM yield consists of two numbers: Base APR and Bonus APR.<br><br>
+        The Base APR automatically compounds in the GM token itself. Where the value of GM is influenced by price-changes of the underlying assets, fees accumulated and counterparty PnL, the APR is influenced solely by the fees accumulated and counterparty PnL.<br><br>
+        The Bonus APR are incentives. Incentives from the STIP are airdropped weekly to your Prime Account.`,
         chartData: [{x: new Date(), y: 5}, {x: new Date(), y: 15}, {x: new Date(), y: 25}, {x: new Date(), y: 20}, {x: new Date(), y: 15}, {x: new Date(), y: 25}, {x: new Date(), y: 5}]
       }
     },
@@ -1037,6 +1091,16 @@ export default {
 
       &.apr, &.max-apr, &.tvl {
         align-items: flex-end;
+
+        .stars-icon {
+          width: 20px;
+          margin-left: 2px;
+          transform: translateY(-2px);
+        }
+      }
+
+      &.apr {
+        padding-right: 24px;
       }
 
       &.max-apr {
