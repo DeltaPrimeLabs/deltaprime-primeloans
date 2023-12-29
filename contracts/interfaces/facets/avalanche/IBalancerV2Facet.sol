@@ -5,8 +5,7 @@ import "../../balancer-v2/IBalancerV2Vault.sol";
 interface IBalancerV2Facet {
     struct UnstakeRequest {
         bytes32 poolId;
-        address unstakedToken;
-        uint256 unstakedAmount;
+        uint256[] unstakedAmounts;
         uint256 bptAmount;
     }
 

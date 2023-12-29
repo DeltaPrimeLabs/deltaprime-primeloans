@@ -197,11 +197,9 @@ describe('Smart loan', () => {
             await wrappedLoan.borrow(toBytes32("AVAX"), toWei("300"));
 
             let swapData = await getSwapData('AVAX', 18, 'yyAVAX', 18, toWei('50'));
-            await wrappedLoan.paraSwap(swapData.selector, swapData.data, TOKEN_ADDRESSES['AVAX'], toWei('50'), TOKEN_ADDRESSES['yyAVAX'], 0);
+            await wrappedLoan.paraSwapV2(swapData.selector, swapData.data, TOKEN_ADDRESSES['AVAX'], toWei('50'), TOKEN_ADDRESSES['yyAVAX'], 1);
             swapData = await getSwapData('AVAX', 18, 'ggAVAX', 18, toWei('50'));
-            await wrappedLoan.paraSwap(swapData.selector, swapData.data, TOKEN_ADDRESSES['AVAX'], toWei('50'), TOKEN_ADDRESSES['ggAVAX'], 0);
-            swapData = await getSwapData('AVAX', 18, 'sAVAX', 18, toWei('50'));
-            await wrappedLoan.paraSwap(swapData.selector, swapData.data, TOKEN_ADDRESSES['AVAX'], toWei('50'), TOKEN_ADDRESSES['sAVAX'], 0);
+            await wrappedLoan.paraSwapV2(swapData.selector, swapData.data, TOKEN_ADDRESSES['AVAX'], toWei('50'), TOKEN_ADDRESSES['ggAVAX'], 1);
 
             // transfer BPTs from whale address for testing
             await network.provider.request({
@@ -219,6 +217,17 @@ describe('Smart loan', () => {
             await tokenContracts.get('BAL_sAVAX_AVAX')!.connect(vault).transfer(owner.address, toWei("50"));
             await tokenContracts.get('BAL_sAVAX_AVAX')!.connect(owner).approve(wrappedLoan.address, toWei("50"));
             await wrappedLoan.fund(toBytes32("BAL_sAVAX_AVAX"), toWei("50"));
+
+            // transfer sAVAX from whale address for testing
+            await network.provider.request({
+                method: "hardhat_impersonateAccount",
+                params: ["0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE"],
+            });
+            vault = await ethers.provider.getSigner('0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE');
+
+            await tokenContracts.get('sAVAX')!.connect(vault).transfer(owner.address, toWei("50"));
+            await tokenContracts.get('sAVAX')!.connect(owner).approve(wrappedLoan.address, toWei("50"));
+            await wrappedLoan.fund(toBytes32("sAVAX"), toWei("50"));
         });
 
         it("should fail to stake as a non-owner", async () => {
@@ -249,8 +258,7 @@ describe('Smart loan', () => {
             await expect(nonOwnerWrappedLoan.unstakeAndExitPoolBalancerV2(
                 [
                     "0xc13546b97b9b1b15372368dc06529d7191081f5b00000000000000000000001d",
-                    "0xA25EaF2906FA1a3a13EdAc9B9657108Af7B703e3",
-                    toWei("9"), //max. slippage = 10%,
+                    [0, 0, 0],
                     await ggAvaxTokenContract.balanceOf(wrappedLoan.address)
                 ]
             )).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
@@ -358,8 +366,7 @@ describe('Smart loan', () => {
             await wrappedLoan.unstakeAndExitPoolBalancerV2(
                 [
                     "0xc13546b97b9b1b15372368dc06529d7191081f5b00000000000000000000001d",
-                    "0xA25EaF2906FA1a3a13EdAc9B9657108Af7B703e3",
-                    toWei("9"), //max. slippage = 10%,
+                    [0, 0, 0],
                     (await ggAvaxTokenContract.balanceOf(wrappedLoan.address)).sub(toWei("10"))
                 ]
             );
@@ -484,8 +491,7 @@ describe('Smart loan', () => {
             await wrappedLoan.unstakeAndExitPoolBalancerV2(
                 [
                     "0x9fa6ab3d78984a69e712730a2227f20bcc8b5ad900000000000000000000001f",
-                    "0xF7D9281e8e363584973F946201b82ba72C965D27",
-                    toWei("9"), //max. slippage = 10%,
+                    [0, 0, 0],
                     (await yyAvaxTokenContract.balanceOf(wrappedLoan.address)).sub(toWei("10"))
                 ]
             );
@@ -603,8 +609,7 @@ describe('Smart loan', () => {
             await wrappedLoan.unstakeAndExitPoolBalancerV2(
                 [
                     "0xfd2620c9cfcec7d152467633b3b0ca338d3d78cc00000000000000000000001c",
-                    "0x2b2c81e08f1af8835a78bb2a90ae924ace0ea4be",
-                    toWei("9"), //max. slippage = 10%,
+                    [0, 0, 0],
                     (await sAvaxTokenContract.balanceOf(wrappedLoan.address)).sub(toWei("10"))
                 ]
             );
