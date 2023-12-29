@@ -50,9 +50,7 @@
       The Arbitrum chain is fully congested resulting in failed transactions across apps. Please join our <a href='https://discord.gg/57EdDsvhxK' target='_blank'><b>Discord</b></a> to learn more
     </Banner>
 <!--    <Banner v-if="showAvalancheDepositorBanner" background="green-accent" :closable="true"></Banner>-->
-    <Banner v-if="showAvalanchePrimeAccountBanner || showArbitrumPrimeAccountBanner"  :closable="true">
-      APYs of underlying protocols are temporarily not available. Please find accurate APYs on that protocol’s website. This will be resolved today.
-    </Banner>
+<!--    <Banner v-if="showAvalanchePrimeAccountBanner" background="green-accent" :closable="true"></Banner>-->
     <div class="content">
       <div class="top-bar">
         <div class="top-bar__left-part">
@@ -159,7 +157,6 @@ export default {
       }
       if (window.location.href.includes('prime-account')) {
         this.remainingTime = getCountdownString(1695218400000);
-        this.showArbitrumPrimeAccountBanner = true;
       }
     }
 
@@ -168,7 +165,7 @@ export default {
         // this.showAvalancheDepositorBanner = true;
       }
       if (window.location.href.includes('prime-account')) {
-        this.showAvalanchePrimeAccountBanner = true;
+        // this.showAvalanchePrimeAccountBanner = true;
       }
     }
   },
@@ -280,7 +277,7 @@ export default {
       const resp = await fetch('https://gavax.blockscan.com/gasapi.ashx?apikey=key&method=gasoracle');
       const blockchainData = await resp.json();
 
-      // this.highGasPrice = parseInt(blockchainData.result.SafeGasPrice) > 150;
+      this.highGasPrice = parseInt(blockchainData.result.SafeGasPrice) > 150;
     },
 
     hasUnwindedGlp() {
