@@ -82,6 +82,7 @@ export default {
     ...mapState('fundsStore', [
         'apys',
         'smartLoanContract',
+        'assets',
         'gmxV2Balances',
         'gmxV2Assets',
     ]),
@@ -94,7 +95,7 @@ export default {
        'getCollateral'
     ]),
     gmBoostApy() {
-      return this.apys ? this.apys['GM_BOOST'].arbApy : 0;
+      return (this.apys && this.assets['ARB'] && this.assets['ARB'].price) ? this.apys['GM_BOOST'].arbApy * this.assets['ARB'].price : 0;
     },
     totalLeveragedGm() {
      let apy = this.apys ? this.apys['GM_BOOST'].arbApy : 0;

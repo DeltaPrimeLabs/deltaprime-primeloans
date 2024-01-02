@@ -270,8 +270,9 @@ export default {
     },
 
     gmBoost() {
-      if (!this.apys) return;
-      return this.hasGmIncentives ? 4.5 * this.apys['GM_BOOST'].arbApy : 0;
+      if (!this.apys || !this.assets['ARB'] || !this.assets['ARB'].price) return;
+      let apy = this.apys['GM_BOOST'].arbApy * this.assets['ARB'].price;
+      return this.hasGmIncentives ? 4.5 * apy : 0;
     },
 
     hasGmIncentives() {
