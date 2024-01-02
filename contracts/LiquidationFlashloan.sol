@@ -157,8 +157,12 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
                 // There was enough of `assetSurplus[j].amount` to swap for `assetDeficit[i].amount` and potentially even a bit more; namely `remainDeficitAmount` more.
                 // We send it to the liquidator if `remainDeficitAmount` > 0
                 if (deficitPaidInFull && remainDeficitAmount > 0) {
-                  address(assetDeficit[i].asset).safeTransfer(
-                    lep.liquidator,
+//                  address(assetDeficit[i].asset).safeTransfer(
+//                    lep.liquidator,
+//                    remainDeficitAmount
+//                  );
+                  assetSurplus[i] = AssetAmount(
+                    assetDeficit[i].asset,
                     remainDeficitAmount
                   );
                 }
@@ -337,7 +341,7 @@ contract LiquidationFlashloan is FlashLoanReceiverBase, Ownable {
 
     IYieldYakRouter.Trade memory trade = IYieldYakRouter.Trade({
       amountIn: amountIn,
-      amountOut: expectedBuyTokenReturned * 92 / 100,
+      amountOut: 0,
       path: _offer.path,
       adapters: _offer.adapters
     });
