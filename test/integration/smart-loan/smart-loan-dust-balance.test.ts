@@ -1,14 +1,14 @@
-import { ethers, waffle } from "hardhat";
-import chai, { expect } from "chai";
-import { solidity } from "ethereum-waffle";
-import { parseUnits } from "ethers/lib/utils";
+import {ethers, waffle} from "hardhat";
+import chai, {expect} from "chai";
+import {solidity} from "ethereum-waffle";
+import {parseUnits} from "ethers/lib/utils";
 
 import SmartLoansFactoryArtifact from "../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json";
 import MockTokenManagerArtifact from "../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json";
 import AddressProviderArtifact from '../../../artifacts/contracts/AddressProvider.sol/AddressProvider.json';
 import PrimeDexArtifact from '../../../artifacts/contracts/PrimeDex.sol/PrimeDex.json';
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { WrapperBuilder } from "@redstone-finance/evm-connector";
+import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
+import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import TOKEN_ADDRESSES from "../../../common/addresses/avax/token_addresses.json";
 import {
     addMissingTokenContracts,
@@ -28,7 +28,7 @@ import {
     toBytes32,
     toWei,
 } from "../../_helpers";
-import { syncTime } from "../../_syncTime";
+import {syncTime} from "../../_syncTime";
 import {
     AddressProvider,
     PrimeDex,
@@ -37,13 +37,13 @@ import {
     SmartLoansFactory,
     PangolinIntermediary,
 } from "../../../typechain";
-import { deployDiamond } from "../../../tools/diamond/deploy-diamond";
-import { getProvider } from "../../../tools/liquidation/utlis";
-import { Contract, BigNumber } from "ethers";
+import {deployDiamond} from "../../../tools/diamond/deploy-diamond";
+import {getProvider} from "../../../tools/liquidation/utlis";
+import {Contract, BigNumber} from "ethers";
 
 chai.use(solidity);
 
-const { deployContract } = waffle;
+const {deployContract} = waffle;
 const pangolinRouterAddress = "0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106";
 
 const args = require("yargs").argv;
@@ -62,6 +62,7 @@ describe("Smart loan", () => {
             primeDex: PrimeDex,
             wrappedLoan: any,
             nonOwnerWrappedLoan: any,
+            dynamicNameMapping: NameMapping = {},
             owner: SignerWithAddress,
             nonOwner: SignerWithAddress,
             depositor: SignerWithAddress,
@@ -79,7 +80,7 @@ describe("Smart loan", () => {
 
                 let assetsList = ["AVAX", "USDC", "USDT", "ETH"];
                 let poolNameAirdropList: Array<PoolInitializationObject> = [
-                    { name: "AVAX", airdropList: [depositor] },
+                    {name: "AVAX", airdropList: [depositor]},
                 ];
 
                 smartLoansFactory = (await deployContract(
@@ -172,6 +173,43 @@ describe("Smart loan", () => {
             }
         );
 
+        interface NameMapping {
+            [name: string]: string;
+        }
+
+        interface BalanceCache {
+            [address: string]: ethers.BigNumber;
+        }
+
+        let balanceCache: BalanceCache = {};
+
+        async function logERC20Balances(
+            tokenNames: string[],
+            accountAddresses: string[],
+            nameMapping: NameMapping = {},
+            dynamicNameMapping: NameMapping = {}
+        ) {
+            console.log('======== BALANCES ========')
+            for (const account of accountAddresses) {
+                const accountName = dynamicNameMapping[account] || account;
+                console.log(`\nAccount: ${accountName} (${account})`);
+                for (const tokenName of tokenNames) {
+                    const token = nameMapping[tokenName];
+                    const tokenContract = await ethers.getContractAt("IERC20Metadata", token);
+                    const decimals = await tokenContract.decimals();
+                    const balance = await tokenContract.balanceOf(account);
+                    const formattedBalance = ethers.utils.formatUnits(balance, decimals);
+                    const cacheKey = `${account}-${token}`;
+                    const oldBalance = balanceCache[cacheKey] || ethers.BigNumber.from(0);
+                    const delta = balance.sub(oldBalance);
+                    const formattedDelta = ethers.utils.formatUnits(delta, decimals);
+                    balanceCache[cacheKey] = balance;
+                    console.log(`Token: ${tokenName} (${token}), Balance: ${formattedBalance}, Delta: ${formattedDelta}`);
+                }
+            }
+            console.log('==========================')
+        }
+
         it("should deploy a smart loan", async () => {
             await smartLoansFactory.connect(owner).createLoan();
 
@@ -199,25 +237,31 @@ describe("Smart loan", () => {
                     mockSignersCount: 10,
                     dataPoints: MOCK_PRICES,
                 });
+
+            dynamicNameMapping[wrappedLoan.address] = 'WrappedLoan';
+            dynamicNameMapping[primeDex.address] = 'PrimeDex';
         });
 
         it("should fund and transfer target asset to converter contract", async () => {
+            // Fund PrimeAccount with 300 WAVAX
             await tokenContracts
                 .get("AVAX")!
                 .connect(owner)
-                .deposit({ value: toWei("300") });
+                .deposit({value: toWei("300")});
             await tokenContracts
                 .get("AVAX")!
                 .connect(owner)
                 .approve(wrappedLoan.address, toWei("300"));
             await wrappedLoan.fund(toBytes32("AVAX"), toWei("300"));
+            // =======
+
 
             const usdcAmount = parseUnits("600", BigNumber.from("6"));
             const amountSwapped = toWei("50");
             await tokenContracts
                 .get("AVAX")!
                 .connect(depositor)
-                .deposit({ value: amountSwapped });
+                .deposit({value: amountSwapped});
             await tokenContracts
                 .get("AVAX")!
                 .connect(depositor)
@@ -240,9 +284,9 @@ describe("Smart loan", () => {
                 .connect(depositor)
                 .transfer(primeDex.address, usdcAmount);
 
-            await wrappedLoan.swapPangolin(toBytes32("AVAX"), toBytes32("ETH"), toWei("0.8"), 0);
-            await wrappedLoan.swapPangolin(toBytes32("AVAX"), toBytes32("USDT"), toWei("0.6"), 0);
-            await wrappedLoan.swapPangolin(toBytes32("AVAX"), toBytes32("USDC"), toWei("0.4"), 0);
+            await wrappedLoan.swapPangolin(toBytes32("AVAX"), toBytes32("ETH"), toWei("0.3"), 0);
+            await wrappedLoan.swapPangolin(toBytes32("AVAX"), toBytes32("USDT"), toWei("0.35"), 0);
+            await wrappedLoan.swapPangolin(toBytes32("AVAX"), toBytes32("USDC"), toWei("0.38"), 0);
         });
 
         it("should fail to convert dust as a non-owner", async () => {
@@ -256,7 +300,23 @@ describe("Smart loan", () => {
             let initialHR = await wrappedLoan.getHealthRatio();
             let initialTWV = await wrappedLoan.getThresholdWeightedValue();
 
+            // @ts-ignore
+            await logERC20Balances(
+                ['USDC', 'USDT', 'AVAX', 'ETH'],
+                [wrappedLoan.address, primeDex.address],
+                TOKEN_ADDRESSES,
+                dynamicNameMapping
+            );
+
             await wrappedLoan.convertDustAssets();
+
+            // @ts-ignore
+            await logERC20Balances(
+                ['USDC', 'USDT', 'AVAX', 'ETH'],
+                [wrappedLoan.address, primeDex.address],
+                TOKEN_ADDRESSES,
+                dynamicNameMapping
+            );
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 0.01);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.eq(fromWei(initialHR));

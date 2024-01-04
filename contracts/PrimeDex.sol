@@ -39,6 +39,8 @@ contract PrimeDex is Ownable, ReentrancyGuard {
         IPrimeDex.AssetInfo memory targetAsset,
         uint256 targetPrice
     ) external returns (uint256 returnAmount) {
+        require(smartLoanFactory.canBorrow(msg.sender), "Unauthorized");
+
         uint256 length = assets.length;
 
         IERC20Metadata target = IERC20Metadata(targetAsset.asset);

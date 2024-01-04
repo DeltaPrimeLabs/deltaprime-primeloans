@@ -306,7 +306,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
         uint256 returnAmount = primeDex.convert(
             dustAssets,
-            balances,
+            dustAssetAmounts,
             dustAssetsPrices,
             targetAsset,
             targetPrice
