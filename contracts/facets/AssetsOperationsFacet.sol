@@ -143,6 +143,8 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         emit Borrowed(msg.sender, _asset, _amount, block.timestamp);
     }
 
+    // TODO: Add functions for repaying the protocol fee and referral fee
+    // TODO: Repaying protocol fees will be pretty straightforward, but repaying referral fees will require usage of the PrimeDEX
 
     /**
      * Repays funds to the pool
@@ -158,6 +160,8 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         }
 
         Pool pool = Pool(DeploymentConstants.getTokenManager().getPoolAddress(_asset));
+
+        // TODO: add assertions for referral and protocol fees to be paid first
 
         _amount = Math.min(_amount, token.balanceOf(address(this)));
         _amount = Math.min(_amount, pool.getBorrowed(address(this)));

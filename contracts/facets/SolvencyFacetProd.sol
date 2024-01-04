@@ -250,7 +250,8 @@ abstract contract SolvencyFacetProd is RedstoneConsumerNumericBase, DiamondHelpe
         for(uint i; i< poolAssets.length; i++) {
             Pool pool = Pool(DeploymentConstants.getTokenManager().getPoolAddress(poolAssets[i]));
             IERC20 token = IERC20(pool.tokenAddress());
-            if(token.balanceOf(address(this)) < pool.getBorrowed(address(this))) {
+            if( token.balanceOf(address(this)) < pool.getBorrowedWithFees(address(this))
+            ) {
                 return false;
             }
         }
@@ -359,7 +360,7 @@ abstract contract SolvencyFacetProd is RedstoneConsumerNumericBase, DiamondHelpe
 
             Pool pool = Pool(tokenManager.getPoolAddress(debtAssetsPrices[i].asset));
             //10**18 (wei in eth) / 10**8 (precision of oracle feed) = 10**10
-            debt = debt + pool.getBorrowed(address(this)) * debtAssetsPrices[i].price * 10 ** 10
+            debt = debt + pool.getBorrowedWithFees(address(this)) * debtAssetsPrices[i].price * 10 ** 10
             / 10 ** token.decimals();
         }
 

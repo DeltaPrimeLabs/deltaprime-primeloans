@@ -44,6 +44,113 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
     uint8 internal _decimals;
 
+    // Referral program block
+
+    // STORAGE VARIABLES
+    uint256 public referralBorrowingFee;
+    uint256 public noReferralProtocolBorrowingFee;
+    uint256 public referralProtocolBorrowingFee;
+    address public protocolFeeReceiver;
+
+    mapping(address => uint256) public referralFee;
+    mapping(address => uint256) public protocolFee;
+
+
+    // SETTERS
+
+    /**
+     * Sets the new Pool fee receiver.
+     * Only the owner of the Contract can execute this function.
+     * @dev _receiver the address of ProtocolFeeReceiver
+    **/
+    function setProtocolFeeReceiver(address _receiver) external onlyOwner {
+        protocolFeeReceiver = _receiver;
+
+        emit ProtocolFeeReceiverChanged(_receiver, block.timestamp);
+    }
+
+    /**
+     * Sets the additional fee percentage that goes to the referrer
+     * Only the owner of the Contract can execute this function.
+     * @dev _borrowingFee new fee
+    **/
+    function setReferralBorrowingFee(uint256 _borrowingFee) external onlyOwner {
+        if (_borrowingFee > 1e18) revert WrongFee(_borrowingFee);
+        referralBorrowingFee = _borrowingFee;
+    }
+
+    /**
+     * Sets the additional fee percentage that goes to the protocol
+     * Only the owner of the Contract can execute this function.
+     * @dev _borrowingFee new fee
+    **/
+    function setReferralProtocolBorrowingFee(uint256 _borrowingFee) external onlyOwner {
+        if (_borrowingFee > 1e18) revert WrongFee(_borrowingFee);
+        referralProtocolBorrowingFee = _borrowingFee;
+    }
+
+    // GETTERS
+
+    /**
+     * Returns the current borrowed amount with fees for the given user
+     * The value includes the interest rates owned at the current moment
+     * @dev _user the address of queried borrower
+    **/
+    function getBorrowedWithFees(address _user) public view returns (uint256) {
+        return getBorrowed(_user) + referralFee[_user] + protocolFee[_user];
+    }
+
+    /**
+     * Returns the current interest rate for borrowings for referees
+     **/
+    function getBorrowingRateWithReferralFee() public view returns (uint256) {
+        //TODO: check if it's correct
+        return ratesCalculator.calculateBorrowingRate(totalBorrowed(), totalSupply()) + referralBorrowingFee + referralProtocolBorrowingFee;
+    }
+
+    /**
+     * Returns the current interest rate for borrowings including protocol fee
+     **/
+    function getBorrowingRateWithNoReferralFee() public view returns (uint256) {
+        //TODO: check if it's correct
+        return ratesCalculator.calculateBorrowingRate(totalBorrowed(), totalSupply()) + noReferralProtocolBorrowingFee;
+    }
+
+    // MUTATIVE FUNCTIONS
+
+    /**
+        * Repays the amount
+        * It updates user borrowed balance, total borrowed amount and rates
+        * @dev It is only meant to be used by a SmartLoanDiamondProxy, enforced by the canBorrow modifier
+    **/
+    function _repayOtherUser(address user, uint256 amount) internal canBorrow nonReentrant {
+        require(ISmartLoanViewFacet(msg.sender).getReferrer() == user, "Not a referrer");
+
+        _accumulateBorrowingInterest(user);
+
+        if(amount > borrowed[user]) revert RepayingMoreThanWasBorrowed();
+        _transferToPool(msg.sender, amount);
+
+        borrowed[user] -= amount;
+        borrowed[address(this)] -= amount;
+
+        _updateRates();
+
+        emit Repayment(user, amount, block.timestamp);
+    }
+
+    // End of referral program block
+
+    /**
+     * Sets the additional fee percentage that goes to the protocol
+     * Only the owner of the Contract can execute this function.
+     * @dev _borrowingFee new fee
+    **/
+    function setNoReferralProtocolBorrowingFee(uint256 _borrowingFee) external onlyOwner {
+        if (_borrowingFee > 1e18) revert WrongFee(_borrowingFee);
+        noReferralProtocolBorrowingFee = _borrowingFee;
+    }
+
 
     function initialize(IRatesCalculator ratesCalculator_, IBorrowersRegistry borrowersRegistry_, IIndex depositIndex_, IIndex borrowIndex_, address payable tokenAddress_, IPoolRewarder poolRewarder_, uint256 _totalSupplyCap) public initializer {
         require(AddressUpgradeable.isContract(address(ratesCalculator_))
@@ -332,12 +439,39 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         emit Borrowing(msg.sender, _amount, block.timestamp);
     }
 
+    function payProtocolFee() external canBorrow nonReentrant {
+        if(protocolFeeReceiver == address(0)) revert ProtocolFeeReceiverNotSet();
+        require(protocolFee[msg.sender] > 0, "No protocol fee to pay");
+        require(IERC20Metadata(tokenAddress).balanceOf(msg.sender) >= protocolFee[msg.sender], "Insufficient funds");
+        require(IERC20Metadata(tokenAddress).allowance(msg.sender, address(this)) >= protocolFee[msg.sender], "Insufficient allowance");
+        tokenAddress.safeTransferFrom(msg.sender, protocolFeeReceiver, protocolFee[msg.sender]);
+        emit ProtocolFeePaid(msg.sender, protocolFee[msg.sender], block.timestamp);
+
+        protocolFee[msg.sender] = 0;
+    }
+
+    function payReferralFee() external canBorrow nonReentrant {
+        // TODO: Source refferal preferred tokenAddress from referral PrimeAccount
+        // TODO: Add amount of preferred token that corresponds to dollar value of referral fee
+
+        require(referralFee[msg.sender] > 0, "No referral fee to pay");
+        require(IERC20Metadata(tokenAddress).balanceOf(msg.sender) >= referralFee[msg.sender], "Insufficient funds");
+        require(IERC20Metadata(tokenAddress).allowance(msg.sender, address(this)) >= referralFee[msg.sender], "Insufficient allowance");
+        tokenAddress.safeTransferFrom(msg.sender, borrowersRegistry.getReferrer(msg.sender), referralFee[msg.sender]);
+        emit ReferralFeePaid(msg.sender, referralFee[msg.sender], block.timestamp);
+
+        referralFee[msg.sender] = 0;
+    }
+
     /**
      * Repays the amount
      * It updates user borrowed balance, total borrowed amount and rates
      * @dev It is only meant to be used by a SmartLoanDiamondProxy
      **/
     function repay(uint256 amount) external nonReentrant {
+        require(protocolFee[msg.sender] == 0, "Protocol fee must be paid first");
+        require(referralFee[msg.sender] == 0, "Referral fee must be paid first");
+
         _accumulateBorrowingInterest(msg.sender);
 
         if(amount > borrowed[msg.sender]) revert RepayingMoreThanWasBorrowed();
@@ -514,8 +648,16 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     }
 
     function _accumulateBorrowingInterest(address user) internal {
-        borrowed[user] = getBorrowed(user);
+        uint256 accumulatedInterest = getBorrowed(user) - borrowed[user];
+        borrowed[user] += accumulatedInterest;
         borrowed[address(this)] = getBorrowed(address(this));
+
+        if (ISmartLoanViewFacet(user).getReferrer() != address(0)) {
+            referralFee[user] += referralBorrowingFee * accumulatedInterest / 1e18;
+            protocolFee[user] += referralProtocolBorrowingFee * accumulatedInterest / 1e18;
+        } else {
+            protocolFee[user] += noReferralProtocolBorrowingFee * accumulatedInterest / 1e18;
+        }
 
         borrowIndex.updateUser(user);
         borrowIndex.updateUser(address(this));
@@ -594,6 +736,13 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     event BorrowersRegistryChanged(address indexed registry, uint256 timestamp);
 
     /**
+    * @dev emitted after changing protocol fee receiver
+    * @param receiver an address of the newly set receiver
+    * @param timestamp of the receiver change
+    **/
+    event ProtocolFeeReceiverChanged(address indexed receiver, uint256 timestamp);
+
+    /**
     * @dev emitted after changing rates calculator
     * @param calculator an address of the newly set rates calculator
     * @param timestamp of the borrowers registry change
@@ -613,6 +762,11 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     * @param timestamp of the distributor change
     **/
     event VestingDistributorChanged(address indexed distributor, uint256 timestamp);
+
+
+    event ProtocolFeeReceiverNotSet();
+
+    event ProtocolFeePaid(address indexed user, uint256 amount, uint256 timestamp);
 
     /* ========== ERRORS ========== */
 
@@ -674,4 +828,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
     // getMaxPoolUtilisationForBorrowing was breached
     error MaxPoolUtilisationBreached();
+
+    // trying to set incorrect fee value
+    error WrongFee(uint256 fee);
 }
