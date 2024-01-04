@@ -528,7 +528,7 @@ export default {
           const maxHops = 3;
           const gasPrice = ethers.utils.parseUnits('0', 'gwei');
 
-          const MAX_TRY_AMOUNT = 10;
+          const MAX_TRY_AMOUNT = 20;
 
           let i = 0;
           let targetBorrowedAmount = amountOut;
