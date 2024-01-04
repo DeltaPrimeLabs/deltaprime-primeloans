@@ -416,6 +416,7 @@ export default {
           this.adapters = queryResponse.adapters;
           this.updateSlippageWithAmounts(parseFloat(formatUnits(estimated, BigNumber.from(this.targetAssetData.decimals))));
         } else {
+          this.calculatingSwapRoute = false;
           if (queryResponse.dex === 'PARA_SWAP') {
             estimated = queryResponse.amounts[queryResponse.amounts.length - 1];
             this.paraSwapRate = queryResponse.swapRate;
