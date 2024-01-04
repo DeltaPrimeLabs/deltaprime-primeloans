@@ -1,0 +1,29 @@
+{
+  "arbitrum": {
+    "GM_ETH_WETH_USDC": {
+      "name": "ETH-USDC",
+      "symbol": "GM_ETH_WETH_USDC",
+      "decimals": 18
+    },
+    "GM_BTC_WBTC_USDC": {
+      "name": "BTC-USDC",
+      "symbol": "GM_BTC_WBTC_USDC",
+      "decimals": 18
+    },
+    "GM_ARB_ARB_USDC": {
+      "name": "ARB-USDC",
+      "symbol": "GM_ARB_ARB_USDC",
+      "decimals": 18
+    },
+    "GM_UNI_UNI_USDC": {
+      "name": "UNI-USDC",
+      "symbol": "GM_UNI_UNI_USDC",
+      "decimals": 18
+    },
+    "GM_LINK_LINK_USDC": {
+      "name": "LINK-USDC",
+      "symbol": "GM_LINK_LINK_USDC",
+      "decimals": 18
+    }
+  }
+}

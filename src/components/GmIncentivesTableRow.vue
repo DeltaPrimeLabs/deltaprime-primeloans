@@ -41,7 +41,7 @@ import WithdrawModal from './WithdrawModal';
 
 const ethers = require('ethers');
 import erc20ABI from '../../test/abis/ERC20.json';
-import GM_DISTRIBUTED from '../data/arbitrum/GM_EPOCH_2.json';
+import GM_DISTRIBUTED from '../data/arbitrum/GM_EPOCH_3.json';
 import {calculateMaxApy, fromWei} from '../utils/calculate';
 import addresses from '../../common/addresses/avalanche/token_addresses.json';
 import {formatUnits, parseUnits} from 'ethers/lib/utils';
@@ -82,6 +82,7 @@ export default {
     ...mapState('fundsStore', [
         'apys',
         'smartLoanContract',
+        'assets',
         'gmxV2Balances',
         'gmxV2Assets',
     ]),
@@ -94,7 +95,7 @@ export default {
        'getCollateral'
     ]),
     gmBoostApy() {
-      return this.apys ? this.apys['GM_BOOST'].arbApy : 0;
+      return (this.apys && this.assets['ARB'] && this.assets['ARB'].price) ? this.apys['GM_BOOST'].arbApy * this.assets['ARB'].price : 0;
     },
     totalLeveragedGm() {
      let apy = this.apys ? this.apys['GM_BOOST'].arbApy : 0;

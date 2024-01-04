@@ -100,7 +100,7 @@ const uploadLiveLoansStatusAvalanche = async () => {
 
 exports.saveLiveLoansStatusAvalanche = functions
   .runWith({ timeoutSeconds: 500, memory: "2GB" })
-  .pubsub.schedule('*/5 * * * *')
+  .pubsub.schedule('0 5 * * *')
   .onRun(async (context) => {
     functions.logger.info("Getting Loans Status.");
     return uploadLiveLoansStatusAvalanche()

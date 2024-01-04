@@ -165,6 +165,7 @@ import {constructSimpleSDK, ContractMethod, SwapSide} from '@paraswap/sdk';
 import axios from 'axios';
 import TradingViewChart from "./TradingViewChart.vue";
 import Toggle from "./Toggle.vue";
+import {BigNumber} from "ethers";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -527,12 +528,13 @@ export default {
           const maxHops = 3;
           const gasPrice = ethers.utils.parseUnits('0', 'gwei');
 
-          const MAX_TRY_AMOUNT = 10;
+          const MAX_TRY_AMOUNT = 20;
 
           let i = 0;
           let targetBorrowedAmount = amountOut;
 
           while (i < MAX_TRY_AMOUNT) {
+            console.log(i);
             try {
               let path = await yakRouter.findBestPathWithGas(
                   targetBorrowedAmount,

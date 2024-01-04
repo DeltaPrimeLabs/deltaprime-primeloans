@@ -31,7 +31,13 @@ provider:
     LOAN_AVA_TABLE: loans-ava-${opt:stage, "dev"}
     LOAN_ARB_TABLE: loans-arb-${opt:stage, "dev"}
     APY_TABLE: apys-${opt:stage, "dev"}
+    GMX_INCENTIVES_ARB_TABLE: gmx-incentives-arb-${opt:stage, "dev"}
+    GM_OPEN_INTEREST_TABLE: gm-open-interest-${opt:stage, "dev"}
     TJ_API_KEY: ${file(./.secrets/traderJoe.json):apiKey}
+    FUNC_RPC_AVA: ${file(./.secrets/funcRpc.json):avalanche}
+    FUNC_RPC_ARB: ${file(./.secrets/funcRpc.json):arbitrum}
+    EXT_RPC_AVA: ${file(./.secrets/extRpc.json):avalanche}
+    EXT_RPC_ARB: ${file(./.secrets/extRpc.json):arbitrum}
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -48,20 +54,20 @@ provider:
 #    variable1: value1
 
 functions:
-  sPrimeCalculatorAva:
-    handler: sPrime/sPrimeCalculatorAva.handler
-    memorySize: 1024
-    timeout: 600
-    description: Calculate sPRIME Value for depositors on Avalanche.
-    events:
-      - schedule: rate(5 minutes)
-  sPrimeCalculatorArb:
-    handler: sPrime/sPrimeCalculatorArb.handler
-    memorySize: 1024
-    timeout: 600
-    description: Calculate sPRIME Value for depositors on Arbitrum.
-    events:
-      - schedule: rate(5 minutes)
+  # sPrimeCalculatorAva:
+  #   handler: sPrime/sPrimeCalculatorAva.handler
+  #   memorySize: 1024
+  #   timeout: 600
+  #   description: Calculate sPRIME Value for depositors on Avalanche.
+  #   events:
+  #     - schedule: rate(5 minutes)
+  # sPrimeCalculatorArb:
+  #   handler: sPrime/sPrimeCalculatorArb.handler
+  #   memorySize: 1024
+  #   timeout: 600
+  #   description: Calculate sPRIME Value for depositors on Arbitrum.
+  #   events:
+  #     - schedule: rate(5 minutes)
   sPrimeAggregator:
     handler: apis/sPrimeValue.sPrimeAggregator
     memorySize: 512
@@ -148,6 +154,27 @@ functions:
     description: Fetch GM token APYs from GMX website.
     events:
       - schedule: rate(2 minutes)
+  balanerApyAggregator:
+    handler: aggregators/apy.balanerApyAggregator
+    memorySize: 2048
+    timeout: 300
+    description: Fetch pool APYs from Balancer website.
+    events:
+      - schedule: rate(2 minutes)
+  assetStakingApyAggregator:
+    handler: aggregators/apy.assetStakingApyAggregator
+    memorySize: 2048
+    timeout: 300
+    description: Fetch staking APYs of various assets.
+    events:
+      - schedule: rate(2 minutes)
+  gmOpenInterestAggregator:
+    handler: gmOpenInterest/gmOpenInterestAggregator.handler
+    memorySize: 2048
+    timeout: 300
+    description: fetch Open Interests of GM pool.
+    events:
+      - schedule: rate(3 hours)
   # loanAggregatorAva:
   #   handler: aggregators/loan.loanAggregatorAva
   #   memorySize: 1024
@@ -170,6 +197,37 @@ functions:
       - httpApi:
           method: get
           path: /traderjoe/rewards/claimable
+  gmxIncentivesCalculatorArb:
+    handler: gmxIncentives/gmxIncentivesCalculatorArb.handler
+    memorySize: 1024
+    timeout: 600
+    description: Calculate incentives for loans on Arbitrum.
+    events:
+      - schedule: rate(10 minutes)
+  getGmxIncentivesApi:
+    handler: apis/gmxIncentives.getGmxIncentivesApi
+    memorySize: 512
+    description: Fetch GMX incentives values for a loan
+    events:
+      - httpApi:
+          method: get
+          path: /gmx-incentives/{id}
+  getGmBoostApyApi:
+    handler: apis/gmxIncentives.getGmBoostApyApi
+    memorySize: 512
+    description: Fetch GM Boost APY
+    events:
+      - httpApi:
+          method: get
+          path: /gm-boost-apy
+  getGmOpenInterestsApi:
+    handler: apis/gmOpenInterests.getGmOpenInterestsApi
+    memorySize: 512
+    description: Fetch Open Interest of GM pools
+    events:
+      - httpApi:
+          method: get
+          path: /gm-open-interests
 
 resources:
   Resources:
@@ -205,6 +263,54 @@ resources:
         StreamSpecification:
           StreamViewType: "NEW_AND_OLD_IMAGES"
         TableName: ${self:provider.environment.SPRIME_ARB_TABLE}
+    gmxIncentivesArbTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: "id"
+            AttributeType: "S"
+        KeySchema:
+          -
+            AttributeName: "id"
+            KeyType: "HASH"
+        BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: "NEW_AND_OLD_IMAGES"
+        TableName: ${self:provider.environment.GMX_INCENTIVES_ARB_TABLE}
+    ApysTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: "id"
+            AttributeType: "S"
+        KeySchema:
+          -
+            AttributeName: "id"
+            KeyType: "HASH"
+        BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: "NEW_AND_OLD_IMAGES"
+        TableName: ${self:provider.environment.APY_TABLE}
+    gmOpenInterestTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: "id"
+            AttributeType: "S"
+        KeySchema:
+          -
+            AttributeName: "id"
+            KeyType: "HASH"
+        BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: "NEW_AND_OLD_IMAGES"
+        TableName: ${self:provider.environment.GM_OPEN_INTEREST_TABLE}
     # loansAvaTable:
     #   Type: AWS::DynamoDB::Table
     #   DeletionPolicy: Retain
@@ -241,20 +347,4 @@ resources:
     #     StreamSpecification:
     #       StreamViewType: "NEW_AND_OLD_IMAGES"
     #     TableName: ${self:provider.environment.LOAN_ARB_TABLE}
-    ApysTable:
-      Type: AWS::DynamoDB::Table
-      DeletionPolicy: Retain
-      Properties:
-        AttributeDefinitions:
-          -
-            AttributeName: "id"
-            AttributeType: "S"
-        KeySchema:
-          -
-            AttributeName: "id"
-            KeyType: "HASH"
-        BillingMode: PAY_PER_REQUEST
-        StreamSpecification:
-          StreamViewType: "NEW_AND_OLD_IMAGES"
-        TableName: ${self:provider.environment.APY_TABLE}
 

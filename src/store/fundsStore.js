@@ -1050,7 +1050,10 @@ export default {
           for (let [symbol, asset] of Object.entries(balancerLpAssets)) {
             // we don't use getApy method anymore, but fetch APYs from db
             if (apys[symbol] && apys[symbol].lp_apy) {
-              balancerLpAssets[symbol].apy = apys[symbol].lp_apy * 100;
+              //TODO: correct in AWS
+              let appreciation = (apys[asset.primary] && apys[asset.primary].apy) || (apys[asset.secondary] && apys[asset.secondary].apy);
+
+              balancerLpAssets[symbol].apy = (apys[symbol].lp_apy - appreciation / 2 / 100) * 100;
             }
           }
         }
@@ -1625,7 +1628,7 @@ export default {
       const secondDecimals = config.ASSETS_CONFIG[provideLiquidityRequest.secondAsset].decimals;
       const lpTokenDecimals = config.LP_ASSETS_CONFIG[provideLiquidityRequest.symbol].decimals;
 
-      let minAmount = 0.9;
+      let minAmount = 0.99;
 
       const loanAssets = mergeArrays([(
         await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
@@ -1764,7 +1767,7 @@ export default {
       firstAmountWei = firstAmountWei.gt(firstBalance) ? firstBalance : firstAmountWei;
       secondAmountWei = secondAmountWei.gt(secondBalance) ? secondBalance : secondAmountWei;
 
-      let minAmount = 0.95;
+      let minAmount = 0.99;
       let gaugeDecimals = config.BALANCER_LP_ASSETS_CONFIG[provideLiquidityRequest.symbol].decimals;
       let minGaugeAmountWei = parseUnits((parseFloat(provideLiquidityRequest.addedLiquidity) * minAmount).toFixed(gaugeDecimals), gaugeDecimals);
 
@@ -1853,16 +1856,16 @@ export default {
       let amountWei = toWei(removeLiquidityRequest.amount);
       amountWei = amountWei.gt(gaugeBalance) ? gaugeBalance : amountWei;
 
+      let minTargetReceived = removeLiquidityRequest.isFirstUnstaked ? removeLiquidityRequest.minReceivedFirst : removeLiquidityRequest.minReceivedSecond;
       //TODO: now the logic is simplified so we always unstake to the first asset
-      let minReceivedFirstAmount = 0.95;
-      let minReceivedFirstAmountWei = parseUnits((parseFloat(removeLiquidityRequest.minReceivedFirst) * minReceivedFirstAmount).toFixed(targetAssetDecimals), targetAssetDecimals);
+      let minReceivedWei = parseUnits((parseFloat(minTargetReceived)).toFixed(targetAssetDecimals), targetAssetDecimals);
 
       const transaction = await wrappedContract.unstakeAndExitPoolBalancerV2(
           [
             removeLiquidityRequest.poolId,
             config.ASSETS_CONFIG[removeLiquidityRequest.targetAsset].address,
             //TODO: slippage
-            minReceivedFirstAmountWei,
+            minReceivedWei,
             amountWei
           ]
       );
@@ -2050,6 +2053,36 @@ export default {
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {
         rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, config.refreshDelay);
+    },
+
+    async claimRewardsBalancerV2({state, rootState, dispatch}, {claimRequest}) {
+      console.log('claimRewardsBalancerV2')
+      const provider = rootState.network.provider;
+
+      const loanAssets = mergeArrays([(
+          await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG)
+      ]);
+
+      const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
+
+      const transaction = await wrappedContract.claimRewardsBalancerV2(claimRequest.poolId);
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      const tx = await awaitConfirmation(transaction, provider, 'claim Balancer rewards');
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+        const lpService = rootState.serviceRegistry.lpService;
+        lpService.emitRefreshLp('BALANCER_V2_REWARDS_CLAIMED');
       }, SUCCESS_DELAY_AFTER_TRANSACTION);
 
       setTimeout(async () => {

@@ -168,10 +168,8 @@ const sPrimeCalculator = async (event) => {
 
             const userDepositInUsd = tokenPrice * sPrimeValue[depositor.id][transfer.tokenSymbol].total;
 
-            if (transfer.timestamp > 1693756800) {
-              const newValue = (timeInterval < 0 ? 0 : timeInterval) / 31536000 * (prevApr * userDepositInUsd);
-              sPrimeValue[depositor.id][transfer.tokenSymbol].sPrime = Number(sPrimeValue[depositor.id][transfer.tokenSymbol].sPrime) + newValue;
-            }
+            const newValue = (timeInterval < 0 ? 0 : timeInterval) / 31536000 * (prevApr * userDepositInUsd);
+            sPrimeValue[depositor.id][transfer.tokenSymbol].sPrime = Number(sPrimeValue[depositor.id][transfer.tokenSymbol].sPrime) + newValue * 0.25;
             sPrimeValue[depositor.id][transfer.tokenSymbol]['timestamp'] = transfer.timestamp;
             sPrimeValue[depositor.id][transfer.tokenSymbol]['offset'] = offset + poolTransfersLen;
             sPrimeValue[depositor.id][transfer.tokenSymbol]['curPoolTvl'] = transfer.curPoolTvl;

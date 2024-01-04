@@ -36,6 +36,10 @@
                      :validators="secondInputValidators">
       </CurrencyInput>
 
+      <div class="modal-top-info">
+        <div class="top-info__label">Max. slippage is 1%.</div>
+      </div>
+
       <div class="transaction-summary-wrapper">
         <TransactionResultSummaryBeta>
           <div class="summary__title">

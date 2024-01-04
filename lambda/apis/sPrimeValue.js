@@ -6,7 +6,7 @@ const sPrimeAggregator = (event, context, callback) => {
   const params = {
     TableName: event.queryStringParameters.network === 'arbitrum' ? process.env.SPRIME_ARB_TABLE : process.env.SPRIME_AVA_TABLE,
     Key: {
-      id: event.pathParameters.id
+      id: event.pathParameters.id.toLowerCase()
     }
   };
 
