@@ -12,6 +12,7 @@ import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
 import "../../interfaces/IStakingPositions.sol";
 import "../../interfaces/balancer-v2/IBalancerV2Vault.sol";
 import "../../interfaces/balancer-v2/IBalancerV2Gauge.sol";
+import "../../interfaces/balancer-v2/IBalancerPseudoMinter.sol";
 import "../../interfaces/facets/avalanche/IBalancerV2Facet.sol";
 
 //This path is updated during deployment
@@ -346,17 +347,63 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent, IBalanc
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         (address pool,) = IVault(MASTER_VAULT_ADDRESS).getPool(poolId);
-
         IBalancerV2Gauge gauge = IBalancerV2Gauge(poolToGauge(pool));
+
+        bytes32[] memory _rewardTokens = rewardTokens(pool);
+        uint256[] memory initialBalances = new uint256[](_rewardTokens.length);
+
+        for (uint256 i; i < _rewardTokens.length; i++) {
+            address rewardToken;
+            rewardToken = unsupportedAssetToAddress(_rewardTokens[i]);
+
+            // Token is supported
+            if(rewardToken == address(0)){
+                rewardToken = tokenManager.getAssetAddress(_rewardTokens[i], false);
+                initialBalances[i] = IERC20(rewardToken).balanceOf(address(this));
+            }
+            // Token is not supported
+            else {
+                initialBalances[i] = IERC20(rewardToken).balanceOf(address(this));
+            }
+        }
 
         gauge.claim_rewards();
 
-        bytes32[] memory _rewardTokens = rewardTokens(pool);
+        IBalancerPseudoMinter pseudoMinter = IBalancerPseudoMinter(gauge.bal_pseudo_minter());
+        pseudoMinter.mint(address(gauge));
 
         for (uint256 i; i < _rewardTokens.length; i++) {
-            address rewardToken = tokenManager.getAssetAddress(_rewardTokens[i], false);
-            if(IERC20(rewardToken).balanceOf(address(this)) > 0) {
-                DiamondStorageLib.addOwnedAsset(_rewardTokens[i], rewardToken);
+            address rewardToken;
+            rewardToken = unsupportedAssetToAddress(_rewardTokens[i]);
+
+            // Token is supported - add to owned assets
+            if(rewardToken == address(0)){
+                rewardToken = tokenManager.getAssetAddress(_rewardTokens[i], false);
+                uint256 claimedAmount = IERC20(rewardToken).balanceOf(address(this)) - initialBalances[i];
+                if(claimedAmount > 0) {
+                    DiamondStorageLib.addOwnedAsset(_rewardTokens[i], rewardToken);
+                    emit RewardClaimed(
+                        msg.sender,
+                        rewardToken,
+                        _rewardTokens[i],
+                        claimedAmount,
+                        block.timestamp
+                    );
+                }
+            }
+            // Token is not supported - transfer to msg.sender
+            else {
+                uint256 claimedAmount = IERC20(rewardToken).balanceOf(address(this)) - initialBalances[i];
+                if(claimedAmount > 0) {
+                    rewardToken.safeTransfer(msg.sender, claimedAmount);
+                    emit RewardClaimed(
+                        msg.sender,
+                        rewardToken,
+                        _rewardTokens[i],
+                        claimedAmount,
+                        block.timestamp
+                    );
+                }
             }
         }
     }
@@ -422,28 +469,45 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent, IBalanc
         return IERC20(gauge).balanceOf(address(this));
     }
 
+    function unsupportedAssetToAddress(bytes32 symbol) internal pure returns (address) {
+        if (symbol == "GGP") {
+            return 0x69260B9483F9871ca57f81A90D91E2F96c2Cd11d;
+        }
+        if (symbol == "BAL") {
+            return 0xE15bCB9E0EA69e6aB9FA080c4c4A5632896298C3;
+        }
+        if (symbol == "QI") {
+            return 0x8729438EB15e2C8B576fCc6AeCdA6A148776C0F5;
+        }
+
+        return address(0);
+    }
+
     function rewardTokens(address pool) internal pure returns (bytes32[] memory) {
         if (pool == 0xC13546b97B9B1b15372368Dc06529d7191081F5B) {
-            bytes32[] memory tokens = new bytes32[](3);
+            bytes32[] memory tokens = new bytes32[](4);
             tokens[0] = "AVAX";
-            tokens[1] = "ggAVAX";
-            tokens[2] = "USDC";
+            tokens[1] = "USDC";
+            tokens[2] = "GGP";
+            tokens[3] = "BAL";
 
             return tokens;
         }
         if (pool == 0x9fA6aB3d78984A69e712730A2227F20bCC8b5aD9) {
-            bytes32[] memory tokens = new bytes32[](3);
+            bytes32[] memory tokens = new bytes32[](4);
             tokens[0] = "AVAX";
-            tokens[1] = "yyAVAX";
-            tokens[2] = "USDC";
+            tokens[1] = "USDC";
+            tokens[2] = "yyAVAX";
+            tokens[3] = "BAL";
 
             return tokens;
         }
         if (pool == 0xfD2620C9cfceC7D152467633B3B0Ca338D3d78cc) {
-            bytes32[] memory tokens = new bytes32[](3);
+            bytes32[] memory tokens = new bytes32[](4);
             tokens[0] = "AVAX";
-            tokens[1] = "sAVAX";
-            tokens[2] = "USDC";
+            tokens[1] = "USDC";
+            tokens[2] = "QI";
+            tokens[3] = "BAL";
 
             return tokens;
         }
@@ -476,6 +540,16 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent, IBalanc
         DiamondStorageLib.enforceIsContractOwner();
         _;
     }
+
+    // EVENTS
+
+    event RewardClaimed(
+        address indexed user,
+        address indexed token,
+        bytes32 asset,
+        uint256 amount,
+        uint256 timestamp
+    );
 
 
     // ERRORS
