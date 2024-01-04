@@ -49,15 +49,35 @@ contract PrimeDex is Ownable, ReentrancyGuard {
             IERC20Metadata dustAsset = IERC20Metadata(assets[i].asset);
             if (assets[i].symbol != targetAsset.symbol) {
                 dustAsset.safeTransferFrom(msg.sender, address(this), amounts[i]);
+                emit ReceiveDustToken(assets[i].asset, msg.sender, amounts[i]);
                 returnAmount += amounts[i] * prices[i] * (10 ** targetDecimals) / (10 ** dustAsset.decimals()) / targetPrice;
             }
         }
 
         target.safeTransfer(msg.sender, returnAmount);
+        emit TransferTargetToken(targetAsset.asset, msg.sender, returnAmount);
     }
 
     /// @notice Transfer out dust tokens
     function transferToken(IERC20Metadata token, uint256 amount) external onlyOwner {
         token.safeTransfer(msg.sender, amount);
     }
+
+    // ---------- Events ----------
+
+    /**
+     * @notice Emitted when a user sends dust tokens to the contract
+     * @param token The address of the dust token
+     * @param user The address of the user
+     * @param amount The amount of dust tokens
+     */
+    event ReceiveDustToken(address indexed token, address indexed user, uint256 amount);
+
+    /**
+     * @notice Emitted when the contract sends target tokens to the user
+     * @param token The address of the target token
+     * @param user The address of the user
+     * @param amount The amount of target tokens
+     */
+    event TransferTargetToken(address indexed token, address indexed user, uint256 amount);
 }
