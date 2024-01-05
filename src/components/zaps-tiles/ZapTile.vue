@@ -1,14 +1,14 @@
 <template>
-  <div class="zap-tile__border" :class="{'disabled': disabled}">
-    <div class="zap-tile" @click="onTileClick()">
+  <div class="zap-tile__border">
+    <div class="zap-tile" :class="{'disabled': disabled}" @click="onTileClick()">
       <div class="label">
         <slot name="label"></slot>
       </div>
       <div class="header">{{ header }}</div>
       <slot></slot>
-      <div class="images">
-        <img class="image" :src="imgSrc">
-        <img class="image image--dark" :src="darkImgSrc">
+      <div :class="imgClass" class="images">
+        <img :class="imgClass" class="image" :src="imgSrc">
+        <img :class="imgClass" class="image image--dark" :src="darkImgSrc">
       </div>
     </div>
   </div>
@@ -22,6 +22,7 @@ export default {
     header: null,
     imgSrc: null,
     darkImgSrc: null,
+    imgClass: null,
   },
   methods: {
     onTileClick: function () {

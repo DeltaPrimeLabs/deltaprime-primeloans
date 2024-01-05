@@ -178,7 +178,7 @@ import {
   ESTIMATED_GAS_FEE_MULTIPLIER_FACTOR, WITHDRAWAL_GAS_LIMIT_KEY
 } from "../integrations/contracts/dataStore";
 import zapLong from "./zaps-tiles/ZapLong.vue";
-import {hashData} from "../utils/blockchain";
+import {calculateGmxV2ExecutionFee, capitalize, hashData} from "../utils/blockchain";
 import Dropdown from "./notifi/settings/Dropdown.vue";
 
 export default {
@@ -480,7 +480,6 @@ export default {
       const longToken = config.ASSETS_CONFIG[this.lpToken.longToken];
       const shortToken = config.ASSETS_CONFIG[this.lpToken.shortToken];
 
-      console.log('this.lpToken.indexTokenAddress: ', this.lpToken.indexTokenAddress)
       const marketProps = {
         marketToken: this.lpToken.address,
         indexToken: this.lpToken.indexTokenAddress,
@@ -704,7 +703,13 @@ export default {
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.checkMarketDeviation = false;
 
-      const executionFee = await this.calculateExecutionFee(true);
+      const executionFee = await calculateGmxV2ExecutionFee(
+          config.gmxV2DataStoreAddress,
+          config.gmxV2DepositCallbackGasLimit,
+          config.gmxV2UseMaxPriorityFeePerGas,
+          config.gmxV2GasPriceBuffer,
+          config.gmxV2GasPricePremium,
+          true);
       modalInstance.info = `<div>Execution fee: ${executionFee.toFixed(6)}${config.nativeToken}. Unused gas will be returned to your account.</div>`;
 
 
@@ -741,7 +746,7 @@ export default {
           sourceAmount: swapEvent.sourceAmount,
           minGmAmount: swapEvent.targetAmount,
           executionFee: executionFee,
-          method: `deposit${this.capitalize(this.lpToken.longToken)}${this.capitalize(this.lpToken.shortToken)}GmxV2`
+          method: `deposit${capitalize(this.lpToken.longToken)}${capitalize(this.lpToken.shortToken)}GmxV2`
         };
 
         this.handleTransaction(this.addLiquidityGmxV2, {addLiquidityRequest: addLiquidityRequest}, () => {
@@ -794,7 +799,13 @@ export default {
       };
       modalInstance.swapDex = 'GmxV2';
 
-      const executionFee = await this.calculateExecutionFee(false);
+      const executionFee = await calculateGmxV2ExecutionFee(
+          config.gmxV2DataStoreAddress,
+          config.gmxV2DepositCallbackGasLimit,
+          config.gmxV2UseMaxPriorityFeePerGas,
+          config.gmxV2GasPriceBuffer,
+          config.gmxV2GasPricePremium,
+          false);
       modalInstance.info = `<div>Execution fee: ${executionFee.toFixed(6)}${config.nativeToken}. Unused gas will be returned to your account.</div>`;
 
       const nativeBalance = parseFloat(ethers.utils.formatEther(await this.provider.getBalance(this.account)));
@@ -821,7 +832,7 @@ export default {
           minLongAmount: swapEvent.targetAmounts[0],
           minShortAmount: swapEvent.targetAmounts[1],
           executionFee: executionFee,
-          method: `withdraw${this.capitalize(this.lpToken.longToken)}${this.capitalize(this.lpToken.shortToken)}GmxV2`
+          method: `withdraw${capitalize(this.lpToken.longToken)}${capitalize(this.lpToken.shortToken)}GmxV2`
         };
 
         this.handleTransaction(this.removeLiquidityGmxV2, {removeLiquidityRequest: removeLiquidityRequest}, () => {
@@ -874,10 +885,6 @@ export default {
           y: 20
         }, {x: new Date(), y: 15}, {x: new Date(), y: 25}, {x: new Date(), y: 5}]
       }
-    },
-
-    capitalize(word) {
-      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
     },
 
     async setupPoolBalance() {
