@@ -8,6 +8,7 @@ import "../ReentrancyGuardKeccak.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 import "../lib/SolvencyMethods.sol";
+import "./SmartLoanLiquidationFacet.sol";
 import "../interfaces/ITokenManager.sol";
 
 //This path is updated during deployment
@@ -68,6 +69,78 @@ contract ParaSwapFacet is ReentrancyGuardKeccak, SolvencyMethods {
                 initialSoldTokenBalance: _soldToken.balanceOf(address(this)),
                 initialBoughtTokenBalance: _boughtToken.balanceOf(address(this))
             });
+    }
+
+    function paraSwapBeforeLiquidation(
+        bytes4 selector,
+        bytes memory data,
+        address fromToken,
+        uint256 fromAmount,
+        address toToken,
+        uint256 minOut
+    )
+    external
+    nonReentrant
+    onlyWhitelistedLiquidators
+    noBorrowInTheSameBlock
+    recalculateAssetsExposure
+    {
+        require(!_isSolvent(), "Cannot perform on a solvent account");
+
+        SwapTokensDetails memory swapTokensDetails = getInitialTokensDetails(
+            fromToken,
+            toToken
+        );
+        require(swapTokensDetails.initialSoldTokenBalance >= fromAmount, "Insufficient balance");
+        require(minOut > 0, "minOut needs to be > 0");
+        require(fromAmount > 0, "Amount of tokens to sell has to be greater than 0");
+
+        address(swapTokensDetails.soldToken).safeApprove(PARA_TRANSFER_PROXY, 0);
+        address(swapTokensDetails.soldToken).safeApprove(
+            PARA_TRANSFER_PROXY,
+            fromAmount
+        );
+
+        (bool success, ) = PARA_ROUTER.call((abi.encodePacked(selector, data)));
+        require(success, "Swap failed");
+
+        // Add asset to ownedAssets
+        if (swapTokensDetails.boughtToken.balanceOf(address(this)) > 0) {
+            DiamondStorageLib.addOwnedAsset(
+                swapTokensDetails.tokenBoughtSymbol,
+                address(swapTokensDetails.boughtToken)
+            );
+        }
+
+        // Remove asset from ownedAssets if the asset balance is 0 after the swap
+        if (swapTokensDetails.soldToken.balanceOf(address(this)) == 0) {
+            DiamondStorageLib.removeOwnedAsset(swapTokensDetails.tokenSoldSymbol);
+        }
+
+        uint256 boughtTokenFinalAmount = swapTokensDetails.boughtToken.balanceOf(
+            address(this)
+        ) - swapTokensDetails.initialBoughtTokenBalance;
+        require(boughtTokenFinalAmount >= minOut, "Too little received");
+
+        uint256 soldTokenFinalAmount = swapTokensDetails.soldToken.balanceOf(
+            address(this)
+        ) - swapTokensDetails.initialSoldTokenBalance;
+        require(soldTokenFinalAmount == fromAmount, "Too much sold");
+
+        bytes32[] memory symbols = new bytes32[](2);
+        symbols[0] = swapTokensDetails.tokenSoldSymbol;
+        symbols[1] = swapTokensDetails.tokenBoughtSymbol;
+        uint256[] memory prices = getPrices(symbols);
+
+        uint256 soldTokenDollarValue = prices[0] * soldTokenFinalAmount * 10**10 / 10 ** swapTokensDetails.soldToken.decimals();
+        uint256 boughtTokenDollarValue = prices[1] * boughtTokenFinalAmount * 10**10 / 10 ** swapTokensDetails.boughtToken.decimals();
+        if(soldTokenDollarValue > boughtTokenDollarValue) {
+            // If the sold token is more valuable than the bought token, we need to check the slippage
+            // If the slippage is too high, we revert the transaction
+            // Slippage = (soldTokenDollarValue - boughtTokenDollarValue) * 100 / soldTokenDollarValue
+            uint256 slippage = (soldTokenDollarValue - boughtTokenDollarValue) * 100 / soldTokenDollarValue;
+            require(slippage < 2, "Slippage too high"); // MAX 2% slippage
+        }
     }
 
     function paraSwapV2(
@@ -134,6 +207,12 @@ contract ParaSwapFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
     modifier onlyOwner() {
         DiamondStorageLib.enforceIsContractOwner();
+        _;
+    }
+
+    modifier onlyWhitelistedLiquidators() {
+        // External call in order to execute this method in the SmartLoanDiamondBeacon contract storage
+        require(SmartLoanLiquidationFacet(DeploymentConstants.getDiamondAddress()).isLiquidatorWhitelisted(msg.sender), "Only whitelisted liquidators can execute this method");
         _;
     }
 
