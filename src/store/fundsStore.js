@@ -779,23 +779,25 @@ export default {
         for (let [k, lpToken] of Object.entries(balancerLpAssets)) {
           let gauge= new ethers.Contract(lpToken.gaugeAddress, IBALANCER_V2_GAUGE.abi, provider.getSigner())
 
-          let result = await state.multicallContract.callStatic.aggregate(
-            lpToken.rewardTokens.map(
-              (symbol) => {
-                return {
-                  target: gauge.address,
-                  callData: gauge.interface.encodeFunctionData('claimable_reward', [state.smartLoanContract.address, TOKEN_ADDRESSES[symbol]])
-                }
-              })
-          );
+          try {
+            let result = await state.multicallContract.callStatic.aggregate(
+              lpToken.rewardTokens.map(
+                (symbol) => {
+                  return {
+                    target: gauge.address,
+                    callData: gauge.interface.encodeFunctionData('claimable_reward', [state.smartLoanContract.address, TOKEN_ADDRESSES[symbol]])
+                  }
+                })
+            );
 
-          lpToken.rewardBalances = {};
+            lpToken.rewardBalances = {};
 
-          lpToken.rewardTokens.forEach(
+            lpToken.rewardTokens.forEach(
               (symbol, index) => {
                 lpToken.rewardBalances[symbol] = formatUnits(result.returnData[index], config.ASSETS_CONFIG[symbol].decimals);
               }
-          )
+            )
+          } catch (e) { }
         }
       }
 
