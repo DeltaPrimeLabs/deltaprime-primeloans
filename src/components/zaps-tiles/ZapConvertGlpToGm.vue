@@ -84,6 +84,8 @@ export default {
           targetMarketSymbol: convertEvent.targetMarketSymbol,
           executionFee: executionFee
         };
+        console.log('convert to gm request');
+        console.log(convertRequest);
         this.handleTransaction(this.convertGlpToGm, {convertRequest: convertRequest}, () => {
           this.$forceUpdate();
         }, (error) => {
