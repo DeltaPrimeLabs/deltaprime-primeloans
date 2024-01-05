@@ -5,8 +5,8 @@
         {{ totalLeveragedGm | usd }}
       </div>
       <div class="table__cell table__cell--double-value mission">
-        <img v-if="gmTvl && gmTvl > 1000000" class="milestone-tick" width="16px" src="src/assets/icons/check.png" v-tooltip="{content: 'Milestone completed!', classes: 'info-tooltip long'}"/>
-        <bar-gauge-beta v-if="gmTvl" v-tooltip="{content: `Grant milestone completion: $${(gmTvl / 1000000).toFixed(1)}M / $3M`, classes: 'info-tooltip'}" :min="0" :max="3000000" :value="gmTvl" :width="108"></bar-gauge-beta>
+        <img v-if="gmTvl && gmTvl > 6000000" class="milestone-tick" width="16px" src="src/assets/icons/check.png" v-tooltip="{content: 'Milestone completed!', classes: 'info-tooltip long'}"/>
+        <bar-gauge-beta v-if="gmTvl" v-tooltip="{content: `Grant milestone completion: $${(gmTvl / 1000000).toFixed(1)}M / $6M`, classes: 'info-tooltip'}" :min="0" :max="6000000" :value="gmTvl" :width="108"></bar-gauge-beta>
       </div>
       <div class="table__cell table__cell--double-value leveraged">
         {{ leveragedGm | usd}}
