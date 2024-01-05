@@ -778,66 +778,7 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         uint256 pid,
         IStakingPositions.StakedPosition memory position
     ) private {
-        require(pid == 0, "Jnr and Mze tranches are no longer supported");
-
-        if (asset == address(0)) {
-            amount = Math.min(
-                IWrappedNativeToken(ETH_TOKEN).balanceOf(address(this)),
-                amount
-            );
-            IWrappedNativeToken(ETH_TOKEN).withdraw(amount);
-        } else {
-            amount = Math.min(IERC20(asset).balanceOf(address(this)), amount);
-        }
-        require(amount > 0, "Cannot stake 0 tokens");
-
-        if (asset != address(0)) {
-            asset.safeApprove(LEVEL_FARMING, 0);
-            asset.safeApprove(LEVEL_FARMING, amount);
-        }
-
-        ILevelFinance farmingContract = ILevelFinance(LEVEL_FARMING);
-        uint256 initialReceiptTokenBalance = farmingContract
-            .userInfo(pid, address(this))
-            .amount;
-
-        if (asset == address(0)) {
-            farmingContract.addLiquidityETH{value: amount}(
-                pid,
-                minLpAmount,
-                address(this)
-            );
-        } else {
-            farmingContract.addLiquidity(
-                pid,
-                asset,
-                amount,
-                minLpAmount,
-                address(this)
-            );
-        }
-
-        // Add/remove owned tokens
-        DiamondStorageLib.addStakedPosition(position);
-        if (asset == address(0)) {
-            if (IERC20(ETH_TOKEN).balanceOf(address(this)) == 0) {
-                DiamondStorageLib.removeOwnedAsset(symbol);
-            }
-        } else {
-            if (IERC20(asset).balanceOf(address(this)) == 0) {
-                DiamondStorageLib.removeOwnedAsset(symbol);
-            }
-        }
-
-        emit Staked(
-            msg.sender,
-            symbol,
-            LEVEL_FARMING,
-            amount,
-            farmingContract.userInfo(pid, address(this)).amount -
-                initialReceiptTokenBalance,
-            block.timestamp
-        );
+        revert("No longer supported.");
     }
 
     /**
@@ -852,56 +793,7 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         uint256 pid,
         IStakingPositions.StakedPosition memory position
     ) private {
-        ILevelFinance farmingContract = ILevelFinance(LEVEL_FARMING);
-        IERC20Metadata unstakedToken = getERC20TokenInstance(symbol, false);
-        uint256 initialReceiptTokenBalance = farmingContract
-            .userInfo(pid, address(this))
-            .amount;
-
-        amount = Math.min(initialReceiptTokenBalance, amount);
-
-        require(amount > 0, "Cannot unstake 0 tokens");
-
-        uint256 balance = unstakedToken.balanceOf(address(this));
-
-        if (asset == address(0)) {
-            farmingContract.removeLiquidityETH(
-                pid,
-                amount,
-                minAmount,
-                address(this)
-            );
-            IWrappedNativeToken(ETH_TOKEN).deposit{value: address(this).balance}();
-        } else {
-            farmingContract.removeLiquidity(
-                pid,
-                amount,
-                asset,
-                minAmount,
-                address(this)
-            );
-        }
-
-        uint256 newBalance = unstakedToken.balanceOf(address(this));
-
-        uint256 newReceiptTokenBalance = farmingContract
-            .userInfo(pid, address(this))
-            .amount;
-
-        // Add/remove owned tokens
-        if (newReceiptTokenBalance == 0) {
-            DiamondStorageLib.removeStakedPosition(position.identifier);
-        }
-        DiamondStorageLib.addOwnedAsset(symbol, address(unstakedToken));
-
-        emit Unstaked(
-            msg.sender,
-            symbol,
-            LEVEL_FARMING,
-            newBalance - balance,
-            initialReceiptTokenBalance - newReceiptTokenBalance,
-            block.timestamp
-        );
+        revert("No longer supported.");
     }
 
     function harvestRewards(uint256 pid) external nonReentrant onlyOwner {
@@ -911,52 +803,12 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     }
 
     function unstakeAndWithdrawLLP(uint256 pid, uint256 amount) external nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent{
-        ILevelFinance farmingContract = ILevelFinance(LEVEL_FARMING);
-        require(_levelBalance(pid) >= amount, "Insufficient balance");
-
-        farmingContract.withdraw(pid, amount, msg.sender);
-
-        IStakingPositions.StakedPosition memory position = pidToStakedPosition(pid);
-        if(_levelBalance(pid) == 0){
-            DiamondStorageLib.removeStakedPosition(position.identifier);
-        }
-
-
-        // TODO: Emit withdraw event
-        emit WithdrewLLP(
-            msg.sender,
-            position.symbol,
-            LEVEL_FARMING,
-            amount,
-            block.timestamp
-        );
+        revert("No longer supported.");
     }
 
     // @dev Requires an approval on LLP token for the PrimeAccount address prior to calling this function
     function depositLLPAndStake(uint256 pid, uint256 amount) external nonReentrant onlyOwner recalculateAssetsExposure{
-        IERC20Metadata llpToken = IERC20Metadata(pidToLLPToken(pid));
-        ILevelFinance farmingContract = ILevelFinance(LEVEL_FARMING);
-
-        require(pid == 0, "Jnr and Mze tranches are no longer supported");
-        require(llpToken.balanceOf(msg.sender) >= amount, "amount > balanceOf LLP");
-        require(llpToken.allowance(msg.sender, address(this)) >= amount, "insufficient ERC20 allowance");
-
-        llpToken.transferFrom(msg.sender, address(this), amount);
-
-        address(llpToken).safeApprove(LEVEL_FARMING, 0);
-        address(llpToken).safeApprove(LEVEL_FARMING, amount);
-        farmingContract.deposit(pid, amount, address(this));
-
-        IStakingPositions.StakedPosition memory position = pidToStakedPosition(pid);
-        DiamondStorageLib.addStakedPosition(position);
-
-    emit DepositedLLP(
-            msg.sender,
-            position.symbol,
-            LEVEL_FARMING,
-            amount,
-            block.timestamp
-        );
+        revert("No longer supported.");
     }
 
     function pidToLLPToken(uint256 pid) private pure returns (address){
