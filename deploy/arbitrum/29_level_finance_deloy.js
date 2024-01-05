@@ -13,6 +13,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     let LevelFinanceFacet = await deploy("LevelFinanceFacet", {
         from: deployer,
         gasLimit: 50000000,
+        gasPrice: 120000000,
         args: [],
     });
 

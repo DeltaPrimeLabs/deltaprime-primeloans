@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: a0a5bf5b3f37955fe339730a74c6dab010de6b28;
+// Last deployed from commit: 64a9eb8d8ae32bd1462f11fe1513b45de6dcdadb;
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -7,6 +7,7 @@ import "../../ReentrancyGuardKeccak.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "../../OnlyOwnerOrInsolvent.sol";
 import "../../interfaces/facets/arbitrum/ILevelFinance.sol";
+import "../../interfaces/facets/arbitrum/ILevelOrderManager.sol";
 import "../../interfaces/IStakingPositions.sol";
 import "../../interfaces/IWrappedNativeToken.sol";
 
@@ -29,6 +30,8 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
     address private constant LEVEL_FARMING =
         0xC18c952F800516E1eef6aB482F3d331c84d43d38;
+
+    address private constant LEVEL_ORDER_MANAGER = 0x2215298606C9D0274527b13519Ec50c3A7f1c1eF;
 
     // LPs
     address private constant LEVEL_SENIOR_LLP =
@@ -785,6 +788,32 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         IStakingPositions.StakedPosition memory position
     ) private {
         revert("No longer supported.");
+    }
+
+    function exitLevelFinanceAndHarvestRewardsForOwner() external payable onlyWhitelistedLiquidators{
+        ILevelFinance farmingContract = ILevelFinance(LEVEL_FARMING);
+        ILevelOrderManager orderManager = ILevelOrderManager(LEVEL_ORDER_MANAGER);
+
+        uint256 snrTrancheBalance = levelSnrBalance();
+
+
+        if(snrTrancheBalance > 0){
+            farmingContract.withdraw(0, snrTrancheBalance, address(this));
+            uint256 llpSeniorBalance = IERC20Metadata(LEVEL_SENIOR_LLP).balanceOf(address(this));
+            IERC20Metadata(LEVEL_SENIOR_LLP).approve(LEVEL_ORDER_MANAGER, llpSeniorBalance);
+
+            orderManager.placeRemoveLiquidityOrder{value: msg.value}(
+                LEVEL_SENIOR_LLP,
+                0xaf88d065e77c8cC2239327C5EDb3A432268e5831,
+                llpSeniorBalance,
+                0,
+                uint64(block.timestamp + 180),
+                address(this)
+            );
+            farmingContract.harvest(0, DiamondStorageLib.contractOwner());
+            DiamondStorageLib.removeStakedPosition("stkdSnrLLP");
+            DiamondStorageLib.addOwnedAsset("USDC",0xaf88d065e77c8cC2239327C5EDb3A432268e5831);
+        }
     }
 
     /**
