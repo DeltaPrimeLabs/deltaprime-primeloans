@@ -191,7 +191,7 @@
         <Button :label="swapDebtMode ? 'Swap debt' : 'Swap'"
                 v-on:click="submit()"
                 :disabled="sourceInputError || targetInputError"
-                :waiting="transactionOngoing || isTyping">
+                :waiting="transactionOngoing || isTyping || calculatingSwapRoute">
         </Button>
       </div>
     </Modal>
@@ -305,7 +305,8 @@ export default {
       sourceAssetsConfig: config.ASSETS_CONFIG,
       targetAssetsConfig: config.ASSETS_CONFIG,
       swapDexsConfig: config.SWAP_DEXS_CONFIG,
-      reverseSwapDisabled: false
+      reverseSwapDisabled: false,
+      calculatingSwapRoute: false,
     };
   },
 
@@ -381,6 +382,7 @@ export default {
     },
 
     async chooseBestTrade(basedOnSource = true) {
+      this.calculatingSwapRoute = true;
       if (this.sourceAssetAmount == null) return;
       if (this.sourceAssetAmount === 0) {
         this.targetAssetAmount = 0;
@@ -408,11 +410,13 @@ export default {
         if (this.swapDebtMode) {
           estimated = queryResponse.amounts[0];
           console.log('estimated')
+          this.calculatingSwapRoute = false;
           console.log(fromWei(estimated))
           this.path = queryResponse.path;
           this.adapters = queryResponse.adapters;
           this.updateSlippageWithAmounts(parseFloat(formatUnits(estimated, BigNumber.from(this.targetAssetData.decimals))));
         } else {
+          this.calculatingSwapRoute = false;
           if (queryResponse.dex === 'PARA_SWAP') {
             estimated = queryResponse.amounts[queryResponse.amounts.length - 1];
             this.paraSwapRate = queryResponse.swapRate;
