@@ -83,7 +83,7 @@
 
       <div class="table__cell actions">
         <IconButton class="action-button"
-                    :disabled="((disableAllButtons) && (!(asset.debtCoverage > 0 && noSmartLoan)) || asset.inactive)"
+                    :disabled="((disableAllButtons) && (!(asset.debtCoverage > 0 && noSmartLoan)) || asset.inactive || asset.unsupported)"
                     :icon-src="'src/assets/icons/plus.svg'" :size="26"
                     v-tooltip="{content: 'Deposit collateral', classes: 'button-tooltip'}"
                     v-on:click="actionClick('ADD_FROM_WALLET')">
@@ -95,7 +95,7 @@
             buttons and deposit collateral.
           </template>
         </IconButton>
-        <IconButton :disabled="disableAllButtons || asset.inactive || noSmartLoan"
+        <IconButton :disabled="disableAllButtons || asset.inactive || asset.unsupported || noSmartLoan"
                     class="action-button"
                     :icon-src="'src/assets/icons/swap.svg'" :size="26"
                     v-tooltip="{content: 'Swap', classes: 'button-tooltip'}"
@@ -105,7 +105,7 @@
             class="actions__icon-button"
             :config="moreActionsConfig"
             v-on:iconButtonClick="actionClick"
-            :disabled="disableAllButtons || asset.inactive || noSmartLoan">
+            :disabled="disableAllButtons || asset.inactive || asset.unsupported || noSmartLoan">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -165,6 +165,7 @@ import {constructSimpleSDK, ContractMethod, SwapSide} from '@paraswap/sdk';
 import axios from 'axios';
 import TradingViewChart from "./TradingViewChart.vue";
 import Toggle from "./Toggle.vue";
+import {BigNumber} from "ethers";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -527,12 +528,13 @@ export default {
           const maxHops = 3;
           const gasPrice = ethers.utils.parseUnits('0', 'gwei');
 
-          const MAX_TRY_AMOUNT = 10;
+          const MAX_TRY_AMOUNT = 20;
 
           let i = 0;
           let targetBorrowedAmount = amountOut;
 
           while (i < MAX_TRY_AMOUNT) {
+            console.log(i);
             try {
               let path = await yakRouter.findBestPathWithGas(
                   targetBorrowedAmount,

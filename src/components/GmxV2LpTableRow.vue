@@ -86,21 +86,21 @@
             :config="addActionsConfig"
             v-if="addActionsConfig"
             v-on:iconButtonClick="actionClick"
-            :disabled="disableAllButtons || !healthLoaded">
+            :disabled="disableAllButtons || !healthLoaded || !assets">
         </IconButtonMenuBeta>
         <IconButtonMenuBeta
             class="actions__icon-button last"
             :config="removeActionsConfig"
             v-if="removeActionsConfig"
             v-on:iconButtonClick="actionClick"
-            :disabled="disableAllButtons || !healthLoaded">
+            :disabled="disableAllButtons || !healthLoaded || !assets">
         </IconButtonMenuBeta>
         <IconButtonMenuBeta
             class="actions__icon-button"
             v-if="moreActionsConfig"
             :config="moreActionsConfig"
             v-on:iconButtonClick="actionClick"
-            :disabled="disableAllButtons || !healthLoaded">
+            :disabled="disableAllButtons || !healthLoaded || !assets">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -290,8 +290,9 @@ export default {
     },
 
     gmBoost() {
-      if (!this.apys) return;
-      return this.hasGmIncentives ? 4.5 * this.apys['GM_BOOST'].arbApy : 0;
+      if (!this.apys || !this.assets || !this.assets['ARB'] || !this.assets['ARB'].price) return;
+      let apy = this.apys['GM_BOOST'].arbApy * (this.assets['ARB'].price || 0);
+      return this.hasGmIncentives ? 4.5 * apy : 0;
     },
 
     hasGmIncentives() {

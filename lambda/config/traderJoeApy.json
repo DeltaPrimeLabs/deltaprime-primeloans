@@ -81,6 +81,11 @@
       "assetX": "ETH",
       "assetY": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
       "binStep": 15
+    },
+    "TJLB_MAGIC_ETH": {
+      "assetX": "0x539bdE0d7Dbd336b79148AA742883198BBF60342",
+      "assetY": "ETH",
+      "binStep": 25      
     }
   }
 }

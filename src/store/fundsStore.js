@@ -23,8 +23,10 @@ import {constructSimpleSDK, SimpleFetchSDK, SwapSide} from '@paraswap/sdk';
 import axios from 'axios';
 import LB_TOKEN from '/artifacts/contracts/interfaces/joe-v2/ILBToken.sol/ILBToken.json'
 import MULTICALL from '/artifacts/contracts/lib/Multicall3.sol/Multicall3.json'
+import IBALANCER_V2_GAUGE from '/artifacts/contracts/interfaces/balancer-v2/IBalancerV2Gauge.sol/IBalancerV2Gauge.json'
 import {decodeFunctionData} from "viem";
 import {expect} from "chai";
+import YAK_ROUTER_ABI from "../../test/abis/YakRouter.json";
 
 const toBytes32 = require('ethers').utils.formatBytes32String;
 const fromBytes32 = require('ethers').utils.parseBytes32String;
@@ -703,12 +705,14 @@ export default {
     },
 
     async getAllAssetsBalances({state, commit, rootState, dispatch}) {
+      console.log('getAllAssetsBalances')
       const dataRefreshNotificationService = rootState.serviceRegistry.dataRefreshEventService;
       const balances = {};
       const lpBalances = {};
       const concentratedLpBalances = {};
       const gmxV2Balances = {};
       const balancerLpBalances = {};
+      const balancerLpAssets = state.balancerLpAssets;
       const levelLpBalances = {};
       const assetBalances = await state.readSmartLoanContract.getAllAssetsBalances();
       assetBalances.forEach(
@@ -753,6 +757,7 @@ export default {
       }
 
       if (config.BALANCER_LP_ASSETS_CONFIG) {
+        //balances
         let result = await state.multicallContract.callStatic.aggregate(
             Object.entries(config.BALANCER_LP_ASSETS_CONFIG).map(
                 ([key, value]) => {
@@ -768,12 +773,37 @@ export default {
               balancerLpBalances[key] = fromWei(result.returnData[index]);
             }
         )
+
+
+        //TODO: optimize
+        for (let [k, lpToken] of Object.entries(balancerLpAssets)) {
+          let gauge= new ethers.Contract(lpToken.gaugeAddress, IBALANCER_V2_GAUGE.abi, provider.getSigner())
+
+          let result = await state.multicallContract.callStatic.aggregate(
+            lpToken.rewardTokens.map(
+              (symbol) => {
+                return {
+                  target: gauge.address,
+                  callData: gauge.interface.encodeFunctionData('claimable_reward', [state.smartLoanContract.address, TOKEN_ADDRESSES[symbol]])
+                }
+              })
+          );
+
+          lpToken.rewardBalances = {};
+
+          lpToken.rewardTokens.forEach(
+              (symbol, index) => {
+                lpToken.rewardBalances[symbol] = formatUnits(result.returnData[index], config.ASSETS_CONFIG[symbol].decimals);
+              }
+          )
+        }
       }
 
       await commit('setAssetBalances', balances);
       await commit('setLpBalances', lpBalances);
       await commit('setConcentratedLpBalances', concentratedLpBalances);
       await commit('setBalancerLpBalances', balancerLpBalances);
+      await commit('setBalancerLpAssets', balancerLpAssets);
       await commit('setLevelLpBalances', levelLpBalances);
       await commit('setGmxV2Balances', gmxV2Balances);
       await dispatch('setupConcentratedLpUnderlyingBalances');
@@ -1020,7 +1050,10 @@ export default {
           for (let [symbol, asset] of Object.entries(balancerLpAssets)) {
             // we don't use getApy method anymore, but fetch APYs from db
             if (apys[symbol] && apys[symbol].lp_apy) {
-              balancerLpAssets[symbol].apy = apys[symbol].lp_apy * 100;
+              //TODO: correct in AWS
+              let appreciation = (apys[asset.primary] && apys[asset.primary].apy) || (apys[asset.secondary] && apys[asset.secondary].apy);
+
+              balancerLpAssets[symbol].apy = (apys[symbol].lp_apy - appreciation / 2 / 100) * 100;
             }
           }
         }
@@ -1148,7 +1181,9 @@ export default {
 
             //TODO: take from API
             const apy = asset.apy ? asset.apy / 100 : 0;
-            yearlyAssetInterest += parseFloat(state.assetBalances[symbol]) * apy * asset.price;
+            if (state.assetBalances[symbol]) {
+              yearlyAssetInterest += parseFloat(state.assetBalances[symbol]) * apy * asset.price;
+            }
           }
         }
 
@@ -1187,7 +1222,7 @@ export default {
             let symbol = entry[0];
             let lpAsset = entry[1];
 
-            const apy = lpAsset.tempApy ? lpAsset.tempApy / 100 : 0;
+            const apy = lpAsset.apy ? lpAsset.apy / 100 : 0;
 
             let assetAppreciation = 0;
 
@@ -1593,7 +1628,7 @@ export default {
       const secondDecimals = config.ASSETS_CONFIG[provideLiquidityRequest.secondAsset].decimals;
       const lpTokenDecimals = config.LP_ASSETS_CONFIG[provideLiquidityRequest.symbol].decimals;
 
-      let minAmount = 0.9;
+      let minAmount = 0.99;
 
       const loanAssets = mergeArrays([(
         await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
@@ -1732,7 +1767,7 @@ export default {
       firstAmountWei = firstAmountWei.gt(firstBalance) ? firstBalance : firstAmountWei;
       secondAmountWei = secondAmountWei.gt(secondBalance) ? secondBalance : secondAmountWei;
 
-      let minAmount = 0.95;
+      let minAmount = 0.99;
       let gaugeDecimals = config.BALANCER_LP_ASSETS_CONFIG[provideLiquidityRequest.symbol].decimals;
       let minGaugeAmountWei = parseUnits((parseFloat(provideLiquidityRequest.addedLiquidity) * minAmount).toFixed(gaugeDecimals), gaugeDecimals);
 
@@ -1821,16 +1856,16 @@ export default {
       let amountWei = toWei(removeLiquidityRequest.amount);
       amountWei = amountWei.gt(gaugeBalance) ? gaugeBalance : amountWei;
 
+      let minTargetReceived = removeLiquidityRequest.isFirstUnstaked ? removeLiquidityRequest.minReceivedFirst : removeLiquidityRequest.minReceivedSecond;
       //TODO: now the logic is simplified so we always unstake to the first asset
-      let minReceivedFirstAmount = 0.95;
-      let minReceivedFirstAmountWei = parseUnits((parseFloat(removeLiquidityRequest.minReceivedFirst) * minReceivedFirstAmount).toFixed(targetAssetDecimals), targetAssetDecimals);
+      let minReceivedWei = parseUnits((parseFloat(minTargetReceived)).toFixed(targetAssetDecimals), targetAssetDecimals);
 
       const transaction = await wrappedContract.unstakeAndExitPoolBalancerV2(
           [
             removeLiquidityRequest.poolId,
             config.ASSETS_CONFIG[removeLiquidityRequest.targetAsset].address,
             //TODO: slippage
-            minReceivedFirstAmountWei,
+            minReceivedWei,
             amountWei
           ]
       );
@@ -2018,6 +2053,36 @@ export default {
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {
         rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, config.refreshDelay);
+    },
+
+    async claimRewardsBalancerV2({state, rootState, dispatch}, {claimRequest}) {
+      console.log('claimRewardsBalancerV2')
+      const provider = rootState.network.provider;
+
+      const loanAssets = mergeArrays([(
+          await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG)
+      ]);
+
+      const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
+
+      const transaction = await wrappedContract.claimRewardsBalancerV2(claimRequest.poolId);
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      const tx = await awaitConfirmation(transaction, provider, 'claim Balancer rewards');
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+        const lpService = rootState.serviceRegistry.lpService;
+        lpService.emitRefreshLp('BALANCER_V2_REWARDS_CLAIMED');
       }, SUCCESS_DELAY_AFTER_TRANSACTION);
 
       setTimeout(async () => {

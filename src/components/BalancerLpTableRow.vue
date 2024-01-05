@@ -27,12 +27,30 @@
         </template>
       </div>
 
+      <div class="table__cell table__cell--double-value">
+        <template>
+          <div class="table__cell rewards">
+            <span>
+              <img class="asset__icon" :src="getAssetIcon('BAL')">
+              <img v-tooltip="{content: `Your accumulated BAL rewards will be visible soon.`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon">
+            </span>
+            <span v-for="symbol in lpToken.rewardTokens">
+              <img class="asset__icon" :src="getAssetIcon(symbol)">
+              <span v-if="lpToken.rewardBalances && lpToken.rewardBalances[symbol] && parseFloat(lpToken.rewardBalances[symbol]) !== null">{{
+                formatTokenBalance((lpToken.rewardBalances && lpToken.rewardBalances[symbol] && !rewardsReset) ? lpToken.rewardBalances[symbol]  : 0, 6, true)
+              }}</span>
+              <vue-loaders-ball-beat v-else color="#A6A3FF" scale="0.5"></vue-loaders-ball-beat>
+            </span>
+          </div>
+        </template>
+      </div>
+
       <div class="table__cell table__cell--double-value loan">
         {{ formatTvl(lpToken.tvl) }}
       </div>
 
       <div class="table__cell table__cell--double-value apr" v-bind:class="{'apr--with-warning': lpToken.aprWarning}">
-        {{ lpToken.tempApy / 100 | percent }}
+        {{ lpToken.apy / 100 | percent }}
         <div class="apr-warning" v-if="lpToken.aprWarning">
           <img src="src/assets/icons/warning.svg"
                v-tooltip="{content: lpToken.aprWarning, classes: 'info-tooltip long'}">
@@ -59,6 +77,13 @@
           v-if="removeActionsConfig"
           v-on:iconButtonClick="actionClick"
           :disabled="disableAllButtons || noSmartLoan">
+        </IconButtonMenuBeta>
+        <IconButtonMenuBeta
+            class="actions__icon-button"
+            v-if="moreActionsConfig"
+            :config="moreActionsConfig"
+            v-on:iconButtonClick="actionClick"
+            :disabled="disableAllButtons || !healthLoaded">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -96,6 +121,7 @@ import WithdrawBalancerV2Modal from "./WithdrawBalancerV2Modal.vue";
 import {formatUnits} from "ethers/lib/utils";
 import config from "../config";
 import BalancerUnwindLpModal from "./BalancerUnwindLpModal.vue";
+import ClaimBalancerRewardsModal from "./ClaimBalancerRewardsModal.vue";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -119,12 +145,14 @@ export default {
     this.providerService.observeProviderCreated().subscribe(() => {
       this.setupAddActionsConfiguration();
       this.setupRemoveActionsConfiguration();
+      this.setupMoreActionsConfiguration();
       this.watchAssetBalancesDataRefreshEvent();
       this.watchHardRefreshScheduledEvent();
       this.watchHealth();
       this.watchProgressBarState();
       this.watchAssetApysRefresh();
       this.watchExternalAssetBalanceUpdate();
+      this.watchRefreshLP();
       this.setupApr();
     })
   },
@@ -146,6 +174,7 @@ export default {
       hasNonStakedLp: false,
       availableFarms: [],
       nonStakedLpBalance: 0,
+      rewardsReset: false,
     };
   },
 
@@ -188,7 +217,7 @@ export default {
     },
 
     maxApr() {
-      return calculateMaxApy(this.pools, this.lpToken.tempApy / 100);
+      return calculateMaxApy(this.pools, this.apr / 100);
     }
   },
 
@@ -229,7 +258,8 @@ export default {
       'provideLiquidityAndStakeBalancerV2',
       'unstakeAndRemoveLiquidityBalancerV2',
       'stakeBalancerV2',
-      'withdrawBalancerV2'
+      'withdrawBalancerV2',
+      'claimRewardsBalancerV2'
     ]),
     setupAddActionsConfiguration(hasNonStakedLP = false) {
       this.addActionsConfig =
@@ -283,6 +313,19 @@ export default {
       }
     },
 
+    setupMoreActionsConfiguration() {
+      this.moreActionsConfig = {
+        iconSrc: 'src/assets/icons/icon_a_more.svg',
+        tooltip: 'More',
+        menuOptions: [
+          {
+            key: 'CLAIM_REWARDS',
+            name: 'Claim rewards'
+          }
+        ]
+      };
+    },
+
     async setupApr() {
       if (!this.lpToken.apy) return;
       this.apr = this.lpToken.apy;
@@ -320,6 +363,9 @@ export default {
             break;
           case 'REMOVE_LIQUIDITY':
             this.openRemoveLiquidityModal();
+            break;
+          case 'CLAIM_REWARDS':
+            this.openClaimRewardsModal();
             break;
         }
       }
@@ -475,14 +521,34 @@ export default {
           amount: removeEvent.amount,
           //TODO: should provide targetReceived here and have this logic in modal
           minReceivedFirst: removeEvent.minReceivedFirst,
-          minReceivedSecond: removeEvent.minReceivedSecond
+          minReceivedSecond: removeEvent.minReceivedSecond,
+          isFirstUnstaked: removeEvent.targetAsset === this.lpToken.primary
         };
+
         this.handleTransaction(this.unstakeAndRemoveLiquidityBalancerV2, {removeLiquidityRequest: removeLiquidityRequest}, () => {
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
         }).then(() => {
         });
+      });
+    },
+
+    async openClaimRewardsModal() {
+      const modalInstance = this.openModal(ClaimBalancerRewardsModal);
+
+      modalInstance.$on('CLAIM', claimEvent => {
+        if (this.smartLoanContract) {
+          const claimRequest = {
+            poolId: this.lpToken.poolId
+          };
+          this.handleTransaction(this.claimRewardsBalancerV2, {claimRequest: claimRequest}, () => {
+            this.$forceUpdate();
+          }, (error) => {
+            this.handleTransactionError(error);
+          }).then(() => {
+          });
+        }
       });
     },
 
@@ -548,6 +614,14 @@ export default {
       })
     },
 
+    watchRefreshLP() {
+      this.lpService.observeRefreshLp().subscribe(async (lpType) => {
+        if (lpType === 'BALANCER_V2_REWARDS_CLAIMED') {
+          this.rewardsReset = true;
+        }
+      })
+    },
+
     scheduleHardRefresh() {
       setTimeout(() => {
         this.progressBarService.emitProgressBarInProgressState();
@@ -607,7 +681,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: repeat(3, 1fr) 12% 135px 60px 80px 22px;
+    grid-template-columns: repeat(2, 1fr) 300px 10% 10% 10% 60px 80px 22px;
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;
@@ -654,6 +728,20 @@ export default {
         align-items: flex-end;
       }
 
+      &.rewards {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+
+        .asset__icon {
+          margin-left: 5px;
+          height: 22px;
+          width: 22px;
+          border-radius: 50%;
+          margin-right: 9px;
+        }
+      }
+
       &.apr.apr--with-warning {
         position: relative;
 
@@ -683,6 +771,12 @@ export default {
         .chart__icon-button {
           margin-left: 7px;
         }
+      }
+
+      .stars-icon {
+        width: 20px;
+        margin-right: 10px;
+        transform: translateY(-2px);
       }
 
       &.price {
