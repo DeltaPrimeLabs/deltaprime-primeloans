@@ -1,7 +1,12 @@
 <template>
-  <ZapTile v-on:tileClick="onTileClick()"  :disabled="!hasSmartLoanContract" :img-src="'src/assets/icons/chart-up.png'" :dark-img-src="'src/assets/icons/chart-up--dark.png'" :header="'Convert GLP to GM'">
+  <ZapTile v-on:tileClick="onTileClick()"
+           :disabled="!hasSmartLoanContract"
+           :img-src="'src/assets/icons/glp_to_gm_zap_icon.png'"
+           :dark-img-src="'src/assets/icons/glp_to_gm_zap_icon--dark.png'"
+           :img-class="'glp-to-gm-img'"
+           :header="'Convert GLP to GM'">
     <template #label>
-      <b>here</b>
+      <b>Utility</b>
     </template>
     <template #default>
     </template>
@@ -98,6 +103,5 @@ export default {
 };
 </script>
 
-<style scoped>
-
+<style lang="scss" scoped>
 </style>
