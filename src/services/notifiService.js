@@ -58,6 +58,7 @@ export default class notifiService {
       tenantId,
       env: blockchainEnv
     };
+    console.log(newFrontendConfig);
 
     const client = newFrontendClient(newFrontendConfig);
     const notifi = await this.refreshClientInfo(client);
@@ -66,6 +67,7 @@ export default class notifiService {
     this.alertSettings = alertsConfig;
 
     if (notifi.alerts) {
+      console.log(notifi.alerts);
       for (const alert of notifi.alerts) {
         // get alerts statuses for initialization on settings screen
         let fusionEvent;
@@ -269,10 +271,10 @@ export default class notifiService {
   }
 
   async createBorrowRateAlerts({ client, poolAddress, thresholdDirection, threshold, network }) {
-    // const name = `Borrow Rate Alerts: ${poolAddress} ${thresholdDirection} ${threshold}`;
+    const name = `Borrow Rate Alerts: ${poolAddress} ${thresholdDirection} ${threshold}`;
     const eventType = {
       type: 'fusion',
-      name: 'Borrow Rate Alerts',
+      name,
       fusionEventId: {
         type: 'value',
         value: config.fusionEventIds.borrowRate
@@ -302,8 +304,8 @@ export default class notifiService {
     const result = await client.ensureAlert({
       eventType,
       inputs: {
-        ['Borrow Rate Alerts__healthRatio']: threshold,
-        ['Borrow Rate Alerts__healthThresholdDirection']: thresholdDirection,
+        [`${name}__healthRatio`]: threshold,
+        [`${name}__healthThresholdDirection`]: thresholdDirection,
       },
     });
 
@@ -311,10 +313,10 @@ export default class notifiService {
   }
 
   async createLendingRateAlerts({ client, poolAddress, thresholdDirection, threshold, network }) {
-    // const name = `Lending Rate Alerts: ${poolAddress} ${thresholdDirection} ${threshold}`;
+    const name = `Lending Rate Alerts: ${poolAddress} ${thresholdDirection} ${threshold}`;
     const eventType = {
       type: 'fusion',
-      name: 'Lending Rate Alerts',
+      name,
       fusionEventId: {
         type: 'value',
         value: config.fusionEventIds.lendingRate
@@ -344,8 +346,8 @@ export default class notifiService {
     const result = await client.ensureAlert({
       eventType,
       inputs: {
-        ['Lending Rate Alerts__healthRatio']: threshold,
-        ['Lending Rate Alerts__healthThresholdDirection']: thresholdDirection,
+        [`${name}__healthRatio`]: threshold,
+        [`${name}__healthThresholdDirection`]: thresholdDirection,
       },
     });
 

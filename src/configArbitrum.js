@@ -17,6 +17,7 @@ export default {
     TRANSACTION_HISTORY_PAGE_SIZE: 7,
     chainId: 42161,
     chainSlug: 'arbitrum',
+    notifiEnabled: true,
     primeAccountsBlocked: true,
     //update leverage after every change in contracts
     ASSETS_CONFIG: {
