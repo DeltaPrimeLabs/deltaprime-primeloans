@@ -6,6 +6,9 @@ import "../AssetsOperationsFacet.sol";
 import "../SmartLoanLiquidationFacet.sol";
 
 contract AssetsOperationsAvalancheFacet is AssetsOperationsFacet {
+    using TransferHelper for address payable;
+    using TransferHelper for address;
+
     function YY_ROUTER() internal override pure returns (address) {
         return 0xC4729E56b831d74bBc18797e0e17A295fA77488c;
     }
@@ -15,7 +18,7 @@ contract AssetsOperationsAvalancheFacet is AssetsOperationsFacet {
     * @dev Requires approval for stakedGLP token on frontend side
     * @param _amount to be funded
     **/
-    function fundGLP(uint256 _amount) public override {
+    function fundGLP(uint256 _amount) public override nonReentrant {
         IERC20Metadata stakedGlpToken = IERC20Metadata(0xaE64d55a6f09E4263421737397D1fdFA71896a69);
         _amount = Math.min(_amount, stakedGlpToken.balanceOf(msg.sender));
         address(stakedGlpToken).safeTransferFrom(msg.sender, address(this), _amount);
@@ -33,7 +36,7 @@ contract AssetsOperationsAvalancheFacet is AssetsOperationsFacet {
         * Withdraws specified amount of a GLP
         * @param _amount to be withdrawn
     **/
-    function withdrawGLP(uint256 _amount) public virtual onlyOwner nonReentrant canRepayDebtFully remainsSolvent{
+    function withdrawGLP(uint256 _amount) public override onlyOwner nonReentrant canRepayDebtFully remainsSolvent{
         IERC20Metadata token = getERC20TokenInstance("GLP", true);
         IERC20Metadata stakedGlpToken = IERC20Metadata(0xaE64d55a6f09E4263421737397D1fdFA71896a69);
         _amount = Math.min(token.balanceOf(address(this)), _amount);

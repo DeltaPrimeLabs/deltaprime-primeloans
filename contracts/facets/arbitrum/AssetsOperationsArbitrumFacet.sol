@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 8479ca6cbfea247ea80210166dd068af1228914f;
+// Last deployed from commit: c9a0d9f57b345131acb8e926775476597d6dc652;
 pragma solidity 0.8.17;
 
 import "../AssetsOperationsFacet.sol";
@@ -17,7 +17,7 @@ contract AssetsOperationsArbitrumFacet is AssetsOperationsFacet {
     * @dev Requires approval for stakedGLP token on frontend side
     * @param _amount to be funded
     **/
-    function fundGLP(uint256 _amount) public override {
+    function fundGLP(uint256 _amount) public override nonReentrant{
         IERC20Metadata stakedGlpToken = IERC20Metadata(0x5402B5F40310bDED796c7D0F3FF6683f5C0cFfdf);
         _amount = Math.min(_amount, stakedGlpToken.balanceOf(msg.sender));
         address(stakedGlpToken).safeTransferFrom(msg.sender, address(this), _amount);
@@ -35,7 +35,7 @@ contract AssetsOperationsArbitrumFacet is AssetsOperationsFacet {
         * Withdraws specified amount of a GLP
         * @param _amount to be withdrawn
     **/
-    function withdrawGLP(uint256 _amount) public virtual onlyOwner nonReentrant canRepayDebtFully remainsSolvent{
+    function withdrawGLP(uint256 _amount) public override onlyOwner nonReentrant canRepayDebtFully remainsSolvent{
         IERC20Metadata token = getERC20TokenInstance("GLP", true);
         IERC20Metadata stakedGlpToken = IERC20Metadata(0x5402B5F40310bDED796c7D0F3FF6683f5C0cFfdf);
         _amount = Math.min(token.balanceOf(address(this)), _amount);
