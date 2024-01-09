@@ -370,8 +370,8 @@ export default {
 
         const yakRouter = new ethers.Contract(config.yakRouterAddress, YAK_ROUTER_ABI, provider.getSigner());
 
-        const maxHops = 1;
-        const gasPrice = ethers.utils.parseUnits('225', 'gwei');
+        const maxHops = 3;
+        const gasPrice = ethers.utils.parseUnits('0.2', 'gwei');
 
         try {
           return await yakRouter.findBestPathWithGas(
