@@ -83,14 +83,14 @@
             :config="addActionsConfig"
             v-if="addActionsConfig"
             v-on:iconButtonClick="actionClick"
-            :disabled="disableAllButtons || lpToken.disableAddTokenButton">
+            :disabled="true">
         </IconButtonMenuBeta>
         <IconButtonMenuBeta
             class="actions__icon-button last"
             :config="removeActionsConfig"
             v-if="removeActionsConfig"
             v-on:iconButtonClick="actionClick"
-            :disabled="disableAllButtons">
+            :disabled="true">
         </IconButtonMenuBeta>
         <IconButtonMenuBeta
             class="actions__icon-button"
