@@ -10,7 +10,8 @@
     <div class="lp-tokens" v-if="Object.keys(gmxV2LpTokens).length">
       <div class="lp-table level" v-if="gmxV2LpTokens">
         <TableHeader :config="gmxV2LpTableHeaderConfig"></TableHeader>
-        <GmxV2LpTableRow v-for="(lpToken, index) in gmxV2LpTokens" v-bind:key="index" :index="index" :lp-token="lpToken"></GmxV2LpTableRow>
+        <GmxV2LpTableRow v-for="(lpToken, index) in gmxV2LpTokens" v-bind:key="index" :index="index"
+                         :lp-token="lpToken" :openInterestData="openInterestData[lpToken.symbol]"></GmxV2LpTableRow>
       </div>
     </div>
     <div class="lp-tokens">
@@ -24,7 +25,7 @@
       <div class="lp-table">
         <TableHeader :config="balancerLpTableHeaderConfig"></TableHeader>
         <BalancerLpTableRow v-for="(lpToken, index) in balancerLpTokens" v-bind:key="index" :index="index"
-                             :lp-token="lpToken" :lp-tokens="balancerLpTokens"></BalancerLpTableRow>
+                            :lp-token="lpToken" :lp-tokens="balancerLpTokens"></BalancerLpTableRow>
       </div>
     </div>
     <div class="lp-tokens" v-if="Object.keys(levelLpTokens).length">
@@ -104,7 +105,8 @@ export default {
       levelLpTableHeaderConfig: null,
       gmIncentivesTableHeaderConfig: null,
       selectedLpTokens: [] = [],
-      assets: null
+      assets: null,
+      openInterestData: {},
     };
   },
   mounted() {
@@ -118,6 +120,7 @@ export default {
     this.setupGmxV2LpTableHeaderConfig();
     this.setupGmIncentivesTableHeaderConfig();
     this.setupBalancerLpTableHeaderConfig();
+    this.fetchOpenInterestData();
   },
   computed: {
     ...mapState('serviceRegistry', [
@@ -315,6 +318,21 @@ export default {
         );
       }
     },
+
+    async fetchOpenInterestData() {
+      const data = await (await fetch('https://cavsise1n4.execute-api.us-east-1.amazonaws.com/gm-open-interests')).json();
+      const newOpenInterestData = {}
+      Object.keys(data[0])
+          .filter(key => key !== 'id')
+          .forEach(tokenName => {
+            newOpenInterestData[tokenName] = data.map(dataEntry => ({
+              y: dataEntry[tokenName] * 100,
+              x: Number(dataEntry.id),
+            }))
+          })
+      this.openInterestData = newOpenInterestData;
+    },
+
     setupLpTableHeaderConfig() {
       this.lpTableHeaderConfig = {
         gridTemplateColumns: 'repeat(4, 1fr) 12% 135px 60px 80px 22px',

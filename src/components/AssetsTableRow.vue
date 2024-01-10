@@ -1129,10 +1129,13 @@ export default {
         return;
       }
 
-      if (String(error) === '[object Object]') {
+      if (String(error) === '[object Object]' || typeof error === 'object') {
         switch (error.code) {
           case -32000:
             this.progressBarService.emitProgressBarErrorState('The selected aggregator could not find a route. Please switch aggregator, or try again later.')
+            break;
+          case 'UNPREDICTABLE_GAS_LIMIT':
+            this.progressBarService.emitProgressBarErrorState('Could not estimate gas for transaction. Please switch aggregator, or try again later.')
             break;
           case 4001:
             this.progressBarService.emitProgressBarCancelledState()

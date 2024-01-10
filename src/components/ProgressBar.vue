@@ -73,9 +73,10 @@ export default {
         this.state = stateChangeEvent.state;
         this.additionalInfo = stateChangeEvent.additionalInfo;
         this.statusInfo = stateChangeEvent.statusInfo;
+        const duration = stateChangeEvent.duration ? stateChangeEvent.duration : 3000
         if (this.progressBarVisible) {
           if (this.state === 'SUCCESS' || this.state === 'ERROR' || this.state === 'CANCELLED') {
-            timer(3000).subscribe(() => {
+            timer(duration).subscribe(() => {
               this.progressBarVisible = false;
             });
           }

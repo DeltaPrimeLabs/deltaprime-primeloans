@@ -58,6 +58,10 @@
         default: '$',
         type: String
       },
+      valuesType: {
+        default: 'CURRENCY',
+        type: String
+      },
       minY: 0,
       maxY: null,
       height: null,
@@ -138,12 +142,14 @@
             yAxes: [{
               gridLines: {
                 lineWidth: 2,
-                zeroLineWidth: 0.5,
+                zeroLineWidth: 2,
                 borderDash: [8, 4],
+                zeroLineBorderDash: [8, 4],
                 drawOnChartArea: true,
                 tickMarkLength: 0,
                 drawBorder: false,
                 color: getThemeVariable('--chart__grid-lines-color'),
+                zeroLineColor: getThemeVariable('--chart__grid-lines-color'),
               },
               ticks: {
                 display: true,
@@ -175,7 +181,12 @@
                   label += ': ';
                 }
                 label += tooltipItem.yLabel.toPrecision(6);
-                return this.currencySymbol + label;
+                switch (this.valuesType) {
+                  case 'PERCENTAGE':
+                    return label + '%'
+                  default:
+                    return this.currencySymbol + label;
+                }
               }
             }
           }
