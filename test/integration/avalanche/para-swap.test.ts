@@ -138,6 +138,7 @@ describe('ParaSwap', () => {
                 [],
                 tokenManager.address,
                 addressProvider.address,
+                ethers.constants.AddressZero,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -178,7 +179,7 @@ describe('ParaSwap', () => {
 
         it("should fail to swap as a non-owner", async () => {
             const swapData = await getSwapData('AVAX', 'USDC', toWei('10'), ContractMethod.simpleSwap);
-            await expect(nonOwnerWrappedLoan.paraSwap(swapData.selector, swapData.data, TOKEN_ADDRESSES['AVAX'], toWei('10'), TOKEN_ADDRESSES['USDC'], 0)).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.paraSwapV2(swapData.selector, swapData.data, TOKEN_ADDRESSES['AVAX'], toWei('10'), TOKEN_ADDRESSES['USDC'], 0)).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
         });
 
         it('should swap funds: AVAX -> USDC', async () => {
@@ -189,7 +190,7 @@ describe('ParaSwap', () => {
             expect(await loanOwnsAsset("USDC")).to.be.false;
 
             const swapData = await getSwapData('AVAX', 'USDC', toWei('10'), ContractMethod.simpleSwap);
-            await wrappedLoan.paraSwap(swapData.selector, swapData.data, TOKEN_ADDRESSES['AVAX'], toWei('10'), TOKEN_ADDRESSES['USDC'], parseUnits((tokensPrices.get("AVAX")! * 9.8).toFixed(6), 6));
+            await wrappedLoan.paraSwapV2(swapData.selector, swapData.data, TOKEN_ADDRESSES['AVAX'], toWei('10'), TOKEN_ADDRESSES['USDC'], parseUnits((tokensPrices.get("AVAX")! * 9.8).toFixed(6), 6));
 
             expect(await loanOwnsAsset("USDC")).to.be.true;
 
@@ -208,7 +209,7 @@ describe('ParaSwap', () => {
 
             const swapData = await getSwapData('USDC', 'ETH', usdcBalance, ContractMethod.megaSwap);
             const minOut = formatUnits(usdcBalance, 6) * tokensPrices.get("USDC")! / tokensPrices.get("ETH")!;
-            await wrappedLoan.paraSwap(swapData.selector, swapData.data, TOKEN_ADDRESSES['USDC'], usdcBalance, TOKEN_ADDRESSES['ETH'], toWei((minOut * 0.98).toString()));
+            await wrappedLoan.paraSwapV2(swapData.selector, swapData.data, TOKEN_ADDRESSES['USDC'], usdcBalance, TOKEN_ADDRESSES['ETH'], toWei((minOut * 0.98).toString()));
 
             expect(await loanOwnsAsset("USDC")).to.be.false;
             expect(await loanOwnsAsset("ETH")).to.be.true;
@@ -229,7 +230,7 @@ describe('ParaSwap', () => {
 
             const swapData = await getSwapData('ETH', 'USDC', swapAmount, ContractMethod.multiSwap);
             const minOut = formatUnits(swapAmount, 18) * tokensPrices.get("ETH")!;
-            await wrappedLoan.paraSwap(swapData.selector, swapData.data, TOKEN_ADDRESSES['ETH'], swapAmount, TOKEN_ADDRESSES['USDC'], parseUnits((minOut * 0.98).toFixed(6), 6));
+            await wrappedLoan.paraSwapV2(swapData.selector, swapData.data, TOKEN_ADDRESSES['ETH'], swapAmount, TOKEN_ADDRESSES['USDC'], parseUnits((minOut * 0.98).toFixed(6), 6));
 
             expect(await loanOwnsAsset("ETH")).to.be.true;
             expect(await loanOwnsAsset("USDC")).to.be.true;
@@ -249,7 +250,7 @@ describe('ParaSwap', () => {
 
             const swapData = await getSwapData('ETH', 'USDC', ethBalance, ContractMethod.directUniV3Swap);
             const minOut = formatUnits(ethBalance, 18) * tokensPrices.get("ETH")!;
-            await wrappedLoan.paraSwap(swapData.selector, swapData.data, TOKEN_ADDRESSES['ETH'], ethBalance, TOKEN_ADDRESSES['USDC'], parseUnits((minOut * 0.98).toFixed(6), 6));
+            await wrappedLoan.paraSwapV2(swapData.selector, swapData.data, TOKEN_ADDRESSES['ETH'], ethBalance, TOKEN_ADDRESSES['USDC'], parseUnits((minOut * 0.98).toFixed(6), 6));
 
             expect(await loanOwnsAsset("ETH")).to.be.false;
             expect(await loanOwnsAsset("USDC")).to.be.true;

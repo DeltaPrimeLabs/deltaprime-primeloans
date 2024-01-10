@@ -82,6 +82,7 @@ describe('Yield Yak test stake AVAX', () => {
             [],
             tokenManager.address,
             addressProvider.address,
+            ethers.constants.AddressZero,
             diamondAddress,
             smartLoansFactory.address,
             'lib'
@@ -211,6 +212,7 @@ describe('Yield Yak test stake sAVAX', () => {
             [],
             tokenManager.address,
             addressProvider.address,
+            ethers.constants.AddressZero,
             diamondAddress,
             smartLoansFactory.address,
             'lib'
@@ -231,6 +233,7 @@ describe('Yield Yak test stake sAVAX', () => {
             ],
             tokenManager.address,
             addressProvider.address,
+            ethers.constants.AddressZero,
             diamondAddress,
             smartLoansFactory.address,
             'lib'

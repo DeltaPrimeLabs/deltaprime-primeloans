@@ -77,6 +77,7 @@ module.exports = async ({
         ],
         tokenManager.address,
         addressProvider.address,
+        ethers.constants.AddressZero,
         diamondAddress,
         resultTup.address,
         'lib'

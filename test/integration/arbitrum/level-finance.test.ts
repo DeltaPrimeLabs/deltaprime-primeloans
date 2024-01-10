@@ -158,6 +158,7 @@ describe('Smart loan', () => {
                 [],
                 tokenManager.address,
                 addressProvider.address,
+                ethers.constants.AddressZero,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib',
@@ -256,13 +257,13 @@ describe('Smart loan', () => {
             let initialTWV = await wrappedLoan.getThresholdWeightedValue();
 
             let swapData = await getSwapData('ETH', 'BTC', 18, 8, toWei('2'));
-            await wrappedLoan.paraSwap(swapData.selector, swapData.data, TOKEN_ADDRESSES['ETH'], toWei('2'), TOKEN_ADDRESSES['BTC'], parseUnits((tokensPrices.get("ETH")! * 1.96).toFixed(8), 8));
+            await wrappedLoan.paraSwapV2(swapData.selector, swapData.data, TOKEN_ADDRESSES['ETH'], toWei('2'), TOKEN_ADDRESSES['BTC'], parseUnits((tokensPrices.get("ETH")! * 1.96).toFixed(8), 8));
             btcBalance = await tokenContracts.get('BTC')!.balanceOf(wrappedLoan.address);
             swapData = await getSwapData('ETH', 'USDT', 18, 6, toWei('2'));
-            await wrappedLoan.paraSwap(swapData.selector, swapData.data, TOKEN_ADDRESSES['ETH'], toWei('2'), TOKEN_ADDRESSES['USDT'], parseUnits((tokensPrices.get("ETH")! * 1.96).toFixed(6), 6));
+            await wrappedLoan.paraSwapV2(swapData.selector, swapData.data, TOKEN_ADDRESSES['ETH'], toWei('2'), TOKEN_ADDRESSES['USDT'], parseUnits((tokensPrices.get("ETH")! * 1.96).toFixed(6), 6));
             usdtBalance = await tokenContracts.get('USDT')!.balanceOf(wrappedLoan.address);
             swapData = await getSwapData('ETH', 'USDC', 18, 6, toWei('2'));
-            await wrappedLoan.paraSwap(swapData.selector, swapData.data, TOKEN_ADDRESSES['ETH'], toWei('2'), TOKEN_ADDRESSES['USDC'], parseUnits((tokensPrices.get("ETH")! * 1.96).toFixed(6), 6));
+            await wrappedLoan.paraSwapV2(swapData.selector, swapData.data, TOKEN_ADDRESSES['ETH'], toWei('2'), TOKEN_ADDRESSES['USDC'], parseUnits((tokensPrices.get("ETH")! * 1.96).toFixed(6), 6));
             usdcBalance = await tokenContracts.get('USDC')!.balanceOf(wrappedLoan.address);
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 20);
