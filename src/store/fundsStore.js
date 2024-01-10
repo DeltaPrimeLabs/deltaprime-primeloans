@@ -3155,6 +3155,7 @@ export default {
       const usdcToken = new ethers.Contract(TOKEN_ADDRESSES['USDC'], erc20ABI, provider.getSigner());
 
       const usdcBalanceBefore = await usdcToken.balanceOf(state.smartLoanContract.address);
+      const usdcBalanceBeforeParsed = formatUnits(await usdcToken.balanceOf(state.smartLoanContract.address), config.ASSETS_CONFIG.USDC.decimals);
 
       const walletAmount = await glpToken.balanceOf(rootState.network.account);
 
@@ -3175,8 +3176,11 @@ export default {
             const approveTransaction = await glpToken.connect(provider.getSigner()).approve(state.smartLoanContract.address, walletAmount);
             await awaitConfirmation(approveTransaction, provider, 'approve');
           } catch (error) {
-            rootState.serviceRegistry.progressBarService.emitProgressBarErrorState('Approve transaction failed please retry converting GLP to GM', 6000);
+            rootState.serviceRegistry.progressBarService.emitProgressBarErrorState('Approve transaction failed, please retry the ZAP', 6000);
             rootState.serviceRegistry.modalService.closeModal();
+            setTimeout(async () => {
+              await dispatch('updateFunds');
+            }, config.refreshDelay);
             throw error;
           }
         }
@@ -3185,11 +3189,18 @@ export default {
           const fundTransaction = await (await wrapContract(state.smartLoanContract, loanAssets)).fundGLP(walletAmount);
           await awaitConfirmation(fundTransaction, provider, 'approve');
         } catch (error) {
-          rootState.serviceRegistry.progressBarService.emitProgressBarErrorState('Deposit to Prime Account failed please retry converting GLP to GM', 6000);
+          rootState.serviceRegistry.progressBarService.emitProgressBarErrorState('Deposit to Prime Account failed, please retry the ZAP', 6000);
           rootState.serviceRegistry.modalService.closeModal();
+          setTimeout(async () => {
+            await dispatch('updateFunds');
+          }, config.refreshDelay);
           throw error;
         }
       }
+
+      const glpAfterDeposit = Number(state.assetBalances['GLP']) + walletAmount;
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate('GLP', glpAfterDeposit, false, true);
 
       const smartLoanGlpAmount = await glpToken.balanceOf(state.smartLoanContract.address);
 
@@ -3210,13 +3221,20 @@ export default {
         );
         await awaitConfirmation(txUnstakeGlp, provider, 'unstake Glp');
       } catch (error) {
-        rootState.serviceRegistry.progressBarService.emitProgressBarErrorState('Intermediate convert transaction failed please retry convert GLP to GM', 6000);
+        rootState.serviceRegistry.progressBarService.emitProgressBarErrorState('Redemption failed, please retry the ZAP', 6000);
         rootState.serviceRegistry.modalService.closeModal();
+        setTimeout(async () => {
+          await dispatch('updateFunds');
+        }, config.refreshDelay);
         throw error;
       }
 
-
       const usdcBalanceAfter = await usdcToken.balanceOf(state.smartLoanContract.address);
+      const usdcBalanceAfterParsed = formatUnits(usdcBalanceAfter, config.ASSETS_CONFIG.USDC.decimals);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate('USDC', usdcBalanceAfterParsed, false, true);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate('GLP', 0, false, true);
 
       const usdcForGm = usdcBalanceAfter.sub(usdcBalanceBefore);
 
@@ -3228,7 +3246,6 @@ export default {
       let gmBalanceBefore = state.gmxV2Balances[convertRequest.targetMarketSymbol];
 
       try {
-
         const txAddGm = await (await wrapContract(state.smartLoanContract, loanAssets))[`deposit${capitalize(gmMarket.longToken)}${capitalize(gmMarket.shortToken)}GmxV2`](
           false,
           usdcForGm,
@@ -3239,8 +3256,11 @@ export default {
 
         await awaitConfirmation(txAddGm, provider, 'deposit to GM');
       } catch (error) {
-        rootState.serviceRegistry.progressBarService.emitProgressBarErrorState('GM deposit transaction failed please create GM position on LP page using USDC converted from GLP', 6000)
+        rootState.serviceRegistry.progressBarService.emitProgressBarErrorState('GM minting failed, please mint manually on LP', 6000)
         rootState.serviceRegistry.modalService.closeModal();
+        setTimeout(async () => {
+          await dispatch('updateFunds');
+        }, config.refreshDelay);
         throw error;
       }
 
@@ -3249,7 +3269,10 @@ export default {
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate(convertRequest.targetMarketSymbol, parseFloat(gmBalanceBefore) + fromWei(minReceivedGm), true, false);
       rootState.serviceRegistry.assetBalancesExternalUpdateService
-        .emitExternalAssetBalanceUpdate('GLP', 0, true, true);
+        .emitExternalAssetBalanceUpdate('GLP', 0, false, true);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate('USDC', usdcBalanceBeforeParsed, false, true);
+
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       rootState.serviceRegistry.modalService.closeModal();
