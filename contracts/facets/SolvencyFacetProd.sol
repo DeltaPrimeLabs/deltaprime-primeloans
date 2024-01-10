@@ -46,13 +46,19 @@ abstract contract SolvencyFacetProd is RedstoneConsumerNumericBase, DiamondHelpe
         uint256 priceY;
     }
 
+    error AccountFrozen();
+
+    error InvalidLength();
+
+    error PositionPriceSymbolMismatch();
+
     /**
       * Checks if the loan is solvent.
       * It means that the Health Ratio is greater than 1e18.
       * @dev This function uses the redstone-evm-connector
     **/
     function isSolvent() public view returns (bool) {
-        require(!DiamondStorageLib.isAccountFrozen(), "Account frozen");
+        if (DiamondStorageLib.isAccountFrozen()) revert AccountFrozen();
         return getHealthRatio() >= 1e18;
     }
 
@@ -149,8 +155,8 @@ abstract contract SolvencyFacetProd is RedstoneConsumerNumericBase, DiamondHelpe
     }
 
     function copyToArray(bytes32[] memory target, bytes32[] memory source, uint256 offset, uint256 numberOfItems) pure internal {
-        require(numberOfItems <= source.length, "numberOfItems > target array length");
-        require(offset + numberOfItems <= target.length, "offset + numberOfItems > target array length");
+        if (numberOfItems > source.length) revert InvalidLength();
+        if (offset + numberOfItems > target.length) revert InvalidLength();
 
         for(uint i; i<numberOfItems; i++){
             target[i + offset] = source[i];
@@ -158,10 +164,10 @@ abstract contract SolvencyFacetProd is RedstoneConsumerNumericBase, DiamondHelpe
     }
 
     function copyToAssetPriceArray(AssetPrice[] memory target, bytes32[] memory sourceAssets, uint256[] memory sourcePrices, uint256 offset, uint256 numberOfItems) pure internal {
-        require(numberOfItems <= sourceAssets.length, "numberOfItems > sourceAssets array length");
-        require(numberOfItems <= sourcePrices.length, "numberOfItems > sourcePrices array length");
-        require(offset + numberOfItems <= sourceAssets.length, "offset + numberOfItems > sourceAssets array length");
-        require(offset + numberOfItems <= sourcePrices.length, "offset + numberOfItems > sourcePrices array length");
+        if (numberOfItems > sourceAssets.length) revert InvalidLength();
+        if (numberOfItems > sourcePrices.length) revert InvalidLength();
+        if (offset + numberOfItems > sourceAssets.length) revert InvalidLength();
+        if (offset + numberOfItems > sourcePrices.length) revert InvalidLength();
 
         for(uint i; i<numberOfItems; i++){
             target[i] = AssetPrice({
@@ -244,7 +250,8 @@ abstract contract SolvencyFacetProd is RedstoneConsumerNumericBase, DiamondHelpe
         for(uint i; i< poolAssets.length; i++) {
             Pool pool = Pool(DeploymentConstants.getTokenManager().getPoolAddress(poolAssets[i]));
             IERC20 token = IERC20(pool.tokenAddress());
-            if(token.balanceOf(address(this)) < pool.getBorrowed(address(this))) {
+            if( token.balanceOf(address(this)) < pool.getBorrowedWithFees(address(this))
+            ) {
                 return false;
             }
         }
@@ -296,7 +303,7 @@ abstract contract SolvencyFacetProd is RedstoneConsumerNumericBase, DiamondHelpe
         uint256 weightedValueOfStaked;
 
         for (uint256 i; i < positions.length; i++) {
-            require(stakedPositionsPrices[i].asset == positions[i].symbol, "Position-price symbol mismatch.");
+            if (stakedPositionsPrices[i].asset != positions[i].symbol) revert PositionPriceSymbolMismatch();
 
             (bool success, bytes memory result) = address(this).staticcall(abi.encodeWithSelector(positions[i].balanceSelector));
 
@@ -353,7 +360,7 @@ abstract contract SolvencyFacetProd is RedstoneConsumerNumericBase, DiamondHelpe
 
             Pool pool = Pool(tokenManager.getPoolAddress(debtAssetsPrices[i].asset));
             //10**18 (wei in eth) / 10**8 (precision of oracle feed) = 10**10
-            debt = debt + pool.getBorrowed(address(this)) * debtAssetsPrices[i].price * 10 ** 10
+            debt = debt + pool.getBorrowedWithFees(address(this)) * debtAssetsPrices[i].price * 10 ** 10
             / 10 ** token.decimals();
         }
 
@@ -454,7 +461,7 @@ abstract contract SolvencyFacetProd is RedstoneConsumerNumericBase, DiamondHelpe
         uint256 usdValue;
 
         for (uint256 i; i < positions.length; i++) {
-            require(stakedPositionsPrices[i].asset == positions[i].symbol, "Position-price symbol mismatch.");
+            if (stakedPositionsPrices[i].asset != positions[i].symbol) revert PositionPriceSymbolMismatch();
 
             (bool success, bytes memory result) = address(this).staticcall(abi.encodeWithSelector(positions[i].balanceSelector));
 

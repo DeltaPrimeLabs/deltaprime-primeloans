@@ -128,6 +128,7 @@ describe('Smart loan', () => {
                 ],
                 tokenManager.address,
                 addressProvider.address,
+                ethers.constants.AddressZero,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'

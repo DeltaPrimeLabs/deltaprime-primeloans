@@ -383,6 +383,7 @@ describe('Smart loan - real prices', () => {
                 [],
                 tokenManager.address,
                 addressProvider.address,
+                ethers.constants.AddressZero,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -511,6 +512,7 @@ describe('Smart loan - real prices', () => {
                 ],
                 tokenManager.address,
                 addressProvider.address,
+                ethers.constants.AddressZero,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'
@@ -542,6 +544,7 @@ describe('Smart loan - real prices', () => {
                 ],
                 tokenManager.address,
                 addressProvider.address,
+                ethers.constants.AddressZero,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib'

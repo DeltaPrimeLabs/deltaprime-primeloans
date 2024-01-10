@@ -64,6 +64,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     [],
     tokenManager.address,
     addressProvider.address,
+    ethers.constants.AddressZero,
     diamondAddress,
     resultTup.address,
     "lib",

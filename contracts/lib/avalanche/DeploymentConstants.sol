@@ -28,6 +28,8 @@ library DeploymentConstants {
 
     address private constant _ADDRESS_PROVIDER = address(0);
 
+    address private constant _PRIME_DEX = address(0);
+
     //implementation-specific
 
     function getPercentagePrecision() internal pure returns (uint256) {
@@ -60,6 +62,10 @@ library DeploymentConstants {
 
     function getAddressProvider() internal pure returns (address) {
         return _ADDRESS_PROVIDER;
+    }
+
+    function getPrimeDex() internal pure returns (address) {
+        return _PRIME_DEX;
     }
 
     /**

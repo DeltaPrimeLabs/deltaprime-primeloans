@@ -148,6 +148,7 @@ describe('Smart loan', () => {
                 [],
                 tokenManager.address,
                 addressProvider.address,
+                ethers.constants.AddressZero,
                 diamondAddress,
                 smartLoansFactory.address,
                 'lib',
@@ -199,15 +200,15 @@ describe('Smart loan', () => {
 
             // let swapData = await getSwapData('AVAX', 'BTC', 18, 8, toWei('2'));
             // console.log('swap 1')
-            // await wrappedLoan.paraSwap(swapData);
+            // await wrappedLoan.paraSwapV2(swapData);
             // btcBalance = await tokenContracts.get('BTC')!.balanceOf(wrappedLoan.address);
             // swapData = await getSwapData('AVAX', 'USDT', 18, 6, toWei('2'));
             // console.log('swap 2')
-            // await wrappedLoan.paraSwap(swapData);
+            // await wrappedLoan.paraSwapV2(swapData);
             // usdtBalance = await tokenContracts.get('USDT')!.balanceOf(wrappedLoan.address);
             // swapData = await getSwapData('AVAX', 'USDC', 18, 6, toWei('2'));
             // console.log('swap 3')
-            // await wrappedLoan.paraSwap(swapData);
+            // await wrappedLoan.paraSwapV2(swapData);
             // usdcBalance = await tokenContracts.get('USDC')!.balanceOf(wrappedLoan.address);
         });
 
