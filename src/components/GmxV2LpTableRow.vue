@@ -75,7 +75,7 @@
       </div>
 
       <div class="table__cell table__cell--double-value max-apr">
-        <span>{{ maxApr + gmBoost | percent }}<img v-if="hasGmIncentives" v-tooltip="{content: `This pool is incentivized!<br>⁃ up to ${maxApr ? (maxApr * 100).toFixed(2) : 0}% Pool APR<br>⁃ up to ${gmBoost ? (gmBoost * 100).toFixed(2) : 0}% ARB incentives`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span>
+        <span>{{ (maxApr + gmBoost) | percent }}<img v-if="hasGmIncentives" v-tooltip="{content: `This pool is incentivized!<br>⁃ up to ${maxApr ? (maxApr * 100).toFixed(2) : 0}% Pool APR<br>⁃ up to ${gmBoost ? (gmBoost * 100).toFixed(2) : 0}% ARB incentives`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span>
       </div>
 
       <div class="table__cell"></div>
@@ -290,7 +290,7 @@ export default {
     },
 
     gmBoost() {
-      if (!this.apys || !this.assets || !this.assets['ARB'] || !this.assets['ARB'].price) return;
+      if (!this.apys || !this.assets || !this.assets['ARB'] || !this.assets['ARB'].price) return 0;
       let apy = this.apys['GM_BOOST'].arbApy * (this.assets['ARB'].price || 0);
       return this.hasGmIncentives ? 4.5 * apy : 0;
     },
