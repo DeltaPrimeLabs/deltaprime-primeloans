@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: fc6fd99926b17646f7316be6a0182803aeba46f9;
+// Last deployed from commit: 6ec6ee1d761c27d63154edece8d315a615c74c1e;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -122,9 +122,9 @@ contract ParaSwapFacet is ReentrancyGuardKeccak, SolvencyMethods {
         ) - swapTokensDetails.initialBoughtTokenBalance;
         require(boughtTokenFinalAmount >= minOut, "Too little received");
 
-        uint256 soldTokenFinalAmount = swapTokensDetails.soldToken.balanceOf(
+        uint256 soldTokenFinalAmount = swapTokensDetails.initialSoldTokenBalance - swapTokensDetails.soldToken.balanceOf(
             address(this)
-        ) - swapTokensDetails.initialSoldTokenBalance;
+        );
         require(soldTokenFinalAmount == fromAmount, "Too much sold");
 
         bytes32[] memory symbols = new bytes32[](2);
