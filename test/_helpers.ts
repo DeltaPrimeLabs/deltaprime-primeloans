@@ -636,7 +636,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         "ParaSwapFacet",
         diamondAddress,
         [
-            'paraSwap',
+            'paraSwapV2',
         ],
         hardhatConfig
     );
@@ -1407,30 +1407,13 @@ export class StakedPosition {
     }
 }
 
-export const paraSwapRouteToSimpleData = (txParams: TransactionParams) => {
+export const parseParaSwapRouteData = (txParams: TransactionParams) => {
+    const selector = txParams.data.slice(0, 10);
     const data = "0x" + txParams.data.slice(10);
-    const [
-        decoded,
-    ] = ethers.utils.defaultAbiCoder.decode(
-        ["(address,address,uint256,uint256,uint256,address[],bytes,uint256[],uint256[],address,address,uint256,bytes,uint256,bytes16)"],
-        data
-    );
     return {
-        fromToken: decoded[0],
-        toToken: decoded[1],
-        fromAmount: decoded[2],
-        toAmount: decoded[3],
-        expectedAmount: decoded[4],
-        callees: decoded[5],
-        exchangeData: decoded[6],
-        startIndexes: decoded[7],
-        values: decoded[8],
-        beneficiary: decoded[9],
-        partner: decoded[10],
-        feePercent: decoded[11],
-        permit: decoded[12],
-        deadline: decoded[13],
-        uuid: decoded[14],
+        selector,
+        data
     };
 };
+
 

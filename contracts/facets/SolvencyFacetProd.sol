@@ -52,7 +52,9 @@ abstract contract SolvencyFacetProd is RedstoneConsumerNumericBase, DiamondHelpe
       * @dev This function uses the redstone-evm-connector
     **/
     function isSolvent() public view returns (bool) {
-        require(!DiamondStorageLib.isAccountFrozen(), "Account frozen");
+        if(DiamondStorageLib.isAccountFrozen()){
+            revert AccountFrozen();
+        }
         return getHealthRatio() >= 1e18;
     }
 
@@ -149,8 +151,12 @@ abstract contract SolvencyFacetProd is RedstoneConsumerNumericBase, DiamondHelpe
     }
 
     function copyToArray(bytes32[] memory target, bytes32[] memory source, uint256 offset, uint256 numberOfItems) pure internal {
-        require(numberOfItems <= source.length, "numberOfItems > target array length");
-        require(offset + numberOfItems <= target.length, "offset + numberOfItems > target array length");
+        if(numberOfItems > source.length){
+            revert ArrayLengthMismatch();
+        }
+        if(offset + numberOfItems > target.length){
+            revert ArrayLengthMismatch();
+        }
 
         for(uint i; i<numberOfItems; i++){
             target[i + offset] = source[i];
@@ -158,10 +164,18 @@ abstract contract SolvencyFacetProd is RedstoneConsumerNumericBase, DiamondHelpe
     }
 
     function copyToAssetPriceArray(AssetPrice[] memory target, bytes32[] memory sourceAssets, uint256[] memory sourcePrices, uint256 offset, uint256 numberOfItems) pure internal {
-        require(numberOfItems <= sourceAssets.length, "numberOfItems > sourceAssets array length");
-        require(numberOfItems <= sourcePrices.length, "numberOfItems > sourcePrices array length");
-        require(offset + numberOfItems <= sourceAssets.length, "offset + numberOfItems > sourceAssets array length");
-        require(offset + numberOfItems <= sourcePrices.length, "offset + numberOfItems > sourcePrices array length");
+        if(numberOfItems > sourceAssets.length){
+            revert ArrayLengthMismatch();
+        }
+        if(numberOfItems > sourcePrices.length){
+            revert ArrayLengthMismatch();
+        }
+        if(offset + numberOfItems > sourceAssets.length){
+            revert ArrayLengthMismatch();
+        }
+        if(offset + numberOfItems > sourcePrices.length){
+            revert ArrayLengthMismatch();
+        }
 
         for(uint i; i<numberOfItems; i++){
             target[i] = AssetPrice({
@@ -296,7 +310,9 @@ abstract contract SolvencyFacetProd is RedstoneConsumerNumericBase, DiamondHelpe
         uint256 weightedValueOfStaked;
 
         for (uint256 i; i < positions.length; i++) {
-            require(stakedPositionsPrices[i].asset == positions[i].symbol, "Position-price symbol mismatch.");
+            if(stakedPositionsPrices[i].asset != positions[i].symbol){
+                revert PriceSymbolPositionMismatch();
+            }
 
             (bool success, bytes memory result) = address(this).staticcall(abi.encodeWithSelector(positions[i].balanceSelector));
 
@@ -454,7 +470,9 @@ abstract contract SolvencyFacetProd is RedstoneConsumerNumericBase, DiamondHelpe
         uint256 usdValue;
 
         for (uint256 i; i < positions.length; i++) {
-            require(stakedPositionsPrices[i].asset == positions[i].symbol, "Position-price symbol mismatch.");
+            if(stakedPositionsPrices[i].asset != positions[i].symbol){
+                revert PriceSymbolPositionMismatch();
+            }
 
             (bool success, bytes memory result) = address(this).staticcall(abi.encodeWithSelector(positions[i].balanceSelector));
 
@@ -696,4 +714,11 @@ abstract contract SolvencyFacetProd is RedstoneConsumerNumericBase, DiamondHelpe
             return thresholdWeightedValue * 1e18 / debt;
         }
     }
+
+    // ERRORS
+    error PriceSymbolPositionMismatch();
+
+    error AccountFrozen();
+
+    error ArrayLengthMismatch();
 }
