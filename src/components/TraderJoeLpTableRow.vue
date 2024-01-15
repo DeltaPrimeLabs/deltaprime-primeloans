@@ -38,10 +38,10 @@
         <template>
           <div class="table__cell composition">
             <img class="asset__icon" :src="getAssetIcon(lpToken.primary)">{{
-              formatTokenBalance(lpToken.primaryBalance ? lpToken.primaryBalance : 0, 4, true)
+              formatTokenBalanceWithLessThan(lpToken.primaryBalance ? lpToken.primaryBalance : 0, 4, true)
             }}
             <img class="asset__icon" :src="getAssetIcon(lpToken.secondary)">{{
-              formatTokenBalance(lpToken.secondaryBalance ? lpToken.secondaryBalance : 0, 4, true)
+              formatTokenBalanceWithLessThan(lpToken.secondaryBalance ? lpToken.secondaryBalance : 0, 4, true)
             }}
           </div>
           <div class="double-value__usd">
@@ -1033,6 +1033,7 @@ export default {
   padding: 6px 10px 8px 10px;
   font-size: 12px;
   border-radius: 6px;
+  z-index: 999;
 
   .value {
     font-weight: 600;
