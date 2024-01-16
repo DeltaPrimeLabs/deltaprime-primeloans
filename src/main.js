@@ -14,8 +14,9 @@ import 'vue-toastification/dist/index.css';
 import './styles/overrides.scss';
 import VTooltip from 'v-tooltip';
 import config from './config';
-import configAvalanche from './configAvalanche';
+import ConfigAvalanche from './configAvalanche';
 import ConfigArbitrum from './configArbitrum';
+const RPC_ERROR_FALLBACK_DURATION_MINS = 0.5
 
 if (window.ethereum) {
   window.ethereum.request({method: 'eth_chainId'}).then((id) => {
@@ -23,7 +24,8 @@ if (window.ethereum) {
     switch (chainId) {
       case 43114: {
         window.chain = 'avalanche';
-        Object.assign(config, configAvalanche);
+        Object.assign(config, ConfigAvalanche);
+        setupRpc();
         break;
       }
       case 42161: {
@@ -40,6 +42,21 @@ if (window.ethereum) {
   window.chain = 'avalanche';
   window.noWalletInstalled = true;
   setupApp();
+}
+
+function setupRpc() {
+  const rpcErrorDataString = localStorage.getItem('RPC_ERROR_DATA');
+  if (rpcErrorDataString) {
+    const now = new Date();
+    const rpcErrorData = JSON.parse(rpcErrorDataString);
+    const rpcFallbackValidTill = new Date(new Date(rpcErrorData.errorDate).getTime() + (RPC_ERROR_FALLBACK_DURATION_MINS * 60000));
+    console.log(rpcFallbackValidTill);
+    if (rpcFallbackValidTill.getTime() > now.getTime()) {
+      config.readRpcUrl = rpcErrorData.nextRpcToTry;
+    } else {
+      localStorage.removeItem('RPC_ERROR_DATA');
+    }
+  }
 }
 
 function setupApp() {
