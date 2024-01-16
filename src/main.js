@@ -16,7 +16,7 @@ import VTooltip from 'v-tooltip';
 import config from './config';
 import ConfigAvalanche from './configAvalanche';
 import ConfigArbitrum from './configArbitrum';
-const RPC_ERROR_FALLBACK_DURATION_MINS = 0.5
+const RPC_ERROR_FALLBACK_DURATION_MINS = 15
 
 if (window.ethereum) {
   window.ethereum.request({method: 'eth_chainId'}).then((id) => {
