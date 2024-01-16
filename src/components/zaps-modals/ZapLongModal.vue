@@ -298,7 +298,7 @@ export default {
     },
 
     stableCoinSelectChange(changeEvent) {
-      this.selectedLongAsset = changeEvent.asset[0];
+      this.selectedStableCoin = changeEvent.asset[0];
       this.setupStableCoinAmount();
     },
 

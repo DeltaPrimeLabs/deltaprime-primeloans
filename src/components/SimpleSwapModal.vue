@@ -38,7 +38,9 @@
                           :validators="targetValidators">
       </CurrencyComboInput>
       <div class="target-asset-info">
-        <div class="usd-info">
+        <div class="usd-info"
+             v-bind:style="{ 'visibility': estimatedNeededTokens !== 0 && estimatedNeededTokens !== 0 ? 'visible' : 'hidden' }"
+        >
           Price:&nbsp;<span
             class="price-info__value">1 {{
             targetAsset
@@ -247,7 +249,7 @@ export default {
           this.adapters = queryResponse.adapters;
           estimated = queryResponse.amounts[queryResponse.amounts.length - 1];
         }
-
+        this.estimatedNeededTokens = this.sourceAssetAmount;
         this.estimatedReceivedTokens = parseFloat(formatUnits(estimated, BigNumber.from(this.targetAssetData.decimals)));
 
         this.updateSlippageWithAmounts();
@@ -341,13 +343,13 @@ export default {
         } else {
           let value = Number.isNaN(changeEvent.value) ? 0 : changeEvent.value;
           this.sourceAssetAmount = value;
-          this.estimatedNeededTokens = value;
 
           if (value !== 0) {
             await this.chooseBestTrade();
           } else {
             this.targetAssetAmount = 0;
             this.estimatedReceivedTokens = 0;
+            this.estimatedNeededTokens = 0;
             await this.$refs.targetInput.setCurrencyInputValue(0);
           }
         }

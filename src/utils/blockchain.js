@@ -3,6 +3,15 @@ import {WrapperBuilder} from '@redstone-finance/evm-connector';
 import CACHE_LAYER_URLS from '../../common/redstone-cache-layer-urls.json';
 import {utils} from "ethers";
 import config from '../config';
+import IDATA_STORE from "../../artifacts/contracts/interfaces/gmx-v2/IDataStore.sol/IDataStore.json";
+import {fromWei} from "./calculate";
+import {
+  depositGasLimitKey,
+  ESTIMATED_GAS_FEE_BASE_AMOUNT,
+  ESTIMATED_GAS_FEE_MULTIPLIER_FACTOR,
+  WITHDRAWAL_GAS_LIMIT_KEY
+} from "../integrations/contracts/dataStore";
+import {formatUnits} from "ethers/lib/utils";
 
 const ethers = require('ethers');
 
@@ -94,6 +103,44 @@ function capitalizeFirstLetter(string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
+export function capitalize(word) {
+  return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+}
+
+export async function calculateGmxV2ExecutionFee(
+    gmxV2DataStoreAddress,
+    gmxV2DepositCallbackGasLimit,
+    gmxV2UseMaxPriorityFeePerGas,
+    gmxV2GasPriceBuffer,
+    gmxV2GasPricePremium,
+    isDeposit
+) {
+  const dataStore = new ethers.Contract(gmxV2DataStoreAddress, IDATA_STORE.abi, provider.getSigner());
+
+  //TODO: use multicall
+
+  //TODO: withdraw check
+
+  const estimatedGasLimit = isDeposit ?
+      fromWei(await dataStore.getUint(depositGasLimitKey(true))) * 10**18 + gmxV2DepositCallbackGasLimit
+      :
+      fromWei(await dataStore.getUint(hashData(["bytes32"], [WITHDRAWAL_GAS_LIMIT_KEY]))) * 10**18 + gmxV2DepositCallbackGasLimit;
+
+  let baseGasLimit = fromWei(await dataStore.getUint(ESTIMATED_GAS_FEE_BASE_AMOUNT)) * 10**18;
+
+  let multiplierFactor = formatUnits(await dataStore.getUint(ESTIMATED_GAS_FEE_MULTIPLIER_FACTOR), 30);
+
+  const adjustedGasLimit = baseGasLimit + estimatedGasLimit * multiplierFactor;
+
+  const maxPriorityFeePerGas = (await provider.getFeeData()).maxPriorityFeePerGas.toNumber();
+  let gasPrice = (await provider.getGasPrice()).toNumber();
+
+  if (gmxV2UseMaxPriorityFeePerGas) gasPrice += maxPriorityFeePerGas;
+  gasPrice *= (1 + gmxV2GasPriceBuffer);
+  gasPrice += gmxV2GasPricePremium;
+
+  return adjustedGasLimit * gasPrice / 10**18;
+}
 
 export async function handleCall(fun, args, onSuccess, onFail) {
   try {

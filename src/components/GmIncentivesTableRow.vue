@@ -5,8 +5,8 @@
         {{ totalLeveragedGm | usd }}
       </div>
       <div class="table__cell table__cell--double-value mission">
-        <img v-if="gmTvl && gmTvl > 6000000" class="milestone-tick" width="16px" src="src/assets/icons/check.png" v-tooltip="{content: 'Milestone completed!', classes: 'info-tooltip long'}"/>
-        <bar-gauge-beta v-if="gmTvl" v-tooltip="{content: `Grant milestone completion: $${(gmTvl / 1000000).toFixed(1)}M / $6M`, classes: 'info-tooltip'}" :min="0" :max="6000000" :value="gmTvl" :width="108"></bar-gauge-beta>
+        <img v-if="gmTvlFromApi && gmTvlFromApi > 6000000" class="milestone-tick" width="16px" src="src/assets/icons/check.png" v-tooltip="{content: 'Milestone completed!', classes: 'info-tooltip long'}"/>
+        <bar-gauge-beta v-if="gmTvlFromApi" v-tooltip="{content: `Grant milestone completion: $${(gmTvlFromApi / 1000000).toFixed(1)}M / $6M`, classes: 'info-tooltip'}" :min="0" :max="6000000" :value="gmTvlFromApi" :width="108"></bar-gauge-beta>
       </div>
       <div class="table__cell table__cell--double-value leveraged">
         {{ leveragedGm | usd}}
@@ -32,19 +32,11 @@ import Chart from './Chart';
 import IconButtonMenuBeta from './IconButtonMenuBeta';
 import ColoredValueBeta from './ColoredValueBeta';
 import SmallChartBeta from './SmallChartBeta';
-import AddFromWalletModal from './AddFromWalletModal';
 import config from '../config';
 import {mapActions, mapGetters, mapState} from 'vuex';
-import ProvideLiquidityModal from './ProvideLiquidityModal';
-import RemoveLiquidityModal from './RemoveLiquidityModal';
-import WithdrawModal from './WithdrawModal';
 
 const ethers = require('ethers');
-import erc20ABI from '../../test/abis/ERC20.json';
-import GM_DISTRIBUTED from '../data/arbitrum/GM_EPOCH_3.json';
-import {calculateMaxApy, fromWei} from '../utils/calculate';
-import addresses from '../../common/addresses/avalanche/token_addresses.json';
-import {formatUnits, parseUnits} from 'ethers/lib/utils';
+import GM_DISTRIBUTED from '../data/arbitrum/GM_EPOCH_4.json';
 import DeltaIcon from "./DeltaIcon.vue";
 import BarGaugeBeta from "./BarGaugeBeta.vue";
 
@@ -66,11 +58,17 @@ export default {
   props: {
     lpToken: null,
     collectedArb: 0,
-    gmTvl: 0
+    gmTvlFromApi: 0
   },
 
   async mounted() {
-    this.setGmTvl();
+    this.setGmTvlFromApi();
+    this.$forceUpdate();
+  },
+
+  async created() {
+    this.setGmTvlFromApi();
+    this.$forceUpdate();
   },
 
   data() {
@@ -133,8 +131,11 @@ export default {
 
   methods: {
     ...mapActions('fundsStore', ['fund', 'withdraw', 'provideLiquidity', 'removeLiquidity']),
-    async setGmTvl() {
-      this.gmTvl = (await (await fetch('https://cavsise1n4.execute-api.us-east-1.amazonaws.com/gm-boost-apy')).json()).tvl;
+    async setGmTvlFromApi() {
+      setTimeout(async () => {
+        this.$forceUpdate();
+        this.gmTvlFromApi = (await (await fetch('https://cavsise1n4.execute-api.us-east-1.amazonaws.com/gm-boost-apy')).json()).tvl;
+      }, 100);
     }
   },
 };

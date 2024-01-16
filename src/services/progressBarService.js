@@ -10,10 +10,10 @@ export default class ProgressBarService {
     this.progressBarState$.next({state: 'MINING'});
   }
 
-  emitProgressBarErrorState(additionalInfo) {
+  emitProgressBarErrorState(additionalInfo, duration) {
     console.log('emitting error state');
     this.requestProgressBar();
-    this.progressBarState$.next({state: 'ERROR', additionalInfo});
+    this.progressBarState$.next({state: 'ERROR', additionalInfo, duration});
   }
 
   emitProgressBarCancelledState() {
