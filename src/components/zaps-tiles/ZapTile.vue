@@ -1,6 +1,6 @@
 <template>
   <div class="zap-tile__border">
-    <div class="zap-tile" :class="{'disabled': disabled}" @click="onTileClick()">
+    <div class="zap-tile" :class="{'disabled': disabled, [tileClass]: true}" @click="onTileClick()">
       <div class="label">
         <slot name="label"></slot>
       </div>
@@ -23,6 +23,7 @@ export default {
     imgSrc: null,
     darkImgSrc: null,
     imgClass: null,
+    tileClass: null,
   },
   methods: {
     onTileClick: function () {

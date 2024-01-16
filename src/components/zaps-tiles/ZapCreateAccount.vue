@@ -1,5 +1,10 @@
 <template>
-  <ZapTile v-on:tileClick="onTileClick()" :img-src="'src/assets/icons/chart-up.png'" :dark-img-src="'src/assets/icons/chart-up--dark.png'" :header="'Create Account'">
+  <ZapTile v-on:tileClick="onTileClick()"
+           :img-src="'src/assets/icons/zap-create-account--light.svg'"
+           :dark-img-src="'src/assets/icons/zap-create-account--dark.svg'"
+           :header="'Create a new Prime Account'"
+           :img-class="'create-account-zap-img'"
+           :tile-class="'create-account-zap-tile'">
     <template #label>
       Start <b>here</b>
     </template>
