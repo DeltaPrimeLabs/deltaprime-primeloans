@@ -43,9 +43,9 @@
         </b>
       </a>
     </Banner>
-    <Banner v-if="showArbitrumPrimeAccountBanner" background="green-accent" :closable="true">
+<!--    <Banner v-if="showArbitrumPrimeAccountBanner" background="green-accent" :closable="true">
       Last chance to mint GM for the current milestone
-    </Banner>
+    </Banner>-->
     <Banner v-if="showArbitrumCongestionBanner" :closable="true">
       The Arbitrum chain is fully congested resulting in failed transactions across apps. Please join our <a href='https://discord.gg/57EdDsvhxK' target='_blank'><b>Discord</b></a> to learn more
     </Banner>
