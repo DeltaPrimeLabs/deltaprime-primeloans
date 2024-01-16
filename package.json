@@ -31,7 +31,7 @@
     "@lifi/sdk": "^2.1.1",
     "@nomiclabs/hardhat-ethers": "^2.2.3",
     "@nomiclabs/hardhat-etherscan": "^3.0.1",
-    "@notifi-network/notifi-frontend-client": "^0.88.2",
+    "@notifi-network/notifi-frontend-client": "0.89.1-alpha.1",
     "@openzeppelin/contracts": "^4.1.0",
     "@openzeppelin/contracts-upgradeable": "^4.4.1",
     "@pangolindex/exchange-contracts": "github:pangolindex/exchange-contracts",

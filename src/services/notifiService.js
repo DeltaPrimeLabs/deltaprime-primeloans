@@ -58,7 +58,6 @@ export default class notifiService {
       tenantId,
       env: blockchainEnv
     };
-    console.log(newFrontendConfig);
 
     const client = newFrontendClient(newFrontendConfig);
     const notifi = await this.refreshClientInfo(client);
@@ -67,7 +66,6 @@ export default class notifiService {
     this.alertSettings = alertsConfig;
 
     if (notifi.alerts) {
-      console.log(notifi.alerts);
       for (const alert of notifi.alerts) {
         // get alerts statuses for initialization on settings screen
         let fusionEvent;
@@ -127,7 +125,7 @@ export default class notifiService {
 
   async login(client, provider, account) {
     const loginResult = await client.logIn({
-      walletBlockchain: 'AVALANCHE',
+      walletBlockchain: window.chain.toUpperCase(),
       signMessage: async (message) => {
         const { signedMessage } = await signMessageForNotifi(
           provider,
