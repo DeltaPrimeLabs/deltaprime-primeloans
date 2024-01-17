@@ -36,7 +36,7 @@ import config from '../config';
 import {mapActions, mapGetters, mapState} from 'vuex';
 
 const ethers = require('ethers');
-import GM_DISTRIBUTED from '../data/arbitrum/GM_EPOCH_4.json';
+import GM_DISTRIBUTED from '../data/arbitrum/GM_EPOCH_5.json';
 import DeltaIcon from "./DeltaIcon.vue";
 import BarGaugeBeta from "./BarGaugeBeta.vue";
 
