@@ -318,18 +318,27 @@ export default {
     },
 
     async setupApys({commit}) {
-      let params = {
-        TableName: "apys-prod"
-      };
+      if (window.disableExternalData) {
+        commit('setApys', []);
+      } else {
+        try {
+          let params = {
+            TableName: "apys-prod"
+          };
 
-      const apyDoc = await docClient.scan(params).promise();
-      const apys = {};
+          const apyDoc = await docClient.scan(params).promise();
+          const apys = {};
 
-      apyDoc.Items.map(apy => {
-        apys[apy.id] = {...apy};
-      });
+          apyDoc.Items.map(apy => {
+            apys[apy.id] = {...apy};
+          });
 
-      commit('setApys', apys);
+          commit('setApys', apys);
+        } catch (e) {
+          window.disableExternalData = true;
+          commit('setApys', []);
+        }
+      }
     },
 
     async setupAssets({state, commit, rootState}) {
@@ -541,7 +550,26 @@ export default {
     async setupContracts({rootState, commit}) {
       const smartLoanFactoryContract = new ethers.Contract(SMART_LOAN_FACTORY_TUP.address, SMART_LOAN_FACTORY.abi, provider.getSigner());
       const wrappedTokenContract = new ethers.Contract(config.WRAPPED_TOKEN_ADDRESS, wrappedAbi, provider.getSigner());
-      let readProvider = new ethers.providers.JsonRpcProvider(config.readRpcUrl);
+      let readProvider;
+      readProvider = new ethers.providers.JsonRpcProvider(config.readRpcUrl);
+      console.log(readProvider);
+      const networkResultPromise = readProvider._networkPromise;
+      networkResultPromise.catch(networkResultError => {
+        console.log(networkResultError);
+        if (networkResultError.code === 'NETWORK_ERROR') {
+          console.warn('NETWORK ERROR');
+          const primaryRpcError = !config.fallbackRpcs.includes(config.readRpcUrl);
+          const rpcErrorData = {
+            nextRpcToTry: primaryRpcError ? config.fallbackRpcs[0] : config.fallbackRpcs[config.fallbackRpcs.indexOf(config.readRpcUrl) + 1],
+            rpcNotWorking: config.readRpcUrl,
+            errorDate: new Date(),
+          }
+
+          localStorage.setItem('RPC_ERROR_DATA', JSON.stringify(rpcErrorData));
+          window.location.reload();
+        }
+      })
+
       const multicallContract = new ethers.Contract(config.multicallAddress, MULTICALL.abi, readProvider);
 
       commit('setSmartLoanFactoryContract', smartLoanFactoryContract);

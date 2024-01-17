@@ -31,6 +31,7 @@
   </script>
 
   <script>
+    window.disableExternalData = false;
     if (window.ethereum) {
       window.ethereum.request({method: 'eth_chainId'}).then((id) => {
         const chainId = parseInt(id, 16);
