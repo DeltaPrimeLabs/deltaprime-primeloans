@@ -352,7 +352,7 @@ export default {
       if (this.rowExpanded) {
         this.rowExpanded = false;
         this.showTradingViewChart = false;
-        this.selectedChart = 'TradingView'
+        this.selectedChart = this.asset.tradingViewSymbol ? 'TradingView' : 'Chart'
       } else {
         this.rowExpanded = true;
         setTimeout(() => {
