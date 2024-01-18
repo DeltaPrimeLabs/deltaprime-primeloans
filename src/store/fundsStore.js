@@ -1290,7 +1290,7 @@ export default {
 
           let leveragedGm = gmWorth - collateral > 0 ? gmWorth - collateral : 0;
 
-          yearlyLpInterest += leveragedGm * state.apys['GM_BOOST'].arbApy;
+          yearlyLpInterest += leveragedGm * state.apys['GM_BOOST'].arbApy * state.assets['ARB'].price;
         }
 
         let yearlyTraderJoeV2Interest = 0;
