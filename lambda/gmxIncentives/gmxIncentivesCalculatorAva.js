@@ -1,7 +1,7 @@
 const ethers = require('ethers');
 const fetch = require('node-fetch');
 const {
-  arbitrumProvider,
+  avalancheProvider,
   dynamoDb,
   getWrappedContracts,
   fromWei,
@@ -12,12 +12,12 @@ const constants = require('../config/constants.json');
 const gmTokens = require('../config/gmTokens.json');
 const FACTORY = require('../abis/SmartLoansFactory.json');
 
-const factoryAddress = constants.arbitrum.factory;
-const redstoneFeedUrl = constants.arbitrum.redstoneFeedUrl;
+const factoryAddress = constants.avalanche.factory;
+const redstoneFeedUrl = constants.avalanche.redstoneFeedUrl;
 
 const getLatestIncentives = async () => {
   const params = {
-    TableName: process.env.GMX_INCENTIVES_ARB_TABLE,
+    TableName: process.env.GMX_INCENTIVES_AVA_TABLE,
   };
 
   const res = await dynamoDb.scan(params).promise();
@@ -25,12 +25,12 @@ const getLatestIncentives = async () => {
   return res.Items;
 };
 
-const gmxIncentivesCalculatorArb = async (event) => {
-  const factoryContract = new ethers.Contract(factoryAddress, FACTORY.abi, arbitrumProvider);
+const gmxIncentivesCalculatorAva = async (event) => {
+  const factoryContract = new ethers.Contract(factoryAddress, FACTORY.abi, avalancheProvider);
   let loanAddresses = await factoryContract.getAllLoans();
   const totalLoans = loanAddresses.length;
 
-  const incentivesPerInterval = 10000 / (60 * 60 * 24 * 7) * (60 * 10);
+  const incentivesPerInterval = 500 / (60 * 60 * 24 * 7) * (60 * 10);
   const batchSize = 50;
 
   const loanQualifications = {};
@@ -42,7 +42,7 @@ const gmxIncentivesCalculatorArb = async (event) => {
   const loanIncentivesArray = await getLatestIncentives();
 
   loanIncentivesArray.map((loan) => {
-    loanIncentives[loan.id] = loan.arbCollected;
+    loanIncentives[loan.id] = loan.avaxCollected;
   })
 
   // calculate gm leveraged by the loan
@@ -50,7 +50,7 @@ const gmxIncentivesCalculatorArb = async (event) => {
     console.log(`processing ${i * batchSize} - ${(i + 1) * batchSize > totalLoans ? totalLoans : (i + 1) * batchSize} loans`);
 
     const batchLoanAddresses = loanAddresses.slice(i * batchSize, (i + 1) * batchSize);
-    const wrappedContracts = getWrappedContracts(batchLoanAddresses, 'arbitrum');
+    const wrappedContracts = getWrappedContracts(batchLoanAddresses, 'avalanche');
 
     const loanStats = await Promise.all(
       wrappedContracts.map(contract => Promise.all([contract.getFullLoanStatus(), contract.getAllAssetsBalances()]))
@@ -76,7 +76,7 @@ const gmxIncentivesCalculatorArb = async (event) => {
           let loanTotalGMValue = 0;
 
           await Promise.all(
-            Object.entries(gmTokens.arbitrum).map(async ([symbol, token]) => {
+            Object.entries(gmTokens.avalanche).map(async ([symbol, token]) => {
               const price = redstonePriceData[symbol] ? redstonePriceData[symbol][0].dataPoints[0].value : 0;
 
               const asset = assetBalances.find(asset => fromBytes32(asset.name) == symbol);
@@ -116,11 +116,11 @@ const gmxIncentivesCalculatorArb = async (event) => {
     Object.entries(loanIncentives).map(async ([loanId, value]) => {
       const data = {
         id: loanId,
-        arbCollected: value
+        avaxCollected: value
       };
 
       const params = {
-        TableName: process.env.GMX_INCENTIVES_ARB_TABLE,
+        TableName: process.env.GMX_INCENTIVES_AVA_TABLE,
         Item: data
       };
       await dynamoDb.put(params).promise();
@@ -137,15 +137,11 @@ const gmxIncentivesCalculatorArb = async (event) => {
       id: "GM_BOOST"
     },
     AttributeUpdates: {
-      arbApy: {
+      avaxApy: {
         Value: Number(boostApy) ? boostApy : null,
         Action: "PUT"
       },
-      tvl: {
-        Value: Number(gmTvl) ? gmTvl : null,
-        Action: "PUT"
-      },
-      arbTvl: {
+      avaxTvl: {
         Value: Number(gmTvl) ? gmTvl : null,
         Action: "PUT"
       }
@@ -154,9 +150,9 @@ const gmxIncentivesCalculatorArb = async (event) => {
 
   await dynamoDb.update(params).promise();
 
-  console.log("GM boost APY on Arbitrum saved.");
+  console.log("GM boost APY on Avalanche saved.");
 
   return event;
 }
 
-module.exports.handler = gmxIncentivesCalculatorArb;
+module.exports.handler = gmxIncentivesCalculatorAva;
