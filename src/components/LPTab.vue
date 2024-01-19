@@ -628,7 +628,7 @@ export default {
             sortable: false,
             class: 'composition',
             id: 'COMPOSITION',
-            tooltip: `How close we are to completing the protocol mission: $6M GM TVL. Deadline: January 15, 12pm CET. Failing the mission results in reduced incentives.`
+            tooltip: `How close we are to completing the protocol mission: $9M GM TVL. Deadline: Deadline: February 5th. Failing the mission results in reduced incentives.`
           },
           {
             label: 'Your eligible GM',

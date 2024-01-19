@@ -30,6 +30,15 @@ export default {
       }
     },
 
+    formatTokenBalanceWithLessThan(value, precision = 5, toFixed = false) {
+      const formatted = this.formatTokenBalance(value, precision, toFixed)
+      if (formatted === '0' && value !== '0.0' && value !== 0 && value !== '0') {
+        return `<0.${'0'.repeat(precision - 1)}1`
+      } else {
+        return formatted
+      }
+    },
+
     formatLongNum(value) {
       if (!value) return 0;
       if (value < 1000) {

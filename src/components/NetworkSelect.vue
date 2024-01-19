@@ -30,6 +30,7 @@
 import {mapState} from "vuex";
 import DeltaIcon from "./DeltaIcon.vue";
 import Vue from "vue";
+import config from "../config";
 
 const ethereum = window.ethereum;
 
@@ -56,7 +57,7 @@ export default {
         {
           chainId: this.toHex(43114),
           chainName: 'Avalanche',
-          rpcUrls: ['https://avalanche-mainnet.core.chainstack.com/ext/bc/C/rpc/0968db18a01a90bac990ff00df6f7da1'],
+          rpcUrls: [config.readRpcUrl],
           nativeCurrency: {
             name: 'AVAX',
             symbol: 'AVAX',
@@ -81,6 +82,7 @@ export default {
   },
   methods: {
     toggleDropdown() {
+      console.log(config.readRpcUrl);
       this.showOptions = !this.showOptions
       if (this.showOptions) {
         setTimeout(() => {
