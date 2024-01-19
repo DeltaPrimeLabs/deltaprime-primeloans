@@ -5,20 +5,26 @@
         {{ totalLeveragedGm | usd }}
       </div>
       <div class="table__cell table__cell--double-value mission">
-        <img v-if="gmTvlFromApi && gmTvlFromApi > 9000000" class="milestone-tick" width="16px" src="src/assets/icons/check.png" v-tooltip="{content: 'Milestone completed!', classes: 'info-tooltip long'}"/>
-        <bar-gauge-beta v-if="gmTvlFromApi" v-tooltip="{content: `Grant milestone completion: $${(gmTvlFromApi / 1000000).toFixed(1)}M / $9M`, classes: 'info-tooltip'}" :min="0" :max="9000000" :value="gmTvlFromApi" :width="108"></bar-gauge-beta>
+        <img v-if="gmTvlFromApi && gmTvlFromApi > milestone" class="milestone-tick" width="16px"
+             src="src/assets/icons/check.png"
+             v-tooltip="{content: 'Milestone completed!', classes: 'info-tooltip long'}"/>
+        <bar-gauge-beta v-if="gmTvlFromApi"
+                        v-tooltip="{content: `Grant milestone completion: $${(gmTvlFromApi / 1000000).toFixed(1)}M / $${milestone / 1000000}M`, classes: 'info-tooltip'}"
+                        :min="0" :max="milestone" :value="gmTvlFromApi" :width="108"></bar-gauge-beta>
       </div>
       <div class="table__cell table__cell--double-value leveraged">
-        {{ leveragedGm | usd}}
+        {{ leveragedGm | usd }}
       </div>
       <div class="table__cell table__cell--double-value boost-apy">
-        <span><b>{{ gmBoostApy | percent }}</b><img v-tooltip="{content: `Boost APR from the GM grant.`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span>
+        <span><b>{{ gmBoostApy | percent }}</b><img
+          v-tooltip="{content: `Boost APR from the GM grant.`, classes: 'info-tooltip'}"
+          src="src/assets/icons/stars.png" class="stars-icon"></span>
       </div>
       <div class="table__cell table__cell--double-value boost-apy">
         <span><b>{{ maxBoostApr | percent }}</b><img src="src/assets/icons/stars.png" class="stars-icon"></span>
       </div>
       <div class="table__cell table__cell--double-value arb-collected">
-        {{collectedArb ? collectedArb.toFixed(2) : 0}}
+        {{ collectedBonus ? collectedBonus.toFixed(2) : 0 }}
       </div>
     </div>
   </div>
@@ -36,11 +42,15 @@ import config from '../config';
 import {mapActions, mapGetters, mapState} from 'vuex';
 
 const ethers = require('ethers');
-import GM_DISTRIBUTED from '../data/arbitrum/GM_EPOCH_5.json';
+import GM_DISTRIBUTED_ARBITRUM from '../data/arbitrum/GM_EPOCH_5.json';
+import GM_DISTRIBUTED_AVALANCHE from '../data/avalanche/GM_EPOCH_0.json';
 import DeltaIcon from "./DeltaIcon.vue";
 import BarGaugeBeta from "./BarGaugeBeta.vue";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
+
+const ARB_MILESTONE = 9000000;
+const AVAX_MILESTONE = 9000000;
 
 export default {
   name: 'GmIncentivesTableRow',
@@ -57,7 +67,7 @@ export default {
   },
   props: {
     lpToken: null,
-    collectedArb: 0,
+    collectedBonus: 0,
     gmTvlFromApi: 0
   },
 
@@ -69,34 +79,44 @@ export default {
   async created() {
     this.setGmTvlFromApi();
     this.$forceUpdate();
+    this.setupMilestones();
   },
 
   data() {
     return {
+      milestone: null
     };
   },
 
   computed: {
     ...mapState('fundsStore', [
-        'apys',
-        'smartLoanContract',
-        'assets',
-        'gmxV2Balances',
-        'gmxV2Assets',
+      'apys',
+      'smartLoanContract',
+      'assets',
+      'gmxV2Balances',
+      'gmxV2Assets',
     ]),
     ...mapState('stakeStore', ['farms']),
     ...mapState('poolStore', ['pools']),
     ...mapState('network', ['provider', 'account']),
-    ...mapState('serviceRegistry', [
-    ]),
+    ...mapState('serviceRegistry', []),
     ...mapGetters('fundsStore', [
-       'getCollateral'
+      'getCollateral'
     ]),
     gmBoostApy() {
-      return (this.apys && this.assets['ARB'] && this.assets['ARB'].price) ? this.apys['GM_BOOST'].arbApy * this.assets['ARB'].price : 0;
+      if (window.arbitrumChain) {
+        return (this.apys && this.assets['ARB'] && this.assets['ARB'].price) ? this.apys['GM_BOOST'].arbApy * this.assets['ARB'].price : 0;
+      } else {
+        return (this.apys && this.assets['AVAX'] && this.assets['AVAX'].price) ? this.apys['GM_BOOST'].avaxApy * this.assets['AVAX'].price : 0;
+      }
     },
     totalLeveragedGm() {
-     let apy = this.apys ? this.apys['GM_BOOST'].arbApy : 0;
+      let apy;
+      if (window.arbitrumChain) {
+        apy = this.apys ? this.apys['GM_BOOST'].arbApy : 0;
+      } else {
+        apy = this.apys ? this.apys['GM_BOOST'].avaxApy : 0;
+      }
 
       return apy ? 10000 / (7 * 24 * 6) / apy * 6 * 24 * 365 : 0;
     },
@@ -110,7 +130,7 @@ export default {
       let gmWorth = 0;
 
       Object.keys(config.GMX_V2_ASSETS_CONFIG).forEach(
-          gmSymbol => gmWorth += this.gmxV2Balances[gmSymbol] * this.gmxV2Assets[gmSymbol].price
+        gmSymbol => gmWorth += this.gmxV2Balances[gmSymbol] * this.gmxV2Assets[gmSymbol].price
       );
 
       return gmWorth - this.getCollateral > 0 ? gmWorth - this.getCollateral : 0;
@@ -121,9 +141,17 @@ export default {
     smartLoanContract: {
       async handler(smartLoanContract) {
         if (smartLoanContract) {
-          const collected = await (await fetch(`https://cavsise1n4.execute-api.us-east-1.amazonaws.com/gmx-incentives/${smartLoanContract.address}?network=arbitrum`)).json();
-          let harvestedArb = GM_DISTRIBUTED[this.smartLoanContract.address.toLowerCase()] ? GM_DISTRIBUTED[this.smartLoanContract.address.toLowerCase()] : 0;
-          this.collectedArb = collected.arbCollected - harvestedArb;
+          const collectedResponse = await (await fetch(`https://cavsise1n4.execute-api.us-east-1.amazonaws.com/gmx-incentives/${smartLoanContract.address}?network=${window.chain}`)).json();
+          let collectedToken;
+          let harvested;
+          if (window.arbitrumChain) {
+            harvested = GM_DISTRIBUTED_ARBITRUM[this.smartLoanContract.address.toLowerCase()] ? GM_DISTRIBUTED_ARBITRUM[this.smartLoanContract.address.toLowerCase()] : 0;
+            collectedToken = collectedResponse.arbCollected;
+          } else {
+            harvested = GM_DISTRIBUTED_AVALANCHE[this.smartLoanContract.address.toLowerCase()] ? GM_DISTRIBUTED_AVALANCHE[this.smartLoanContract.address.toLowerCase()] : 0;
+            collectedToken = collectedResponse.avaxCollected;
+          }
+          this.collectedBonus = collectedToken - harvested;
         }
       },
     },
@@ -134,9 +162,17 @@ export default {
     async setGmTvlFromApi() {
       setTimeout(async () => {
         this.$forceUpdate();
-        this.gmTvlFromApi = (await (await fetch('https://cavsise1n4.execute-api.us-east-1.amazonaws.com/gm-boost-apy')).json()).arbTvl;
+        if (window.arbitrumChain) {
+          this.gmTvlFromApi = (await (await fetch('https://cavsise1n4.execute-api.us-east-1.amazonaws.com/gm-boost-apy')).json()).arbTvl;
+        } else {
+          this.gmTvlFromApi = (await (await fetch('https://cavsise1n4.execute-api.us-east-1.amazonaws.com/gm-boost-apy')).json()).avaxTvl;
+        }
       }, 100);
-    }
+    },
+
+    setupMilestones() {
+      this.milestone = window.arbitrumChain ? ARB_MILESTONE : AVAX_MILESTONE;
+    },
   },
 };
 </script>
