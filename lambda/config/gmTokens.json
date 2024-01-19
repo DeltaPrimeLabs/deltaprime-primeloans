@@ -1,4 +1,21 @@
 {
+  "avalanche": {
+    "GM_AVAX_WAVAX_USDC": {
+      "name": "AVAX-USDC",
+      "symbol": "GM_AVAX_WAVAX_USDC",
+      "decimals": "18"
+    },
+    "GM_BTC_BTCb_USDC": {
+      "name": "BTC-USDC",
+      "symbol": "GM_BTC_BTCb_USDC",
+      "decimals": "18"
+    },
+    "GM_ETH_WETHe_USDC": {
+      "name": "ETH-USDC",
+      "symbol": "GM_ETH_WETHe_USDC",
+      "decimals": "18"
+    }
+  },
   "arbitrum": {
     "GM_ETH_WETH_USDC": {
       "name": "ETH-USDC",
