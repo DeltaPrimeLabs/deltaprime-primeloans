@@ -11,6 +11,7 @@ import "../ReentrancyGuardKeccak.sol";
 import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 import "../lib/SolvencyMethods.sol";
 import "../interfaces/ITokenManager.sol";
+import "../interfaces/ISmartLoanFactory.sol";
 import "../interfaces/IAddressProvider.sol";
 import "../interfaces/IPrimeDex.sol";
 import "../interfaces/facets/IYieldYakRouter.sol";
@@ -163,6 +164,12 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         _amount = Math.min(_amount, pool.getBorrowed(address(this)));
         require(token.balanceOf(address(this)) >= _amount, "There is not enough funds to repay");
 
+        uint256 feeRatio = pool.getFeeRatio(address(this));
+        uint256 feeAmount = _amount * feeRatio / 1e18;
+        _amount -= feeAmount;
+
+        _repayFee(_asset, feeAmount);
+
         address(token).safeApprove(address(pool), 0);
         address(token).safeApprove(address(pool), _amount);
 
@@ -173,6 +180,80 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         }
 
         emit Repaid(msg.sender, _asset, _amount, block.timestamp);
+    }
+
+    function _repayFee(bytes32 asset, uint256 amount) internal {
+        address referrer = getReferrer();
+        IERC20Metadata token = getERC20TokenInstance(asset, false);
+
+        if (referrer != address(0)) {
+            ISmartLoanFactory smartLoansFactory = ISmartLoanFactory(DeploymentConstants.getSmartLoansFactoryAddress());
+            bytes32 feeAsset = smartLoansFactory.getFeeAsset(referrer);
+            if (feeAsset != bytes32(0)) {
+                Pool pool = Pool(DeploymentConstants.getTokenManager().getPoolAddress(feeAsset));
+                uint256 feeAmount;
+                IERC20Metadata feeToken = getERC20TokenInstance(feeAsset, false);
+
+                if (feeAsset != asset) {
+
+                    uint256[] memory prices;
+                    {
+                        bytes32[] memory priceAssets = new bytes32[](2);
+                        priceAssets[0] = asset;
+                        priceAssets[1] = feeAsset;
+                        prices = getPrices(priceAssets);
+                    }
+
+                    IPrimeDex primeDex = IPrimeDex(DeploymentConstants.getPrimeDex());
+                    IPrimeDex.AssetInfo[] memory assets = new IPrimeDex.AssetInfo[](1);
+                    uint256[] memory amounts = new uint256[](1);
+                    IPrimeDex.AssetInfo memory targetAsset = IPrimeDex.AssetInfo({
+                        symbol: feeAsset,
+                        asset: address(feeToken)
+                    });
+                    {
+                        // IERC20Metadata token = getERC20TokenInstance(asset, false);
+                        assets[0] = IPrimeDex.AssetInfo({
+                            symbol: asset,
+                            asset: address(token)
+                        });
+                    }
+                    amounts[0] = amount;
+                    feeAmount = primeDex.convert(
+                        assets,
+                        amounts,
+                        prices,
+                        targetAsset,
+                        prices[1]
+                    );
+                } else {
+                    feeAmount = amount;
+                }
+                uint256 repayAmount;
+                {
+                    uint256 borrowed = pool.getBorrowed(referrer);
+                    repayAmount = Math.min(feeAmount, borrowed);
+                }
+
+                // repay referrer's debt
+                address(feeToken).safeApprove(address(pool), 0);
+                address(feeToken).safeApprove(address(pool), repayAmount);
+                pool.repayFor(referrer, repayAmount);
+
+                transferSurplus(feeToken, feeAmount - repayAmount);
+            } else {
+                transferSurplus(token, amount);
+            }
+        }
+    }
+
+    function transferSurplus(IERC20Metadata token, uint256 amount) internal {
+        address(token).safeTransfer(DeploymentConstants.getTreasury(), amount);
+    }
+
+    function getReferrer() internal view returns (address) {
+        DiamondStorageLib.SmartLoanStorage storage sls = DiamondStorageLib.smartLoanStorage();
+        return sls.referrer;
     }
 
     // TODO: Separate manager for unfreezing - not liquidators

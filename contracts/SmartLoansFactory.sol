@@ -31,11 +31,25 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
         _;
     }
 
+    modifier validReferralCode(bytes32 referralCode) {
+        if (referralCode == bytes32(0) || referrers[referralCode] != address(0)) {
+            _;
+        }
+
+        revert("Invalid Referral Code");
+    }
 
     SmartLoanDiamondBeacon public smartLoanDiamond;
 
     mapping(address => address) public ownersToLoans;
     mapping(address => address) public loansToOwners;
+
+    /// @notice Referrer => Referral Code
+    mapping(address => bytes32) public referralCodes;
+    /// @notice Referral Code => Referrer
+    mapping(bytes32 => address) public referrers;
+    /// @notice Referrer => Fee Asset
+    mapping(address => bytes32) public feeAssets;
 
     address[] loans;
 
@@ -67,12 +81,12 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
         tokenManager = ITokenManager(_tokenManager);
     }
 
-    function createLoan() public virtual hasNoLoan returns (SmartLoanDiamondBeacon) {
+    function createLoan(bytes32 referralCode) public virtual hasNoLoan validReferralCode(referralCode) returns (SmartLoanDiamondBeacon) {
         SmartLoanDiamondProxy beaconProxy = new SmartLoanDiamondProxy(
             payable(address(smartLoanDiamond)),
         // Setting SLFactory as the initial owner and then using .transferOwnership to change the owner to msg.sender
         // It is possible to set msg.sender as the initial owner if our loan-creation flow would change
-            abi.encodeWithSelector(SmartLoanViewFacet.initialize.selector, msg.sender)
+            abi.encodeWithSelector(SmartLoanViewFacet.initialize.selector, msg.sender, referrers[referralCode])
         );
         SmartLoanDiamondBeacon smartLoan = SmartLoanDiamondBeacon(payable(address(beaconProxy)));
 
@@ -83,10 +97,10 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
         return smartLoan;
     }
 
-    function createAndFundLoan(bytes32 _fundedAsset, uint256 _amount) public virtual hasNoLoan returns (SmartLoanDiamondBeacon) {
+    function createAndFundLoan(bytes32 _fundedAsset, uint256 _amount, bytes32 referralCode) public virtual hasNoLoan validReferralCode(referralCode) returns (SmartLoanDiamondBeacon) {
         address asset = tokenManager.getAssetAddress(_fundedAsset, false);
         SmartLoanDiamondProxy beaconProxy = new SmartLoanDiamondProxy(payable(address(smartLoanDiamond)),
-            abi.encodeWithSelector(SmartLoanViewFacet.initialize.selector, msg.sender)
+            abi.encodeWithSelector(SmartLoanViewFacet.initialize.selector, msg.sender, referrers[referralCode])
         );
         SmartLoanDiamondBeacon smartLoan = SmartLoanDiamondBeacon(payable(address(beaconProxy)));
 
@@ -110,6 +124,34 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
         ownersToLoans[owner] = loan;
         loansToOwners[loan] = owner;
         loans.push(loan);
+    }
+
+    function setReferralCode(bytes32 referralCode) external {
+        require(referralCode != bytes32(0), "Invalid referral code");
+        require(referrers[referralCode] == address(0), "Referral code used");
+        address owner = msg.sender;
+        address loan = ownersToLoans[owner];
+        require(referralCodes[loan] == bytes32(0), "Already set referral code");
+        referralCodes[loan] = referralCode;
+
+        emit ReferralCodeSet(owner, loan, referralCode);
+    }
+
+    function getReferrer(bytes32 referralCode) external view returns (address) {
+        return referrers[referralCode];
+    }
+
+    function setFeeAsset(bytes32 feeAsset) external {
+        address owner = msg.sender;
+        address loan = ownersToLoans[owner];
+        require(loan != address(0), "Don't have a loan");
+        // validate asset
+        tokenManager.getAssetAddress(feeAsset, false);
+        feeAssets[loan] = feeAsset;
+    }
+
+    function getFeeAsset(address _account) external view returns (bytes32) {
+        return feeAssets[_account];
     }
 
     function canBorrow(address _account) external view override returns (bool) {
@@ -160,4 +202,12 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
      * @param collateralAmount amount of asset used as initial collateral
      **/
     event SmartLoanCreated(address indexed accountAddress, address indexed creator, bytes32 collateralAsset, uint256 collateralAmount);
+
+    /**
+     * @dev emitted when user sets referral code
+     * @param owner Owner address
+     * @param loan Loan address
+     * @param referralCode Referral code
+     */
+    event ReferralCodeSet(address indexed owner, address indexed loan, bytes32 referralCode);
 }

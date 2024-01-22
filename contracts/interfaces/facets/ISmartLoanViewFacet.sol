@@ -25,5 +25,7 @@ interface ISmartLoanViewFacet {
 
     function getStakedPositions() external view returns (IStakingPositions.StakedPosition[] memory  _positions);
 
-    function initialize(address owner) external;
+    function getReferrer() external view returns (address _referrer);
+
+    function initialize(address owner, address referrer) external;
 }
