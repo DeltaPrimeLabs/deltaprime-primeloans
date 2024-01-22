@@ -42,7 +42,7 @@ import config from '../config';
 import {mapActions, mapGetters, mapState} from 'vuex';
 
 const ethers = require('ethers');
-import GM_DISTRIBUTED_ARBITRUM from '../data/arbitrum/GM_EPOCH_5.json';
+import GM_DISTRIBUTED_ARBITRUM from '../data/arbitrum/GM_EPOCH_6.json';
 import GM_DISTRIBUTED_AVALANCHE from '../data/avalanche/GM_EPOCH_0.json';
 import DeltaIcon from "./DeltaIcon.vue";
 import BarGaugeBeta from "./BarGaugeBeta.vue";
