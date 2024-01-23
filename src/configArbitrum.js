@@ -15,6 +15,7 @@ export default {
     DECIMALS_PRECISION: 8,
     MAX_BUTTON_MULTIPLIER: 1.01,
     TRANSACTION_HISTORY_PAGE_SIZE: 7,
+    disableAWSData: false,
     chainId: 42161,
     chainSlug: 'arbitrum',
     notifiEnabled: true,
@@ -47,15 +48,13 @@ export default {
 
     SWAP_DEXS_CONFIG: {
         YakSwap: {
+            displayName: 'YakSwap',
             availableAssets: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'GLP', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH', 'GRAIL', 'WOO', 'MAGIC', 'JOE'],
             slippageMargin: 0.02
         },
-        ParaSwap: {
-            availableAssets: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH', 'GRAIL', 'WOO', 'MAGIC', 'JOE'],
-            slippageMargin: 0.05
-        },
         ParaSwapV2: {
-            availableAssets: [],
+            displayName: 'ParaSwap',
+            availableAssets: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH', 'GRAIL', 'WOO', 'MAGIC', 'JOE'],
             slippageMargin: 0.05
         },
         Level: {

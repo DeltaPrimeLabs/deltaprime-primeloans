@@ -5,8 +5,8 @@
         {{ totalLeveragedGm | usd }}
       </div>
       <div class="table__cell table__cell--double-value mission">
-        <img v-if="gmTvlFromApi && gmTvlFromApi > 6000000" class="milestone-tick" width="16px" src="src/assets/icons/check.png" v-tooltip="{content: 'Milestone completed!', classes: 'info-tooltip long'}"/>
-        <bar-gauge-beta v-if="gmTvlFromApi" v-tooltip="{content: `Grant milestone completion: $${(gmTvlFromApi / 1000000).toFixed(1)}M / $6M`, classes: 'info-tooltip'}" :min="0" :max="6000000" :value="gmTvlFromApi" :width="108"></bar-gauge-beta>
+        <img v-if="gmTvlFromApi && gmTvlFromApi > 9000000" class="milestone-tick" width="16px" src="src/assets/icons/check.png" v-tooltip="{content: 'Milestone completed!', classes: 'info-tooltip long'}"/>
+        <bar-gauge-beta v-if="gmTvlFromApi" v-tooltip="{content: `Grant milestone completion: $${(gmTvlFromApi / 1000000).toFixed(1)}M / $9M`, classes: 'info-tooltip'}" :min="0" :max="9000000" :value="gmTvlFromApi" :width="108"></bar-gauge-beta>
       </div>
       <div class="table__cell table__cell--double-value leveraged">
         {{ leveragedGm | usd}}
@@ -36,7 +36,7 @@ import config from '../config';
 import {mapActions, mapGetters, mapState} from 'vuex';
 
 const ethers = require('ethers');
-import GM_DISTRIBUTED from '../data/arbitrum/GM_EPOCH_4.json';
+import GM_DISTRIBUTED from '../data/arbitrum/GM_EPOCH_6.json';
 import DeltaIcon from "./DeltaIcon.vue";
 import BarGaugeBeta from "./BarGaugeBeta.vue";
 
@@ -134,7 +134,7 @@ export default {
     async setGmTvlFromApi() {
       setTimeout(async () => {
         this.$forceUpdate();
-        this.gmTvlFromApi = (await (await fetch('https://cavsise1n4.execute-api.us-east-1.amazonaws.com/gm-boost-apy')).json()).tvl;
+        this.gmTvlFromApi = (await (await fetch('https://cavsise1n4.execute-api.us-east-1.amazonaws.com/gm-boost-apy')).json()).arbTvl;
       }, 100);
     }
   },

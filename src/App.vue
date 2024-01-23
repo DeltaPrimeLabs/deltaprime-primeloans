@@ -29,7 +29,7 @@
       <a class="banner-link" href="https://chrome.google.com/webstore/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn" target="_blank"><b>Metamask
         plugin</b></a>.
     </Banner>
-    <Banner v-if="highGasPrice && !showMetamaskBanner && !showNetworkBanner && !showUpgradeBanner && !showArbitrumCongestionBanner" :closable="true">
+    <Banner v-if="highGasPrice && !showMetamaskBanner && !showNetworkBanner && !showArbitrumCongestionBanner" :closable="true">
       Gas prices are high at the moment. Be careful with your transactions.
     </Banner>
     <Banner v-if="oracleError">
@@ -43,9 +43,9 @@
         </b>
       </a>
     </Banner>
-    <Banner v-if="showArbitrumPrimeAccountBanner" background="green-accent" :closable="true">
+<!--    <Banner v-if="showArbitrumPrimeAccountBanner" background="green-accent" :closable="true">
       Last chance to mint GM for the current milestone
-    </Banner>
+    </Banner>-->
     <Banner v-if="showArbitrumCongestionBanner" :closable="true">
       The Arbitrum chain is fully congested resulting in failed transactions across apps. Please join our <a href='https://discord.gg/57EdDsvhxK' target='_blank'><b>Discord</b></a> to learn more
     </Banner>
@@ -230,7 +230,7 @@ export default {
               walletParams = {
                 chainName: 'Avalanche Mainnet C-Chain',
                 chainId: this.toHex(config.chainId),
-                rpcUrls: ['https://avalanche-mainnet.core.chainstack.com/ext/bc/C/rpc/0968db18a01a90bac990ff00df6f7da1'],
+                rpcUrls: [config.readRpcUrl],
                 nativeCurrency: {
                   name: 'AVAX',
                   symbol: 'AVAX',

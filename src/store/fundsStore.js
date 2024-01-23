@@ -318,18 +318,27 @@ export default {
     },
 
     async setupApys({commit}) {
-      let params = {
-        TableName: "apys-prod"
-      };
+      if (window.disableExternalData) {
+        commit('setApys', []);
+      } else {
+        try {
+          let params = {
+            TableName: "apys-prod"
+          };
 
-      const apyDoc = await docClient.scan(params).promise();
-      const apys = {};
+          const apyDoc = await docClient.scan(params).promise();
+          const apys = {};
 
-      apyDoc.Items.map(apy => {
-        apys[apy.id] = {...apy};
-      });
+          apyDoc.Items.map(apy => {
+            apys[apy.id] = {...apy};
+          });
 
-      commit('setApys', apys);
+          commit('setApys', apys);
+        } catch (e) {
+          window.disableExternalData = true;
+          commit('setApys', []);
+        }
+      }
     },
 
     async setupAssets({state, commit, rootState}) {
@@ -541,7 +550,26 @@ export default {
     async setupContracts({rootState, commit}) {
       const smartLoanFactoryContract = new ethers.Contract(SMART_LOAN_FACTORY_TUP.address, SMART_LOAN_FACTORY.abi, provider.getSigner());
       const wrappedTokenContract = new ethers.Contract(config.WRAPPED_TOKEN_ADDRESS, wrappedAbi, provider.getSigner());
-      let readProvider = new ethers.providers.JsonRpcProvider(config.readRpcUrl);
+      let readProvider;
+      readProvider = new ethers.providers.JsonRpcProvider(config.readRpcUrl);
+      console.log(readProvider);
+      const networkResultPromise = readProvider._networkPromise;
+      networkResultPromise.catch(networkResultError => {
+        console.log(networkResultError);
+        if (networkResultError.code === 'NETWORK_ERROR') {
+          console.warn('NETWORK ERROR');
+          const primaryRpcError = !config.fallbackRpcs.includes(config.readRpcUrl);
+          const rpcErrorData = {
+            nextRpcToTry: primaryRpcError ? config.fallbackRpcs[0] : config.fallbackRpcs[config.fallbackRpcs.indexOf(config.readRpcUrl) + 1],
+            rpcNotWorking: config.readRpcUrl,
+            errorDate: new Date(),
+          }
+
+          localStorage.setItem('RPC_ERROR_DATA', JSON.stringify(rpcErrorData));
+          window.location.reload();
+        }
+      })
+
       const multicallContract = new ethers.Contract(config.multicallAddress, MULTICALL.abi, readProvider);
 
       commit('setSmartLoanFactoryContract', smartLoanFactoryContract);
@@ -1262,7 +1290,11 @@ export default {
 
           let leveragedGm = gmWorth - collateral > 0 ? gmWorth - collateral : 0;
 
-          yearlyLpInterest += leveragedGm * state.apys['GM_BOOST'].arbApy;
+          if (window.chain === 'arbitrum') {
+            yearlyLpInterest += leveragedGm * state.apys['GM_BOOST'].arbApy * state.assets['ARB'].price;
+          } else {
+            yearlyLpInterest += leveragedGm * state.apys['GM_BOOST'].arbApy;
+          }
         }
 
         let yearlyTraderJoeV2Interest = 0;
@@ -2787,76 +2819,6 @@ export default {
       setTimeout(async () => {
         await dispatch('updateFunds');
       }, config.refreshDelay);
-    },
-
-    async paraSwap({state, rootState, commit, dispatch}, {swapRequest}) {
-      const provider = rootState.network.provider;
-
-      console.log(swapRequest);
-
-      const loanAssets = mergeArrays([(
-        await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
-        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
-        Object.keys(config.POOLS_CONFIG),
-        [swapRequest.targetAsset]
-      ]);
-
-      const wrappedLoan = await wrapContract(state.smartLoanContract, loanAssets);
-
-      let sourceDecimals = config.ASSETS_CONFIG[swapRequest.sourceAsset].decimals;
-      let sourceAmount = parseUnits(parseFloat(swapRequest.sourceAmount).toFixed(sourceDecimals), sourceDecimals);
-
-      let targetDecimals = config.ASSETS_CONFIG[swapRequest.targetAsset].decimals;
-      let targetAmount = parseUnits(swapRequest.targetAmount.toFixed(targetDecimals), targetDecimals);
-
-      const paraSwapSDK = constructSimpleSDK({chainId: config.chainId, axios});
-
-      const transactionParams = await paraSwapSDK.swap.buildTx({
-        srcToken: swapRequest.paraSwapRate.srcToken,
-        destToken: swapRequest.paraSwapRate.destToken,
-        srcAmount: swapRequest.paraSwapRate.srcAmount,
-        destAmount: swapRequest.paraSwapRate.destAmount,
-        priceRoute: swapRequest.paraSwapRate,
-        userAddress: wrappedLoan.address,
-        partner: 'anon',
-      }, {
-        ignoreChecks: true,
-      });
-      console.log(transactionParams);
-      const swapData = paraSwapRouteToSimpleData(transactionParams);
-
-
-      console.log(swapData);
-
-      const transaction = await wrappedLoan.paraSwap(swapData);
-
-      rootState.serviceRegistry.progressBarService.requestProgressBar();
-      rootState.serviceRegistry.modalService.closeModal();
-
-      const tx = await awaitConfirmation(transaction, provider, 'paraSwap');
-
-      console.log('SWAP LOG');
-      console.log(getLog(tx, SMART_LOAN.abi, 'Swap'));
-
-      const amountSold = formatUnits(getLog(tx, SMART_LOAN.abi, 'Swap').args.maximumSold, config.ASSETS_CONFIG[swapRequest.sourceAsset].decimals);
-      const amountBought = formatUnits(getLog(tx, SMART_LOAN.abi, 'Swap').args.minimumBought, config.ASSETS_CONFIG[swapRequest.targetAsset].decimals);
-      const sourceBalanceAfterSwap = Number(state.assetBalances[swapRequest.sourceAsset]) - Number(amountSold);
-      const targetBalanceAfterSwap = Number(state.assetBalances[swapRequest.targetAsset]) + Number(amountBought);
-
-      commit('setSingleAssetBalance', {asset: swapRequest.sourceAsset, balance: sourceBalanceAfterSwap});
-      commit('setSingleAssetBalance', {asset: swapRequest.targetAsset, balance: targetBalanceAfterSwap});
-
-      rootState.serviceRegistry.assetBalancesExternalUpdateService
-        .emitExternalAssetBalanceUpdate(swapRequest.sourceAsset, sourceBalanceAfterSwap, false, true);
-      rootState.serviceRegistry.assetBalancesExternalUpdateService
-        .emitExternalAssetBalanceUpdate(swapRequest.targetAsset, targetBalanceAfterSwap, false, true);
-
-      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
-      setTimeout(() => {
-        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
-      }, SUCCESS_DELAY_AFTER_TRANSACTION);
-
-      console.log(tx);
     },
 
     async paraSwapV2({state, rootState, commit, dispatch}, {swapRequest}) {

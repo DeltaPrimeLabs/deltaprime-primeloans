@@ -10,7 +10,7 @@
         <Toggle v-on:change="swapDexChange" :options="dexOptions"></Toggle>
       </div>
 
-      <div class="modal-top-desc" v-if="swapDex === 'ParaSwap' && showParaSwapWarning">
+      <div class="modal-top-desc" v-if="swapDex === 'ParaSwapV2' && showParaSwapWarning">
         <div>
           <b>Caution: Paraswap slippage vastly exceeds YakSwap. Use with caution.</b>
         </div>
@@ -22,7 +22,7 @@
         </div>
       </div>
 
-      <div class="modal-top-desc" v-if="['YakSwap', 'ParaSwap', 'ParaSwapV2'].includes(swapDex)">
+      <div class="modal-top-desc" v-if="['YakSwap', 'ParaSwapV2'].includes(swapDex)">
         <div>
           <b>Token availability might change with different aggregators.</b>
         </div>
@@ -360,6 +360,10 @@ export default {
     },
 
     swapDexChange(dex) {
+      console.log(dex);
+      if (dex === 'ParaSwap') {
+        dex = 'ParaSwapV2'
+      }
       this.swapDex = dex;
       this.setupSourceAssetOptions();
       this.setupTargetAssetOptions();

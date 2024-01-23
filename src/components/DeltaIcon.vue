@@ -30,10 +30,12 @@ export default {
 .delta-icon {
   display: inline-block;
   vertical-align: middle;
+  mask-size: contain;
   -webkit-mask-size: contain;
   mask-repeat: no-repeat;
-  -webkit-mask-position: center;
+  -webkit-mask-repeat: no-repeat;
   mask-position: center;
+  -webkit-mask-position: center;
 
   &.delta-icon--no-hover {
     pointer-events: none;

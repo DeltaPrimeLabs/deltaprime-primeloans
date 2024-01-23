@@ -271,7 +271,6 @@ export default {
     ...mapActions('fundsStore',
         [
           'swap',
-          'paraSwap',
           'paraSwapV2',
           'swapDebt',
           'fund',
@@ -352,7 +351,7 @@ export default {
       if (this.rowExpanded) {
         this.rowExpanded = false;
         this.showTradingViewChart = false;
-        this.selectedChart = 'TradingView'
+        this.selectedChart = this.asset.tradingViewSymbol ? 'TradingView' : 'Chart'
       } else {
         this.rowExpanded = true;
         setTimeout(() => {
@@ -432,47 +431,6 @@ export default {
             } catch (e) {
               this.handleTransactionError(e);
             }
-          }
-        }
-      };
-    },
-
-
-    paraSwapQueryMethod() {
-      return async (sourceAsset, targetAsset, amountIn) => {
-        const paraSwapSDK = constructSimpleSDK({chainId: config.chainId, axios});
-
-        try {
-          const swapRate = await paraSwapSDK.swap.getRate({
-            srcToken: TOKEN_ADDRESSES[sourceAsset],
-            srcDecimals: config.ASSETS_CONFIG[sourceAsset].decimals,
-            destToken: TOKEN_ADDRESSES[targetAsset],
-            destDecimals: config.ASSETS_CONFIG[targetAsset].decimals,
-            amount: amountIn,
-            userAddress: this.smartLoanContract.address,
-            side: SwapSide.SELL,
-            includeContractMethods: [ContractMethod.simpleSwap],
-            excludeContractMethods: [ContractMethod.directUniV3Swap],
-          });
-
-          const sourceAmountWei = parseUnits(Number(`${swapRate.srcAmount}e-${swapRate.srcDecimals}`).toFixed(swapRate.srcDecimals), swapRate.srcDecimals);
-          const targetAmountWei = parseUnits(Number(`${swapRate.destAmount}e-${swapRate.destDecimals}`).toFixed(swapRate.destDecimals), swapRate.destDecimals);
-
-          const queryResponse = {
-            amounts: [sourceAmountWei, targetAmountWei],
-            dex: 'PARA_SWAP',
-            swapRate: swapRate
-          };
-
-          return queryResponse;
-        } catch (error) {
-          console.warn('para swap query method error');
-          console.log(error);
-          console.log(typeof error);
-          console.log(String(error));
-          if (String(error).includes('No routes found with enough liquidity')) {
-            this.progressBarService.emitProgressBarErrorState('The selected aggregator could not find a route. Please switch aggregator, or try again later.')
-            this.cleanupAfterError();
           }
         }
       };
@@ -652,13 +610,12 @@ export default {
       let swapDexSwapMethodMap = {};
 
       if (config.SWAP_DEXS_CONFIG.YakSwap.availableAssets && config.SWAP_DEXS_CONFIG.YakSwap.availableAssets.includes(this.asset.symbol)) swapDexSwapMethodMap.YakSwap = this.swap;
-      if (config.SWAP_DEXS_CONFIG.YakSwap.availableAssets && config.SWAP_DEXS_CONFIG.ParaSwap.availableAssets.includes(this.asset.symbol)) swapDexSwapMethodMap.ParaSwap = this.paraSwap;
       if (config.SWAP_DEXS_CONFIG.YakSwap.availableAssets && config.SWAP_DEXS_CONFIG.ParaSwapV2.availableAssets.includes(this.asset.symbol)) swapDexSwapMethodMap.ParaSwapV2 = this.paraSwapV2;
 
       const modalInstance = this.openModal(SwapModal);
       modalInstance.dexOptions = Object.entries(config.SWAP_DEXS_CONFIG)
         .filter(([dexName, dexConfig]) => dexConfig.availableAssets.includes(this.asset.symbol))
-        .map(([dexName, dexConfig]) => dexName);
+        .map(([dexName, dexConfig]) => dexConfig.displayName);
       modalInstance.swapDex = Object.entries(config.SWAP_DEXS_CONFIG).filter(([k,v]) => v.availableAssets.includes(this.asset.symbol))[0][0];
       modalInstance.swapDebtMode = false;
       modalInstance.sourceAsset = this.asset.symbol;
@@ -684,7 +641,6 @@ export default {
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.queryMethods = {
         YakSwap: this.yakSwapQueryMethod(),
-        ParaSwap: this.paraSwapQueryMethod(),
         ParaSwapV2: this.paraSwapV2QueryMethod(),
       };
 
@@ -693,6 +649,8 @@ export default {
           ...swapEvent,
           sourceAmount: swapEvent.sourceAmount.toString()
         };
+
+        console.log(swapRequest);
 
         this.handleTransaction(swapDexSwapMethodMap[swapRequest.swapDex], {swapRequest: swapRequest}, () => {
           this.$forceUpdate();
