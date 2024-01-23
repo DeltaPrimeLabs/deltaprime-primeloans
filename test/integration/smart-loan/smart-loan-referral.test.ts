@@ -67,7 +67,6 @@ describe("Smart loan", () => {
             primeDex: PrimeDex,
             wrappedLoanReferrer: any,
             wrappedLoanReferee: any,
-            nonOwnerWrappedLoan: any,
             tokenManager: MockTokenManager,
             dynamicNameMapping: NameMapping = {},
             owner: SignerWithAddress,
@@ -261,14 +260,6 @@ describe("Smart loan", () => {
                     dataPoints: MOCK_PRICES,
                 });
 
-            nonOwnerWrappedLoan = WrapperBuilder
-                // @ts-ignore
-                .wrap(loan.connect(nonOwner))
-                .usingSimpleNumericMock({
-                    mockSignersCount: 10,
-                    dataPoints: MOCK_PRICES,
-                });
-
             dynamicNameMapping[wrappedLoanReferrer.address] = 'ReferrerWrappedLoan';
             dynamicNameMapping[wrappedLoanReferee.address] = 'RefereeWrappedLoan';
             dynamicNameMapping[primeDex.address] = 'PrimeDex';
@@ -351,7 +342,7 @@ describe("Smart loan", () => {
 
         it("should fail to create loan using invalid referral code", async () => {
             await expect(
-                smartLoansFactory.connect(referee).createLoan(invalidReferralCode)
+                smartLoansFactory.connect(nonOwner).createLoan(invalidReferralCode)
             ).to.be.revertedWith("Invalid referral code");
         });
     });

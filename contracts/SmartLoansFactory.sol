@@ -37,7 +37,7 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
             return;
         }
 
-        revert("Invalid Referral Code");
+        revert("Invalid referral code");
     }
 
     SmartLoanDiamondBeacon public smartLoanDiamond;
@@ -134,6 +134,7 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
         address loan = ownersToLoans[owner];
         require(referralCodes[loan] == bytes32(0), "Already set referral code");
         referralCodes[loan] = referralCode;
+        referrers[referralCode] = loan;
 
         emit ReferralCodeSet(owner, loan, referralCode);
     }
