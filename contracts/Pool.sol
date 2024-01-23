@@ -26,9 +26,9 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     using TransferHelper for address payable;
 
     struct FeeData {
-        uint256 referralBorrowingFee;
-        uint256 noReferralProtocolBorrowingFee;
-        uint256 referralProtocolBorrowingFee;
+        uint256 referrerFee;
+        uint256 noReferrerProtocolFee;
+        uint256 referrerProtocolFee;
         address protocolFeeReceiver;
     }
 
@@ -75,23 +75,34 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     /**
      * Sets the additional fee percentage that goes to the referrer
      * Only the owner of the Contract can execute this function.
-     * @dev _borrowingFee new fee
+     * @dev _referrerFee new fee
     **/
-    function setReferralBorrowingFee(uint256 _borrowingFee) external onlyOwner {
-        if (_borrowingFee > 1e18) revert WrongFee(_borrowingFee);
+    function setReferrerFee(uint256 _referrerFee) external onlyOwner {
+        if (_referrerFee > 1e18) revert WrongFee(_referrerFee);
         FeeData storage feeData = getFeeData();
-        feeData.referralBorrowingFee = _borrowingFee;
+        feeData.referrerFee = _referrerFee;
     }
 
     /**
      * Sets the additional fee percentage that goes to the protocol
      * Only the owner of the Contract can execute this function.
-     * @dev _borrowingFee new fee
+     * @dev _referrerProtocolFee new fee
     **/
-    function setReferralProtocolBorrowingFee(uint256 _borrowingFee) external onlyOwner {
-        if (_borrowingFee > 1e18) revert WrongFee(_borrowingFee);
+    function setReferrerProtocolFee(uint256 _referrerProtocolFee) external onlyOwner {
+        if (_referrerProtocolFee > 1e18) revert WrongFee(_referrerProtocolFee);
         FeeData storage feeData = getFeeData();
-        feeData.referralProtocolBorrowingFee = _borrowingFee;
+        feeData.referrerProtocolFee = _referrerProtocolFee;
+    }
+
+    /**
+     * Sets the additional fee percentage that goes to the protocol
+     * Only the owner of the Contract can execute this function.
+     * @dev _noReferrerProtocolFee new fee
+    **/
+    function setNoReferrerProtocolFee(uint256 _noReferrerProtocolFee) external onlyOwner {
+        if (_noReferrerProtocolFee > 1e18) revert WrongFee(_noReferrerProtocolFee);
+        FeeData storage feeData = getFeeData();
+        feeData.noReferrerProtocolFee = _noReferrerProtocolFee;
     }
 
     // GETTERS
@@ -109,9 +120,9 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     function getFeeRatio(address _user) public view returns (uint256 feeRatio) {
         FeeData storage feeData = getFeeData();
         if (ISmartLoanViewFacet(_user).getReferrer() != address(0)) {
-            return feeData.referralBorrowingFee + feeData.referralProtocolBorrowingFee;
+            return feeData.referrerFee + feeData.referrerProtocolFee;
         } else {
-            return feeData.noReferralProtocolBorrowingFee;
+            return feeData.noReferrerProtocolFee;
         }
     }
 
@@ -121,7 +132,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     function getBorrowingRateWithReferralFee() public view returns (uint256) {
         //TODO: check if it's correct
         FeeData storage feeData = getFeeData();
-        return ratesCalculator.calculateBorrowingRate(totalBorrowed(), totalSupply()) + feeData.referralBorrowingFee + feeData.referralProtocolBorrowingFee;
+        return ratesCalculator.calculateBorrowingRate(totalBorrowed(), totalSupply()) + feeData.referrerFee + feeData.referrerProtocolFee;
     }
 
     /**
@@ -130,7 +141,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     function getBorrowingRateWithNoReferralFee() public view returns (uint256) {
         //TODO: check if it's correct
         FeeData storage feeData = getFeeData();
-        return ratesCalculator.calculateBorrowingRate(totalBorrowed(), totalSupply()) + feeData.noReferralProtocolBorrowingFee;
+        return ratesCalculator.calculateBorrowingRate(totalBorrowed(), totalSupply()) + feeData.noReferrerProtocolFee;
     }
 
     function getFeeData() internal pure returns (FeeData storage feeData) {
