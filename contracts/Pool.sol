@@ -107,6 +107,11 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
     // GETTERS
 
+    function getProtocolFeeReceiver() external view returns (address) {
+        FeeData storage feeData = getFeeData();
+        return feeData.protocolFeeReceiver;
+    }
+
     /**
      * Returns the current borrowed amount with fees for the given user
      * The value includes the interest rates owned at the current moment
@@ -121,6 +126,22 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         FeeData storage feeData = getFeeData();
         if (ISmartLoanViewFacet(_user).getReferrer() != address(0)) {
             return feeData.referrerFee + feeData.referrerProtocolFee;
+        } else {
+            return feeData.noReferrerProtocolFee;
+        }
+    }
+
+    function getReferrerFee(address _user) public view returns (uint256) {
+        FeeData storage feeData = getFeeData();
+        if (ISmartLoanViewFacet(_user).getReferrer() != address(0)) {
+            return feeData.referrerFee;
+        }
+    }
+
+    function getProtocolFee(address _user) public view returns (uint256) {
+        FeeData storage feeData = getFeeData();
+        if (ISmartLoanViewFacet(_user).getReferrer() != address(0)) {
+            return feeData.referrerProtocolFee;
         } else {
             return feeData.noReferrerProtocolFee;
         }
