@@ -100,7 +100,7 @@ describe('Smart loan', () => {
         });
 
         it("should deploy a smart loan and check ownership", async () => {
-            await smartLoansFactory.connect(owner1).createLoan();
+            await smartLoansFactory.connect(owner1).createLoan(ethers.constants.HashZero);
             const loanProxyAddress = await smartLoansFactory.getLoanForOwner(owner1.address);
             loan = new ethers.Contract(loanProxyAddress, SmartLoanGigaChadInterfaceArtifact.abi, provider);
 
@@ -185,7 +185,7 @@ describe('Smart loan', () => {
         });
 
         it("Revert proposal of an address that has a loan", async () => {
-            await smartLoansFactory.connect(owner5).createLoan();
+            await smartLoansFactory.connect(owner5).createLoan(ethers.constants.HashZero);
 
             await expect(loan.connect(owner4).proposeOwnershipTransfer(owner5.address)).to.be.revertedWith("Can't propose an address that already has a loan");
         });
@@ -193,7 +193,7 @@ describe('Smart loan', () => {
         it("Revert acceptance of ownership transfer to an address that created a loan in the meantime", async () => {
             await loan.connect(owner4).proposeOwnershipTransfer(owner6.address)
 
-            await smartLoansFactory.connect(owner6).createLoan();
+            await smartLoansFactory.connect(owner6).createLoan(ethers.constants.HashZero);
 
             await expect(loan.connect(owner6).acceptOwnership()).to.be.revertedWith("New owner already has a loan");
         });

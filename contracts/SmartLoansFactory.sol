@@ -34,6 +34,7 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
     modifier validReferralCode(bytes32 referralCode) {
         if (referralCode == bytes32(0) || referrers[referralCode] != address(0)) {
             _;
+            return;
         }
 
         revert("Invalid Referral Code");

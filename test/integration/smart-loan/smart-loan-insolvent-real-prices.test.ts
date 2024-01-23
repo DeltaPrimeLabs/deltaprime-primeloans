@@ -568,7 +568,7 @@ describe('Smart loan - real prices', () => {
 
                             borrower = borrowers[testCase.id - 1];
 
-                            await smartLoansFactory.connect(borrower).createLoan();
+                            await smartLoansFactory.connect(borrower).createLoan(ethers.constants.HashZero);
 
                             const loan_proxy_address = await smartLoansFactory.getLoanForOwner(borrower.address);
 

@@ -4,7 +4,8 @@ pragma solidity 0.8.17;
 
 import "../ReentrancyGuardKeccak.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
-import {SolvencyMethods, IStakingPositions} from "../lib/SolvencyMethods.sol";
+import {SolvencyMethods} from "../lib/SolvencyMethods.sol";
+import "../interfaces/IStakingPositions.sol";
 import {Pool} from "../Pool.sol";
 import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";

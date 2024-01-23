@@ -109,7 +109,7 @@ describe('Smart loan', () => {
         });
 
         it("should deploy a smart loan", async () => {
-            await smartLoansFactory.connect(owner).createLoan();
+            await smartLoansFactory.connect(owner).createLoan(ethers.constants.HashZero);
 
             const loanAddress = await smartLoansFactory.getLoanForOwner(owner.address);
             loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loanAddress, owner);
@@ -232,7 +232,7 @@ describe('Smart loan', () => {
         });
 
         it("should deploy a smart loan", async () => {
-            await smartLoansFactory.connect(owner).createLoan();
+            await smartLoansFactory.connect(owner).createLoan(ethers.constants.HashZero);
 
             const loanAddress = await smartLoansFactory.getLoanForOwner(owner.address);
             loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loanAddress, owner);
@@ -391,7 +391,7 @@ describe('Smart loan', () => {
         );
 
         it("should deploy a smart loan", async () => {
-            await smartLoansFactory.connect(borrower).createLoan();
+            await smartLoansFactory.connect(borrower).createLoan(ethers.constants.HashZero);
 
             const loan_proxy_address = await smartLoansFactory.getLoanForOwner(
                 borrower.address

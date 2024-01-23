@@ -171,7 +171,7 @@ describe('Test liquidations using deployed contracts on Avalanche', () => {
             const loansBeforeCreate = await smartLoansFactory.getAllLoans();
 
             for (const user of [USER_1, USER_2, USER_3, USER_4, USER_5]) {
-                await smartLoansFactory.connect(user).createLoan();
+                await smartLoansFactory.connect(user).createLoan(ethers.constants.HashZero);
             }
 
             const loansAfterCreate = await smartLoansFactory.getAllLoans();

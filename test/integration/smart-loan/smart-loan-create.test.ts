@@ -112,7 +112,7 @@ describe('Smart loan', () => {
 
 
         it("should create a smart loan using createLoan", async () => {
-            await smartLoansFactory.connect(borrower1).createLoan();
+            await smartLoansFactory.connect(borrower1).createLoan(ethers.constants.HashZero);
 
             const loanAddress = await smartLoansFactory.getLoanForOwner(borrower1.address);
             loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loanAddress, borrower1);
@@ -135,7 +135,7 @@ describe('Smart loan', () => {
 
             await tokenContracts.get('AVAX')!.connect(borrower2).deposit({value: toWei("1")});
             await tokenContracts.get('AVAX')!.connect(borrower2).approve(smartLoansFactory.address, toWei("1"));
-            await wrappedSmartLoansFactory.createAndFundLoan(toBytes32("AVAX"), toWei("1"));
+            await wrappedSmartLoansFactory.createAndFundLoan(toBytes32("AVAX"), toWei("1"), ethers.constants.HashZero);
 
             const loanAddress = await smartLoansFactory.getLoanForOwner(borrower2.address);
             loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loanAddress, borrower2);
@@ -177,10 +177,10 @@ describe('Smart loan', () => {
             await tokenContracts.get('AVAX')!.connect(borrower3).deposit({value: toWei("1")});
             await tokenContracts.get('AVAX')!.connect(borrower3).approve(smartLoansFactory.address, toWei("1"));
 
-            await expect(wrappedSmartLoansFactory.createAndFundLoan(toBytes32("AVAX"), toWei("1")))
+            await expect(wrappedSmartLoansFactory.createAndFundLoan(toBytes32("AVAX"), toWei("1")), ethers.constants.HashZero)
                 .to.be.revertedWith('TransferHelper::transferFrom: transferFrom failed');
 
-            await expect(wrappedSmartLoansFactory.createAndFundLoan(toBytes32("MCKUSD"), toWei("1")))
+            await expect(wrappedSmartLoansFactory.createAndFundLoan(toBytes32("MCKUSD"), toWei("1")), ethers.constants.HashZero)
                 .not.to.be.reverted;
         });
     });

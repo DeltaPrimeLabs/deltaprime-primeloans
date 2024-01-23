@@ -105,7 +105,7 @@ describe('Yield Yak test stake AVAX', () => {
             },
         ];
 
-        await smartLoansFactory.connect(user).createLoan();
+        await smartLoansFactory.connect(user).createLoan(ethers.constants.HashZero);
 
         const loan_proxy_address = await smartLoansFactory.getLoanForOwner(user.address);
         loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, user);
@@ -261,7 +261,7 @@ describe('Yield Yak test stake sAVAX', () => {
             },
         ];
 
-        await smartLoansFactory.connect(user).createLoan();
+        await smartLoansFactory.connect(user).createLoan(ethers.constants.HashZero);
 
         const loan_proxy_address = await smartLoansFactory.getLoanForOwner(user.address);
         loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, user);

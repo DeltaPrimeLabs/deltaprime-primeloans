@@ -16,7 +16,6 @@ import "../interfaces/facets/ISmartLoanLiquidationFacet.sol";
 
 import "./avalanche/SolvencyFacetProdAvalanche.sol";
 import "../SmartLoanDiamondBeacon.sol";
-import "hardhat/console.sol";
 
 contract SmartLoanLiquidationFacetDebug is ReentrancyGuardKeccak, SolvencyMethods {
     //IMPORTANT: KEEP IT IDENTICAL ACROSS FACETS TO BE PROPERLY UPDATED BY DEPLOYMENT SCRIPTS

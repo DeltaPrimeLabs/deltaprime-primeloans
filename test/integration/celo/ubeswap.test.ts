@@ -147,7 +147,7 @@ describe('Smart loan', () => {
         });
 
         it("should deploy a smart loan", async () => {
-            await smartLoansFactory.connect(owner).createLoan();
+            await smartLoansFactory.connect(owner).createLoan(ethers.constants.HashZero);
 
             const loan_proxy_address = await smartLoansFactory.getLoanForOwner(await owner.getAddress());
 
