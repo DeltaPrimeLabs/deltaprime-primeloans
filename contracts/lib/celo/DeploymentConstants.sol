@@ -26,8 +26,6 @@ library DeploymentConstants {
 
     address private constant _TOKEN_MANAGER_ADDRESS = 0x4EE6eCAD1c2Dae9f525404De8555724e3c35d07B;
 
-    address private constant _TREASURY_ADDRESS = 0x000000F406CA147030BE7069149e4a7423E3A264;
-
     address private constant _ADDRESS_PROVIDER = address(0);
 
     //implementation-specific
@@ -58,10 +56,6 @@ library DeploymentConstants {
 
     function getTokenManager() internal pure returns (ITokenManager) {
         return ITokenManager(_TOKEN_MANAGER_ADDRESS);
-    }
-
-    function getTreasury() internal pure returns (address) {
-        return _TREASURY_ADDRESS;
     }
 
     /**

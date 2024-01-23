@@ -256,10 +256,6 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         }
     }
 
-    function transferSurplus(IERC20Metadata token, uint256 amount) internal {
-        address(token).safeTransfer(DeploymentConstants.getTreasury(), amount);
-    }
-
     function getReferrer() internal view returns (address) {
         DiamondStorageLib.SmartLoanStorage storage sls = DiamondStorageLib.smartLoanStorage();
         return sls.referrer;
