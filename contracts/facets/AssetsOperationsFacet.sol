@@ -164,11 +164,17 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         _amount = Math.min(_amount, pool.getBorrowed(address(this)));
         require(token.balanceOf(address(this)) >= _amount, "There is not enough funds to repay");
 
-        uint256 feeRatio = pool.getFeeRatio(address(this));
-        uint256 feeAmount = _amount * feeRatio / 1e18;
-        _amount -= feeAmount;
+        address protocolFeeReceiver = pool.getProtocolFeeReceiver();
+        uint256 referrerFeeAmount = _amount * pool.getReferrerFee(address(this)) / 1e18;
+        uint256 protocolFeeAmount = _amount * pool.getProtocolFee(address(this)) / 1e18;
+        if (protocolFeeAmount > 0) {
+            address(token).safeTransfer(protocolFeeReceiver, protocolFeeAmount);
+        }
+        if (referrerFeeAmount > 0) {
+            _repayReferrerFee(_asset, referrerFeeAmount, protocolFeeReceiver);
+        }
 
-        _repayFee(_asset, feeAmount);
+        _amount -= referrerFeeAmount + protocolFeeAmount;
 
         address(token).safeApprove(address(pool), 0);
         address(token).safeApprove(address(pool), _amount);
@@ -182,20 +188,22 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         emit Repaid(msg.sender, _asset, _amount, block.timestamp);
     }
 
-    function _repayFee(bytes32 asset, uint256 amount) internal {
+    function _repayReferrerFee(bytes32 asset, uint256 amount, address feeReceiver) internal {
         address referrer = getReferrer();
         IERC20Metadata token = getERC20TokenInstance(asset, false);
 
         if (referrer != address(0)) {
-            ISmartLoanFactory smartLoansFactory = ISmartLoanFactory(DeploymentConstants.getSmartLoansFactoryAddress());
-            bytes32 feeAsset = smartLoansFactory.getFeeAsset(referrer);
+            bytes32 feeAsset;
+            {
+                ISmartLoanFactory smartLoansFactory = ISmartLoanFactory(DeploymentConstants.getSmartLoansFactoryAddress());
+                feeAsset = smartLoansFactory.getFeeAsset(referrer);
+            }
             if (feeAsset != bytes32(0)) {
                 Pool pool = Pool(DeploymentConstants.getTokenManager().getPoolAddress(feeAsset));
                 uint256 feeAmount;
                 IERC20Metadata feeToken = getERC20TokenInstance(feeAsset, false);
 
                 if (feeAsset != asset) {
-
                     uint256[] memory prices;
                     {
                         bytes32[] memory priceAssets = new bytes32[](2);
@@ -240,9 +248,10 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
                 address(feeToken).safeApprove(address(pool), repayAmount);
                 pool.repayFor(referrer, repayAmount);
 
-                transferSurplus(feeToken, feeAmount - repayAmount);
+                feeReceiver = pool.getProtocolFeeReceiver();
+                address(feeToken).safeTransfer(feeReceiver, feeAmount - repayAmount);
             } else {
-                transferSurplus(token, amount);
+                address(token).safeTransfer(feeReceiver, amount);
             }
         }
     }
