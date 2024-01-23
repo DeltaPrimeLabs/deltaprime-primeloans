@@ -34,11 +34,14 @@ provider:
     GMX_INCENTIVES_AVA_TABLE: gmx-incentives-ava-${opt:stage, "dev"}
     GMX_INCENTIVES_ARB_TABLE: gmx-incentives-arb-${opt:stage, "dev"}
     GM_OPEN_INTEREST_TABLE: gm-open-interest-${opt:stage, "dev"}
+    REFERRAL_TABLE: referral-${opt:stage, "dev"}
     TJ_API_KEY: ${file(./.secrets/traderJoe.json):apiKey}
     FUNC_RPC_AVA: ${file(./.secrets/funcRpc.json):avalanche}
     FUNC_RPC_ARB: ${file(./.secrets/funcRpc.json):arbitrum}
     EXT_RPC_AVA: ${file(./.secrets/extRpc.json):avalanche}
     EXT_RPC_ARB: ${file(./.secrets/extRpc.json):arbitrum}
+    AUTH0_AUDIENCE: ${file(./.secrets/auth0.json):audience}
+    AUTH0_ISSUER: ${file(./.secrets/auth0.json):issuer}
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -48,6 +51,14 @@ provider:
         - dynamodb:PutItem
         - dynamodb:UpdateItem
       Resource: "*"
+  httpApi:
+    authorizers:
+      auth0Authorizer:
+        type: jwt
+        identitySource: $request.header.Authorization
+        issuerUrl: ${self:provider.environment.AUTH0_ISSUER}
+        audience:
+          - ${self:provider.environment.AUTH0_AUDIENCE}
   # you can add statements to the Lambda function's IAM Role here
 
 # you can define service wide environment variables here
@@ -77,13 +88,13 @@ functions:
       - httpApi:
           method: get
           path: /sprime/{id}
-  levelTvlAggregator:
+  levelTvlAndApyAggregator:
     handler: aggregators/apy.levelTvlAggregator
     memorySize: 512
     timeout: 600
     description: Fetch TVL from Level Finance.
     events:
-      - schedule: rate(2 minutes)
+      - schedule: rate(5 minutes)
   levelTvlApi:
     handler: apis/apy.levelTvlApi
     memorySize: 512
@@ -98,42 +109,42 @@ functions:
     timeout: 300
     description: Fetch GLP Apr from GMX website.
     events:
-      - schedule: rate(2 minutes)
+      - schedule: rate(5 minutes)
   vectorApyAggregator:
     handler: aggregators/apy.vectorApyAggregator
     memorySize: 2048
     timeout: 300
     description: Fetch auto-compounding APYs from Vector website.
     events:
-      - schedule: rate(2 minutes)
+      - schedule: rate(5 minutes)
   lpAndFarmApyAggregator:
     handler: aggregators/apy.lpAndFarmApyAggregator
     memorySize: 512
     timeout: 120
     description: Fetch LP and Farm APYs from Pangolin and TraderJoe V1
     events:
-      - schedule: rate(2 minutes)
+      - schedule: rate(5 minutes)
   steakHutApyAggregator:
     handler: aggregators/apy.steakHutApyAggregator
     memorySize: 2048
     timeout: 300
     description: Fetch APYs from StackHut website.
     events:
-      - schedule: rate(2 minutes)
+      - schedule: rate(5 minutes)
   traderJoeApyAggregator:
     handler: aggregators/apy.traderJoeApyAggregator
     memorySize: 2048
     timeout: 300
     description: Fetch APYs from TraderJoe website.
     events:
-      - schedule: rate(12 minutes)
+      - schedule: rate(15 minutes)
   sushiApyAggregator:
     handler: aggregators/apy.sushiApyAggregator
     memorySize: 2048
     timeout: 300
     description: Fetch APYs from Sushi website.
     events:
-      - schedule: rate(2 minutes)
+      - schedule: rate(5 minutes)
   beefyApyAggregator:
     handler: aggregators/apy.beefyApyAggregator
     memorySize: 2048
@@ -141,34 +152,27 @@ functions:
     description: Fetch APYs from Beefy website.
     events:
       - schedule: rate(3 minutes)
-  levelApyAggregator:
-    handler: aggregators/apy.levelApyAggregator
-    memorySize: 2048
-    timeout: 300
-    description: Fetch APYs from Level website.
-    events:
-      - schedule: rate(2 minutes)
   gmxApyAggregator:
     handler: aggregators/apy.gmxApyAggregator
     memorySize: 2048
     timeout: 300
     description: Fetch GM token APYs from GMX website.
     events:
-      - schedule: rate(2 minutes)
+      - schedule: rate(5 minutes)
   balanerApyAggregator:
     handler: aggregators/apy.balanerApyAggregator
     memorySize: 2048
     timeout: 300
     description: Fetch pool APYs from Balancer website.
     events:
-      - schedule: rate(2 minutes)
+      - schedule: rate(5 minutes)
   assetStakingApyAggregator:
     handler: aggregators/apy.assetStakingApyAggregator
     memorySize: 2048
     timeout: 300
     description: Fetch staking APYs of various assets.
     events:
-      - schedule: rate(2 minutes)
+      - schedule: rate(5 minutes)
   gmOpenInterestAggregator:
     handler: gmOpenInterest/gmOpenInterestAggregator.handler
     memorySize: 2048
@@ -236,6 +240,24 @@ functions:
       - httpApi:
           method: get
           path: /gm-open-interests
+  getAccountByReferralApi:
+    handler: apis/referral.getAccountByReferralApi
+    memorySize: 512
+    description: Get PA account info by referral
+    events:
+      - httpApi:
+          method: get
+          path: /referral/{id}
+  saveReferralApi:
+    handler: apis/referral.saveReferralApi
+    memorySize: 512
+    description: Save referral with PA account and wallet
+    events:
+      - httpApi:
+          method: POST
+          path: /referral/create
+          authorizer:
+            name: auth0Authorizer
 
 resources:
   Resources:
@@ -335,6 +357,22 @@ resources:
         StreamSpecification:
           StreamViewType: "NEW_AND_OLD_IMAGES"
         TableName: ${self:provider.environment.GM_OPEN_INTEREST_TABLE}
+    referralTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: "id"
+            AttributeType: "S"
+        KeySchema:
+          -
+            AttributeName: "id"
+            KeyType: "HASH"
+        BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: "NEW_AND_OLD_IMAGES"
+        TableName: ${self:provider.environment.REFERRAL_TABLE}
     # loansAvaTable:
     #   Type: AWS::DynamoDB::Table
     #   DeletionPolicy: Retain
@@ -372,3 +410,5 @@ resources:
     #       StreamViewType: "NEW_AND_OLD_IMAGES"
     #     TableName: ${self:provider.environment.LOAN_ARB_TABLE}
 
+plugins:
+  - serverless-prune-plugin

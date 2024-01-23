@@ -20,9 +20,14 @@ const balancerApyConfig = require("../config/balancerApy.json");
 
 const formatUnits = (val, decimals) => parseFloat(ethers.utils.formatUnits(val, decimals));
 
-const levelTvlAggregator = async (event) => {
+const levelTvlAndApyAggregator = async (event) => {
   console.log('fetching TVLs from Level..');
+
   const levelApiUrl = "https://api.level.finance/v2/stats/liquidity-performance";
+  const redstoneFeedUrl = "https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-arbitrum-prod";
+
+  const redstonePriceDataRequest = await fetch(redstoneFeedUrl);
+  const redstonePriceData = await redstonePriceDataRequest.json();
 
   // fetch APYs from Level on Arbitrum
   const resp = await fetch(levelApiUrl);
@@ -33,7 +38,7 @@ const levelTvlAggregator = async (event) => {
     const liquidityInUsd = formatUnits(lpInfo.totalSupply, 18) * formatUnits(lpInfo.price, 12);
     console.log(lpInfo.name, liquidityInUsd);
 
-    const params = {
+    let params = {
       TableName: process.env.APY_TABLE,
       Key: {
         id: levelConfig[lpInfo.name].symbol
@@ -45,10 +50,27 @@ const levelTvlAggregator = async (event) => {
         }
       }
     };
+    // save tvl
+    await dynamoDb.update(params).promise();
+
+    const apy = formatUnits(lpInfo.feeApr, 8) + formatUnits(lpInfo.rewardApr, 8);
+    console.log(levelConfig[lpInfo.name].symbol, levelConfig[lpInfo.name].protocolIdentifier, apy);
+
+    params = {
+      TableName: process.env.APY_TABLE,
+      Key: {
+        id: levelConfig[lpInfo.name].symbol
+      },
+      AttributeUpdates: {
+        [levelConfig[lpInfo.name].protocolIdentifier]: {
+          Value: Number(apy) ? apy : null,
+          Action: "PUT"
+        }
+      }
+    };
+    // save apy
     await dynamoDb.update(params).promise();
   }
-
-  console.log('fetching done.');
 
   return event;
 }
@@ -557,57 +579,6 @@ const beefyApyAggregator = async (event) => {
   return event;
 }
 
-const levelApyAggregator = async (event) => {
-  const levelApiUrl = "https://api.level.finance/v2/stats/liquidity-performance";
-  const redstoneFeedUrl = "https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-arbitrum-prod";
-
-  const redstonePriceDataRequest = await fetch(redstoneFeedUrl);
-  const redstonePriceData = await redstonePriceDataRequest.json();
-
-  // fetch APYs from Level on Arbitrum
-  const resp = await fetch(levelApiUrl);
-  const liquidityPerformance = await resp.json();
-
-  const arbLP = liquidityPerformance.find(item => item.chainId == 42161);
-  for (const lpInfo of arbLP.lpInfos) {
-    // const liquidityInUsd = formatUnits(lpInfo.totalSupply, 18) * formatUnits(lpInfo.price, 12);
-
-    // let tradingFees = 0;
-
-    // for (const [address, fees] of Object.entries(lpInfo.feeDetailsPerWeek)) {
-    //   Object.values(fees).forEach(fee => {
-    //     tradingFees += formatUnits(fee, levelConfig.lpSymbols[address].decimals) * redstonePriceData[levelConfig.lpSymbols[address].symbol][0].dataPoints[0].value;
-    //   });
-    // }
-
-    // const profit =
-    //   (formatUnits(lpInfo.lvlRewards, 18) * formatUnits(lpInfo.lvlPrice, 12)) +
-    //   formatUnits(lpInfo.mintingFee, 6) +
-    //   formatUnits(lpInfo.pnlVsTrader, 30) +
-    //   tradingFees;
-
-    // const apy = profit / liquidityInUsd / 7 * 365 * 100;
-    const apy = formatUnits(lpInfo.feeApr, 8) + formatUnits(lpInfo.rewardApr, 8);
-    console.log(levelConfig[lpInfo.name].symbol, levelConfig[lpInfo.name].protocolIdentifier, apy);
-
-    const params = {
-      TableName: process.env.APY_TABLE,
-      Key: {
-        id: levelConfig[lpInfo.name].symbol
-      },
-      AttributeUpdates: {
-        [levelConfig[lpInfo.name].protocolIdentifier]: {
-          Value: Number(apy) ? apy : null,
-          Action: "PUT"
-        }
-      }
-    };
-    await dynamoDb.update(params).promise();
-  }
-
-  return event;
-}
-
 const gmxApyAggregator = async (event) => {
   const { page } = await newChrome();
 
@@ -847,7 +818,7 @@ const assetStakingApyAggregator = async (event) => {
 }
 
 module.exports = {
-  levelTvlAggregator,
+  levelTvlAndApyAggregator,
   glpAprAggregator,
   vectorApyAggregator,
   lpAndFarmApyAggregator,
@@ -855,7 +826,6 @@ module.exports = {
   traderJoeApyAggregator,
   sushiApyAggregator,
   beefyApyAggregator,
-  levelApyAggregator,
   gmxApyAggregator,
   balanerApyAggregator,
   assetStakingApyAggregator
