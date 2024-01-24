@@ -1674,20 +1674,26 @@
   dependencies:
     "@types/bignumber.js" "^5.0.0"
 
-"@notifi-network/notifi-frontend-client@0.89.1-alpha.1":
-  version "0.89.1-alpha.1"
-  resolved "https://registry.yarnpkg.com/@notifi-network/notifi-frontend-client/-/notifi-frontend-client-0.89.1-alpha.1.tgz#cc2e7daf2b166224a7503297ae78874a420346af"
-  integrity sha512-47kk3OEZJidZwn+ypLniYaUNhckv1s2cZr0NPrnn/cKtN7rAWbraKZLtdP1HptLwWIoBjpUsHnsJ6eIJPVOPYg==
+"@notifi-network/notifi-dataplane@^0.90.1":
+  version "0.90.1"
+  resolved "https://registry.yarnpkg.com/@notifi-network/notifi-dataplane/-/notifi-dataplane-0.90.1.tgz#89bb6de43da43d4a8548fd82cb672c61e3d058d5"
+  integrity sha512-eE86dXOEVoslIsGnRsocaU/POr19Mf2jv+t0ugDz9ebHO7S3LkyD9LRadX2l198aFxGICaDgmVLfhF35ZtXsSw==
+
+"@notifi-network/notifi-frontend-client@^0.90.1":
+  version "0.90.1"
+  resolved "https://registry.yarnpkg.com/@notifi-network/notifi-frontend-client/-/notifi-frontend-client-0.90.1.tgz#7e1d0d91f3a15ec09611cd8bdee5ce58d848132e"
+  integrity sha512-N5QEec+G+5DlCxKVm2iw9AzYdlVDCLz0hQ5oQTN+0EqyGymIn1eRLNfbFVdT2g3JwMgD5WBd/JrtzjVtzXjFVw==
   dependencies:
-    "@notifi-network/notifi-graphql" "^0.89.1-alpha.1+c0689e5"
+    "@notifi-network/notifi-graphql" "^0.90.1"
     graphql-request "^6.0.0"
     localforage "^1.10.0"
 
-"@notifi-network/notifi-graphql@^0.89.1-alpha.1+c0689e5":
-  version "0.89.4"
-  resolved "https://registry.yarnpkg.com/@notifi-network/notifi-graphql/-/notifi-graphql-0.89.4.tgz#0c6bc2b498110eb86ee4062fa3ce3f622c2e72b0"
-  integrity sha512-PPZjZ42oqioaj9NMwqUkUo1tNLfEwoqI6JDPsR2ZK7zRbUI7cbDIHRS9eYKMDZc4+06CEkb/Ct7u3SyGHqwI8g==
+"@notifi-network/notifi-graphql@^0.90.1":
+  version "0.90.1"
+  resolved "https://registry.yarnpkg.com/@notifi-network/notifi-graphql/-/notifi-graphql-0.90.1.tgz#0a68d24787b65778f1a5bbd4425095163772ad47"
+  integrity sha512-IiVZFPGTCh+27zSPvtSdGUpwK5p5DqbMtlaEpCvBqBNVXPBhfIY+HrCaNE4uxdUycXS+YYm/2Dx+cukpJciJWA==
   dependencies:
+    "@notifi-network/notifi-dataplane" "^0.90.1"
     graphql "^16.6.0"
     graphql-request "^6.0.0"
     uuid "^8.3.2"

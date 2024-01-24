@@ -269,7 +269,7 @@ export default class notifiService {
   }
 
   async createBorrowRateAlerts({ client, poolAddress, thresholdDirection, threshold, network }) {
-    const name = `Borrow Rate Alerts: ${poolAddress} ${thresholdDirection} ${threshold}`;
+    const name = `Borrow Rate Alerts: ${poolAddress.toLowerCase()} ${thresholdDirection} ${threshold}`;
     const eventType = {
       type: 'fusion',
       name,
@@ -281,7 +281,7 @@ export default class notifiService {
       // filterType: 'DELTA_PRIME_BORROW_RATE_EVENTS',
       sourceAddress: {
         type: 'value',
-        value: poolAddress,
+        value: poolAddress.toLowerCase(),
       },
       // selectedUIType: 'TOGGLE',
       // filterOptions: {
@@ -311,7 +311,7 @@ export default class notifiService {
   }
 
   async createLendingRateAlerts({ client, poolAddress, thresholdDirection, threshold, network }) {
-    const name = `Lending Rate Alerts: ${poolAddress} ${thresholdDirection} ${threshold}`;
+    const name = `Lending Rate Alerts: ${poolAddress.toLowerCase()} ${thresholdDirection} ${threshold}`;
     const eventType = {
       type: 'fusion',
       name,
@@ -323,7 +323,7 @@ export default class notifiService {
       // filterType: 'DELTA_PRIME_SUPPLY_RATE_EVENTS',
       sourceAddress: {
         type: 'value',
-        value: poolAddress,
+        value: poolAddress.toLowerCase(),
       },
       // selectedUIType: 'TOGGLE',
       // filterOptions: {
