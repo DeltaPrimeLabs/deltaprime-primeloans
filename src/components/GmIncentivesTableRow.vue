@@ -108,14 +108,16 @@ export default {
       }
     },
     totalLeveragedGm() {
-      let apy;
+      let apy, weeklyAmount;
       if (window.arbitrumChain) {
         apy = this.apys ? this.apys['GM_BOOST'].arbApy : 0;
+        weeklyAmount = 10000;
       } else {
         apy = this.apys ? this.apys['GM_BOOST'].avaxApy : 0;
+        weeklyAmount = 500;
       }
 
-      return apy ? 10000 / (7 * 24 * 6) / apy * 6 * 24 * 365 : 0;
+      return apy ? weeklyAmount / 7 * 365 / apy  : 0;
     },
     maxBoostApr() {
       if (!this.gmBoostApy) return;
