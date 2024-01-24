@@ -42,6 +42,8 @@ contract SmartLoanViewFacet is ReentrancyGuardKeccak, SolvencyMethods {
         DiamondStorageLib.setContractOwner(owner);
         DiamondStorageLib.setReferrer(referrer);
         sls._initialized = true;
+
+        emit LoanInitialized(address(this), owner, referrer);
     }
 
     /* ========== VIEW FUNCTIONS ========== */
@@ -146,4 +148,10 @@ contract SmartLoanViewFacet is ReentrancyGuardKeccak, SolvencyMethods {
         DiamondStorageLib.enforceIsContractOwner();
         _;
     }
+
+    event LoanInitialized(
+        address indexed loan,
+        address indexed owner,
+        address indexed referrer
+    );
 }
