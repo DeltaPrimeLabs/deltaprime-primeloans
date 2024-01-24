@@ -227,6 +227,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
                         });
                     }
                     amounts[0] = amount;
+                    token.safeApprove(address(primeDex), amount);
                     feeAmount = primeDex.convert(
                         assets,
                         amounts,
