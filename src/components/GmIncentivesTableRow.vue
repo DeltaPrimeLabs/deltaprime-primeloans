@@ -49,9 +49,6 @@ import BarGaugeBeta from "./BarGaugeBeta.vue";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
-const ARB_MILESTONE = 9000000;
-const AVAX_MILESTONE = 9000000;
-
 export default {
   name: 'GmIncentivesTableRow',
   components: {
@@ -171,7 +168,7 @@ export default {
     },
 
     setupMilestones() {
-      this.milestone = window.arbitrumChain ? ARB_MILESTONE : AVAX_MILESTONE;
+      this.milestone = config.gmxV2IncentivesMilestone;
     },
   },
 };
