@@ -164,7 +164,7 @@ export default {
         } else {
           this.gmTvlFromApi = (await (await fetch('https://cavsise1n4.execute-api.us-east-1.amazonaws.com/gm-boost-apy')).json()).avaxTvl;
         }
-      }, 100);
+      }, 1000);
     },
 
     setupMilestones() {
