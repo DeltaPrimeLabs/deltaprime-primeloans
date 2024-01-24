@@ -2616,6 +2616,9 @@ export default {
 
       setTimeout(async () => {
         await dispatch('updateFunds');
+        setTimeout(async () => {
+          await dispatch('updateFunds');
+        }, config.gmxV2RefreshDelay)
       }, config.refreshDelay);
     },
 
@@ -2673,6 +2676,9 @@ export default {
 
       setTimeout(async () => {
         await dispatch('updateFunds');
+        setTimeout(async () => {
+          await dispatch('updateFunds');
+        }, config.gmxV2RefreshDelay)
       }, config.refreshDelay);
     },
 
