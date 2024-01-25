@@ -111,10 +111,6 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
             tokenManager.tokenAddressToSymbol(depositedToken),
             tokenAmount * 1e18 / 10**IERC20Metadata(depositedToken).decimals()
         );
-        tokenManager.increaseProtocolExposure(
-            tokenManager.tokenAddressToSymbol(gmToken),
-            minGmAmount * 1e18 / 10**IERC20Metadata(gmToken).decimals()
-        );
 
         // Update owned assets
         if(IERC20Metadata(depositedToken).balanceOf(address(this)) == 0){
@@ -191,14 +187,6 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
             tokenManager.tokenAddressToSymbol(gmToken),
             gmAmount * 1e18 / 10**IERC20Metadata(gmToken).decimals()
         );
-        tokenManager.increaseProtocolExposure(
-            tokenManager.tokenAddressToSymbol(marketToLongToken(gmToken)),
-            minLongTokenAmount * 1e18 / 10**IERC20Metadata(marketToLongToken(gmToken)).decimals()
-        );
-        tokenManager.increaseProtocolExposure(
-            tokenManager.tokenAddressToSymbol(marketToShortToken(gmToken)),
-            minShortTokenAmount * 1e18 / 10**IERC20Metadata(marketToShortToken(gmToken)).decimals()
-        );
 
         // Remove GM token from owned assets if whole balance was used
         if(IERC20Metadata(gmToken).balanceOf(address(this)) == 0){
@@ -216,14 +204,22 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
 
     function afterDepositExecution(bytes32 key, Deposit.Props memory deposit, EventUtils.EventLogData memory eventData) external onlyGmxV2Keeper nonReentrant override {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        uint256 gmTokenInitialBalance = IERC20Metadata(deposit.addresses.market).balanceOf(address(this));
+        uint256 receivedMarketTokens = eventData.uintItems.items[0].value;
+        address gmToken = deposit.addresses.market;
+
+        uint256 gmTokenBalance = IERC20Metadata(gmToken).balanceOf(address(this));
         // Add owned assets
-        if( gmTokenInitialBalance > 0){
-            DiamondStorageLib.addOwnedAsset(tokenManager.tokenAddressToSymbol(deposit.addresses.market), deposit.addresses.market);
+        if( gmTokenBalance > 0){
+            DiamondStorageLib.addOwnedAsset(tokenManager.tokenAddressToSymbol(gmToken), gmToken);
         }
 
         // Native token transfer happens after execution of this method, but the amounts should be dust ones anyway and by wrapping here we get a chance to wrap any previously sent native token
         wrapNativeToken();
+
+        tokenManager.increaseProtocolExposure(
+            tokenManager.tokenAddressToSymbol(gmToken),
+            receivedMarketTokens * 1e18 / 10**IERC20Metadata(gmToken).decimals()
+        );
 
         // Unfreeze account
         DiamondStorageLib.unfreezeAccount(msg.sender);
@@ -231,7 +227,7 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
         emit DepositExecuted(
             msg.sender,
             deposit.addresses.market,
-            IERC20Metadata(deposit.addresses.market).balanceOf(address(this)) - gmTokenInitialBalance,
+            receivedMarketTokens,
             deposit.numbers.executionFee
         );
     }
@@ -240,6 +236,7 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         address longToken = marketToLongToken(deposit.addresses.market);
         address shortToken = marketToShortToken(deposit.addresses.market);
+
 
         // Add owned assets
         if(IERC20Metadata(longToken).balanceOf(address(this)) > 0){
@@ -251,6 +248,19 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
 
         // Native token transfer happens after execution of this method, but the amounts should be dust ones anyway and by wrapping here we get a chance to wrap any previously sent native token
         wrapNativeToken();
+
+        if(deposit.numbers.initialLongTokenAmount > 0) {
+            tokenManager.increaseProtocolExposure(
+                tokenManager.tokenAddressToSymbol(longToken),
+                deposit.numbers.initialLongTokenAmount * 1e18 / 10**IERC20Metadata(longToken).decimals()
+            );
+        }
+        if(deposit.numbers.initialShortTokenAmount > 0) {
+            tokenManager.increaseProtocolExposure(
+                tokenManager.tokenAddressToSymbol(shortToken),
+                deposit.numbers.initialShortTokenAmount * 1e18 / 10**IERC20Metadata(shortToken).decimals()
+            );
+        }
 
         DiamondStorageLib.unfreezeAccount(msg.sender);
         emit DepositCancelled(
@@ -266,15 +276,30 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
         address shortToken = marketToShortToken(withdrawal.addresses.market);
         uint256 longTokenInitialBalance = IERC20Metadata(longToken).balanceOf(address(this));
         uint256 shortTokenInitialBalance = IERC20Metadata(shortToken).balanceOf(address(this));
+        uint256 longOutputAmount = eventData.uintItems.items[0].value;
+        uint256 shortOutputAmount = eventData.uintItems.items[1].value;
 
         // Add owned assets
-        if(IERC20Metadata(longToken).balanceOf(address(this)) > 0){
+        if(longTokenInitialBalance > 0){
             DiamondStorageLib.addOwnedAsset(tokenManager.tokenAddressToSymbol(longToken), longToken);
         }
-        if(IERC20Metadata(shortToken).balanceOf(address(this)) > 0){
+        if(shortTokenInitialBalance > 0){
             DiamondStorageLib.addOwnedAsset(tokenManager.tokenAddressToSymbol(shortToken), shortToken);
         }
-
+        
+        if(longOutputAmount > 0) {
+            tokenManager.increaseProtocolExposure(
+                tokenManager.tokenAddressToSymbol(longToken),
+                longOutputAmount * 1e18 / 10**IERC20Metadata(longToken).decimals()
+            );
+        }
+        if(shortOutputAmount > 0) {
+            tokenManager.increaseProtocolExposure(
+                tokenManager.tokenAddressToSymbol(shortToken),
+                shortOutputAmount * 1e18 / 10**IERC20Metadata(shortToken).decimals()
+            );
+        }
+        
         // Native token transfer happens after execution of this method, but the amounts should be dust ones anyway and by wrapping here we get a chance to wrap any previously sent native token
         wrapNativeToken();
 
@@ -298,6 +323,11 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
 
         // Native token transfer happens after execution of this method, but the amounts should be dust ones anyway and by wrapping here we get a chance to wrap any previously sent native token
         wrapNativeToken();
+
+        tokenManager.increaseProtocolExposure(
+            tokenManager.tokenAddressToSymbol(withdrawal.addresses.market),
+            withdrawal.numbers.marketTokenAmount * 1e18 / 10**IERC20Metadata(withdrawal.addresses.market).decimals()
+        );
 
         DiamondStorageLib.unfreezeAccount(msg.sender);
         emit WithdrawalCancelled(
