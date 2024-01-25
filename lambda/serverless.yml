@@ -256,8 +256,8 @@ functions:
       - httpApi:
           method: POST
           path: /referral/create
-          authorizer:
-            name: auth0Authorizer
+          # authorizer:
+          #   name: auth0Authorizer
 
 resources:
   Resources:
