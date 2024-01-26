@@ -1293,7 +1293,8 @@ export default {
           if (window.chain === 'arbitrum') {
             yearlyLpInterest += leveragedGm * state.apys['GM_BOOST'].arbApy * state.assets['ARB'].price;
           } else {
-            yearlyLpInterest += leveragedGm * state.apys['GM_BOOST'].arbApy;
+            // TODO uncomment when launching GM Incentives on Avalanche
+            // yearlyLpInterest += leveragedGm * state.apys['GM_BOOST'].arbApy;
           }
         }
 
