@@ -377,7 +377,6 @@ export default {
                 debtCoverage: 0.83333333333,
                 strategy: 'Pangolin',
                 refreshDelay: 60000,
-                banner: 'The Pangolin APYs might temporarily report inaccurate data. We are working to solve this asap.'
             }
         ],
         PNG_AVAX_ETH_LP: [
@@ -398,7 +397,6 @@ export default {
                 debtCoverage: 0.83333333333,
                 strategy: 'Pangolin',
                 refreshDelay: 60000,
-                banner: 'The Pangolin APYs might temporarily report inaccurate data. We are working to solve this asap.'
             }
         ],
         TJ_AVAX_USDC_LP: [
