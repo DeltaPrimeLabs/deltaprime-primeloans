@@ -614,7 +614,7 @@ export default {
     },
     setupGmIncentivesTableHeaderConfig() {
       this.gmIncentivesTableHeaderConfig = {
-        gridTemplateColumns: '160px repeat(5, 1fr) 50px',
+        gridTemplateColumns: '160px 180px 160px repeat(3, 1fr) 100px 50px',
         cells: [
           {
             label: 'Total eligible TVL',
@@ -657,6 +657,13 @@ export default {
             class: 'trend-level',
             id: 'TREND',
             tooltip: `The total amount of ARB you have collected this week. Collected ARB will be distributed weekly. This number is not included in your collateral value, until the ARB is distributed to all Prime Accounts. This number resets to 0 after the collected ARB is added to your assets on Monday.`
+          },
+          {
+            label: 'Points',
+            sortable: false,
+            class: 'trend-level',
+            id: 'TREND',
+            tooltip: `The points received for your deposits.`
           },
         ]
       };
