@@ -98,7 +98,7 @@ export function round(num) {
 }
 
 export function smartRound(value, precision = 8, toFixed = false) {
-  if (Number.isNaN(value)) {
+  if (Number.isNaN(value) || isNaN(value)) {
     return '0';
   }
   if (value < 0) {
