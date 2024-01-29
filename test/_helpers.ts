@@ -624,6 +624,22 @@ export const getFixedGasSigners = async function (gasLimit: number) {
 };
 
 
+export const deployTestFacet = async function (diamondAddress: any) {
+    const diamondCut = await ethers.getContractAt('IDiamondCut', diamondAddress);
+    await diamondCut.pause();
+
+    await deployFacet(
+        "TestFacet",
+        diamondAddress,
+        [
+            'testFunc',
+        ]
+    );
+
+    await diamondCut.unpause();
+}
+
+
 export const deployAllFacets = async function (diamondAddress: any, mock: boolean = true, chain = 'AVAX',  hardhatConfig: any = undefined, provider = undefined) {
     const diamondCut = provider ?
         new ethers.Contract(diamondAddress, IDiamondCutArtifact.abi, provider.getSigner())
@@ -686,6 +702,16 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         [
             'resetPrimeAccountAssetsExposure',
             'setPrimeAccountAssetsExposure',
+        ],
+        hardhatConfig
+    )
+
+    await deployFacet(
+        "BeaconUpgradeFacet",
+        diamondAddress,
+        [
+            'getBeacon',
+            'setBeacon',
         ],
         hardhatConfig
     )
