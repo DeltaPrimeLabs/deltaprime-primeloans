@@ -18,7 +18,12 @@
         <span><b>{{ maxBoostApr | percent }}</b><img src="src/assets/icons/stars.png" class="stars-icon"></span>
       </div>
       <div class="table__cell table__cell--double-value arb-collected">
-        {{collectedArb ? collectedArb.toFixed(2) : 0}}
+        {{collectedArb ? collectedArb.toFixed(2) : 0}}&nbsp;
+        <InfoIcon
+            v-if="['0x4c9c76507d661f6fbdb2e641c7fe061f1743f8fd', '0x38716cba180d5bd3a4e51c6303a861a1e8fbef52', '0x9232800211347ec4ebeff3143f5dd34c438f214c', '0x14c047a8ca6238e9ea14a9a740a6010423a0783c'].includes(smartLoanContract.address)"
+            class="info__icon"
+            :tooltip="{content: 'Your account received excessive ARB rewards during the last distribution. Your ARB amount can be temporarily negative.', classes: 'info-tooltip'}"
+        ></InfoIcon>
       </div>
     </div>
   </div>
@@ -36,15 +41,17 @@ import config from '../config';
 import {mapActions, mapGetters, mapState} from 'vuex';
 
 const ethers = require('ethers');
-import GM_DISTRIBUTED from '../data/arbitrum/GM_EPOCH_6.json';
+import GM_DISTRIBUTED from '../data/arbitrum/GM_EPOCH_7_corrected.json';
 import DeltaIcon from "./DeltaIcon.vue";
 import BarGaugeBeta from "./BarGaugeBeta.vue";
+import InfoIcon from "./InfoIcon.vue";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 export default {
   name: 'GmIncentivesTableRow',
   components: {
+    InfoIcon,
     BarGaugeBeta,
     DeltaIcon,
     DoubleAssetIcon,
