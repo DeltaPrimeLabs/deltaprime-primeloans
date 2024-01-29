@@ -98,6 +98,7 @@ export default {
     ...mapState('fundsStore', [
         'apys',
         'smartLoanContract',
+        'historicalSmartLoanContract',
         'assets',
         'gmxV2Balances',
         'gmxV2Assets',
@@ -142,11 +143,16 @@ export default {
           const collected = await (await fetch(`https://cavsise1n4.execute-api.us-east-1.amazonaws.com/gmx-incentives/${smartLoanContract.address}?network=arbitrum`)).json();
           let harvestedArb = GM_DISTRIBUTED[this.smartLoanContract.address.toLowerCase()] ? GM_DISTRIBUTED[this.smartLoanContract.address.toLowerCase()] : 0;
           this.collectedArb = collected.arbCollected - harvestedArb;
-
-          this.calculatePoints();
         }
       },
     },
+    historicalSmartLoanContract: {
+      async handler(historicalSmartLoanContract) {
+        if (historicalSmartLoanContract) {
+          this.calculatePoints();
+        }
+      }
+    }
   },
 
   methods: {
@@ -237,7 +243,7 @@ export default {
                 const wrappedContract = await wrapContract(this.smartLoanContract);
 
                 const loanStatus = await getData(wrappedContract.address, timestamp0);
-                const assetsBalances = await this.smartLoanContract.getAllAssetsBalances.call({ blockTag: blockNumber });
+                const assetsBalances = await this.historicalSmartLoanContract.getAllAssetsBalances({ blockTag: blockNumber });
 
                 let loanTotalGm = 0;
                 Object.entries(config.GMX_V2_ASSETS_CONFIG).map(([symbol, token]) => {
