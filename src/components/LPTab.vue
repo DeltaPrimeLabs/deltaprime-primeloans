@@ -614,7 +614,7 @@ export default {
     },
     setupGmIncentivesTableHeaderConfig() {
       this.gmIncentivesTableHeaderConfig = {
-        gridTemplateColumns: '160px 180px 160px repeat(3, 1fr) 100px 50px',
+        gridTemplateColumns: window.chain == 'avalanche' ? '160px repeat(5, 1fr) 50px' : '160px 180px 160px repeat(3, 1fr) 100px 50px',
         cells: [
           {
             label: 'Total eligible TVL',

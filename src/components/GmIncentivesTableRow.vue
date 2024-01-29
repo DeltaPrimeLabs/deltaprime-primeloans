@@ -1,6 +1,6 @@
 <template>
   <div class="lp-table-row-component gm-incentives">
-    <div class="table__row">
+    <div class="table__row" :style="gridTemplateColumns()">
       <div class="table__cell table__cell--double-value tvl">
         {{ totalLeveragedGm | usd }}
       </div>
@@ -259,6 +259,10 @@ export default {
       )
 
       this.receivedPoints = receivedPoints;
+    },
+    gridTemplateColumns() {
+      const res = window.chain == 'avalanche' ? {gridTemplateColumns: '160px repeat(5, 1fr) 50px'} : {gridTemplateColumns: '160px 180px 160px repeat(3, 1fr) 100px 50px'};
+      return res;
     }
   },
 };
@@ -277,7 +281,6 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: 160px 180px 160px repeat(3, 1fr) 100px 50px;
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;
