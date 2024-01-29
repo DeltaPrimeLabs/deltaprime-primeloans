@@ -21,7 +21,7 @@
         {{collectedArb ? collectedArb.toFixed(2) : 0}}
       </div>
       <div class="table__cell table__cell--double-value points-received">
-        {{ receivedPoints ? receivedPoints.toFixed(2) : 0 }}
+        <span>{{ receivedPoints ? receivedPoints.toFixed(2) : 0 }}<img src="src/assets/icons/icon_circle_star.svg" class="stars-icon" /></span>
       </div>
     </div>
   </div>
@@ -47,6 +47,7 @@ import DeltaIcon from "./DeltaIcon.vue";
 import BarGaugeBeta from "./BarGaugeBeta.vue";
 import { fetchGmTransactions } from '../utils/graph';
 import { fromWei, formatUnits, fromBytes32 } from '../utils/calculate';
+import { getData } from '../utils/blockchain';
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -96,7 +97,7 @@ export default {
     ]),
     ...mapState('stakeStore', ['farms']),
     ...mapState('poolStore', ['pools']),
-    ...mapState('network', ['provider', 'account']),
+    ...mapState('network', ['provider', 'historicalProvider', 'account']),
     ...mapState('serviceRegistry', [
     ]),
     ...mapGetters('fundsStore', [
@@ -151,7 +152,7 @@ export default {
     },
     async getBlockForTimestamp(timestamp) {
       const dater = new EthDater(
-        provider // ethers provider, required.
+        this.historicalProvider // ethers provider, required.
       );
 
       return await dater.getDate(
@@ -188,52 +189,48 @@ export default {
       );
 
       const gmTransactions = await fetchGmTransactions(this.smartLoanContract.address);
-      const weeks = [];
+      const periods = [];
 
       for (let i = 0; i < timestamps.length - 1; i++) {
         if (timestamps[i] > now) break;
 
-        const startOfWeek = timestamps[i];
-        const endOfWeek = Math.min(timestamps[i + 1], now);
-        const week = [startOfWeek];
+        const startOfPeriod = timestamps[i];
+        const endOfPeriod = Math.min(timestamps[i + 1], now);
+        const period = [startOfPeriod];
 
         for (const transaction of gmTransactions) {
-          if (transaction.timestamp >= startOfWeek && transaction.timestamp <= endOfWeek) {
-            week.push(parseFloat(transaction.timestamp));
+          if (transaction.timestamp >= startOfPeriod && transaction.timestamp <= endOfPeriod) {
+            period.push(parseFloat(transaction.timestamp));
           }
         }
 
-        week.push(endOfWeek);
+        period.push(endOfPeriod);
 
-        // if (week.length > 2) {
-          weeks.push(week);
+        // if (period.length > 2) {
+          periods.push(period);
         // }
       }
 
       let receivedPoints = 0;
 
       await Promise.all(
-        weeks.map(async (week) => {
-          const startOfWeek = week[0];
-          const pricesOfStart = timestampToGmPrices[startOfWeek] ? timestampToGmPrices[startOfWeek] : [];
+        periods.map(async (period) => {
+          const startOfPeriod = period[0];
+          const pricesOfStart = timestampToGmPrices[startOfPeriod] ? timestampToGmPrices[startOfPeriod] : [];
 
-          let weekWeightedLeveragedGm = 0;
+          let periodWeightedLeveragedGm = 0;
           await Promise.all(
-            week.map(async (timestamp, idx) => {
+            period.map(async (timestamp, idx) => {
               const timestamp0 = timestamp;
 
-              if (week[idx + 1]) {
-                const timestamp1 = week[idx + 1];
+              if (period[idx + 1]) {
+                const timestamp1 = period[idx + 1];
 
                 const blockNumber = (await this.getBlockForTimestamp(timestamp0 * 1000)).block;
                 const wrappedContract = await wrapContract(this.smartLoanContract);
 
-                const [loanStatus, assetsBalances] = await Promise.all([
-                  wrappedContract.getFullLoanStatus.call({ blockTag: blockNumber }),
-                  wrappedContract.getAllAssetsBalances.call({ blockTag: blockNumber })
-                ]);
-
-                const collateral = fromWei(loanStatus[0]) - fromWei(loanStatus[1]);
+                const loanStatus = await getData(wrappedContract.address, timestamp0);
+                const assetsBalances = await wrappedContract.getAllAssetsBalances.call({ blockTag: blockNumber });
 
                 let loanTotalGm = 0;
                 Object.entries(config.GMX_V2_ASSETS_CONFIG).map(([symbol, token]) => {
@@ -243,25 +240,26 @@ export default {
                   loanTotalGm += pricesOfStart[symbol].value * balance;
                 });
 
-                const leveragedGm = loanTotalGm - collateral;
+                const leveragedGm = loanTotalGm - loanStatus.collateral;
                 const weightedLeveragedGm = leveragedGm * (timestamp1 - timestamp0);
-                weekWeightedLeveragedGm += weightedLeveragedGm;
+                periodWeightedLeveragedGm += weightedLeveragedGm;
               }
             })
           );
 
-          const meanLeveragedGm = weekWeightedLeveragedGm / (7 * 24 * 60 * 60 );
+          // const meanLeveragedGm = periodWeightedLeveragedGm / (7 * 24 * 60 * 60 );
 
-          const pointsThisWeek = meanLeveragedGm * timestampToMultiplier[startOfWeek];
+          const pointsThisPeriod = periodWeightedLeveragedGm * timestampToMultiplier[startOfPeriod];
+          console.log('---------------------------------------', pointsThisPeriod)
 
-          receivedPoints += pointsThisWeek;
+          receivedPoints += pointsThisPeriod;
         })
       )
 
       this.receivedPoints = receivedPoints;
     },
     gridTemplateColumns() {
-      const res = window.chain == 'avalanche' ? {gridTemplateColumns: '160px repeat(5, 1fr) 50px'} : {gridTemplateColumns: '160px 180px 160px repeat(3, 1fr) 100px 50px'};
+      const res = window.chain == 'avalanche' ? {gridTemplateColumns: '160px repeat(5, 1fr) 50px'} : {gridTemplateColumns: '160px 180px 160px repeat(3, 1fr) 130px 20px'};
       return res;
     }
   },
@@ -309,6 +307,10 @@ export default {
         height: 1px;
         width: 15px;
         background-color: var(--asset-table-row__no-value-dash-color);
+      }
+
+      .points_star {
+
       }
     }
   }
