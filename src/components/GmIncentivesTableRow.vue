@@ -22,7 +22,7 @@
       </div>
       <div class="table__cell table__cell--double-value points-received">
         <div class="points-received-value" v-if="receivedPoints != null">
-          <span>{{ receivedPoints ? receivedPoints.toFixed(0) : 0 }}</span>
+          <span>{{ receivedPoints ? receivedPoints.toFixed(0) : 0 }}&nbsp;<b class="multiplier">{{ `(x${multiplier})` }}</b></span>
           <img src="src/assets/icons/icon_circle_star.svg" class="point-star-icon" />
         </div>
         <div v-else>
@@ -90,6 +90,7 @@ export default {
       collectedArb: 0,
       gmTvlFromApi: 0,
       receivedPoints: null,
+      multiplier: null
     };
   },
 
@@ -170,7 +171,7 @@ export default {
       const timestamps = [
         1701428400,// Dec 1 12pm CET
         1705316400,// Jan 15 12pm CET
-        1707130800,// Feb 5 12pm CET
+        1706727600,// Jan 31 12pm CET
         1707562800,// Feb 10 12pm CET
         1707735600,// Feb 12 12pm CET
       ];
@@ -178,7 +179,7 @@ export default {
       const timestampToMultiplier = {
         1701428400: 0.33,
         1705316400: 1,
-        1707130800: 2,
+        1706727600: 2,
         1707562800: 4,
         1707735600: 0
       };
@@ -236,7 +237,7 @@ export default {
                 const wrappedContract = await wrapContract(this.smartLoanContract);
 
                 const loanStatus = await getData(wrappedContract.address, timestamp0);
-                const assetsBalances = await wrappedContract.getAllAssetsBalances.call({ blockTag: blockNumber });
+                const assetsBalances = await this.smartLoanContract.getAllAssetsBalances.call({ blockTag: blockNumber });
 
                 let loanTotalGm = 0;
                 Object.entries(config.GMX_V2_ASSETS_CONFIG).map(([symbol, token]) => {
@@ -262,6 +263,7 @@ export default {
       )
 
       this.receivedPoints = receivedPoints;
+      this.multiplier = timestampToMultiplier[Math.max(...(timestamps.filter(timestamp => timestamp <= now)))];
     },
     gridTemplateColumns() {
       const res = window.chain == 'avalanche' ? {gridTemplateColumns: '160px repeat(5, 1fr) 50px'} : {gridTemplateColumns: '160px 180px 160px repeat(3, 1fr) 130px 20px'};
@@ -313,13 +315,13 @@ export default {
         width: 15px;
         background-color: var(--asset-table-row__no-value-dash-color);
       }
-    }
-  }
 
-  .points-received-value {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
+      .points-received-value {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+      }
+    }
   }
 
   .stars-icon {
