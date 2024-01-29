@@ -21,7 +21,13 @@
         {{collectedArb ? collectedArb.toFixed(2) : 0}}
       </div>
       <div class="table__cell table__cell--double-value points-received">
-        <span>{{ receivedPoints ? receivedPoints.toFixed(2) : 0 }}<img src="src/assets/icons/icon_circle_star.svg" class="stars-icon" /></span>
+        <div class="points-received-value" v-if="receivedPoints != null">
+          <span>{{ receivedPoints ? receivedPoints.toFixed(0) : 0 }}</span>
+          <img src="src/assets/icons/icon_circle_star.svg" class="point-star-icon" />
+        </div>
+        <div v-else>
+          <vue-loaders-ball-beat color="#A6A3FF" scale="0.5"></vue-loaders-ball-beat>
+        </div>
       </div>
     </div>
   </div>
@@ -83,7 +89,7 @@ export default {
       points: 0,
       collectedArb: 0,
       gmTvlFromApi: 0,
-      receivedPoints: 0,
+      receivedPoints: null,
     };
   },
 
@@ -241,7 +247,7 @@ export default {
                 });
 
                 const leveragedGm = loanTotalGm - loanStatus.collateral;
-                const weightedLeveragedGm = leveragedGm * (timestamp1 - timestamp0);
+                const weightedLeveragedGm = leveragedGm * (timestamp1 - timestamp0) / 1000000;
                 periodWeightedLeveragedGm += weightedLeveragedGm;
               }
             })
@@ -250,7 +256,6 @@ export default {
           // const meanLeveragedGm = periodWeightedLeveragedGm / (7 * 24 * 60 * 60 );
 
           const pointsThisPeriod = periodWeightedLeveragedGm * timestampToMultiplier[startOfPeriod];
-          console.log('---------------------------------------', pointsThisPeriod)
 
           receivedPoints += pointsThisPeriod;
         })
@@ -308,17 +313,24 @@ export default {
         width: 15px;
         background-color: var(--asset-table-row__no-value-dash-color);
       }
-
-      .points_star {
-
-      }
     }
+  }
+
+  .points-received-value {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
   }
 
   .stars-icon {
     width: 20px;
     margin-left: 2px;
     transform: translateY(-2px);
+  }
+
+  .point-star-icon {
+    width: 25px;
+    margin-left: 2px;
   }
 
   .milestone-tick {
