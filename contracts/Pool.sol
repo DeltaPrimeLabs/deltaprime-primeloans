@@ -67,9 +67,10 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     **/
     function setProtocolFeeReceiver(address _receiver) external onlyOwner {
         FeeData storage feeData = getFeeData();
+        address prevReceiver = feeData.protocolFeeReceiver;
         feeData.protocolFeeReceiver = _receiver;
 
-        emit ProtocolFeeReceiverChanged(_receiver, block.timestamp);
+        emit ProtocolFeeReceiverChanged(prevReceiver, _receiver, block.timestamp);
     }
 
     /**
@@ -80,7 +81,10 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     function setReferrerFee(uint256 _referrerFee) external onlyOwner {
         if (_referrerFee > 1e18) revert WrongFee(_referrerFee);
         FeeData storage feeData = getFeeData();
+        uint256 prevFee = feeData.referrerFee;
         feeData.referrerFee = _referrerFee;
+
+        emit ReferrerFeeChanged(prevFee, _referrerFee, block.timestamp);
     }
 
     /**
@@ -91,7 +95,10 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     function setReferrerProtocolFee(uint256 _referrerProtocolFee) external onlyOwner {
         if (_referrerProtocolFee > 1e18) revert WrongFee(_referrerProtocolFee);
         FeeData storage feeData = getFeeData();
+        uint256 prevFee = feeData.referrerProtocolFee;
         feeData.referrerProtocolFee = _referrerProtocolFee;
+
+        emit ReferrerProtocolFeeChanged(prevFee, _referrerProtocolFee, block.timestamp);
     }
 
     /**
@@ -102,7 +109,10 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     function setNoReferrerProtocolFee(uint256 _noReferrerProtocolFee) external onlyOwner {
         if (_noReferrerProtocolFee > 1e18) revert WrongFee(_noReferrerProtocolFee);
         FeeData storage feeData = getFeeData();
+        uint256 prevFee = feeData.noReferrerProtocolFee;
         feeData.noReferrerProtocolFee = _noReferrerProtocolFee;
+
+        emit NoReferrerProtocolFeeChanged(prevFee, _noReferrerProtocolFee, block.timestamp);
     }
 
     // GETTERS
@@ -735,10 +745,35 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
     /**
     * @dev emitted after changing protocol fee receiver
+    * @param prevReceiver previous receiver
     * @param receiver an address of the newly set receiver
     * @param timestamp of the receiver change
     **/
-    event ProtocolFeeReceiverChanged(address indexed receiver, uint256 timestamp);
+    event ProtocolFeeReceiverChanged(address indexed prevReceiver, address indexed receiver, uint256 timestamp);
+
+    /**
+    * @dev emitted after changing referrer fee
+    * @param prevFee previous referrer fee
+    * @param fee new referrer fee
+    * @param timestamp of the fee change
+    **/
+    event ReferrerFeeChanged(uint256 indexed prevFee, uint256 indexed fee, uint256 timestamp);
+
+    /**
+    * @dev emitted after changing referrer fee
+    * @param prevFee previous referrer protocol fee
+    * @param fee new referrer fee
+    * @param timestamp of the fee change
+    **/
+    event ReferrerProtocolFeeChanged(uint256 indexed prevFee, uint256 indexed fee, uint256 timestamp);
+
+    /**
+    * @dev emitted after changing referrer fee
+    * @param prevFee previous no referrer protocol fee
+    * @param fee new referrer fee
+    * @param timestamp of the fee change
+    **/
+    event NoReferrerProtocolFeeChanged(uint256 indexed prevFee, uint256 indexed fee, uint256 timestamp);
 
     /**
     * @dev emitted after changing rates calculator
@@ -760,10 +795,6 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     * @param timestamp of the distributor change
     **/
     event VestingDistributorChanged(address indexed distributor, uint256 timestamp);
-
-    event ProtocolFeeReceiverNotSet();
-
-    event ProtocolFeePaid(address indexed user, uint256 amount, uint256 timestamp);
 
     /* ========== ERRORS ========== */
 

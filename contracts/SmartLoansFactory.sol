@@ -132,6 +132,7 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
         require(referrers[referralCode] == address(0), "Referral code used");
         address owner = msg.sender;
         address loan = ownersToLoans[owner];
+        require(loan != address(0), "Not a loan owner");
         require(referralCodes[loan] == bytes32(0), "Already set referral code");
         referralCodes[loan] = referralCode;
         referrers[referralCode] = loan;
@@ -148,7 +149,7 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
         address loan = ownersToLoans[owner];
         require(loan != address(0), "Don't have a loan");
         // validate asset
-        tokenManager.getAssetAddress(feeAsset, false);
+        tokenManager.getPoolAddress(feeAsset);
         feeAssets[loan] = feeAsset;
     }
 
