@@ -257,7 +257,6 @@ export default {
                   const leveragedGm = loanTotalGm - loanStatus.collateral;
                   const weightedLeveragedGm = leveragedGm * (timestamp1 - timestamp0) / 1000000;
                   periodWeightedLeveragedGm += weightedLeveragedGm;
-                  console.log(`----------${idx}, ${timestamp0}, ${weightedLeveragedGm}---------`);
                 } catch (error) {
                   console.log(`points calculation failed at ${idx}, ${timestamp0}`);
                   console.log('Error: ', error);
