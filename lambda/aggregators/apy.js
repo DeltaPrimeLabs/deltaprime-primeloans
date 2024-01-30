@@ -447,8 +447,8 @@ const traderJoeApyAggregator = async (event) => {
 
       try {
         const tabs = await page.$$(".chakra-tabs__tab");
-        console.log(await (await tabs[6].getProperty('textContent')).jsonValue());
-        await tabs[6].click();
+        console.log(pool, tabs.length);
+        tabs.length == 16 ? await tabs[6].click() : await tabs[5].click();
 
         await new Promise((resolve, reject) => setTimeout(resolve, 5000));
 
