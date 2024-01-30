@@ -22,7 +22,7 @@
       </div>
       <div class="table__cell table__cell--double-value points-received">
         <div class="points-received-value" v-if="receivedPoints != null">
-          <span>{{ receivedPoints ? receivedPoints.toFixed(0) : 0 }}&nbsp;<b class="multiplier">{{ `(x${multiplier})` }}</b></span>
+          <span>{{ receivedPoints ? receivedPoints.toFixed(0) : 0 }}&nbsp;<b class="multiplier">{{ `(x${(multiplier * 3).toFixed(0)})` }}</b></span>
           <img src="src/assets/icons/icon_circle_star.svg" class="point-star-icon" />
         </div>
         <div v-else>
