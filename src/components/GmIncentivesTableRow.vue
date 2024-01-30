@@ -237,25 +237,31 @@ export default {
               const timestamp0 = timestamp;
 
               if (period[idx + 1]) {
-                const timestamp1 = period[idx + 1];
+                try {
+                  const timestamp1 = period[idx + 1];
 
-                const blockNumber = (await this.getBlockForTimestamp(timestamp0 * 1000)).block;
-                const wrappedContract = await wrapContract(this.smartLoanContract);
+                  const blockNumber = (await this.getBlockForTimestamp(timestamp0 * 1000)).block;
+                  const wrappedContract = await wrapContract(this.smartLoanContract);
 
-                const loanStatus = await getData(wrappedContract.address, timestamp0);
-                const assetsBalances = await this.historicalSmartLoanContract.getAllAssetsBalances({ blockTag: blockNumber });
+                  const loanStatus = await getData(wrappedContract.address, timestamp0);
+                  const assetsBalances = await this.historicalSmartLoanContract.getAllAssetsBalances({ blockTag: blockNumber });
 
-                let loanTotalGm = 0;
-                Object.entries(config.GMX_V2_ASSETS_CONFIG).map(([symbol, token]) => {
-                  const asset = assetsBalances.find(asset => fromBytes32(asset.name) == symbol);
-                  const balance = formatUnits(asset.balance.toString(), token.decimals);
+                  let loanTotalGm = 0;
+                  Object.entries(config.GMX_V2_ASSETS_CONFIG).map(([symbol, token]) => {
+                    const asset = assetsBalances.find(asset => fromBytes32(asset.name) == symbol);
+                    const balance = formatUnits(asset.balance.toString(), token.decimals);
 
-                  loanTotalGm += pricesOfStart[symbol].value * balance;
-                });
+                    loanTotalGm += pricesOfStart[symbol].value * balance;
+                  });
 
-                const leveragedGm = loanTotalGm - loanStatus.collateral;
-                const weightedLeveragedGm = leveragedGm * (timestamp1 - timestamp0) / 1000000;
-                periodWeightedLeveragedGm += weightedLeveragedGm;
+                  const leveragedGm = loanTotalGm - loanStatus.collateral;
+                  const weightedLeveragedGm = leveragedGm * (timestamp1 - timestamp0) / 1000000;
+                  periodWeightedLeveragedGm += weightedLeveragedGm;
+                  console.log(`----------${idx}, ${timestamp0}, ${weightedLeveragedGm}---------`);
+                } catch (error) {
+                  console.log(`points calculation failed at ${idx}, ${timestamp0}`);
+                  console.log('Error: ', error);
+                }
               }
             })
           );
