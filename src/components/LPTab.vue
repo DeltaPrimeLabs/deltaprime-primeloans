@@ -659,11 +659,11 @@ export default {
             tooltip: `The total amount of ARB you have collected this week. Collected ARB will be distributed weekly. This number is not included in your collateral value, until the ARB is distributed to all Prime Accounts. This number resets to 0 after the collected ARB is added to your assets on Monday.`
           },
           {
-            label: 'Points',
+            label: 'Tickets',
             sortable: false,
             class: 'trend-level',
             id: 'TREND',
-            tooltip: `The points received for your deposits.`
+            tooltip: `The raffle-tickets you accumulated. Mint more GM to boost your ticket-yield.`
           },
         ]
       };
