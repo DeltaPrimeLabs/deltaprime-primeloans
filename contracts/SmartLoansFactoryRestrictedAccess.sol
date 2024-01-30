@@ -33,12 +33,12 @@ contract SmartLoansFactoryRestrictedAccess is SmartLoansFactory {
         return getWhitelistingMapping()[_borrower];
     }
 
-    function createLoan(bytes32 referralCode) public virtual override hasNoLoan canCreatePrimeAccount(msg.sender) returns (SmartLoanDiamondBeacon) {
-        return super.createLoan(referralCode);
+    function createLoan(address referrer) public virtual override hasNoLoan canCreatePrimeAccount(msg.sender) returns (SmartLoanDiamondBeacon) {
+        return super.createLoan(referrer);
     }
 
-    function createAndFundLoan(bytes32 _fundedAsset, uint256 _amount, bytes32 referralCode) public virtual override hasNoLoan canCreatePrimeAccount(msg.sender) returns (SmartLoanDiamondBeacon) {
-        return super.createAndFundLoan(_fundedAsset, _amount, referralCode);
+    function createAndFundLoan(bytes32 _fundedAsset, uint256 _amount, address referrer) public virtual override hasNoLoan canCreatePrimeAccount(msg.sender) returns (SmartLoanDiamondBeacon) {
+        return super.createAndFundLoan(_fundedAsset, _amount, referrer);
     }
 
     /**

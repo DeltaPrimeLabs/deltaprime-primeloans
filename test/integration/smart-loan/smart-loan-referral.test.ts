@@ -62,8 +62,6 @@ describe("Smart loan", () => {
             referrerLoan: SmartLoanGigaChadInterface,
             refereeLoan: SmartLoanGigaChadInterface,
             exchange: PangolinIntermediary,
-            referralCode: string,
-            invalidReferralCode: string,
             primeDex: PrimeDex,
             wrappedLoanReferrer: any,
             wrappedLoanReferee: any,
@@ -222,24 +220,22 @@ describe("Smart loan", () => {
         }
 
         it("should deploy a smart loan", async () => {
-            await smartLoansFactory.connect(referrer).createLoan(ethers.constants.HashZero);
-            referralCode = toBytes32("referral code");
-            invalidReferralCode = toBytes32("invalid referral code");
-            await smartLoansFactory.connect(referrer).setReferralCode(referralCode);
+            await smartLoansFactory.connect(referrer).createLoan(ethers.constants.AddressZero);
             await smartLoansFactory.connect(referrer).setFeeAsset(toBytes32("USDT"));
-
-            await smartLoansFactory.connect(referee).createLoan(referralCode);
 
             const referrer_loan_proxy_address = await smartLoansFactory.getLoanForOwner(
                 referrer.address
-            );
-            const referee_loan_proxy_address = await smartLoansFactory.getLoanForOwner(
-                referee.address
             );
             referrerLoan = await ethers.getContractAt(
                 "SmartLoanGigaChadInterface",
                 referrer_loan_proxy_address,
                 referrer
+            );
+
+            await smartLoansFactory.connect(referee).createLoan(referrerLoan.address);
+
+            const referee_loan_proxy_address = await smartLoansFactory.getLoanForOwner(
+                referee.address
             );
             refereeLoan = await ethers.getContractAt(
                 "SmartLoanGigaChadInterface",
@@ -376,10 +372,10 @@ describe("Smart loan", () => {
             await wrappedLoanReferee.borrow(toBytes32("USDC"), parseUnits("500", BigNumber.from("6")));
         });
 
-        it("should fail to create loan using invalid referral code", async () => {
+        it("should fail to create loan using invalid referrer", async () => {
             await expect(
-                smartLoansFactory.connect(nonOwner).createLoan(invalidReferralCode)
-            ).to.be.revertedWith("Invalid referral code");
+                smartLoansFactory.connect(nonOwner).createLoan(owner.address)
+            ).to.be.revertedWith("Invalid referrer");
         });
 
         it("should repay and pay referral fee", async () => {
