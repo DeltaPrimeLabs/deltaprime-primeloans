@@ -487,6 +487,9 @@ export const parseUnits = ethers.utils.parseUnits;
 // BigNumber -> String
 export const formatUnits = ethers.utils.formatUnits;
 
+// Bytes -> String
+export const fromBytes32 = ethers.utils.parseBytes32String;
+
 function formatTokenBalance(value, precision = 5, toFixed = false) {
   const balanceOrderOfMagnitudeExponent = String(value).split('.')[0].length - 1;
   const precisionMultiplierExponent = precision - balanceOrderOfMagnitudeExponent;
