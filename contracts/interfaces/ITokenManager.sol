@@ -10,6 +10,11 @@ interface ITokenManager {
         uint256 debtCoverage;
     }
 
+    struct Exposure {
+        uint256 current;
+        uint256 max; // Setting max to 0 means no exposure limitations.
+    }
+
     function activateToken ( address token ) external;
     function addPoolAssets ( poolAsset[] memory poolAssets ) external;
     function addTokenAssets ( Asset[] memory tokenAssets ) external;
@@ -33,6 +38,8 @@ interface ITokenManager {
     function setDebtCoverageStaked ( bytes32 stakedAsset, uint256 coverage ) external;
     function supportedTokensList ( uint256 ) external view returns ( address );
     function tokenAddressToSymbol ( address ) external view returns ( bytes32 );
+    function identifierToExposureGroup ( bytes32 ) external view returns ( bytes32 );
+    function groupToExposure ( bytes32 ) external view returns ( Exposure memory);
     function tokenToStatus ( address ) external view returns ( uint256 );
     function transferOwnership ( address newOwner ) external;
 }

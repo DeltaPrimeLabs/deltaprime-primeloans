@@ -28,6 +28,9 @@ import "../lib/local/DeploymentConstants.sol";
 abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackReceiver, ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     using TransferHelper for address;
 
+    mapping(address => mapping(bytes32 => uint256)) private pendingUserExposure;
+    mapping(bytes32 => uint256) private pendingProtocolExposure;
+
     // CONSTANTS
     bytes32 constant public CONTROLLER = keccak256(abi.encode("CONTROLLER"));
 
@@ -55,6 +58,42 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
         return false;
     }
 
+    function isWithinBounds(uint256 _estimate, uint256 _userInput) internal pure returns(bool) {
+        if(_estimate * 95 / 100 <= _userInput && _estimate * 105 / 100 >= _userInput) {
+            return true;
+        }
+        return false;
+    }
+
+    function isExposureAvailable(ITokenManager tokenManager, bytes32 _assetIdentifier) internal view returns(bool) {
+        bytes32 group = tokenManager.identifierToExposureGroup(_assetIdentifier);
+        if(group != ""){
+            ITokenManager.Exposure memory exposure = tokenManager.groupToExposure(group);
+            if(exposure.max != 0){
+                if(exposure.max <= exposure.current + pendingProtocolExposure[_assetIdentifier]) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    function increasePendingExposure(ITokenManager tokenManager, bytes32 _assetIdentifier, uint256 _amount) internal {
+        require(pendingUserExposure[msg.sender][_assetIdentifier] == 0, "Pending Tx");
+
+        pendingUserExposure[msg.sender][_assetIdentifier] += _amount;
+        pendingProtocolExposure[_assetIdentifier] += _amount;
+        
+        require(isExposureAvailable(tokenManager, _assetIdentifier), "Lack of Exposure");
+    }
+
+    function decreasePendingExposure(bytes32 _assetIdentifier) internal {
+        uint256 pending = pendingUserExposure[msg.sender][_assetIdentifier];
+        if(pending > 0) {
+            pendingProtocolExposure[_assetIdentifier] -= pending;
+            pendingUserExposure[msg.sender][_assetIdentifier] = 0;
+        }
+    }
 
     function _deposit(address gmToken, address depositedToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) internal nonReentrant noBorrowInTheSameBlock onlyOwner {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
@@ -96,15 +135,25 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
 
         // Simulate solvency check
         {
-            bytes32[] memory dataFeedIds = new bytes32[](1);
+            bytes32[] memory dataFeedIds = new bytes32[](2);
             dataFeedIds[0] = tokenManager.tokenAddressToSymbol(gmToken);
+            dataFeedIds[1] = tokenManager.tokenAddressToSymbol(depositedToken);
+
             uint256 gmTokenUsdPrice = SolvencyMethods.getPrices(dataFeedIds)[0];
+            uint256 depositTokenUsdPrice = SolvencyMethods.getPrices(dataFeedIds)[1];
+            require(isWithinBounds(
+                depositTokenUsdPrice * tokenAmount / 10**IERC20Metadata(depositedToken).decimals(),  // Deposit Amount In USD
+                minGmAmount * gmTokenUsdPrice / 10**IERC20Metadata(gmToken).decimals())                                                // Output Amount In USD
+            , "Invalid min output value");
+
             uint256 gmTokensWeightedUsdValue = gmTokenUsdPrice * minGmAmount * tokenManager.debtCoverage(gmToken) / 1e26;
             require((_getThresholdWeightedValuePayable() + gmTokensWeightedUsdValue) > _getDebtPayable(), "The action may cause the account to become insolvent");
         }
 
         // Freeze account
         DiamondStorageLib.freezeAccount(gmToken);
+        
+        increasePendingExposure(tokenManager, tokenManager.tokenAddressToSymbol(gmToken), minGmAmount * 1e18 / 10**IERC20Metadata(gmToken).decimals());
 
         // Update exposures
         tokenManager.decreaseProtocolExposure(
@@ -158,22 +207,29 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
         IERC20(gmToken).approve(getGmxV2Router(), gmAmount);
         BasicMulticall(getGmxV2ExchangeRouter()).multicall{ value: msg.value }(data);
 
+        address longToken = marketToLongToken(gmToken);
+        address shortToken = marketToShortToken(gmToken);
+
         // Simulate solvency check
         if(msg.sender == DiamondStorageLib.contractOwner()){    // Only owner can call this method or else it's liquidator when the account is already insolvent
-            address longToken = marketToLongToken(gmToken);
-            address shortToken = marketToShortToken(gmToken);
-            uint256[] memory receivedTokensPrices = new uint256[](2);
+            uint256[] memory tokenPrices = new uint256[](2);
 
             {
-                bytes32[] memory receivedTokensSymbols = new bytes32[](2);
-                receivedTokensSymbols[0] = tokenManager.tokenAddressToSymbol(longToken);
-                receivedTokensSymbols[1] = tokenManager.tokenAddressToSymbol(shortToken);
-                receivedTokensPrices = getPrices(receivedTokensSymbols);
+                bytes32[] memory tokenSymbols = new bytes32[](3);
+                tokenSymbols[0] = tokenManager.tokenAddressToSymbol(longToken);
+                tokenSymbols[1] = tokenManager.tokenAddressToSymbol(shortToken);
+                tokenSymbols[2] = tokenManager.tokenAddressToSymbol(gmToken);
+                tokenPrices = getPrices(tokenSymbols);
             }
-
+            require(isWithinBounds(
+                tokenPrices[3] * gmAmount / 10**IERC20Metadata(gmToken).decimals(),                   // Deposit Amount In USD
+                tokenPrices[0] * minLongTokenAmount / 10**IERC20Metadata(longToken).decimals() 
+                + tokenPrices[1] * minShortTokenAmount / 10**IERC20Metadata(shortToken).decimals())   // Output Amount In USD
+            , "Invalid min output value");
+            
             uint256 receivedTokensWeightedUsdValue = (
-                (receivedTokensPrices[0] * minLongTokenAmount * tokenManager.debtCoverage(longToken) * 1e18 / 10**IERC20Metadata(longToken).decimals()) +
-                (receivedTokensPrices[1] * minShortTokenAmount * tokenManager.debtCoverage(shortToken) * 1e18 / 10**IERC20Metadata(shortToken).decimals())
+                (tokenPrices[0] * minLongTokenAmount * tokenManager.debtCoverage(longToken) * 1e18 / 10**IERC20Metadata(longToken).decimals()) +
+                (tokenPrices[1] * minShortTokenAmount * tokenManager.debtCoverage(shortToken) * 1e18 / 10**IERC20Metadata(shortToken).decimals())
             )
             / 1e26;
             require((_getThresholdWeightedValuePayable() + receivedTokensWeightedUsdValue) > _getDebtPayable(), "The action may cause the account to become insolvent");
@@ -181,6 +237,9 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
 
         // Freeze account
         DiamondStorageLib.freezeAccount(gmToken);
+
+        increasePendingExposure(tokenManager, tokenManager.tokenAddressToSymbol(longToken), minLongTokenAmount * 1e18 / 10**IERC20Metadata(longToken).decimals());
+        increasePendingExposure(tokenManager, tokenManager.tokenAddressToSymbol(shortToken), minShortTokenAmount * 1e18 / 10**IERC20Metadata(shortToken).decimals());
 
         // Update exposures
         tokenManager.decreaseProtocolExposure(
@@ -221,6 +280,8 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
             receivedMarketTokens * 1e18 / 10**IERC20Metadata(gmToken).decimals()
         );
 
+        decreasePendingExposure(tokenManager.tokenAddressToSymbol(gmToken));
+        
         // Unfreeze account
         DiamondStorageLib.unfreezeAccount(msg.sender);
 
@@ -262,6 +323,8 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
             );
         }
 
+        decreasePendingExposure(tokenManager.tokenAddressToSymbol(deposit.addresses.market));
+
         DiamondStorageLib.unfreezeAccount(msg.sender);
         emit DepositCancelled(
             msg.sender,
@@ -299,6 +362,9 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
                 shortOutputAmount * 1e18 / 10**IERC20Metadata(shortToken).decimals()
             );
         }
+
+        decreasePendingExposure(tokenManager.tokenAddressToSymbol(longToken));
+        decreasePendingExposure(tokenManager.tokenAddressToSymbol(shortToken));
         
         // Native token transfer happens after execution of this method, but the amounts should be dust ones anyway and by wrapping here we get a chance to wrap any previously sent native token
         wrapNativeToken();
@@ -315,7 +381,9 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
 
     function afterWithdrawalCancellation(bytes32 key, Withdrawal.Props memory withdrawal, EventUtils.EventLogData memory eventData) external onlyGmxV2Keeper nonReentrant override {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-
+        address longToken = marketToLongToken(withdrawal.addresses.market);
+        address shortToken = marketToShortToken(withdrawal.addresses.market);
+        
         // Add owned assets
         if(IERC20Metadata(withdrawal.addresses.market).balanceOf(address(this)) > 0){
             DiamondStorageLib.addOwnedAsset(tokenManager.tokenAddressToSymbol(withdrawal.addresses.market), withdrawal.addresses.market);
@@ -328,6 +396,9 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
             tokenManager.tokenAddressToSymbol(withdrawal.addresses.market),
             withdrawal.numbers.marketTokenAmount * 1e18 / 10**IERC20Metadata(withdrawal.addresses.market).decimals()
         );
+
+        decreasePendingExposure(tokenManager.tokenAddressToSymbol(longToken));
+        decreasePendingExposure(tokenManager.tokenAddressToSymbol(shortToken));
 
         DiamondStorageLib.unfreezeAccount(msg.sender);
         emit WithdrawalCancelled(
