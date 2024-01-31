@@ -90,7 +90,7 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
         //Update registry and emit event
         updateRegistry(address(smartLoan), msg.sender);
 
-        emit SmartLoanCreated(address(smartLoan), msg.sender, "", 0);
+        emit SmartLoanCreated(address(smartLoan), msg.sender, referrer, "", 0);
         return smartLoan;
     }
 
@@ -112,7 +112,7 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
         (bool success, bytes memory result) = address(smartLoan).call(abi.encodeWithSelector(AssetsOperationsFacet.fund.selector, _fundedAsset, _amount));
         ProxyConnector._prepareReturnValue(success, result);
 
-        emit SmartLoanCreated(address(smartLoan), msg.sender, _fundedAsset, _amount);
+        emit SmartLoanCreated(address(smartLoan), msg.sender, referrer, _fundedAsset, _amount);
 
         return smartLoan;
     }
@@ -180,8 +180,9 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
      * @dev emitted after creating a loan by the owner
      * @param accountAddress address of a new SmartLoanDiamondBeacon
      * @param creator account creating a SmartLoanDiamondBeacon
+     * @param referrer referrer of the user
      * @param collateralAsset asset used as initial collateral
      * @param collateralAmount amount of asset used as initial collateral
      **/
-    event SmartLoanCreated(address indexed accountAddress, address indexed creator, bytes32 collateralAsset, uint256 collateralAmount);
+    event SmartLoanCreated(address indexed accountAddress, address indexed creator, address indexed referrer, bytes32 collateralAsset, uint256 collateralAmount);
 }
