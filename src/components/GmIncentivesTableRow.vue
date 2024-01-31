@@ -114,7 +114,7 @@ export default {
         weeklyAmount = 10000;
       } else {
         apy = this.apys ? this.apys['GM_BOOST'].avaxApy : 0;
-        weeklyAmount = 500;
+        weeklyAmount = 333.333;
       }
 
       return apy ? weeklyAmount / 7 * 365 / apy  : 0;
