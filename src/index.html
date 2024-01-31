@@ -32,6 +32,8 @@
 
   <script>
     window.disableExternalData = false;
+    window.arbitrumChain = false;
+    window.avalancheChain = false;
     if (window.ethereum) {
       window.ethereum.request({method: 'eth_chainId'}).then((id) => {
         const chainId = parseInt(id, 16);
@@ -40,10 +42,13 @@
         switch (chainId) {
           case 43114: {
             window.chain = 'avalanche';
+            window.avalancheChain = true;
+
             break;
           }
           case 42161: {
             window.chain = 'arbitrum';
+            window.arbitrumChain = true;
             break;
           }
           default: {
