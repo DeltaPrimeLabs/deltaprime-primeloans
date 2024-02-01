@@ -93,6 +93,8 @@ module.exports = {
   wrap,
   avalancheProvider,
   arbitrumProvider,
+  avalancheWallet,
+  arbitrumWallet,
   dynamoDb,
   getWrappedContracts,
   getBlockForTimestamp
