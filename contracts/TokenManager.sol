@@ -53,6 +53,9 @@ contract TokenManager is OwnableUpgradeable {
     mapping(bytes32 => bytes32) public identifierToExposureGroup;
     mapping(bytes32 => Exposure) public groupToExposure;
 
+    mapping(address => mapping(bytes32 => uint256)) private pendingUserExposure;
+    mapping(bytes32 => uint256) private pendingProtocolExposure;
+
     function initialize(Asset[] memory tokenAssets, poolAsset[] memory poolAssets) external initializer {
         __Ownable_init();
 
@@ -263,6 +266,36 @@ contract TokenManager is OwnableUpgradeable {
         //LTV must be lower than 5
         require(coverage <= 0.833333333333333333e18, 'Debt coverage higher than maximum acceptable');
         debtCoverageStaked[stakedAsset] = coverage;
+    }
+
+    function isExposureAvailable(bytes32 assetIdentifier) internal view returns(bool) {
+        bytes32 group = identifierToExposureGroup[assetIdentifier];
+        if(group != ""){
+            Exposure memory exposure = groupToExposure[group];
+            if(exposure.max != 0){
+                if(exposure.max <= exposure.current + pendingProtocolExposure[assetIdentifier]) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    function increasePendingExposure(bytes32 assetIdentifier, address user, uint256 amount) public onlyOwner {
+        require(pendingUserExposure[user][assetIdentifier] == 0, "Pending Tx");
+
+        pendingUserExposure[user][assetIdentifier] += amount;
+        pendingProtocolExposure[assetIdentifier] += amount;
+        
+        require(isExposureAvailable(assetIdentifier), "Lack of Exposure");
+    }
+
+    function decreasePendingExposure(bytes32 assetIdentifier, address user) public onlyOwner {
+        uint256 pending = pendingUserExposure[user][assetIdentifier];
+        if(pending > 0) {
+            pendingProtocolExposure[assetIdentifier] -= pending;
+            pendingUserExposure[user][assetIdentifier] = 0;
+        }
     }
 
     function getSmartLoansFactoryAddress() public view virtual returns (address) {

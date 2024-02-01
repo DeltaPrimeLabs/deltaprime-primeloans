@@ -28,9 +28,6 @@ import "../lib/local/DeploymentConstants.sol";
 abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackReceiver, ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     using TransferHelper for address;
 
-    mapping(address => mapping(bytes32 => uint256)) private pendingUserExposure;
-    mapping(bytes32 => uint256) private pendingProtocolExposure;
-
     // CONSTANTS
     bytes32 constant public CONTROLLER = keccak256(abi.encode("CONTROLLER"));
 
@@ -63,36 +60,6 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
             return true;
         }
         return false;
-    }
-
-    function isExposureAvailable(ITokenManager tokenManager, bytes32 _assetIdentifier) internal view returns(bool) {
-        bytes32 group = tokenManager.identifierToExposureGroup(_assetIdentifier);
-        if(group != ""){
-            ITokenManager.Exposure memory exposure = tokenManager.groupToExposure(group);
-            if(exposure.max != 0){
-                if(exposure.max <= exposure.current + pendingProtocolExposure[_assetIdentifier]) {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
-    function increasePendingExposure(ITokenManager tokenManager, bytes32 _assetIdentifier, uint256 _amount) internal {
-        require(pendingUserExposure[msg.sender][_assetIdentifier] == 0, "Pending Tx");
-
-        pendingUserExposure[msg.sender][_assetIdentifier] += _amount;
-        pendingProtocolExposure[_assetIdentifier] += _amount;
-        
-        require(isExposureAvailable(tokenManager, _assetIdentifier), "Lack of Exposure");
-    }
-
-    function decreasePendingExposure(bytes32 _assetIdentifier) internal {
-        uint256 pending = pendingUserExposure[msg.sender][_assetIdentifier];
-        if(pending > 0) {
-            pendingProtocolExposure[_assetIdentifier] -= pending;
-            pendingUserExposure[msg.sender][_assetIdentifier] = 0;
-        }
     }
 
     function _deposit(address gmToken, address depositedToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) internal nonReentrant noBorrowInTheSameBlock onlyOwner {
@@ -153,7 +120,7 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
         // Freeze account
         DiamondStorageLib.freezeAccount(gmToken);
         
-        increasePendingExposure(tokenManager, tokenManager.tokenAddressToSymbol(gmToken), minGmAmount * 1e18 / 10**IERC20Metadata(gmToken).decimals());
+        tokenManager.increasePendingExposure(tokenManager.tokenAddressToSymbol(gmToken), msg.sender, minGmAmount * 1e18 / 10**IERC20Metadata(gmToken).decimals());
 
         // Update exposures
         tokenManager.decreaseProtocolExposure(
@@ -238,8 +205,8 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
         // Freeze account
         DiamondStorageLib.freezeAccount(gmToken);
 
-        increasePendingExposure(tokenManager, tokenManager.tokenAddressToSymbol(longToken), minLongTokenAmount * 1e18 / 10**IERC20Metadata(longToken).decimals());
-        increasePendingExposure(tokenManager, tokenManager.tokenAddressToSymbol(shortToken), minShortTokenAmount * 1e18 / 10**IERC20Metadata(shortToken).decimals());
+        tokenManager.increasePendingExposure(tokenManager.tokenAddressToSymbol(longToken), msg.sender, minLongTokenAmount * 1e18 / 10**IERC20Metadata(longToken).decimals());
+        tokenManager.increasePendingExposure(tokenManager.tokenAddressToSymbol(shortToken), msg.sender, minShortTokenAmount * 1e18 / 10**IERC20Metadata(shortToken).decimals());
 
         // Update exposures
         tokenManager.decreaseProtocolExposure(
@@ -280,7 +247,7 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
             receivedMarketTokens * 1e18 / 10**IERC20Metadata(gmToken).decimals()
         );
 
-        decreasePendingExposure(tokenManager.tokenAddressToSymbol(gmToken));
+        tokenManager.decreasePendingExposure(tokenManager.tokenAddressToSymbol(gmToken), msg.sender);
         
         // Unfreeze account
         DiamondStorageLib.unfreezeAccount(msg.sender);
@@ -323,7 +290,7 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
             );
         }
 
-        decreasePendingExposure(tokenManager.tokenAddressToSymbol(deposit.addresses.market));
+        tokenManager.decreasePendingExposure(tokenManager.tokenAddressToSymbol(deposit.addresses.market), msg.sender);
 
         DiamondStorageLib.unfreezeAccount(msg.sender);
         emit DepositCancelled(
@@ -363,8 +330,8 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
             );
         }
 
-        decreasePendingExposure(tokenManager.tokenAddressToSymbol(longToken));
-        decreasePendingExposure(tokenManager.tokenAddressToSymbol(shortToken));
+        tokenManager.decreasePendingExposure(tokenManager.tokenAddressToSymbol(longToken), msg.sender);
+        tokenManager.decreasePendingExposure(tokenManager.tokenAddressToSymbol(shortToken), msg.sender);
         
         // Native token transfer happens after execution of this method, but the amounts should be dust ones anyway and by wrapping here we get a chance to wrap any previously sent native token
         wrapNativeToken();
@@ -397,8 +364,8 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
             withdrawal.numbers.marketTokenAmount * 1e18 / 10**IERC20Metadata(withdrawal.addresses.market).decimals()
         );
 
-        decreasePendingExposure(tokenManager.tokenAddressToSymbol(longToken));
-        decreasePendingExposure(tokenManager.tokenAddressToSymbol(shortToken));
+        tokenManager.decreasePendingExposure(tokenManager.tokenAddressToSymbol(longToken), msg.sender);
+        tokenManager.decreasePendingExposure(tokenManager.tokenAddressToSymbol(shortToken), msg.sender);
 
         DiamondStorageLib.unfreezeAccount(msg.sender);
         emit WithdrawalCancelled(
