@@ -311,13 +311,15 @@ export default {
             ]
           };
 
-      const eventAprCell = {
+      if (window.chain === 'arbitrum') {
+        const eventAprCell = {
           label: 'Event APR',
           sortable: false,
           class: 'event-apr',
           id: 'EVENT_APR',
-        }
-      this.poolsTableHeaderConfig.cells.splice(4, 0, eventAprCell)
+        };
+        this.poolsTableHeaderConfig.cells.splice(4, 0, eventAprCell)
+      }
     },
 
   },
