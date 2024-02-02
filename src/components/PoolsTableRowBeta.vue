@@ -44,8 +44,9 @@
       <div v-if="isArbitrum" class="table__cell table__cell--double-value event-apr">
         <template>
           <div class="double-value__pieces">
-            <LoadedValue :check="() => pool.tvl != null" :value="formatPercent(eventApr)">
+            +<LoadedValue :check="() => pool.tvl != null" :value="formatPercent(eventApr)">
             </LoadedValue>
+            <img src="src/assets/icons/warning.svg"  v-tooltip="{content: `Event APR will be paid out upon timely completion of the GM mission.<br><a target='_blank' href='https://discord.com/channels/889510301421166643/912702114252329060/1203033053442867281'><b>Read more</b></a>.`, classes: 'info-tooltip'}"/>
           </div>
         </template>
       </div>
@@ -514,6 +515,17 @@ export default {
         justify-content: flex-end;
         font-weight: 600;
         color: var(--asset-table-row__apy-color);
+
+        .double-value__pieces {
+          display: flex;
+
+          img {
+            margin-left: 3px;
+            width: 20px;
+            height: 20px;
+            opacity: 75%;
+          }
+        }
       }
 
       &.interest {
