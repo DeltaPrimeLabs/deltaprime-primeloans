@@ -111,6 +111,10 @@ export default {
       justify-content: flex-end;
     }
 
+    &.event-apr {
+      justify-content: flex-end;
+    }
+
     &.deposit {
       justify-content: flex-end;
     }

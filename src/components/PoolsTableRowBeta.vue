@@ -1,6 +1,6 @@
 <template>
   <div class="pools-table-row-component">
-    <div class="table__row" v-if="pool" :class="{'unlocking': poolsUnlocking, 'disabled': pool.disabled}">
+    <div class="table__row" v-if="pool" :class="{'unlocking': poolsUnlocking, 'disabled': pool.disabled, 'with-event-apr': isArbitrum}">
       <div class="table__cell asset">
         <img class="asset__icon" :src="getAssetIcon(pool.asset.symbol)">
         <div class="asset__info">
@@ -37,6 +37,15 @@
           </div>
           <div class="double-value__usd">
             <span v-if="pool.apy != null && miningApy">{{formatPercent(pool.apy)}}&nbsp;+&nbsp;{{formatPercent(miningApy)}}</span>
+          </div>
+        </template>
+      </div>
+
+      <div v-if="isArbitrum" class="table__cell table__cell--double-value event-apr">
+        <template>
+          <div class="double-value__pieces">
+            <LoadedValue :check="() => pool.tvl != null" :value="formatPercent(eventApr)">
+            </LoadedValue>
           </div>
         </template>
       </div>
@@ -116,7 +125,8 @@ export default {
       poolAssetsPrices: {},
       poolContracts: {},
       lifiData: {},
-      poolsUnlocking: config.poolsUnlocking
+      poolsUnlocking: config.poolsUnlocking,
+      isArbitrum: window.chain === 'arbitrum'
     };
   },
 
@@ -136,7 +146,19 @@ export default {
       if (this.pool.tvl === 0) return 0;
       return (config.chainId === 42161) ?  0 * 1000 * 365 / 4 / (this.pool.tvl * this.pool.assetPrice)
       : 0 * Math.max((1 - this.pool.tvl * this.pool.assetPrice / 4000000) * 0.1, 0);
-    }
+    },
+
+    eventApr() {
+      if (this.pool.asset.symbol === 'DAI') {
+        return 0
+      }
+      console.log(this.pool.tvl * this.pool.assetPrice);
+      if (this.pool.tvl === 0) {
+        return 0
+      } else {
+        return 1000 / 10 * 365 / (this.pool.tvl * this.pool.assetPrice);
+      }
+    },
   },
 
   methods: {
@@ -443,6 +465,10 @@ export default {
       grid-template-columns: repeat(3, 1fr) 140px 140px 140px 140px 90px 90px 22px;
     }
 
+    &.with-event-apr {
+      grid-template-columns: 120px 100px 120px 120px 100px 120px 120px 120px 90px 90px 22px;
+    }
+
     .table__cell {
       display: flex;
       flex-direction: row;
@@ -477,6 +503,13 @@ export default {
       }
 
       &.apy {
+        align-items: flex-end;
+        justify-content: flex-end;
+        font-weight: 600;
+        color: var(--asset-table-row__apy-color);
+      }
+
+      &.event-apr {
         align-items: flex-end;
         justify-content: flex-end;
         font-weight: 600;
