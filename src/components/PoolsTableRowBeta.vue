@@ -157,7 +157,7 @@ export default {
       if (this.pool.tvl === 0) {
         return 0
       } else {
-        return 1000 / 10 * 365 / (this.pool.tvl * this.pool.assetPrice) * 0.9;
+        return 1000 / 10 * 365 / (this.pool.tvl * this.pool.assetPrice) * 0.7;
       }
     },
   },
