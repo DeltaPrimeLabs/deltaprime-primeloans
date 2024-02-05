@@ -256,12 +256,13 @@ export default class notifiService {
       healthCheckSubtitle: '', // mandatory but unused field
       numberType: 'integer',
     }
-  
+
     const result = await client.ensureAlert({
       eventType,
       inputs: {
         walletAddress,
         ['Loan Health Alerts__healthRatio']: healthRatio, // in decimal like 0.05 for 5%
+        ['Loan Health Alerts__healthThresholdDirection']: 'below',
       },
     });
   
