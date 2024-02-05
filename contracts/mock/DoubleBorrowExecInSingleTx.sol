@@ -27,9 +27,14 @@ contract DoubleBorrowExecInSingleTx is ProxyConnector {
 
     address constant WAVAX_ADDRESS = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
 
-    function createLoan(address factoryAddress, address referrer) public {
+    function createLoan(address factoryAddress) public {
         SmartLoansFactory factory = SmartLoansFactory(factoryAddress);
-        factory.createLoan(referrer);
+        factory.createLoan();
+    }
+
+    function createLoanWithrReferrer(address factoryAddress, address referrer) public {
+        SmartLoansFactory factory = SmartLoansFactory(factoryAddress);
+        factory.createLoanWithReferrer(referrer);
     }
 
     function execute(address smartLoanAddress) public {

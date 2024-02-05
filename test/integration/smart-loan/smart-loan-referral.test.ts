@@ -220,7 +220,7 @@ describe("Smart loan", () => {
         }
 
         it("should deploy a smart loan", async () => {
-            await smartLoansFactory.connect(referrer).createLoan(ethers.constants.AddressZero);
+            await smartLoansFactory.connect(referrer).createLoan();
             await smartLoansFactory.connect(referrer).setFeeAsset(toBytes32("USDT"));
 
             const referrer_loan_proxy_address = await smartLoansFactory.getLoanForOwner(
@@ -232,7 +232,7 @@ describe("Smart loan", () => {
                 referrer
             );
 
-            await smartLoansFactory.connect(referee).createLoan(referrerLoan.address);
+            await smartLoansFactory.connect(referee).createLoanWithReferrer(referrerLoan.address);
 
             const referee_loan_proxy_address = await smartLoansFactory.getLoanForOwner(
                 referee.address
@@ -374,7 +374,7 @@ describe("Smart loan", () => {
 
         it("should fail to create loan using invalid referrer", async () => {
             await expect(
-                smartLoansFactory.connect(nonOwner).createLoan(owner.address)
+                smartLoansFactory.connect(nonOwner).createLoanWithReferrer(owner.address)
             ).to.be.revertedWith("Invalid referrer");
         });
 

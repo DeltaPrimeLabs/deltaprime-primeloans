@@ -169,6 +169,8 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         uint256 protocolFeeAmount = _amount * pool.getProtocolFee(address(this)) / 1e18;
         if (protocolFeeAmount > 0) {
             address(token).safeTransfer(protocolFeeReceiver, protocolFeeAmount);
+
+            emit ProtocolFeePayment(address(this), address(token), protocolFeeAmount);
         }
         if (referrerFeeAmount > 0) {
             _repayReferrerFee(_asset, referrerFeeAmount, protocolFeeReceiver);
@@ -253,6 +255,8 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
                 address(feeToken).safeTransfer(feeReceiver, feeAmount - repayAmount);
             } else {
                 address(token).safeTransfer(feeReceiver, amount);
+
+                emit ProtocolFeePayment(address(this), address(token), amount);
             }
         }
     }
@@ -475,4 +479,12 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
     event Repaid(address indexed user, bytes32 indexed asset, uint256 amount, uint256 timestamp);
 
     event DustConverted(address indexed user, uint256 timestamp, address[] dustAssets, uint256[] dustAmounts, address tokenReceived, uint256 amountReceived);
+
+    /**
+     * @dev emitted when fees are paid to the protocol
+     * @param user the address paying the fee
+     * @param token fee token paid by user
+     * @param amount of fee payment
+     **/
+    event ProtocolFeePayment(address indexed user, address indexed token, uint256 amount);
 }

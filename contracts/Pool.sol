@@ -54,10 +54,6 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
     uint256 public constant FEE_DATA_SLOT = uint256(keccak256("pool.feeData"));
 
-    uint256 public constant REFERRAL_FEE_SLOT = uint256(keccak256("pool.referralFee"));
-
-    uint256 public constant PROTOCOL_FEE_SLOT = uint256(keccak256("pool.protocolFee"));
-
     // SETTERS
 
     /**
@@ -498,7 +494,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
         _updateRates();
 
-        emit Repayment(account, amount, block.timestamp);
+        emit Repayment(account, msg.sender, amount, block.timestamp);
     }
 
     /* =========
@@ -722,11 +718,12 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
     /**
      * @dev emitted after the user repays debt
-     * @param user the address that repays debt
+     * @param repayee the address that debt is repaid
+     * @param repayer the address that repays debt
      * @param value the amount repaid
      * @param timestamp of the repayment
      **/
-    event Repayment(address indexed user, uint256 value, uint256 timestamp);
+    event Repayment(address indexed repayee, address indexed repayer, uint256 value, uint256 timestamp);
 
     /**
      * @dev emitted after accumulating deposit interest

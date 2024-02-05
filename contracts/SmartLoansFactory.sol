@@ -78,7 +78,15 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
         tokenManager = ITokenManager(_tokenManager);
     }
 
-    function createLoan(address referrer) public virtual hasNoLoan validReferrer(referrer) returns (SmartLoanDiamondBeacon) {
+    function createLoan() public virtual returns (SmartLoanDiamondBeacon) {
+        return _createLoan(address(0));
+    }
+
+    function createLoanWithReferrer(address referrer) public virtual returns (SmartLoanDiamondBeacon) {
+        return _createLoan(referrer);
+    }
+
+    function _createLoan(address referrer) internal hasNoLoan validReferrer(referrer) returns (SmartLoanDiamondBeacon) {
         SmartLoanDiamondProxy beaconProxy = new SmartLoanDiamondProxy(
             payable(address(smartLoanDiamond)),
         // Setting SLFactory as the initial owner and then using .transferOwnership to change the owner to msg.sender
@@ -94,7 +102,15 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
         return smartLoan;
     }
 
-    function createAndFundLoan(bytes32 _fundedAsset, uint256 _amount, address referrer) public virtual hasNoLoan validReferrer(referrer) returns (SmartLoanDiamondBeacon) {
+    function createAndFundLoan(bytes32 _fundedAsset, uint256 _amount) public virtual returns (SmartLoanDiamondBeacon) {
+        return _createAndFundLoan(_fundedAsset, _amount, address(0));
+    }
+
+    function createAndFundLoanWithReferrer(bytes32 _fundedAsset, uint256 _amount, address referrer) public virtual returns (SmartLoanDiamondBeacon) {
+        return _createAndFundLoan(_fundedAsset, _amount, referrer);
+    }
+
+    function _createAndFundLoan(bytes32 _fundedAsset, uint256 _amount, address referrer) internal hasNoLoan validReferrer(referrer) returns (SmartLoanDiamondBeacon) {
         address asset = tokenManager.getAssetAddress(_fundedAsset, false);
         SmartLoanDiamondProxy beaconProxy = new SmartLoanDiamondProxy(payable(address(smartLoanDiamond)),
             abi.encodeWithSelector(SmartLoanViewFacet.initialize.selector, msg.sender, referrer)
