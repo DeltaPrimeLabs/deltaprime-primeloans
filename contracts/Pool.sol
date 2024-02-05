@@ -12,6 +12,7 @@ import "./interfaces/IIndex.sol";
 import "./interfaces/IRatesCalculator.sol";
 import "./interfaces/IBorrowersRegistry.sol";
 import "./interfaces/IPoolRewarder.sol";
+import {ISmartLoanViewFacet} from "./interfaces/facets/ISmartLoanViewFacet.sol";
 import "./VestingDistributor.sol";
 
 
@@ -23,6 +24,13 @@ import "./VestingDistributor.sol";
  */
 contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     using TransferHelper for address payable;
+
+    struct FeeData {
+        uint256 referrerFee;
+        uint256 noReferrerProtocolFee;
+        uint256 referrerProtocolFee;
+        address protocolFeeReceiver;
+    }
 
     uint256 public totalSupplyCap;
 
@@ -44,6 +52,131 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
     uint8 internal _decimals;
 
+    uint256 public constant FEE_DATA_SLOT = uint256(keccak256("pool.feeData"));
+
+    // SETTERS
+
+    /**
+     * Sets the new Pool fee receiver.
+     * Only the owner of the Contract can execute this function.
+     * @dev _receiver the address of ProtocolFeeReceiver
+    **/
+    function setProtocolFeeReceiver(address _receiver) external onlyOwner {
+        FeeData storage feeData = getFeeData();
+        address prevReceiver = feeData.protocolFeeReceiver;
+        feeData.protocolFeeReceiver = _receiver;
+
+        emit ProtocolFeeReceiverChanged(prevReceiver, _receiver, block.timestamp);
+    }
+
+    /**
+     * Sets the additional fee percentage that goes to the referrer
+     * Only the owner of the Contract can execute this function.
+     * @dev _referrerFee new fee
+    **/
+    function setReferrerFee(uint256 _referrerFee) external onlyOwner {
+        if (_referrerFee > 1e18) revert WrongFee(_referrerFee);
+        FeeData storage feeData = getFeeData();
+        uint256 prevFee = feeData.referrerFee;
+        feeData.referrerFee = _referrerFee;
+
+        emit ReferrerFeeChanged(prevFee, _referrerFee, block.timestamp);
+    }
+
+    /**
+     * Sets the additional fee percentage that goes to the protocol
+     * Only the owner of the Contract can execute this function.
+     * @dev _referrerProtocolFee new fee
+    **/
+    function setReferrerProtocolFee(uint256 _referrerProtocolFee) external onlyOwner {
+        if (_referrerProtocolFee > 1e18) revert WrongFee(_referrerProtocolFee);
+        FeeData storage feeData = getFeeData();
+        uint256 prevFee = feeData.referrerProtocolFee;
+        feeData.referrerProtocolFee = _referrerProtocolFee;
+
+        emit ReferrerProtocolFeeChanged(prevFee, _referrerProtocolFee, block.timestamp);
+    }
+
+    /**
+     * Sets the additional fee percentage that goes to the protocol
+     * Only the owner of the Contract can execute this function.
+     * @dev _noReferrerProtocolFee new fee
+    **/
+    function setNoReferrerProtocolFee(uint256 _noReferrerProtocolFee) external onlyOwner {
+        if (_noReferrerProtocolFee > 1e18) revert WrongFee(_noReferrerProtocolFee);
+        FeeData storage feeData = getFeeData();
+        uint256 prevFee = feeData.noReferrerProtocolFee;
+        feeData.noReferrerProtocolFee = _noReferrerProtocolFee;
+
+        emit NoReferrerProtocolFeeChanged(prevFee, _noReferrerProtocolFee, block.timestamp);
+    }
+
+    // GETTERS
+
+    function getProtocolFeeReceiver() external view returns (address) {
+        FeeData storage feeData = getFeeData();
+        return feeData.protocolFeeReceiver;
+    }
+
+    /**
+     * Returns the current borrowed amount with fees for the given user
+     * The value includes the interest rates owned at the current moment
+     * @dev _user the address of queried borrower
+    **/
+    function getBorrowedWithFees(address _user) public view returns (uint256 borrowedAmount) {
+        borrowedAmount = getBorrowed(_user);
+        borrowedAmount += borrowedAmount * getFeeRatio(_user) / 1e18;
+    }
+
+    function getFeeRatio(address _user) public view returns (uint256 feeRatio) {
+        FeeData storage feeData = getFeeData();
+        if (ISmartLoanViewFacet(_user).getReferrer() != address(0)) {
+            return feeData.referrerFee + feeData.referrerProtocolFee;
+        } else {
+            return feeData.noReferrerProtocolFee;
+        }
+    }
+
+    function getReferrerFee(address _user) public view returns (uint256) {
+        FeeData storage feeData = getFeeData();
+        if (ISmartLoanViewFacet(_user).getReferrer() != address(0)) {
+            return feeData.referrerFee;
+        }
+    }
+
+    function getProtocolFee(address _user) public view returns (uint256) {
+        FeeData storage feeData = getFeeData();
+        if (ISmartLoanViewFacet(_user).getReferrer() != address(0)) {
+            return feeData.referrerProtocolFee;
+        } else {
+            return feeData.noReferrerProtocolFee;
+        }
+    }
+
+    /**
+     * Returns the current interest rate for borrowings for referees
+     **/
+    function getBorrowingRateWithReferralFee() public view returns (uint256) {
+        //TODO: check if it's correct
+        FeeData storage feeData = getFeeData();
+        return ratesCalculator.calculateBorrowingRate(totalBorrowed(), totalSupply()) + feeData.referrerFee + feeData.referrerProtocolFee;
+    }
+
+    /**
+     * Returns the current interest rate for borrowings including protocol fee
+     **/
+    function getBorrowingRateWithNoReferralFee() public view returns (uint256) {
+        //TODO: check if it's correct
+        FeeData storage feeData = getFeeData();
+        return ratesCalculator.calculateBorrowingRate(totalBorrowed(), totalSupply()) + feeData.noReferrerProtocolFee;
+    }
+
+    function getFeeData() internal pure returns (FeeData storage feeData) {
+        uint256 slot = FEE_DATA_SLOT;
+        assembly {
+            feeData.slot:= slot
+        }
+    }
 
     function initialize(IRatesCalculator ratesCalculator_, IBorrowersRegistry borrowersRegistry_, IIndex depositIndex_, IIndex borrowIndex_, address payable tokenAddress_, IPoolRewarder poolRewarder_, uint256 _totalSupplyCap) public initializer {
         require(AddressUpgradeable.isContract(address(ratesCalculator_))
@@ -338,17 +471,30 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      * @dev It is only meant to be used by a SmartLoanDiamondProxy
      **/
     function repay(uint256 amount) external nonReentrant {
-        _accumulateBorrowingInterest(msg.sender);
+        _repayFor(msg.sender, amount);
+    }
 
-        if(amount > borrowed[msg.sender]) revert RepayingMoreThanWasBorrowed();
+    /**
+     * Repays the amount for other user
+     * It updates user borrowed balance, total borrowed amount and rates
+     * @dev It is only meant to be used by a SmartLoanDiamondProxy
+     **/
+    function repayFor(address account, uint256 amount) external nonReentrant {
+        _repayFor(account, amount);
+    }
+
+    function _repayFor(address account, uint256 amount) internal {
+        _accumulateBorrowingInterest(account);
+
+        if(amount > borrowed[account]) revert RepayingMoreThanWasBorrowed();
         _transferToPool(msg.sender, amount);
 
-        borrowed[msg.sender] -= amount;
+        borrowed[account] -= amount;
         borrowed[address(this)] -= amount;
 
         _updateRates();
 
-        emit Repayment(msg.sender, amount, block.timestamp);
+        emit Repayment(account, msg.sender, amount, block.timestamp);
     }
 
     /* =========
@@ -572,11 +718,12 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
     /**
      * @dev emitted after the user repays debt
-     * @param user the address that repays debt
+     * @param repayee the address that debt is repaid
+     * @param repayer the address that repays debt
      * @param value the amount repaid
      * @param timestamp of the repayment
      **/
-    event Repayment(address indexed user, uint256 value, uint256 timestamp);
+    event Repayment(address indexed repayee, address indexed repayer, uint256 value, uint256 timestamp);
 
     /**
      * @dev emitted after accumulating deposit interest
@@ -592,6 +739,38 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     * @param timestamp of the borrowers registry change
     **/
     event BorrowersRegistryChanged(address indexed registry, uint256 timestamp);
+
+    /**
+    * @dev emitted after changing protocol fee receiver
+    * @param prevReceiver previous receiver
+    * @param receiver an address of the newly set receiver
+    * @param timestamp of the receiver change
+    **/
+    event ProtocolFeeReceiverChanged(address indexed prevReceiver, address indexed receiver, uint256 timestamp);
+
+    /**
+    * @dev emitted after changing referrer fee
+    * @param prevFee previous referrer fee
+    * @param fee new referrer fee
+    * @param timestamp of the fee change
+    **/
+    event ReferrerFeeChanged(uint256 indexed prevFee, uint256 indexed fee, uint256 timestamp);
+
+    /**
+    * @dev emitted after changing referrer fee
+    * @param prevFee previous referrer protocol fee
+    * @param fee new referrer fee
+    * @param timestamp of the fee change
+    **/
+    event ReferrerProtocolFeeChanged(uint256 indexed prevFee, uint256 indexed fee, uint256 timestamp);
+
+    /**
+    * @dev emitted after changing referrer fee
+    * @param prevFee previous no referrer protocol fee
+    * @param fee new referrer fee
+    * @param timestamp of the fee change
+    **/
+    event NoReferrerProtocolFeeChanged(uint256 indexed prevFee, uint256 indexed fee, uint256 timestamp);
 
     /**
     * @dev emitted after changing rates calculator
@@ -674,4 +853,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
     // getMaxPoolUtilisationForBorrowing was breached
     error MaxPoolUtilisationBreached();
+
+    // trying to set incorrect fee value
+    error WrongFee(uint256 fee);
 }

@@ -19,6 +19,7 @@ import VariableUtilisationRatesCalculatorArtifact
     from '../artifacts/contracts/mock/MockVariableUtilisationRatesCalculator.sol/MockVariableUtilisationRatesCalculator.json';
 import PoolArtifact from '../artifacts/contracts/Pool.sol/Pool.json';
 import UsdcPoolArtifact from '../artifacts/contracts/deployment/avalanche/UsdcPool.sol/UsdcPool.json';
+import UsdtPoolArtifact from '../artifacts/contracts/deployment/avalanche/UsdtPool.sol/UsdtPool.json';
 import LinearIndexArtifact from '../artifacts/contracts/LinearIndex.sol/LinearIndex.json';
 import MockTokenArtifact from "../artifacts/contracts/mock/MockToken.sol/MockToken.json";
 import IDiamondCutArtifact from "../artifacts/contracts/interfaces/IDiamondCut.sol/IDiamondCut.json";
@@ -1106,6 +1107,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             'getContractOwner',
             'getProposedOwner',
             'getStakedPositions',
+            'getReferrer',
         ],
         hardhatConfig
     )
@@ -1212,6 +1214,10 @@ export async function deployAndInitializeLendingPool(owner: any, tokenName: stri
             case 'USDC':
                 pool = (await deployContract(owner, UsdcPoolArtifact)) as Pool;
                 tokenContract = new ethers.Contract(AVAX_TOKEN_ADDRESSES['USDC'], erc20ABI, provider);
+                break;
+            case 'USDT':
+                pool = (await deployContract(owner, UsdtPoolArtifact)) as Pool;
+                tokenContract = new ethers.Contract(AVAX_TOKEN_ADDRESSES['USDT'], erc20ABI, provider);
                 break;
             case 'BTC':
                 tokenContract = new ethers.Contract(AVAX_TOKEN_ADDRESSES['BTC'], erc20ABI, provider);

@@ -4,8 +4,9 @@ pragma solidity 0.8.17;
 
 import "../ReentrancyGuardKeccak.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
-import "../lib/SolvencyMethods.sol";
-import "../Pool.sol";
+import {SolvencyMethods} from "../lib/SolvencyMethods.sol";
+import "../interfaces/IStakingPositions.sol";
+import {Pool} from "../Pool.sol";
 import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -33,12 +34,13 @@ contract SmartLoanViewFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
     /* ========== PUBLIC AND EXTERNAL MUTATIVE FUNCTIONS ========== */
 
-    function initialize(address owner) external {
+    function initialize(address owner, address referrer) external {
         require(owner != address(0), "Initialize: Cannot set the owner to a zero address");
 
         DiamondStorageLib.SmartLoanStorage storage sls = DiamondStorageLib.smartLoanStorage();
         require(!sls._initialized, "DiamondInit: contract is already initialized");
         DiamondStorageLib.setContractOwner(owner);
+        DiamondStorageLib.setReferrer(referrer);
         sls._initialized = true;
     }
 
@@ -53,6 +55,10 @@ contract SmartLoanViewFacet is ReentrancyGuardKeccak, SolvencyMethods {
         return sls.frozenSince;
     }
 
+    function getReferrer() public view returns (address){
+        DiamondStorageLib.SmartLoanStorage storage sls = DiamondStorageLib.smartLoanStorage();
+        return sls.referrer;
+    }
 
     /**
     * Returns a current balance of the asset held by the smart loan

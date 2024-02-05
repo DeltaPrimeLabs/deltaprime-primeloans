@@ -141,7 +141,7 @@ describe('Smart loan - upgrading', () => {
                     mockSignersCount: 10,
                     dataPoints: MOCK_PRICES,
                 });
-            await wrappedSmartLoansFactory.createLoan();
+            await wrappedSmartLoansFactory.createLoan(ethers.constants.HashZero);
 
             const loan_proxy_address = await smartLoansFactory.getLoanForOwner(borrower.address);
             loan = await ethers.getContractAt("SmartLoanGigaChadInterface", loan_proxy_address, borrower);
@@ -156,8 +156,8 @@ describe('Smart loan - upgrading', () => {
 
 
         it("should check if only one loan per owner is allowed", async () => {
-            await expect(smartLoansFactory.connect(borrower).createLoan()).to.be.revertedWith("Only one loan per owner is allowed");
-            await expect(smartLoansFactory.connect(borrower).createAndFundLoan(toBytes32("AVAX"), 0)).to.be.revertedWith("Only one loan per owner is allowed");
+            await expect(smartLoansFactory.connect(borrower).createLoan(ethers.constants.HashZero)).to.be.revertedWith("Only one loan per owner is allowed");
+            await expect(smartLoansFactory.connect(borrower).createAndFundLoan(toBytes32("AVAX"), 0, ethers.constants.HashZero)).to.be.revertedWith("Only one loan per owner is allowed");
         });
 
         it("should fund a loan", async () => {

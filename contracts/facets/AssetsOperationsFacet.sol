@@ -11,6 +11,7 @@ import "../ReentrancyGuardKeccak.sol";
 import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 import "../lib/SolvencyMethods.sol";
 import "../interfaces/ITokenManager.sol";
+import "../interfaces/ISmartLoanFactory.sol";
 import "../interfaces/IAddressProvider.sol";
 import "../interfaces/IPrimeDex.sol";
 import "../interfaces/facets/IYieldYakRouter.sol";
@@ -163,6 +164,20 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         _amount = Math.min(_amount, pool.getBorrowed(address(this)));
         require(token.balanceOf(address(this)) >= _amount, "There is not enough funds to repay");
 
+        address protocolFeeReceiver = pool.getProtocolFeeReceiver();
+        uint256 referrerFeeAmount = _amount * pool.getReferrerFee(address(this)) / 1e18;
+        uint256 protocolFeeAmount = _amount * pool.getProtocolFee(address(this)) / 1e18;
+        if (protocolFeeAmount > 0) {
+            address(token).safeTransfer(protocolFeeReceiver, protocolFeeAmount);
+
+            emit ProtocolFeePayment(address(this), address(token), protocolFeeAmount);
+        }
+        if (referrerFeeAmount > 0) {
+            _repayReferrerFee(_asset, referrerFeeAmount, protocolFeeReceiver);
+        }
+
+        _amount -= referrerFeeAmount + protocolFeeAmount;
+
         address(token).safeApprove(address(pool), 0);
         address(token).safeApprove(address(pool), _amount);
 
@@ -173,6 +188,82 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         }
 
         emit Repaid(msg.sender, _asset, _amount, block.timestamp);
+    }
+
+    function _repayReferrerFee(bytes32 asset, uint256 amount, address feeReceiver) internal {
+        address referrer = getReferrer();
+        IERC20Metadata token = getERC20TokenInstance(asset, false);
+
+        if (referrer != address(0)) {
+            bytes32 feeAsset;
+            {
+                ISmartLoanFactory smartLoansFactory = ISmartLoanFactory(DeploymentConstants.getSmartLoansFactoryAddress());
+                feeAsset = smartLoansFactory.getFeeAsset(referrer);
+            }
+            if (feeAsset != bytes32(0)) {
+                Pool pool = Pool(DeploymentConstants.getTokenManager().getPoolAddress(feeAsset));
+                uint256 feeAmount;
+                IERC20Metadata feeToken = getERC20TokenInstance(feeAsset, false);
+
+                if (feeAsset != asset) {
+                    uint256[] memory prices;
+                    {
+                        bytes32[] memory priceAssets = new bytes32[](2);
+                        priceAssets[0] = asset;
+                        priceAssets[1] = feeAsset;
+                        prices = getPrices(priceAssets);
+                    }
+
+                    IPrimeDex primeDex = IPrimeDex(DeploymentConstants.getPrimeDex());
+                    IPrimeDex.AssetInfo[] memory assets = new IPrimeDex.AssetInfo[](1);
+                    uint256[] memory amounts = new uint256[](1);
+                    IPrimeDex.AssetInfo memory targetAsset = IPrimeDex.AssetInfo({
+                        symbol: feeAsset,
+                        asset: address(feeToken)
+                    });
+                    {
+                        // IERC20Metadata token = getERC20TokenInstance(asset, false);
+                        assets[0] = IPrimeDex.AssetInfo({
+                            symbol: asset,
+                            asset: address(token)
+                        });
+                    }
+                    amounts[0] = amount;
+                    token.safeApprove(address(primeDex), amount);
+                    feeAmount = primeDex.convert(
+                        assets,
+                        amounts,
+                        prices,
+                        targetAsset,
+                        prices[1]
+                    );
+                } else {
+                    feeAmount = amount;
+                }
+                uint256 repayAmount;
+                {
+                    uint256 borrowed = pool.getBorrowed(referrer);
+                    repayAmount = Math.min(feeAmount, borrowed);
+                }
+
+                // repay referrer's debt
+                address(feeToken).safeApprove(address(pool), 0);
+                address(feeToken).safeApprove(address(pool), repayAmount);
+                pool.repayFor(referrer, repayAmount);
+
+                feeReceiver = pool.getProtocolFeeReceiver();
+                address(feeToken).safeTransfer(feeReceiver, feeAmount - repayAmount);
+            } else {
+                address(token).safeTransfer(feeReceiver, amount);
+
+                emit ProtocolFeePayment(address(this), address(token), amount);
+            }
+        }
+    }
+
+    function getReferrer() internal view returns (address) {
+        DiamondStorageLib.SmartLoanStorage storage sls = DiamondStorageLib.smartLoanStorage();
+        return sls.referrer;
     }
 
     // TODO: Separate manager for unfreezing - not liquidators
@@ -388,4 +479,12 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
     event Repaid(address indexed user, bytes32 indexed asset, uint256 amount, uint256 timestamp);
 
     event DustConverted(address indexed user, uint256 timestamp, address[] dustAssets, uint256[] dustAmounts, address tokenReceived, uint256 amountReceived);
+
+    /**
+     * @dev emitted when fees are paid to the protocol
+     * @param user the address paying the fee
+     * @param token fee token paid by user
+     * @param amount of fee payment
+     **/
+    event ProtocolFeePayment(address indexed user, address indexed token, uint256 amount);
 }

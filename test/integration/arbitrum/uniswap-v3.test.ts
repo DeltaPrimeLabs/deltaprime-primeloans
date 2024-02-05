@@ -155,7 +155,7 @@ describe('Smart loan', () => {
             console.log('should deploy a smart loan')
             await syncTime("https://rpc.vnet.tenderly.co/devnet/arbi-mainnet/90fee7b6-cc68-4b8f-8929-79f16d6dcaee");
 
-            await smartLoansFactory.connect(owner).createLoan();
+            await smartLoansFactory.connect(owner).createLoan(ethers.constants.HashZero);
             console.log(0)
             const loan_proxy_address = await smartLoansFactory.getLoanForOwner(owner.address);
             console.log(1)

@@ -5,4 +5,6 @@ pragma solidity 0.8.17;
 /// @title ISmartLoanFactory
 interface ISmartLoanFactory {
     function canBorrow(address _account) external view returns (bool);
+
+    function getFeeAsset(address _account) external view returns (bytes32);
 }

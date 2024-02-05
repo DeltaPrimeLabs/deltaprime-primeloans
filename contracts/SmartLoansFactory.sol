@@ -31,11 +31,22 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
         _;
     }
 
+    modifier validReferrer(address referrer) {
+        if (referrer == address(0) || loansToOwners[referrer] != address(0)) {
+            _;
+            return;
+        }
+
+        revert("Invalid referrer");
+    }
 
     SmartLoanDiamondBeacon public smartLoanDiamond;
 
     mapping(address => address) public ownersToLoans;
     mapping(address => address) public loansToOwners;
+
+    /// @notice Referrer => Fee Asset
+    mapping(address => bytes32) public feeAssets;
 
     address[] loans;
 
@@ -67,26 +78,42 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
         tokenManager = ITokenManager(_tokenManager);
     }
 
-    function createLoan() public virtual hasNoLoan returns (SmartLoanDiamondBeacon) {
+    function createLoan() public virtual returns (SmartLoanDiamondBeacon) {
+        return _createLoan(address(0));
+    }
+
+    function createLoanWithReferrer(address referrer) public virtual returns (SmartLoanDiamondBeacon) {
+        return _createLoan(referrer);
+    }
+
+    function _createLoan(address referrer) internal hasNoLoan validReferrer(referrer) returns (SmartLoanDiamondBeacon) {
         SmartLoanDiamondProxy beaconProxy = new SmartLoanDiamondProxy(
             payable(address(smartLoanDiamond)),
         // Setting SLFactory as the initial owner and then using .transferOwnership to change the owner to msg.sender
         // It is possible to set msg.sender as the initial owner if our loan-creation flow would change
-            abi.encodeWithSelector(SmartLoanViewFacet.initialize.selector, msg.sender)
+            abi.encodeWithSelector(SmartLoanViewFacet.initialize.selector, msg.sender, referrer)
         );
         SmartLoanDiamondBeacon smartLoan = SmartLoanDiamondBeacon(payable(address(beaconProxy)));
 
         //Update registry and emit event
         updateRegistry(address(smartLoan), msg.sender);
 
-        emit SmartLoanCreated(address(smartLoan), msg.sender, "", 0);
+        emit SmartLoanCreated(address(smartLoan), msg.sender, "", 0, referrer);
         return smartLoan;
     }
 
-    function createAndFundLoan(bytes32 _fundedAsset, uint256 _amount) public virtual hasNoLoan returns (SmartLoanDiamondBeacon) {
+    function createAndFundLoan(bytes32 _fundedAsset, uint256 _amount) public virtual returns (SmartLoanDiamondBeacon) {
+        return _createAndFundLoan(_fundedAsset, _amount, address(0));
+    }
+
+    function createAndFundLoanWithReferrer(bytes32 _fundedAsset, uint256 _amount, address referrer) public virtual returns (SmartLoanDiamondBeacon) {
+        return _createAndFundLoan(_fundedAsset, _amount, referrer);
+    }
+
+    function _createAndFundLoan(bytes32 _fundedAsset, uint256 _amount, address referrer) internal hasNoLoan validReferrer(referrer) returns (SmartLoanDiamondBeacon) {
         address asset = tokenManager.getAssetAddress(_fundedAsset, false);
         SmartLoanDiamondProxy beaconProxy = new SmartLoanDiamondProxy(payable(address(smartLoanDiamond)),
-            abi.encodeWithSelector(SmartLoanViewFacet.initialize.selector, msg.sender)
+            abi.encodeWithSelector(SmartLoanViewFacet.initialize.selector, msg.sender, referrer)
         );
         SmartLoanDiamondBeacon smartLoan = SmartLoanDiamondBeacon(payable(address(beaconProxy)));
 
@@ -101,7 +128,7 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
         (bool success, bytes memory result) = address(smartLoan).call(abi.encodeWithSelector(AssetsOperationsFacet.fund.selector, _fundedAsset, _amount));
         ProxyConnector._prepareReturnValue(success, result);
 
-        emit SmartLoanCreated(address(smartLoan), msg.sender, _fundedAsset, _amount);
+        emit SmartLoanCreated(address(smartLoan), msg.sender, _fundedAsset, _amount, referrer);
 
         return smartLoan;
     }
@@ -110,6 +137,19 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
         ownersToLoans[owner] = loan;
         loansToOwners[loan] = owner;
         loans.push(loan);
+    }
+
+    function setFeeAsset(bytes32 feeAsset) external {
+        address owner = msg.sender;
+        address loan = ownersToLoans[owner];
+        require(loan != address(0), "Don't have a loan");
+        // validate asset
+        tokenManager.getPoolAddress(feeAsset);
+        feeAssets[loan] = feeAsset;
+    }
+
+    function getFeeAsset(address _account) external view returns (bytes32) {
+        return feeAssets[_account];
     }
 
     function canBorrow(address _account) external view override returns (bool) {
@@ -158,6 +198,7 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
      * @param creator account creating a SmartLoanDiamondBeacon
      * @param collateralAsset asset used as initial collateral
      * @param collateralAmount amount of asset used as initial collateral
+     * @param referrer referrer of the user
      **/
-    event SmartLoanCreated(address indexed accountAddress, address indexed creator, bytes32 collateralAsset, uint256 collateralAmount);
+    event SmartLoanCreated(address indexed accountAddress, address indexed creator, bytes32 collateralAsset, uint256 collateralAmount, address indexed referrer);
 }

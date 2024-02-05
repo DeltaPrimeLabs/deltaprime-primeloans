@@ -74,6 +74,8 @@ library DiamondStorageLib {
         // Timestamp since which the account is frozen
         // 0 means an account that is not frozen. Any other value means that the account is frozen
         uint256 frozenSince;
+
+        address referrer;
     }
 
     struct TraderJoeV2Storage {
@@ -158,6 +160,12 @@ library DiamondStorageLib {
         require(sls.frozenSince == 0, "Account is already frozen");
         sls.frozenSince = block.timestamp;
         emit AccountFrozen(freezeToken, block.timestamp);
+    }
+
+    function setReferrer(address _referrer) internal {
+        SmartLoanStorage storage sls = smartLoanStorage();
+        sls.referrer = _referrer;
+        emit ReferrerChanged(_referrer, block.timestamp);
     }
 
     function isAccountFrozen() internal view returns (bool){
@@ -439,4 +447,6 @@ library DiamondStorageLib {
     event OwnedAssetAdded(bytes32 indexed asset, uint256 timestamp);
 
     event OwnedAssetRemoved(bytes32 indexed asset, uint256 timestamp);
+
+    event ReferrerChanged(address indexed referrer, uint256 timestamp);
 }

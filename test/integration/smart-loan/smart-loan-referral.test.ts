@@ -1,14 +1,14 @@
-import {ethers, waffle} from "hardhat";
-import chai, {expect} from "chai";
-import {solidity} from "ethereum-waffle";
-import {parseUnits} from "ethers/lib/utils";
+import { ethers, waffle } from "hardhat";
+import chai, { expect } from "chai";
+import { solidity } from "ethereum-waffle";
+import { parseUnits } from "ethers/lib/utils";
 
 import SmartLoansFactoryArtifact from "../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json";
 import MockTokenManagerArtifact from "../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json";
 import AddressProviderArtifact from '../../../artifacts/contracts/AddressProvider.sol/AddressProvider.json';
 import PrimeDexArtifact from '../../../artifacts/contracts/PrimeDex.sol/PrimeDex.json';
-import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {WrapperBuilder} from "@redstone-finance/evm-connector";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { WrapperBuilder } from "@redstone-finance/evm-connector";
 import TOKEN_ADDRESSES from "../../../common/addresses/avax/token_addresses.json";
 import {
     addMissingTokenContracts,
@@ -25,10 +25,11 @@ import {
     PoolAsset,
     PoolInitializationObject,
     recompileConstantsFile,
+    time,
     toBytes32,
     toWei,
 } from "../../_helpers";
-import {syncTime} from "../../_syncTime";
+import { syncTime } from "../../_syncTime";
 import {
     AddressProvider,
     PrimeDex,
@@ -36,14 +37,15 @@ import {
     SmartLoanGigaChadInterface,
     SmartLoansFactory,
     PangolinIntermediary,
+    Pool,
 } from "../../../typechain";
-import {deployDiamond} from "../../../tools/diamond/deploy-diamond";
-import {getProvider} from "../../../tools/liquidation/utlis";
-import {Contract, BigNumber} from "ethers";
+import { deployDiamond } from "../../../tools/diamond/deploy-diamond";
+import { getProvider } from "../../../tools/liquidation/utlis";
+import { Contract, BigNumber } from "ethers";
 
 chai.use(solidity);
 
-const {deployContract} = waffle;
+const { deployContract } = waffle;
 const pangolinRouterAddress = "0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106";
 
 const args = require("yargs").argv;
@@ -55,17 +57,22 @@ describe("Smart loan", () => {
         await syncTime();
     });
 
-    describe("Convert Dust Balance", () => {
+    describe("Referral Program", () => {
         let smartLoansFactory: SmartLoansFactory,
-            loan: SmartLoanGigaChadInterface,
+            referrerLoan: SmartLoanGigaChadInterface,
+            refereeLoan: SmartLoanGigaChadInterface,
             exchange: PangolinIntermediary,
             primeDex: PrimeDex,
-            wrappedLoan: any,
-            nonOwnerWrappedLoan: any,
+            wrappedLoanReferrer: any,
+            wrappedLoanReferee: any,
+            tokenManager: MockTokenManager,
             dynamicNameMapping: NameMapping = {},
             owner: SignerWithAddress,
+            referrer: SignerWithAddress,
+            referee: SignerWithAddress,
             nonOwner: SignerWithAddress,
             depositor: SignerWithAddress,
+            feeReceiver: SignerWithAddress,
             poolContracts: Map<string, Contract> = new Map(),
             tokenContracts: Map<string, Contract> = new Map(),
             lendingPools: Array<PoolAsset> = [],
@@ -76,11 +83,13 @@ describe("Smart loan", () => {
         before(
             "deploy factory, wrapped native token pool and USD pool",
             async () => {
-                [owner, nonOwner, depositor] = await getFixedGasSigners(10000000);
+                [owner, referrer, referee, nonOwner, depositor, feeReceiver] = await getFixedGasSigners(10000000);
 
                 let assetsList = ["AVAX", "USDC", "USDT", "ETH"];
                 let poolNameAirdropList: Array<PoolInitializationObject> = [
-                    {name: "AVAX", airdropList: [depositor]},
+                    { name: "AVAX", airdropList: [depositor] },
+                    { name: "USDC", airdropList: [] },
+                    { name: "USDT", airdropList: [] },
                 ];
 
                 smartLoansFactory = (await deployContract(
@@ -110,7 +119,7 @@ describe("Smart loan", () => {
 
                 let diamondAddress = await deployDiamond();
 
-                let tokenManager = (await deployContract(
+                tokenManager = (await deployContract(
                     owner,
                     MockTokenManagerArtifact,
                     []
@@ -168,7 +177,7 @@ describe("Smart loan", () => {
                     smartLoansFactory.address,
                     'lib'
                 );
-    
+
                 await deployAllFacets(diamondAddress);
             }
         );
@@ -211,57 +220,95 @@ describe("Smart loan", () => {
         }
 
         it("should deploy a smart loan", async () => {
-            await smartLoansFactory.connect(owner).createLoan(ethers.constants.HashZero);
+            await smartLoansFactory.connect(referrer).createLoan();
+            await smartLoansFactory.connect(referrer).setFeeAsset(toBytes32("USDT"));
 
-            const loan_proxy_address = await smartLoansFactory.getLoanForOwner(
-                owner.address
+            const referrer_loan_proxy_address = await smartLoansFactory.getLoanForOwner(
+                referrer.address
             );
-            loan = await ethers.getContractAt(
+            referrerLoan = await ethers.getContractAt(
                 "SmartLoanGigaChadInterface",
-                loan_proxy_address,
-                owner
+                referrer_loan_proxy_address,
+                referrer
             );
 
-            wrappedLoan = WrapperBuilder
+            await smartLoansFactory.connect(referee).createLoanWithReferrer(referrerLoan.address);
+
+            const referee_loan_proxy_address = await smartLoansFactory.getLoanForOwner(
+                referee.address
+            );
+            refereeLoan = await ethers.getContractAt(
+                "SmartLoanGigaChadInterface",
+                referee_loan_proxy_address,
+                referee
+            );
+
+            wrappedLoanReferrer = WrapperBuilder
                 // @ts-ignore
-                .wrap(loan)
+                .wrap(referrerLoan)
+                .usingSimpleNumericMock({
+                    mockSignersCount: 10,
+                    dataPoints: MOCK_PRICES,
+                });
+            wrappedLoanReferee = WrapperBuilder
+                // @ts-ignore
+                .wrap(refereeLoan)
                 .usingSimpleNumericMock({
                     mockSignersCount: 10,
                     dataPoints: MOCK_PRICES,
                 });
 
-            nonOwnerWrappedLoan = WrapperBuilder
-                // @ts-ignore
-                .wrap(loan.connect(nonOwner))
-                .usingSimpleNumericMock({
-                    mockSignersCount: 10,
-                    dataPoints: MOCK_PRICES,
-                });
-
-            dynamicNameMapping[wrappedLoan.address] = 'WrappedLoan';
+            dynamicNameMapping[wrappedLoanReferrer.address] = 'ReferrerWrappedLoan';
+            dynamicNameMapping[wrappedLoanReferee.address] = 'RefereeWrappedLoan';
             dynamicNameMapping[primeDex.address] = 'PrimeDex';
+            dynamicNameMapping[feeReceiver.address] = 'FeeReceiver';
+
+            const usdcPool = poolContracts.get("USDC")!;
+
+            await usdcPool.setReferrerFee(toWei("0.05")); // 5%
+            await usdcPool.setReferrerProtocolFee(toWei("0.01")); // 1%
+            await usdcPool.setNoReferrerProtocolFee(toWei("0.08")); // 8%
+            await usdcPool.setProtocolFeeReceiver(feeReceiver.address);
+
+            const usdtPool = poolContracts.get("USDT")!;
+
+            await usdtPool.setReferrerFee(toWei("0.05")); // 5%
+            await usdtPool.setReferrerProtocolFee(toWei("0.01")); // 1%
+            await usdtPool.setNoReferrerProtocolFee(toWei("0.08")); // 8%
+            await usdtPool.setProtocolFeeReceiver(feeReceiver.address);
         });
 
-        it("should fund and transfer target asset to converter contract", async () => {
-            // Fund PrimeAccount with 300 WAVAX
+        it("should fund, borrow and transfer target asset to converter contract", async () => {
+            // Fund PrimeAccounts with 300 WAVAX
             await tokenContracts
                 .get("AVAX")!
-                .connect(owner)
-                .deposit({value: toWei("300")});
+                .connect(referrer)
+                .deposit({ value: toWei("300") });
             await tokenContracts
                 .get("AVAX")!
-                .connect(owner)
-                .approve(wrappedLoan.address, toWei("300"));
-            await wrappedLoan.fund(toBytes32("AVAX"), toWei("300"));
+                .connect(referrer)
+                .approve(wrappedLoanReferrer.address, toWei("300"));
+            await wrappedLoanReferrer.fund(toBytes32("AVAX"), toWei("300"));
+
+            await tokenContracts
+                .get("AVAX")!
+                .connect(referee)
+                .deposit({ value: toWei("300") });
+            await tokenContracts
+                .get("AVAX")!
+                .connect(referee)
+                .approve(wrappedLoanReferee.address, toWei("300"));
+            await wrappedLoanReferee.fund(toBytes32("AVAX"), toWei("300"));
             // =======
 
 
-            const usdcAmount = parseUnits("600", BigNumber.from("6"));
-            const amountSwapped = toWei("50");
+            const usdcAmount = parseUnits("6000", BigNumber.from("6"));
+            const usdtAmount = parseUnits("6000", BigNumber.from("6"));
+            const amountSwapped = toWei("500");
             await tokenContracts
                 .get("AVAX")!
                 .connect(depositor)
-                .deposit({value: amountSwapped});
+                .deposit({ value: amountSwapped.mul(3) });
             await tokenContracts
                 .get("AVAX")!
                 .connect(depositor)
@@ -282,45 +329,117 @@ describe("Smart loan", () => {
             await tokenContracts
                 .get("USDC")!
                 .connect(depositor)
-                .transfer(primeDex.address, usdcAmount);
+                .transfer(primeDex.address, usdcAmount.div(2));
 
-            await wrappedLoan.swapPangolin(toBytes32("AVAX"), toBytes32("ETH"), toWei("0.3"), 0);
-            await wrappedLoan.swapPangolin(toBytes32("AVAX"), toBytes32("USDT"), toWei("0.35"), 0);
-            await wrappedLoan.swapPangolin(toBytes32("AVAX"), toBytes32("USDC"), toWei("0.38"), 0);
+            await tokenContracts
+                .get("AVAX")!
+                .connect(depositor)
+                .approve(exchange.address, amountSwapped);
+            await tokenContracts
+                .get("AVAX")!
+                .connect(depositor)
+                .transfer(exchange.address, amountSwapped);
+            await exchange
+                .connect(depositor)
+                .swap(
+                    TOKEN_ADDRESSES["AVAX"],
+                    TOKEN_ADDRESSES["USDT"],
+                    amountSwapped,
+                    usdtAmount
+                );
+            await tokenContracts
+                .get("USDT")!
+                .connect(depositor)
+                .transfer(primeDex.address, usdtAmount.div(2));
+
+            const usdcPool = poolContracts.get("USDC")!;
+            await tokenContracts
+                .get("USDC")!
+                .connect(depositor)
+                .approve(usdcPool.address, usdcAmount.div(2));
+            await usdcPool.connect(depositor).deposit(usdcAmount.div(2));
+            const usdtPool = poolContracts.get("USDT")!;
+            await tokenContracts
+                .get("USDT")!
+                .connect(depositor)
+                .approve(usdtPool.address, usdtAmount.div(2));
+            await usdtPool.connect(depositor).deposit(usdtAmount.div(2));
+
+            await wrappedLoanReferrer.swapPangolin(toBytes32("AVAX"), toBytes32("USDT"), toWei("10"), 0);
+            await wrappedLoanReferee.swapPangolin(toBytes32("AVAX"), toBytes32("USDC"), toWei("10"), 0);
+
+            await wrappedLoanReferrer.borrow(toBytes32("USDT"), parseUnits("10", BigNumber.from("6")));
+            await wrappedLoanReferee.borrow(toBytes32("USDC"), parseUnits("500", BigNumber.from("6")));
         });
 
-        it("should fail to convert dust as a non-owner", async () => {
+        it("should fail to create loan using invalid referrer", async () => {
             await expect(
-                nonOwnerWrappedLoan.convertDustAssets()
-            ).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+                smartLoansFactory.connect(nonOwner).createLoanWithReferrer(owner.address)
+            ).to.be.revertedWith("Invalid referrer");
         });
 
-        it("should convert dust balances", async () => {
-            let initialTotalValue = await wrappedLoan.getTotalValue();
-            let initialHR = await wrappedLoan.getHealthRatio();
-            let initialTWV = await wrappedLoan.getThresholdWeightedValue();
+        it("should repay and pay referral fee", async () => {
+            await time.increase(time.duration.days(30));
+
+            const usdcInitialBorrowedReferee = ethers.utils.formatUnits(
+                await poolContracts.get("USDC")!.getBorrowed(wrappedLoanReferee.address),
+                6
+            );
+            const usdtInitialBorrowedReferrer = ethers.utils.formatUnits(
+                await poolContracts.get("USDT")!.getBorrowed(wrappedLoanReferrer.address),
+                6
+            );
+            const usdtInitialBalanceTreasury = ethers.utils.formatUnits(
+                await tokenContracts.get("USDT")!.balanceOf(feeReceiver.address),
+                6
+            );
+            const usdcInitialBalanceTreasury = ethers.utils.formatUnits(
+                await tokenContracts.get("USDC")!.balanceOf(feeReceiver.address),
+                6
+            );
 
             // @ts-ignore
             await logERC20Balances(
-                ['USDC', 'USDT', 'AVAX', 'ETH'],
-                [wrappedLoan.address, primeDex.address],
+                ['USDC', 'USDT', 'AVAX'],
+                [wrappedLoanReferrer.address, wrappedLoanReferee.address, primeDex.address, feeReceiver.address],
                 TOKEN_ADDRESSES,
                 dynamicNameMapping
             );
 
-            await wrappedLoan.convertDustAssets();
+            const repayAmount = parseUnits("500", BigNumber.from("6"));
+            await wrappedLoanReferee.repay(toBytes32("USDC"), repayAmount);
 
             // @ts-ignore
             await logERC20Balances(
-                ['USDC', 'USDT', 'AVAX', 'ETH'],
-                [wrappedLoan.address, primeDex.address],
+                ['USDC', 'USDT', 'AVAX'],
+                [wrappedLoanReferrer.address, wrappedLoanReferee.address, primeDex.address, feeReceiver.address],
                 TOKEN_ADDRESSES,
                 dynamicNameMapping
             );
 
-            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 0.01);
-            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.eq(fromWei(initialHR));
-            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 0.01);
+            const usdcBorrowedReferee = ethers.utils.formatUnits(
+                await poolContracts.get("USDC")!.getBorrowed(wrappedLoanReferee.address),
+                6
+            );
+            const usdtBorrowedReferrer = ethers.utils.formatUnits(
+                await poolContracts.get("USDT")!.getBorrowed(wrappedLoanReferrer.address),
+                6
+            );
+            const usdtBalanceTreasury = ethers.utils.formatUnits(
+                await tokenContracts.get("USDT")!.balanceOf(feeReceiver.address),
+                6
+            );
+            const usdcBalanceTreasury = ethers.utils.formatUnits(
+                await tokenContracts.get("USDC")!.balanceOf(feeReceiver.address),
+                6
+            );
+
+            const referrerFee = parseUnits("25", BigNumber.from("6")); // 5% of 500
+            const referrerProtocolFee = parseUnits("5", BigNumber.from("6")); // 1% of 500
+            expect(usdcInitialBorrowedReferee - usdcBorrowedReferee).to.be.closeTo(parseFloat(ethers.utils.formatUnits(repayAmount.sub(referrerFee.add(referrerProtocolFee)), 6)), 0.001);
+            expect(parseFloat(usdtBorrowedReferrer)).to.be.eq(0);
+            expect(usdtBalanceTreasury - usdtInitialBalanceTreasury).to.be.closeTo(25 - usdtInitialBorrowedReferrer, 0.2);
+            expect(usdcBalanceTreasury - usdcInitialBalanceTreasury).to.be.eq(5);
         });
     });
 });

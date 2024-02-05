@@ -135,13 +135,13 @@ describe('Test deployed contracts on Avalanche', () => {
             //administrative functions
 
             //initialize
-            await expect(smartLoansFactory.connect(MAINNET_DEPLOYER).initialize(randomContractAddress)).to.be.revertedWith('Initializable: contract is already initialized')
-            await expect(smartLoansFactory.connect(USER_1).initialize(randomContractAddress)).to.be.revertedWith('Initializable: contract is already initialized')
+            await expect(smartLoansFactory.connect(MAINNET_DEPLOYER).initialize(randomContractAddress, randomContractAddress)).to.be.revertedWith('Initializable: contract is already initialized')
+            await expect(smartLoansFactory.connect(USER_1).initialize(randomContractAddress, randomContractAddress)).to.be.revertedWith('Initializable: contract is already initialized')
 
             //createLoan
             let loansBeforeCreate = await smartLoansFactory.getAllLoans();
 
-            await smartLoansFactory.connect(USER_1).createLoan();
+            await smartLoansFactory.connect(USER_1).createLoan(ethers.constants.HashZero);
 
             let loansAfterCreate = await smartLoansFactory.getAllLoans();
             let newLoan = await smartLoansFactory.getLoanForOwner(USER_1.address);
@@ -152,9 +152,9 @@ describe('Test deployed contracts on Avalanche', () => {
             expect(newLoan).be.equal(loansAfterCreate[loansAfterCreate.length - 1]);
             expect(await smartLoansFactory.getOwnerOfLoan(newLoan)).be.equal(USER_1.address);
 
-            await expect(smartLoansFactory.connect(USER_1).createLoan()).to.be.revertedWith('Only one loan per owner is allowed');
+            await expect(smartLoansFactory.connect(USER_1).createLoan(ethers.constants.HashZero)).to.be.revertedWith('Only one loan per owner is allowed');
             await expect(smartLoansFactory.connect(USER_1).createAndFundLoan(
-                toBytes32('USDC'), parseUnits('1', await usdcTokenContract.decimals()))
+                toBytes32('USDC'), parseUnits('1', await usdcTokenContract.decimals())), ethers.constants.HashZero
             ).to.be.revertedWith('Only one loan per owner is allowed');
 
             await usdcTokenContract.connect(USER_2).approve(smartLoansFactory.address, parseUnits('1', await usdcTokenContract.decimals()));
@@ -165,7 +165,7 @@ describe('Test deployed contracts on Avalanche', () => {
             await usdcTokenContract.connect(USER_2).approve(smartLoansFactory.address, parseUnits('1', await usdcTokenContract.decimals()));
 
             await smartLoansFactory.connect(USER_2).createAndFundLoan(
-                toBytes32('USDC'), parseUnits('1', await usdcTokenContract.decimals()));
+                toBytes32('USDC'), parseUnits('1', await usdcTokenContract.decimals()), ethers.constants.HashZero);
 
             loansAfterCreate = await smartLoansFactory.getAllLoans();
             newLoan = await smartLoansFactory.getLoanForOwner(USER_2.address);
@@ -438,7 +438,7 @@ describe('Test deployed contracts on Avalanche', () => {
 
         //test DEXes
 
-        await smartLoansFactory.connect(USER_3).createLoan();
+        await smartLoansFactory.connect(USER_3).createLoan(ethers.constants.HashZero);
 
         let newLoan = await smartLoansFactory.getLoanForOwner(USER_3.address);
         loan3 = new ethers.Contract(newLoan, SMART_LOAN_GIGACHAD_INTERFACE.abi, provider.getSigner()) as SmartLoanGigaChadInterface;
@@ -455,7 +455,7 @@ describe('Test deployed contracts on Avalanche', () => {
             USER_5
         );
 
-        await smartLoansFactory.connect(USER_4).createLoan();
+        await smartLoansFactory.connect(USER_4).createLoan(ethers.constants.HashZero);
         newLoan = await smartLoansFactory.getLoanForOwner(USER_4.address);
         loan4 = new ethers.Contract(newLoan, SMART_LOAN_GIGACHAD_INTERFACE.abi, provider.getSigner()) as SmartLoanGigaChadInterface;
 
@@ -472,7 +472,7 @@ describe('Test deployed contracts on Avalanche', () => {
         );
 
 
-        await smartLoansFactory.connect(USER_6).createLoan();
+        await smartLoansFactory.connect(USER_6).createLoan(ethers.constants.HashZero);
         newLoan = await smartLoansFactory.getLoanForOwner(USER_6.address);
         loan4 = new ethers.Contract(newLoan, SMART_LOAN_GIGACHAD_INTERFACE.abi, provider.getSigner()) as SmartLoanGigaChadInterface;
 

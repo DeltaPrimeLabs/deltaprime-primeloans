@@ -32,6 +32,11 @@ contract DoubleBorrowExecInSingleTx is ProxyConnector {
         factory.createLoan();
     }
 
+    function createLoanWithrReferrer(address factoryAddress, address referrer) public {
+        SmartLoansFactory factory = SmartLoansFactory(factoryAddress);
+        factory.createLoanWithReferrer(referrer);
+    }
+
     function execute(address smartLoanAddress) public {
         IERC20 token = IERC20(WAVAX_ADDRESS);
         token.approve(smartLoanAddress, 1 ether);

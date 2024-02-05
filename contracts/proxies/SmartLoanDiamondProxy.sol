@@ -36,8 +36,8 @@ contract SmartLoanDiamondProxy is BeaconProxyVirtual {
         _setBeacon(newBeacon);
         emit BeaconUpgraded(newBeacon);
         if (data.length > 0 || forceCall) {
-            // 0xc4d66de8 = initialize(address owner)
-            Address.functionDelegateCall(IDiamondBeacon(newBeacon).implementation(0xc4d66de8), data);
+            // 0x485cc955 = initialize(address owner, address referrer)
+            Address.functionDelegateCall(IDiamondBeacon(newBeacon).implementation(0x485cc955), data);
         }
     }
 }
