@@ -1,17 +1,17 @@
 <template>
   <div class="protected-by-bar-component">
     <div class="text">Protected by</div>
-    <div class="logo peck-shield"></div>
+    <a class="logo peck-shield" href="https://peckshield.com/" target="_blank"></a>
     <div class="divider"></div>
-    <div class="logo chainalysis"></div>
+    <a class="logo chainalysis" href="https://www.chainalysis.com/" target="_blank"></a>
     <div class="divider"></div>
-    <div class="logo fc-shield"></div>
+    <a class="logo fc-shield" href="https://fcshield.com/" target="_blank"></a>
     <div class="divider"></div>
-    <div class="logo hexagate"></div>
+    <a class="logo hexagate" href="https://www.hexagate.com/" target="_blank"></a>
     <div class="divider"></div>
-    <div class="logo atomica"></div>
+    <a class="logo atomica" href="https://www.atomica.org/" target="_blank"></a>
     <div class="divider"></div>
-    <div class="logo salus"></div>
+    <a class="logo salus" href="https://salusec.io/" target="_blank"></a>
   </div>
 </template>
 
