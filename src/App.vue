@@ -65,6 +65,7 @@
       </div>
       <router-view></router-view>
       <ProgressBar></ProgressBar>
+      <ProtectedByBar></ProtectedByBar>
     </div>
   </div>
 
@@ -85,9 +86,11 @@ import ProgressBar from './components/ProgressBar';
 import ThemeToggle from "./components/ThemeToggle.vue";
 import {getCountdownString} from "./utils/calculate";
 import AppToggle from "./components/AppToggle.vue";
+import ProtectedByBar from "./components/ProtectedByBar.vue";
 
 export default {
   components: {
+    ProtectedByBar,
     AppToggle,
     ThemeToggle,
     ProgressBar,
