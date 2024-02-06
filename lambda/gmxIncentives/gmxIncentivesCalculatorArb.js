@@ -30,7 +30,7 @@ const gmxIncentivesCalculatorArb = async (event) => {
   let loanAddresses = await factoryContract.getAllLoans();
   const totalLoans = loanAddresses.length;
 
-  const incentivesPerInterval = 10000 / (60 * 60 * 24 * 7) * (60 * 10);
+  const incentivesPerInterval = 5000 / (60 * 60 * 24 * 7) * (60 * 10);
   const batchSize = 50;
 
   const loanQualifications = {};
