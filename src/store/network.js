@@ -58,6 +58,7 @@ export default {
         const mainAccount = accounts[0];
         commit('setAccount', mainAccount);
         rootState.serviceRegistry.accountService.emitAccountLoaded(mainAccount);
+        window.walletAddress = mainAccount;
       } else {
         Vue.$toast.error("No accounts available");
       }

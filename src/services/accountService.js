@@ -9,6 +9,7 @@ export default class accountService {
   }
 
   emitAccountLoaded(account) {
+    console.log(account);
     this.accountLoaded$.next(account);
   }
 }

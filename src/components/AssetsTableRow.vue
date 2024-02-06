@@ -166,6 +166,7 @@ import axios from 'axios';
 import TradingViewChart from "./TradingViewChart.vue";
 import Toggle from "./Toggle.vue";
 import {BigNumber} from "ethers";
+import ReferralModal from "./ReferralModal.vue";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -253,6 +254,7 @@ export default {
       'healthService',
       'stakedExternalUpdateService',
       'farmService',
+      'referralService'
     ]),
 
     loanValue() {
@@ -714,7 +716,10 @@ export default {
     },
 
     async openAddFromWalletModal() {
-      const modalInstance = this.openModal(AddFromWalletModal);
+      // this.referralService.getToken();
+      // this.referralService.createReferralNick('LeChiffre', this.smartLoanContract.address, window.walletAddress);
+      await this.referralService.createReferralCode(this.provider, this.account, 'xyz123');
+      const modalInstance = this.openModal(ReferralModal);
       this.updateBalance().then(() => {
         modalInstance.setWalletNativeTokenBalance(this.accountBalance);
         this.$forceUpdate();

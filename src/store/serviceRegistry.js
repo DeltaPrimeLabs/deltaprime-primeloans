@@ -21,6 +21,7 @@ import WalletAssetBalancesService from '../services/walletAssetBalancesService';
 import LifiService from '../services/lifiService';
 import NotifiService from '../services/notifiService';
 import TraderJoeService from '../services/traderJoeService';
+import ReferralService from "../services/referralService";
 
 export default {
   namespaced: true,
@@ -47,6 +48,7 @@ export default {
     walletAssetBalancesService: new WalletAssetBalancesService(),
     lifiService: new LifiService(),
     notifiService: new NotifiService(),
-    traderJoeService: new TraderJoeService()
+    traderJoeService: new TraderJoeService(),
+    referralService: new ReferralService()
   },
 };
