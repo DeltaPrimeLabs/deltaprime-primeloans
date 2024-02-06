@@ -165,18 +165,16 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         emit Repaid(msg.sender, _asset, _amount, block.timestamp);
     }
 
-    function withdrawUnsupportedTokens() external onlyOwner remainsSolvent nonReentrant {
-        address BAL = address(0xE15bCB9E0EA69e6aB9FA080c4c4A5632896298C3);
-        uint256 balance = IERC20(BAL).balanceOf(address(this));
-        if (balance > 0) {
-            BAL.safeTransfer(msg.sender, balance);
-        }
+    function withdrawUnsupportedToken(address token) external nonReentrant onlyOwner {
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
-        address GGP = address(0x69260B9483F9871ca57f81A90D91E2F96c2Cd11d);
-        balance = IERC20(GGP).balanceOf(address(this));
-        if (balance > 0) {
-            GGP.safeTransfer(msg.sender, balance);
-        }
+        // _NOT_SUPPORTED = 0
+        require(tokenManager.tokenToStatus(token) == 0, "token supported");
+        require(tokenManager.debtCoverage(token) == 0, "token debt coverage != 0");
+
+        uint256 balance = IERC20(token).balanceOf(address(this));
+        require(balance > 0, "nothing to withdraw");
+        token.safeTransfer(msg.sender, balance);
     }
 
     // TODO: Separate manager for unfreezing - not liquidators
