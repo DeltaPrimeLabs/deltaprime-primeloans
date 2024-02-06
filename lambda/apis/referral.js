@@ -10,7 +10,7 @@ const getAccountByReferralApi = (event, context, callback) => {
   const params = {
     TableName: process.env.REFERRAL_TABLE,
     Key: {
-      id: event.pathParameters.code
+      id: event.pathParameters.id
     }
   };
 
