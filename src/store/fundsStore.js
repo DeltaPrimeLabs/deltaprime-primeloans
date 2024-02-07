@@ -338,6 +338,8 @@ export default {
             apys[apy.id] = {...apy};
           });
 
+          console.log(apys);
+
           commit('setApys', apys);
         } catch (e) {
           window.disableExternalData = true;
@@ -1299,11 +1301,10 @@ export default {
 
           let leveragedGm = gmWorth - collateral > 0 ? gmWorth - collateral : 0;
 
-          if (window.chain === 'arbitrum') {
+          if (window.arbitrumChain) {
             yearlyLpInterest += leveragedGm * state.apys['GM_BOOST'].arbApy * state.assets['ARB'].price;
           } else {
-            // TODO uncomment when launching GM Incentives on Avalanche
-            // yearlyLpInterest += leveragedGm * state.apys['GM_BOOST'].arbApy;
+            yearlyLpInterest += leveragedGm * state.apys['GM_BOOST'].avaxApy * state.assets['AVAX'].price;
           }
         }
 
@@ -2624,6 +2625,9 @@ export default {
 
       setTimeout(async () => {
         await dispatch('updateFunds');
+        setTimeout(async () => {
+          await dispatch('updateFunds');
+        }, config.gmxV2RefreshDelay)
       }, config.refreshDelay);
     },
 
@@ -2681,6 +2685,9 @@ export default {
 
       setTimeout(async () => {
         await dispatch('updateFunds');
+        setTimeout(async () => {
+          await dispatch('updateFunds');
+        }, config.gmxV2RefreshDelay)
       }, config.refreshDelay);
     },
 
