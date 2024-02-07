@@ -636,7 +636,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         "ParaSwapFacet",
         diamondAddress,
         [
-            'paraSwap',
+            'paraSwapV2',
         ],
         hardhatConfig
     );
