@@ -131,8 +131,8 @@ export default {
     ]),
     filteredLpTokens() {
       return Object.values(this.lpTokens).filter(token =>
-          (this.selectedLpTokens.includes(token.primary) || this.selectedLpTokens.includes(token.secondary))
-          && this.selectedDexes.includes(token.dex)
+        (this.selectedLpTokens.includes(token.primary) || this.selectedLpTokens.includes(token.secondary))
+        && this.selectedDexes.includes(token.dex)
       );
     },
     hasGmIncentives() {
@@ -310,11 +310,11 @@ export default {
       //TODO: we have to make sure somehow that it's called in a right moment ->when assets have prices already
       if (this.assets) {
         Object.keys(this.lpTokens).forEach(
-            key => {
-              const lpToken = this.lpTokens[key];
-              lpToken.firstPrice = this.assets[lpToken.primary].price;
-              lpToken.secondPrice = this.assets[lpToken.secondary].price;
-            }
+          key => {
+            const lpToken = this.lpTokens[key];
+            lpToken.firstPrice = this.assets[lpToken.primary].price;
+            lpToken.secondPrice = this.assets[lpToken.secondary].price;
+          }
         );
       }
     },
@@ -323,13 +323,13 @@ export default {
       const data = await (await fetch('https://cavsise1n4.execute-api.us-east-1.amazonaws.com/gm-open-interests')).json();
       const newOpenInterestData = {}
       Object.keys(data[0])
-          .filter(key => key !== 'id')
-          .forEach(tokenName => {
-            newOpenInterestData[tokenName] = data.map(dataEntry => ({
-              y: dataEntry[tokenName] * 100,
-              x: Number(dataEntry.id),
-            }))
-          })
+        .filter(key => key !== 'id')
+        .forEach(tokenName => {
+          newOpenInterestData[tokenName] = data.map(dataEntry => ({
+            y: dataEntry[tokenName] * 100,
+            x: Number(dataEntry.id),
+          }))
+        })
       this.openInterestData = newOpenInterestData;
     },
 
@@ -616,7 +616,7 @@ export default {
       const token = window.arbitrumChain ? 'ARB' : 'AVAX';
       console.log(token);
       this.gmIncentivesTableHeaderConfig = {
-        gridTemplateColumns: '160px 180px 160px repeat(3, 1fr) 130px 20px',
+        gridTemplateColumns: window.chain === 'avalanche' ? '160px repeat(5, 1fr) 50px' : '160px 180px 160px repeat(3, 1fr) 130px 20px',
         cells: [
           {
             label: 'Total eligible TVL',
@@ -660,15 +660,17 @@ export default {
             id: 'TREND',
             tooltip: `The total amount of ${token} you have collected this week. Collected ${token} will be distributed weekly. This number is not included in your collateral value, until the ${token} is distributed to all Prime Accounts. This number resets to 0 after the collected ${token} is added to your assets on Monday.`
           },
-          {
-            label: 'Tickets',
-            sortable: false,
-            class: 'trend-level',
-            id: 'TREND',
-            tooltip: `The raffle-tickets you accumulated. Mint more GM to boost your ticket-yield.`
-          },
         ]
       };
+      if (window.chain === 'arbitrum') {
+        this.gmIncentivesTableHeaderConfig.cells.push({
+          label: 'Tickets',
+          sortable: false,
+          class: 'trend-level',
+          id: 'TREND',
+          tooltip: `The raffle-tickets you accumulated. Mint more GM to boost your ticket-yield.`
+        });
+      }
     },
     watchAssetPricesUpdate() {
       this.priceService.observeRefreshPrices().subscribe((updateEvent) => {

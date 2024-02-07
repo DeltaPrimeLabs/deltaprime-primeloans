@@ -31,7 +31,7 @@
             :tooltip="{content: 'Your account received excessive ARB rewards during the last distribution. Your ARB amount can be temporarily negative.', classes: 'info-tooltip'}"
         ></InfoIcon>
       </div>
-      <div class="table__cell table__cell--double-value points-received">
+      <div v-if="showPoints" class="table__cell table__cell--double-value points-received">
         <div class="points-received-value" v-if="receivedPoints != null">
           <span>{{ receivedPoints ? receivedPoints.toFixed(0) : 0 }}&nbsp;<b class="multiplier">{{ `(x${(multiplier * 3).toFixed(0)})` }}</b></span>
           <img src="src/assets/icons/icon_circle_star.svg" class="point-star-icon" />
@@ -55,18 +55,18 @@ import SmallChartBeta from './SmallChartBeta';
 import config from '../config';
 import {mapActions, mapGetters, mapState} from 'vuex';
 import redstone from "redstone-api";
-import GM_DISTRIBUTED_ARBITRUM from '../data/arbitrum/GM_EPOCH_6.json';
-import GM_DISTRIBUTED_AVALANCHE from '../data/avalanche/GM_EPOCH_0.json';
-import {getData, wrapContract} from "../utils/blockchain";
-import DeltaIcon from "./DeltaIcon.vue";
-import BarGaugeBeta from "./BarGaugeBeta.vue";
-import {fetchGmTransactions} from '../utils/graph';
-import {formatUnits, fromBytes32} from '../utils/calculate';
-import InfoIcon from "./InfoIcon.vue";
-
 const EthDater = require("ethereum-block-by-date");
 
 const ethers = require('ethers');
+import GM_DISTRIBUTED_ARBITRUM from '../data/arbitrum/GM_EPOCH_6.json';
+import GM_DISTRIBUTED_AVALANCHE from '../data/avalanche/GM_EPOCH_0.json';
+import {wrapContract} from "../utils/blockchain";
+import DeltaIcon from "./DeltaIcon.vue";
+import BarGaugeBeta from "./BarGaugeBeta.vue";
+import { fetchGmTransactions } from '../utils/graph';
+import { fromWei, formatUnits, fromBytes32 } from '../utils/calculate';
+import { getData } from '../utils/blockchain';
+import InfoIcon from "./InfoIcon.vue";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -90,6 +90,18 @@ export default {
     gmTvlFromApi: 0
   },
 
+  data() {
+    return {
+      points: 0,
+      collectedArb: 0,
+      gmTvlFromApi: 0,
+      receivedPoints: null,
+      multiplier: null,
+      milestone: null,
+      showPoints: null,
+    };
+  },
+
   async mounted() {
     this.setGmTvlFromApi();
     this.$forceUpdate();
@@ -99,17 +111,7 @@ export default {
     this.setGmTvlFromApi();
     this.$forceUpdate();
     this.setupMilestones();
-  },
-
-  data() {
-    return {
-      points: 0,
-      collectedArb: 0,
-      gmTvlFromApi: 0,
-      receivedPoints: null,
-      multiplier: null,
-      milestone: null
-    };
+    this.showPoints = window.chain === 'arbitrum'
   },
 
   computed: {
@@ -220,6 +222,9 @@ export default {
       );
     },
     async calculatePoints() {
+      if (window.chain === 'avalanche') {
+        return;
+      }
 
       const timestamps = [
         1701428400,// Dec 1 12pm CET
@@ -345,7 +350,8 @@ export default {
       this.multiplier = timestampToMultiplier[Math.max(...(timestamps.filter(timestamp => timestamp <= now)))];
     },
     gridTemplateColumns() {
-      return {gridTemplateColumns: '160px 180px 160px repeat(3, 1fr) 130px 20px'};
+      const template = window.chain === 'avalanche' ? {gridTemplateColumns: '160px repeat(5, 1fr) 50px'} : {gridTemplateColumns: '160px 180px 160px repeat(3, 1fr) 130px 20px'};
+      return template;
     }
   },
 };
