@@ -55,18 +55,18 @@ import SmallChartBeta from './SmallChartBeta';
 import config from '../config';
 import {mapActions, mapGetters, mapState} from 'vuex';
 import redstone from "redstone-api";
+import GM_DISTRIBUTED_ARBITRUM from '../data/arbitrum/GM_EPOCH_6.json';
+import GM_DISTRIBUTED_AVALANCHE from '../data/avalanche/GM_EPOCH_0.json';
+import {getData, wrapContract} from "../utils/blockchain";
+import DeltaIcon from "./DeltaIcon.vue";
+import BarGaugeBeta from "./BarGaugeBeta.vue";
+import {fetchGmTransactions} from '../utils/graph';
+import {formatUnits, fromBytes32} from '../utils/calculate';
+import InfoIcon from "./InfoIcon.vue";
+
 const EthDater = require("ethereum-block-by-date");
 
 const ethers = require('ethers');
-import GM_DISTRIBUTED_ARBITRUM from '../data/arbitrum/GM_EPOCH_6.json';
-import GM_DISTRIBUTED_AVALANCHE from '../data/avalanche/GM_EPOCH_0.json';
-import {wrapContract} from "../utils/blockchain";
-import DeltaIcon from "./DeltaIcon.vue";
-import BarGaugeBeta from "./BarGaugeBeta.vue";
-import { fetchGmTransactions } from '../utils/graph';
-import { fromWei, formatUnits, fromBytes32 } from '../utils/calculate';
-import { getData } from '../utils/blockchain';
-import InfoIcon from "./InfoIcon.vue";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -345,8 +345,7 @@ export default {
       this.multiplier = timestampToMultiplier[Math.max(...(timestamps.filter(timestamp => timestamp <= now)))];
     },
     gridTemplateColumns() {
-      const res = window.chain == 'avalanche' ? {gridTemplateColumns: '160px repeat(5, 1fr) 50px'} : {gridTemplateColumns: '160px 180px 160px repeat(3, 1fr) 130px 20px'};
-      return res;
+      return {gridTemplateColumns: '160px 180px 160px repeat(3, 1fr) 130px 20px'};
     }
   },
 };
