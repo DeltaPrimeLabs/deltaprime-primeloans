@@ -637,7 +637,7 @@ export default {
             sortable: false,
             class: 'composition',
             id: 'COMPOSITION',
-            tooltip: 'The dollarvalue you receive ARB emissions over. This is calculated as: Total GM deposits - Collateral value.'
+            tooltip: `The dollar value you receive ${window.chain === 'arbitrum' ? 'ARB' : 'AVAX'} emissions over. This is calculated as: Total GM deposits - Collateral value.`
           },
           {
             label: '1x APR Boost',
