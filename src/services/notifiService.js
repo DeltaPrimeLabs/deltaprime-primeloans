@@ -226,7 +226,7 @@ export default class notifiService {
     const result = await client.ensureAlert({
       eventType,
       inputs: {
-        walletAddress,
+        walletAddress: walletAddress.toLowerCase()
       },
     });
   
@@ -260,7 +260,7 @@ export default class notifiService {
     const result = await client.ensureAlert({
       eventType,
       inputs: {
-        walletAddress,
+        walletAddress: walletAddress.toLowerCase(),
         ['Loan Health Alerts__healthRatio']: healthRatio, // in decimal like 0.05 for 5%
         ['Loan Health Alerts__healthThresholdDirection']: 'below',
       },
