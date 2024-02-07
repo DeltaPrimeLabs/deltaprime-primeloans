@@ -185,12 +185,10 @@ export default {
     },
 
     setupPoolsTableHeaderConfig() {
-      const avalancheTemplate = 'repeat(3, 1fr) 140px 140px 140px 140px 90px 90px 22px';
-      const arbitrumTemplate = '120px 100px 120px 110px 100px 120px 120px 120px 90px 90px 22px';
       this.poolsTableHeaderConfig =
         config.poolsUnlocking ?
           {
-            gridTemplateColumns: window.chain === 'arbitrum' ? arbitrumTemplate : avalancheTemplate,
+            gridTemplateColumns: 'repeat(3, 1fr) 140px 140px 140px 140px 90px 90px 22px',
             cells: [
               {
                 label: 'Asset',
@@ -310,16 +308,6 @@ export default {
               },
             ]
           };
-
-      if (window.chain === 'arbitrum') {
-        const eventAprCell = {
-          label: 'Event APR',
-          sortable: false,
-          class: 'event-apr',
-          id: 'EVENT_APR',
-        };
-        this.poolsTableHeaderConfig.cells.splice(4, 0, eventAprCell)
-      }
     },
 
   },
