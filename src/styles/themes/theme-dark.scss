@@ -594,4 +594,22 @@
   --app-toggle__switch-color: #{$pale-space};
   --app-toggle__switch-box-shadow: 1px 1px 4px 0 #{$dark-space}99;
   // endregion
+
+  // region ProtectedByBar
+  --bar__background: #{$pale-space};
+  --bar__text-color: #{$light-navy};
+  --bar__divider-background: #{$mist-navy};
+  --bar__logo-peck-shield: url("/src/assets/icons/securityLogos/peckShield--dark.svg");
+  --bar__logo-chainalysis: url("/src/assets/icons/securityLogos/chainalysis--dark.svg");
+  --bar__logo-fc-shield: url("/src/assets/icons/securityLogos/fcShield--dark.svg");
+  --bar__logo-hexagate: url("/src/assets/icons/securityLogos/hexagate--dark.png");
+  --bar__logo-atomica: url("/src/assets/icons/securityLogos/atomica--dark.svg");
+  --bar__logo-salus: url("/src/assets/icons/securityLogos/salus--dark.svg");
+  --bar__logo--hover-peck-shield: url("/src/assets/icons/securityLogos/peckShield--dark--hover.svg");
+  --bar__logo--hover-chainalysis: url("/src/assets/icons/securityLogos/chainalysis--dark--hover.svg");
+  --bar__logo--hover-fc-shield: url("/src/assets/icons/securityLogos/fcShield--dark--hover.svg");
+  --bar__logo--hover-hexagate: url("/src/assets/icons/securityLogos/hexagate--dark--hover.png");
+  --bar__logo--hover-atomica: url("/src/assets/icons/securityLogos/atomica--dark--hover.svg");
+  --bar__logo--hover-salus: url("/src/assets/icons/securityLogos/salus--dark--hover.svg");
+  // endregion
 }

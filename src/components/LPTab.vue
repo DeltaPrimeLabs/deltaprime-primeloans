@@ -616,7 +616,7 @@ export default {
       const token = window.arbitrumChain ? 'ARB' : 'AVAX';
       console.log(token);
       this.gmIncentivesTableHeaderConfig = {
-        gridTemplateColumns: '160px repeat(5, 1fr) 50px',
+        gridTemplateColumns: window.chain == 'avalanche' ? '160px repeat(5, 1fr) 50px' : '160px 180px 160px repeat(3, 1fr) 130px 20px',
         cells: [
           {
             label: 'Total eligible TVL',
@@ -659,6 +659,13 @@ export default {
             class: 'trend-level',
             id: 'TREND',
             tooltip: `The total amount of ${token} you have collected this week. Collected ${token} will be distributed weekly. This number is not included in your collateral value, until the ${token} is distributed to all Prime Accounts. This number resets to 0 after the collected ${token} is added to your assets on Monday.`
+          },
+          {
+            label: 'Tickets',
+            sortable: false,
+            class: 'trend-level',
+            id: 'TREND',
+            tooltip: `The raffle-tickets you accumulated. Mint more GM to boost your ticket-yield.`
           },
         ]
       };

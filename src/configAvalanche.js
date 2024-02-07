@@ -377,7 +377,6 @@ export default {
                 debtCoverage: 0.83333333333,
                 strategy: 'Pangolin',
                 refreshDelay: 60000,
-                banner: 'The Pangolin APYs might temporarily report inaccurate data. We are working to solve this asap.'
             }
         ],
         PNG_AVAX_ETH_LP: [
@@ -398,7 +397,6 @@ export default {
                 debtCoverage: 0.83333333333,
                 strategy: 'Pangolin',
                 refreshDelay: 60000,
-                banner: 'The Pangolin APYs might temporarily report inaccurate data. We are working to solve this asap.'
             }
         ],
         TJ_AVAX_USDC_LP: [
@@ -510,5 +508,6 @@ export default {
     refreshDelay: 5000,
     gmxV2RefreshDelay: 10000,
     gmxV2IncentivesMilestone: 4500000,
-    gmxV2IncentivesDeadline: 'March 3rd'
+    gmxV2IncentivesDeadline: 'March 3rd',
+    historicalRpcUrl: "https://nd-875-171-632.p2pify.com/1e4e4e399220d21d56677b5be69f9326/ext/bc/C/rpc",
 }

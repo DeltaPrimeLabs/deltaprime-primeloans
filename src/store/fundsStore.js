@@ -68,6 +68,7 @@ export default {
     supportedAssets: null,
     provider: null,
     readSmartLoanContract: null,
+    historicalSmartLoanContract: null,
     smartLoanContract: null,
     smartLoanFactoryContract: null,
     wrappedTokenContract: null,
@@ -97,6 +98,10 @@ export default {
 
     setReadSmartLoanContract(state, smartLoanContract) {
       state.readSmartLoanContract = smartLoanContract;
+    },
+
+    setHistoricalSmartLoanContract(state, smartLoanContract) {
+      state.historicalSmartLoanContract = smartLoanContract;
     },
 
     setApys(state, apys) {
@@ -599,6 +604,10 @@ export default {
       let readProvider = new ethers.providers.JsonRpcProvider(config.readRpcUrl);
       const readSmartLoanContract = new ethers.Contract(smartLoanAddress, SMART_LOAN.abi, readProvider);
 
+      const historicalProvider = new ethers.providers.JsonRpcProvider(config.historicalRpcUrl);
+      const historicalSmartLoanContract = new ethers.Contract(smartLoanAddress, SMART_LOAN.abi, historicalProvider);
+
+      commit('setHistoricalSmartLoanContract', historicalSmartLoanContract);
       commit('setReadSmartLoanContract', readSmartLoanContract);
       commit('setSmartLoanContract', smartLoanContract);
     },

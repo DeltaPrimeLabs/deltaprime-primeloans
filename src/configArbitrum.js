@@ -324,5 +324,6 @@ export default {
     refreshDelay: 2000,
     gmxV2RefreshDelay: 4000,
     gmxV2IncentivesMilestone: 9000000,
-    gmxV2IncentivesDeadline: 'February 5th'
+    gmxV2IncentivesDeadline: 'February 5th',
+    historicalRpcUrl: "https://nd-767-190-280.p2pify.com/8d546b2f3519965f0f1cb4332abe96b3",
 }
