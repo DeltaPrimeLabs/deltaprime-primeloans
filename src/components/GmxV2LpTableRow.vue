@@ -75,7 +75,7 @@
       </div>
 
       <div class="table__cell table__cell--double-value max-apr">
-        <span>{{ (maxApr + gmBoost) | percent }}<img v-if="hasGmIncentives" v-tooltip="{content: `This pool is incentivized!<br>⁃ up to ${maxApr ? (maxApr * 100).toFixed(2) : 0}% Pool APR<br>⁃ up to ${gmBoost ? (gmBoost * 100).toFixed(2) : 0}% ARB incentives`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span>
+        <span>{{ (maxApr + gmBoost) | percent }}<img v-if="hasGmIncentives" v-tooltip="{content: `This pool is incentivized!<br>⁃ up to ${maxApr ? (maxApr * 100).toFixed(2) : 0}% Pool APR<br>⁃ up to ${gmBoost ? (gmBoost * 100).toFixed(2) : 0}% ${chain === 'arbitrum' ? 'ARB' : 'AVAX'} incentives`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span>
       </div>
 
       <div class="table__cell"></div>
@@ -202,6 +202,7 @@ export default {
   },
 
   async mounted() {
+    this.chain = window.chain;
     this.setupAddActionsConfiguration();
     this.setupRemoveActionsConfiguration();
     this.watchAssetBalancesDataRefreshEvent();
@@ -244,6 +245,7 @@ export default {
       longTokenAmount: 0,
       shortTokenAmount: 0,
       selectedChart: 'PRICE',
+      chain: null,
     };
   },
 
@@ -289,14 +291,35 @@ export default {
       return calculateMaxApy(this.pools, this.apr / 100);
     },
 
-    gmBoost() {
+    gmBoostOld() {
       if (!this.apys || !this.assets || !this.assets['ARB'] || !this.assets['ARB'].price) return 0;
       let apy = this.apys['GM_BOOST'].arbApy * (this.assets['ARB'].price || 0);
       return this.hasGmIncentives ? 4.5 * apy : 0;
     },
 
+    gmBoost() {
+      let apy;
+      if (!this.apys || !this.assets) return 0;
+      if (window.chain === 'arbitrum') {
+        if (!this.assets['ARB'] || !this.assets['ARB'].price) {
+          return 0;
+        } else {
+          apy = this.apys['GM_BOOST'].arbApy * (this.assets['ARB'].price || 0);
+        }
+      } else {
+        console.log('avalanche gm boost');
+        if (!this.assets['AVAX'] || !this.assets['AVAX'].price) {
+          return 0
+        } else {
+          apy = this.apys['GM_BOOST'].avaxApy * (this.assets['AVAX'].price || 0);
+          console.log(apy);
+        }
+      }
+      return this.hasGmIncentives ? 4.5 * apy : 0;
+    },
+
     hasGmIncentives() {
-      return config.chainId === 42161;
+      return true;
     }
   },
 
