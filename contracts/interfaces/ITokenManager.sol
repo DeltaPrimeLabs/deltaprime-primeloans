@@ -10,10 +10,6 @@ interface ITokenManager {
         uint256 debtCoverage;
     }
 
-    function activateToken ( address token ) external;
-    function addPoolAssets ( poolAsset[] memory poolAssets ) external;
-    function addTokenAssets ( Asset[] memory tokenAssets ) external;
-    function deactivateToken ( address token ) external;
     function debtCoverage ( address ) external view returns ( uint256 );
     function debtCoverageStaked ( bytes32 ) external view returns ( uint256 );
     function getAllPoolAssets (  ) external view returns ( bytes32[] memory result );
@@ -26,12 +22,7 @@ interface ITokenManager {
     function decreaseProtocolExposure(bytes32 assetIdentifier, uint256 exposureDecrease) external;
     function isTokenAssetActive ( address token ) external view returns ( bool );
     function owner (  ) external view returns ( address );
-    function removePoolAssets ( bytes32[] memory _poolAssets ) external;
-    function removeTokenAssets ( bytes32[] memory _tokenAssets ) external;
     function renounceOwnership (  ) external;
-    function setDebtCoverage ( address token, uint256 coverage ) external;
-    function setDebtCoverageStaked ( bytes32 stakedAsset, uint256 coverage ) external;
-    function supportedTokensList ( uint256 ) external view returns ( address );
     function tokenAddressToSymbol ( address ) external view returns ( bytes32 );
     function tokenToStatus ( address ) external view returns ( uint256 );
     function transferOwnership ( address newOwner ) external;
