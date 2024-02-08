@@ -12,7 +12,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
     let TokenManager = await deploy("TokenManager", {
         from: deployer,
-        gasLimit: 50000000,
+        gasLimit: 100000000,
         args: [],
     });
 
