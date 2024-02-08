@@ -75,7 +75,7 @@
       </div>
 
       <div class="table__cell table__cell--double-value max-apr">
-        <span>{{ (maxApr + gmBoost) | percent }}<img v-if="hasGmIncentives" v-tooltip="{content: `This pool is incentivized!<br>⁃ up to ${maxApr ? (maxApr * 100).toFixed(2) : 0}% Pool APR<br>⁃ up to ${gmBoost ? (gmBoost * 100).toFixed(2) : 0}% ARB incentives`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span>
+        <span>{{ (maxApr + gmBoost) | percent }}<img v-if="hasGmIncentives" v-tooltip="{content: `This pool is incentivized!<br>⁃ up to ${maxApr ? (maxApr * 100).toFixed(2) : 0}% Pool APR<br>⁃ up to ${gmBoost ? (gmBoost * 100).toFixed(2) : 0}% ${chain === 'arbitrum' ? 'ARB' : 'AVAX'} incentives`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span>
       </div>
 
       <div class="table__cell"></div>
@@ -202,6 +202,7 @@ export default {
   },
 
   async mounted() {
+    this.chain = window.chain;
     this.setupAddActionsConfiguration();
     this.setupRemoveActionsConfiguration();
     this.watchAssetBalancesDataRefreshEvent();
@@ -244,6 +245,7 @@ export default {
       longTokenAmount: 0,
       shortTokenAmount: 0,
       selectedChart: 'PRICE',
+      chain: null,
     };
   },
 
@@ -289,14 +291,35 @@ export default {
       return calculateMaxApy(this.pools, this.apr / 100);
     },
 
-    gmBoost() {
+    gmBoostOld() {
       if (!this.apys || !this.assets || !this.assets['ARB'] || !this.assets['ARB'].price) return 0;
       let apy = this.apys['GM_BOOST'].arbApy * (this.assets['ARB'].price || 0);
       return this.hasGmIncentives ? 4.5 * apy : 0;
     },
 
+    gmBoost() {
+      let apy;
+      if (!this.apys || !this.assets) return 0;
+      if (window.chain === 'arbitrum') {
+        if (!this.assets['ARB'] || !this.assets['ARB'].price) {
+          return 0;
+        } else {
+          apy = this.apys['GM_BOOST'].arbApy * (this.assets['ARB'].price || 0);
+        }
+      } else {
+        console.log('avalanche gm boost');
+        if (!this.assets['AVAX'] || !this.assets['AVAX'].price) {
+          return 0
+        } else {
+          apy = this.apys['GM_BOOST'].avaxApy * (this.assets['AVAX'].price || 0);
+          console.log(apy);
+        }
+      }
+      return this.hasGmIncentives ? 4.5 * apy : 0;
+    },
+
     hasGmIncentives() {
-      return config.chainId === 42161;
+      return true;
     }
   },
 
@@ -410,7 +433,12 @@ export default {
         shortToken: shortToken.address
       }
 
-      const gmxData = await (await fetch(`https://${config.chainSlug}-api.gmxinfra.io/prices/tickers`)).json();
+      let gmxData;
+      if (window.chain === 'arbitrum') {
+        gmxData = await (await fetch(`https://arbitrum-api.gmxinfra.io/prices/tickers`)).json();
+      } else {
+        gmxData = await (await fetch(`https://avalanche-api.gmxinfra2.io/prices/tickers`)).json()
+      }
 
       let shortTokenGmxData = gmxData.find(el => el.tokenSymbol === shortToken.symbol);
       let longTokenGmxData = gmxData.find(el => el.tokenSymbol === longToken.symbol);
@@ -489,7 +517,12 @@ export default {
 
 
       return async (sourceAsset, targetAsset, amountIn) => {
-        const gmxData = await (await fetch(`https://${config.chainSlug}-api.gmxinfra.io/prices/tickers`)).json();
+        let gmxData;
+        if (window.chain === 'arbitrum') {
+          gmxData = await (await fetch(`https://${config.chainSlug}-api.gmxinfra.io/prices/tickers`)).json();
+        } else {
+          gmxData = JSON.parse('[{"tokenAddress":"0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB","tokenSymbol":"ETH","minPrice":"2376284700000000","maxPrice":"2376284700000000","updatedAt":1707272591518},{"tokenAddress":"0x152b9d0FdC40C096757F570A51E494bd4b943E50","tokenSymbol":"BTC","minPrice":"430397400000000000000000000","maxPrice":"430397400000000000000000000","updatedAt":1707272591119},{"tokenAddress":"0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7","tokenSymbol":"AVAX","minPrice":"34196331000000","maxPrice":"34196331000000","updatedAt":1707272589916},{"tokenAddress":"0x5947BB275c521040051D82396192181b413227A3","tokenSymbol":"LINK","minPrice":"18312430870000","maxPrice":"18312430870000","updatedAt":1707272589716},{"tokenAddress":"0xFE6B19286885a4F7F55AdAD09C3Cd1f906D2478F","tokenSymbol":"SOL","minPrice":"96820000000000000000000","maxPrice":"96820000000000000000000","updatedAt":1707272589516},{"tokenAddress":"0xC301E6fe31062C557aEE806cc6A841aE989A3ac6","tokenSymbol":"DOGE","minPrice":"788116000000000000000","maxPrice":"788116000000000000000","updatedAt":1707272589716},{"tokenAddress":"0x8E9C35235C38C44b5a53B56A41eaf6dB9a430cD6","tokenSymbol":"LTC","minPrice":"680795000000000000000000","maxPrice":"680795000000000000000000","updatedAt":1707272591722},{"tokenAddress":"0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E","tokenSymbol":"USDC","minPrice":"1000000000000000000000000","maxPrice":"1000198000000000000000000","updatedAt":1707272588361},{"tokenAddress":"0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664","tokenSymbol":"USDC.e","minPrice":"1000000000000000000000000","maxPrice":"1000198000000000000000000","updatedAt":1707272588361},{"tokenAddress":"0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7","tokenSymbol":"USDT","minPrice":"999259570000000000000000","maxPrice":"1000000000000000000000000","updatedAt":1707272588361},{"tokenAddress":"0xc7198437980c041c805A1EDcbA50c1Ce5db95118","tokenSymbol":"USDT.e","minPrice":"999259570000000000000000","maxPrice":"1000000000000000000000000","updatedAt":1707272588361},{"tokenAddress":"0xd586E7F844cEa2F87f50152665BCbc2C279D8d70","tokenSymbol":"DAI.e","minPrice":"999900000000","maxPrice":"1000000000000","updatedAt":1707272588361},{"tokenAddress":"0x34B2885D617cE2ddeD4F60cCB49809fc17bb58Af","tokenSymbol":"XRP","minPrice":"504763000000000000000000","maxPrice":"504763000000000000000000","updatedAt":1707272591518}]')
+        }
 
         let shortTokenGmxData = gmxData.find(el => el.tokenSymbol === shortToken.symbol);
         let longTokenGmxData = gmxData.find(el => el.tokenSymbol === longToken.symbol);

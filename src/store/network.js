@@ -15,6 +15,9 @@ export default {
     setProvider(state, provider) {
       state.provider = provider;
     },
+    setHistoricalProvider(state, historicalProvider) {
+      state.historicalProvider = historicalProvider;
+    },
     setAccount(state, account) {
       state.account = account;
     },
@@ -39,6 +42,9 @@ export default {
 
       await commit('setProvider', provider);
       rootState.serviceRegistry.providerService.emitProviderCreated();
+
+      const historicalProvider = new ethers.providers.JsonRpcProvider(config.historicalRpcUrl);
+      await commit('setHistoricalProvider', historicalProvider);
     },
     async initAccount({ commit, state, rootState }) {
       if (state.account) {

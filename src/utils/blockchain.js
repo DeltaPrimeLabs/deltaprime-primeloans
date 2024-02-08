@@ -258,3 +258,26 @@ tokens or virtual assets are prohibited [full text available at https://arweave.
 export const depositTermsToSign =
 `By entering DeltaPrime I agree to be bound by the DeltaPrime "TERMS OF USE" and herby further represent and warrant that:
 I am not a citizen of, natural and legal person, having habitual residence, location or their seat of incorporation in the country or territory where transactions with digital tokens or virtual assets are prohibited [full text available at https://arweave.net/9dc5BuzFYefZrL7ciUnxyeRUFh52U3UKju7AD6InsJ8].`;
+
+async function getLoanHistoryData(walletAddress) {
+  const startDate = 1701428400 * 1000;
+  const endDate = new Date().getTime();
+
+  const response = await fetch(`https://us-central1-delta-prime-db.cloudfunctions.net/loanhistory?address=${walletAddress}&from=${startDate}&to=${endDate}&network=${window.chain}`);
+  const body = await response.json()
+
+  return body.data;
+}
+
+export async function getData(loanAddress, timestamp) {
+
+  let historyData = await getLoanHistoryData(loanAddress);
+
+  let dataPoint = historyData.find(
+      el => {
+          return el.timestamp > timestamp * 1000;
+      }
+  );
+
+  return dataPoint;
+}
