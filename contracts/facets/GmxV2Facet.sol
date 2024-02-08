@@ -179,7 +179,7 @@ abstract contract GmxV2Facet is IDepositCallbackReceiver, IWithdrawalCallbackRec
 
         // Simulate solvency check
         if(msg.sender == DiamondStorageLib.contractOwner()){    // Only owner can call this method or else it's liquidator when the account is already insolvent
-            uint256[] memory tokenPrices = new uint256[](2);
+            uint256[] memory tokenPrices = new uint256[](3);
 
             {
                 bytes32[] memory tokenSymbols = new bytes32[](3);
