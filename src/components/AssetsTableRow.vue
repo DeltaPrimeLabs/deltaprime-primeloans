@@ -390,8 +390,8 @@ export default {
               ))
             }
             if (route[0].length === 0 && route[1].length === 0 && route[2].length === 0) {
-              this.progressBarService.emitProgressBarErrorState('The selected aggregator could not find a route. Please switch aggregator, or try again later.')
-              this.cleanupAfterError();
+              this.progressBarService.emitProgressBarErrorState('The selected aggregator could not find a route. Please switch aggregator, increase slippage or try again later.')
+              this.cleanupAfterError(false);
             }
             return {
               ...route,
@@ -469,8 +469,8 @@ export default {
           console.log(typeof error);
           console.log(String(error));
           if (String(error).includes('No routes found with enough liquidity')) {
-            this.progressBarService.emitProgressBarErrorState('The selected aggregator could not find a route. Please switch aggregator, or try again later.')
-            this.cleanupAfterError();
+            this.progressBarService.emitProgressBarErrorState('The selected aggregator could not find a route. Please switch aggregator, increase slippage or try again later.')
+            this.cleanupAfterError(false);
           }
         }
       };
@@ -1090,7 +1090,7 @@ export default {
       if (String(error) === '[object Object]' || typeof error === 'object') {
         switch (error.code) {
           case -32000:
-            this.progressBarService.emitProgressBarErrorState('The selected aggregator could not find a route. Please switch aggregator, or try again later.')
+            this.progressBarService.emitProgressBarErrorState('The selected aggregator could not find a route. Please switch aggregator, increase slippage or try again later.')
             break;
           case 'UNPREDICTABLE_GAS_LIMIT':
             this.progressBarService.emitProgressBarErrorState('Could not estimate gas for transaction. Please switch aggregator, or try again later.')
@@ -1105,11 +1105,13 @@ export default {
           this.progressBarService.emitProgressBarErrorState('Insufficient slippage.');
         }
       }
-      this.cleanupAfterError();
+      this.cleanupAfterError(error.code !== -32000);
     },
 
-    cleanupAfterError() {
-      this.closeModal();
+    cleanupAfterError(closeModal = true) {
+      if (closeModal) {
+        this.closeModal();
+      }
       this.disableAllButtons = false;
       this.isBalanceEstimated = false;
       this.isBalanceEstimated = false;

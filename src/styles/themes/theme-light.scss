@@ -208,7 +208,7 @@
 
   // region InfoBubble
   --info-bubble__info-bubble: #{$white};
-  --info-bubble__info-bubble-stroke: linear-gradient(318deg, #{$washed-raspberry} 17% , #{$washed-orange} 56%, #{$delta-washed} 99%);
+  --info-bubble__info-bubble-stroke: linear-gradient(318deg, #{$washed-raspberry} 17%, #{$washed-orange} 56%, #{$delta-washed} 99%);
   --info-bubble__color: #{$steel-gray};
   // endregion
 
@@ -592,5 +592,23 @@
   --app-toggle__switch-background: #{$white};
   --app-toggle__switch-color: #{$persian-blue};
   --app-toggle__switch-box-shadow: 1px 1px 4px 0 #{$smoke-purple}4c;
+  // endregion
+
+  // region ProtectedByBar
+  --bar__background: #{$delta-burnt-out};
+  --bar__text-color: #{$delta-gray};
+  --bar__divider-background: #{$light-gray};
+  --bar__logo-peck-shield: url("/src/assets/icons/securityLogos/peckShield--light.svg");
+  --bar__logo-chainalysis: url("/src/assets/icons/securityLogos/chainalysis--light.svg");
+  --bar__logo-fc-shield: url("/src/assets/icons/securityLogos/fcShield--light.svg");
+  --bar__logo-hexagate: url("/src/assets/icons/securityLogos/hexagate--light.png");
+  --bar__logo-atomica: url("/src/assets/icons/securityLogos/atomica--light.svg");
+  --bar__logo-salus: url("/src/assets/icons/securityLogos/salus--light.svg");
+  --bar__logo--hover-peck-shield: url("/src/assets/icons/securityLogos/peckShield--light--hover.svg");
+  --bar__logo--hover-chainalysis: url("/src/assets/icons/securityLogos/chainalysis--light--hover.svg");
+  --bar__logo--hover-fc-shield: url("/src/assets/icons/securityLogos/fcShield--light--hover.svg");
+  --bar__logo--hover-hexagate: url("/src/assets/icons/securityLogos/hexagate--light--hover.png");
+  --bar__logo--hover-atomica: url("/src/assets/icons/securityLogos/atomica--light--hover.svg");
+  --bar__logo--hover-salus: url("/src/assets/icons/securityLogos/salus--light--hover.svg");
   // endregion
 }

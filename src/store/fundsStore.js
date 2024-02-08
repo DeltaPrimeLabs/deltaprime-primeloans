@@ -68,6 +68,7 @@ export default {
     supportedAssets: null,
     provider: null,
     readSmartLoanContract: null,
+    historicalSmartLoanContract: null,
     smartLoanContract: null,
     smartLoanFactoryContract: null,
     wrappedTokenContract: null,
@@ -97,6 +98,10 @@ export default {
 
     setReadSmartLoanContract(state, smartLoanContract) {
       state.readSmartLoanContract = smartLoanContract;
+    },
+
+    setHistoricalSmartLoanContract(state, smartLoanContract) {
+      state.historicalSmartLoanContract = smartLoanContract;
     },
 
     setApys(state, apys) {
@@ -332,6 +337,8 @@ export default {
           apyDoc.Items.map(apy => {
             apys[apy.id] = {...apy};
           });
+
+          console.log(apys);
 
           commit('setApys', apys);
         } catch (e) {
@@ -597,6 +604,10 @@ export default {
       let readProvider = new ethers.providers.JsonRpcProvider(config.readRpcUrl);
       const readSmartLoanContract = new ethers.Contract(smartLoanAddress, SMART_LOAN.abi, readProvider);
 
+      const historicalProvider = new ethers.providers.JsonRpcProvider(config.historicalRpcUrl);
+      const historicalSmartLoanContract = new ethers.Contract(smartLoanAddress, SMART_LOAN.abi, historicalProvider);
+
+      commit('setHistoricalSmartLoanContract', historicalSmartLoanContract);
       commit('setReadSmartLoanContract', readSmartLoanContract);
       commit('setSmartLoanContract', smartLoanContract);
     },
@@ -1021,6 +1032,8 @@ export default {
 
       let assets = state.assets;
       const apys = state.apys;
+      console.warn('--------___---__---APYYYYYYYS___--___--___--____--');
+      console.log(apys);
 
       for (let [symbol, asset] of Object.entries(assets)) {
         // we don't use getApy method anymore, but fetch APYs from db
@@ -1290,10 +1303,10 @@ export default {
 
           let leveragedGm = gmWorth - collateral > 0 ? gmWorth - collateral : 0;
 
-          if (window.chain === 'arbitrum') {
+          if (window.arbitrumChain) {
             yearlyLpInterest += leveragedGm * state.apys['GM_BOOST'].arbApy * state.assets['ARB'].price;
           } else {
-            yearlyLpInterest += leveragedGm * state.apys['GM_BOOST'].arbApy;
+            yearlyLpInterest += leveragedGm * state.apys['GM_BOOST'].avaxApy * state.assets['AVAX'].price;
           }
         }
 
@@ -2614,6 +2627,9 @@ export default {
 
       setTimeout(async () => {
         await dispatch('updateFunds');
+        setTimeout(async () => {
+          await dispatch('updateFunds');
+        }, config.gmxV2RefreshDelay)
       }, config.refreshDelay);
     },
 
@@ -2671,6 +2687,9 @@ export default {
 
       setTimeout(async () => {
         await dispatch('updateFunds');
+        setTimeout(async () => {
+          await dispatch('updateFunds');
+        }, config.gmxV2RefreshDelay)
       }, config.refreshDelay);
     },
 

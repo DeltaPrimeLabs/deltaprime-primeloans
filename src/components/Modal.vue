@@ -63,7 +63,6 @@ export default {
         width: 750px;
         border-radius: 21px;
         background-color: var(--modal__background-color);
-        padding: 60px 0;
 
         &::after {
           position: absolute;
@@ -100,6 +99,14 @@ export default {
         overflow-x: hidden;
         padding: 0 100px;
         line-height: normal;
+
+        >:last-child {
+          margin-bottom: 60px;
+        }
+
+        >:first-child {
+          margin-top: 60px;
+        }
 
         &::-webkit-scrollbar {
           width: 12px;
