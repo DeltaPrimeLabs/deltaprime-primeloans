@@ -84,19 +84,19 @@ export default {
       LIGHT: "src/assets/icons/icon_announcement.svg",
       DARK: "src/assets/icons/icon_announcement_dark.svg"
     },
-    "Liquidation": {
+    "Liquidation Alert": {
       LIGHT: "src/assets/icons/icon_liquidation.svg",
       DARK: "src/assets/icons/icon_liquidation_dark.svg"
     },
-    "Loan Health Alerts": {
+    "Loan Health Alert": {
       LIGHT: "src/assets/icons/icon_health.svg",
       DARK: "src/assets/icons/icon_health_dark.svg"
     },
-    "Borrowing Interest Rate Alert": {
+    "Borrow Rate Alert": {
       LIGHT: "src/assets/icons/icon_rate.svg",
       DARK: "src/assets/icons/icon_rate_dark.svg"
     },
-    "Deposit Interest Rate Alert": {
+    "Deposit Rate Alert": {
       LIGHT: "src/assets/icons/icon_rate.svg",
       DARK: "src/assets/icons/icon_rate_dark.svg"
     }

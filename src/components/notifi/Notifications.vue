@@ -77,6 +77,7 @@ export default ({
   mounted() {
     this.watchHistory();
     this.watchThemeChange();
+    console.log(this.history.nodes)
   },
   methods: {
     watchHistory() {
@@ -97,7 +98,8 @@ export default ({
         return this.iconsConfig.Announcement[this.theme];
       }
 
-      const sourceName = Object.keys(this.iconsConfig).find(key => notification.detail.sourceName.includes(key));
+      const sourceName = notification.detail.sourceName;
+
       return this.iconsConfig[sourceName] && this.iconsConfig[sourceName][this.theme];
     },
 
