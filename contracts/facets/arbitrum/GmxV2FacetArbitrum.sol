@@ -88,7 +88,7 @@ contract GmxV2FacetArbitrum is GmxV2Facet {
     function depositArbUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable {
         address _depositedToken = isLongToken ? ARB : USDC;
 
-        _deposit(GM_ARB_ARB_USDC, isLongToken ? ARB : USDC, tokenAmount, minGmAmount, executionFee);
+        _deposit(GM_ARB_ARB_USDC, _depositedToken, tokenAmount, minGmAmount, executionFee);
     }
 
     function depositLinkUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable {
