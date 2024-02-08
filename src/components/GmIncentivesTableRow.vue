@@ -58,7 +58,7 @@ import redstone from "redstone-api";
 const EthDater = require("ethereum-block-by-date");
 
 const ethers = require('ethers');
-import GM_DISTRIBUTED_ARBITRUM from '../data/arbitrum/GM_EPOCH_6.json';
+import GM_DISTRIBUTED_ARBITRUM from '../data/arbitrum/GM_EPOCH_8_corrected.json';
 import GM_DISTRIBUTED_AVALANCHE from '../data/avalanche/GM_EPOCH_0.json';
 import {wrapContract} from "../utils/blockchain";
 import DeltaIcon from "./DeltaIcon.vue";
@@ -145,7 +145,7 @@ export default {
         weeklyAmount = 10000;
       } else {
         apy = this.apys ? this.apys['GM_BOOST'].avaxApy : 0;
-        weeklyAmount = 333.333;
+        weeklyAmount = 833.333;
       }
 
       return apy ? weeklyAmount / 7 * 365 / apy  : 0;
