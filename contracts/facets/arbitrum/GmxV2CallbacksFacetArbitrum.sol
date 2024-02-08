@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 4ad7b1532b12e0253817f898bca47228d3b907e0;
+// Last deployed from commit: 8922f5facddf72a172d7cd2dc5c648be3d62ff3d;
 pragma solidity 0.8.17;
 
 //This path is updated during deployment
 import "../GmxV2CallbacksFacet.sol";
 
-contract GmxV2CallbacksFacetAvalanche is GmxV2CallbacksFacet {
+contract GmxV2CallbacksFacetArbitrum is GmxV2CallbacksFacet {
     using TransferHelper for address;
 
     // https://github.com/gmx-io/gmx-synthetics/blob/main/deployments/arbitrum/
