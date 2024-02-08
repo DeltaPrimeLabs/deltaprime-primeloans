@@ -6,6 +6,7 @@ import "./lib/Bytes32EnumerableMap.sol";
 import "./interfaces/IBorrowersRegistry.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "./lib/local/DeploymentConstants.sol";
 
 contract TokenManager is OwnableUpgradeable {
     /**
@@ -299,7 +300,7 @@ contract TokenManager is OwnableUpgradeable {
     }
 
     function getSmartLoansFactoryAddress() public view virtual returns (address) {
-        return 0x3Ea9D480295A73fd2aF95b4D96c2afF88b21B03D;
+        return DeploymentConstants.getSmartLoansFactoryAddress();
     }
 
     /* ========== OVERRIDDEN FUNCTIONS ========== */
