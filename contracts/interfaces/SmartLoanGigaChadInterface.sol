@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.17;
 
+import "./facets/IBeaconUpgradeFacet.sol";
 import "./facets/avalanche/IYieldYakFacet.sol";
 import "./facets/avalanche/IGMDFacet.sol";
 import "./facets/avalanche/IYieldYakSwapFacet.sol";
@@ -34,8 +35,10 @@ import "./facets/arbitrum/IGmxV2ArbitrumFacet.sol";
 import "./facets/avalanche/IGmxV2AvalancheFacet.sol";
 import "./facets/arbitrum/ISushiSwapFacet.sol";
 import "./facets/arbitrum/ILevelFinanceFacet.sol";
+import "./facets/ITestFacet.sol";
 
 interface SmartLoanGigaChadInterface is
+    IBeaconUpgradeFacet,
     IGMDFacet,
     IHealthMeterFacetProd,
     IGLPFacet,
@@ -68,5 +71,6 @@ interface SmartLoanGigaChadInterface is
     IGmxV2ArbitrumFacet,
     IGmxV2AvalancheFacet,
     IBalancerV2Facet,
-    IGogoPoolFacet
+    IGogoPoolFacet,
+    ITestFacet
 {}
