@@ -53,8 +53,8 @@ contract TokenManager is OwnableUpgradeable {
     mapping(bytes32 => bytes32) public identifierToExposureGroup;
     mapping(bytes32 => Exposure) public groupToExposure;
 
-    mapping(address => mapping(bytes32 => uint256)) private pendingUserExposure;
-    mapping(bytes32 => uint256) private pendingProtocolExposure;
+    mapping(address => mapping(bytes32 => uint256)) public pendingUserExposure;
+    mapping(bytes32 => uint256) public pendingProtocolExposure;
 
     function initialize(Asset[] memory tokenAssets, poolAsset[] memory poolAssets) external initializer {
         __Ownable_init();
