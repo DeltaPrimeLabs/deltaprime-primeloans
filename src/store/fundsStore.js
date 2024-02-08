@@ -1032,6 +1032,8 @@ export default {
 
       let assets = state.assets;
       const apys = state.apys;
+      console.warn('--------___---__---APYYYYYYYS___--___--___--____--');
+      console.log(apys);
 
       for (let [symbol, asset] of Object.entries(assets)) {
         // we don't use getApy method anymore, but fetch APYs from db
