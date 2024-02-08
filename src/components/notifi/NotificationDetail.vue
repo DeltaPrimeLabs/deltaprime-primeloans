@@ -65,6 +65,7 @@ export default ({
 
   .detail-message {
     margin-top: 10px;
+    overflow-wrap: break-word;
   }
 }
 </style>
