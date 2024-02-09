@@ -176,7 +176,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         require(balance > 0, "nothing to withdraw");
         token.safeTransfer(msg.sender, balance);
 
-        emit WithdrawUnsupportedToken(msg.sender, token, balance);
+        emit WithdrawUnsupportedToken(msg.sender, token, balance, block.timestamp);
     }
 
     // TODO: Separate manager for unfreezing - not liquidators
@@ -318,6 +318,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
      * @param user the address withdrawing unsupported token
      * @param token the unsupported token address
      * @param amount of unsupported token withdrawn
+     * @param timestamp of the withdraw
      **/
-    event WithdrawUnsupportedToken(address indexed user, address indexed token, uint256 amount);
+    event WithdrawUnsupportedToken(address indexed user, address indexed token, uint256 amount, uint256 timestamp);
 }
