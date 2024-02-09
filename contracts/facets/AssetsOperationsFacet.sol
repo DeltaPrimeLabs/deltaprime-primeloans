@@ -165,7 +165,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         emit Repaid(msg.sender, _asset, _amount, block.timestamp);
     }
 
-    function withdrawUnsupportedToken(address token) external nonReentrant onlyOwner {
+    function withdrawUnsupportedToken(address token) external nonReentrant onlyOwner remainsSolvent {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         // _NOT_SUPPORTED = 0
