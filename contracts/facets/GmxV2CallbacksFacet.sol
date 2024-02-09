@@ -69,7 +69,7 @@ abstract contract GmxV2CallbacksFacet is IDepositCallbackReceiver, IWithdrawalCa
             receivedMarketTokens * 1e18 / 10**IERC20Metadata(gmToken).decimals()
         );
 
-        tokenManager.setPendingExposureToZero(tokenManager.tokenAddressToSymbol(gmToken), msg.sender);
+        tokenManager.setPendingExposureToZero(tokenManager.tokenAddressToSymbol(gmToken));
         
         // Unfreeze account
         DiamondStorageLib.unfreezeAccount(msg.sender);
@@ -112,7 +112,7 @@ abstract contract GmxV2CallbacksFacet is IDepositCallbackReceiver, IWithdrawalCa
             );
         }
 
-        tokenManager.setPendingExposureToZero(tokenManager.tokenAddressToSymbol(deposit.addresses.market), msg.sender);
+        tokenManager.setPendingExposureToZero(tokenManager.tokenAddressToSymbol(deposit.addresses.market));
 
         DiamondStorageLib.unfreezeAccount(msg.sender);
         emit DepositCancelled(
@@ -152,8 +152,8 @@ abstract contract GmxV2CallbacksFacet is IDepositCallbackReceiver, IWithdrawalCa
             );
         }
 
-        tokenManager.setPendingExposureToZero(tokenManager.tokenAddressToSymbol(longToken), msg.sender);
-        tokenManager.setPendingExposureToZero(tokenManager.tokenAddressToSymbol(shortToken), msg.sender);
+        tokenManager.setPendingExposureToZero(tokenManager.tokenAddressToSymbol(longToken));
+        tokenManager.setPendingExposureToZero(tokenManager.tokenAddressToSymbol(shortToken));
         
         // Native token transfer happens after execution of this method, but the amounts should be dust ones anyway and by wrapping here we get a chance to wrap any previously sent native token
         wrapNativeToken();
@@ -186,8 +186,8 @@ abstract contract GmxV2CallbacksFacet is IDepositCallbackReceiver, IWithdrawalCa
             withdrawal.numbers.marketTokenAmount * 1e18 / 10**IERC20Metadata(withdrawal.addresses.market).decimals()
         );
 
-        tokenManager.setPendingExposureToZero(tokenManager.tokenAddressToSymbol(longToken), msg.sender);
-        tokenManager.setPendingExposureToZero(tokenManager.tokenAddressToSymbol(shortToken), msg.sender);
+        tokenManager.setPendingExposureToZero(tokenManager.tokenAddressToSymbol(longToken));
+        tokenManager.setPendingExposureToZero(tokenManager.tokenAddressToSymbol(shortToken));
 
         DiamondStorageLib.unfreezeAccount(msg.sender);
         emit WithdrawalCancelled(

@@ -282,20 +282,20 @@ contract TokenManager is OwnableUpgradeable {
         return true;
     }
 
-    function increasePendingExposure(bytes32 assetIdentifier, address user, uint256 amount) public onlyPrimeAccountOrOwner {
-        require(pendingUserExposure[user][assetIdentifier] == 0, "Pending Tx");
+    function increasePendingExposure(bytes32 assetIdentifier, uint256 amount) public onlyPrimeAccountOrOwner {
+        require(pendingUserExposure[msg.sender][assetIdentifier] == 0, "Pending Tx");
 
-        pendingUserExposure[user][assetIdentifier] += amount;
+        pendingUserExposure[msg.sender][assetIdentifier] += amount;
         pendingProtocolExposure[assetIdentifier] += amount;
         
         require(isExposureAvailable(assetIdentifier), "Lack of Exposure");
     }
 
-    function setPendingExposureToZero(bytes32 assetIdentifier, address user) public onlyPrimeAccountOrOwner {
-        uint256 pending = pendingUserExposure[user][assetIdentifier];
+    function setPendingExposureToZero(bytes32 assetIdentifier) public onlyPrimeAccountOrOwner {
+        uint256 pending = pendingUserExposure[msg.sender][assetIdentifier];
         if(pending > 0) {
             pendingProtocolExposure[assetIdentifier] -= pending;
-            pendingUserExposure[user][assetIdentifier] = 0;
+            pendingUserExposure[msg.sender][assetIdentifier] = 0;
         }
     }
 
