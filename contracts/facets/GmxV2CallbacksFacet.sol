@@ -128,16 +128,14 @@ abstract contract GmxV2CallbacksFacet is IDepositCallbackReceiver, IWithdrawalCa
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         address longToken = marketToLongToken(withdrawal.addresses.market);
         address shortToken = marketToShortToken(withdrawal.addresses.market);
-        uint256 longTokenInitialBalance = IERC20Metadata(longToken).balanceOf(address(this));
-        uint256 shortTokenInitialBalance = IERC20Metadata(shortToken).balanceOf(address(this));
         uint256 longOutputAmount = eventData.uintItems.items[0].value;
         uint256 shortOutputAmount = eventData.uintItems.items[1].value;
 
         // Add owned assets
-        if(longTokenInitialBalance > 0){
+        if(IERC20Metadata(longToken).balanceOf(address(this)) > 0){
             DiamondStorageLib.addOwnedAsset(tokenManager.tokenAddressToSymbol(longToken), longToken);
         }
-        if(shortTokenInitialBalance > 0){
+        if(IERC20Metadata(shortToken).balanceOf(address(this)) > 0){
             DiamondStorageLib.addOwnedAsset(tokenManager.tokenAddressToSymbol(shortToken), shortToken);
         }
         
@@ -164,8 +162,8 @@ abstract contract GmxV2CallbacksFacet is IDepositCallbackReceiver, IWithdrawalCa
         emit WithdrawalExecuted(
             msg.sender,
             withdrawal.addresses.market,
-            IERC20Metadata(longToken).balanceOf(address(this)) - longTokenInitialBalance,
-            IERC20Metadata(shortToken).balanceOf(address(this)) - shortTokenInitialBalance,
+            longOutputAmount,
+            shortOutputAmount,
             withdrawal.numbers.executionFee
         );
     }
