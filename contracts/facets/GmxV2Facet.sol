@@ -30,9 +30,6 @@ abstract contract GmxV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
     function getGmxV2WithdrawalVault() internal pure virtual returns (address);
 
-    // Callback contract
-    function getCallbackContract() internal pure virtual returns (address);
-
     // Mappings
     function marketToLongToken(address market) internal virtual pure returns (address);
 
@@ -66,8 +63,8 @@ abstract contract GmxV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             IDepositUtils.createDeposit.selector,
             IDepositUtils.CreateDepositParams({
                 receiver: address(this), //receiver
-                callbackContract: getCallbackContract(), //callbackContract
-                uiFeeReceiver: address(0), //uiFeeReceiver
+                callbackContract: address(this), //callbackContract
+                uiFeeReceiver: address(this), //uiFeeReceiver
                 market: gmToken, //market
                 initialLongToken: marketToLongToken(gmToken), //initialLongToken
                 initialShortToken: marketToShortToken(gmToken), //initialShortToken
@@ -141,7 +138,7 @@ abstract contract GmxV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             IWithdrawalUtils.createWithdrawal.selector,
             IWithdrawalUtils.CreateWithdrawalParams({
                 receiver: address(this), //receiver
-                callbackContract: getCallbackContract(), //callbackContract
+                callbackContract: address(this), //callbackContract
                 uiFeeReceiver: address(0), //uiFeeReceiver
                 market: gmToken, //market
                 longTokenSwapPath: new address[](0), //longTokenSwapPath
