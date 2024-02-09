@@ -64,7 +64,7 @@ abstract contract GmxV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             IDepositUtils.CreateDepositParams({
                 receiver: address(this), //receiver
                 callbackContract: address(this), //callbackContract
-                uiFeeReceiver: address(this), //uiFeeReceiver
+                uiFeeReceiver: address(0), //uiFeeReceiver
                 market: gmToken, //market
                 initialLongToken: marketToLongToken(gmToken), //initialLongToken
                 initialShortToken: marketToShortToken(gmToken), //initialShortToken
