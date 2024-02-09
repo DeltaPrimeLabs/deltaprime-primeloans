@@ -24,7 +24,7 @@
         <span><b>{{ maxBoostApr | percent }}</b><img src="src/assets/icons/stars.png" class="stars-icon"></span>
       </div>
       <div class="table__cell table__cell--double-value arb-collected">
-        {{ collectedBonus ? collectedBonus.toFixed(2) : 0 }}&nbsp;
+        {{ collectedBonus ? collectedBonus.toFixed(3) : 0 }}&nbsp;
         <InfoIcon
             v-if="['0x4c9c76507d661f6fbdb2e641c7fe061f1743f8fd', '0x38716cba180d5bd3a4e51c6303a861a1e8fbef52', '0x9232800211347ec4ebeff3143f5dd34c438f214c', '0x14c047a8ca6238e9ea14a9a740a6010423a0783c', '0x14ec143849f5a56908c15e2e8963058fba54fcc0'].includes(smartLoanContract.address)"
             class="info__icon"
