@@ -26,6 +26,10 @@ contract GmxV2FacetArbitrum is GmxV2Facet {
         return 0x0628D46b5D145f183AdB6Ef1f2c97eD1C4701C55;
     }
 
+    function getCallbackContract() internal pure virtual override returns (address) {
+        return 0xEca1daCEd46777Ac8b7C524769740CAe6cbC2dA8; // Should be replaced with latest Callback
+    }
+
     // Markets
     address constant GM_ETH_WETH_USDC = 0x70d95587d40A2caf56bd97485aB3Eec10Bee6336;
     address constant GM_ARB_ARB_USDC = 0xC25cEf6061Cf5dE5eb761b50E4743c1F5D7E5407;

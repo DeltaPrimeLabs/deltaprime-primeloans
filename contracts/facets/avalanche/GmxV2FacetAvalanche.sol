@@ -26,6 +26,9 @@ contract GmxV2FacetAvalanche is GmxV2Facet {
         return 0xf5F30B10141E1F63FC11eD772931A8294a591996;
     }
 
+    function getCallbackContract() internal pure virtual override returns (address) {
+        return 0xEca1daCEd46777Ac8b7C524769740CAe6cbC2dA8; // Should be replaced with latest Callback
+    }
 
     // Markets
     address constant GM_BTC_BTCb_USDC = 0xFb02132333A79C8B5Bd0b64E3AbccA5f7fAf2937;

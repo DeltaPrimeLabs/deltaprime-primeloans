@@ -30,6 +30,9 @@ abstract contract GmxV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
     function getGmxV2WithdrawalVault() internal pure virtual returns (address);
 
+    // Callback contract
+    function getCallbackContract() internal pure virtual returns (address);
+
     // Mappings
     function marketToLongToken(address market) internal virtual pure returns (address);
 
@@ -63,7 +66,7 @@ abstract contract GmxV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             IDepositUtils.createDeposit.selector,
             IDepositUtils.CreateDepositParams({
                 receiver: address(this), //receiver
-                callbackContract: address(this), //callbackContract
+                callbackContract: getCallbackContract(), //callbackContract
                 uiFeeReceiver: address(0), //uiFeeReceiver
                 market: gmToken, //market
                 initialLongToken: marketToLongToken(gmToken), //initialLongToken
@@ -100,7 +103,7 @@ abstract contract GmxV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         // Freeze account
         DiamondStorageLib.freezeAccount(gmToken);
         
-        tokenManager.increasePendingExposure(tokenManager.tokenAddressToSymbol(gmToken), minGmAmount * 1e18 / 10**IERC20Metadata(gmToken).decimals());
+        tokenManager.increasePendingExposure(tokenManager.tokenAddressToSymbol(gmToken), address(this), minGmAmount * 1e18 / 10**IERC20Metadata(gmToken).decimals());
 
         // Update exposures
         tokenManager.decreaseProtocolExposure(
@@ -138,7 +141,7 @@ abstract contract GmxV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             IWithdrawalUtils.createWithdrawal.selector,
             IWithdrawalUtils.CreateWithdrawalParams({
                 receiver: address(this), //receiver
-                callbackContract: address(this), //callbackContract
+                callbackContract: getCallbackContract(), //callbackContract
                 uiFeeReceiver: address(0), //uiFeeReceiver
                 market: gmToken, //market
                 longTokenSwapPath: new address[](0), //longTokenSwapPath
@@ -185,8 +188,8 @@ abstract contract GmxV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         // Freeze account
         DiamondStorageLib.freezeAccount(gmToken);
 
-        tokenManager.increasePendingExposure(tokenManager.tokenAddressToSymbol(longToken), minLongTokenAmount * 1e18 / 10**IERC20Metadata(longToken).decimals());
-        tokenManager.increasePendingExposure(tokenManager.tokenAddressToSymbol(shortToken), minShortTokenAmount * 1e18 / 10**IERC20Metadata(shortToken).decimals());
+        tokenManager.increasePendingExposure(tokenManager.tokenAddressToSymbol(longToken), address(this), minLongTokenAmount * 1e18 / 10**IERC20Metadata(longToken).decimals());
+        tokenManager.increasePendingExposure(tokenManager.tokenAddressToSymbol(shortToken), address(this), minShortTokenAmount * 1e18 / 10**IERC20Metadata(shortToken).decimals());
 
         // Update exposures
         tokenManager.decreaseProtocolExposure(
