@@ -141,6 +141,18 @@ describe('Smart loan', () => {
             mockToken.connect(owner).transfer(wrappedLoan.address, toWei("100"));
         });
 
+        it("should fail to withdraw as a non-owner account", async () => {
+            let nonOwnerWrappedLoan = WrapperBuilder
+                // @ts-ignore
+                .wrap(loan.connect(depositor))
+                .usingSimpleNumericMock({
+                    mockSignersCount: 10,
+                    dataPoints: MOCK_PRICES,
+                });
+
+            await expect(nonOwnerWrappedLoan.withdrawUnsupportedToken(mockToken.address)).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+        });
+
         it("should fail to withdraw supported tokens", async () => {
             await expect(wrappedLoan.withdrawUnsupportedToken(tokenContracts.get('AVAX')!.address)).to.be.revertedWith("token supported");
         });
