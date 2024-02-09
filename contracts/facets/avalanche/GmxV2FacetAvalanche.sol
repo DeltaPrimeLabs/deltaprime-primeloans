@@ -64,22 +64,16 @@ contract GmxV2FacetAvalanche is GmxV2Facet {
     }
 
     // DEPOSIT
-    function depositBtcUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable {
-        address _depositedToken = isLongToken ? BTCb : USDC;
-
-        _deposit(GM_BTC_BTCb_USDC, _depositedToken, tokenAmount, minGmAmount, executionFee);
+    function depositBtcUsdcGmxV2(uint256 tokenAmount, uint256 tokenBmount, uint256 minGmAmount, uint256 executionFee) external payable {
+        _deposit(GM_BTC_BTCb_USDC, tokenAmount, tokenBmount, minGmAmount, executionFee);
     }
 
-    function depositEthUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable {
-        address _depositedToken = isLongToken ? WETHe : USDC;
-
-        _deposit(GM_ETH_WETHe_USDC, _depositedToken, tokenAmount, minGmAmount, executionFee);
+    function depositEthUsdcGmxV2(uint256 tokenAmount, uint256 tokenBmount, uint256 minGmAmount, uint256 executionFee) external payable {
+        _deposit(GM_ETH_WETHe_USDC, tokenAmount, tokenBmount, minGmAmount, executionFee);
     }
 
-    function depositAvaxUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable {
-        address _depositedToken = isLongToken ? WAVAX : USDC;
-
-        _deposit(GM_AVAX_WAVAX_USDC, _depositedToken, tokenAmount, minGmAmount, executionFee);
+    function depositAvaxUsdcGmxV2(uint256 tokenAmount, uint256 tokenBmount, uint256 minGmAmount, uint256 executionFee) external payable {
+        _deposit(GM_AVAX_WAVAX_USDC, tokenAmount, tokenBmount, minGmAmount, executionFee);
     }
 
     // WITHDRAW
