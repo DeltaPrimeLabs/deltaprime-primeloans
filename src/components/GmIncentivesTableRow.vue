@@ -263,13 +263,8 @@ export default {
       await Promise.all(
         timestamps.map(async timestamp => {
           if (timestamp <= now) {
-            const prices = await Promise.all(Object.keys(config.GMX_V2_ASSETS_CONFIG).map( key => redstone.getHistoricalPrice(key, {date: timestamp * 1000})))
-            const pricesObj = {};
-            prices.forEach(feed =>
-              pricesObj[feed.symbol] = feed
-            )
-
-            timestampToGmPrices[timestamp] = pricesObj;
+            const prices = await redstone.getHistoricalPrice(Object.keys(config.GMX_V2_ASSETS_CONFIG), {date: timestamp * 1000});
+            timestampToGmPrices[timestamp] = prices;
           }
         })
       );
