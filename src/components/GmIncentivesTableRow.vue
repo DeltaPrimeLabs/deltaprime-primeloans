@@ -133,7 +133,7 @@ export default {
     ]),
     gmBoostApy() {
       if (window.arbitrumChain) {
-        return (this.apys && this.assets['ARB'] && this.assets['ARB'].price) ? this.apys['GM_BOOST'].arbApy * this.assets['ARB'].price : 0;
+        return 0;
       } else {
         return (this.apys && this.assets['AVAX'] && this.assets['AVAX'].price) ? this.apys['GM_BOOST'].avaxApy * this.assets['AVAX'].price : 0;
       }
@@ -142,7 +142,7 @@ export default {
       let apy, weeklyAmount;
       if (window.arbitrumChain) {
         apy = this.apys ? this.apys['GM_BOOST'].arbApy : 0;
-        weeklyAmount = 10000;
+        weeklyAmount = 0;
       } else {
         apy = this.apys ? this.apys['GM_BOOST'].avaxApy : 0;
         weeklyAmount = 1500;
@@ -151,7 +151,7 @@ export default {
       return apy ? weeklyAmount / 7 * 365 / apy  : 0;
     },
     maxBoostApr() {
-      if (!this.gmBoostApy) return;
+      if (!this.gmBoostApy) return 0;
       return 4.5 * this.gmBoostApy;
     },
     leveragedGm() {

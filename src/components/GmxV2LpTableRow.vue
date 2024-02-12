@@ -304,7 +304,7 @@ export default {
         if (!this.assets['ARB'] || !this.assets['ARB'].price) {
           return 0;
         } else {
-          apy = this.apys['GM_BOOST'].arbApy * (this.assets['ARB'].price || 0);
+          apy = 0;
         }
       } else {
         console.log('avalanche gm boost');
@@ -319,7 +319,7 @@ export default {
     },
 
     hasGmIncentives() {
-      return true;
+      return window.chain === 'avalanche';
     }
   },
 
