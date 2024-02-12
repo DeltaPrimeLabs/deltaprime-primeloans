@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 4ad7b1532b12e0253817f898bca47228d3b907e0;
+// Last deployed from commit: 2c04f8bbc145fcb8a91c9e51438a65729a4a81fc;
 pragma solidity 0.8.17;
 
 //This path is updated during deployment
@@ -25,8 +25,7 @@ contract GmxV2FacetAvalanche is GmxV2Facet {
     function getGmxV2WithdrawalVault() internal pure virtual override returns (address) {
         return 0xf5F30B10141E1F63FC11eD772931A8294a591996;
     }
-
-
+    
     // Markets
     address constant GM_BTC_BTCb_USDC = 0xFb02132333A79C8B5Bd0b64E3AbccA5f7fAf2937;
     address constant GM_ETH_WETHe_USDC = 0xB7e69749E3d2EDd90ea59A4932EFEa2D41E245d7;

@@ -22,6 +22,8 @@ import "../lib/local/DeploymentConstants.sol";
 
 abstract contract GmxV2CallbacksFacet is IDepositCallbackReceiver, IWithdrawalCallbackReceiver, ReentrancyGuardKeccak {
     using TransferHelper for address;
+    using Deposit for Deposit.Props;
+    using Withdrawal for Withdrawal.Props;
 
     // CONSTANTS
     bytes32 constant public CONTROLLER = keccak256(abi.encode("CONTROLLER"));
@@ -69,7 +71,7 @@ abstract contract GmxV2CallbacksFacet is IDepositCallbackReceiver, IWithdrawalCa
             receivedMarketTokens * 1e18 / 10**IERC20Metadata(gmToken).decimals()
         );
 
-        tokenManager.setPendingExposureToZero(tokenManager.tokenAddressToSymbol(gmToken));
+        tokenManager.setPendingExposureToZero(tokenManager.tokenAddressToSymbol(gmToken), deposit.account());
         
         // Unfreeze account
         DiamondStorageLib.unfreezeAccount(msg.sender);
@@ -112,7 +114,7 @@ abstract contract GmxV2CallbacksFacet is IDepositCallbackReceiver, IWithdrawalCa
             );
         }
 
-        tokenManager.setPendingExposureToZero(tokenManager.tokenAddressToSymbol(deposit.addresses.market));
+        tokenManager.setPendingExposureToZero(tokenManager.tokenAddressToSymbol(deposit.addresses.market), deposit.account());
 
         DiamondStorageLib.unfreezeAccount(msg.sender);
         emit DepositCancelled(
@@ -126,16 +128,14 @@ abstract contract GmxV2CallbacksFacet is IDepositCallbackReceiver, IWithdrawalCa
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         address longToken = marketToLongToken(withdrawal.addresses.market);
         address shortToken = marketToShortToken(withdrawal.addresses.market);
-        uint256 longTokenInitialBalance = IERC20Metadata(longToken).balanceOf(address(this));
-        uint256 shortTokenInitialBalance = IERC20Metadata(shortToken).balanceOf(address(this));
         uint256 longOutputAmount = eventData.uintItems.items[0].value;
         uint256 shortOutputAmount = eventData.uintItems.items[1].value;
 
         // Add owned assets
-        if(longTokenInitialBalance > 0){
+        if(IERC20Metadata(longToken).balanceOf(address(this)) > 0){
             DiamondStorageLib.addOwnedAsset(tokenManager.tokenAddressToSymbol(longToken), longToken);
         }
-        if(shortTokenInitialBalance > 0){
+        if(IERC20Metadata(shortToken).balanceOf(address(this)) > 0){
             DiamondStorageLib.addOwnedAsset(tokenManager.tokenAddressToSymbol(shortToken), shortToken);
         }
         
@@ -152,8 +152,8 @@ abstract contract GmxV2CallbacksFacet is IDepositCallbackReceiver, IWithdrawalCa
             );
         }
 
-        tokenManager.setPendingExposureToZero(tokenManager.tokenAddressToSymbol(longToken));
-        tokenManager.setPendingExposureToZero(tokenManager.tokenAddressToSymbol(shortToken));
+        tokenManager.setPendingExposureToZero(tokenManager.tokenAddressToSymbol(longToken), withdrawal.account());
+        tokenManager.setPendingExposureToZero(tokenManager.tokenAddressToSymbol(shortToken), withdrawal.account());
         
         // Native token transfer happens after execution of this method, but the amounts should be dust ones anyway and by wrapping here we get a chance to wrap any previously sent native token
         wrapNativeToken();
@@ -162,8 +162,8 @@ abstract contract GmxV2CallbacksFacet is IDepositCallbackReceiver, IWithdrawalCa
         emit WithdrawalExecuted(
             msg.sender,
             withdrawal.addresses.market,
-            IERC20Metadata(longToken).balanceOf(address(this)) - longTokenInitialBalance,
-            IERC20Metadata(shortToken).balanceOf(address(this)) - shortTokenInitialBalance,
+            longOutputAmount,
+            shortOutputAmount,
             withdrawal.numbers.executionFee
         );
     }
@@ -186,8 +186,8 @@ abstract contract GmxV2CallbacksFacet is IDepositCallbackReceiver, IWithdrawalCa
             withdrawal.numbers.marketTokenAmount * 1e18 / 10**IERC20Metadata(withdrawal.addresses.market).decimals()
         );
 
-        tokenManager.setPendingExposureToZero(tokenManager.tokenAddressToSymbol(longToken));
-        tokenManager.setPendingExposureToZero(tokenManager.tokenAddressToSymbol(shortToken));
+        tokenManager.setPendingExposureToZero(tokenManager.tokenAddressToSymbol(longToken), withdrawal.account());
+        tokenManager.setPendingExposureToZero(tokenManager.tokenAddressToSymbol(shortToken), withdrawal.account());
 
         DiamondStorageLib.unfreezeAccount(msg.sender);
         emit WithdrawalCancelled(

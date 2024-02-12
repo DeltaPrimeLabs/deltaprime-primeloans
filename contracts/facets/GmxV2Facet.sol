@@ -143,7 +143,7 @@ abstract contract GmxV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         // Freeze account
         DiamondStorageLib.freezeAccount(gmToken);
         
-        tokenManager.increasePendingExposure(tokenManager.tokenAddressToSymbol(gmToken), minGmAmount * 1e18 / 10**IERC20Metadata(gmToken).decimals());
+        tokenManager.increasePendingExposure(tokenManager.tokenAddressToSymbol(gmToken), address(this), minGmAmount * 1e18 / 10**IERC20Metadata(gmToken).decimals());
 
         // Update exposures
         _updateOwnedAssets(tokenManager, longToken, longTokenAmount);
@@ -198,8 +198,8 @@ abstract contract GmxV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         // Freeze account
         DiamondStorageLib.freezeAccount(gmToken);
 
-        tokenManager.increasePendingExposure(tokenManager.tokenAddressToSymbol(marketToLongToken(gmToken)), minLongTokenAmount * 1e18 / 10**IERC20Metadata(marketToLongToken(gmToken)).decimals());
-        tokenManager.increasePendingExposure(tokenManager.tokenAddressToSymbol(marketToShortToken(gmToken)), minShortTokenAmount * 1e18 / 10**IERC20Metadata(marketToShortToken(gmToken)).decimals());
+        tokenManager.increasePendingExposure(tokenManager.tokenAddressToSymbol(longToken), address(this), minLongTokenAmount * 1e18 / 10**IERC20Metadata(longToken).decimals());
+        tokenManager.increasePendingExposure(tokenManager.tokenAddressToSymbol(shortToken), address(this), minShortTokenAmount * 1e18 / 10**IERC20Metadata(shortToken).decimals());
 
         // Update exposures
         tokenManager.decreaseProtocolExposure(
