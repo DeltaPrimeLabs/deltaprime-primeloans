@@ -7,25 +7,25 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deploy } = deployments;
     const { deployer, admin } = await getNamedAccounts();
 
-    embedCommitHash("AssetsOperationsFacet", "./contracts/facets");
+    embedCommitHash("AssetsOperationsArbitrumFacet", "./contracts/facets/arbitrum");
 
-    let AssetsOperationsFacet = await deploy("AssetsOperationsFacet", {
+    let AssetsOperationsArbitrumFacet = await deploy("AssetsOperationsArbitrumFacet", {
         from: deployer,
-        gasLimit: 80000000,
+        gasLimit: 100000000,
         args: [],
     });
 
     console.log(
-        `AssetsOperationsFacet implementation deployed at address: ${AssetsOperationsFacet.address}`
+        `AssetsOperationsArbitrumFacet implementation deployed at address: ${AssetsOperationsArbitrumFacet.address}`
     );
 
     await verifyContract(hre,
         {
-            address: AssetsOperationsFacet.address,
-            contract: `contracts/facets/AssetsOperationsFacet.sol:AssetsOperationsFacet`,
+            address: AssetsOperationsArbitrumFacet.address,
+            contract: `contracts/facets/arbitrum/AssetsOperationsArbitrumFacet.sol:AssetsOperationsArbitrumFacet`,
             constructorArguments: []
         });
-    console.log(`Verified AssetsOperationsFacet`);
+    console.log(`Verified AssetsOperationsArbitrumFacet`);
 };
 
 module.exports.tags = ["arbitrum-asset-operation"];
