@@ -40,8 +40,8 @@ provider:
     FUNC_RPC_ARB: ${file(./.secrets/funcRpc.json):arbitrum}
     EXT_RPC_AVA: ${file(./.secrets/extRpc.json):avalanche}
     EXT_RPC_ARB: ${file(./.secrets/extRpc.json):arbitrum}
-    AUTH0_AUDIENCE: ${file(./.secrets/auth0.json):audience}
-    AUTH0_ISSUER: ${file(./.secrets/auth0.json):issuer}
+    # AUTH0_AUDIENCE: ${file(./.secrets/auth0.json):audience}
+    # AUTH0_ISSUER: ${file(./.secrets/auth0.json):issuer}
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -51,14 +51,14 @@ provider:
         - dynamodb:PutItem
         - dynamodb:UpdateItem
       Resource: "*"
-  httpApi:
-    authorizers:
-      auth0Authorizer:
-        type: jwt
-        identitySource: $request.header.Authorization
-        issuerUrl: ${self:provider.environment.AUTH0_ISSUER}
-        audience:
-          - ${self:provider.environment.AUTH0_AUDIENCE}
+  # httpApi:
+  #   authorizers:
+  #     auth0Authorizer:
+  #       type: jwt
+  #       identitySource: $request.header.Authorization
+  #       issuerUrl: ${self:provider.environment.AUTH0_ISSUER}
+  #       audience:
+  #         - ${self:provider.environment.AUTH0_AUDIENCE}
   # you can add statements to the Lambda function's IAM Role here
 
 # you can define service wide environment variables here
@@ -209,13 +209,13 @@ functions:
     description: Calculate incentives for loans on Avalanche.
     events:
       - schedule: rate(10 minutes)
-  gmxIncentivesCalculatorArb:
-    handler: gmxIncentives/gmxIncentivesCalculatorArb.handler
-    memorySize: 1024
-    timeout: 600
-    description: Calculate incentives for loans on Arbitrum.
-    events:
-      - schedule: rate(10 minutes)
+  # gmxIncentivesCalculatorArb:
+  #   handler: gmxIncentives/gmxIncentivesCalculatorArb.handler
+  #   memorySize: 1024
+  #   timeout: 600
+  #   description: Calculate incentives for loans on Arbitrum.
+  #   events:
+  #     - schedule: rate(10 minutes)
   getGmxIncentivesApi:
     handler: apis/gmxIncentives.getGmxIncentivesApi
     memorySize: 512
