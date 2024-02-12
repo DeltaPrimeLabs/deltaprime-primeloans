@@ -169,7 +169,7 @@ abstract contract GmxV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
                 tokenPrices = getPrices(tokenSymbols);
             }
             require(isWithinBounds(
-                tokenPrices[3] * gmAmount / 10**IERC20Metadata(gmToken).decimals(),                   // Deposit Amount In USD
+                tokenPrices[2] * gmAmount / 10**IERC20Metadata(gmToken).decimals(),                   // Deposit Amount In USD
                 tokenPrices[0] * minLongTokenAmount / 10**IERC20Metadata(longToken).decimals() 
                 + tokenPrices[1] * minShortTokenAmount / 10**IERC20Metadata(shortToken).decimals())   // Output Amount In USD
             , "Invalid min output value");
