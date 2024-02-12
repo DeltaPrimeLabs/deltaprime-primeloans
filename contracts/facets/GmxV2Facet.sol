@@ -57,13 +57,16 @@ abstract contract GmxV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     function _simulateSolvencyCheck(ITokenManager tokenManager, address gmToken, uint longTokenAmount, uint shortTokenAmount, uint gmAmount, bool isDeposit) internal{
         uint256[] memory tokenPrices = new uint256[](3);
         bytes32[] memory tokenSymbols = new bytes32[](3);
-        tokenSymbols[0] = tokenManager.tokenAddressToSymbol(marketToLongToken(gmToken));
-        tokenSymbols[1] = tokenManager.tokenAddressToSymbol(marketToShortToken(gmToken));
+        address shortToken = marketToShortToken(gmToken);
+        address longToken = marketToLongToken(gmToken);
+        
+        tokenSymbols[0] = tokenManager.tokenAddressToSymbol(longToken);
+        tokenSymbols[1] = tokenManager.tokenAddressToSymbol(shortToken);
         tokenSymbols[2] = tokenManager.tokenAddressToSymbol(gmToken);
         tokenPrices = getPrices(tokenSymbols);
 
         uint256 amount0 = tokenPrices[2] * gmAmount / 10**IERC20Metadata(gmToken).decimals();
-        uint256 amount1 = tokenPrices[0] * longTokenAmount / 10**IERC20Metadata(marketToLongToken(gmToken)).decimals() + tokenPrices[1] * shortTokenAmount / 10**IERC20Metadata(marketToShortToken(gmToken)).decimals();
+        uint256 amount1 = tokenPrices[0] * longTokenAmount / 10**IERC20Metadata(longToken).decimals() + tokenPrices[1] * shortTokenAmount / 10**IERC20Metadata(shortToken).decimals();
         (amount0, amount1) = isDeposit ? (amount1, amount0) : (amount0, amount1);
         require(isWithinBounds(amount0, amount1) , "Invalid min output value");
         
@@ -71,8 +74,8 @@ abstract contract GmxV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             (tokenPrices[2] * gmAmount * tokenManager.debtCoverage(gmToken) * 1e18 / 10**IERC20Metadata(gmToken).decimals()) / 1e26 
         :
         (
-            (tokenPrices[0] * longTokenAmount * tokenManager.debtCoverage(marketToLongToken(gmToken)) * 1e18 / 10**IERC20Metadata(marketToLongToken(gmToken)).decimals()) +
-            (tokenPrices[1] * shortTokenAmount * tokenManager.debtCoverage(marketToShortToken(gmToken)) * 1e18 / 10**IERC20Metadata(marketToShortToken(gmToken)).decimals())
+            (tokenPrices[0] * longTokenAmount * tokenManager.debtCoverage(longToken) * 1e18 / 10**IERC20Metadata(longToken).decimals()) +
+            (tokenPrices[1] * shortTokenAmount * tokenManager.debtCoverage(shortToken) * 1e18 / 10**IERC20Metadata(shortToken).decimals())
         )
         / 1e26;
 
