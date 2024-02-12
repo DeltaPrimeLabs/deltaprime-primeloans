@@ -67,12 +67,12 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
         tokenManager = ITokenManager(_tokenManager);
     }
 
-    function createLoan() public virtual hasNoLoan returns (SmartLoanDiamondBeacon) {
+    function createLoan(address referrer) public virtual hasNoLoan returns (SmartLoanDiamondBeacon) {
         SmartLoanDiamondProxy beaconProxy = new SmartLoanDiamondProxy(
             payable(address(smartLoanDiamond)),
         // Setting SLFactory as the initial owner and then using .transferOwnership to change the owner to msg.sender
         // It is possible to set msg.sender as the initial owner if our loan-creation flow would change
-            abi.encodeWithSelector(SmartLoanViewFacet.initialize.selector, msg.sender)
+            abi.encodeWithSelector(SmartLoanViewFacet.initialize.selector, msg.sender, referrer)
         );
         SmartLoanDiamondBeacon smartLoan = SmartLoanDiamondBeacon(payable(address(beaconProxy)));
 
@@ -83,10 +83,10 @@ contract SmartLoansFactory is OwnableUpgradeable, IBorrowersRegistry, ProxyConne
         return smartLoan;
     }
 
-    function createAndFundLoan(bytes32 _fundedAsset, uint256 _amount) public virtual hasNoLoan returns (SmartLoanDiamondBeacon) {
+    function createAndFundLoan(bytes32 _fundedAsset, uint256 _amount, address referrer) public virtual hasNoLoan returns (SmartLoanDiamondBeacon) {
         address asset = tokenManager.getAssetAddress(_fundedAsset, false);
         SmartLoanDiamondProxy beaconProxy = new SmartLoanDiamondProxy(payable(address(smartLoanDiamond)),
-            abi.encodeWithSelector(SmartLoanViewFacet.initialize.selector, msg.sender)
+            abi.encodeWithSelector(SmartLoanViewFacet.initialize.selector, msg.sender, referrer)
         );
         SmartLoanDiamondBeacon smartLoan = SmartLoanDiamondBeacon(payable(address(beaconProxy)));
 

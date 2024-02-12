@@ -12,33 +12,19 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 //This path is updated during deployment
 import "../lib/local/DeploymentConstants.sol";
 
-contract SmartLoanViewFacet is ReentrancyGuardKeccak, SolvencyMethods {
+contract SmartLoanViewFacet is ISmartLoanViewFacet, ReentrancyGuardKeccak, SolvencyMethods {
     using TransferHelper for address payable;
     using TransferHelper for address;
 
-    struct AssetNameBalance {
-        bytes32 name;
-        uint256 balance;
-    }
-
-    struct AssetNameDebt {
-        bytes32 name;
-        uint256 debt;
-    }
-
-    struct AssetNamePrice {
-        bytes32 name;
-        uint256 price;
-    }
-
     /* ========== PUBLIC AND EXTERNAL MUTATIVE FUNCTIONS ========== */
 
-    function initialize(address owner) external {
+    function initialize(address owner, address referrer) external {
         require(owner != address(0), "Initialize: Cannot set the owner to a zero address");
 
         DiamondStorageLib.SmartLoanStorage storage sls = DiamondStorageLib.smartLoanStorage();
         require(!sls._initialized, "DiamondInit: contract is already initialized");
         DiamondStorageLib.setContractOwner(owner);
+        DiamondStorageLib.setReferrer(referrer);
         sls._initialized = true;
     }
 
@@ -51,6 +37,11 @@ contract SmartLoanViewFacet is ReentrancyGuardKeccak, SolvencyMethods {
     function getAccountFrozenSince() public view returns (uint256){
         DiamondStorageLib.SmartLoanStorage storage sls = DiamondStorageLib.smartLoanStorage();
         return sls.frozenSince;
+    }
+
+    function getReferrer() public view returns (address){
+        DiamondStorageLib.SmartLoanStorage storage sls = DiamondStorageLib.smartLoanStorage();
+        return sls.referrer;
     }
 
 
