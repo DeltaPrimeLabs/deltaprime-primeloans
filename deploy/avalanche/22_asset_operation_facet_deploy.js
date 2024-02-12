@@ -7,25 +7,25 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deploy } = deployments;
     const { deployer, admin } = await getNamedAccounts();
 
-    embedCommitHash("AssetsOperationsFacet", "./contracts/facets");
+    embedCommitHash("AssetsOperationsAvalancheFacet", "./contracts/facets/avalanche");
 
-    let AssetsOperationsFacet = await deploy("AssetsOperationsFacet", {
+    let AssetsOperationsAvalancheFacet = await deploy("AssetsOperationsAvalancheFacet", {
         from: deployer,
         gasLimit: 15000000,
         args: [],
     });
 
     console.log(
-        `AssetsOperationsFacet implementation deployed at address: ${AssetsOperationsFacet.address}`
+        `AssetsOperationsAvalancheFacet implementation deployed at address: ${AssetsOperationsAvalancheFacet.address}`
     );
 
     await verifyContract(hre,
         {
-            address: AssetsOperationsFacet.address,
-            contract: `contracts/facets/AssetsOperationsFacet.sol:AssetsOperationsFacet`,
+            address: AssetsOperationsAvalancheFacet.address,
+            contract: `contracts/facets/avalanche/AssetsOperationsAvalancheFacet.sol:AssetsOperationsAvalancheFacet`,
             constructorArguments: []
         });
-    console.log(`Verified AssetsOperationsFacet`);
+    console.log(`Verified AssetsOperationsAvalancheFacet`);
 };
 
 module.exports.tags = ["avalanche-asset-operation"];
