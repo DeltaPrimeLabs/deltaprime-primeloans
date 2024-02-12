@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: b3b1f1fda8bcd4b1601a1c82de7b1439d5ad352d;
+// Last deployed from commit: 89353f15e154d074fa2679c4fde2012bafee25fc;
 pragma solidity 0.8.17;
 
 //This path is updated during deployment
@@ -24,10 +24,6 @@ contract GmxV2FacetArbitrum is GmxV2Facet {
 
     function getGmxV2WithdrawalVault() internal pure virtual override returns (address) {
         return 0x0628D46b5D145f183AdB6Ef1f2c97eD1C4701C55;
-    }
-
-    function getGmxV2RoleStore() internal pure virtual override returns (address){
-        return 0x3c3d99FD298f679DBC2CEcd132b4eC4d0F5e6e72;
     }
 
     // Markets
@@ -88,7 +84,7 @@ contract GmxV2FacetArbitrum is GmxV2Facet {
     function depositArbUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable {
         address _depositedToken = isLongToken ? ARB : USDC;
 
-        _deposit(GM_ARB_ARB_USDC, isLongToken ? ARB : USDC, tokenAmount, minGmAmount, executionFee);
+        _deposit(GM_ARB_ARB_USDC, _depositedToken, tokenAmount, minGmAmount, executionFee);
     }
 
     function depositLinkUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable {

@@ -1416,4 +1416,19 @@ export const parseParaSwapRouteData = (txParams: TransactionParams) => {
     };
 };
 
+export const getContractSelectors = (contract: Contract) => {
+    contract.interface.fragments.forEach(fragment => {
+        if (fragment.type === 'function') {
+            // Construct the function signature
+            const inputTypes = fragment.inputs.map(input => input.type).join(',');
+            const signature = `${fragment.name}(${inputTypes})`;
+
+            // Compute the selector
+            const selector = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(signature)).slice(0, 10); // '0x' followed by the 4-byte selector
+
+            console.log(`Method: ${fragment.name}, Selector: ${selector}`);
+        }
+    });
+}
+
 
