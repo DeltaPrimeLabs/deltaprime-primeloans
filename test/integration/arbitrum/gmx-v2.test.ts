@@ -3,7 +3,7 @@ import chai, {expect, util} from 'chai'
 import {solidity} from "ethereum-waffle";
 import { constructSimpleSDK, SimpleFetchSDK, SwapSide, ContractMethod } from '@paraswap/sdk';
 import axios from 'axios';
-
+import { parseUnits } from 'ethers/lib/utils'
 import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import AddressProviderArtifact from '../../../artifacts/contracts/AddressProvider.sol/AddressProvider.json';
@@ -30,7 +30,7 @@ import {
     time,
     toBytes32,
     toWei,
-    paraSwapRouteToSimpleData,
+    parseParaSwapRouteData,
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
@@ -102,7 +102,7 @@ describe('Smart loan', () => {
             }, {
                 ignoreChecks: true,
             });
-            const swapData = paraSwapRouteToSimpleData(txParams);
+            const swapData = parseParaSwapRouteData(txParams);
             return swapData;
         };
 
@@ -190,33 +190,31 @@ describe('Smart loan', () => {
 
 
         it("should swap and fund", async () => {
-            await tokenContracts.get('ETH')!.connect(owner).deposit({value: toWei("10")});
-            await tokenContracts.get('ETH')!.connect(owner).approve(wrappedLoan.address, toWei("10"));
-            await wrappedLoan.fund(toBytes32("ETH"), toWei("10"));
+            await tokenContracts.get('ETH')!.connect(owner).deposit({value: toWei("100")});
+            await tokenContracts.get('ETH')!.connect(owner).approve(wrappedLoan.address, toWei("100"));
+            await wrappedLoan.fund(toBytes32("ETH"), toWei("100"));
 
             let initialTotalValue = await wrappedLoan.getTotalValue();
             let initialHR = await wrappedLoan.getHealthRatio();
             let initialTWV = await wrappedLoan.getThresholdWeightedValue();
-
-            let swapData = await getSwapData('ETH', 'BTC', 18, 8, toWei('2'));
-            console.log('swap 1')
-            await wrappedLoan.paraSwap(swapData);
-            btcBalance = await tokenContracts.get('BTC')!.balanceOf(wrappedLoan.address);
-            swapData = await getSwapData('ETH', 'USDT', 18, 6, toWei('2'));
-            console.log('swap 2')
-            await wrappedLoan.paraSwap(swapData);
+            
+            let swapData = await getSwapData('ETH', 'USDT', 18, 6, toWei('2'));
+            await wrappedLoan.paraSwapV2(swapData.selector, swapData.data, TOKEN_ADDRESSES['ETH'], toWei('2'), TOKEN_ADDRESSES['USDT'], parseUnits((tokensPrices.get("ETH")! * 1.96).toFixed(6), 6));
             usdtBalance = await tokenContracts.get('USDT')!.balanceOf(wrappedLoan.address);
             swapData = await getSwapData('ETH', 'USDC', 18, 6, toWei('2'));
-            console.log('swap 3')
-            await wrappedLoan.paraSwap(swapData);
+            await wrappedLoan.paraSwapV2(swapData.selector, swapData.data, TOKEN_ADDRESSES['ETH'], toWei('2'), TOKEN_ADDRESSES['USDC'], parseUnits((tokensPrices.get("ETH")! * 1.96).toFixed(6), 6));
             usdcBalance = await tokenContracts.get('USDC')!.balanceOf(wrappedLoan.address);
+
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 20);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.eq(fromWei(initialHR));
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 20);
         });
 
-        it("should deposit to GMX V2", async () => {
+        it("should deposit one side token to GMX V2", async () => {
             const tokenAmount = toWei('0.0005');
             const maxFee = toWei('0.01');
 
-            await wrappedLoan.depositEthUsdcGmxV2(true, tokenAmount, 0, maxFee, { value: maxFee });
+            await wrappedLoan.depositEthUsdcGmxV2(tokenAmount, 0, 0, maxFee, { value: maxFee });
         });
 
         it("should deposit to GMX V2", async () => {

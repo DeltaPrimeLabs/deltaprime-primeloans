@@ -190,6 +190,9 @@ abstract contract GmxV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         IERC20(gmToken).approve(getGmxV2Router(), gmAmount);
         BasicMulticall(getGmxV2ExchangeRouter()).multicall{ value: msg.value }(data);
 
+        address longToken = marketToLongToken(gmToken);
+        address shortToken = marketToShortToken(gmToken);
+
         // Simulate solvency check
         if(msg.sender == DiamondStorageLib.contractOwner()){    // Only owner can call this method or else it's liquidator when the account is already insolvent
             _simulateSolvencyCheck(tokenManager, gmToken, minLongTokenAmount, minShortTokenAmount, gmAmount, false);
