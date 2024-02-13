@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 4da64a8a04844045e51b88c6202064e16ea118aa;
+// Last deployed from commit: 9be978eee452f5d0645f568d47e3ca96b1d7c8ef;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -165,6 +165,20 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         emit Repaid(msg.sender, _asset, _amount, block.timestamp);
     }
 
+    function withdrawUnsupportedToken(address token) external nonReentrant onlyOwner remainsSolvent {
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+
+        // _NOT_SUPPORTED = 0
+        require(tokenManager.tokenToStatus(token) == 0, "token supported");
+        require(tokenManager.debtCoverage(token) == 0, "token debt coverage != 0");
+
+        uint256 balance = IERC20(token).balanceOf(address(this));
+        require(balance > 0, "nothing to withdraw");
+        token.safeTransfer(msg.sender, balance);
+
+        emit WithdrawUnsupportedToken(msg.sender, token, balance, block.timestamp);
+    }
+
     // TODO: Separate manager for unfreezing - not liquidators
     function unfreezeAccount() external onlyWhitelistedLiquidators {
         DiamondStorageLib.unfreezeAccount(msg.sender);
@@ -298,4 +312,13 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
      * @param timestamp of the repayment
      **/
     event Repaid(address indexed user, bytes32 indexed asset, uint256 amount, uint256 timestamp);
+
+    /**
+     * @dev emitted when unsupported token is withdrawn
+     * @param user the address withdrawing unsupported token
+     * @param token the unsupported token address
+     * @param amount of unsupported token withdrawn
+     * @param timestamp of the withdraw
+     **/
+    event WithdrawUnsupportedToken(address indexed user, address indexed token, uint256 amount, uint256 timestamp);
 }
