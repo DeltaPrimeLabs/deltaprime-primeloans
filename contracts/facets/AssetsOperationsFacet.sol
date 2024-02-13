@@ -27,7 +27,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
     * @param _fundedAsset asset to be funded
     * @param _amount to be funded
     **/
-    function fund(bytes32 _fundedAsset, uint256 _amount) public virtual {
+    function fund(bytes32 _fundedAsset, uint256 _amount) public virtual nonReentrant {
         IERC20Metadata token = getERC20TokenInstance(_fundedAsset, false);
         _amount = Math.min(_amount, token.balanceOf(msg.sender));
 
@@ -42,7 +42,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         emit Funded(msg.sender, _fundedAsset, _amount, block.timestamp);
     }
 
-    function addOwnedAsset(bytes32 _asset, address _address) external onlyWhitelistedLiquidators {
+    function addOwnedAsset(bytes32 _asset, address _address) external onlyWhitelistedLiquidators nonReentrant{
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         require(tokenManager.isTokenAssetActive(_address), "Asset not supported");
 
@@ -54,7 +54,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
     * @dev Requires approval for stakedGLP token on frontend side
     * @param _amount to be funded
     **/
-    function fundGLP(uint256 _amount) public virtual {
+    function fundGLP(uint256 _amount) public virtual nonReentrant {
         IERC20Metadata stakedGlpToken = IERC20Metadata(0xaE64d55a6f09E4263421737397D1fdFA71896a69);
         _amount = Math.min(_amount, stakedGlpToken.balanceOf(msg.sender));
         address(stakedGlpToken).safeTransferFrom(msg.sender, address(this), _amount);
@@ -117,7 +117,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
     * @param _asset to be borrowed
     * @param _amount of funds to borrow
     **/
-    function borrow(bytes32 _asset, uint256 _amount) external onlyOwner remainsSolvent {
+    function borrow(bytes32 _asset, uint256 _amount) external onlyOwner remainsSolvent nonReentrant {
         DiamondStorageLib.DiamondStorage storage ds = DiamondStorageLib.diamondStorage();
         ds._lastBorrowTimestamp = block.timestamp;
 
@@ -140,7 +140,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
      * @param _asset to be repaid
      * @param _amount of funds to repay
      **/
-    function repay(bytes32 _asset, uint256 _amount) public payable {
+    function repay(bytes32 _asset, uint256 _amount) public payable nonReentrant {
         IERC20Metadata token = getERC20TokenInstance(_asset, true);
 
         if (_isSolvent()) {

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 600afd729b3c98da58e0b3371833b7184bb99bc8;
+// Last deployed from commit: 64a9eb8d8ae32bd1462f11fe1513b45de6dcdadb;
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -7,6 +7,7 @@ import "../../ReentrancyGuardKeccak.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "../../OnlyOwnerOrInsolvent.sol";
 import "../../interfaces/facets/arbitrum/ILevelFinance.sol";
+import "../../interfaces/facets/arbitrum/ILevelOrderManager.sol";
 import "../../interfaces/IStakingPositions.sol";
 import "../../interfaces/IWrappedNativeToken.sol";
 
@@ -29,6 +30,8 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
     address private constant LEVEL_FARMING =
         0xC18c952F800516E1eef6aB482F3d331c84d43d38;
+
+    address private constant LEVEL_ORDER_MANAGER = 0x2215298606C9D0274527b13519Ec50c3A7f1c1eF;
 
     // LPs
     address private constant LEVEL_SENIOR_LLP =
@@ -669,7 +672,7 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     function levelUnstakeUsdcSnr(
         uint256 lpAmount,
         uint256 minAmount
-    ) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure {
+    ) public onlyWhitelistedLiquidators nonReentrant recalculateAssetsExposure {
         IStakingPositions.StakedPosition memory position = IStakingPositions
             .StakedPosition({
                 asset: LEVEL_SENIOR_LLP,
@@ -697,7 +700,7 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     function levelUnstakeUsdcMze(
         uint256 lpAmount,
         uint256 minAmount
-    ) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure {
+    ) public onlyWhitelistedLiquidators nonReentrant recalculateAssetsExposure {
         IStakingPositions.StakedPosition memory position = IStakingPositions
             .StakedPosition({
                 asset: LEVEL_MEZZANINE_LLP,
@@ -716,6 +719,12 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         );
     }
 
+    modifier onlyWhitelistedLiquidators() {
+        // External call in order to execute this method in the SmartLoanDiamondBeacon contract storage
+        require(SmartLoanLiquidationFacet(DeploymentConstants.getDiamondAddress()).isLiquidatorWhitelisted(msg.sender), "Only whitelisted liquidators can execute this method");
+        _;
+    }
+
     /**
      * Unstakes USDC from the junior tranche of Level finance
      * @dev This function uses the redstone-evm-connector
@@ -725,7 +734,7 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     function levelUnstakeUsdcJnr(
         uint256 lpAmount,
         uint256 minAmount
-    ) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure {
+    ) public onlyWhitelistedLiquidators nonReentrant recalculateAssetsExposure {
         IStakingPositions.StakedPosition memory position = IStakingPositions
             .StakedPosition({
                 asset: LEVEL_JUNIOR_LLP,
@@ -778,66 +787,33 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         uint256 pid,
         IStakingPositions.StakedPosition memory position
     ) private {
-        require(pid == 0, "Jnr and Mze tranches are no longer supported");
+        revert("No longer supported.");
+    }
 
-        if (asset == address(0)) {
-            amount = Math.min(
-                IWrappedNativeToken(ETH_TOKEN).balanceOf(address(this)),
-                amount
-            );
-            IWrappedNativeToken(ETH_TOKEN).withdraw(amount);
-        } else {
-            amount = Math.min(IERC20(asset).balanceOf(address(this)), amount);
-        }
-        require(amount > 0, "Cannot stake 0 tokens");
-
-        if (asset != address(0)) {
-            asset.safeApprove(LEVEL_FARMING, 0);
-            asset.safeApprove(LEVEL_FARMING, amount);
-        }
-
+    function exitLevelFinanceAndHarvestRewardsForOwner() external payable onlyWhitelistedLiquidators{
         ILevelFinance farmingContract = ILevelFinance(LEVEL_FARMING);
-        uint256 initialReceiptTokenBalance = farmingContract
-            .userInfo(pid, address(this))
-            .amount;
+        ILevelOrderManager orderManager = ILevelOrderManager(LEVEL_ORDER_MANAGER);
 
-        if (asset == address(0)) {
-            farmingContract.addLiquidityETH{value: amount}(
-                pid,
-                minLpAmount,
+        uint256 snrTrancheBalance = levelSnrBalance();
+
+
+        if(snrTrancheBalance > 0){
+            farmingContract.withdraw(0, snrTrancheBalance, address(this));
+            uint256 llpSeniorBalance = IERC20Metadata(LEVEL_SENIOR_LLP).balanceOf(address(this));
+            IERC20Metadata(LEVEL_SENIOR_LLP).approve(LEVEL_ORDER_MANAGER, llpSeniorBalance);
+
+            orderManager.placeRemoveLiquidityOrder{value: msg.value}(
+                LEVEL_SENIOR_LLP,
+                0xaf88d065e77c8cC2239327C5EDb3A432268e5831,
+                llpSeniorBalance,
+                0,
+                uint64(block.timestamp + 180),
                 address(this)
             );
-        } else {
-            farmingContract.addLiquidity(
-                pid,
-                asset,
-                amount,
-                minLpAmount,
-                address(this)
-            );
+            farmingContract.harvest(0, DiamondStorageLib.contractOwner());
+            DiamondStorageLib.removeStakedPosition("stkdSnrLLP");
+            DiamondStorageLib.addOwnedAsset("USDC",0xaf88d065e77c8cC2239327C5EDb3A432268e5831);
         }
-
-        // Add/remove owned tokens
-        DiamondStorageLib.addStakedPosition(position);
-        if (asset == address(0)) {
-            if (IERC20(ETH_TOKEN).balanceOf(address(this)) == 0) {
-                DiamondStorageLib.removeOwnedAsset(symbol);
-            }
-        } else {
-            if (IERC20(asset).balanceOf(address(this)) == 0) {
-                DiamondStorageLib.removeOwnedAsset(symbol);
-            }
-        }
-
-        emit Staked(
-            msg.sender,
-            symbol,
-            LEVEL_FARMING,
-            amount,
-            farmingContract.userInfo(pid, address(this)).amount -
-                initialReceiptTokenBalance,
-            block.timestamp
-        );
     }
 
     /**
@@ -855,8 +831,8 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         ILevelFinance farmingContract = ILevelFinance(LEVEL_FARMING);
         IERC20Metadata unstakedToken = getERC20TokenInstance(symbol, false);
         uint256 initialReceiptTokenBalance = farmingContract
-            .userInfo(pid, address(this))
-            .amount;
+        .userInfo(pid, address(this))
+        .amount;
 
         amount = Math.min(initialReceiptTokenBalance, amount);
 
@@ -885,8 +861,8 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         uint256 newBalance = unstakedToken.balanceOf(address(this));
 
         uint256 newReceiptTokenBalance = farmingContract
-            .userInfo(pid, address(this))
-            .amount;
+        .userInfo(pid, address(this))
+        .amount;
 
         // Add/remove owned tokens
         if (newReceiptTokenBalance == 0) {
@@ -902,6 +878,9 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             initialReceiptTokenBalance - newReceiptTokenBalance,
             block.timestamp
         );
+
+        farmingContract.harvest(pid, DiamondStorageLib.contractOwner());
+        emit RewardsHarvested(msg.sender, pid, block.timestamp);
     }
 
     function harvestRewards(uint256 pid) external nonReentrant onlyOwner {
@@ -911,52 +890,12 @@ contract LevelFinanceFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     }
 
     function unstakeAndWithdrawLLP(uint256 pid, uint256 amount) external nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent{
-        ILevelFinance farmingContract = ILevelFinance(LEVEL_FARMING);
-        require(_levelBalance(pid) >= amount, "Insufficient balance");
-
-        farmingContract.withdraw(pid, amount, msg.sender);
-
-        IStakingPositions.StakedPosition memory position = pidToStakedPosition(pid);
-        if(_levelBalance(pid) == 0){
-            DiamondStorageLib.removeStakedPosition(position.identifier);
-        }
-
-
-        // TODO: Emit withdraw event
-        emit WithdrewLLP(
-            msg.sender,
-            position.symbol,
-            LEVEL_FARMING,
-            amount,
-            block.timestamp
-        );
+        revert("No longer supported.");
     }
 
     // @dev Requires an approval on LLP token for the PrimeAccount address prior to calling this function
     function depositLLPAndStake(uint256 pid, uint256 amount) external nonReentrant onlyOwner recalculateAssetsExposure{
-        IERC20Metadata llpToken = IERC20Metadata(pidToLLPToken(pid));
-        ILevelFinance farmingContract = ILevelFinance(LEVEL_FARMING);
-
-        require(pid == 0, "Jnr and Mze tranches are no longer supported");
-        require(llpToken.balanceOf(msg.sender) >= amount, "amount > balanceOf LLP");
-        require(llpToken.allowance(msg.sender, address(this)) >= amount, "insufficient ERC20 allowance");
-
-        llpToken.transferFrom(msg.sender, address(this), amount);
-
-        address(llpToken).safeApprove(LEVEL_FARMING, 0);
-        address(llpToken).safeApprove(LEVEL_FARMING, amount);
-        farmingContract.deposit(pid, amount, address(this));
-
-        IStakingPositions.StakedPosition memory position = pidToStakedPosition(pid);
-        DiamondStorageLib.addStakedPosition(position);
-
-    emit DepositedLLP(
-            msg.sender,
-            position.symbol,
-            LEVEL_FARMING,
-            amount,
-            block.timestamp
-        );
+        revert("No longer supported.");
     }
 
     function pidToLLPToken(uint256 pid) private pure returns (address){

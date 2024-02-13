@@ -17,7 +17,7 @@ contract AssetsOperationsArbitrumFacet is AssetsOperationsFacet {
     * @dev Requires approval for stakedGLP token on frontend side
     * @param _amount to be funded
     **/
-    function fundGLP(uint256 _amount) public override {
+    function fundGLP(uint256 _amount) public override nonReentrant{
         IERC20Metadata stakedGlpToken = IERC20Metadata(0x5402B5F40310bDED796c7D0F3FF6683f5C0cFfdf);
         _amount = Math.min(_amount, stakedGlpToken.balanceOf(msg.sender));
         address(stakedGlpToken).safeTransferFrom(msg.sender, address(this), _amount);
@@ -29,5 +29,25 @@ contract AssetsOperationsArbitrumFacet is AssetsOperationsFacet {
         tokenManager.increaseProtocolExposure("GLP", _amount);
 
         emit Funded(msg.sender, "GLP", _amount, block.timestamp);
+    }
+
+    /**
+        * Withdraws specified amount of a GLP
+        * @param _amount to be withdrawn
+    **/
+    function withdrawGLP(uint256 _amount) public override onlyOwner nonReentrant canRepayDebtFully remainsSolvent{
+        IERC20Metadata token = getERC20TokenInstance("GLP", true);
+        IERC20Metadata stakedGlpToken = IERC20Metadata(0x5402B5F40310bDED796c7D0F3FF6683f5C0cFfdf);
+        _amount = Math.min(token.balanceOf(address(this)), _amount);
+
+        address(stakedGlpToken).safeTransfer(msg.sender, _amount);
+        if (token.balanceOf(address(this)) == 0) {
+            DiamondStorageLib.removeOwnedAsset("GLP");
+        }
+
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        tokenManager.decreaseProtocolExposure("GLP", _amount);
+
+        emit Withdrawn(msg.sender, "GLP", _amount, block.timestamp);
     }
 }

@@ -12,8 +12,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
     let ParaSwapFacet = await deploy("ParaSwapFacet", {
         from: deployer,
-        gasLimit: 3_000_000,
-        gasPrice: 600_000_000_000,
+        gasLimit: 15_000_000,
         args: [],
     });
 

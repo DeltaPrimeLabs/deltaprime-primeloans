@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: f9171d928d202be8df847b45d098bda14373cb32;
+// Last deployed from commit: 931bac1e3236e79e9ef603f1cf1f2237b9b76dfa;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";

@@ -1,6 +1,5 @@
 import { embedCommitHash } from "../../tools/scripts/embed-commit-hash";
 
-const { ethers } = require("hardhat");
 import verifyContract from "../../tools/scripts/verify-contract";
 import hre from "hardhat";
 
@@ -8,11 +7,6 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deploy } = deployments;
     const { deployer, admin } = await getNamedAccounts();
 
-    const FacetCutAction = {
-        Add: 0,
-        Replace: 1,
-        Remove: 2
-    }
 
     embedCommitHash("SolvencyFacetProdAvalanche", "./contracts/facets/avalanche");
 

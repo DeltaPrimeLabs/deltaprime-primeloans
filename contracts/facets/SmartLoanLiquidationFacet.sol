@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: d006dde9ed1c9c0e7a24b60635fdc62ea22cca7b;
+// Last deployed from commit: 59d41e5c806ed6c7c12b866c33944a73ec269f4c;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -21,7 +21,7 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
     uint256 private constant _MAX_HEALTH_AFTER_LIQUIDATION = 1.042e18;
 
     //IMPORTANT: KEEP IT IDENTICAL ACROSS FACETS TO BE PROPERLY UPDATED BY DEPLOYMENT SCRIPTS
-    uint256 private constant _MAX_LIQUIDATION_BONUS = 100;
+    uint256 private constant _MAX_LIQUIDATION_BONUS = 200;
 
     using TransferHelper for address payable;
     using TransferHelper for address;

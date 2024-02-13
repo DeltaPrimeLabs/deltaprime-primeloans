@@ -1408,30 +1408,28 @@ export class StakedPosition {
     }
 }
 
-export const paraSwapRouteToSimpleData = (txParams: TransactionParams) => {
+export const parseParaSwapRouteData = (txParams: TransactionParams) => {
+    const selector = txParams.data.slice(0, 10);
     const data = "0x" + txParams.data.slice(10);
-    const [
-        decoded,
-    ] = ethers.utils.defaultAbiCoder.decode(
-        ["(address,address,uint256,uint256,uint256,address[],bytes,uint256[],uint256[],address,address,uint256,bytes,uint256,bytes16)"],
-        data
-    );
     return {
-        fromToken: decoded[0],
-        toToken: decoded[1],
-        fromAmount: decoded[2],
-        toAmount: decoded[3],
-        expectedAmount: decoded[4],
-        callees: decoded[5],
-        exchangeData: decoded[6],
-        startIndexes: decoded[7],
-        values: decoded[8],
-        beneficiary: decoded[9],
-        partner: decoded[10],
-        feePercent: decoded[11],
-        permit: decoded[12],
-        deadline: decoded[13],
-        uuid: decoded[14],
+        selector,
+        data
     };
 };
+
+export const getContractSelectors = (contract: Contract) => {
+    contract.interface.fragments.forEach(fragment => {
+        if (fragment.type === 'function') {
+            // Construct the function signature
+            const inputTypes = fragment.inputs.map(input => input.type).join(',');
+            const signature = `${fragment.name}(${inputTypes})`;
+
+            // Compute the selector
+            const selector = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(signature)).slice(0, 10); // '0x' followed by the 4-byte selector
+
+            console.log(`Method: ${fragment.name}, Selector: ${selector}`);
+        }
+    });
+}
+
 
