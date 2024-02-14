@@ -86,7 +86,7 @@ abstract contract GmxV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         address longToken = marketToLongToken(gmToken);
         address shortToken = marketToShortToken(gmToken);
-        bytes[] memory data = new bytes[](3);
+        bytes[] memory data = new bytes[](4);
         data[0] = abi.encodeWithSelector(
             IGmxV2Router.sendWnt.selector,
             getGmxV2DepositVault(),

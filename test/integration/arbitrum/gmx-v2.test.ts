@@ -197,7 +197,7 @@ describe('Smart loan', () => {
             let initialTotalValue = await wrappedLoan.getTotalValue();
             let initialHR = await wrappedLoan.getHealthRatio();
             let initialTWV = await wrappedLoan.getThresholdWeightedValue();
-            
+
             let swapData = await getSwapData('ETH', 'USDT', 18, 6, toWei('2'));
             await wrappedLoan.paraSwapV2(swapData.selector, swapData.data, TOKEN_ADDRESSES['ETH'], toWei('2'), TOKEN_ADDRESSES['USDT'], parseUnits((tokensPrices.get("ETH")! * 1.96).toFixed(6), 6));
             usdtBalance = await tokenContracts.get('USDT')!.balanceOf(wrappedLoan.address);
@@ -211,13 +211,27 @@ describe('Smart loan', () => {
         });
 
         it("should deposit one side token to GMX V2", async () => {
-            const tokenAmount = toWei('0.0005');
+            const tokenAmount = toWei('0.05');
             const maxFee = toWei('0.01');
-
-            await wrappedLoan.depositEthUsdcGmxV2(tokenAmount, 0, 0, maxFee, { value: maxFee });
+            const estimateOutput = 0.05 * tokensPrices.get("ETH")! / tokensPrices.get("GM_ETH_WETH_USDC")!;
+            
+            await expect(wrappedLoan.depositEthUsdcGmxV2(tokenAmount, 0, 0, maxFee, { value: maxFee })).to.be.revertedWith("Invalid min output value");
+            
+            await wrappedLoan.depositEthUsdcGmxV2(tokenAmount, 0, toWei(estimateOutput.toString()), maxFee, { value: maxFee })
         });
 
-        it("should deposit to GMX V2", async () => {
+        it("should deposit multiple assets to GMX V2", async () => {
+            const tokenAmount = toWei('0.05');
+            const tokenBAmount = 10 * 1000000;
+            const maxFee = toWei('0.01');
+            const estimateOutput = (0.05 * tokensPrices.get("ETH")!  + 10 * tokensPrices.get("USDC")!) / tokensPrices.get("GM_ETH_WETH_USDC")!;
+            
+            await expect(wrappedLoan.depositEthUsdcGmxV2(tokenAmount, tokenBAmount, 0, maxFee, { value: maxFee })).to.be.revertedWith("Invalid min output value");
+            
+            await wrappedLoan.depositEthUsdcGmxV2(tokenAmount, tokenBAmount, toWei(estimateOutput.toString()), maxFee, { value: maxFee })
+        });
+
+        it("should withdraw from GMX V2", async () => {
             const gmAmount = await tokenContracts.get('GM_ETH_WETH_USDC')!.balanceOf(wrappedLoan.address);
             const maxFee = toWei('0.01');
 

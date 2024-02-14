@@ -756,11 +756,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                 'depositEthUsdcGmxV2',
                 'withdrawBtcUsdcGmxV2',
                 'withdrawAvaxUsdcGmxV2',
-                'withdrawEthUsdcGmxV2',
-                'afterDepositExecution',
-                'afterDepositCancellation',
-                'afterWithdrawalExecution',
-                'afterWithdrawalCancellation'
+                'withdrawEthUsdcGmxV2'
             ],
             hardhatConfig
         )
