@@ -343,7 +343,7 @@ abstract contract SolvencyFacetProd is RedstoneConsumerNumericBase, DiamondHelpe
         return _getThresholdWeightedValueBase(ownedAssetsPrices, stakedPositionsPrices);
     }
 
-    function getThresholdWeightedValuePayable() external payable virtual returns (uint256) {
+    function getThresholdWeightedValuePayable() external view virtual returns (uint256) {
         return getThresholdWeightedValue();
     }
 
