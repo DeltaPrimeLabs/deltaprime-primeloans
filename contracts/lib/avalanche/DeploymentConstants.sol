@@ -28,6 +28,8 @@ library DeploymentConstants {
 
     address private constant _ADDRESS_PROVIDER = address(0);
 
+    address private constant _FEES_TREASURY_ADDREESS = 0x18C244c62372dF1b933CD455769f9B4DdB820F0C;
+
     //implementation-specific
 
     function getPercentagePrecision() internal pure returns (uint256) {
@@ -60,6 +62,10 @@ library DeploymentConstants {
 
     function getAddressProvider() internal pure returns (address) {
         return _ADDRESS_PROVIDER;
+    }
+
+    function getTreasuryAddress() internal pure returns (address) {
+        return _FEES_TREASURY_ADDREESS;
     }
 
     /**
