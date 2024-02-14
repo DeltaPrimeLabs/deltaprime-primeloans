@@ -19,6 +19,11 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
     using TransferHelper for address payable;
     using TransferHelper for address;
 
+    address private constant PARA_TRANSFER_PROXY =
+        0x216B4B4Ba9F3e719726886d34a177484278Bfcae;
+    address private constant PARA_ROUTER =
+        0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57;
+
     /* ========== PUBLIC AND EXTERNAL MUTATIVE FUNCTIONS ========== */
 
     /**
@@ -232,6 +237,39 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
             router.swapNoSplit(trade, address(this), 0);
         }
         
+        address(fromToken).safeApprove(address(fromAssetPool), 0);
+        address(fromToken).safeApprove(address(fromAssetPool), _repayAmount);
+        fromAssetPool.repay(_repayAmount);
+
+        if (fromToken.balanceOf(address(this)) > 0) {
+            DiamondStorageLib.addOwnedAsset(_fromAsset, address(fromToken));
+        } else {
+            DiamondStorageLib.removeOwnedAsset(_fromAsset);
+        }
+
+        emit DebtSwap(msg.sender, address(fromToken), address(toToken), _repayAmount, _borrowAmount, block.timestamp);
+    }
+
+    function swapDebtParaSwap(bytes32 _fromAsset, bytes32 _toAsset, uint256 _repayAmount, uint256 _borrowAmount, bytes4 selector, bytes memory data) external onlyOwner remainsSolvent nonReentrant {
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        Pool fromAssetPool = Pool(tokenManager.getPoolAddress(_fromAsset));
+        _repayAmount = Math.min(_repayAmount, fromAssetPool.getBorrowed(address(this)));
+
+        IERC20Metadata toToken = getERC20TokenInstance(_toAsset, false);
+        IERC20Metadata fromToken = getERC20TokenInstance(_fromAsset, false);
+
+        Pool toAssetPool = Pool(tokenManager.getPoolAddress(_toAsset));
+        toAssetPool.borrow(_borrowAmount);
+
+        {
+            // swap toAsset to fromAsset
+            address(toToken).safeApprove(PARA_TRANSFER_PROXY, 0);
+            address(toToken).safeApprove(PARA_TRANSFER_PROXY, _borrowAmount);
+
+            (bool success, ) = PARA_ROUTER.call((abi.encodePacked(selector, data)));
+            require(success, "Swap failed");
+        }
+
         address(fromToken).safeApprove(address(fromAssetPool), 0);
         address(fromToken).safeApprove(address(fromAssetPool), _repayAmount);
         fromAssetPool.repay(_repayAmount);
