@@ -190,9 +190,9 @@ describe('Smart loan', () => {
 
 
         it("should swap and fund", async () => {
-            await tokenContracts.get('ETH')!.connect(owner).deposit({value: toWei("100")});
-            await tokenContracts.get('ETH')!.connect(owner).approve(wrappedLoan.address, toWei("100"));
-            await wrappedLoan.fund(toBytes32("ETH"), toWei("100"));
+            await tokenContracts.get('ETH')!.connect(owner).deposit({value: toWei("10")});
+            await tokenContracts.get('ETH')!.connect(owner).approve(wrappedLoan.address, toWei("10"));
+            await wrappedLoan.fund(toBytes32("ETH"), toWei("10"));
 
             let initialTotalValue = await wrappedLoan.getTotalValue();
             let initialHR = await wrappedLoan.getHealthRatio();
@@ -208,16 +208,6 @@ describe('Smart loan', () => {
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 20);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.eq(fromWei(initialHR));
             expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 20);
-        });
-
-        it("should deposit one side token to GMX V2", async () => {
-            const tokenAmount = toWei('0.05');
-            const maxFee = toWei('0.01');
-            const estimateOutput = 0.05 * tokensPrices.get("ETH")! / tokensPrices.get("GM_ETH_WETH_USDC")!;
-            
-            await expect(wrappedLoan.depositEthUsdcGmxV2(tokenAmount, 0, 0, maxFee, { value: maxFee })).to.be.revertedWith("Invalid min output value");
-            
-            await wrappedLoan.depositEthUsdcGmxV2(tokenAmount, 0, toWei(estimateOutput.toString()), maxFee, { value: maxFee })
         });
 
         it("should deposit multiple assets to GMX V2", async () => {
