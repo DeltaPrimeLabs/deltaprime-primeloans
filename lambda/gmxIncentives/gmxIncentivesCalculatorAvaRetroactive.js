@@ -14,13 +14,15 @@ const gmTokens = require('../config/gmTokens.json');
 const FACTORY = require('../abis/SmartLoansFactory.json');
 const EthDater = require("ethereum-block-by-date");
 const redstone = require("redstone-api");
+const fs = require("fs");
+
 // const config = require("../../src/config");
 // const key = fs.readFileSync("./.secret").toString().trim();
 
 // const Web3 = require('web3');
 // const fs = require("fs");
 const blockTimestampStart = 1707314400;
-const blockTimestampEnd = 1707973000;// 1708002000;
+const blockTimestampEnd = 1707919200;// 1708002000;
 
 const factoryAddress = constants.avalanche.factory;
 
@@ -36,6 +38,8 @@ const getBlockForTimestamp = async (timestamp) => {
 }
 
 const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
+  let json = JSON.parse(fs.readFileSync('avax-epoch-1-test.json'));
+  if (!json) json = {};
   //in seconds
   let timestampInSeconds = blockTimestampStart;
 
@@ -58,7 +62,7 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
   while (timestampInSeconds <= blockTimestampEnd) {
     console.log(`Processed timestamp: ${timestampInSeconds}`)
     let blockNumber = (await getBlockForTimestamp(timestampInSeconds * 1000)).block;
-    const factoryContract = new ethers.Contract(factoryAddress, FACTORY.abi, avalancheProvider);
+    const factoryContract = new ethers.Contract(factoryAddress, FACTORY.abi, avalancheHistoricalProvider);
     let loanAddresses = await factoryContract.getAllLoans({ blockTag: blockNumber });
     const totalLoans = loanAddresses.length;
 
@@ -89,6 +93,7 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
       );
 
       if (loanStats.length > 0) {
+        console.log(`loanStats: ${loanStats.length}, timestamp: ${Date.now()}`)
         await Promise.all(
           loanStats.map(async (loan, batchId) => {
             const loanId = batchLoanAddresses[batchId].toLowerCase();
@@ -149,21 +154,12 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
     })
 
     // save/update incentives values to DB
-    const params = {
-      RequestItems: {
-        [process.env.GMX_INCENTIVES_AVA_RETROACTIVE_TABLE]: Object.entries(loanIncentives).map(([loanId, value]) => ({
-          PutRequest: {
-            Item: {
-              id: loanId,
-              timestamp: timestampInSeconds,
-              avaxCollected: value
-            }
-          }
-        }))
-      }
-    }
 
-    await dynamoDb.batchWrite(params).promise();
+    Object.entries(loanIncentives).forEach(([loanId, value]) => {
+      if (json[loanId]) {json[loanId] += value} else {json[loanId] = value};
+    })
+
+    fs.writeFileSync('avax-epoch-1-test.json', JSON.stringify(json))
 
     console.log(`GMX incentives updated for timestamp ${timestampInSeconds}.`)
 
@@ -179,4 +175,4 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
   return event;
 }
 
-module.exports.handler = gmxIncentivesCalculatorAvaRetroactive;
+gmxIncentivesCalculatorAvaRetroactive().then()

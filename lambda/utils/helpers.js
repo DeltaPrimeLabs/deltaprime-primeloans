@@ -21,10 +21,10 @@ const formatUnits = ethers.utils.formatUnits;
 const fromWei = val => parseFloat(ethers.utils.formatEther(val));
 const toWei = val => ethers.utils.parseEther(val.toString());
 
-const avalancheProvider = new ethers.providers.JsonRpcProvider(process.env.FUNC_RPC_AVA);
+const avalancheProvider = new ethers.providers.JsonRpcProvider('https://avalanche-mainnet.core.chainstack.com/ext/bc/C/rpc/0968db18a01a90bac990ff00df6f7da1');
 const arbitrumProvider = new ethers.providers.JsonRpcProvider(process.env.FUNC_RPC_ARB);
 
-const avalancheHistoricalProvider = new ethers.providers.JsonRpcProvider(process.env.EXT_RPC_AVA);
+const avalancheHistoricalProvider = new ethers.providers.JsonRpcProvider('https://nd-875-171-632.p2pify.com/1e4e4e399220d21d56677b5be69f9326/ext/bc/C/rpc');
 const arbitrumHistoricalProvider = new ethers.providers.JsonRpcProvider(process.env.EXT_RPC_ARB);
 
 const avalancheWallet = (new ethers.Wallet("0xca63cb3223cb19b06fa42110c89ad21a17bad22ea061e5a2c2487bd37b71e809"))
