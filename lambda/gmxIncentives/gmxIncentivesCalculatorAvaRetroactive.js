@@ -47,8 +47,8 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
 
   for (let gmSymbol of Object.keys(gmTokens.avalanche)) {
     const resp = await redstone.getHistoricalPrice(gmSymbol, {
-      startDate: (blockTimestampStart - 60 * 10) * 1000,
-      interval: 10 * 60 * 1000,
+      startDate: (blockTimestampStart - 4 * 60 * 60) * 1000,
+      interval: 4 * 60 * 60 * 1000,
       endDate: blockTimestampEnd * 1000,
       provider: "redstone"
     });
@@ -74,7 +74,7 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
     } else {
       weeklyIncentives = 1500;
     }
-    const incentivesPerInterval = weeklyIncentives / (60 * 60 * 24 * 7) * (60 * 10);
+    const incentivesPerInterval = weeklyIncentives / (60 * 60 * 24 * 7) * (60 * 60 * 4);
     const batchSize = 50;
 
     const loanQualifications = {};
@@ -165,7 +165,7 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
 
     console.log(`Updated timestamp: ${timestampInSeconds}, block number: ${blockNumber}.`);
 
-    timestampInSeconds += 10 * 60;
+    timestampInSeconds += 4 * 60 * 60;
   }
 
   console.log(`GM boost APY on avalanche updated from ${blockTimestampStart} to ${blockTimestampEnd}.`);
