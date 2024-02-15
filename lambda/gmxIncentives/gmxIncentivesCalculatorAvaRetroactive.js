@@ -1,5 +1,4 @@
 const ethers = require('ethers');
-const fetch = require('node-fetch');
 const {
   dynamoDb,
   getWrappedContracts,
@@ -19,7 +18,7 @@ const redstone = require("redstone-api");
 // const Web3 = require('web3');
 // const fs = require("fs");
 const blockTimestampStart = 1707314400;
-const blockTimestampEnd = 1707973000;// 1708002000;
+const blockTimestampEnd = 1708025000;
 
 const factoryAddress = constants.avalanche.factory;
 
@@ -42,8 +41,8 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
 
   for (let gmSymbol of Object.keys(gmTokens.avalanche)) {
     const resp = await redstone.getHistoricalPrice(gmSymbol, {
-      startDate: (blockTimestampStart - 60 * 10) * 1000,
-      interval: 10 * 60 * 1000,
+      startDate: (blockTimestampStart - 60 * 60 * 4) * 1000,
+      interval: 60 * 60 * 4 * 1000,
       endDate: blockTimestampEnd * 1000,
       provider: "redstone"
     });
@@ -69,8 +68,8 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
     } else {
       weeklyIncentives = 1500;
     }
-    const incentivesPerInterval = weeklyIncentives / (60 * 60 * 24 * 7) * (60 * 10);
-    const batchSize = 50;
+    const incentivesPerInterval = weeklyIncentives / (60 * 60 * 24 * 7) * (60 * 60 * 4);
+    const batchSize = 200;
 
     const loanQualifications = {};
     let totalLeveragedGM = 0;
@@ -168,7 +167,7 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
 
     console.log(`Updated timestamp: ${timestampInSeconds}, block number: ${blockNumber}.`);
 
-    timestampInSeconds += 10 * 60;
+    timestampInSeconds += 60 * 60 * 4;
   }
 
   console.log(Object.values(prices)[0][Object.values(prices)[0].length - 1])

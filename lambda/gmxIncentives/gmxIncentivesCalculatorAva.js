@@ -31,7 +31,7 @@ const gmxIncentivesCalculatorAva = async (event) => {
   const totalLoans = loanAddresses.length;
 
   const incentivesPerInterval = 1500 / (60 * 60 * 24 * 7) * (60 * 10);
-  const batchSize = 50;
+  const batchSize = 200;
 
   const loanQualifications = {};
   let totalLeveragedGM = 0;

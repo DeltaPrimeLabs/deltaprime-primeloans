@@ -16,15 +16,15 @@ const factoryAddress = constants.avalanche.factory;
 const redstoneFeedUrl = constants.avalanche.redstoneFeedUrl;
 
 /**
- * GMX incentives calculator that starts from Feb 15 2pm CET - 1708002000
+ * GMX incentives calculator that starts from 1708022000
  */
 const gmxIncentivesCalculatorAvaFrom = async (event) => {
   const factoryContract = new ethers.Contract(factoryAddress, FACTORY.abi, avalancheHistoricalProvider);
   let loanAddresses = await factoryContract.getAllLoans();
   const totalLoans = loanAddresses.length;
 
-  const incentivesPerInterval = 1500 / (60 * 60 * 24 * 7) * (60 * 10);
-  const batchSize = 50;
+  const incentivesPerInterval = 1500 / (60 * 60 * 24 * 7) * (60 * 60 * 4);
+  const batchSize = 200;
 
   const loanQualifications = {};
   let totalLeveragedGM = 0;
