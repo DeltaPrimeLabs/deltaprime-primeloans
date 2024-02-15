@@ -1,12 +1,12 @@
 const ethers = require('ethers');
 const fetch = require('node-fetch');
 const {
-  avalancheProvider,
   dynamoDb,
   getWrappedContracts,
   fromWei,
   fromBytes32,
-  formatUnits
+  formatUnits,
+  avalancheHistoricalProvider
 } = require('../utils/helpers');
 const constants = require('../config/constants.json');
 const gmTokens = require('../config/gmTokens.json');
@@ -26,7 +26,7 @@ const getLatestIncentives = async () => {
 };
 
 const gmxIncentivesCalculatorAva = async (event) => {
-  const factoryContract = new ethers.Contract(factoryAddress, FACTORY.abi, avalancheProvider);
+  const factoryContract = new ethers.Contract(factoryAddress, FACTORY.abi, avalancheHistoricalProvider);
   let loanAddresses = await factoryContract.getAllLoans();
   const totalLoans = loanAddresses.length;
 

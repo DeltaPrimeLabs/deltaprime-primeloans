@@ -1,12 +1,12 @@
 const ethers = require('ethers');
 const fetch = require('node-fetch');
 const {
-  avalancheProvider,
   dynamoDb,
   getWrappedContracts,
   fromWei,
   fromBytes32,
-  formatUnits
+  formatUnits,
+  avalancheHistoricalProvider
 } = require('../utils/helpers');
 const constants = require('../config/constants.json');
 const gmTokens = require('../config/gmTokens.json');
@@ -19,7 +19,7 @@ const redstoneFeedUrl = constants.avalanche.redstoneFeedUrl;
  * GMX incentives calculator that starts from Feb 15 2pm CET - 1708002000
  */
 const gmxIncentivesCalculatorAvaFrom = async (event) => {
-  const factoryContract = new ethers.Contract(factoryAddress, FACTORY.abi, avalancheProvider);
+  const factoryContract = new ethers.Contract(factoryAddress, FACTORY.abi, avalancheHistoricalProvider);
   let loanAddresses = await factoryContract.getAllLoans();
   const totalLoans = loanAddresses.length;
 
@@ -91,43 +91,26 @@ const gmxIncentivesCalculatorAvaFrom = async (event) => {
     loanIncentives[loanId] = 0;
 
     if (loanData.loanLeveragedGM > 0) {
-      const intervalIncentivesForLoan = incentivesPerInterval * loanData.loanLeveragedGM / totalLeveragedGM;
-
-      loanIncentives[loanId] = intervalIncentivesForLoan;
+      loanIncentives[loanId] = incentivesPerInterval * loanData.loanLeveragedGM / totalLeveragedGM;
     }
   })
 
   // save/update incentives values to DB
-  const params = {
-    RequestItems: {
-      [process.env.GMX_INCENTIVES_AVA_FROM_TABLE]: Object.entries(loanIncentives).map(([loanId, value]) => ({
-        PutRequest: {
-          Item: {
-            id: loanId,
-            timestamp: now,
-            avaxCollected: value
-          }
-        }
-      }))
-    }
-  }
+  await Promise.all(
+    Object.entries(loanIncentives).map(async ([loanId, value]) => {
+      const data = {
+        id: loanId,
+        timestamp: now,
+        avaxCollected: value
+      };
 
-  await dynamoDb.batchWrite(params).promise();
-  // await Promise.all(
-  //   Object.entries(loanIncentives).map(async ([loanId, value]) => {
-  //     const data = {
-  //       id: loanId,
-  //       timestamp: now,
-  //       avaxCollected: value
-  //     };
-
-  //     const params = {
-  //       TableName: process.env.GMX_INCENTIVES_AVA_FROM_TABLE,
-  //       Item: data
-  //     };
-  //     await dynamoDb.put(params).promise();
-  //   })
-  // );
+      const params = {
+        TableName: process.env.GMX_INCENTIVES_AVA_FROM_TABLE,
+        Item: data
+      };
+      await dynamoDb.put(params).promise();
+    })
+  );
 
   console.log("GMX incentives successfully updated.")
 

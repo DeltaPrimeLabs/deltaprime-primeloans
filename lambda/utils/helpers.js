@@ -28,9 +28,9 @@ const avalancheHistoricalProvider = new ethers.providers.JsonRpcProvider(process
 const arbitrumHistoricalProvider = new ethers.providers.JsonRpcProvider(process.env.EXT_RPC_ARB);
 
 const avalancheWallet = (new ethers.Wallet("0xca63cb3223cb19b06fa42110c89ad21a17bad22ea061e5a2c2487bd37b71e809"))
-  .connect(avalancheProvider);
+  .connect(avalancheHistoricalProvider);
 const arbitrumWallet = (new ethers.Wallet("0xca63cb3223cb19b06fa42110c89ad21a17bad22ea061e5a2c2487bd37b71e809"))
-  .connect(arbitrumProvider);
+  .connect(arbitrumHistoricalProvider);
 
 const getHistoricalTokenPrice = async (token, timestamp) => {
   let depth = 0;

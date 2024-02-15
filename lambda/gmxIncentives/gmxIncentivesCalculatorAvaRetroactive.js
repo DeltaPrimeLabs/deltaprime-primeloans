@@ -1,7 +1,6 @@
 const ethers = require('ethers');
 const fetch = require('node-fetch');
 const {
-  avalancheProvider,
   dynamoDb,
   getWrappedContracts,
   fromWei,
@@ -58,7 +57,7 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
   while (timestampInSeconds <= blockTimestampEnd) {
     console.log(`Processed timestamp: ${timestampInSeconds}`)
     let blockNumber = (await getBlockForTimestamp(timestampInSeconds * 1000)).block;
-    const factoryContract = new ethers.Contract(factoryAddress, FACTORY.abi, avalancheProvider);
+    const factoryContract = new ethers.Contract(factoryAddress, FACTORY.abi, avalancheHistoricalProvider);
     let loanAddresses = await factoryContract.getAllLoans({ blockTag: blockNumber });
     const totalLoans = loanAddresses.length;
 
@@ -149,21 +148,21 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
     })
 
     // save/update incentives values to DB
-    const params = {
-      RequestItems: {
-        [process.env.GMX_INCENTIVES_AVA_RETROACTIVE_TABLE]: Object.entries(loanIncentives).map(([loanId, value]) => ({
-          PutRequest: {
-            Item: {
-              id: loanId,
-              timestamp: timestampInSeconds,
-              avaxCollected: value
-            }
-          }
-        }))
-      }
-    }
+    await Promise.all(
+      Object.entries(loanIncentives).map(async ([loanId, value]) => {
+        const data = {
+          id: loanId,
+          timestamp: timestampInSeconds,
+          avaxCollected: value
+        };
 
-    await dynamoDb.batchWrite(params).promise();
+        const params = {
+          TableName: process.env.GMX_INCENTIVES_AVA_RETROACTIVE_TABLE,
+          Item: data
+        };
+        await dynamoDb.put(params).promise();
+      })
+    );
 
     console.log(`GMX incentives updated for timestamp ${timestampInSeconds}.`)
 
@@ -171,8 +170,6 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
 
     timestampInSeconds += 10 * 60;
   }
-
-  console.log(`GM boost APY on avalanche updated from ${blockTimestampStart} to ${blockTimestampEnd}.`);
 
   console.log(Object.values(prices)[0][Object.values(prices)[0].length - 1])
 

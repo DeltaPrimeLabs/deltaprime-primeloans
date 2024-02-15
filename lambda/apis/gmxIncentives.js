@@ -28,8 +28,9 @@ const getGmxIncentivesApi = (event, context, callback) => {
 const getGmxIncentivesFromApi = (event, context, callback) => {
   const params = {
     TableName: process.env.GMX_INCENTIVES_AVA_FROM_TABLE,
-    Key: {
-      id: event.pathParameters.id.toLowerCase()
+    KeyConditionExpression: 'id = :id',
+    ExpressionAttributeValues: {
+      ':id': event.pathParameters.id.toLowerCase()
     }
   };
 
@@ -38,7 +39,7 @@ const getGmxIncentivesFromApi = (event, context, callback) => {
       let accumulatedIncentives = 0;
 
       result.Items.map((item) => {
-        accumulatedIncentives += Number(item.avaxCollected);
+        accumulatedIncentives += item.avaxCollected ? Number(item.avaxCollected) : 0;
       });
 
       const response = {
@@ -60,8 +61,9 @@ const getGmxIncentivesFromApi = (event, context, callback) => {
 const getGmxIncentivesRetroactiveApi = (event, context, callback) => {
   const params = {
     TableName: process.env.GMX_INCENTIVES_AVA_RETROACTIVE_TABLE,
-    Key: {
-      id: event.pathParameters.id.toLowerCase()
+    KeyConditionExpression: 'id = :id',
+    ExpressionAttributeValues: {
+      ':id': event.pathParameters.id.toLowerCase()
     }
   };
 
