@@ -239,16 +239,15 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
                 }
                 uint256 balance = token.balanceOf(address(this));
 
-                if((balance * partToReturnBonus / 10 ** 18) == 0){
-                    continue;
+                if(balance > 0){
+                    address(token).safeTransfer(msg.sender, balance * partToReturnBonus / 10 ** 18);
+                    emit LiquidationTransfer(msg.sender, assetsOwned[i], balance * partToReturnBonus / 10 ** 18, block.timestamp);
+                    if(partToReturnFees > 0){
+                        address(token).safeTransfer(DeploymentConstants.getTreasuryAddress(), balance * partToReturnFees / 10 ** 18);
+                        emit LiquidationFeesTransfer(msg.sender, assetsOwned[i], balance * partToReturnFees / 10 ** 18, block.timestamp);
+                    }
                 }
 
-                address(token).safeTransfer(msg.sender, balance * partToReturnBonus / 10 ** 18);
-                emit LiquidationTransfer(msg.sender, assetsOwned[i], balance * partToReturnBonus / 10 ** 18, block.timestamp);
-                if(partToReturnFees > 0){
-                    address(token).safeTransfer(DeploymentConstants.getTreasuryAddress(), balance * partToReturnFees / 10 ** 18);
-                    emit LiquidationFeesTransfer(msg.sender, assetsOwned[i], balance * partToReturnFees / 10 ** 18, block.timestamp);
-                }
             }
         }
 
