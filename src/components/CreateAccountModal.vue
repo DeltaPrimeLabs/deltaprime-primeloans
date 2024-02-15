@@ -1,5 +1,5 @@
 <template>
-  <div v-if="asset" id="modal" class="add-from-wallet-modal-component modal-component">
+  <div v-if="selectedAsset" id="modal" class="add-from-wallet-modal-component modal-component">
     <Modal>
       <div class="modal__title">
         Create a Prime Account
@@ -21,7 +21,7 @@
                        :value="formatTokenBalance(availableAssetAmount, 10, true)"></LoadedValue>
           <div v-if="availableAssetAmount != null">
             <span class="top-info__currency">
-              {{ asset.short ? asset.short : asset.symbol }}
+              {{ this.nativeAssetOptionSelected === this.toggleOptions[1] ? this.nativeAssetOptionSelected : (selectedAsset.short ? selectedAsset.short : selectedAsset.symbol) }}
             </span>
           </div>
         </div>
@@ -29,7 +29,7 @@
 
       <CurrencyComboInput ref="sourceInput"
                           :asset-options="assetOptions"
-                          :default-asset="asset"
+                          :default-asset="selectedAsset"
                           :validators="validators"
                           :disabled="false"
                           :max="availableAssetAmount"
@@ -38,6 +38,10 @@
                           v-on:ongoingTyping="ongoingTyping"
       >
       </CurrencyComboInput>
+
+      <div class="toggle-container" v-if="selectedAsset.symbol === toggleOptions[0]">
+        <Toggle v-on:change="assetToggleChange" :options="toggleOptions" :initial-option="0"></Toggle>
+      </div>
 
       <div class="button-wrapper">
        <Button :label="'Create account'"
@@ -78,7 +82,7 @@ export default {
   },
 
   props: {
-    asset: {},
+    selectedAsset: {},
     assetOptions: {},
     logo: null,
     assetBalance: Number,
@@ -91,7 +95,10 @@ export default {
       value: 0,
       validators: [],
       validationError: true,
-      availableAssetAmount: 0
+      availableAssetAmount: 0,
+      toggleOptions: config.NATIVE_ASSET_TOGGLE_OPTIONS,
+      nativeAssetOptionSelected: config.NATIVE_ASSET_TOGGLE_OPTIONS[0],
+      signer: null,
     };
   },
 
@@ -100,9 +107,6 @@ export default {
       this.setupAssetOptions();
       this.setupValidators();
     });
-    setTimeout(() => {
-      this.setupAvailableAssetAmount();
-    }, 1);
   },
 
   computed: {
@@ -112,14 +116,26 @@ export default {
   methods: {
     submit() {
       this.transactionOngoing = true;
-        this.$emit('CREATE_ACCOUNT', {
-          value: parseFloat(this.value).toFixed(this.asset.decimals),
-          asset: this.asset
+      const asset = this.selectedAsset.symbol === this.toggleOptions[0] ? this.nativeAssetOptionSelected : this.selectedAsset
+      this.$emit('ZAP_CREATE_ACCOUNT_EVENT', {
+          value: parseFloat(this.value).toFixed(this.selectedAsset.decimals),
+          asset: asset,
         });
     },
 
+    recalculateAvailable() {
+      const isSecondaryNativeTokenOptionSelected = this.selectedAsset.symbol === this.toggleOptions[0] && this.nativeAssetOptionSelected !== this.toggleOptions[0]
+
+      this.availableAssetAmount = this.walletAssetBalances[isSecondaryNativeTokenOptionSelected ? this.toggleOptions[1] : this.selectedAsset.symbol]
+      this.$forceUpdate()
+    },
+
     async inputChange(changeEvent) {
-      console.log(changeEvent)
+      if (this.selectedAsset.symbol !== changeEvent.asset) {
+        this.selectedAsset = config.ASSETS_CONFIG[changeEvent.asset]
+        this.nativeAssetOptionSelected = this.toggleOptions[0]
+        this.recalculateAvailable()
+      }
       this.value = changeEvent.value;
       this.validationError = changeEvent.error;
     },
@@ -135,7 +151,7 @@ export default {
         },
         {
           validate: async (value) => {
-            const allowed = this.asset.maxExposure - this.asset.currentExposure;
+            const allowed = this.selectedAsset.maxExposure - this.selectedAsset.currentExposure;
         
             if (value > allowed) {
               return `Max. allowed amount is ${allowed.toFixed(2)}.`;
@@ -143,6 +159,18 @@ export default {
           }
         }
       ];
+    },
+
+    async assetToggleChange(asset) {
+      this.nativeAssetOptionSelected = asset;
+      const error = await this.$refs.sourceInput.forceValidationCheck(this.value);
+      this.validationError = error;
+      this.recalculateAvailable()
+    },
+
+    setTokenBalances(balancesObject) {
+      this.walletAssetBalances = balancesObject
+      this.recalculateAvailable();
     },
 
     setupAssetOptions() {
