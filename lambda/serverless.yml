@@ -32,6 +32,8 @@ provider:
     LOAN_ARB_TABLE: loans-arb-${opt:stage, "dev"}
     APY_TABLE: apys-${opt:stage, "dev"}
     GMX_INCENTIVES_AVA_TABLE: gmx-incentives-ava-${opt:stage, "dev"}
+    GMX_INCENTIVES_AVA_FROM_TABLE: gmx-incentives-ava-from-${opt:stage, "dev"}
+    GMX_INCENTIVES_AVA_RETROACTIVE_TABLE: gmx-incentives-ava-retroactive-${opt:stage, "dev"}
     GMX_INCENTIVES_ARB_TABLE: gmx-incentives-arb-${opt:stage, "dev"}
     GM_OPEN_INTEREST_TABLE: gm-open-interest-${opt:stage, "dev"}
     REFERRAL_TABLE: referral-${opt:stage, "dev"}
@@ -209,6 +211,20 @@ functions:
     description: Calculate incentives for loans on Avalanche.
     events:
       - schedule: rate(10 minutes)
+  gmxIncentivesCalculatorAvaFrom:
+    handler: gmxIncentives/gmxIncentivesCalculatorAvaFrom.handler
+    memorySize: 1024
+    timeout: 600
+    description: Calculate incentives for loans on Avalanche From a week ago.
+    events:
+      - schedule: rate(10 minutes)
+  gmxIncentivesCalculatorAvaRetroactive:
+    handler: gmxIncentives/gmxIncentivesCalculatorAvaRetroactive.handler
+    memorySize: 1024
+    timeout: 600
+    description: Calculate retroactive incentives for loans on Avalanche.
+    events:
+      - schedule: rate(10 minutes)
   # gmxIncentivesCalculatorArb:
   #   handler: gmxIncentives/gmxIncentivesCalculatorArb.handler
   #   memorySize: 1024
@@ -224,6 +240,22 @@ functions:
       - httpApi:
           method: get
           path: /gmx-incentives/{id}
+  getGmxIncentivesFromApi:
+    handler: apis/gmxIncentives.getGmxIncentivesFromApi
+    memorySize: 512
+    description: Fetch GMX incentives values calculated from certain timestamp for a loan on Avalanche
+    events:
+      - httpApi:
+          method: get
+          path: /gmx-incentives-from/{id}
+  getGmxIncentivesRetroactiveApi:
+    handler: apis/gmxIncentives.getGmxIncentivesRetroactiveApi
+    memorySize: 512
+    description: Fetch retroactive GMX incentives values from a week ago to certain timestamp for a loan on Avalanche
+    events:
+      - httpApi:
+          method: get
+          path: /gmx-incentives-retroactive/{id}
   getGmBoostApyApi:
     handler: apis/gmxIncentives.getGmBoostApyApi
     memorySize: 512
@@ -309,6 +341,50 @@ resources:
         StreamSpecification:
           StreamViewType: "NEW_AND_OLD_IMAGES"
         TableName: ${self:provider.environment.GMX_INCENTIVES_AVA_TABLE}
+    gmxIncentivesAvaFromTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: "id"
+            AttributeType: "S"
+          -
+            AttributeName: "timestamp"
+            AttributeType: "N"
+        KeySchema:
+          -
+            AttributeName: "id"
+            KeyType: "HASH"
+          -
+            AttributeName: "timestamp"
+            KeyType: "RANGE"
+        BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: "NEW_AND_OLD_IMAGES"
+        TableName: ${self:provider.environment.GMX_INCENTIVES_AVA_FROM_TABLE}
+    gmxIncentivesAvaRetroactiveTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: "id"
+            AttributeType: "S"
+          -
+            AttributeName: "timestamp"
+            AttributeType: "N"
+        KeySchema:
+          -
+            AttributeName: "id"
+            KeyType: "HASH"
+          -
+            AttributeName: "timestamp"
+            KeyType: "RANGE"
+        BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: "NEW_AND_OLD_IMAGES"
+        TableName: ${self:provider.environment.GMX_INCENTIVES_AVA_RETROACTIVE_TABLE}
     gmxIncentivesArbTable:
       Type: AWS::DynamoDB::Table
       DeletionPolicy: Retain

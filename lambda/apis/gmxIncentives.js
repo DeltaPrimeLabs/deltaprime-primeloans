@@ -25,6 +25,70 @@ const getGmxIncentivesApi = (event, context, callback) => {
     });
 };
 
+const getGmxIncentivesFromApi = (event, context, callback) => {
+  const params = {
+    TableName: process.env.GMX_INCENTIVES_AVA_FROM_TABLE,
+    Key: {
+      id: event.pathParameters.id.toLowerCase()
+    }
+  };
+
+  dynamoDb.query(params).promise()
+    .then(result => {
+      let accumulatedIncentives = 0;
+
+      result.Items.map((item) => {
+        accumulatedIncentives += Number(item.avaxCollected);
+      });
+
+      const response = {
+        statusCode: 200,
+        body: JSON.stringify({
+          total: accumulatedIncentives,
+          list: result.Items
+        }),
+      };
+      callback(null, response);
+    })
+    .catch(error => {
+      console.error(error);
+      callback(new Error('Couldn\'t fetch GMX Incentives values.'));
+      return;
+    });
+};
+
+const getGmxIncentivesRetroactiveApi = (event, context, callback) => {
+  const params = {
+    TableName: process.env.GMX_INCENTIVES_AVA_RETROACTIVE_TABLE,
+    Key: {
+      id: event.pathParameters.id.toLowerCase()
+    }
+  };
+
+  dynamoDb.query(params).promise()
+    .then(result => {
+      let accumulatedIncentives = 0;
+
+      result.Items.map((item) => {
+        accumulatedIncentives += Number(item.avaxCollected);
+      });
+
+      const response = {
+        statusCode: 200,
+        body: JSON.stringify({
+          total: accumulatedIncentives,
+          list: result.Items
+        }),
+      };
+      callback(null, response);
+    })
+    .catch(error => {
+      console.error(error);
+      callback(new Error('Couldn\'t fetch GMX Incentives values.'));
+      return;
+    });
+};
+
 const getGmBoostApyApi = (event, context, callback) => {
   const params = {
     TableName: process.env.APY_TABLE,
@@ -50,5 +114,7 @@ const getGmBoostApyApi = (event, context, callback) => {
 
 module.exports = {
   getGmxIncentivesApi,
+  getGmxIncentivesFromApi,
+  getGmxIncentivesRetroactiveApi,
   getGmBoostApyApi
 }
