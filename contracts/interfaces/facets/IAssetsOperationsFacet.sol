@@ -15,6 +15,8 @@ interface IAssetsOperationsFacet {
 
     function swapDebt(bytes32 _fromAsset, bytes32 _toAsset, uint256 _repayAmount, uint256 _borrowAmount, address[] calldata _path, address[] calldata _adapters) external;
 
+    function swapDebtParaSwap(bytes32 _fromAsset, bytes32 _toAsset, uint256 _repayAmount, uint256 _borrowAmount, bytes4 selector, bytes memory data) external;
+
     function withdrawUnsupportedToken(address token) external;
 
     event Funded(address indexed user, bytes32 indexed asset, uint256 amount, uint256 timestamp);

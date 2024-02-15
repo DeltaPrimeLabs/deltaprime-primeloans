@@ -2,6 +2,8 @@ import { ethers, waffle } from "hardhat";
 import chai, { expect } from "chai";
 import { solidity } from "ethereum-waffle";
 import { parseUnits } from "ethers/lib/utils";
+import { constructSimpleSDK, SimpleFetchSDK, SwapSide } from '@paraswap/sdk';
+import axios from 'axios';
 
 import SmartLoansFactoryArtifact from "../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json";
 import MockTokenManagerArtifact from "../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json";
@@ -26,7 +28,7 @@ import {
     recompileConstantsFile,
     toBytes32,
     toWei,
-    yakRouterAbi,
+    parseParaSwapRouteData,
 } from "../../_helpers";
 import { syncTime } from "../../_syncTime";
 import {
@@ -38,34 +40,12 @@ import {
     SmartLoansFactory,
 } from "../../../typechain";
 import { deployDiamond } from "../../../tools/diamond/deploy-diamond";
-import { getProvider } from "../../../tools/liquidation/utlis";
 import { Contract, BigNumber } from "ethers";
 
 chai.use(solidity);
 
 const { deployContract } = waffle;
 const traderJoeRouterAddress = "0x60aE616a2155Ee3d9A68541Ba4544862310933d4";
-const pangolinRouterAddress = "0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106";
-const yakRouterAddress = "0xC4729E56b831d74bBc18797e0e17A295fA77488c";
-
-const args = require("yargs").argv;
-const network = args.network ? args.network : "localhost";
-let provider = getProvider(network);
-
-const yakRouter = new ethers.Contract(yakRouterAddress, yakRouterAbi, provider);
-
-async function query(tknFrom: string, tknTo: string, amountIn: BigNumber) {
-    const maxHops = 2;
-    const gasPrice = await provider.getGasPrice();
-    return await yakRouter.findBestPathWithGas(
-        amountIn,
-        tknFrom,
-        tknTo,
-        maxHops,
-        gasPrice.mul(15).div(10),
-        { gasLimit: 1e9 }
-    );
-}
 
 describe("Smart loan", () => {
     before("Synchronize blockchain time", async () => {
@@ -75,17 +55,40 @@ describe("Smart loan", () => {
     describe("Swap debt", () => {
         let smartLoansFactory: SmartLoansFactory,
             exchange: TraderJoeIntermediary,
-            exchangePNG: PangolinIntermediary,
             loan: SmartLoanGigaChadInterface,
             wrappedLoan: any,
             owner: SignerWithAddress,
             borrower: SignerWithAddress,
             depositor: SignerWithAddress,
+            paraSwapMin: SimpleFetchSDK,
             poolContracts: Map<string, Contract> = new Map(),
             tokenContracts: Map<string, Contract> = new Map(),
             lendingPools: Array<PoolAsset> = [],
             supportedAssets: Array<Asset>,
             tokensPrices: Map<string, number>;
+
+        const getSwapData = async (srcToken: keyof typeof TOKEN_ADDRESSES, destToken: keyof typeof TOKEN_ADDRESSES, srcAmount: any) => {
+            const priceRoute = await paraSwapMin.swap.getRate({
+                srcToken: TOKEN_ADDRESSES[srcToken],
+                destToken: TOKEN_ADDRESSES[destToken],
+                amount: srcAmount.toString(),
+                userAddress: wrappedLoan.address,
+                side: SwapSide.SELL,
+            });
+            const txParams = await paraSwapMin.swap.buildTx({
+                srcToken: priceRoute.srcToken,
+                destToken: priceRoute.destToken,
+                srcAmount: priceRoute.srcAmount,
+                slippage: 300,
+                priceRoute,
+                userAddress: wrappedLoan.address,
+                partner: 'anon',
+            }, {
+                ignoreChecks: true,
+            });
+            const swapData = parseParaSwapRouteData(txParams);
+            return swapData;
+        };
 
         before(
             "deploy factory, wrapped native token pool and USD pool",
@@ -160,13 +163,6 @@ describe("Smart loan", () => {
                     supportedAssets,
                     "TraderJoeIntermediary"
                 )) as TraderJoeIntermediary;
-                exchangePNG = (await deployAndInitExchangeContract(
-                    owner,
-                    pangolinRouterAddress,
-                    tokenManager.address,
-                    supportedAssets,
-                    "PangolinIntermediary"
-                )) as PangolinIntermediary;
 
                 await smartLoansFactory.initialize(diamondAddress, tokenManager.address);
 
@@ -178,10 +174,6 @@ describe("Smart loan", () => {
                             facetPath: "./contracts/facets/avalanche/TraderJoeDEXFacet.sol",
                             contractAddress: exchange.address,
                         },
-                        {
-                            facetPath: "./contracts/facets/avalanche/PangolinDEXFacet.sol",
-                            contractAddress: exchangePNG.address,
-                        },
                     ],
                     tokenManager.address,
                     addressProvider.address,
@@ -189,7 +181,10 @@ describe("Smart loan", () => {
                     smartLoansFactory.address,
                     "lib"
                 );
+
                 await deployAllFacets(diamondAddress, false);
+
+                paraSwapMin = constructSimpleSDK({chainId: 43114, axios});
             }
         );
 
@@ -289,14 +284,15 @@ describe("Smart loan", () => {
                         disablePayloadsDryRun: true,
                     },
                 );
+            const swapData = await getSwapData('AVAX', 'USDC', toWei('10'));
             await expect(
-                nonOwnerWrappedLoan.swapDebt(
+                nonOwnerWrappedLoan.swapDebtParaSwap(
                     toBytes32("USDC"),
                     toBytes32("AVAX"),
                     parseUnits("400", BigNumber.from("6")),
                     0,
-                    [],
-                    []
+                    swapData.selector,
+                    swapData.data
                 )
             ).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
         });
@@ -304,28 +300,24 @@ describe("Smart loan", () => {
         it("should swap debt", async () => {
             let AVAX_PRICE = tokensPrices.get("AVAX")!;
             let repayAmount = parseUnits("400.1", BigNumber.from("6"));
-            let borrowAmount = toWei(((400 *1.01) / AVAX_PRICE).toFixed(18));
-            const queryRes = await query(
-                TOKEN_ADDRESSES["AVAX"],
-                TOKEN_ADDRESSES["USDC"],
-                borrowAmount
-            );
-            await wrappedLoan.swapDebt(
+            let borrowAmount = toWei(((400 *1.02) / AVAX_PRICE).toFixed(18));
+            const swapData = await getSwapData('AVAX', 'USDC', borrowAmount);
+            await wrappedLoan.swapDebtParaSwap(
                 toBytes32("USDC"),
                 toBytes32("AVAX"),
                 repayAmount,
                 borrowAmount,
-                queryRes.path,
-                queryRes.adapters
+                swapData.selector,
+                swapData.data
             );
 
             expect(await poolContracts.get("USDC")?.getBorrowed(wrappedLoan.address)).to.be.eq(
                 0
             );
             expect(await poolContracts.get("AVAX")?.getBorrowed(wrappedLoan.address)).to.be.closeTo(
-                borrowAmount, borrowAmount.div(100)
+                borrowAmount, borrowAmount.div(100).mul(2)
             );
-            expect(fromWei(await wrappedLoan.getDebt())).to.be.closeTo(400 * 1.01, 0.5);
+            expect(fromWei(await wrappedLoan.getDebt())).to.be.closeTo(400 * 1.02, 1);
         });
     });
 });
