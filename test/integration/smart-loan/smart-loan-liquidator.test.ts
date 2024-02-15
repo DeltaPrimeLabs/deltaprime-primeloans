@@ -108,6 +108,9 @@ describe('Test liquidator', () => {
             await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
             await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
+            await tokenManager.setIdentifiersToExposureGroups([toBytes32("AVAX")], [toBytes32("AVAX_GROUP")]);
+            await tokenManager.setMaxProtocolsExposure([toBytes32("AVAX_GROUP")], [toWei("5000")]);
+
             await smartLoansFactory.initialize(diamondAddress, tokenManager.address);
 
             exchange = await deployAndInitExchangeContract(owner, pangolinRouterAddress, tokenManager.address, supportedAssets, "PangolinIntermediary") as PangolinIntermediary;
@@ -245,8 +248,12 @@ describe('Test liquidator', () => {
             await expect(wrappedLoanLiquidator.liquidateLoan([toBytes32("AVAX")], [toWei("100")], 0, 101)).to.be.revertedWith("Defined liquidation fees higher than max. value");
             await expect(wrappedLoanLiquidator.liquidateLoan([toBytes32("AVAX")], [toWei("100")], 90, 10)).to.be.revertedWith("Fees not applicable");
 
+            let avaxExposureGroup = await tokenManager.identifierToExposureGroup(toBytes32("AVAX"));
+            let currentAVAXExposure = fromWei((await tokenManager.groupToExposure(avaxExposureGroup))[0]);
+
             // Liquidation 1 - 10% bonus, 0% fees
             console.log('Liquidation 1');
+            expect(currentAVAXExposure).to.be.equal(2701);
             let liquidatorAVAXBalanceBefore = await tokenContracts.get('AVAX')!.balanceOf(liquidatorWallet.address);
             let treasuryAVAXBalanceBefore = await tokenContracts.get('AVAX')!.balanceOf(TREASURY_ADDRESS);
 
@@ -254,9 +261,12 @@ describe('Test liquidator', () => {
 
             let liquidatorAVAXBalanceAfter = await tokenContracts.get('AVAX')!.balanceOf(liquidatorWallet.address);
             let treasuryAVAXBalanceAfter = await tokenContracts.get('AVAX')!.balanceOf(TREASURY_ADDRESS);
+            currentAVAXExposure = fromWei((await tokenManager.groupToExposure(avaxExposureGroup))[0]);
             expect(await wrappedLoan.isSolvent()).to.be.true;
             expect(liquidatorAVAXBalanceAfter).to.be.equal(liquidatorAVAXBalanceBefore.add(toWei("30")));
             expect(treasuryAVAXBalanceBefore).to.be.equal(treasuryAVAXBalanceAfter);
+            expect(currentAVAXExposure).to.be.equal(2371);
+
 
             // Liquidation 2 - 5% bonus, 0% fees
             console.log('Liquidation 2');
@@ -268,9 +278,11 @@ describe('Test liquidator', () => {
 
             liquidatorAVAXBalanceAfter = await tokenContracts.get('AVAX')!.balanceOf(liquidatorWallet.address);
             treasuryAVAXBalanceAfter = await tokenContracts.get('AVAX')!.balanceOf(TREASURY_ADDRESS);
+            currentAVAXExposure = fromWei((await tokenManager.groupToExposure(avaxExposureGroup))[0]);
             expect(await wrappedLoan.isSolvent()).to.be.true;
             expect(liquidatorAVAXBalanceAfter).to.be.equal(liquidatorAVAXBalanceBefore.add(toWei("10")));
             expect(treasuryAVAXBalanceBefore).to.be.equal(treasuryAVAXBalanceAfter);
+            expect(currentAVAXExposure).to.be.equal(2161);
 
             // Liquidation 3 - 10% bonus, 5% fees
             console.log('Liquidation 3');
@@ -282,9 +294,11 @@ describe('Test liquidator', () => {
 
             treasuryAVAXBalanceAfter = await tokenContracts.get('AVAX')!.balanceOf(TREASURY_ADDRESS);
             liquidatorAVAXBalanceAfter = await tokenContracts.get('AVAX')!.balanceOf(liquidatorWallet.address);
+            currentAVAXExposure = fromWei((await tokenManager.groupToExposure(avaxExposureGroup))[0]);
             expect(await wrappedLoan.isSolvent()).to.be.true;
             expect(liquidatorAVAXBalanceAfter).to.be.equal(liquidatorAVAXBalanceBefore.add(toWei("50")));
             expect(treasuryAVAXBalanceAfter).to.be.equal(treasuryAVAXBalanceBefore.add(toWei("25")));
+            expect(currentAVAXExposure).to.be.equal(1586);
 
             // Liquidation 4 - 10% bonus, 9% fees
             console.log('Liquidation 4');
@@ -296,9 +310,11 @@ describe('Test liquidator', () => {
 
             treasuryAVAXBalanceAfter = await tokenContracts.get('AVAX')!.balanceOf(TREASURY_ADDRESS);
             liquidatorAVAXBalanceAfter = await tokenContracts.get('AVAX')!.balanceOf(liquidatorWallet.address);
+            currentAVAXExposure = fromWei((await tokenManager.groupToExposure(avaxExposureGroup))[0]);
             expect(await wrappedLoan.isSolvent()).to.be.true;
             expect(fromWei(liquidatorAVAXBalanceAfter)).to.be.equal(fromWei(liquidatorAVAXBalanceBefore) + 10);
             expect(fromWei(treasuryAVAXBalanceAfter)).to.be.equal(fromWei(treasuryAVAXBalanceBefore) + 9);
+            expect(currentAVAXExposure).to.be.equal(1467);
         });
     });
 });

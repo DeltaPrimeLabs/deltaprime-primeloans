@@ -144,7 +144,7 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
     * @dev This function uses the redstone-evm-connector
     * @param config configuration for liquidation
     **/
-    function liquidate(LiquidationConfig memory config) internal recalculateAssetsExposure{
+    function liquidate(LiquidationConfig memory config) internal {
         SolvencyFacetProdAvalanche.CachedPrices memory cachedPrices = _getAllPricesForLiquidation(config.assetsToRepay);
 
         uint256 initialTotal = _getTotalValueWithPrices(cachedPrices.ownedAssetsPrices, cachedPrices.stakedPositionsPrices); 
@@ -192,6 +192,7 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
             repaidInUSD += repayAmount * cachedPrices.assetsToRepayPrices[i].price * 10 ** 10 / 10 ** token.decimals();
 
             pool.repay(repayAmount);
+            tokenManager.decreaseProtocolExposure(config.assetsToRepay[i], repayAmount);
 
             if (token.balanceOf(address(this)) == 0) {
                 DiamondStorageLib.removeOwnedAsset(config.assetsToRepay[i]);
@@ -242,9 +243,11 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
                 if(balance > 0){
                     address(token).safeTransfer(msg.sender, balance * partToReturnBonus / 10 ** 18);
                     emit LiquidationTransfer(msg.sender, assetsOwned[i], balance * partToReturnBonus / 10 ** 18, block.timestamp);
+                    tokenManager.decreaseProtocolExposure(assetsOwned[i], balance * partToReturnBonus / 10 ** 18);
                     if(partToReturnFees > 0){
                         address(token).safeTransfer(DeploymentConstants.getTreasuryAddress(), balance * partToReturnFees / 10 ** 18);
                         emit LiquidationFeesTransfer(msg.sender, assetsOwned[i], balance * partToReturnFees / 10 ** 18, block.timestamp);
+                        tokenManager.decreaseProtocolExposure(assetsOwned[i], balance * partToReturnFees / 10 ** 18);
                     }
                 }
 
