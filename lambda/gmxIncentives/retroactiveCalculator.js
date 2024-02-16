@@ -100,99 +100,104 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
     let totalLeveragedGM = 0;
     let gmTvl = 0;
 
-    // calculate gm leveraged by the loan
-    for (let i = 0; i < Math.ceil(totalLoans / batchSize); i++) {
-      console.log(`processing ${i * batchSize} - ${(i + 1) * batchSize > totalLoans ? totalLoans : (i + 1) * batchSize} loans. ${timestampInSeconds}`);
+    try {
+      // calculate gm leveraged by the loan
+      for (let i = 0; i < Math.ceil(totalLoans / batchSize); i++) {
+        console.log(`processing ${i * batchSize} - ${(i + 1) * batchSize > totalLoans ? totalLoans : (i + 1) * batchSize} loans. ${timestampInSeconds}`);
 
-      const batchLoanAddresses = loanAddresses.slice(i * batchSize, (i + 1) * batchSize);
-      const wrappedContracts = getWrappedContracts(batchLoanAddresses, 'avalanche');
+        const batchLoanAddresses = loanAddresses.slice(i * batchSize, (i + 1) * batchSize);
+        const wrappedContracts = getWrappedContracts(batchLoanAddresses, 'avalanche');
+        console.log('---------------loading contracts finished--------------');
 
-      const loanStats = await Promise.all(
-        wrappedContracts.map(contract => Promise.all([contract.getFullLoanStatus.call({ blockTag: blockNumber }), contract.getAllAssetsBalances.call({ blockTag: blockNumber })]))
+        const loanStats = await Promise.all(
+          wrappedContracts.map(contract => Promise.all([contract.getFullLoanStatus.call({ blockTag: blockNumber }), contract.getAllAssetsBalances.call({ blockTag: blockNumber })]))
+        );
+
+        if (loanStats.length > 0) {
+          await Promise.all(
+            loanStats.map(async (loan, batchId) => {
+              const loanId = batchLoanAddresses[batchId].toLowerCase();
+              const status = loan[0];
+              const assetBalances = loan[1];
+              const collateral = fromWei(status[0]) - fromWei(status[1]);
+
+              loanQualifications[loanId] = {
+                collateral,
+                gmTokens: {},
+                loanLeveragedGM: 0
+              };
+
+              let loanTotalGMValue = 0;
+
+              await Promise.all(
+                Object.entries(gmTokens.avalanche).map(async ([symbol, token]) => {
+                  let price;
+
+                  if (prices[symbol]) {
+                    let i = 0;
+                    while (!price) {
+                      price = prices[symbol].find(price => Math.abs(Number(price.timestamp) - timestampInSeconds * 1000) <= 70 * 1000)
+                      i++;
+                    }
+                  }
+
+                  const asset = assetBalances.find(asset => fromBytes32(asset.name) == symbol);
+                  const balance = formatUnits(asset.balance.toString(), token.decimals);
+
+                  loanQualifications[loanId].gmTokens[symbol] = balance * price.value;
+                  loanTotalGMValue += balance * price.value;
+                })
+              );
+
+              const loanLeveragedGM = loanTotalGMValue - collateral > 0 ? loanTotalGMValue - collateral : 0;
+              loanQualifications[loanId].loanLeveragedGM = loanLeveragedGM;
+              totalLeveragedGM += loanLeveragedGM;
+              gmTvl += loanTotalGMValue;
+            })
+          );
+        }
+      }
+
+      console.log(`${Object.entries(loanQualifications).length} loans analyzed.`);
+
+      // incentives of all loans
+      const loanIncentives = {};
+
+      Object.entries(loanQualifications).map(([loanId, loanData]) => {
+        loanIncentives[loanId] = 0;
+
+        if (loanData.loanLeveragedGM > 0) {
+          const intervalIncentivesForLoan = incentivesPerInterval * loanData.loanLeveragedGM / totalLeveragedGM;
+
+          loanIncentives[loanId] = intervalIncentivesForLoan;
+        }
+      })
+
+      // save/update incentives values to DB
+      await Promise.all(
+        Object.entries(loanIncentives).map(async ([loanId, value]) => {
+          const data = {
+            id: loanId,
+            timestamp: timestampInSeconds,
+            avaxCollected: value
+          };
+
+          const params = {
+            TableName: 'gmx-incentives-ava-retroactive-prod',
+            Item: data
+          };
+          await dynamoDb.put(params).promise();
+        })
       );
 
-      if (loanStats.length > 0) {
-        await Promise.all(
-          loanStats.map(async (loan, batchId) => {
-            const loanId = batchLoanAddresses[batchId].toLowerCase();
-            const status = loan[0];
-            const assetBalances = loan[1];
-            const collateral = fromWei(status[0]) - fromWei(status[1]);
+      console.log(`GMX incentives updated for timestamp ${timestampInSeconds}.`)
 
-            loanQualifications[loanId] = {
-              collateral,
-              gmTokens: {},
-              loanLeveragedGM: 0
-            };
+      console.log(`Updated timestamp: ${timestampInSeconds}, block number: ${blockNumber}.`);
 
-            let loanTotalGMValue = 0;
-
-            await Promise.all(
-              Object.entries(gmTokens.avalanche).map(async ([symbol, token]) => {
-                let price;
-
-                if (prices[symbol]) {
-                  let i = 0;
-                  while (!price) {
-                    price = prices[symbol].find(price => Math.abs(Number(price.timestamp) - timestampInSeconds * 1000) <= 70 * 1000)
-                    i++;
-                  }
-                }
-
-                const asset = assetBalances.find(asset => fromBytes32(asset.name) == symbol);
-                const balance = formatUnits(asset.balance.toString(), token.decimals);
-
-                loanQualifications[loanId].gmTokens[symbol] = balance * price.value;
-                loanTotalGMValue += balance * price.value;
-              })
-            );
-
-            const loanLeveragedGM = loanTotalGMValue - collateral > 0 ? loanTotalGMValue - collateral : 0;
-            loanQualifications[loanId].loanLeveragedGM = loanLeveragedGM;
-            totalLeveragedGM += loanLeveragedGM;
-            gmTvl += loanTotalGMValue;
-          })
-        );
-      }
+      timestampInSeconds += 60 * 60 * 4;
+    } catch (error) {
+      console.log(error);
     }
-
-    console.log(`${Object.entries(loanQualifications).length} loans analyzed.`);
-
-    // incentives of all loans
-    const loanIncentives = {};
-
-    Object.entries(loanQualifications).map(([loanId, loanData]) => {
-      loanIncentives[loanId] = 0;
-
-      if (loanData.loanLeveragedGM > 0) {
-        const intervalIncentivesForLoan = incentivesPerInterval * loanData.loanLeveragedGM / totalLeveragedGM;
-
-        loanIncentives[loanId] = intervalIncentivesForLoan;
-      }
-    })
-
-    // save/update incentives values to DB
-    await Promise.all(
-      Object.entries(loanIncentives).map(async ([loanId, value]) => {
-        const data = {
-          id: loanId,
-          timestamp: timestampInSeconds,
-          avaxCollected: value
-        };
-
-        const params = {
-          TableName: 'gmx-incentives-ava-retroactive-prod',
-          Item: data
-        };
-        await dynamoDb.put(params).promise();
-      })
-    );
-
-    console.log(`GMX incentives updated for timestamp ${timestampInSeconds}.`)
-
-    console.log(`Updated timestamp: ${timestampInSeconds}, block number: ${blockNumber}.`);
-
-    timestampInSeconds += 60 * 60 * 4;
   }
 
   console.log(Object.values(prices)[0][Object.values(prices)[0].length - 1])
