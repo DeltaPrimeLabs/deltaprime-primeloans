@@ -181,7 +181,7 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
         };
 
         const params = {
-          TableName: process.env.GMX_INCENTIVES_AVA_RETROACTIVE_TABLE,
+          TableName: 'gmx-incentives-ava-retroactive-prod',
           Item: data
         };
         await dynamoDb.put(params).promise();
