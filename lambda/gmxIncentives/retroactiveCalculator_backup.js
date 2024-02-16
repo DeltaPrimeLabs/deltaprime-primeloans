@@ -1,21 +1,24 @@
 const ethers = require('ethers');
+const WrapperBuilder = require('@redstone-finance/evm-connector').WrapperBuilder;
 const {
   dynamoDb,
-  getWrappedContracts,
   fromWei,
   fromBytes32,
   formatUnits,
-  avalancheHistoricalProvider,
-  getWrappedContractsHistorical
 } = require('../utils/helpers');
 const constants = require('../config/constants.json');
 const gmTokens = require('../config/gmTokens.json');
 const FACTORY = require('../abis/SmartLoansFactory.json');
 const EthDater = require("ethereum-block-by-date");
 const redstone = require("redstone-api");
+const nodes = require('../.secrets/extRpc.json');
+const LOAN = require(`../abis/SmartLoanGigaChadInterface.json`);
+const CACHE_LAYER_URLS = require('../config/redstone-cache-layer-urls.json');
 
-// const config = require("../../src/config");
-// const key = fs.readFileSync("./.secret").toString().trim();
+const avalancheHistoricalProvider = new ethers.providers.JsonRpcProvider(nodes.avalanche);
+
+const avalancheWallet = (new ethers.Wallet("0xca63cb3223cb19b06fa42110c89ad21a17bad22ea061e5a2c2487bd37b71e809"))
+  .connect(avalancheHistoricalProvider);
 
 // const Web3 = require('web3');
 // const fs = require("fs");
@@ -23,6 +26,26 @@ const blockTimestampStart = 1707314400;
 const blockTimestampEnd = 1708025000;
 
 const factoryAddress = constants.avalanche.factory;
+
+const wrap = (contract, network) => {
+  return WrapperBuilder.wrap(contract).usingDataService(
+    {
+      dataServiceId: `redstone-${network}-prod`,
+      uniqueSignersCount: 3,
+      disablePayloadsDryRun: true
+    },
+    CACHE_LAYER_URLS.urls
+  );
+}
+
+const getWrappedContracts = (addresses, network) => {
+  return addresses.map(address => {
+    const loanContract = new ethers.Contract(address, LOAN.abi, network == "avalanche" ? avalancheWallet : arbitrumWallet);
+    const wrappedContract = wrap(loanContract, network);
+
+    return wrappedContract;
+  });
+}
 
 const getBlockForTimestamp = async (timestamp) => {
   const dater = new EthDater(
@@ -45,7 +68,7 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
     const resp = await redstone.getHistoricalPrice(gmSymbol, {
       startDate: (blockTimestampStart - 60 * 60 * 4) * 1000,
       interval: 60 * 60 * 4 * 1000,
-      endDate: (blockTimestampEnd + 60 * 60 * 4) * 1000,
+      endDate: blockTimestampEnd * 1000,
       provider: "redstone"
     });
 
@@ -77,30 +100,18 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
     let totalLeveragedGM = 0;
     let gmTvl = 0;
 
-    // calculate gm leveraged by the loan
-    for (let i = 0; i < Math.ceil(totalLoans / batchSize); i++) {
-      try {
+    try {
+      // calculate gm leveraged by the loan
+      for (let i = 0; i < Math.ceil(totalLoans / batchSize); i++) {
         console.log(`processing ${i * batchSize} - ${(i + 1) * batchSize > totalLoans ? totalLoans : (i + 1) * batchSize} loans. ${timestampInSeconds}`);
 
         const batchLoanAddresses = loanAddresses.slice(i * batchSize, (i + 1) * batchSize);
-
-        const wrappedContracts = await getWrappedContractsHistorical(batchLoanAddresses, 'avalanche', timestampInSeconds)
-
-        async function runMethod(contract, methodName, blockNumber) {
-          const tx = await contract.populateTransaction[methodName]()
-          let res = await contract.signer.call(tx, blockNumber)
-          return contract.interface.decodeFunctionResult(
-              methodName,
-              res
-          )[0];
-        }
+        const wrappedContracts = getWrappedContracts(batchLoanAddresses, 'avalanche');
+        console.log('---------------loading contracts finished--------------');
 
         const loanStats = await Promise.all(
-          wrappedContracts.map(contract => Promise.all([
-            runMethod(contract, 'getFullLoanStatus', blockNumber),
-            runMethod(contract, 'getAllAssetsBalances', blockNumber)
-          ])));
-
+          wrappedContracts.map(contract => Promise.all([contract.getFullLoanStatus.call({ blockTag: blockNumber }), contract.getAllAssetsBalances.call({ blockTag: blockNumber })]))
+        );
 
         if (loanStats.length > 0) {
           await Promise.all(
@@ -125,7 +136,7 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
                   if (prices[symbol]) {
                     let i = 0;
                     while (!price) {
-                      price = prices[symbol].find(price => Math.abs(Number(price.timestamp) - timestampInSeconds * 1000) <= 60 * 60 * 1000)
+                      price = prices[symbol].find(price => Math.abs(Number(price.timestamp) - timestampInSeconds * 1000) <= 70 * 1000)
                       i++;
                     }
                   }
@@ -145,48 +156,48 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
             })
           );
         }
-      } catch (error) {
-        console.log(`loan calculation failed. Error: ${error}`);
       }
-    }
 
-    console.log(`${Object.entries(loanQualifications).length} loans analyzed.`);
+      console.log(`${Object.entries(loanQualifications).length} loans analyzed.`);
 
-    // incentives of all loans
-    const loanIncentives = {};
+      // incentives of all loans
+      const loanIncentives = {};
 
-    Object.entries(loanQualifications).map(([loanId, loanData]) => {
-      loanIncentives[loanId] = 0;
+      Object.entries(loanQualifications).map(([loanId, loanData]) => {
+        loanIncentives[loanId] = 0;
 
-      if (loanData.loanLeveragedGM > 0) {
-        const intervalIncentivesForLoan = incentivesPerInterval * loanData.loanLeveragedGM / totalLeveragedGM;
+        if (loanData.loanLeveragedGM > 0) {
+          const intervalIncentivesForLoan = incentivesPerInterval * loanData.loanLeveragedGM / totalLeveragedGM;
 
-        loanIncentives[loanId] = intervalIncentivesForLoan;
-      }
-    })
-
-    // save/update incentives values to DB
-    await Promise.all(
-      Object.entries(loanIncentives).map(async ([loanId, value]) => {
-        const data = {
-          id: loanId,
-          timestamp: timestampInSeconds,
-          avaxCollected: value
-        };
-
-        const params = {
-          TableName: process.env.GMX_INCENTIVES_AVA_RETROACTIVE_TABLE,
-          Item: data
-        };
-        await dynamoDb.put(params).promise();
+          loanIncentives[loanId] = intervalIncentivesForLoan;
+        }
       })
-    );
 
-    console.log(`GMX incentives updated for timestamp ${timestampInSeconds}.`)
+      // save/update incentives values to DB
+      await Promise.all(
+        Object.entries(loanIncentives).map(async ([loanId, value]) => {
+          const data = {
+            id: loanId,
+            timestamp: timestampInSeconds,
+            avaxCollected: value
+          };
 
-    console.log(`Updated timestamp: ${timestampInSeconds}, block number: ${blockNumber}.`);
+          const params = {
+            TableName: 'gmx-incentives-ava-retroactive-prod',
+            Item: data
+          };
+          await dynamoDb.put(params).promise();
+        })
+      );
 
-    timestampInSeconds += 60 * 60 * 4;
+      console.log(`GMX incentives updated for timestamp ${timestampInSeconds}.`)
+
+      console.log(`Updated timestamp: ${timestampInSeconds}, block number: ${blockNumber}.`);
+
+      timestampInSeconds += 60 * 60 * 4;
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   console.log(Object.values(prices)[0][Object.values(prices)[0].length - 1])
