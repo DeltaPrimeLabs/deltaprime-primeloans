@@ -1,4 +1,5 @@
 const ethers = require('ethers');
+const WrapperBuilder = require('@redstone-finance/evm-connector').WrapperBuilder;
 const {
   dynamoDb,
   fromWei,
@@ -11,8 +12,8 @@ const FACTORY = require('../abis/SmartLoansFactory.json');
 const EthDater = require("ethereum-block-by-date");
 const redstone = require("redstone-api");
 const nodes = require('../.secrets/extRpc.json');
-// const config = require("../../src/config");
-// const key = fs.readFileSync("./.secret").toString().trim();
+const LOAN = require(`../abis/SmartLoanGigaChadInterface.json`);
+const CACHE_LAYER_URLS = require('../config/redstone-cache-layer-urls.json');
 
 const avalancheHistoricalProvider = new ethers.providers.JsonRpcProvider(nodes.avalanche);
 
@@ -25,6 +26,17 @@ const blockTimestampStart = 1707314400;
 const blockTimestampEnd = 1708025000;
 
 const factoryAddress = constants.avalanche.factory;
+
+const wrap = (contract, network) => {
+  return WrapperBuilder.wrap(contract).usingDataService(
+    {
+      dataServiceId: `redstone-${network}-prod`,
+      uniqueSignersCount: 3,
+      disablePayloadsDryRun: true
+    },
+    CACHE_LAYER_URLS.urls
+  );
+}
 
 const getWrappedContracts = (addresses, network) => {
   return addresses.map(address => {
