@@ -57,6 +57,8 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
 
   while (timestampInSeconds <= blockTimestampEnd) {
     console.log(`Processed timestamp: ${timestampInSeconds}`)
+    let packages = await getArweavePackages(timestampInSeconds);
+
     let blockNumber = (await getBlockForTimestamp(timestampInSeconds * 1000)).block;
     const factoryContract = new ethers.Contract(factoryAddress, FACTORY.abi, avalancheHistoricalProvider);
     let loanAddresses = await factoryContract.getAllLoans({ blockTag: blockNumber });
@@ -84,7 +86,7 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
 
         const batchLoanAddresses = loanAddresses.slice(i * batchSize, (i + 1) * batchSize);
 
-        const wrappedContracts = await getWrappedContractsHistorical(batchLoanAddresses, 'avalanche', timestampInSeconds)
+        const wrappedContracts = await getWrappedContractsHistorical(batchLoanAddresses, 'avalanche', packages)
 
         async function runMethod(contract, methodName, blockNumber) {
           const tx = await contract.populateTransaction[methodName]()
