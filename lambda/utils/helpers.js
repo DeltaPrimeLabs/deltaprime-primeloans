@@ -8,6 +8,13 @@ const networkInfo = require('./constants.json');
 const CACHE_LAYER_URLS = require('../config/redstone-cache-layer-urls.json');
 
 const LOAN = require(`../abis/SmartLoanGigaChadInterface.json`);
+const {queryHistoricalFeeds} = require("../../tools/scripts/query-arweave");
+const fetch = require("node-fetch");
+const {SignedDataPackage} = require("redstone-protocol");
+const Web3 = require('web3');
+const web = new Web3(new Web3.providers.HttpProvider('https://avax.nirvanalabs.xyz/avalanche_ui/ext/bc/C/rpc?apikey=284d7cde-5c20-46a9-abee-2e3932cdb771'));
+const fs = require("fs");
+
 
 // AWS DynamoDB setup
 AWS.config.update({region:'us-east-1'});
@@ -21,10 +28,10 @@ const formatUnits = ethers.utils.formatUnits;
 const fromWei = val => parseFloat(ethers.utils.formatEther(val));
 const toWei = val => ethers.utils.parseEther(val.toString());
 
-const avalancheProvider = new ethers.providers.JsonRpcProvider('https://avalanche-mainnet.core.chainstack.com/ext/bc/C/rpc/0968db18a01a90bac990ff00df6f7da1');
+const avalancheProvider = new ethers.providers.JsonRpcProvider('https://nd-033-589-713.p2pify.com/d41fdf9956747a40bae4edec06ad4ab9/ext/bc/C/rpc');
 const arbitrumProvider = new ethers.providers.JsonRpcProvider(process.env.FUNC_RPC_ARB);
 
-const avalancheHistoricalProvider = new ethers.providers.JsonRpcProvider('https://nd-875-171-632.p2pify.com/1e4e4e399220d21d56677b5be69f9326/ext/bc/C/rpc');
+const avalancheHistoricalProvider = new ethers.providers.JsonRpcProvider('https://nd-033-589-713.p2pify.com/d41fdf9956747a40bae4edec06ad4ab9/ext/bc/C/rpc');
 const arbitrumHistoricalProvider = new ethers.providers.JsonRpcProvider(process.env.EXT_RPC_ARB);
 
 const avalancheWallet = (new ethers.Wallet("0xca63cb3223cb19b06fa42110c89ad21a17bad22ea061e5a2c2487bd37b71e809"))
@@ -59,6 +66,9 @@ const wrap = (contract, network) => {
     CACHE_LAYER_URLS.urls
   );
 }
+const wrapWithPackages = (contract, network, packages) => {
+  return WrapperBuilder.wrap(contract).usingDataPackages(packages);
+}
 
 const getWrappedContracts = (addresses, network) => {
   return addresses.map(address => {
@@ -67,6 +77,53 @@ const getWrappedContracts = (addresses, network) => {
 
     return wrappedContract;
   });
+}
+
+const getWrappedContractsHistorical = async (addresses, network, timestamp) => {
+
+  let packages = await getData(timestamp);
+
+  fs.writeFileSync(`packages-${timestamp}.json`, JSON.stringify(packages))
+  return addresses.map(address => {
+    const loanContract = new ethers.Contract(address, LOAN.abi, network == "avalanche" ? avalancheWallet : arbitrumWallet);
+    const wrappedContract = wrapWithPackages(loanContract, network, packages);
+
+    return wrappedContract;
+  });
+}
+
+async function getData(timestamp) {
+  const nodeAddress1 = '0x83cbA8c619fb629b81A65C2e67fE15cf3E3C9747';
+  const nodeAddress2 = '0x2c59617248994D12816EE1Fa77CE0a64eEB456BF';
+  const nodeAddress3 = '0x12470f7aBA85c8b81D63137DD5925D6EE114952b';
+  //do dziesietnych
+
+  const dater = new EthDater(web);
+
+  let blockData = await dater.getDate(timestamp * 1000);
+
+  let approxTimestamp = parseInt((blockData.timestamp / 10).toString()) * 10; //requirement for Redstone
+
+  const feeds = await queryHistoricalFeeds(approxTimestamp, [nodeAddress1, nodeAddress2, nodeAddress3]);
+
+  let packages = [];
+
+
+  for (let obj of feeds) {
+
+    let txId = obj.node.id;
+    let url = `https://arweave.net/${txId}`;
+
+    const response = await fetch(url);
+
+    const json = await response.json();
+
+    const dataPackage = SignedDataPackage.fromObj(json)
+
+    packages.push(dataPackage);
+  }
+
+  return packages;
 }
 
 const fromBytes32 = ethers.utils.parseBytes32String;
@@ -102,5 +159,6 @@ module.exports = {
   arbitrumWallet,
   dynamoDb,
   getWrappedContracts,
+  getWrappedContractsHistorical,
   getBlockForTimestamp
 }

@@ -15,6 +15,7 @@ const FACTORY = require('../abis/SmartLoansFactory.json');
 const EthDater = require("ethereum-block-by-date");
 const redstone = require("redstone-api");
 const fs = require("fs");
+import {getWrappedContractsHistorical} from "../utils/helpers";
 
 // const config = require("../../src/config");
 // const key = fs.readFileSync("./.secret").toString().trim();
@@ -56,13 +57,12 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
     prices[gmSymbol] = resp;
   }
 
-  // console.log('Prices:');
-  // console.log(prices);
 
   while (timestampInSeconds <= blockTimestampEnd) {
     console.log(`Processed timestamp: ${timestampInSeconds}`)
     let blockNumber = (await getBlockForTimestamp(timestampInSeconds * 1000)).block;
     const factoryContract = new ethers.Contract(factoryAddress, FACTORY.abi, avalancheHistoricalProvider);
+
     let loanAddresses = await factoryContract.getAllLoans({ blockTag: blockNumber });
     const totalLoans = loanAddresses.length;
 
@@ -86,11 +86,24 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
       console.log(`processing ${i * batchSize} - ${(i + 1) * batchSize > totalLoans ? totalLoans : (i + 1) * batchSize} loans. ${timestampInSeconds}`);
 
       const batchLoanAddresses = loanAddresses.slice(i * batchSize, (i + 1) * batchSize);
-      const wrappedContracts = getWrappedContracts(batchLoanAddresses, 'avalanche');
+
+      const wrappedContracts = await getWrappedContractsHistorical(batchLoanAddresses, 'avalanche', timestampInSeconds)
+
+      async function runMethod(contract, methodName, blockNumber) {
+        const tx = await contract.populateTransaction[methodName]()
+        let res = await contract.signer.call(tx, blockNumber)
+        return contract.interface.decodeFunctionResult(
+            methodName,
+            res
+        )[0];
+      }
 
       const loanStats = await Promise.all(
-        wrappedContracts.map(contract => Promise.all([contract.getFullLoanStatus.call({ blockTag: blockNumber }), contract.getAllAssetsBalances.call({ blockTag: blockNumber })]))
-      );
+        wrappedContracts.map(contract => Promise.all([
+          runMethod(contract, 'getFullLoanStatus', blockNumber),
+          runMethod(contract, 'getAllAssetsBalances', blockNumber)
+        ])));
+
 
       if (loanStats.length > 0) {
         console.log(`loanStats: ${loanStats.length}, timestamp: ${Date.now()}`)
