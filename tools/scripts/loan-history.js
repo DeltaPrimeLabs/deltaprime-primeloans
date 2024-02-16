@@ -1,8 +1,11 @@
 const EthDater = require('ethereum-block-by-date');
 
 const LOAN_ADDRESS = "0xB058DDDBcF513D7159cca9e7D776Ee0bF18E36E9";
-const TIMESTAMP = 1683553932000;
-const jsonRPC = "https://api.avax.network/ext/bc/C/rpc";
+//1707314400
+// const TIMESTAMP = 1683553932000;
+// const TIMESTAMP = 1707315400000;
+const TIMESTAMP = 1707314400000;
+const jsonRPC = "https://avax.nirvanalabs.xyz/avalanche_ui/ext/bc/C/rpc?apikey=284d7cde-5c20-46a9-abee-2e3932cdb771";
 
 const ARTIFACT = require(`../../artifacts/contracts/interfaces/SmartLoanGigaChadInterface.sol/SmartLoanGigaChadInterface.json`);
 const ethers = require("ethers");
@@ -10,8 +13,8 @@ const fs = require("fs");
 const {WrapperBuilder} = require("@redstone-finance/evm-connector");
 const {queryHistoricalFeeds} = require("./query-arweave");
 import { SignedDataPackage } from "redstone-protocol";
-import {fromWei} from "../../test/_helpers";
 import CACHE_LAYER_URLS from "../../common/redstone-cache-layer-urls.json";
+export const fromWei = val => parseFloat(ethers.utils.formatEther(val));
 
 const key = fs.readFileSync("./.secret").toString().trim();
 let mnemonicWallet = new ethers.Wallet(key);
