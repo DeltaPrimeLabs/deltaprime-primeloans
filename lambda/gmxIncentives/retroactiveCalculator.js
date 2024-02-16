@@ -1,7 +1,6 @@
 const ethers = require('ethers');
 const {
   dynamoDb,
-  getWrappedContracts,
   fromWei,
   fromBytes32,
   formatUnits,
@@ -17,12 +16,24 @@ const nodes = require('../.secrets/extRpc.json');
 
 const avalancheHistoricalProvider = new ethers.providers.JsonRpcProvider(nodes.avalanche);
 
+const avalancheWallet = (new ethers.Wallet("0xca63cb3223cb19b06fa42110c89ad21a17bad22ea061e5a2c2487bd37b71e809"))
+  .connect(avalancheHistoricalProvider);
+
 // const Web3 = require('web3');
 // const fs = require("fs");
 const blockTimestampStart = 1707314400;
 const blockTimestampEnd = 1708025000;
 
 const factoryAddress = constants.avalanche.factory;
+
+const getWrappedContracts = (addresses, network) => {
+  return addresses.map(address => {
+    const loanContract = new ethers.Contract(address, LOAN.abi, network == "avalanche" ? avalancheWallet : arbitrumWallet);
+    const wrappedContract = wrap(loanContract, network);
+
+    return wrappedContract;
+  });
+}
 
 const getBlockForTimestamp = async (timestamp) => {
   const dater = new EthDater(
