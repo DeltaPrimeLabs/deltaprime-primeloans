@@ -630,7 +630,7 @@ export default {
             sortable: false,
             class: 'composition',
             id: 'COMPOSITION',
-            tooltip: `How close we are to completing the protocol mission: $${config.gmxV2IncentivesMilestone / 1000000}M GM TVL. Deadline: ${config.gmxV2IncentivesDeadline}. Failing the mission results in reduced incentives.`
+            tooltip: `How close we are to completing the protocol mission: $${config.gmxV2IncentivesMilestone / 1000000}M GM TVL.`
           },
           {
             label: 'Your eligible GM',
@@ -658,7 +658,7 @@ export default {
             sortable: false,
             class: 'trend-level',
             id: 'TREND',
-            tooltip: `The total amount of ${token} you have collected this week. Collected ${token} will be distributed weekly. This number is not included in your collateral value, until the ${token} is distributed to all Prime Accounts. This number resets to 0 after the collected ${token} is added to your assets on Monday.`
+            tooltip: `The total amount of ${token} you have collected this week. Collected ${token} will be distributed weekly. This number is not included in your collateral value, until the ${token} is distributed to all Prime Accounts. This number resets to 0 after the collected ${token} is added to your assets on Wednesday.`
           },
         ]
       };
