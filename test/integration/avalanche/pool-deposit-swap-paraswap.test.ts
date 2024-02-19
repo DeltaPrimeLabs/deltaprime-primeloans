@@ -7,7 +7,7 @@ import axios from 'axios';
 import PoolArtifact from '../../../artifacts/contracts/Pool.sol/Pool.json';
 import DepositSwapArtifact from '../../../artifacts/contracts/DepositSwap.sol/DepositSwap.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {fromWei, getFixedGasSigners, parseParaSwapRouteData, toWei, wavaxAbi} from "../../_helpers";
+import {fromWei, getFixedGasSigners, getRedstonePrices, getTokensPricesMap, parseParaSwapRouteData, toWei, wavaxAbi} from "../../_helpers";
 import {Pool, DepositSwap} from "../../../typechain";
 import {BigNumber, Contract} from "ethers";
 import TOKEN_ADDRESSES from "../../../common/addresses/avax/token_addresses.json";
@@ -28,6 +28,7 @@ describe('Pool with variable utilisation interest rates', () => {
         depositSwapContract: Contract,
         owner: SignerWithAddress,
         depositor: SignerWithAddress,
+        tokensPrices: Map<string, number>,
         paraSwapMin: SimpleFetchSDK;
 
     const getSwapData = async (userAddress: string, srcToken: keyof typeof TOKEN_ADDRESSES, destToken: keyof typeof TOKEN_ADDRESSES, srcAmount: any) => {
@@ -60,6 +61,9 @@ describe('Pool with variable utilisation interest rates', () => {
         wavaxPool = new ethers.Contract(WAVAX_POOL_TUP_ADDRESS, PoolArtifact.abi, depositor) as Pool;
         usdcPool = new ethers.Contract(USDC_POOL_TUP_ADDRESS, PoolArtifact.abi, depositor) as Pool;
         wavaxContract = new ethers.Contract(WAVAX_CONTRACT_ADDRESS, wavaxAbi, depositor) as Pool;
+
+        let assetsList = ['AVAX', 'USDC'];
+        tokensPrices = await getTokensPricesMap(assetsList, "avalanche", getRedstonePrices, []);
 
         paraSwapMin = constructSimpleSDK({chainId: 43114, axios});
     });
@@ -97,6 +101,6 @@ describe('Pool with variable utilisation interest rates', () => {
         )
 
         expect(fromWei(await wavaxPool.balanceOf(depositor.address))).to.closeTo(0, 0.01);
-        expect(parseFloat(formatUnits(await usdcPool.balanceOf(depositor.address), 6))).to.gte(10);
+        expect(parseFloat(formatUnits(await usdcPool.balanceOf(depositor.address), 6))).to.closeTo(tokensPrices.get("AVAX")! * 10, 1);
     });
 });
