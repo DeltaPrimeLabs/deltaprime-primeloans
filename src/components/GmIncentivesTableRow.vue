@@ -171,7 +171,7 @@ export default {
     smartLoanContract: {
       async handler(smartLoanContract) {
         if (smartLoanContract) {
-          const collectedResponse = await (await fetch(`https://cavsise1n4.execute-api.us-east-1.amazonaws.com/gmx-incentives/${smartLoanContract.address}?network=${window.chain}`)).json();
+          const collectedResponse = await (await fetch(`https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/gmx-incentives/${smartLoanContract.address}?network=${window.chain}`)).json();
           let collectedToken;
           let harvested;
           if (window.arbitrumChain) {
@@ -200,9 +200,9 @@ export default {
       setTimeout(async () => {
         this.$forceUpdate();
         if (window.arbitrumChain) {
-          this.gmTvlFromApi = (await (await fetch('https://cavsise1n4.execute-api.us-east-1.amazonaws.com/gm-boost-apy')).json()).arbTvl;
+          this.gmTvlFromApi = (await (await fetch('https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/gm-boost-apy')).json()).arbTvl;
         } else {
-          this.gmTvlFromApi = (await (await fetch('https://cavsise1n4.execute-api.us-east-1.amazonaws.com/gm-boost-apy')).json()).avaxTvl;
+          this.gmTvlFromApi = (await (await fetch('https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/gm-boost-apy')).json()).avaxTvl;
         }
       }, 1000);
     },

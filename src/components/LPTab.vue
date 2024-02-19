@@ -320,7 +320,7 @@ export default {
     },
 
     async fetchOpenInterestData() {
-      const data = await (await fetch('https://cavsise1n4.execute-api.us-east-1.amazonaws.com/gm-open-interests')).json();
+      const data = await (await fetch('https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/gm-open-interests')).json();
       const newOpenInterestData = {}
       Object.keys(data[0])
         .filter(key => key !== 'id')
