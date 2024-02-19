@@ -42,32 +42,87 @@ abstract contract GmxV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         return false;
     }
 
-    function _deposit(address gmToken, address depositedToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) internal nonReentrant noBorrowInTheSameBlock onlyOwner {
+    function _decreaseExposure(ITokenManager tokenManager, address _token, uint256 _amount) internal {
+        if(_amount > 0) {
+            tokenManager.decreaseProtocolExposure(
+                tokenManager.tokenAddressToSymbol(_token),
+                _amount * 1e18 / 10**IERC20Metadata(_token).decimals()
+            );
+            if(IERC20Metadata(_token).balanceOf(address(this)) == 0){
+                DiamondStorageLib.removeOwnedAsset(tokenManager.tokenAddressToSymbol(_token));
+            }
+        }
+    }
+
+    function _simulateSolvencyCheck(ITokenManager tokenManager, address gmToken, uint256 longTokenAmount, uint256 shortTokenAmount, uint256 gmAmount, bool isDeposit) internal{
+        uint256[] memory tokenPrices = new uint256[](3);
+        bytes32[] memory tokenSymbols = new bytes32[](3);
+        address shortToken = marketToShortToken(gmToken);
+        address longToken = marketToLongToken(gmToken);
+        
+        tokenSymbols[0] = tokenManager.tokenAddressToSymbol(longToken);
+        tokenSymbols[1] = tokenManager.tokenAddressToSymbol(shortToken);
+        tokenSymbols[2] = tokenManager.tokenAddressToSymbol(gmToken);
+        tokenPrices = getPrices(tokenSymbols);
+
+        uint256 inUsdValue = tokenPrices[2] * gmAmount / 10**IERC20Metadata(gmToken).decimals();
+        uint256 outUsdValue = tokenPrices[0] * longTokenAmount / 10**IERC20Metadata(longToken).decimals() + tokenPrices[1] * shortTokenAmount / 10**IERC20Metadata(shortToken).decimals();
+        (inUsdValue, outUsdValue) = isDeposit ? (outUsdValue, inUsdValue) : (inUsdValue, outUsdValue);
+        require(isWithinBounds(inUsdValue, outUsdValue) , "Invalid min output value");
+        
+        uint256 receivedWeightedUsdValue = isDeposit ? 
+            (tokenPrices[2] * gmAmount * tokenManager.debtCoverage(gmToken) / 10**IERC20Metadata(gmToken).decimals()) / 1e8 
+        :
+        (
+            (tokenPrices[0] * longTokenAmount * tokenManager.debtCoverage(longToken) / 10**IERC20Metadata(longToken).decimals()) +
+            (tokenPrices[1] * shortTokenAmount * tokenManager.debtCoverage(shortToken) / 10**IERC20Metadata(shortToken).decimals())
+        )
+        / 1e8;
+
+        require((_getThresholdWeightedValuePayable() + receivedWeightedUsdValue) > _getDebtPayable(), "The action may cause the account to become insolvent");
+    }
+
+    function _deposit(address gmToken, uint256 longTokenAmount, uint256 shortTokenAmount, uint256 minGmAmount, uint256 executionFee) internal nonReentrant noBorrowInTheSameBlock onlyOwner {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        address longToken = marketToLongToken(gmToken);
+        address shortToken = marketToShortToken(gmToken);
 
-        tokenAmount = IERC20(depositedToken).balanceOf(address(this)) < tokenAmount ? IERC20(depositedToken).balanceOf(address(this)) : tokenAmount;
+        longTokenAmount = IERC20(longToken).balanceOf(address(this)) < longTokenAmount ? IERC20(longToken).balanceOf(address(this)) : longTokenAmount;
+        shortTokenAmount = IERC20(shortToken).balanceOf(address(this)) < shortTokenAmount ? IERC20(shortToken).balanceOf(address(this)) : shortTokenAmount;
 
-        bytes[] memory data = new bytes[](3);
+        // Simulate solvency check
+        _simulateSolvencyCheck(tokenManager, gmToken, longTokenAmount, shortTokenAmount, minGmAmount, true);
+
+        bytes[] memory data = new bytes[](4);
         data[0] = abi.encodeWithSelector(
             IGmxV2Router.sendWnt.selector,
             getGmxV2DepositVault(),
             executionFee
         );
+
         data[1] = abi.encodeWithSelector(
             IGmxV2Router.sendTokens.selector,
-            depositedToken,
+            longToken,
             getGmxV2DepositVault(),
-            tokenAmount
+            longTokenAmount
         );
+        
         data[2] = abi.encodeWithSelector(
+            IGmxV2Router.sendTokens.selector,
+            shortToken,
+            getGmxV2DepositVault(),
+            shortTokenAmount
+        );
+        
+        data[3] = abi.encodeWithSelector(
             IDepositUtils.createDeposit.selector,
             IDepositUtils.CreateDepositParams({
                 receiver: address(this), //receiver
                 callbackContract: address(this), //callbackContract
                 uiFeeReceiver: address(0), //uiFeeReceiver
                 market: gmToken, //market
-                initialLongToken: marketToLongToken(gmToken), //initialLongToken
-                initialShortToken: marketToShortToken(gmToken), //initialShortToken
+                initialLongToken: longToken, //initialLongToken
+                initialShortToken: shortToken, //initialShortToken
                 longTokenSwapPath: new address[](0), //longTokenSwapPath
                 shortTokenSwapPath: new address[](0), //shortTokenSwapPath
                 minMarketTokens: minGmAmount, //minMarketTokens
@@ -77,25 +132,14 @@ abstract contract GmxV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             })
         );
 
-        IERC20(depositedToken).approve(getGmxV2Router(), tokenAmount);
-        BasicMulticall(getGmxV2ExchangeRouter()).multicall{ value: msg.value }(data);
-
-        // Simulate solvency check
-        {
-            bytes32[] memory dataFeedIds = new bytes32[](2);
-            dataFeedIds[0] = tokenManager.tokenAddressToSymbol(gmToken);
-            dataFeedIds[1] = tokenManager.tokenAddressToSymbol(depositedToken);
-
-            uint256 gmTokenUsdPrice = SolvencyMethods.getPrices(dataFeedIds)[0];
-            uint256 depositTokenUsdPrice = SolvencyMethods.getPrices(dataFeedIds)[1];
-            require(isWithinBounds(
-                depositTokenUsdPrice * tokenAmount / 10**IERC20Metadata(depositedToken).decimals(),  // Deposit Amount In USD
-                minGmAmount * gmTokenUsdPrice / 10**IERC20Metadata(gmToken).decimals())                                                // Output Amount In USD
-            , "Invalid min output value");
-
-            uint256 gmTokensWeightedUsdValue = gmTokenUsdPrice * minGmAmount * tokenManager.debtCoverage(gmToken) / 1e26;
-            require((_getThresholdWeightedValuePayable() + gmTokensWeightedUsdValue) > _getDebtPayable(), "The action may cause the account to become insolvent");
+        if(longTokenAmount > 0) {
+            IERC20(longToken).approve(getGmxV2Router(), longTokenAmount);
         }
+        if(shortTokenAmount > 0) {
+            IERC20(shortToken).approve(getGmxV2Router(), shortTokenAmount);
+        }
+
+        BasicMulticall(getGmxV2ExchangeRouter()).multicall{ value: msg.value }(data);
 
         // Freeze account
         DiamondStorageLib.freezeAccount(gmToken);
@@ -103,15 +147,8 @@ abstract contract GmxV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         tokenManager.increasePendingExposure(tokenManager.tokenAddressToSymbol(gmToken), address(this), minGmAmount * 1e18 / 10**IERC20Metadata(gmToken).decimals());
 
         // Update exposures
-        tokenManager.decreaseProtocolExposure(
-            tokenManager.tokenAddressToSymbol(depositedToken),
-            tokenAmount * 1e18 / 10**IERC20Metadata(depositedToken).decimals()
-        );
-
-        // Update owned assets
-        if(IERC20Metadata(depositedToken).balanceOf(address(this)) == 0){
-            DiamondStorageLib.removeOwnedAsset(tokenManager.tokenAddressToSymbol(depositedToken));
-        }
+        _decreaseExposure(tokenManager, longToken, longTokenAmount);
+        _decreaseExposure(tokenManager, shortToken, shortTokenAmount);
     }
 
 
@@ -119,6 +156,11 @@ abstract contract GmxV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         gmAmount = IERC20(gmToken).balanceOf(address(this)) < gmAmount ? IERC20(gmToken).balanceOf(address(this)) : gmAmount;
+
+        // Simulate solvency check
+        if(msg.sender == DiamondStorageLib.contractOwner()){    // Only owner can call this method or else it's liquidator when the account is already insolvent
+            _simulateSolvencyCheck(tokenManager, gmToken, minLongTokenAmount, minShortTokenAmount, gmAmount, false);
+        }
 
         bytes[] memory data = new bytes[](3);
         data[0] = abi.encodeWithSelector(
@@ -157,31 +199,6 @@ abstract contract GmxV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         address longToken = marketToLongToken(gmToken);
         address shortToken = marketToShortToken(gmToken);
 
-        // Simulate solvency check
-        if(msg.sender == DiamondStorageLib.contractOwner()){    // Only owner can call this method or else it's liquidator when the account is already insolvent
-            uint256[] memory tokenPrices = new uint256[](2);
-
-            {
-                bytes32[] memory tokenSymbols = new bytes32[](3);
-                tokenSymbols[0] = tokenManager.tokenAddressToSymbol(longToken);
-                tokenSymbols[1] = tokenManager.tokenAddressToSymbol(shortToken);
-                tokenSymbols[2] = tokenManager.tokenAddressToSymbol(gmToken);
-                tokenPrices = getPrices(tokenSymbols);
-            }
-            require(isWithinBounds(
-                tokenPrices[2] * gmAmount / 10**IERC20Metadata(gmToken).decimals(),                   // Deposit Amount In USD
-                tokenPrices[0] * minLongTokenAmount / 10**IERC20Metadata(longToken).decimals() 
-                + tokenPrices[1] * minShortTokenAmount / 10**IERC20Metadata(shortToken).decimals())   // Output Amount In USD
-            , "Invalid min output value");
-            
-            uint256 receivedTokensWeightedUsdValue = (
-                (tokenPrices[0] * minLongTokenAmount * tokenManager.debtCoverage(longToken) * 1e18 / 10**IERC20Metadata(longToken).decimals()) +
-                (tokenPrices[1] * minShortTokenAmount * tokenManager.debtCoverage(shortToken) * 1e18 / 10**IERC20Metadata(shortToken).decimals())
-            )
-            / 1e26;
-            require((_getThresholdWeightedValuePayable() + receivedTokensWeightedUsdValue) > _getDebtPayable(), "The action may cause the account to become insolvent");
-        }
-
         // Freeze account
         DiamondStorageLib.freezeAccount(gmToken);
 
@@ -189,15 +206,7 @@ abstract contract GmxV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         tokenManager.increasePendingExposure(tokenManager.tokenAddressToSymbol(shortToken), address(this), minShortTokenAmount * 1e18 / 10**IERC20Metadata(shortToken).decimals());
 
         // Update exposures
-        tokenManager.decreaseProtocolExposure(
-            tokenManager.tokenAddressToSymbol(gmToken),
-            gmAmount * 1e18 / 10**IERC20Metadata(gmToken).decimals()
-        );
-
-        // Remove GM token from owned assets if whole balance was used
-        if(IERC20Metadata(gmToken).balanceOf(address(this)) == 0){
-            DiamondStorageLib.removeOwnedAsset(tokenManager.tokenAddressToSymbol(gmToken));
-        }
+        _decreaseExposure(tokenManager, gmToken, gmAmount);
     }
 
     // MODIFIERS

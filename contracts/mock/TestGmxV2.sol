@@ -27,12 +27,14 @@ contract TestGmxV2 is IDepositCallbackReceiver, IWithdrawalCallbackReceiver {
         return bytes4(keccak256(bytes(_func)));
     }
 
-    function depositEthUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) public payable returns (bytes[] memory) {
-        address depositedToken = isLongToken ? ETH : USDC;
+    function depositEthUsdcGmxV2(uint256 longTokenAmount, uint256 shortTokenAmount, uint256 minGmAmount, uint256 executionFee) public payable returns (bytes[] memory) {
+        address longToken = ETH;
+        address shortToken = USDC;
 
-        IERC20(depositedToken).approve(GMX_V2_ROUTER, tokenAmount);
+        IERC20(longToken).approve(GMX_V2_ROUTER, longTokenAmount);
+        IERC20(shortToken).approve(GMX_V2_ROUTER, shortTokenAmount);
 
-        bytes[] memory data = new bytes[](3);
+        bytes[] memory data = new bytes[](4);
 
         data[0] = abi.encodeWithSelector(
             IGmxV2Router.sendWnt.selector,
@@ -41,11 +43,17 @@ contract TestGmxV2 is IDepositCallbackReceiver, IWithdrawalCallbackReceiver {
         );
         data[1] = abi.encodeWithSelector(
             IGmxV2Router.sendTokens.selector,
-            depositedToken,
+            longToken,
             GMX_V2_DEPOSIT_VAULT,
-            tokenAmount
+            longTokenAmount
         );
         data[2] = abi.encodeWithSelector(
+            IGmxV2Router.sendTokens.selector,
+            shortToken,
+            GMX_V2_DEPOSIT_VAULT,
+            shortTokenAmount
+        );
+        data[3] = abi.encodeWithSelector(
             IDepositUtils.createDeposit.selector,
             IDepositUtils.CreateDepositParams({
                 receiver: address(this), //receiver

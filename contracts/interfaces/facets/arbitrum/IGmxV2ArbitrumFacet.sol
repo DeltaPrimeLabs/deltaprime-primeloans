@@ -4,7 +4,7 @@ import "../../gmx-v2/Deposit.sol";
 import "../../gmx-v2/Withdrawal.sol";
 
 interface IGmxV2ArbitrumFacet {
-    function depositEthUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable;
+    function depositEthUsdcGmxV2(uint256 longTokenAmount, uint256 shortTokenAmount, uint256 minGmAmount, uint256 executionFee) external payable;
 
     function withdrawEthUsdcGmxV2(uint256 gmAmount, uint256 minLongTokenAmount, uint256 minShortTokenAmount, uint256 executionFee) external payable;
 

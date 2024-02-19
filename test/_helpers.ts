@@ -756,7 +756,15 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                 'depositEthUsdcGmxV2',
                 'withdrawBtcUsdcGmxV2',
                 'withdrawAvaxUsdcGmxV2',
-                'withdrawEthUsdcGmxV2',
+                'withdrawEthUsdcGmxV2'
+            ],
+            hardhatConfig
+        )
+
+        await deployFacet(
+            "GmxV2CallbacksFacetArbitrum",
+            diamondAddress,
+            [
                 'afterDepositExecution',
                 'afterDepositCancellation',
                 'afterWithdrawalExecution',
@@ -1052,7 +1060,15 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                 'withdrawArbUsdcGmxV2',
                 'withdrawLinkUsdcGmxV2',
                 'withdrawUniUsdcGmxV2',
-                'withdrawBtcUsdcGmxV2',
+                'withdrawBtcUsdcGmxV2'
+            ],
+            hardhatConfig
+        )
+
+        await deployFacet(
+            "GmxV2CallbacksFacetArbitrum",
+            diamondAddress,
+            [
                 'afterDepositExecution',
                 'afterDepositCancellation',
                 'afterWithdrawalExecution',
@@ -1432,4 +1448,32 @@ export const getContractSelectors = (contract: Contract) => {
     });
 }
 
+export function hashData(dataTypes, dataValues) {
+    const bytes = ethers.utils.defaultAbiCoder.encode(dataTypes, dataValues);
+    const hash = ethers.utils.keccak256(ethers.utils.arrayify(bytes));
+  
+    return hash;
+  }
+  
+export function hashString(string) {
+    return hashData(["string"], [string]);
+}
 
+export function getDepositKeys(dataStore, start, end) {
+    const DEPOSIT_LIST = hashString("DEPOSIT_LIST");
+    return dataStore.getBytes32ValuesAt(DEPOSIT_LIST, start, end);
+}
+
+export function getDepositCount(dataStore) {
+    const DEPOSIT_LIST = hashString("DEPOSIT_LIST");
+    return dataStore.getBytes32Count(DEPOSIT_LIST);
+}
+
+export function accountDepositListKey(account) {
+    const ACCOUNT_DEPOSIT_LIST = hashString("ACCOUNT_DEPOSIT_LIST");
+    return hashData(["bytes32", "address"], [ACCOUNT_DEPOSIT_LIST, account]);
+}
+
+export function getAccountDepositCount(dataStore, account) {
+    return dataStore.getBytes32Count(accountDepositListKey(account));
+}

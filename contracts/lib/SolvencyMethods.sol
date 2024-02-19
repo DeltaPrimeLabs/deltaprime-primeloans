@@ -111,7 +111,7 @@ contract SolvencyMethods is DiamondHelper, ProxyConnector {
     // This function executes SolvencyFacetProd.getThresholdWeightedValuePayable()
     function _getThresholdWeightedValuePayable() public virtual returns (uint256 twv) {
         twv = abi.decode(
-            proxyDelegateCalldata(
+            proxyCalldataView(
                 DiamondHelper._getFacetAddress(SolvencyFacetProd.getThresholdWeightedValuePayable.selector),
                 abi.encodeWithSelector(SolvencyFacetProd.getThresholdWeightedValuePayable.selector)
             ),

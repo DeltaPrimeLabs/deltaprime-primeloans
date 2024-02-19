@@ -75,34 +75,24 @@ contract GmxV2FacetArbitrum is GmxV2Facet {
     }
 
     // DEPOSIT
-    function depositEthUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable {
-        address _depositedToken = isLongToken ? WETH : USDC;
-
-        _deposit(GM_ETH_WETH_USDC, _depositedToken, tokenAmount, minGmAmount, executionFee);
+    function depositEthUsdcGmxV2(uint256 longTokenAmount, uint256 shortTokenAmount, uint256 minGmAmount, uint256 executionFee) external payable {
+        _deposit(GM_ETH_WETH_USDC, longTokenAmount, shortTokenAmount, minGmAmount, executionFee);
     }
 
-    function depositArbUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable {
-        address _depositedToken = isLongToken ? ARB : USDC;
-
-        _deposit(GM_ARB_ARB_USDC, _depositedToken, tokenAmount, minGmAmount, executionFee);
+    function depositArbUsdcGmxV2(uint256 longTokenAmount, uint256 shortTokenAmount, uint256 minGmAmount, uint256 executionFee) external payable {
+        _deposit(GM_ARB_ARB_USDC, longTokenAmount, shortTokenAmount, minGmAmount, executionFee);
     }
 
-    function depositLinkUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable {
-        address _depositedToken = isLongToken ? LINK : USDC;
-
-        _deposit(GM_LINK_LINK_USDC, _depositedToken, tokenAmount, minGmAmount, executionFee);
+    function depositLinkUsdcGmxV2(uint256 longTokenAmount, uint256 shortTokenAmount, uint256 minGmAmount, uint256 executionFee) external payable {
+        _deposit(GM_LINK_LINK_USDC, longTokenAmount, shortTokenAmount, minGmAmount, executionFee);
     }
 
-    function depositUniUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable {
-        address _depositedToken = isLongToken ? UNI : USDC;
-
-        _deposit(GM_UNI_UNI_USDC, _depositedToken, tokenAmount, minGmAmount, executionFee);
+    function depositUniUsdcGmxV2(uint256 longTokenAmount, uint256 shortTokenAmount, uint256 minGmAmount, uint256 executionFee) external payable {
+        _deposit(GM_UNI_UNI_USDC, longTokenAmount, shortTokenAmount, minGmAmount, executionFee);
     }
 
-    function depositBtcUsdcGmxV2(bool isLongToken, uint256 tokenAmount, uint256 minGmAmount, uint256 executionFee) external payable {
-        address _depositedToken = isLongToken ? WBTC : USDC;
-
-        _deposit(GM_BTC_WBTC_USDC, _depositedToken, tokenAmount, minGmAmount, executionFee);
+    function depositBtcUsdcGmxV2(uint256 longTokenAmount, uint256 shortTokenAmount, uint256 minGmAmount, uint256 executionFee) external payable {
+        _deposit(GM_BTC_WBTC_USDC, longTokenAmount, shortTokenAmount, minGmAmount, executionFee);
     }
 
     // WITHDRAW
