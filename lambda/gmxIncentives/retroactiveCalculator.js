@@ -1,7 +1,6 @@
 const ethers = require('ethers');
 const {
   dynamoDb,
-  getWrappedContracts,
   fromWei,
   fromBytes32,
   formatUnits,
@@ -19,8 +18,8 @@ const redstone = require("redstone-api");
 
 // const Web3 = require('web3');
 // const fs = require("fs");
-const blockTimestampStart = 1707314400;
-const blockTimestampEnd = 1708025000;
+const blockTimestampStart = 1707919200;
+const blockTimestampEnd = 1707919200;
 
 const factoryAddress = constants.avalanche.factory;
 
@@ -35,6 +34,30 @@ const getBlockForTimestamp = async (timestamp) => {
   );
 }
 
+const findClosest = (numbers, target) => {
+
+  let closest = numbers[0];
+  // Assume the first number is the closest
+  let closestDiff = Math.abs(target - closest.timestamp);
+
+  // Calculate the difference between the target and closest
+  for (let i = 1; i < numbers.length; i++) {
+    let current = numbers[i];
+    let currentDiff = Math.abs(target - current.timestamp);
+
+    // Calculate the difference between the target and current number
+    if (currentDiff < closestDiff) {
+      closest = current;
+
+      // Update the closest number
+      closestDiff = currentDiff;
+
+      // Update the closest difference
+    }
+  }
+  return closest;
+}
+
 const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
   //in seconds
   let timestampInSeconds = blockTimestampStart;
@@ -44,7 +67,7 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
   for (let gmSymbol of Object.keys(gmTokens.avalanche)) {
     const resp = await redstone.getHistoricalPrice(gmSymbol, {
       startDate: (blockTimestampStart - 60 * 60 * 4) * 1000,
-      interval: 60 * 60 * 4 * 1000,
+      interval: 60 * 60 * 1000,
       endDate: (blockTimestampEnd + 60 * 60 * 4) * 1000,
       provider: "redstone"
     });
@@ -92,8 +115,8 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
           const tx = await contract.populateTransaction[methodName]()
           let res = await contract.signer.call(tx, blockNumber)
           return contract.interface.decodeFunctionResult(
-              methodName,
-              res
+            methodName,
+            res
           )[0];
         }
 
@@ -122,15 +145,8 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
 
               await Promise.all(
                 Object.entries(gmTokens.avalanche).map(async ([symbol, token]) => {
-                  let price;
-
-                  if (prices[symbol]) {
-                    let i = 0;
-                    while (!price) {
-                      price = prices[symbol].find(price => Math.abs(Number(price.timestamp) - timestampInSeconds * 1000) <= 60 * 60 * 1000)
-                      i++;
-                    }
-                  }
+                  const price = findClosest(prices[symbol], timestampInSeconds * 1000);
+                  console.log(price);
 
                   const asset = assetBalances.find(asset => fromBytes32(asset.name) == symbol);
                   const balance = formatUnits(asset.balance.toString(), token.decimals);
@@ -177,7 +193,7 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
         };
 
         const params = {
-          TableName: process.env.GMX_INCENTIVES_AVA_RETROACTIVE_TABLE,
+          TableName: 'gmx-incentives-ava-retroactive-prod',
           Item: data
         };
         await dynamoDb.put(params).promise();

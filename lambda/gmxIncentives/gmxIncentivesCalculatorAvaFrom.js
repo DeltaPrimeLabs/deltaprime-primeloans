@@ -15,9 +15,6 @@ const FACTORY = require('../abis/SmartLoansFactory.json');
 const factoryAddress = constants.avalanche.factory;
 const redstoneFeedUrl = constants.avalanche.redstoneFeedUrl;
 
-/**
- * GMX incentives calculator that starts from 1708022000
- */
 const gmxIncentivesCalculatorAvaFrom = async (event) => {
   const factoryContract = new ethers.Contract(factoryAddress, FACTORY.abi, avalancheHistoricalProvider);
   let loanAddresses = await factoryContract.getAllLoans();
@@ -30,6 +27,7 @@ const gmxIncentivesCalculatorAvaFrom = async (event) => {
   let totalLeveragedGM = 0;
   let gmTvl = 0;
   const now = Math.floor(Date.now() / 1000);
+  console.log(now);
 
   // calculate gm leveraged by the loan
   for (let i = 0; i < Math.ceil(totalLoans/batchSize); i++) {
