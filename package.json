@@ -34,6 +34,7 @@
     "@pangolindex/exchange-contracts": "github:pangolindex/exchange-contracts",
     "@paraswap/sdk": "^6.2.4",
     "@redstone-finance/evm-connector": "0.2.5",
+    "@gmx-v2": "git+https://github.com/gmx-io/gmx-synthetics.git",
     "@tenderly/hardhat-tenderly": "^1.7.7",
     "@traderjoe-xyz/sdk": "^4.1.0",
     "@traderjoe-xyz/sdk-core": "^1.1.0",
