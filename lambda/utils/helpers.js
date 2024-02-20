@@ -79,11 +79,7 @@ const getWrappedContracts = (addresses, network) => {
   });
 }
 
-const getWrappedContractsHistorical = async (addresses, network, timestamp) => {
-
-  let packages = await getData(timestamp);
-
-  fs.writeFileSync(`packages-${timestamp}.json`, JSON.stringify(packages))
+const getWrappedContractsHistorical = (addresses, network, packages) => {
   return addresses.map(address => {
     const loanContract = new ethers.Contract(address, LOAN.abi, network == "avalanche" ? avalancheWallet : arbitrumWallet);
     const wrappedContract = wrapWithPackages(loanContract, network, packages);
@@ -92,7 +88,7 @@ const getWrappedContractsHistorical = async (addresses, network, timestamp) => {
   });
 }
 
-async function getData(timestamp) {
+async function getArweavePackages(timestamp) {
   const nodeAddress1 = '0x83cbA8c619fb629b81A65C2e67fE15cf3E3C9747';
   const nodeAddress2 = '0x2c59617248994D12816EE1Fa77CE0a64eEB456BF';
   const nodeAddress3 = '0x12470f7aBA85c8b81D63137DD5925D6EE114952b';
@@ -160,5 +156,6 @@ module.exports = {
   dynamoDb,
   getWrappedContracts,
   getWrappedContractsHistorical,
+  getArweavePackages,
   getBlockForTimestamp
 }

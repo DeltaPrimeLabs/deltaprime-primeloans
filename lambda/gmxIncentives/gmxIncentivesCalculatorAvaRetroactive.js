@@ -15,7 +15,7 @@ const FACTORY = require('../abis/SmartLoansFactory.json');
 const EthDater = require("ethereum-block-by-date");
 const redstone = require("redstone-api");
 const fs = require("fs");
-import {getWrappedContractsHistorical} from "../utils/helpers";
+import {getArweavePackages, getWrappedContractsHistorical} from "../utils/helpers";
 
 // const config = require("../../src/config");
 // const key = fs.readFileSync("./.secret").toString().trim();
@@ -48,8 +48,8 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
 
   for (let gmSymbol of Object.keys(gmTokens.avalanche)) {
     const resp = await redstone.getHistoricalPrice(gmSymbol, {
-      startDate: (blockTimestampStart - 4 * 60 * 60) * 1000,
-      interval: 4 * 60 * 60 * 1000,
+      startDate: (blockTimestampStart - 24 * 60 * 60) * 1000,
+      interval: 24 * 60 * 60 * 1000,
       endDate: blockTimestampEnd * 1000,
       provider: "redstone"
     });
@@ -60,6 +60,8 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
 
   while (timestampInSeconds <= blockTimestampEnd) {
     console.log(`Processed timestamp: ${timestampInSeconds}`)
+    let packages = await getArweavePackages(timestampInSeconds);
+
     let blockNumber = (await getBlockForTimestamp(timestampInSeconds * 1000)).block;
     const factoryContract = new ethers.Contract(factoryAddress, FACTORY.abi, avalancheHistoricalProvider);
 
@@ -74,7 +76,7 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
     } else {
       weeklyIncentives = 1500;
     }
-    const incentivesPerInterval = weeklyIncentives / (60 * 60 * 24 * 7) * (60 * 60 * 4);
+    const incentivesPerInterval = weeklyIncentives / (60 * 60 * 24 * 7) * (60 * 60 * 24);
     const batchSize = 50;
 
     const loanQualifications = {};
@@ -87,7 +89,7 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
 
       const batchLoanAddresses = loanAddresses.slice(i * batchSize, (i + 1) * batchSize);
 
-      const wrappedContracts = await getWrappedContractsHistorical(batchLoanAddresses, 'avalanche', timestampInSeconds)
+      const wrappedContracts = getWrappedContractsHistorical(batchLoanAddresses, 'avalanche', packages)
 
       async function runMethod(contract, methodName, blockNumber) {
         const tx = await contract.populateTransaction[methodName]()
@@ -98,11 +100,20 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
         )[0];
       }
 
-      const loanStats = await Promise.all(
-        wrappedContracts.map(contract => Promise.all([
-          runMethod(contract, 'getFullLoanStatus', blockNumber),
-          runMethod(contract, 'getAllAssetsBalances', blockNumber)
-        ])));
+      let loanStats;
+      try {
+        loanStats = await Promise.all(
+            wrappedContracts.map(contract => Promise.all([
+              runMethod(contract, 'getFullLoanStatus', blockNumber),
+              runMethod(contract, 'getAllAssetsBalances', blockNumber)
+            ])));
+      } catch (e) {
+        loanStats = await Promise.all(
+            wrappedContracts.map(contract => Promise.all([
+              runMethod(contract, 'getFullLoanStatus', blockNumber),
+              runMethod(contract, 'getAllAssetsBalances', blockNumber)
+            ])));
+      }
 
 
       if (loanStats.length > 0) {
@@ -178,7 +189,7 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
 
     console.log(`Updated timestamp: ${timestampInSeconds}, block number: ${blockNumber}.`);
 
-    timestampInSeconds += 4 * 60 * 60;
+    timestampInSeconds += 24 * 60 * 60;
   }
 
   console.log(`GM boost APY on avalanche updated from ${blockTimestampStart} to ${blockTimestampEnd}.`);
