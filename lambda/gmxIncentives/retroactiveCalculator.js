@@ -19,7 +19,7 @@ const redstone = require("redstone-api");
 // const Web3 = require('web3');
 // const fs = require("fs");
 const blockTimestampStart = 1707919200;
-const blockTimestampEnd = 1707919200;
+const blockTimestampEnd = 1708454700;
 
 const factoryAddress = constants.avalanche.factory;
 

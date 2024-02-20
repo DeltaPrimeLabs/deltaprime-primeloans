@@ -42,8 +42,6 @@ provider:
     FUNC_RPC_ARB: ${file(./.secrets/funcRpc.json):arbitrum}
     EXT_RPC_AVA: ${file(./.secrets/extRpc.json):avalanche}
     EXT_RPC_ARB: ${file(./.secrets/extRpc.json):arbitrum}
-    # AUTH0_AUDIENCE: ${file(./.secrets/auth0.json):audience}
-    # AUTH0_ISSUER: ${file(./.secrets/auth0.json):issuer}
   iamRoleStatements:
     - Effect: Allow
       Action:

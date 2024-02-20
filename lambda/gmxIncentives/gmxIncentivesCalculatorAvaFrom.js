@@ -27,7 +27,6 @@ const gmxIncentivesCalculatorAvaFrom = async (event) => {
   let totalLeveragedGM = 0;
   let gmTvl = 0;
   const now = Math.floor(Date.now() / 1000);
-  console.log(now);
 
   // calculate gm leveraged by the loan
   for (let i = 0; i < Math.ceil(totalLoans/batchSize); i++) {
