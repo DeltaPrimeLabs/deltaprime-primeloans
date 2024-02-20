@@ -156,5 +156,6 @@ module.exports = {
   dynamoDb,
   getWrappedContracts,
   getWrappedContractsHistorical,
-  getBlockForTimestamp
+  getBlockForTimestamp,
+  getArweavePackages
 }
