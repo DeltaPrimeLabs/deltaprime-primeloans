@@ -1476,3 +1476,40 @@ export function accountDepositListKey(account) {
 export function getAccountDepositCount(dataStore, account) {
     return dataStore.getBytes32Count(accountDepositListKey(account));
 }
+
+export function encodeRealtimeData(data) {
+    const {
+      feedId,
+      observationsTimestamp,
+      median,
+      bid,
+      ask,
+      blocknumberUpperBound,
+      upperBlockhash,
+      blocknumberLowerBound,
+      currentBlockTimestamp,
+    } = data;
+  
+    return ethers.utils.defaultAbiCoder.encode(
+      ["bytes32", "uint32", "int192", "int192", "int192", "uint64", "bytes32", "uint64", "uint64"],
+      [
+        feedId,
+        observationsTimestamp,
+        median,
+        bid,
+        ask,
+        blocknumberUpperBound,
+        upperBlockhash,
+        blocknumberLowerBound,
+        currentBlockTimestamp,
+      ]
+    );
+  }
+  
+  export function bigNumberify(n) {
+    return ethers.BigNumber.from(n);
+  }
+  
+  export function expandDecimals(n, decimals) {
+    return bigNumberify(n).mul(bigNumberify(10).pow(decimals));
+  }
