@@ -5,7 +5,8 @@ const {
   fromBytes32,
   formatUnits,
   avalancheHistoricalProvider,
-  getWrappedContractsHistorical, getArweavePackages
+  getWrappedContractsHistorical,
+  getArweavePackages
 } = require('../utils/helpers');
 const constants = require('../config/constants.json');
 const gmTokens = require('../config/gmTokens.json');
