@@ -321,16 +321,18 @@ export default {
 
     async fetchOpenInterestData() {
       const data = await (await fetch('https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/gm-open-interests')).json();
-      const newOpenInterestData = {}
-      Object.keys(data[0])
-        .filter(key => key !== 'id')
-        .forEach(tokenName => {
-          newOpenInterestData[tokenName] = data.map(dataEntry => ({
-            y: dataEntry[tokenName] * 100,
-            x: Number(dataEntry.id),
-          }))
-        })
-      this.openInterestData = newOpenInterestData;
+      const mappedData = {};
+      const tokens = Object.keys(data[0]).filter(key => key !== 'id');
+      tokens.forEach(token => {
+        mappedData[token] = []
+      });
+
+      data.forEach(dataPoint => {
+        tokens.forEach(token => {
+          mappedData[token].push({x: Number(dataPoint.id), y: dataPoint[token] * 100})
+        });
+      });
+      this.openInterestData = mappedData;
     },
 
     setupLpTableHeaderConfig() {
