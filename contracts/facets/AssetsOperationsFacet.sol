@@ -126,6 +126,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         pool.borrow(_amount);
 
         IERC20Metadata token = getERC20TokenInstance(_asset, false);
+        tokenManager.increaseProtocolExposure(_asset, _amount * 1e18 / 10 ** token.decimals());
         if (token.balanceOf(address(this)) > 0) {
             DiamondStorageLib.addOwnedAsset(_asset, address(token));
         }
@@ -147,7 +148,8 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
             DiamondStorageLib.enforceIsContractOwner();
         }
 
-        Pool pool = Pool(DeploymentConstants.getTokenManager().getPoolAddress(_asset));
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        Pool pool = Pool(tokenManager.getPoolAddress(_asset));
 
         _amount = Math.min(_amount, token.balanceOf(address(this)));
         _amount = Math.min(_amount, pool.getBorrowed(address(this)));
@@ -161,6 +163,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         if (token.balanceOf(address(this)) == 0) {
             DiamondStorageLib.removeOwnedAsset(_asset);
         }
+        tokenManager.decreaseProtocolExposure(_asset, _amount * 1e18 / 10 ** token.decimals());
 
         emit Repaid(msg.sender, _asset, _amount, block.timestamp);
     }
