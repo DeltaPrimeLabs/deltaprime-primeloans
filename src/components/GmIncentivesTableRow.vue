@@ -24,7 +24,13 @@
         <span><b>{{ maxBoostApr | percent }}</b><img src="src/assets/icons/stars.png" class="stars-icon"></span>
       </div>
       <div class="table__cell table__cell--double-value arb-collected">
-        {{ collectedBonus ? collectedBonus.toFixed(3) : 0 }}&nbsp;
+        <span v-if="!isAvalanche">{{ collectedBonus ? collectedBonus.toFixed(3) : 0  }}</span>
+        <vue-loaders-ball-beat
+            v-if="isAvalanche"
+            color="#A6A3FF"
+            scale="0.5"
+            v-tooltip="{content: 'The rewards are being currently accumulated according to displayed Boost APR and will be distributed every week.', classes: 'info-tooltip'}"
+        ></vue-loaders-ball-beat>
         <InfoIcon
             v-if="['0x4c9c76507d661f6fbdb2e641c7fe061f1743f8fd', '0x38716cba180d5bd3a4e51c6303a861a1e8fbef52', '0x9232800211347ec4ebeff3143f5dd34c438f214c', '0x14c047a8ca6238e9ea14a9a740a6010423a0783c', '0x14ec143849f5a56908c15e2e8963058fba54fcc0'].includes(smartLoanContract.address)"
             class="info__icon"
@@ -67,12 +73,14 @@ import { fetchGmTransactions } from '../utils/graph';
 import { fromWei, formatUnits, fromBytes32 } from '../utils/calculate';
 import { getData } from '../utils/blockchain';
 import InfoIcon from "./InfoIcon.vue";
+import Loader from "./Loader.vue";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 export default {
   name: 'GmIncentivesTableRow',
   components: {
+    Loader,
     InfoIcon,
     BarGaugeBeta,
     DeltaIcon,
@@ -99,6 +107,7 @@ export default {
       multiplier: null,
       milestone: null,
       showPoints: null,
+      isAvalanche: false
     };
   },
 
@@ -111,7 +120,8 @@ export default {
     this.setGmTvlFromApi();
     this.$forceUpdate();
     this.setupMilestones();
-    this.showPoints = window.chain === 'arbitrum'
+    this.showPoints = window.chain === 'arbitrum';
+    this.isAvalanche = window.chain === 'avalanche';
   },
 
   computed: {
