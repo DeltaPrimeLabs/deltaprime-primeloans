@@ -624,7 +624,7 @@ export const getFixedGasSigners = async function (gasLimit: number) {
 };
 
 
-export const deployAllFacets = async function (diamondAddress: any, mock: boolean = true, chain = 'AVAX',  hardhatConfig: any = undefined, provider = undefined) {
+export const deployAllFacets = async function (diamondAddress: any, mock: boolean = true, chain = 'AVAX',  hardhatConfig: any = undefined, provider: any = undefined) {
     const diamondCut = provider ?
         new ethers.Contract(diamondAddress, IDiamondCutArtifact.abi, provider.getSigner())
         : (hardhatConfig && hardhatConfig.deployer) ?

@@ -11697,6 +11697,15 @@ redstone-protocol@*, redstone-protocol@^1.0.5:
   dependencies:
     ethers "^5.6.8"
 
+redstone-sdk@1.0.7:
+  version "1.0.7"
+  resolved "https://registry.yarnpkg.com/redstone-sdk/-/redstone-sdk-1.0.7.tgz#ca03b81db77d60a4d75b7bf4c90ed7fb7bac00cd"
+  integrity sha512-pjSNWLoWvaol73kJO58YHqy3VUfDN2hMTeQW4wccQAPWY2OhnM7Ody9TL8l2DxXgXMAUscuqVRHBmUNjT3Q2rw==
+  dependencies:
+    axios "^0.27.2"
+    redstone-oracles-smartweave-contracts "*"
+    redstone-protocol "*"
+
 redstone-sdk@^1.6.1:
   version "1.8.2"
   resolved "https://registry.yarnpkg.com/redstone-sdk/-/redstone-sdk-1.8.2.tgz#39abf332b0bd2b3e935fd58f385f8e2c70d2e2e5"
