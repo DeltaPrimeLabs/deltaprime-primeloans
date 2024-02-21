@@ -6,7 +6,7 @@ const {
   fromWei,
   fromBytes32,
   formatUnits,
-  avalancheHistoricalProvider
+  avalancheProvider
 } = require('../utils/helpers');
 const constants = require('../config/constants.json');
 const gmTokens = require('../config/gmTokens.json');
@@ -16,12 +16,12 @@ const factoryAddress = constants.avalanche.factory;
 const redstoneFeedUrl = constants.avalanche.redstoneFeedUrl;
 
 const gmxIncentivesCalculatorAvaFrom = async (event) => {
-  const factoryContract = new ethers.Contract(factoryAddress, FACTORY.abi, avalancheHistoricalProvider);
+  const factoryContract = new ethers.Contract(factoryAddress, FACTORY.abi, avalancheProvider);
   let loanAddresses = await factoryContract.getAllLoans();
   const totalLoans = loanAddresses.length;
 
   const incentivesPerInterval = 1500 / (60 * 60 * 24 * 7) * (60 * 10);
-  const batchSize = 250;
+  const batchSize = 150;
 
   const loanQualifications = {};
   let totalLeveragedGM = 0;
@@ -31,6 +31,7 @@ const gmxIncentivesCalculatorAvaFrom = async (event) => {
   // calculate gm leveraged by the loan
   for (let i = 0; i < Math.ceil(totalLoans/batchSize); i++) {
     console.log(`processing ${i * batchSize} - ${(i + 1) * batchSize > totalLoans ? totalLoans : (i + 1) * batchSize} loans`);
+    console.log(`----------------${Math.floor(Date.now() / 1000)}---------------`)
 
     const batchLoanAddresses = loanAddresses.slice(i * batchSize, (i + 1) * batchSize);
     const wrappedContracts = getWrappedContracts(batchLoanAddresses, 'avalanche');
@@ -77,6 +78,7 @@ const gmxIncentivesCalculatorAvaFrom = async (event) => {
         })
       );
     }
+    console.log(`******************${Math.floor(Date.now() / 1000)}****************`)
   }
 
   console.log(`${Object.entries(loanQualifications).length} loans analyzed.`);
