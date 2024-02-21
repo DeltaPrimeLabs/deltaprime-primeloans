@@ -30,7 +30,7 @@ const toWei = val => ethers.utils.parseEther(val.toString());
 const avalancheProvider = new ethers.providers.JsonRpcProvider(process.env.FUNC_RPC_AVA);
 const arbitrumProvider = new ethers.providers.JsonRpcProvider(process.env.FUNC_RPC_ARB);
 
-const avalancheHistoricalProvider = new ethers.providers.JsonRpcProvider('https://nd-033-589-713.p2pify.com/d41fdf9956747a40bae4edec06ad4ab9/ext/bc/C/rpc');
+const avalancheHistoricalProvider = new ethers.providers.JsonRpcProvider(process.env.EXT_RPC_AVA);
 const arbitrumHistoricalProvider = new ethers.providers.JsonRpcProvider(process.env.EXT_RPC_ARB);
 
 const avalancheWallet = (new ethers.Wallet("0xca63cb3223cb19b06fa42110c89ad21a17bad22ea061e5a2c2487bd37b71e809"))

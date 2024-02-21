@@ -6,7 +6,7 @@ const {
   fromWei,
   fromBytes32,
   formatUnits,
-  avalancheProvider
+  avalancheHistoricalProvider
 } = require('../utils/helpers');
 const constants = require('../config/constants.json');
 const gmTokens = require('../config/gmTokens.json');
@@ -16,7 +16,7 @@ const factoryAddress = constants.avalanche.factory;
 const redstoneFeedUrl = constants.avalanche.redstoneFeedUrl;
 
 const gmxIncentivesCalculatorAvaFrom = async (event) => {
-  const factoryContract = new ethers.Contract(factoryAddress, FACTORY.abi, avalancheProvider);
+  const factoryContract = new ethers.Contract(factoryAddress, FACTORY.abi, avalancheHistoricalProvider);
   let loanAddresses = await factoryContract.getAllLoans();
   const totalLoans = loanAddresses.length;
 
@@ -31,18 +31,25 @@ const gmxIncentivesCalculatorAvaFrom = async (event) => {
   // calculate gm leveraged by the loan
   for (let i = 0; i < Math.ceil(totalLoans/batchSize); i++) {
     console.log(`processing ${i * batchSize} - ${(i + 1) * batchSize > totalLoans ? totalLoans : (i + 1) * batchSize} loans`);
-    console.log(`----------------${Math.floor(Date.now() / 1000)}---------------`)
+    const start = Math.floor(Date.now() / 1000);
 
+    const secondStart = Math.floor(Date.now() / 1000);
     const batchLoanAddresses = loanAddresses.slice(i * batchSize, (i + 1) * batchSize);
     const wrappedContracts = getWrappedContracts(batchLoanAddresses, 'avalanche');
+    const secondEnd = Math.floor(Date.now() / 1000);
 
+    const thirdStart = Math.floor(Date.now() / 1000);
     const loanStats = await Promise.all(
       wrappedContracts.map(contract => Promise.all([contract.getFullLoanStatus(), contract.getAllAssetsBalances()]))
     );
+    const thirdEnd = Math.floor(Date.now() / 1000);
 
+    const fourthStart = Math.floor(Date.now() / 1000);
     const redstonePriceDataRequest = await fetch(redstoneFeedUrl);
     const redstonePriceData = await redstonePriceDataRequest.json();
+    const fourthEnd = Math.floor(Date.now() / 1000);
 
+    const fifthStart = Math.floor(Date.now() / 1000);
     if (loanStats.length > 0) {
       await Promise.all(
         loanStats.map(async (loan, batchId) => {
@@ -78,7 +85,14 @@ const gmxIncentivesCalculatorAvaFrom = async (event) => {
         })
       );
     }
-    console.log(`******************${Math.floor(Date.now() / 1000)}****************`)
+    const fifthEnd = Math.floor(Date.now() / 1000);
+    const end = Math.floor(Date.now() / 1000);
+    console.log(`****************************************`)
+    console.log(end - start);
+    console.log(secondEnd - secondStart);
+    console.log(thirdEnd - thirdStart);
+    console.log(fourthEnd - fourthStart);
+    console.log(fifthEnd - fifthStart);
   }
 
   console.log(`${Object.entries(loanQualifications).length} loans analyzed.`);
