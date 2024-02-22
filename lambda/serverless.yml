@@ -69,14 +69,14 @@ functions:
   # sPrimeCalculatorAva:
   #   handler: sPrime/sPrimeCalculatorAva.handler
   #   memorySize: 1024
-  #   timeout: 600
+  #   timeout: 900
   #   description: Calculate sPRIME Value for depositors on Avalanche.
   #   events:
   #     - schedule: rate(5 minutes)
   # sPrimeCalculatorArb:
   #   handler: sPrime/sPrimeCalculatorArb.handler
   #   memorySize: 1024
-  #   timeout: 600
+  #   timeout: 900
   #   description: Calculate sPRIME Value for depositors on Arbitrum.
   #   events:
   #     - schedule: rate(5 minutes)
@@ -91,7 +91,7 @@ functions:
   levelTvlAndApyAggregator:
     handler: aggregators/apy.levelTvlAggregator
     memorySize: 512
-    timeout: 600
+    timeout: 900
     description: Fetch TVL from Level Finance.
     events:
       - schedule: rate(5 minutes)
@@ -183,14 +183,14 @@ functions:
   # loanAggregatorAva:
   #   handler: aggregators/loan.loanAggregatorAva
   #   memorySize: 1024
-  #   timeout: 600
+  #   timeout: 900
   #   description: upload loan addresses on Avalanche
   #   events:
   #     - schedule: rate(5 minutes)
   # loanAggregatorArb:
   #   handler: aggregators/loan.loanAggregatorArb
   #   memorySize: 1024
-  #   timeout: 600
+  #   timeout: 900
   #   description: upload loan addresses on Arbitrum
   #   events:
   #     - schedule: rate(5 minutes)
@@ -205,21 +205,21 @@ functions:
   gmxIncentivesCalculatorAva:
     handler: gmxIncentives/gmxIncentivesCalculatorAva.handler
     memorySize: 1024
-    timeout: 600
+    timeout: 900
     description: Calculate incentives for loans on Avalanche.
     events:
       - schedule: rate(10 minutes)
   gmxIncentivesCalculatorAvaFrom:
     handler: gmxIncentives/gmxIncentivesCalculatorAvaFrom.handler
     memorySize: 1024
-    timeout: 600
+    timeout: 900
     description: Calculate incentives for loans on Avalanche From a week ago.
     events:
       - schedule: rate(10 minutes)
   # gmxIncentivesCalculatorArb:
   #   handler: gmxIncentives/gmxIncentivesCalculatorArb.handler
   #   memorySize: 1024
-  #   timeout: 600
+  #   timeout: 900
   #   description: Calculate incentives for loans on Arbitrum.
   #   events:
   #     - schedule: rate(10 minutes)
@@ -247,6 +247,14 @@ functions:
       - httpApi:
           method: get
           path: /gmx-incentives-retroactive/{id}
+  getGmxIncentivesRemakeApi:
+    handler: apis/gmxIncentives.getGmxIncentivesRemakeApi
+    memorySize: 512
+    description: (New) Fetch retroactive (entire)GMX incentives values for a loan on Avalanche
+    events:
+      - httpApi:
+          method: get
+          path: /gmx-incentives-remake/{id}
   getGmBoostApyApi:
     handler: apis/gmxIncentives.getGmBoostApyApi
     memorySize: 512

@@ -91,6 +91,51 @@ const getGmxIncentivesRetroactiveApi = (event, context, callback) => {
     });
 };
 
+const getGmxIncentivesRemakeApi = async (event, context, callback) => {
+  const retroactiveParams = {
+    TableName: process.env.GMX_INCENTIVES_AVA_RETROACTIVE_TABLE,
+    KeyConditionExpression: 'id = :id',
+    ExpressionAttributeValues: {
+      ':id': event.pathParameters.id.toLowerCase()
+    }
+  };
+
+  const liveParams = {
+    TableName: process.env.GMX_INCENTIVES_AVA_FROM_TABLE,
+    KeyConditionExpression: 'id = :id',
+    ExpressionAttributeValues: {
+      ':id': event.pathParameters.id.toLowerCase()
+    }
+  };
+
+  try {
+    const retroactive = await dynamoDb.query(retroactiveParams).promise();
+    const live = await dynamoDb.query(liveParams).promise();
+
+    const list = [...retroactive.Items, ...live.Items].sort((a, b) => a.id - b.id);
+
+    let accumulatedIncentives = 0;
+
+    list.map((item) => {
+      accumulatedIncentives += Number(item.avaxCollected);
+    });
+
+    const response = {
+      statusCode: 200,
+      body: JSON.stringify({
+        total: accumulatedIncentives,
+        list
+      }),
+    };
+
+    callback(null, response);
+  } catch (error) {
+    console.error(error);
+    callback(new Error('Couldn\'t fetch GMX Incentives values.'));
+    return;
+  };
+};
+
 const getGmBoostApyApi = (event, context, callback) => {
   const params = {
     TableName: process.env.APY_TABLE,
@@ -118,5 +163,6 @@ module.exports = {
   getGmxIncentivesApi,
   getGmxIncentivesFromApi,
   getGmxIncentivesRetroactiveApi,
-  getGmBoostApyApi
+  getGmBoostApyApi,
+  getGmxIncentivesRemakeApi
 }
