@@ -128,6 +128,43 @@ contract DepositSwapArbitrum {
         _depositToPool(toPool, IERC20(toToken), IERC20(toToken).balanceOf(address(this)), user);
     }
 
+    function depositSwapParaSwap(
+        bytes4 selector,
+        bytes memory data,
+        address fromToken,
+        uint256 fromAmount,
+        address toToken,
+        uint256 minOut
+    ) public {
+        require(_isTokenSupported(fromToken), "fromToken not supported");
+        require(_isTokenSupported(toToken), "toToken not supported");
+
+        require(minOut > 0, "minOut needs to be > 0");
+        require(fromAmount > 0, "Amount of tokens to sell needs to be > 0");
+
+        Pool fromPool = _tokenToPoolTUPMapping(fromToken);
+        Pool toPool = _tokenToPoolTUPMapping(toToken);
+
+        address user = msg.sender;
+        fromAmount = Math.min(fromPool.balanceOf(user), fromAmount);
+
+        _withdrawFromPool(fromPool, IERC20(fromToken), fromAmount, user);
+
+        IERC20(fromToken).safeApprove(PARA_TRANSFER_PROXY, 0);
+        IERC20(fromToken).safeApprove(
+            PARA_TRANSFER_PROXY,
+            fromAmount
+        );
+
+        (bool success, ) = PARA_ROUTER.call((abi.encodePacked(selector, data)));
+        require(success, "Swap failed");
+
+        uint256 amountOut = IERC20(toToken).balanceOf(address(this));
+        require(amountOut >= minOut, "Too little received");
+
+        _depositToPool(toPool, IERC20(toToken), amountOut, user);
+    }
+
     function YY_ROUTER() internal virtual pure returns (address) {
         return 0xb32C79a25291265eF240Eb32E9faBbc6DcEE3cE3;
     }
