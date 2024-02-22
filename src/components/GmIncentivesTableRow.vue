@@ -24,13 +24,7 @@
         <span><b>{{ maxBoostApr | percent }}</b><img src="src/assets/icons/stars.png" class="stars-icon"></span>
       </div>
       <div class="table__cell table__cell--double-value arb-collected">
-        <span v-if="!isAvalanche">{{ collectedBonus ? collectedBonus.toFixed(3) : 0  }}</span>
-        <vue-loaders-ball-beat
-            v-if="isAvalanche"
-            color="#A6A3FF"
-            scale="0.5"
-            v-tooltip="{content: 'The rewards are being currently accumulated according to displayed Boost APR and will be distributed every week.', classes: 'info-tooltip'}"
-        ></vue-loaders-ball-beat>
+        <span>{{ collectedBonus ? collectedBonus.toFixed(3) : 0  }}</span>
         <InfoIcon
             v-if="['0x4c9c76507d661f6fbdb2e641c7fe061f1743f8fd', '0x38716cba180d5bd3a4e51c6303a861a1e8fbef52', '0x9232800211347ec4ebeff3143f5dd34c438f214c', '0x14c047a8ca6238e9ea14a9a740a6010423a0783c', '0x14ec143849f5a56908c15e2e8963058fba54fcc0'].includes(smartLoanContract.address)"
             class="info__icon"
@@ -65,7 +59,7 @@ const EthDater = require("ethereum-block-by-date");
 
 const ethers = require('ethers');
 import GM_DISTRIBUTED_ARBITRUM from '../data/arbitrum/GM_EPOCH_8_corrected.json';
-import GM_DISTRIBUTED_AVALANCHE from '../data/avalanche/GM_EPOCH_0.json';
+import GM_DISTRIBUTED_AVALANCHE from '../data/avalanche/GM_EPOCH_2.json';
 import {wrapContract} from "../utils/blockchain";
 import DeltaIcon from "./DeltaIcon.vue";
 import BarGaugeBeta from "./BarGaugeBeta.vue";
@@ -181,16 +175,19 @@ export default {
     smartLoanContract: {
       async handler(smartLoanContract) {
         if (smartLoanContract) {
-          const collectedResponse = await (await fetch(`https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/gmx-incentives/${smartLoanContract.address}?network=${window.chain}`)).json();
+          let collectedResponse;
           let collectedToken;
           let harvested;
           if (window.arbitrumChain) {
+            collectedResponse = await (await fetch(`https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/gmx-incentives/${smartLoanContract.address}?network=${window.chain}`)).json();
             harvested = GM_DISTRIBUTED_ARBITRUM[this.smartLoanContract.address.toLowerCase()] ? GM_DISTRIBUTED_ARBITRUM[this.smartLoanContract.address.toLowerCase()] : 0;
             collectedToken = collectedResponse.arbCollected;
           } else {
-            harvested = GM_DISTRIBUTED_AVALANCHE[this.smartLoanContract.address.toLowerCase()] ? GM_DISTRIBUTED_AVALANCHE[this.smartLoanContract.address.toLowerCase()] : 0;
-            collectedToken = collectedResponse.avaxCollected;
+            collectedResponse = await (await fetch(`https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/gmx-incentives-remake/${smartLoanContract.address}`)).json();
+            harvested = GM_DISTRIBUTED_AVALANCHE[this.smartLoanContract.address] ? GM_DISTRIBUTED_AVALANCHE[this.smartLoanContract.address] : 0;
+            collectedToken = collectedResponse.total;
           }
+
           this.collectedBonus = collectedToken - harvested;
         }
       },
