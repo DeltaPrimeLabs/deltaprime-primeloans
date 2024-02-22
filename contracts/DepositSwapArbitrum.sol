@@ -11,6 +11,11 @@ import "./Pool.sol";
 contract DepositSwapArbitrum {
     using SafeERC20 for IERC20;
 
+    address private constant PARA_TRANSFER_PROXY =
+    0x216B4B4Ba9F3e719726886d34a177484278Bfcae;
+    address private constant PARA_ROUTER =
+    0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57;
+
     address public constant WETH_POOL_TUP = 0x0BeBEB5679115f143772CfD97359BBcc393d46b3;
     address public constant USDC_POOL_TUP = 0x8FE3842e0B7472a57f2A2D56cF6bCe08517A1De0;
     address public constant ARB_POOL_TUP = 0x2B8C610F3fC6F883817637d15514293565C3d08A;
