@@ -42,6 +42,37 @@ abstract contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, 
         return false;
     }
 
+    function _removeLiquidity(ILBRouter traderJoeV2Router, RemoveLiquidityParameters memory parameters) internal returns (uint256, uint256){
+        (uint amountX, uint256 amountY) = traderJoeV2Router.removeLiquidity(
+            parameters.tokenX, parameters.tokenY, parameters.binStep, parameters.amountXMin, parameters.amountYMin, parameters.ids, parameters.amounts, address(this), parameters.deadline
+        );
+        return (amountX, amountY);
+    }
+
+    function _decreaseExposure(ITokenManager tokenManager, address _token, uint256 _amount) internal {
+        if(_amount > 0) {
+            tokenManager.decreaseProtocolExposure(
+                tokenManager.tokenAddressToSymbol(_token),
+                _amount * 1e18 / 10**IERC20Metadata(_token).decimals()
+            );
+            if(IERC20Metadata(_token).balanceOf(address(this)) == 0){
+                DiamondStorageLib.removeOwnedAsset(tokenManager.tokenAddressToSymbol(_token));
+            }
+        }
+    }
+
+    function _increaseExposure(ITokenManager tokenManager, address _token, uint256 _amount) internal {
+        if(_amount > 0) {
+            tokenManager.increaseProtocolExposure(
+                tokenManager.tokenAddressToSymbol(_token),
+                _amount * 1e18 / 10**IERC20Metadata(_token).decimals()
+            );
+            if(IERC20Metadata(_token).balanceOf(address(this)) > 0){
+                DiamondStorageLib.addOwnedAsset(tokenManager.tokenAddressToSymbol(_token), _token);
+            }
+        }
+    }
+
     function claimReward(IRewarder.MerkleEntry[] calldata merkleEntries) external nonReentrant onlyOwner {
         uint256 length = merkleEntries.length;
         IERC20[] memory tokens = new IERC20[](length);
@@ -115,7 +146,7 @@ abstract contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, 
     }
 
 
-    function addLiquidityTraderJoeV2(ILBRouter.LiquidityParameters memory liquidityParameters) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent {
+    function addLiquidityTraderJoeV2(ILBRouter.LiquidityParameters memory liquidityParameters) external nonReentrant onlyOwner noBorrowInTheSameBlock remainsSolvent {
         ILBRouter traderJoeV2Router = ILBRouter(getJoeV2RouterAddress());
         TraderJoeV2Bin[] memory ownedBins = getOwnedTraderJoeV2Bins();
         ILBFactory lbFactory = traderJoeV2Router.getFactory();
@@ -156,64 +187,43 @@ abstract contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, 
             }
         }
 
-        if (liquidityParameters.tokenX.balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset(tokenX);
-        }
-
-        if (liquidityParameters.tokenY.balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset(tokenY);
-        }
+        _decreaseExposure(tokenManager, address(liquidityParameters.tokenX), amountXAdded);
+        _decreaseExposure(tokenManager, address(liquidityParameters.tokenY), amountYAdded);
 
         if (maxBinsPerPrimeAccount() > 0 && getOwnedTraderJoeV2BinsStorage().length > maxBinsPerPrimeAccount()) revert TooManyBins();
 
         emit AddLiquidityTraderJoeV2(msg.sender, address(pairInfo.LBPair), depositIds, liquidityMinted, tokenX, tokenY, amountXAdded, amountYAdded, block.timestamp);
     }
 
-    function removeLiquidityTraderJoeV2(RemoveLiquidityParameters memory parameters) external nonReentrant onlyOwnerOrInsolvent noBorrowInTheSameBlock recalculateAssetsExposure {
+    function removeLiquidityTraderJoeV2(RemoveLiquidityParameters memory parameters) external nonReentrant onlyOwnerOrInsolvent noBorrowInTheSameBlock {
         ILBRouter traderJoeV2Router = ILBRouter(getJoeV2RouterAddress());
 
-        ILBPair(traderJoeV2Router.getFactory().getLBPairInformation(parameters.tokenX, parameters.tokenY, parameters.binStep).LBPair).approveForAll(address(traderJoeV2Router), true);
+        ILBPair lbPair = ILBPair(traderJoeV2Router.getFactory().getLBPairInformation(parameters.tokenX, parameters.tokenY, parameters.binStep).LBPair);
+        lbPair.approveForAll(address(traderJoeV2Router), true);
 
-        traderJoeV2Router.removeLiquidity(
-            parameters.tokenX, parameters.tokenY, parameters.binStep, parameters.amountXMin, parameters.amountYMin, parameters.ids, parameters.amounts, address(this), parameters.deadline
-        );
+        (uint256 amountXReceived, uint256 amountYReceived) = _removeLiquidity(traderJoeV2Router, parameters);
 
-        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-
-        ILBFactory lbFactory = traderJoeV2Router.getFactory();
-
-        ILBFactory.LBPairInformation memory pairInfo = lbFactory.getLBPairInformation(parameters.tokenX, parameters.tokenY, parameters.binStep);
-
-        TraderJoeV2Bin storage bin;
         TraderJoeV2Bin[] storage binsStorage = getOwnedTraderJoeV2BinsStorage();
 
-        for (int256 i; uint(i) < binsStorage.length; i++) {
-            if (address(binsStorage[uint(i)].pair) == address(pairInfo.LBPair)) {
-                bin = binsStorage[uint(i)];
-
-                if (bin.pair.balanceOf(address(this), bin.id) == 0) {
-                    binsStorage[uint(i)] = binsStorage[binsStorage.length - 1];
-                    i--;
-                    binsStorage.pop();
-                }
+        for (uint256 i = 0; i < binsStorage.length; i++) {
+            TraderJoeV2Bin storage bin = binsStorage[i];
+            if (address(bin.pair) == address(lbPair) && bin.pair.balanceOf(address(this), bin.id) == 0) {
+                binsStorage[i] = binsStorage[binsStorage.length - 1];
+                binsStorage.pop();
+                i--;
             }
         }
 
-
+         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         bytes32 tokenX = tokenManager.tokenAddressToSymbol(address(parameters.tokenX));
         bytes32 tokenY = tokenManager.tokenAddressToSymbol(address(parameters.tokenY));
 
-        if (parameters.tokenX.balanceOf(address(this)) > 0) {
-            DiamondStorageLib.addOwnedAsset(tokenX, address(parameters.tokenX));
-        }
+        _increaseExposure(tokenManager, address(parameters.tokenX), amountXReceived);
+        _increaseExposure(tokenManager, address(parameters.tokenY), amountYReceived);
 
-        if (parameters.tokenY.balanceOf(address(this)) > 0) {
-            DiamondStorageLib.addOwnedAsset(tokenY, address(parameters.tokenY));
-        }
-
-        emit RemoveLiquidityTraderJoeV2(msg.sender, address(pairInfo.LBPair), parameters.ids, parameters.amounts, tokenX, tokenY, block.timestamp);
-
+        emit RemoveLiquidityTraderJoeV2(msg.sender, address(lbPair), parameters.ids, parameters.amounts, tokenX, tokenY, block.timestamp);
     }
+
 
     modifier onlyOwner() {
         DiamondStorageLib.enforceIsContractOwner();
