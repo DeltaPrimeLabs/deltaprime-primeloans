@@ -63,7 +63,29 @@ async function queryArweave(timestamp, nodeAddress) {
 export const queryHistoricalFeeds = async (timestamp, nodeAddress) => {
     try {
         return await queryArweave(timestamp, nodeAddress);
-    } catch (error) {
-        console.log(error);
+    } catch (e) {
+        try {
+            await new Promise(r => setTimeout(r, 1000));
+            return await queryArweave(timestamp, nodeAddress);
+        } catch (e) {
+            try {
+                await new Promise(r => setTimeout(r, 2000));
+                return await queryArweave(timestamp, nodeAddress);
+            } catch (e) {
+                try {
+                    await new Promise(r => setTimeout(r, 5000));
+                    return await queryArweave(timestamp, nodeAddress);
+                } catch (e) {
+                    try {
+                        await new Promise(r => setTimeout(r, 20000));
+                        return await queryArweave(timestamp, nodeAddress);
+                    } catch (e) {
+                        // console.log(e)
+                        console.log('querying Arweave failed')
+                    }
+                }
+            }
+        }
     }
+
 };
