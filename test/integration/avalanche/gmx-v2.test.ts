@@ -109,7 +109,7 @@ describe('Smart loan', () => {
         };
 
         before("deploy factory and pool", async () => {
-            paraSwapMin = constructSimpleSDK({ chainId: 42161, axios });
+            paraSwapMin = constructSimpleSDK({ chainId: 43114, axios });
 
             [owner, nonOwner, depositor] = await getFixedGasSigners(10000000);
             let assetsList = ['AVAX', 'BTC', 'USDT', 'USDC', 'GM_AVAX_WAVAX_USDC'];
