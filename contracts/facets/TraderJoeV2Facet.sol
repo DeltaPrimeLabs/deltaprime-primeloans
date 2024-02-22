@@ -205,12 +205,14 @@ abstract contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, 
 
         TraderJoeV2Bin[] storage binsStorage = getOwnedTraderJoeV2BinsStorage();
 
-        for (uint256 i = 0; i < binsStorage.length; i++) {
-            TraderJoeV2Bin storage bin = binsStorage[i];
-            if (address(bin.pair) == address(lbPair) && bin.pair.balanceOf(address(this), bin.id) == 0) {
-                binsStorage[i] = binsStorage[binsStorage.length - 1];
-                binsStorage.pop();
-                i--;
+        for (int256 i; uint(i) < binsStorage.length; i++) {
+            if (address(binsStorage[uint(i)].pair) == address(lbPair)) {
+                TraderJoeV2Bin storage bin = binsStorage[uint(i)];
+                if (bin.pair.balanceOf(address(this), bin.id) == 0) {
+                    binsStorage[uint(i)] = binsStorage[binsStorage.length - 1];
+                    i--;
+                    binsStorage.pop();
+                }
             }
         }
 
