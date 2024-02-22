@@ -270,6 +270,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
             require(success, "Swap failed");
         }
 
+        _repayAmount = Math.min(fromToken.balanceOf(address(this)), _repayAmount);
         address(fromToken).safeApprove(address(fromAssetPool), 0);
         address(fromToken).safeApprove(address(fromAssetPool), _repayAmount);
         fromAssetPool.repay(_repayAmount);
