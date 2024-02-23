@@ -60,7 +60,7 @@ contract TraderJoeV2AutopoolsFacet is ITraderJoeV2AutopoolsFacet, ReentrancyGuar
      * Stakes {stakingDetails.token0Address}, {stakingDetails.token1Address} token in the SteakHut pool
      * @param stakingDetails ITraderJoeV2Autopool.StakingDetails staking details
      **/
-    function stakeTokenTraderJoeV2Autopool(ITraderJoeV2Autopool.StakingDetails memory stakingDetails) private nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent {
+    function stakeTokenTraderJoeV2Autopool(ITraderJoeV2Autopool.StakingDetails memory stakingDetails) private nonReentrant onlyOwner remainsSolvent {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         address vaultAddress = tokenManager.getAssetAddress(stakingDetails.vaultTokenSymbol, false);
         IERC20 vaultToken = IERC20(vaultAddress);
@@ -81,6 +81,9 @@ contract TraderJoeV2AutopoolsFacet is ITraderJoeV2AutopoolsFacet, ReentrancyGuar
 
         //TODO: difference to Steakhut
         require(amount0Actual >= stakingDetails.amount0Min && amount1Actual >= stakingDetails.amount1Min, "Staked less tokens than expected");
+
+        _decreaseExposure(tokenManager, address(token0), amount0Actual);
+        _decreaseExposure(tokenManager, address(token1), amount1Actual);
 
         // Add/remove owned tokens
         DiamondStorageLib.addOwnedAsset(stakingDetails.vaultTokenSymbol, vaultAddress);
@@ -107,7 +110,7 @@ contract TraderJoeV2AutopoolsFacet is ITraderJoeV2AutopoolsFacet, ReentrancyGuar
      * Unstakes {UnstakingDetails.token0Address}, {UnstakingDetails.token1Address} token from the SteakHut pool
      * @param unstakingDetails ITraderJoeV2Autopool.UnstakingDetails unstaking details
      **/
-    function unstakeTokenTraderJoeV2Autopool(ITraderJoeV2Autopool.UnstakingDetails memory unstakingDetails) private nonReentrant onlyOwnerOrInsolvent recalculateAssetsExposure {
+    function unstakeTokenTraderJoeV2Autopool(ITraderJoeV2Autopool.UnstakingDetails memory unstakingDetails) private nonReentrant onlyOwnerOrInsolvent {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         address vaultAddress = tokenManager.getAssetAddress(unstakingDetails.vaultTokenSymbol, true);
         uint256 vaultTokenBalance = IERC20(vaultAddress).balanceOf(address(this));
@@ -128,6 +131,9 @@ contract TraderJoeV2AutopoolsFacet is ITraderJoeV2AutopoolsFacet, ReentrancyGuar
                 amount0Unstaked = depositToken0.balanceOf(address(this)) - initialDepositTokenBalance0;
                 amount1Unstaked = depositToken1.balanceOf(address(this)) - initialDepositTokenBalance1;
                 require(amount0Unstaked >= unstakingDetails.amount0Min && amount1Unstaked >= unstakingDetails.amount1Min, "Unstaked less tokens than expected");
+
+                _increaseExposure(tokenManager, address(depositToken0), amount0Unstaked);
+                _increaseExposure(tokenManager, address(depositToken1), amount1Unstaked);
             }
 
             // Add/remove owned tokens

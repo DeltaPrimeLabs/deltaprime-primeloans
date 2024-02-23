@@ -49,30 +49,6 @@ abstract contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, 
         return (amountX, amountY);
     }
 
-    function _decreaseExposure(ITokenManager tokenManager, address _token, uint256 _amount) internal {
-        if(_amount > 0) {
-            tokenManager.decreaseProtocolExposure(
-                tokenManager.tokenAddressToSymbol(_token),
-                _amount * 1e18 / 10**IERC20Metadata(_token).decimals()
-            );
-            if(IERC20Metadata(_token).balanceOf(address(this)) == 0){
-                DiamondStorageLib.removeOwnedAsset(tokenManager.tokenAddressToSymbol(_token));
-            }
-        }
-    }
-
-    function _increaseExposure(ITokenManager tokenManager, address _token, uint256 _amount) internal {
-        if(_amount > 0) {
-            tokenManager.increaseProtocolExposure(
-                tokenManager.tokenAddressToSymbol(_token),
-                _amount * 1e18 / 10**IERC20Metadata(_token).decimals()
-            );
-            if(IERC20Metadata(_token).balanceOf(address(this)) > 0){
-                DiamondStorageLib.addOwnedAsset(tokenManager.tokenAddressToSymbol(_token), _token);
-            }
-        }
-    }
-
     function claimReward(IRewarder.MerkleEntry[] calldata merkleEntries) external nonReentrant onlyOwner {
         uint256 length = merkleEntries.length;
         IERC20[] memory tokens = new IERC20[](length);
