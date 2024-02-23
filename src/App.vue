@@ -50,7 +50,9 @@
       The Arbitrum chain is fully congested resulting in failed transactions across apps. Please join our <a href='https://discord.gg/57EdDsvhxK' target='_blank'><b>Discord</b></a> to learn more
     </Banner>
 <!--    <Banner v-if="showAvalancheDepositorBanner" background="green-accent" :closable="true"></Banner>-->
-<!--    <Banner v-if="showAvalanchePrimeAccountBanner" background="green-accent" :closable="true"></Banner>-->
+    <Banner v-if="showAvalanchePrimeAccountBanner" :closable="true">
+      The Avalanche chain is currently down. Stay tuned
+    </Banner>
     <div class="content">
       <div class="top-bar">
         <div class="top-bar__left-part">
@@ -169,7 +171,7 @@ export default {
         // this.showAvalancheDepositorBanner = true;
       }
       if (window.location.href.includes('prime-account')) {
-        // this.showAvalanchePrimeAccountBanner = true;
+        this.showAvalanchePrimeAccountBanner = true;
       }
     }
   },

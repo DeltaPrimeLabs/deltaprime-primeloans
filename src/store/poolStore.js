@@ -48,7 +48,7 @@ export default {
       let resp = {};
 
       try {
-        resp = await (await fetch(`https://cavsise1n4.execute-api.us-east-1.amazonaws.com/sprime/${rootState.network.account.toLowerCase()}?network=${config.chainSlug}`)).json();
+        resp = await (await fetch(`https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/sprime/${rootState.network.account.toLowerCase()}?network=${config.chainSlug}`)).json();
       } catch (error) {
         console.error('fetching sprime failed.');
       }
