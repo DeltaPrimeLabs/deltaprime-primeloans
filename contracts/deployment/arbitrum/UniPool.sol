@@ -11,7 +11,7 @@ import "../../Pool.sol";
  */
 contract UniPool is Pool {
     function getMaxPoolUtilisationForBorrowing() override public view returns (uint256) {
-        return 0.9e18;
+        return 0.925e18;
     }
 
     function name() public virtual override pure returns(string memory _name){

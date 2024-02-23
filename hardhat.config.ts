@@ -26,7 +26,7 @@ export default {
         settings: {
           optimizer: {
             enabled: true,
-            runs: 50
+            runs: 10
           }
         }
       },
@@ -38,11 +38,16 @@ export default {
       forking: {
         url: "https://arb1.arbitrum.io/rpc",
       },
+      gas: 12000000,
+      blockGasLimit: 0x1fffffffffffff,
+      allowUnlimitedContractSize: true,
     },
     localhost: {
       timeout: 1800000,
       url: 'http://127.0.0.1:8545/',
       chainId: 31337,
+      gas: 12000000,
+      blockGasLimit: 0x1fffffffffffff,
       allowUnlimitedContractSize: true,
       // accounts: [getKey('avalanche', 'deployer'), getKey('avalanche', 'admin')]
     },
@@ -77,18 +82,6 @@ export default {
       gasPrice: 100000000000,
       chainId: 43114,
       accounts: [getKey('avalanche', 'deployer'), getKey('avalanche', 'admin')]
-    },
-    fantom: {
-      url: 'https://rpc.ftm.tools/',
-      gasPrice: 250000000000,
-      chainId: 250,
-      accounts: [getKey('fantom', 'deployer')]
-    },
-    celo: {
-      url: 'https://forno.celo.org',
-      gasPrice: 250000000000,
-      chainId: 42220,
-      accounts: [getKey('celo', 'deployer')],
     }
   },
   paths: {

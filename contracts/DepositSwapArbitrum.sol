@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 1dd28e6bf0c997e456da9aa92002751292872e5f;
+// Last deployed from commit: 3742ed131202971f0b79e04769200986a3c7f8d0;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -11,18 +11,29 @@ import "./Pool.sol";
 contract DepositSwapArbitrum {
     using SafeERC20 for IERC20;
 
+    address private constant PARA_TRANSFER_PROXY =
+    0x216B4B4Ba9F3e719726886d34a177484278Bfcae;
+    address private constant PARA_ROUTER =
+    0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57;
+
     address public constant WETH_POOL_TUP = 0x0BeBEB5679115f143772CfD97359BBcc393d46b3;
     address public constant USDC_POOL_TUP = 0x8FE3842e0B7472a57f2A2D56cF6bCe08517A1De0;
     address public constant ARB_POOL_TUP = 0x2B8C610F3fC6F883817637d15514293565C3d08A;
+    address public constant BTC_POOL_TUP = 0x5CdE36c23f0909960BA4D6E8713257C6191f8C35;
+    address public constant DAI_POOL_TUP = 0xd5E8f691756c3d7b86FD8A89A06497D38D362540;
 
     address public constant WETH = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
     address public constant USDC = 0xaf88d065e77c8cC2239327C5EDb3A432268e5831;
     address public constant ARB = 0x912CE59144191C1204E64559FE8253a0e49E6548;
+    address public constant BTC = 0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f;
+    address public constant DAI = 0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1;
 
     function _isTokenSupported(address token) private pure returns (bool) {
         if(
             token == WETH ||
             token == USDC ||
+            token == BTC ||
+            token == DAI ||
             token == ARB
         ){
             return true;
@@ -37,6 +48,10 @@ contract DepositSwapArbitrum {
             return Pool(USDC_POOL_TUP);
         } else if (token == ARB){
             return Pool(ARB_POOL_TUP);
+        } else if (token == BTC){
+            return Pool(BTC_POOL_TUP);
+        } else if (token == DAI){
+            return Pool(DAI_POOL_TUP);
         }
         revert("Pool not supported");
     }
@@ -116,6 +131,43 @@ contract DepositSwapArbitrum {
         _yakSwap(path, adapters, amountFromToken, minAmountToToken);
 
         _depositToPool(toPool, IERC20(toToken), IERC20(toToken).balanceOf(address(this)), user);
+    }
+
+    function depositSwapParaSwap(
+        bytes4 selector,
+        bytes memory data,
+        address fromToken,
+        uint256 fromAmount,
+        address toToken,
+        uint256 minOut
+    ) public {
+        require(_isTokenSupported(fromToken), "fromToken not supported");
+        require(_isTokenSupported(toToken), "toToken not supported");
+
+        require(minOut > 0, "minOut needs to be > 0");
+        require(fromAmount > 0, "Amount of tokens to sell needs to be > 0");
+
+        Pool fromPool = _tokenToPoolTUPMapping(fromToken);
+        Pool toPool = _tokenToPoolTUPMapping(toToken);
+
+        address user = msg.sender;
+        fromAmount = Math.min(fromPool.balanceOf(user), fromAmount);
+
+        _withdrawFromPool(fromPool, IERC20(fromToken), fromAmount, user);
+
+        IERC20(fromToken).safeApprove(PARA_TRANSFER_PROXY, 0);
+        IERC20(fromToken).safeApprove(
+            PARA_TRANSFER_PROXY,
+            fromAmount
+        );
+
+        (bool success, ) = PARA_ROUTER.call((abi.encodePacked(selector, data)));
+        require(success, "Swap failed");
+
+        uint256 amountOut = IERC20(toToken).balanceOf(address(this));
+        require(amountOut >= minOut, "Too little received");
+
+        _depositToPool(toPool, IERC20(toToken), amountOut, user);
     }
 
     function YY_ROUTER() internal virtual pure returns (address) {
