@@ -85,14 +85,8 @@ contract TraderJoeV2AutopoolsFacet is ITraderJoeV2AutopoolsFacet, ReentrancyGuar
         _decreaseExposure(tokenManager, address(token0), amount0Actual);
         _decreaseExposure(tokenManager, address(token1), amount1Actual);
 
-        // Add/remove owned tokens
-        DiamondStorageLib.addOwnedAsset(stakingDetails.vaultTokenSymbol, vaultAddress);
-        if(token0.balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset(stakingDetails.token0Symbol);
-        }
-        if(token1.balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset(stakingDetails.token1Symbol);
-        }
+        uint256 vaultTokenReceived = vaultToken.balanceOf(address(this)) - initialVaultBalance;
+        _increaseExposure(tokenManager, address(vaultToken), vaultTokenReceived);
 
         emit Staked(
             msg.sender,
@@ -101,7 +95,7 @@ contract TraderJoeV2AutopoolsFacet is ITraderJoeV2AutopoolsFacet, ReentrancyGuar
             vaultAddress,
             amount0Actual,
             amount1Actual,
-            vaultToken.balanceOf(address(this)) - initialVaultBalance,
+            vaultTokenReceived,
             block.timestamp
         );
     }
@@ -131,19 +125,13 @@ contract TraderJoeV2AutopoolsFacet is ITraderJoeV2AutopoolsFacet, ReentrancyGuar
                 amount0Unstaked = depositToken0.balanceOf(address(this)) - initialDepositTokenBalance0;
                 amount1Unstaked = depositToken1.balanceOf(address(this)) - initialDepositTokenBalance1;
                 require(amount0Unstaked >= unstakingDetails.amount0Min && amount1Unstaked >= unstakingDetails.amount1Min, "Unstaked less tokens than expected");
-
-                _increaseExposure(tokenManager, address(depositToken0), amount0Unstaked);
-                _increaseExposure(tokenManager, address(depositToken1), amount1Unstaked);
             }
-
-            // Add/remove owned tokens
-            DiamondStorageLib.addOwnedAsset(unstakingDetails.token0Symbol, address(depositToken0));
-            DiamondStorageLib.addOwnedAsset(unstakingDetails.token1Symbol, address(depositToken1));
+            _increaseExposure(tokenManager, address(depositToken0), amount0Unstaked);
+            _increaseExposure(tokenManager, address(depositToken1), amount1Unstaked);
         }
         uint256 newVaultTokenBalance = IERC20(vaultAddress).balanceOf(address(this));
-        if(newVaultTokenBalance == 0) {
-            DiamondStorageLib.removeOwnedAsset(unstakingDetails.vaultTokenSymbol);
-        }
+
+        _decreaseExposure(tokenManager, vaultAddress, vaultTokenBalance - newVaultTokenBalance);
 
         emit Unstaked(
             msg.sender,
