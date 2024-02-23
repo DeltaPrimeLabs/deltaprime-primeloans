@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: ;
+// Last deployed from commit: e458289996cc5bb1378ce9654eedc316f5beefdf;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -10,6 +10,11 @@ import "./Pool.sol";
 
 contract DepositSwap {
     using SafeERC20 for IERC20;
+
+    address private constant PARA_TRANSFER_PROXY =
+        0x216B4B4Ba9F3e719726886d34a177484278Bfcae;
+    address private constant PARA_ROUTER =
+        0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57;
 
     address public constant WAVAX_POOL_TUP = 0xD26E504fc642B96751fD55D3E68AF295806542f5;
     address public constant USDC_POOL_TUP = 0x2323dAC85C6Ab9bd6a8B5Fb75B0581E31232d12b;
@@ -126,6 +131,44 @@ contract DepositSwap {
         _yakSwap(path, adapters, amountFromToken, minAmountToToken);
 
         _depositToPool(toPool, IERC20(toToken), IERC20(toToken).balanceOf(address(this)), user);
+    }
+
+    // Needs approval on the fromToken Pool
+    function depositSwapParaSwap(
+        bytes4 selector,
+        bytes memory data,
+        address fromToken,
+        uint256 fromAmount,
+        address toToken,
+        uint256 minOut
+    ) public {
+        require(_isTokenSupported(fromToken), "fromToken not supported");
+        require(_isTokenSupported(toToken), "toToken not supported");
+
+        require(minOut > 0, "minOut needs to be > 0");
+        require(fromAmount > 0, "Amount of tokens to sell needs to be > 0");
+
+        Pool fromPool = _tokenToPoolTUPMapping(fromToken);
+        Pool toPool = _tokenToPoolTUPMapping(toToken);
+
+        address user = msg.sender;
+        fromAmount = Math.min(fromPool.balanceOf(user), fromAmount);
+
+        _withdrawFromPool(fromPool, IERC20(fromToken), fromAmount, user);
+
+        IERC20(fromToken).safeApprove(PARA_TRANSFER_PROXY, 0);
+        IERC20(fromToken).safeApprove(
+            PARA_TRANSFER_PROXY,
+            fromAmount
+        );
+
+        (bool success, ) = PARA_ROUTER.call((abi.encodePacked(selector, data)));
+        require(success, "Swap failed");
+
+        uint256 amountOut = IERC20(toToken).balanceOf(address(this));
+        require(amountOut >= minOut, "Too little received");
+
+        _depositToPool(toPool, IERC20(toToken), amountOut, user);
     }
 
     function YY_ROUTER() internal virtual pure returns (address) {
