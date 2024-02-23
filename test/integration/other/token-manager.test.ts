@@ -92,6 +92,13 @@ describe('Token Manager tests', () => {
         expect(poolAssets).to.be.eql([toBytes32("AVAX"), toBytes32("BTC")]);
         expect(fromBytes32(await tokenManager.connect(owner).tokenAddressToSymbol(addresses.AVAX))).to.be.equal("AVAX");
         expect(fromBytes32(await tokenManager.connect(owner).tokenAddressToSymbol(addresses.BTC))).to.be.equal("BTC");
+
+        let supportedAssetsDebtCoverages = await tokenManager.getSupportedTokensAddressesAndDebtCoverage();
+        expect(supportedAssetsDebtCoverages.length).to.be.equal(2);
+        expect(supportedAssetsDebtCoverages[0].address).to.be.equal(addresses.AVAX);
+        expect(fromWei(supportedAssetsDebtCoverages[0].debtCoverage)).to.be.equal(0.8333333333333333);
+        expect(supportedAssetsDebtCoverages[1].address).to.be.equal(addresses.BTC);
+        expect(fromWei(supportedAssetsDebtCoverages[1].debtCoverage)).to.be.equal(0.8333333333333333);
     });
 
     it("should fail to add an already existing asset", async () => {
@@ -136,6 +143,13 @@ describe('Token Manager tests', () => {
         expect(fromWei(await tokenManager.connect(owner).debtCoverage(addresses.AVAX))).to.be.equal(0.8333333333333333);
         await tokenManager.connect(owner).setDebtCoverage(addresses.AVAX, toWei("0.5"));
         expect(fromWei(await tokenManager.connect(owner).debtCoverage(addresses.AVAX))).to.be.equal(0.5);
+
+        let supportedAssetsDebtCoverages = await tokenManager.getSupportedTokensAddressesAndDebtCoverage();
+        expect(supportedAssetsDebtCoverages.length).to.be.equal(2);
+        expect(supportedAssetsDebtCoverages[0].address).to.be.equal(addresses.AVAX);
+        expect(fromWei(supportedAssetsDebtCoverages[0].debtCoverage)).to.be.equal(0.5);
+        expect(supportedAssetsDebtCoverages[1].address).to.be.equal(addresses.BTC);
+        expect(fromWei(supportedAssetsDebtCoverages[1].debtCoverage)).to.be.equal(0.8333333333333333);
     });
 
     it("should not accept leverage higher than x5", async () => {
