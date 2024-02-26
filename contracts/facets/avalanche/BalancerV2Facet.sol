@@ -126,6 +126,8 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent, IBalanc
             //stakes everything in a gauge
             gauge.deposit(poolBalance);
 
+            emit GaugeDeposit(poolBalance, block.timestamp);
+
             bytes32 poolSymbol = tokenManager.tokenAddressToSymbol(pool);
             IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
                 asset : pool,
@@ -190,6 +192,8 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent, IBalanc
         //stakes everything in a gauge
         gauge.deposit(amount);
 
+        emit GaugeDeposit(amount, block.timestamp);
+
         bytes32 poolSymbol = tokenManager.tokenAddressToSymbol(pool);
         IStakingPositions.StakedPosition memory position = IStakingPositions.StakedPosition({
             asset : pool,
@@ -232,6 +236,8 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent, IBalanc
 
         //unstakes from the gauge
         gauge.withdraw(request.bptAmount);
+
+        emit GaugeWithdraw(request.bptAmount, block.timestamp);
 
         IVault.ExitPoolRequest memory exitRequest;
 
@@ -328,6 +334,8 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent, IBalanc
 
         //unstakes from the gauge
         gauge.withdraw(amount);
+
+        emit GaugeWithdraw(amount, block.timestamp);
 
         uint256 newGaugeBalance = IERC20(gauge).balanceOf(address(this));
         if (newGaugeBalance == 0) {
@@ -555,6 +563,15 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent, IBalanc
         uint256 timestamp
     );
 
+    event GaugeWithdraw(
+        uint256 amount,
+        uint256 timestamp
+    );
+
+    event GaugeDeposit(
+        uint256 amount,
+        uint256 timestamp
+    );
 
     // ERRORS
     error BalancerV2PoolNotWhitelisted();
