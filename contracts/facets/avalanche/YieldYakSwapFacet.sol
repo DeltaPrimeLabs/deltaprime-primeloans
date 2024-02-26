@@ -55,7 +55,7 @@ contract YieldYakSwapFacet is ReentrancyGuardKeccak, SolvencyMethods {
         });
     }
 
-    function yakSwap(uint256 _amountIn, uint256 _amountOut, address[] calldata _path, address[] calldata _adapters) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent{
+    function yakSwap(uint256 _amountIn, uint256 _amountOut, address[] calldata _path, address[] calldata _adapters) external nonReentrant onlyOwner noBorrowInTheSameBlock remainsSolvent{
         SwapTokensDetails memory swapTokensDetails = getInitialTokensDetails(_path[0], _path[_path.length - 1]);
 
         _amountIn = Math.min(swapTokensDetails.soldToken.balanceOf(address(this)), _amountIn);
@@ -75,24 +75,20 @@ contract YieldYakSwapFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
         router.swapNoSplit(trade, address(this), 0);
 
-        // Add asset to ownedAssets
-        if (swapTokensDetails.boughtToken.balanceOf(address(this)) > 0) {
-            DiamondStorageLib.addOwnedAsset(swapTokensDetails.tokenBoughtSymbol, address(swapTokensDetails.boughtToken));
-        }
-
-        // Remove asset from ownedAssets if the asset balance is 0 after the swap
-        if (swapTokensDetails.soldToken.balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset(swapTokensDetails.tokenSoldSymbol);
-        }
-
         uint256 boughtTokenFinalAmount = swapTokensDetails.boughtToken.balanceOf(address(this)) - swapTokensDetails.initialBoughtTokenBalance;
         require(boughtTokenFinalAmount >= _amountOut, "Insufficient output amount");
+
+        uint256 soldTokenFinalAmount = swapTokensDetails.initialSoldTokenBalance - swapTokensDetails.soldToken.balanceOf(address(this));
+
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        _increaseExposure(tokenManager, address(swapTokensDetails.boughtToken), boughtTokenFinalAmount);
+        _decreaseExposure(tokenManager, address(swapTokensDetails.soldToken), soldTokenFinalAmount);
 
         emit Swap(
             msg.sender,
             swapTokensDetails.tokenSoldSymbol,
             swapTokensDetails.tokenBoughtSymbol,
-            swapTokensDetails.initialSoldTokenBalance - swapTokensDetails.soldToken.balanceOf(address(this)),
+            soldTokenFinalAmount,
             boughtTokenFinalAmount,
             block.timestamp
         );
