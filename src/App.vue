@@ -49,7 +49,14 @@
     <Banner v-if="showArbitrumCongestionBanner" :closable="true">
       The Arbitrum chain is fully congested resulting in failed transactions across apps. Please join our <a href='https://discord.gg/57EdDsvhxK' target='_blank'><b>Discord</b></a> to learn more
     </Banner>
-<!--    <Banner v-if="showAvalancheDepositorBanner" background="green-accent" :closable="true"></Banner>-->
+    <Banner v-if="showAvalancheDepositorBanner" background="green" :closable="true">
+      BTC APY will be boosted this Wednesday.
+      <a class="banner-link" href="https://discord.com/channels/889510301421166643/912702114252329060/1211682978258878504" target="_blank">
+        <b>
+          Learn more.
+        </b>
+      </a>
+    </Banner>
     <Banner v-if="showAvalanchePrimeAccountBanner" :closable="true">
       The Avalanche chain is currently down. Stay tuned
     </Banner>
@@ -168,7 +175,7 @@ export default {
 
     if (config.chainId === 43114) {
       if (window.location.href.includes('pools')) {
-        // this.showAvalancheDepositorBanner = true;
+        this.showAvalancheDepositorBanner = true;
       }
       if (window.location.href.includes('prime-account')) {
         // this.showAvalanchePrimeAccountBanner = true;
