@@ -52,9 +52,12 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerO
     * @param _exactSold exact amount of asset to be sold
     * @param _minimumBought minimum amount of asset to be bought
     **/
-    function swapAssets(bytes32 _soldAsset, bytes32 _boughtAsset, uint256 _exactSold, uint256 _minimumBought) internal recalculateAssetsExposure remainsSolvent returns (uint256[] memory) {
+    function swapAssets(bytes32 _soldAsset, bytes32 _boughtAsset, uint256 _exactSold, uint256 _minimumBought) internal remainsSolvent returns (uint256[] memory) {
         IERC20Metadata soldToken = getERC20TokenInstance(_soldAsset, true);
         IERC20Metadata boughtToken = getERC20TokenInstance(_boughtAsset, false);
+
+        uint256 initialSellTokenBalance = soldToken.balanceOf(address(this));
+        uint256 initialBuyTokenBalance = boughtToken.balanceOf(address(this));
 
         require(soldToken.balanceOf(address(this)) >= _exactSold, "Not enough token to sell");
         address(soldToken).safeTransfer(getExchangeIntermediaryContract(), _exactSold);
@@ -64,17 +67,9 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerO
         uint256[] memory amounts = exchange.swap(address(soldToken), address(boughtToken), _exactSold, _minimumBought);
 
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        // Add asset to ownedAssets
-        address boughtAssetAddress = tokenManager.getAssetAddress(_boughtAsset, false);
-
-        if (boughtToken.balanceOf(address(this)) > 0) {
-            DiamondStorageLib.addOwnedAsset(_boughtAsset, boughtAssetAddress);
-        }
-
-        // Remove asset from ownedAssets if the asset balance is 0 after the swap
-        if (soldToken.balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset(_soldAsset);
-        }
+        
+        _decreaseExposure(tokenManager, address(soldToken), soldToken.balanceOf(address(this)) - initialSellTokenBalance);
+        _increaseExposure(tokenManager, address(boughtToken), boughtToken.balanceOf(address(this)) - initialBuyTokenBalance);
 
         emit Swap(msg.sender, _soldAsset, _boughtAsset, amounts[0], amounts[amounts.length - 1], block.timestamp);
 
@@ -84,7 +79,7 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerO
     /**
     * Adds liquidity
     **/
-    function addLiquidity(bytes32 _assetA, bytes32 _assetB, uint amountA, uint amountB, uint amountAMin, uint amountBMin) internal recalculateAssetsExposure remainsSolvent {
+    function addLiquidity(bytes32 _assetA, bytes32 _assetB, uint amountA, uint amountB, uint amountAMin, uint amountBMin) internal remainsSolvent {
         IERC20Metadata tokenA = getERC20TokenInstance(_assetA, false);
         IERC20Metadata tokenB = getERC20TokenInstance(_assetB, false);
 
@@ -102,19 +97,11 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerO
         (lpTokenAddress, amountA, amountB, liquidity)
           = exchange.addLiquidity(address(tokenA), address(tokenB), amountA, amountB, amountAMin, amountBMin);
 
-        if (IERC20Metadata(lpTokenAddress).balanceOf(address(this)) > 0) {
-            bytes32 lpToken = calculateLpTokenSymbol(_assetA, _assetB);
-            DiamondStorageLib.addOwnedAsset(lpToken, lpTokenAddress);
-        }
-
-        // Remove asset from ownedAssets if the asset balance is 0 after the LP
-        if (tokenA.balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset(_assetA);
-        }
-
-        if (tokenB.balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset(_assetB);
-        }
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        
+        _decreaseExposure(tokenManager, address(tokenA), amountA);
+        _decreaseExposure(tokenManager, address(tokenB), amountB);
+        _increaseExposure(tokenManager, lpTokenAddress, liquidity);
 
         emit AddLiquidity(msg.sender, lpTokenAddress, _assetA, _assetB, liquidity, amountA, amountB, block.timestamp);
     }
@@ -122,7 +109,7 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerO
     /**
     * Removes liquidity
     **/
-    function removeLiquidity(bytes32 _assetA, bytes32 _assetB, uint liquidity, uint amountAMin, uint amountBMin) internal recalculateAssetsExposure onlyOwnerOrInsolvent{
+    function removeLiquidity(bytes32 _assetA, bytes32 _assetB, uint liquidity, uint amountAMin, uint amountBMin) internal onlyOwnerOrInsolvent{
         IERC20Metadata tokenA = getERC20TokenInstance(_assetA, true);
         IERC20Metadata tokenB = getERC20TokenInstance(_assetB, true);
 
@@ -135,12 +122,10 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerO
 
         (uint amountA, uint amountB) = exchange.removeLiquidity(address(tokenA), address(tokenB), liquidity, amountAMin, amountBMin);
 
-        // Remove asset from ownedAssets if the asset balance is 0 after the LP
-        if (IERC20Metadata(lpTokenAddress).balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset(calculateLpTokenSymbol(_assetA, _assetB));
-        }
-        DiamondStorageLib.addOwnedAsset(_assetA, address(tokenA));
-        DiamondStorageLib.addOwnedAsset(_assetB, address(tokenB));
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        _decreaseExposure(tokenManager, lpTokenAddress, liquidity);
+        _increaseExposure(tokenManager, address(tokenA), amountA);
+        _increaseExposure(tokenManager, address(tokenB), amountB);
 
         emit RemoveLiquidity(msg.sender, lpTokenAddress, _assetA, _assetB, liquidity, amountA, amountB, block.timestamp);
     }
