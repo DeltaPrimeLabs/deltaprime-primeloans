@@ -5,10 +5,10 @@ import { constructSimpleSDK, SimpleFetchSDK, SwapSide } from '@paraswap/sdk';
 import axios from 'axios';
 
 import PoolArtifact from '../../../artifacts/contracts/Pool.sol/Pool.json';
-import DepositSwapArtifact from '../../../artifacts/contracts/DepositSwap.sol/DepositSwap.json';
+import DepositSwapAvalancheArtifact from '../../../artifacts/contracts/DepositSwapAvalanche.sol/DepositSwapAvalanche.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, getFixedGasSigners, getRedstonePrices, getTokensPricesMap, parseParaSwapRouteData, toWei, wavaxAbi} from "../../_helpers";
-import {Pool, DepositSwap} from "../../../typechain";
+import {Pool, DepositSwapAvalanche} from "../../../typechain";
 import {BigNumber, Contract} from "ethers";
 import TOKEN_ADDRESSES from "../../../common/addresses/avax/token_addresses.json";
 import { formatUnits } from 'ethers/lib/utils';
@@ -57,7 +57,7 @@ describe('Pool with variable utilisation interest rates', () => {
     beforeEach(async () => {
         [owner, depositor] = await getFixedGasSigners(10000000);
 
-        depositSwapContract = (await deployContract(owner, DepositSwapArtifact)) as DepositSwap;
+        depositSwapContract = (await deployContract(owner, DepositSwapAvalancheArtifact)) as DepositSwapAvalanche;
         wavaxPool = new ethers.Contract(WAVAX_POOL_TUP_ADDRESS, PoolArtifact.abi, depositor) as Pool;
         usdcPool = new ethers.Contract(USDC_POOL_TUP_ADDRESS, PoolArtifact.abi, depositor) as Pool;
         wavaxContract = new ethers.Contract(WAVAX_CONTRACT_ADDRESS, wavaxAbi, depositor) as Pool;
