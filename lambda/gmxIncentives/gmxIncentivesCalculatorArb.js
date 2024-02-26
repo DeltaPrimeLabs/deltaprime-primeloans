@@ -112,35 +112,35 @@ const gmxIncentivesCalculatorArb = async (event) => {
   })
 
   // save/update incentives values to DB
-  await Promise.all(
-    Object.entries(loanIncentives).map(async ([loanId, value]) => {
-      const data = {
-        id: loanId,
-        arbCollected: value
-      };
+  // await Promise.all(
+  //   Object.entries(loanIncentives).map(async ([loanId, value]) => {
+  //     const data = {
+  //       id: loanId,
+  //       arbCollected: value
+  //     };
 
-      const params = {
-        TableName: process.env.GMX_INCENTIVES_ARB_TABLE,
-        Item: data
-      };
-      await dynamoDb.put(params).promise();
-    })
-  );
+  //     const params = {
+  //       TableName: process.env.GMX_INCENTIVES_ARB_TABLE,
+  //       Item: data
+  //     };
+  //     await dynamoDb.put(params).promise();
+  //   })
+  // );
 
-  console.log("GMX incentives successfully updated.")
+  // console.log("GMX incentives successfully updated.")
 
   // save boost APY to DB
-  const boostApy = incentivesPerInterval / totalLeveragedGM * 6 * 24 * 365;
+  // const boostApy = incentivesPerInterval / totalLeveragedGM * 6 * 24 * 365;
   const params = {
     TableName: process.env.APY_TABLE,
     Key: {
       id: "GM_BOOST"
     },
     AttributeUpdates: {
-      arbApy: {
-        Value: Number(boostApy) ? boostApy : null,
-        Action: "PUT"
-      },
+      // arbApy: {
+      //   Value: Number(boostApy) ? boostApy : null,
+      //   Action: "PUT"
+      // },
       tvl: {
         Value: Number(gmTvl) ? gmTvl : null,
         Action: "PUT"
