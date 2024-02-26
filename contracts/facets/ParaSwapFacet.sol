@@ -83,7 +83,6 @@ contract ParaSwapFacet is ReentrancyGuardKeccak, SolvencyMethods {
     nonReentrant
     onlyWhitelistedLiquidators
     noBorrowInTheSameBlock
-    recalculateAssetsExposure
     {
         require(!_isSolvent(), "Cannot perform on a solvent account");
 
@@ -104,19 +103,6 @@ contract ParaSwapFacet is ReentrancyGuardKeccak, SolvencyMethods {
         (bool success, ) = PARA_ROUTER.call((abi.encodePacked(selector, data)));
         require(success, "Swap failed");
 
-        // Add asset to ownedAssets
-        if (swapTokensDetails.boughtToken.balanceOf(address(this)) > 0) {
-            DiamondStorageLib.addOwnedAsset(
-                swapTokensDetails.tokenBoughtSymbol,
-                address(swapTokensDetails.boughtToken)
-            );
-        }
-
-        // Remove asset from ownedAssets if the asset balance is 0 after the swap
-        if (swapTokensDetails.soldToken.balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset(swapTokensDetails.tokenSoldSymbol);
-        }
-
         uint256 boughtTokenFinalAmount = swapTokensDetails.boughtToken.balanceOf(
             address(this)
         ) - swapTokensDetails.initialBoughtTokenBalance;
@@ -126,6 +112,10 @@ contract ParaSwapFacet is ReentrancyGuardKeccak, SolvencyMethods {
             address(this)
         );
         require(soldTokenFinalAmount == fromAmount, "Too much sold");
+
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        _decreaseExposure(tokenManager, fromToken, soldTokenFinalAmount);
+        _increaseExposure(tokenManager, toToken, boughtTokenFinalAmount);
 
         bytes32[] memory symbols = new bytes32[](2);
         symbols[0] = swapTokensDetails.tokenSoldSymbol;
@@ -155,7 +145,6 @@ contract ParaSwapFacet is ReentrancyGuardKeccak, SolvencyMethods {
         nonReentrant
         onlyOwner
         noBorrowInTheSameBlock
-        recalculateAssetsExposure
         remainsSolvent
     {
         SwapTokensDetails memory swapTokensDetails = getInitialTokensDetails(
@@ -176,30 +165,23 @@ contract ParaSwapFacet is ReentrancyGuardKeccak, SolvencyMethods {
         (bool success, ) = PARA_ROUTER.call((abi.encodePacked(selector, data)));
         require(success, "Swap failed");
 
-        // Add asset to ownedAssets
-        if (swapTokensDetails.boughtToken.balanceOf(address(this)) > 0) {
-            DiamondStorageLib.addOwnedAsset(
-                swapTokensDetails.tokenBoughtSymbol,
-                address(swapTokensDetails.boughtToken)
-            );
-        }
-
-        // Remove asset from ownedAssets if the asset balance is 0 after the swap
-        if (swapTokensDetails.soldToken.balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset(swapTokensDetails.tokenSoldSymbol);
-        }
-
         uint256 boughtTokenFinalAmount = swapTokensDetails.boughtToken.balanceOf(
             address(this)
         ) - swapTokensDetails.initialBoughtTokenBalance;
         require(boughtTokenFinalAmount >= minOut, "Too little received");
 
+        uint256 soldTokenFinalAmount = swapTokensDetails.initialSoldTokenBalance -
+                swapTokensDetails.soldToken.balanceOf(address(this));
+
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        _decreaseExposure(tokenManager, fromToken, soldTokenFinalAmount);
+        _increaseExposure(tokenManager, toToken, boughtTokenFinalAmount);
+
         emit Swap(
             msg.sender,
             swapTokensDetails.tokenSoldSymbol,
             swapTokensDetails.tokenBoughtSymbol,
-            swapTokensDetails.initialSoldTokenBalance -
-                swapTokensDetails.soldToken.balanceOf(address(this)),
+            soldTokenFinalAmount,
             boughtTokenFinalAmount,
             block.timestamp
         );
