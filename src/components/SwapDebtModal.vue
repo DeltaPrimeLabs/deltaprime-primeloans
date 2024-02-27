@@ -2,60 +2,22 @@
   <div id="modal" class="swap-modal-component modal-component">
     <Modal>
       <div class="modal__title">
-        <span></span>
-        {{ title }}
+        Swap debt
       </div>
-
-      <div class="dex-toggle" v-if="!swapDebtMode && dexOptions && dexOptions.length > 1">
-        <Toggle v-on:change="swapDexChange" :options="dexOptions"></Toggle>
-      </div>
-
-      <div class="modal-top-desc" v-if="swapDex === 'ParaSwapV2' && showParaSwapWarning">
-        <div>
-          <b>Caution: Paraswap slippage vastly exceeds YakSwap. Use with caution.</b>
-        </div>
-      </div>
-
-      <div class="modal-top-desc" v-if="swapDex === 'YakSwap' && showYakSwapWarning">
-        <div>
-          <b>We recommend using Paraswap for swaps of $50K+.</b>
-        </div>
-      </div>
-
-      <div class="modal-top-desc" v-if="['YakSwap', 'ParaSwapV2'].includes(swapDex)">
-        <div>
-          <b>Token availability might change with different aggregators.</b>
-        </div>
-      </div>
-
-      <div class="modal-top-desc" v-if="info">
-        <div>
-          <b v-html="info"></b>
-        </div>
-      </div>
-
-      <div class="asset-info" v-if="!swapDebtMode">
-        Available:
-        <span v-if="sourceAssetBalance && sourceAssetData" class="asset-info__value">{{
-            Number(sourceAssetBalance) | smartRound(sourceAssetData.decimals, true)
+      <div class="asset-info">
+        Borrowed:
+        <span v-if="sourceAssetBalance" class="asset-info__value">{{
+            Number(sourceAssetBalance) | smartRound(10, true)
           }}</span>
       </div>
-      <div class="asset-info" v-if="swapDebtMode">
-        Borrowed:
-        <span v-if="sourceAssetDebt && sourceAssetData" class="asset-info__value">
-          {{
-            Number(debtsPerAsset[sourceAsset].debt) | smartRound(sourceAssetData.decimals, true)
-          }}
-        </span>
-      </div>
-
 
       <CurrencyComboInput ref="sourceInput"
                           :asset-options="sourceAssetOptions"
                           :default-asset="sourceAsset"
                           :validators="sourceValidators"
                           :disabled="checkingPrices"
-                          :max="maxSourceValue"
+                          :max="sourceAssetBalance"
+                          :info="() => sourceAssetValue"
                           :typingTimeout="2000"
                           v-on:valueChange="sourceInputChange"
                           v-on:ongoingTyping="ongoingTyping"
@@ -70,15 +32,18 @@
                           :asset-options="targetAssetOptions"
                           :default-asset="targetAsset"
                           v-on:valueChange="targetInputChange"
+                          :info="() => targetAssetValue"
                           :disabled="true"
                           info-icon-message="Minimum received amount"
                           :validators="targetValidators">
       </CurrencyComboInput>
       <div class="target-asset-info">
-        <div class="usd-info">
+        <div class="usd-info"
+             v-bind:style="{ 'visibility': estimatedNeededTokens !== 0 && estimatedNeededTokens !== 0 ? 'visible' : 'hidden' }"
+        >
           Price:&nbsp;<span
           class="price-info__value">1 {{
-            (targetAssetData && targetAssetData.short) ? targetAssetData.short : targetAsset
+            targetAsset
           }} = {{ estimatedNeededTokens / estimatedReceivedTokens | smartRound }} {{ sourceAsset }}</span>
         </div>
       </div>
@@ -90,25 +55,12 @@
           <span class="percent">%</span>
         </div>
         <div class="slippage__divider"></div>
-        <div class="fee" v-if="feeMethods && feeMethods[swapDex]">
-          <span class="slippage-label">Max. fee:</span>
-          <span class="deviation-value">{{ fee | percent }}</span>
-          <div class="info__icon__wrapper">
-            <InfoIcon
-              class="info__icon"
-              :tooltip="{content: 'The fee of underlying protocol.', placement: 'top', classes: 'info-tooltip'}"
-            ></InfoIcon>
-          </div>
-        </div>
-        <div class="dex-slippage" v-else>
-          <span class="slippage-label">DEX slippage:</span>
-          <span class="deviation-value">{{ marketDeviation }}<span class="percent">%</span></span>
-          <div class="info__icon__wrapper">
-            <InfoIcon
-              class="info__icon"
-              :tooltip="{content: 'The difference between DEX and market prices.', placement: 'top', classes: 'info-tooltip'}"
-            ></InfoIcon>
-          </div>
+        DEX slippage: <span class="deviation-value">{{ marketDeviation }}<span class="percent">%</span></span>
+        <div class="info__icon__wrapper">
+          <InfoIcon
+            class="info__icon"
+            :tooltip="{content: 'The difference between DEX and market prices.', placement: 'top', classes: 'info-tooltip'}"
+          ></InfoIcon>
         </div>
       </div>
       <div v-if="slippageWarning" class="slippage-warning">
@@ -142,18 +94,8 @@
             </div>
             <div class="summary__divider divider--long light"></div>
 
-            <div class="summary__value__pair" v-if="!swapDebtMode">
-              <div class="summary__label">
-                {{ (sourceAssetData && sourceAssetData.short) ? sourceAssetData.short : sourceAsset }} balance:
-              </div>
-              <div class="summary__value">
-                {{
-                  formatTokenBalance(Number(assetBalances[sourceAsset]) - Number(sourceAssetAmount)) > 0 ? formatTokenBalance(Number(assetBalances[sourceAsset]) - Number(sourceAssetAmount)) : 0
-                }}
-              </div>
-            </div>
 
-            <div class="summary__value__pair" v-if="swapDebtMode">
+            <div class="summary__value__pair">
               <div class="summary__label">
                 {{ sourceAsset }} borrowed:
               </div>
@@ -166,16 +108,8 @@
 
             <div class="summary__divider divider--long light"></div>
 
-            <div class="summary__value__pair" v-if="!swapDebtMode">
-              <div class="summary__label">
-                {{ (targetAssetData && targetAssetData.short) ? targetAssetData.short : targetAsset }} balance:
-              </div>
-              <div class="summary__value">
-                {{ formatTokenBalance(Number(assetBalances[targetAsset]) + Number(targetAssetAmount)) }}
-              </div>
-            </div>
 
-            <div class="summary__value__pair" v-if="swapDebtMode">
+            <div class="summary__value__pair">
               <div class="summary__label">
                 {{ targetAsset }} borrowed:
               </div>
@@ -188,10 +122,10 @@
       </div>
 
       <div class="button-wrapper">
-        <Button :label="swapDebtMode ? 'Swap debt' : 'Swap'"
+        <Button :label="'Swap deposit'"
                 v-on:click="submit()"
                 :disabled="sourceInputError || targetInputError"
-                :waiting="transactionOngoing || isTyping || calculatingSwapRoute">
+                :waiting="transactionOngoing || isTyping">
         </Button>
       </div>
     </Modal>
@@ -206,19 +140,21 @@ import Button from './Button';
 import CurrencyComboInput from './CurrencyComboInput';
 import BarGaugeBeta from './BarGaugeBeta';
 import config from '../config';
-import {calculateHealth, formatUnits, fromWei, parseUnits} from '../utils/calculate';
+import {calculateHealth, formatUnits, parseUnits} from '../utils/calculate';
 import {BigNumber} from 'ethers';
 import SimpleInput from './SimpleInput';
-import DeltaIcon from "./DeltaIcon.vue";
-import InfoIcon from "./InfoIcon.vue";
-import Toggle from './Toggle.vue';
+import DeltaIcon from './DeltaIcon.vue';
+import InfoIcon from './InfoIcon.vue';
+import {constructSimpleSDK} from "@paraswap/sdk";
+import axios from "axios";
+import {getSwapData} from "../utils/paraSwapUtils";
 
 const ethers = require('ethers');
+let TOKEN_ADDRESSES;
 
 export default {
-  name: 'SwapModal',
+  name: 'SwapDebtModal',
   components: {
-    Toggle,
     InfoIcon,
     DeltaIcon,
     SimpleInput,
@@ -234,7 +170,6 @@ export default {
 
   data() {
     return {
-      swapDebtMode: null,
       sourceAssets: null,
       targetAssets: null,
       sourceAssetOptions: null,
@@ -244,94 +179,56 @@ export default {
       sourceAssetData: null,
       targetAssetData: null,
       sourceAssetBalance: 0,
-      sourceAssetDebt: 0,
       targetAssetBalance: null,
       conversionRate: null,
       sourceAssetAmount: 0,
       targetAssetAmount: 0,
-      fee: 0,
-      info: null,
       userSlippage: 0,
-      slippageMargin: null,
       queryMethod: null,
-      feeMethods: null,
-      lastChangedSource: true,
       sourceValidators: [],
       sourceWarnings: [],
       slippageWarning: '',
       targetValidators: [],
-      customSourceValidators: null,
-      customTargetValidators: null,
       sourceInputError: true,
       targetInputError: false,
       checkingPrices: false,
       isTyping: false,
-      checkMarketDeviation: true, //check oracle slippage
       marketDeviation: 0,
-      MIN_ALLOWED_HEALTH: config.MIN_ALLOWED_HEALTH,
-      healthAfterTransaction: 0,
       assetBalances: {},
-      assets: {},
-      debtsPerAsset: {},
-      lpAssets: {},
-      lpBalances: {},
-      farms: {},
-      concentratedLpAssets: {},
-      concentratedLpBalances: {},
-      levelLpAssets: {},
-      levelLpBalances: {},
-      gmxV2Assets: {},
-      gmxV2Balances: {},
-      traderJoeV2LpAssets: {},
-      balancerLpAssets: {},
-      balancerLpBalances: {},
       transactionOngoing: false,
-      debt: 0,
       thresholdWeightedValue: 0,
       estimatedReceivedTokens: 0,
       estimatedNeededTokens: 0,
+      receivedAccordingToOracle: 0,
       neededAccordingToOracle: 0,
       path: null,
       adapters: null,
       maxButtonUsed: false,
-      valueAsset: "USDC",
-      paraSwapRate: {},
-      dexOptions: null,
-      swapDex: null,
-      title: 'Swap',
-      currentSourceInputChangeEvent: {},
-      showParaSwapWarning: config.showParaSwapWarning,
-      showYakSwapWarning: config.showYakSwapWarning,
-      sourceAssetsConfig: config.ASSETS_CONFIG,
-      targetAssetsConfig: config.ASSETS_CONFIG,
-      swapDexsConfig: config.SWAP_DEXS_CONFIG,
-      reverseSwapDisabled: false,
-      calculatingSwapRoute: false,
+      assetPrices: {},
+      swapData: {},
+      debtsPerAsset: {},
+      healthAfterTransaction: 0,
+      MIN_ALLOWED_HEALTH: config.MIN_ALLOWED_HEALTH,
+      lpAssets: {},
+      concentratedLpAssets: {},
+      traderJoeV2LpAssets: {},
+      gmxV2Assets: {},
+      levelLpAssets: {},
+      levelLpBalances: {},
+      lpBalances: {},
+      concentratedLpBalances: {},
+      gmxV2Balances: {},
+      balancerLpBalances: {},
+      balancerLpAssets: {},
+      farms: {},
+      debt: {},
+      health: {},
     };
   },
 
-  computed: {
-    maxSourceValue() {
-      if (this.swapDebtMode) {
-        return this.sourceAssetDebt;
-      } else {
-        return this.sourceAssetBalance;
-      }
-    },
-    receivedAccordingToOracle() {
-      return (this.estimatedNeededTokens && this.sourceAssetData && this.targetAssetData)
-          ?
-          this.estimatedNeededTokens * this.sourceAssetData.price / this.targetAssetData.price
-          :
-          0;
-    }
-  },
-
-  methods: {
-    initiate() {
-      if (this.swapDebtMode && !this.swapDex) {
-        this.swapDex = 'YakSwap'
-      }
+  mounted() {
+    setTimeout(async () => {
+      await this.setupFiles();
       this.setupSourceAssetOptions();
       this.setupTargetAssetOptions();
       this.setupSourceAsset();
@@ -339,142 +236,93 @@ export default {
       this.setupValidators();
       this.setupWarnings();
       this.calculateHealthAfterTransaction();
+    });
+  },
+
+  computed: {
+    sourceAssetValue() {
+      const sourceAssetUsdPrice = Number(this.sourceAssetAmount) * this.assetPrices[this.sourceAssetData.symbol];
+      return `~ $${sourceAssetUsdPrice.toFixed(2)}`;
     },
 
+    targetAssetValue() {
+      const targetAssetUsdPrice = Number(this.targetAssetAmount) * this.assetPrices[this.targetAssetData.symbol];
+      return `~ $${targetAssetUsdPrice.toFixed(2)}`;
+    }
+  },
+
+  methods: {
+    async setupFiles() {
+      TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
+    },
     submit() {
       this.transactionOngoing = true;
-      console.log('submit this.swapDex: ', this.swapDex)
-      console.log('sourceAssetAmount: ', sourceAssetAmount)
-      const sourceAssetAmount = (this.maxButtonUsed && this.swapDex !== 'ParaSwapV2' && !this.swapDebtMode) ? this.sourceAssetAmount * config.MAX_BUTTON_MULTIPLIER : this.sourceAssetAmount;
-      console.log('sourceAssetAmount: ', sourceAssetAmount)
+      const sourceAssetAmount = this.maxButtonUsed ? this.sourceAssetAmount * config.MAX_BUTTON_MULTIPLIER : this.sourceAssetAmount;
       this.$emit('SWAP', {
         sourceAsset: this.sourceAsset,
         targetAsset: this.targetAsset,
         sourceAmount: sourceAssetAmount,
         targetAmount: this.targetAssetAmount,
-        path: this.path,
-        adapters: this.adapters,
-        paraSwapRate: this.paraSwapRate,
-        swapDex: this.swapDex
+        swapData: this.swapData
       });
     },
 
-    swapDexChange(dex) {
-      console.log(dex);
-      if (dex === 'ParaSwap') {
-        dex = 'ParaSwapV2'
-      }
-      this.swapDex = dex;
-      this.setupSourceAssetOptions();
-      this.setupTargetAssetOptions();
-      if (this.currentSourceInputChangeEvent.value) {
-        this.sourceInputChange(this.currentSourceInputChangeEvent);
-      }
-    },
-
-    async query(sourceAsset, targetAsset, amountIn, amountOut) {
-      if (this.swapDebtMode) {
-        return await this.queryMethod(targetAsset, sourceAsset, amountIn);
-      } else {
-        return await this.queryMethods[this.swapDex](sourceAsset, targetAsset, amountIn);
-      }
+    async query(sourceAsset, targetAsset, amountIn) {
+      return await this.queryMethod(sourceAsset, targetAsset, amountIn);
     },
 
     async chooseBestTrade(basedOnSource = true) {
-      this.calculatingSwapRoute = true;
       if (this.sourceAssetAmount == null) return;
       if (this.sourceAssetAmount === 0) {
         this.targetAssetAmount = 0;
         return;
       }
 
-      this.lastChangedSource = true;
-      let sourceDecimals = this.sourceAssetData.decimals;
-      console.log(sourceDecimals);
-      let sourceAmountInWei = parseUnits(this.sourceAssetAmount.toFixed(sourceDecimals), BigNumber.from(sourceDecimals));
-      let targetDecimals = this.targetAssetData.decimals;
-      let oracleReceivedAmountInWei = parseUnits(this.receivedAccordingToOracle.toFixed(targetDecimals), BigNumber.from(targetDecimals));
+      let decimals = this.sourceAssetData.decimals;
+      let amountInWei = parseUnits(this.sourceAssetAmount.toFixed(decimals), BigNumber.from(decimals));
 
-      console.log('receivedAccordingToOracle: ', this.receivedAccordingToOracle)
-      console.log('estimatedNeededTokens: ', this.estimatedNeededTokens)
-      const queryResponse =
-          this.swapDebtMode
-          ?
-          await this.query(this.targetAsset, this.sourceAsset, sourceAmountInWei)
-          :
-          await this.query(this.sourceAsset, this.targetAsset, sourceAmountInWei);
+      const sourceAssetAddress = TOKEN_ADDRESSES[this.sourceAsset];
+      const targetAssetAddress = TOKEN_ADDRESSES[this.targetAsset];
+      const paraSwapSDK = constructSimpleSDK({chainId: config.chainId, axios});
+      const swapData = await getSwapData(
+        paraSwapSDK,
+        config.depositSwapAddress,
+        sourceAssetAddress,
+        targetAssetAddress,
+        amountInWei,
+        config.ASSETS_CONFIG[this.sourceAsset].decimals,
+        config.ASSETS_CONFIG[this.targetAsset].decimals,
+      );
+      this.swapData = swapData;
+      console.log(this.swapData);
 
+      const estimated = swapData.simpleData.expectedAmount
+      console.log(estimated);
 
-      let estimated;
-      if (queryResponse) {
-        if (this.swapDebtMode) {
-          console.log(queryResponse);
-          estimated = queryResponse.amounts[queryResponse.amounts.length - 1];
-          console.log('estimated')
-          console.log(estimated);
-          this.calculatingSwapRoute = false;
-          const estimatedReceivedTokens = parseFloat(formatUnits(estimated, BigNumber.from(this.targetAssetData.decimals)));
-          console.log(estimatedReceivedTokens);
-          this.updateSlippageWithAmounts(estimatedReceivedTokens);
-        } else {
-          this.calculatingSwapRoute = false;
-          if (queryResponse.dex === 'PARA_SWAP') {
-            estimated = queryResponse.amounts[queryResponse.amounts.length - 1];
-            this.paraSwapRate = queryResponse.swapRate;
-          } else {
-            if (queryResponse instanceof BigNumber) {
-              estimated = queryResponse;
-            } else {
-              this.path = queryResponse.path;
-              this.adapters = queryResponse.adapters;
-              estimated = queryResponse.amounts[queryResponse.amounts.length - 1];
-            }
-          }
+      this.estimatedNeededTokens = this.sourceAssetAmount;
+      this.estimatedReceivedTokens = parseFloat(formatUnits(estimated, BigNumber.from(this.targetAssetData.decimals)));
+      console.log(this.estimatedReceivedTokens);
 
-          let estimatedReceived = parseFloat(formatUnits(estimated, BigNumber.from(this.targetAssetData.decimals)));
+      this.updateSlippageWithAmounts();
+      this.calculateHealthAfterTransaction();
 
-          if (this.feeMethods && this.feeMethods[this.swapDex]) {
-            this.fee = fromWei(await this.feeMethods[this.swapDex](this.sourceAsset, this.targetAsset, sourceAmountInWei, estimated));
-
-            estimatedReceived -= this.fee * estimatedReceived;
-          }
-
-          this.updateSlippageWithAmounts(estimatedReceived);
-        }
-
-        this.calculateHealthAfterTransaction();
-      }
     },
 
     async updateAmountsWithSlippage() {
-      this.targetAssetAmount =
-          this.swapDebtMode
-          ?
-          this.receivedAccordingToOracle * (1 + (this.userSlippage / 100 + (this.fee ? this.fee : 0)))
-          :
-          this.receivedAccordingToOracle * (1 - (this.userSlippage / 100 + (this.fee ? this.fee : 0)));
-
-
+      this.targetAssetAmount = this.receivedAccordingToOracle * (1 - this.userSlippage / 100);
       const targetInputChangeEvent = await this.$refs.targetInput.setCurrencyInputValue(this.targetAssetAmount);
-
-      this.estimatedReceivedTokens = this.targetAssetAmount;
-
       this.setSlippageWarning();
     },
 
-    async updateSlippageWithAmounts(estimatedReceivedTokens) {
+    async updateSlippageWithAmounts() {
       let dexSlippage = 0;
-      dexSlippage = (this.receivedAccordingToOracle - estimatedReceivedTokens) / estimatedReceivedTokens;
+      this.receivedAccordingToOracle = this.estimatedNeededTokens * this.assetPrices[this.sourceAssetData.symbol] / this.assetPrices[this.targetAssetData.symbol];
+      dexSlippage = (this.receivedAccordingToOracle - this.estimatedReceivedTokens) / this.estimatedReceivedTokens;
 
+      const SLIPPAGE_MARGIN = 0.3;
+      this.marketDeviation = parseFloat((100 * dexSlippage).toFixed(3));
 
-      if (this.checkMarketDeviation) {
-        dexSlippage = (this.receivedAccordingToOracle - estimatedReceivedTokens) / estimatedReceivedTokens;
-        this.marketDeviation = parseFloat((100 * dexSlippage).toFixed(3));
-      }
-
-      let slippageMargin = this.slippageMargin ? this.slippageMargin : config.SWAP_DEXS_CONFIG[this.swapDex].slippageMargin;
-
-      let updatedSlippage = slippageMargin + 100 * dexSlippage;
+      let updatedSlippage = SLIPPAGE_MARGIN + 100 * dexSlippage;
 
       this.userSlippage = parseFloat(updatedSlippage.toFixed(3));
 
@@ -487,25 +335,19 @@ export default {
         this.slippageWarning = 'Slippage exceeds 2%. Be careful.';
       } else if (this.userSlippage < this.marketDeviation) {
         this.slippageWarning = 'Slippage below current DEX slippage. Transaction will likely fail.';
-      } else if (parseFloat((this.userSlippage - this.marketDeviation).toFixed(3)) < 0.01) {
+      } else if (parseFloat((this.userSlippage - this.marketDeviation).toFixed(3)) < 0.1) {
         this.slippageWarning = 'Slippage close to current DEX slippage. Transaction can fail.';
       }
     },
 
     setupSourceAssetOptions() {
       this.sourceAssetOptions = [];
-      let sourceAssets;
-      if (this.sourceAssets) {
-        sourceAssets = this.sourceAssets;
-      } else {
-        sourceAssets = this.swapDexsConfig[this.swapDex].availableAssets;
-      }
-
-      sourceAssets.forEach(assetSymbol => {
-        const asset = this.sourceAssetsConfig[assetSymbol];
+      console.log('this.sourceAssets', this.sourceAssets);
+      this.sourceAssets.forEach(assetSymbol => {
+        console.log(assetSymbol);
+        const asset = config.ASSETS_CONFIG[assetSymbol];
         const assetOption = {
           symbol: assetSymbol,
-          short: asset.short,
           name: asset.name,
           logo: `src/assets/logo/${assetSymbol.toLowerCase()}.${asset.logoExt ? asset.logoExt : 'svg'}`
         };
@@ -515,19 +357,10 @@ export default {
 
     setupTargetAssetOptions() {
       this.targetAssetOptions = [];
-
-      let targetAssets;
-      if (this.targetAssets) {
-        targetAssets = this.targetAssets;
-      } else {
-        targetAssets = this.swapDexsConfig[this.swapDex].availableAssets;
-      }
-
-      targetAssets.forEach(assetSymbol => {
-        const asset = this.targetAssetsConfig[assetSymbol];
+      this.targetAssets.forEach(assetSymbol => {
+        const asset = config.ASSETS_CONFIG[assetSymbol];
         const assetOption = {
           symbol: assetSymbol,
-          short: asset.short,
           name: asset.name,
           logo: `src/assets/logo/${assetSymbol.toLowerCase()}.${asset.logoExt ? asset.logoExt : 'svg'}`
         };
@@ -538,17 +371,16 @@ export default {
     },
 
     setupSourceAsset() {
-      this.sourceAssetData = this.sourceAssetsConfig[this.sourceAsset];
+      this.sourceAssetData = config.ASSETS_CONFIG[this.sourceAsset];
     },
 
     setupTargetAsset() {
       if (this.targetAsset) {
-        this.targetAssetData = this.targetAssetsConfig[this.targetAsset];
+        this.targetAssetData = config.ASSETS_CONFIG[this.targetAsset];
       }
     },
 
     async sourceInputChange(changeEvent) {
-      this.currentSourceInputChangeEvent = changeEvent;
       this.maxButtonUsed = changeEvent.maxButtonUsed;
       this.checkingPrices = true;
       let targetInputChangeEvent;
@@ -558,18 +390,18 @@ export default {
         if (this.sourceAsset !== changeEvent.asset) {
           this.sourceAsset = changeEvent.asset;
           this.calculateSourceAssetBalance();
-          this.sourceAssetData = this.sourceAssetsConfig[this.sourceAsset];
+          this.sourceAssetData = config.ASSETS_CONFIG[this.sourceAsset];
           await this.chooseBestTrade(false);
         } else {
           let value = Number.isNaN(changeEvent.value) ? 0 : changeEvent.value;
           this.sourceAssetAmount = value;
-          this.estimatedNeededTokens = value;
 
           if (value !== 0) {
             await this.chooseBestTrade();
           } else {
             this.targetAssetAmount = 0;
             this.estimatedReceivedTokens = 0;
+            this.estimatedNeededTokens = 0;
             await this.$refs.targetInput.setCurrencyInputValue(0);
           }
         }
@@ -590,7 +422,7 @@ export default {
       } else {
         if (this.targetAsset !== changeEvent.asset) {
           this.targetAsset = changeEvent.asset;
-          this.targetAssetData = this.targetAssetsConfig[this.targetAsset];
+          this.targetAssetData = config.ASSETS_CONFIG[this.targetAsset];
           await this.chooseBestTrade(true);
         } else {
           this.targetAssetAmount = changeEvent.value;
@@ -616,7 +448,7 @@ export default {
     },
 
     calculateSourceAssetBalance() {
-      const sourceAssetBalance = this.assetBalances[this.sourceAsset];
+      const sourceAssetBalance = this.debtsPerAsset[this.sourceAsset].debt;
       this.sourceAssetBalance = sourceAssetBalance;
     },
 
@@ -625,10 +457,9 @@ export default {
     },
 
     reverseSwap() {
-      if (this.reverseSwapDisabled) return;
       const tempSource = this.sourceAsset;
-      this.sourceAssetData = this.sourceAssetsConfig[this.targetAsset];
-      this.targetAssetData = this.targetAssetsConfig[this.sourceAsset];
+      this.sourceAssetData = config.ASSETS_CONFIG[this.targetAsset];
+      this.targetAssetData = config.ASSETS_CONFIG[this.sourceAsset];
       this.sourceAsset = this.targetAsset;
       this.targetAsset = tempSource;
 
@@ -649,44 +480,12 @@ export default {
       this.sourceValidators = [
         {
           validate: async (value) => {
-            if (!this.swapDebtMode) {
-              if (value > parseFloat(this.assetBalances[this.sourceAsset])) {
-                return 'Amount exceeds the current balance.';
-              }
-            } else {
-              if (value > parseFloat(this.debtsPerAsset[this.sourceAsset].debt)) {
-                return 'Amount exceeds the current debt.';
-              }
-            }
-          },
-        }
-      ];
-      this.targetValidators = [
-        // {
-        // validate: async (value) => {
-        //   if (this.healthAfterTransaction < this.MIN_ALLOWED_HEALTH) {
-        //     return 'The health is below allowed limit.';
-        //   }
-        // }
-        // },
-        {
-          validate: async (value) => {
-            const allowed = this.targetAssetsConfig[this.targetAsset].maxExposure - this.targetAssetsConfig[this.targetAsset].currentExposure;
-
-            if (value > allowed) {
-              return `Max. allowed amount is ${allowed.toFixed(2)}.`;
+            if (value > parseFloat(this.assetBalances[this.sourceAsset])) {
+              return 'Amount exceeds the current deposit.';
             }
           }
-        }
+        },
       ];
-
-      if (this.customSourceValidators) {
-        this.sourceValidators.push(...this.customSourceValidators);
-      }
-
-      if (this.customTargetValidators) {
-        this.targetValidators.push(...this.customTargetValidators);
-      }
     },
 
     calculateHealthAfterTransaction() {
@@ -808,10 +607,6 @@ export default {
     margin-bottom: 53px;
   }
 
-  .modal-top-desc {
-    margin-bottom: 20px;
-  }
-
   .asset-info {
     display: flex;
     flex-direction: row;
@@ -888,10 +683,6 @@ export default {
     height: 20px;
     transform: translateY(-1px);
   }
-}
-
-.dex-toggle {
-  margin-bottom: 30px;
 }
 
 </style>
