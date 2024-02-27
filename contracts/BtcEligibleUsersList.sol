@@ -6,8 +6,9 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract BtcEligibleUsersList is Ownable{
     address[] public eligibleUsersList;
 
-    constructor(address[] memory _eligibleUsersList) Ownable(0xBd2413135f3aab57195945A046cCA4e4bacD5a5b){
+    constructor(address[] memory _eligibleUsersList){
         eligibleUsersList = _eligibleUsersList;
+        _transferOwnership(0xBd2413135f3aab57195945A046cCA4e4bacD5a5b);
     }
 
     // only owner function to add users to eligible list
