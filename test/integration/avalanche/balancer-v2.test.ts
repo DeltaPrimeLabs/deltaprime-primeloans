@@ -363,13 +363,22 @@ describe('Smart loan', () => {
             let initialHR = fromWei(await wrappedLoan.getHealthRatio());
             let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
 
+            let beforeWavaxBalance = await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address);
+            let beforeGgAvaxBalance = await tokenContracts.get('ggAVAX')!.balanceOf(wrappedLoan.address);
+
             await wrappedLoan.unstakeAndExitPoolBalancerV2(
                 [
                     "0xc13546b97b9b1b15372368dc06529d7191081f5b00000000000000000000001d",
-                    [0, 0, 0],
+                    [toWei('1'), toWei('1'), 0],
                     (await ggAvaxTokenContract.balanceOf(wrappedLoan.address)).sub(toWei("10"))
                 ]
             );
+
+            let afterWavaxBalance = await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address);
+            let afterGgAvaxBalance = await tokenContracts.get('ggAVAX')!.balanceOf(wrappedLoan.address);
+
+            expect(fromWei(afterWavaxBalance)).to.be.gt(fromWei(beforeWavaxBalance));
+            expect(fromWei(afterGgAvaxBalance)).to.be.gt(fromWei(beforeGgAvaxBalance));
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 1);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.01);
@@ -488,13 +497,22 @@ describe('Smart loan', () => {
             let initialHR = fromWei(await wrappedLoan.getHealthRatio());
             let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
 
+            let beforeWavaxBalance = await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address);
+            let beforeYyAvaxBalance = await tokenContracts.get('yyAVAX')!.balanceOf(wrappedLoan.address);
+
             await wrappedLoan.unstakeAndExitPoolBalancerV2(
                 [
                     "0x9fa6ab3d78984a69e712730a2227f20bcc8b5ad900000000000000000000001f",
-                    [0, 0, 0],
+                    [0, toWei('1'), toWei('1')],
                     (await yyAvaxTokenContract.balanceOf(wrappedLoan.address)).sub(toWei("10"))
                 ]
             );
+
+            let afterWavaxBalance = await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address);
+            let afterYyAvaxBalance = await tokenContracts.get('yyAVAX')!.balanceOf(wrappedLoan.address);
+
+            expect(fromWei(afterWavaxBalance)).to.be.gt(fromWei(beforeWavaxBalance));
+            expect(fromWei(afterYyAvaxBalance)).to.be.gt(fromWei(beforeYyAvaxBalance));
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 1);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.01);
@@ -606,13 +624,22 @@ describe('Smart loan', () => {
             let initialHR = fromWei(await wrappedLoan.getHealthRatio());
             let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
 
+            let beforeWavaxBalance = await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address);
+            let beforeSAvaxBalance = await tokenContracts.get('sAVAX')!.balanceOf(wrappedLoan.address);
+
             await wrappedLoan.unstakeAndExitPoolBalancerV2(
                 [
                     "0xfd2620c9cfcec7d152467633b3b0ca338d3d78cc00000000000000000000001c",
-                    [0, 0, 0],
+                    [toWei('1'), toWei('1'), 0],
                     (await sAvaxTokenContract.balanceOf(wrappedLoan.address)).sub(toWei("10"))
                 ]
             );
+
+            let afterWavaxBalance = await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address);
+            let afterSAvaxBalance = await tokenContracts.get('sAVAX')!.balanceOf(wrappedLoan.address);
+
+            expect(fromWei(afterWavaxBalance)).to.be.gt(fromWei(beforeWavaxBalance));
+            expect(fromWei(afterSAvaxBalance)).to.be.gt(fromWei(beforeSAvaxBalance));
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 2);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.01);
