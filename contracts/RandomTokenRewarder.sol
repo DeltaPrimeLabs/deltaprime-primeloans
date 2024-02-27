@@ -9,25 +9,23 @@ import "./SmartLoansFactory.sol";
 import "./Pool.sol";
 
 
-contract RandomTokenRewarder is
-VRFV2WrapperConsumerBase,
-ConfirmedOwner
-{
+contract RandomTokenRewarder is VRFV2WrapperConsumerBase, ConfirmedOwner {
     event RequestSent(uint256 requestId, uint32 numWords);
 
     // event for transferring reward to winner
     event RewardTransferred(address indexed winner, address indexed rewardToken, uint256 amount, uint256 blockNumber);
 
     // past requests Id.
-    uint256[] public requestIds;
-    uint256 public lastRequestId;
+    uint256 public lastRandomNumber;
+    bool public lastRandomNumberUsed;
+    uint256 public indexIncrementer;
 
     // Depends on the number of requested values that you want sent to the
     // fulfillRandomWords() function. Test and adjust
     // this limit based on the network that you select, the size of the request,
     // and the processing of the callback request in the fulfillRandomWords()
     // function.
-    uint32 callbackGasLimit = 1000000;
+    uint32 callbackGasLimit = 14000000;
 
     // The default is 3, but you can set this higher.
     uint16 requestConfirmations = 3;
@@ -95,16 +93,32 @@ ConfirmedOwner
         );
     }
 
-    function fulfillRandomWords(
-        uint256 _requestId,
-        uint256[] memory _randomWords
-    ) internal override {
-        uint256 randomWord = _randomWords[0];
+    function continueDistributionProcess() external onlyOwner{
+        if(lastRandomNumberUsed){
+            revert("Random number was already used");
+        } else{
+            address primeAccountAddress = findNextEligiblePrimeAccountAddress();
+            uint256 rewardBalance = IERC20(rewardToken).balanceOf(address(this));
+            lastRandomNumberUsed = true;
+            IERC20(rewardToken).transfer(primeAccountAddress, rewardBalance);
+            emit RewardTransferred(primeAccountAddress, rewardToken, rewardBalance, block.number);
+        }
+    }
+
+    function findNextEligiblePrimeAccountAddress() internal returns (address){
         SmartLoansFactory slf = SmartLoansFactory(smartLoansFactoryTUP);
         uint256 numberOfPrimeAccounts = slf.getLoansLength();
-        uint256 primeAccountIndex = randomWord % numberOfPrimeAccounts;
+        uint256 primeAccountIndex = (lastRandomNumber % numberOfPrimeAccounts) + indexIncrementer;
+        if(primeAccountIndex >= numberOfPrimeAccounts){
+            primeAccountIndex = primeAccountIndex - numberOfPrimeAccounts;
+        }
+
         bool found = false;
         while(!found){
+            if(gasleft() < 100000){
+                indexIncrementer = primeAccountIndex;
+                return address(0);
+            }
             if(isAccountEligible(slf.getLoans(primeAccountIndex, 1)[0])){
                 found = true;
                 break;
@@ -115,8 +129,26 @@ ConfirmedOwner
                 primeAccountIndex++;
             }
         }
-        address primeAccountAddress = slf.getLoans(primeAccountIndex, 1)[0];
+        return slf.getLoans(primeAccountIndex, 1)[0];
+    }
+
+    function fulfillRandomWords(
+        uint256 _requestId,
+        uint256[] memory _randomWords
+    ) internal override {
+        uint256 randomWord = _randomWords[0];
+        SmartLoansFactory slf = SmartLoansFactory(smartLoansFactoryTUP);
+
+        lastRandomNumber = randomWord;
+        lastRandomNumberUsed = false;
+
+        address primeAccountAddress = findNextEligiblePrimeAccountAddress();
+        if(primeAccountAddress == address(0)){
+            return;
+        }
+
         uint256 rewardBalance = IERC20(rewardToken).balanceOf(address(this));
+        lastRandomNumberUsed = true;
         IERC20(rewardToken).transfer(primeAccountAddress, rewardBalance);
         emit RewardTransferred(primeAccountAddress, rewardToken, rewardBalance, block.number);
     }
