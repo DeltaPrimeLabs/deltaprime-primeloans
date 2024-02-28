@@ -68,7 +68,6 @@ contract TokenManager is OwnableUpgradeable {
         return supportedTokensList;
     }
 
-
     function getAllTokenAssets() public view returns (bytes32[] memory result) {
         return assetToTokenAddress._inner._keys._inner._values;
     }
