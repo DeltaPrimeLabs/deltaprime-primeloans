@@ -73,7 +73,7 @@ contract RandomTokenRewarder is VRFV2WrapperConsumerBase, ConfirmedOwner {
         uint256 randomWord = _randomWords[0];
 
         uint256 primeAccountCount = btcEligibleUsersList.getEligibleUsersCount();
-        address primeAccountAddress = btcEligibleUsersList.getEligibleUsers(randomWord % primeAccountCount, 1)[0];
+        address primeAccountAddress = btcEligibleUsersList.eligibleUsersList(randomWord % primeAccountCount);
 
         uint256 rewardBalance = IERC20(rewardToken).balanceOf(address(this));
         IERC20(rewardToken).transfer(primeAccountAddress, rewardBalance);
