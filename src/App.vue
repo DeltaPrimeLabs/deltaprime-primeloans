@@ -68,7 +68,7 @@
           </a>
           <AppToggle class="top-bar__app-toggle"></AppToggle>
           <ThemeToggle class="top-bar__theme-toggle"></ThemeToggle>
-          <div class="protocol-insurance">
+          <div v-if="isSavingsPage" class="protocol-insurance">
             <span>Protocol insurance:</span>
             <span class="insurance-value">$1.5M</span>
             <InfoIcon class="info__icon" :tooltip="{content: 'Protocol Reserve Fund and Atomica insurance pools.', classes: 'info-tooltip'}" :classes="'info-tooltip'" ></InfoIcon>
@@ -134,6 +134,7 @@ export default {
       remainingTime: "",
       darkMode: false,
       showNoWalletBanner: window.noWalletInstalled,
+      isSavingsPage: false,
     };
   },
   async created() {
@@ -164,6 +165,7 @@ export default {
 
     if (window.location.href.includes('pools')) {
       this.showDepositBanner = true;
+      this.isSavingsPage = true;
     }
 
     if (window.location.href.includes('prime-account')) {
