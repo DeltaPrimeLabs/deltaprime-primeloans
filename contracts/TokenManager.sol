@@ -68,16 +68,6 @@ contract TokenManager is OwnableUpgradeable {
         return supportedTokensList;
     }
 
-    function getSupportedTokensAddressesAndDebtCoverage() public view returns (address[] memory, uint256[] memory) {
-        uint256 length = supportedTokensList.length;
-        uint256[] memory debtCoverages = new uint256[](length);
-
-        for (uint256 i; i != length; ++i) {
-            debtCoverages[i] = debtCoverage[supportedTokensList[i]];
-        }
-
-        return (supportedTokensList, debtCoverages);
-    }
 
     function getAllTokenAssets() public view returns (bytes32[] memory result) {
         return assetToTokenAddress._inner._keys._inner._values;

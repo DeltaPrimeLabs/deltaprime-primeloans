@@ -77,18 +77,6 @@ export default {
       gasPrice: 100000000000,
       chainId: 43114,
       accounts: [getKey('avalanche', 'deployer'), getKey('avalanche', 'admin')]
-    },
-    fantom: {
-      url: 'https://rpc.ftm.tools/',
-      gasPrice: 250000000000,
-      chainId: 250,
-      accounts: [getKey('fantom', 'deployer')]
-    },
-    celo: {
-      url: 'https://forno.celo.org',
-      gasPrice: 250000000000,
-      chainId: 42220,
-      accounts: [getKey('celo', 'deployer')],
     }
   },
   paths: {

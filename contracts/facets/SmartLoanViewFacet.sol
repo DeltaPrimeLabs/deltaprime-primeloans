@@ -21,6 +21,12 @@ contract SmartLoanViewFacet is ReentrancyGuardKeccak, SolvencyMethods {
         uint256 balance;
     }
 
+    struct AssetNameBalanceDebtCoverage {
+        bytes32 name;
+        uint256 balance;
+        uint256 debtCoverage;
+    }
+
     struct AssetNameDebt {
         bytes32 name;
         uint256 debt;
@@ -70,6 +76,23 @@ contract SmartLoanViewFacet is ReentrancyGuardKeccak, SolvencyMethods {
     function getSupportedTokensAddresses() external view returns (address[] memory) {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         return tokenManager.getSupportedTokensAddresses();
+    }
+
+    function getAllAssetsBalancesDebtCoverages() public view returns (AssetNameBalanceDebtCoverage[] memory) {
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        bytes32[] memory assets = tokenManager.getAllTokenAssets();
+        AssetNameBalanceDebtCoverage[] memory result = new AssetNameBalanceDebtCoverage[](assets.length);
+
+        for (uint256 i = 0; i < assets.length; i++) {
+            address assetAddress = tokenManager.getAssetAddress(assets[i], true);
+            result[i] = AssetNameBalanceDebtCoverage({
+                name : assets[i],
+                balance : IERC20(assetAddress).balanceOf(address(this)),
+                debtCoverage : tokenManager.debtCoverage(assetAddress)
+            });
+        }
+
+        return result;
     }
 
     function getAllAssetsBalances() public view returns (AssetNameBalance[] memory) {
