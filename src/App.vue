@@ -68,6 +68,11 @@
           </a>
           <AppToggle class="top-bar__app-toggle"></AppToggle>
           <ThemeToggle class="top-bar__theme-toggle"></ThemeToggle>
+          <div class="protocol-insurance">
+            <span>Protocol insurance:</span>
+            <span class="insurance-value">$1.5M</span>
+            <InfoIcon class="info__icon" :tooltip="{content: 'Protocol Reserve Fund and Atomica insurance pools.', classes: 'info-tooltip'}" :classes="'info-tooltip'" ></InfoIcon>
+          </div>
         </div>
         <!--      <div class="connect" v-if="!account" v-on:click="initNetwork()">Connect to wallet</div>-->
         <Wallet class="wallet"/>
@@ -96,9 +101,11 @@ import ThemeToggle from "./components/ThemeToggle.vue";
 import {getCountdownString} from "./utils/calculate";
 import AppToggle from "./components/AppToggle.vue";
 import ProtectedByBar from "./components/ProtectedByBar.vue";
+import InfoIcon from "./components/InfoIcon.vue";
 
 export default {
   components: {
+    InfoIcon,
     ProtectedByBar,
     AppToggle,
     ThemeToggle,
@@ -419,6 +426,28 @@ a {
 .top-bar__theme-toggle,
 .top-bar__app-toggle, {
   margin-left: 24px;
+}
+
+.protocol-insurance {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  height: 27px;
+  padding: 0 13px;
+  margin-left: 14px;
+  color: var(--protocol-insurance-text);
+  border: 1px solid var(--protocol-insurance-border);
+  border-radius: 16px;
+  font-size: $font-size-xsm;
+  font-weight: 500;
+  background-color: var(--protocol-insurance-background);
+
+  .insurance-value {
+    color: var(--protocol-insurance-value);
+    font-weight: 600;
+    margin: 0 6px;
+  }
 }
 
 </style>

@@ -611,4 +611,11 @@
   --bar__logo--hover-atomica: url("/src/assets/icons/securityLogos/atomica--light--hover.svg");
   --bar__logo--hover-salus: url("/src/assets/icons/securityLogos/salus--light--hover.svg");
   // endregion
+
+  // region ProtocolInsurance
+  --protocol-insurance-text: #{$dark-gray};
+  --protocol-insurance-value: #{$black};
+  --protocol-insurance-border: #{$delta-light};
+  --protocol-insurance-background: #{$violet-mist};
+  // endregion
 }
