@@ -194,6 +194,14 @@ functions:
   #   description: upload loan addresses on Arbitrum
   #   events:
   #     - schedule: rate(5 minutes)
+  assetApyApi:
+    handler: apis/apy.assetApyApi
+    memorySize: 512
+    description: Fetch APYS of all assets and farms
+    events:
+      - httpApi:
+          method: get
+          path: /apys
   getRewardsInfoApi:
     handler: apis/traderJoe.getRewardsInfoApi
     memorySize: 512
