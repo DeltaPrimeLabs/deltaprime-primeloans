@@ -37,12 +37,9 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         _amount = Math.min(_amount, token.balanceOf(msg.sender));
 
         address(token).safeTransferFrom(msg.sender, address(this), _amount);
-        if (token.balanceOf(address(this)) > 0) {
-            DiamondStorageLib.addOwnedAsset(_fundedAsset, address(token));
-        }
 
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        tokenManager.increaseProtocolExposure(_fundedAsset, _amount * 1e18 / 10 ** token.decimals());
+        _increaseExposure(tokenManager, address(token), _amount);
 
         emit Funded(msg.sender, _fundedAsset, _amount, block.timestamp);
     }
@@ -54,6 +51,18 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         DiamondStorageLib.addOwnedAsset(_asset, _address);
     }
 
+    function _processRepay(ITokenManager tokenManager, Pool fromAssetPool, address fromToken, uint256 repayAmount, uint256 receivedRepayTokenAmount) internal {
+        fromToken.safeApprove(address(fromAssetPool), 0);
+        fromToken.safeApprove(address(fromAssetPool), repayAmount);
+        fromAssetPool.repay(repayAmount);
+
+        if(receivedRepayTokenAmount > repayAmount) {
+            _increaseExposure(tokenManager, fromToken, receivedRepayTokenAmount - repayAmount);
+        }  else {
+            _decreaseExposure(tokenManager, fromToken, repayAmount - receivedRepayTokenAmount);
+        }
+    }
+
     /**
     * Funds the loan with a specified amount of a GLP
     * @dev Requires approval for stakedGLP token on frontend side
@@ -63,12 +72,9 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         IERC20Metadata stakedGlpToken = IERC20Metadata(0xaE64d55a6f09E4263421737397D1fdFA71896a69);
         _amount = Math.min(_amount, stakedGlpToken.balanceOf(msg.sender));
         address(stakedGlpToken).safeTransferFrom(msg.sender, address(this), _amount);
-        if (stakedGlpToken.balanceOf(address(this)) > 0) {
-            DiamondStorageLib.addOwnedAsset("GLP", address(stakedGlpToken));
-        }
 
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        tokenManager.increaseProtocolExposure("GLP", _amount);
+        _increaseExposure(tokenManager, address(stakedGlpToken), _amount);
 
         emit Funded(msg.sender, "GLP", _amount, block.timestamp);
     }
@@ -86,13 +92,10 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         _amount = Math.min(_amount, token.balanceOf(address(this)));
 
         address(token).safeTransfer(msg.sender, _amount);
-        if (token.balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset(_withdrawnAsset);
-        }
 
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        tokenManager.decreaseProtocolExposure(_withdrawnAsset, _amount * 1e18 / 10 ** token.decimals());
 
+        _decreaseExposure(tokenManager, address(token), _amount);
         emit Withdrawn(msg.sender, _withdrawnAsset, _amount, block.timestamp);
     }
 
@@ -104,15 +107,12 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         IERC20Metadata token = getERC20TokenInstance("GLP", true);
         IERC20Metadata stakedGlpToken = IERC20Metadata(0xaE64d55a6f09E4263421737397D1fdFA71896a69);
         _amount = Math.min(token.balanceOf(address(this)), _amount);
-
+        
         address(stakedGlpToken).safeTransfer(msg.sender, _amount);
-        if (token.balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset("GLP");
-        }
-
+        
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        tokenManager.decreaseProtocolExposure("GLP", _amount);
 
+        _decreaseExposure(tokenManager, address(stakedGlpToken), _amount);
         emit Withdrawn(msg.sender, "GLP", _amount, block.timestamp);
     }
 
@@ -131,10 +131,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         pool.borrow(_amount);
 
         IERC20Metadata token = getERC20TokenInstance(_asset, false);
-        tokenManager.increaseProtocolExposure(_asset, _amount * 1e18 / 10 ** token.decimals());
-        if (token.balanceOf(address(this)) > 0) {
-            DiamondStorageLib.addOwnedAsset(_asset, address(token));
-        }
+        _increaseExposure(tokenManager, address(token), _amount);
 
         emit Borrowed(msg.sender, _asset, _amount, block.timestamp);
     }
@@ -165,10 +162,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
         pool.repay(_amount);
 
-        if (token.balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset(_asset);
-        }
-        tokenManager.decreaseProtocolExposure(_asset, _amount * 1e18 / 10 ** token.decimals());
+        _decreaseExposure(tokenManager, address(token), _amount);
 
         emit Repaid(msg.sender, _asset, _amount, block.timestamp);
     }
@@ -217,8 +211,8 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         IERC20Metadata toToken = getERC20TokenInstance(_toAsset, false);
         IERC20Metadata fromToken = getERC20TokenInstance(_fromAsset, false);
 
-        Pool toAssetPool = Pool(tokenManager.getPoolAddress(_toAsset));
-        toAssetPool.borrow(_borrowAmount);
+        Pool(tokenManager.getPoolAddress(_toAsset)).borrow(_borrowAmount);
+        uint256 initialRepayTokenAmount = fromToken.balanceOf(address(this));
 
         {
             // swap toAsset to fromAsset
@@ -233,19 +227,13 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
                 path: _path,
                 adapters: _adapters
             });
-
+        
             router.swapNoSplit(trade, address(this), 0);
         }
-        
-        address(fromToken).safeApprove(address(fromAssetPool), 0);
-        address(fromToken).safeApprove(address(fromAssetPool), _repayAmount);
-        fromAssetPool.repay(_repayAmount);
 
-        if (fromToken.balanceOf(address(this)) > 0) {
-            DiamondStorageLib.addOwnedAsset(_fromAsset, address(fromToken));
-        } else {
-            DiamondStorageLib.removeOwnedAsset(_fromAsset);
-        }
+        _repayAmount = Math.min(_repayAmount, fromToken.balanceOf(address(this)));
+        
+        _processRepay(tokenManager, fromAssetPool, address(fromToken), _repayAmount, fromToken.balanceOf(address(this)) - initialRepayTokenAmount);
 
         emit DebtSwap(msg.sender, address(fromToken), address(toToken), _repayAmount, _borrowAmount, block.timestamp);
     }
@@ -261,25 +249,21 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         Pool toAssetPool = Pool(tokenManager.getPoolAddress(_toAsset));
         toAssetPool.borrow(_borrowAmount);
 
+        uint256 initialRepayTokenAmount = fromToken.balanceOf(address(this));
+
         {
+            
             // swap toAsset to fromAsset
             address(toToken).safeApprove(PARA_TRANSFER_PROXY, 0);
             address(toToken).safeApprove(PARA_TRANSFER_PROXY, _borrowAmount);
 
             (bool success, ) = PARA_ROUTER.call((abi.encodePacked(selector, data)));
             require(success, "Swap failed");
-        }
 
+        }
         _repayAmount = Math.min(fromToken.balanceOf(address(this)), _repayAmount);
-        address(fromToken).safeApprove(address(fromAssetPool), 0);
-        address(fromToken).safeApprove(address(fromAssetPool), _repayAmount);
-        fromAssetPool.repay(_repayAmount);
 
-        if (fromToken.balanceOf(address(this)) > 0) {
-            DiamondStorageLib.addOwnedAsset(_fromAsset, address(fromToken));
-        } else {
-            DiamondStorageLib.removeOwnedAsset(_fromAsset);
-        }
+        _processRepay(tokenManager, fromAssetPool, address(fromToken), _repayAmount, fromToken.balanceOf(address(this)) - initialRepayTokenAmount);
 
         emit DebtSwap(msg.sender, address(fromToken), address(toToken), _repayAmount, _borrowAmount, block.timestamp);
     }
