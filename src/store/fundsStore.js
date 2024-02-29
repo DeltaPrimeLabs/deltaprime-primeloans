@@ -10,8 +10,6 @@ import {formatUnits, fromWei, parseUnits, toWei} from '@/utils/calculate';
 import config from '@/config';
 import redstone from 'redstone-api';
 import {BigNumber, utils} from 'ethers';
-import * as AWS from 'aws-sdk';
-import awsConfig from '../../.secrets/awsConfig.json';
 import {getBinPrice, mergeArrays, paraSwapRouteToSimpleData, removePaddedTrailingZeros} from '../utils/calculate';
 import wrappedAbi from '../../test/abis/WAVAX.json';
 import erc20ABI from '../../test/abis/ERC20.json';
@@ -44,16 +42,6 @@ let TOKEN_ADDRESSES;
 
 let readProvider;
 let multicallContract;
-
-
-AWS.config.update({
-  region: 'us-east-1',
-  endpoint: 'dynamodb.us-east-1.amazonaws.com',
-  accessKeyId: awsConfig.accessKey,
-  secretAccessKey: awsConfig.secretKey
-});
-
-const docClient = new AWS.DynamoDB.DocumentClient();
 
 export default {
   namespaced: true,
@@ -331,10 +319,11 @@ export default {
             TableName: "apys-prod"
           };
 
-          const apyDoc = await docClient.scan(params).promise();
+          const apyDoc = await (await fetch('https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/apys')).json();
+
           const apys = {};
 
-          apyDoc.Items.map(apy => {
+          apyDoc.map(apy => {
             apys[apy.id] = {...apy};
           });
 
