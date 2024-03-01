@@ -69,8 +69,8 @@
           <AppToggle class="top-bar__app-toggle"></AppToggle>
           <ThemeToggle class="top-bar__theme-toggle"></ThemeToggle>
           <div v-if="isSavingsPage" class="protocol-insurance">
-            <span>Protocol insurance:</span>
-            <span class="insurance-value">$1.5M</span>
+            <span>Reserve Fund:</span>
+            <span class="insurance-value">$1,759,000</span>
             <InfoIcon class="info__icon" :tooltip="{content: 'Protocol Reserve Fund and Atomica insurance pools.', classes: 'info-tooltip'}" :classes="'info-tooltip'" ></InfoIcon>
           </div>
         </div>
@@ -184,7 +184,7 @@ export default {
 
     if (config.chainId === 43114) {
       if (window.location.href.includes('pools')) {
-        this.showAvalancheDepositorBanner = true;
+        // this.showAvalancheDepositorBanner = true;
       }
       if (window.location.href.includes('prime-account')) {
         // this.showAvalanchePrimeAccountBanner = true;
