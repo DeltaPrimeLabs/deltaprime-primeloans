@@ -37,6 +37,7 @@ provider:
     GMX_INCENTIVES_ARB_TABLE: gmx-incentives-arb-${opt:stage, "dev"}
     GM_OPEN_INTEREST_TABLE: gm-open-interest-${opt:stage, "dev"}
     REFERRAL_TABLE: referral-${opt:stage, "dev"}
+    TERMS_VERSION_TABLE: terms-version-${opt:stage, "dev"}
     TJ_API_KEY: ${file(./.secrets/traderJoe.json):apiKey}
     FUNC_RPC_AVA: ${file(./.secrets/funcRpc.json):avalanche}
     FUNC_RPC_ARB: ${file(./.secrets/funcRpc.json):arbitrum}
@@ -295,8 +296,22 @@ functions:
       - httpApi:
           method: POST
           path: /referral/create
-          # authorizer:
-          #   name: auth0Authorizer
+  getTermsInfoApi:
+    handler: apis/termsVersion.getTermsInfoApi
+    memorySize: 512
+    description: Get Terms verison info by PA address
+    events:
+      - httpApi:
+          method: get
+          path: /terms-version/{paAddress}
+  saveTermsInfoApi:
+    handler: apis/termsVersion.saveTermsInfoApi
+    memorySize: 512
+    description: Save Terms version info with PA address and wallet
+    events:
+      - httpApi:
+          method: POST
+          path: /terms-version/create
 
 resources:
   Resources:
@@ -456,6 +471,22 @@ resources:
         StreamSpecification:
           StreamViewType: "NEW_AND_OLD_IMAGES"
         TableName: ${self:provider.environment.REFERRAL_TABLE}
+    termsVersionTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: "paAddress"
+            AttributeType: "S"
+        KeySchema:
+          -
+            AttributeName: "paAddress"
+            KeyType: "HASH"
+        BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: "NEW_AND_OLD_IMAGES"
+        TableName: ${self:provider.environment.TERMS_VERSION_TABLE}
     # loansAvaTable:
     #   Type: AWS::DynamoDB::Table
     #   DeletionPolicy: Retain
