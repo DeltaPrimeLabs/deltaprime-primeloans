@@ -4,7 +4,7 @@ const getTermsInfoApi = (event, context, callback) => {
   const params = {
     TableName: process.env.TERMS_VERSION_TABLE,
     Key: {
-      paAddress: event.pathParameters.paAddress
+      walletAddress: event.pathParameters.walletAddress
     }
   };
 
@@ -31,8 +31,8 @@ const saveTermsInfoApi = (event, context, callback) => {
   const data = JSON.parse(event.body);
 
   const termsData = {
-    paAddress: data.paAddress,
     walletAddress: data.walletAddress,
+    paAddress: data.paAddress,
     signResult: data.signResult,
     termsVersion: data.termsVersion
   };

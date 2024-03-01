@@ -303,7 +303,7 @@ functions:
     events:
       - httpApi:
           method: get
-          path: /terms-version/{paAddress}
+          path: /terms-version/{walletAddress}
   saveTermsInfoApi:
     handler: apis/termsVersion.saveTermsInfoApi
     memorySize: 512
@@ -477,11 +477,11 @@ resources:
       Properties:
         AttributeDefinitions:
           -
-            AttributeName: "paAddress"
+            AttributeName: "walletAddress"
             AttributeType: "S"
         KeySchema:
           -
-            AttributeName: "paAddress"
+            AttributeName: "walletAddress"
             KeyType: "HASH"
         BillingMode: PAY_PER_REQUEST
         StreamSpecification:
