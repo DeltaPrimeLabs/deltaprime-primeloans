@@ -49,7 +49,14 @@
     <Banner v-if="showArbitrumCongestionBanner" :closable="true">
       The Arbitrum chain is fully congested resulting in failed transactions across apps. Please join our <a href='https://discord.gg/57EdDsvhxK' target='_blank'><b>Discord</b></a> to learn more
     </Banner>
-<!--    <Banner v-if="showAvalancheDepositorBanner" background="green-accent" :closable="true"></Banner>-->
+    <Banner v-if="showAvalancheDepositorBanner" background="green" :closable="true">
+      BTC APY will be boosted this Wednesday.
+      <a class="banner-link" href="https://discord.com/channels/889510301421166643/912702114252329060/1211682978258878504" target="_blank">
+        <b>
+          Learn more.
+        </b>
+      </a>
+    </Banner>
     <Banner v-if="showAvalanchePrimeAccountBanner" :closable="true">
       The Avalanche chain is currently down. Stay tuned
     </Banner>
@@ -61,6 +68,11 @@
           </a>
           <AppToggle class="top-bar__app-toggle"></AppToggle>
           <ThemeToggle class="top-bar__theme-toggle"></ThemeToggle>
+          <div v-if="isSavingsPage" class="protocol-insurance">
+            <span>Reserve Fund:</span>
+            <span class="insurance-value">$1,759,000</span>
+            <InfoIcon class="info__icon" :tooltip="{content: 'Protocol Reserve Fund and Atomica insurance pools.', classes: 'info-tooltip'}" :classes="'info-tooltip'" ></InfoIcon>
+          </div>
         </div>
         <!--      <div class="connect" v-if="!account" v-on:click="initNetwork()">Connect to wallet</div>-->
         <Wallet class="wallet"/>
@@ -89,9 +101,11 @@ import ThemeToggle from "./components/ThemeToggle.vue";
 import {getCountdownString} from "./utils/calculate";
 import AppToggle from "./components/AppToggle.vue";
 import ProtectedByBar from "./components/ProtectedByBar.vue";
+import InfoIcon from "./components/InfoIcon.vue";
 
 export default {
   components: {
+    InfoIcon,
     ProtectedByBar,
     AppToggle,
     ThemeToggle,
@@ -120,6 +134,7 @@ export default {
       remainingTime: "",
       darkMode: false,
       showNoWalletBanner: window.noWalletInstalled,
+      isSavingsPage: false,
     };
   },
   async created() {
@@ -150,6 +165,7 @@ export default {
 
     if (window.location.href.includes('pools')) {
       this.showDepositBanner = true;
+      this.isSavingsPage = true;
     }
 
     if (window.location.href.includes('prime-account')) {
@@ -171,7 +187,7 @@ export default {
         // this.showAvalancheDepositorBanner = true;
       }
       if (window.location.href.includes('prime-account')) {
-        this.showAvalanchePrimeAccountBanner = true;
+        // this.showAvalanchePrimeAccountBanner = true;
       }
     }
   },
@@ -412,6 +428,28 @@ a {
 .top-bar__theme-toggle,
 .top-bar__app-toggle, {
   margin-left: 24px;
+}
+
+.protocol-insurance {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  height: 27px;
+  padding: 0 13px;
+  margin-left: 14px;
+  color: var(--protocol-insurance-text);
+  border: 1px solid var(--protocol-insurance-border);
+  border-radius: 16px;
+  font-size: $font-size-xsm;
+  font-weight: 500;
+  background-color: var(--protocol-insurance-background);
+
+  .insurance-value {
+    color: var(--protocol-insurance-value);
+    font-weight: 600;
+    margin: 0 6px;
+  }
 }
 
 </style>

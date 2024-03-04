@@ -13,6 +13,10 @@
             Profit APY:&nbsp;{{ asset.apy / 100 | percent }}
           </div>
         </div>
+        <img v-if="asset.symbol === 'BTC' && avalancheChain"
+             src="src/assets/icons/icon_circle_star.svg"
+             class="point-star-icon"
+             v-tooltip="{content: 'Borrow $1000+ BTC and deposit in GMX BTC-USDC pool, to enter the daily $200 raffle.', classes: 'info-tooltip'}" />
       </div>
 
       <div class="table__cell table__cell--double-value balance">
@@ -217,6 +221,7 @@ export default {
       nativeAssetOptions: config.NATIVE_ASSET_TOGGLE_OPTIONS,
       selectedChart: 'TradingView',
       showTradingViewChart: false,
+      avalancheChain: window.avalancheChain,
     };
   },
   computed: {
@@ -1319,6 +1324,10 @@ export default {
   &:not(:last-child) {
     margin-right: 12px;
   }
+}
+
+.point-star-icon {
+  z-index: 1;
 }
 
 </style>
