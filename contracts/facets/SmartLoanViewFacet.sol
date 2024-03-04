@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: bd94fb12a9cfa9603571cf507e6f1fd926f90afb;
+// Last deployed from commit: 58540cc393d0ec84985be9436eb892d71bb3b0c6;
 pragma solidity 0.8.17;
 
 import "../ReentrancyGuardKeccak.sol";
@@ -19,6 +19,12 @@ contract SmartLoanViewFacet is ReentrancyGuardKeccak, SolvencyMethods {
     struct AssetNameBalance {
         bytes32 name;
         uint256 balance;
+    }
+
+    struct AssetNameBalanceDebtCoverage {
+        bytes32 name;
+        uint256 balance;
+        uint256 debtCoverage;
     }
 
     struct AssetNameDebt {
@@ -70,6 +76,23 @@ contract SmartLoanViewFacet is ReentrancyGuardKeccak, SolvencyMethods {
     function getSupportedTokensAddresses() external view returns (address[] memory) {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         return tokenManager.getSupportedTokensAddresses();
+    }
+
+    function getAllAssetsBalancesDebtCoverages() public view returns (AssetNameBalanceDebtCoverage[] memory) {
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        bytes32[] memory assets = tokenManager.getAllTokenAssets();
+        AssetNameBalanceDebtCoverage[] memory result = new AssetNameBalanceDebtCoverage[](assets.length);
+
+        for (uint256 i = 0; i < assets.length; i++) {
+            address assetAddress = tokenManager.getAssetAddress(assets[i], true);
+            result[i] = AssetNameBalanceDebtCoverage({
+                name : assets[i],
+                balance : IERC20(assetAddress).balanceOf(address(this)),
+                debtCoverage : tokenManager.debtCoverage(assetAddress)
+            });
+        }
+
+        return result;
     }
 
     function getAllAssetsBalances() public view returns (AssetNameBalance[] memory) {

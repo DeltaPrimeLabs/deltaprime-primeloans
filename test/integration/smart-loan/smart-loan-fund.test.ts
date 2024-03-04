@@ -11,7 +11,7 @@ import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import {
     addMissingTokenContracts,
     Asset,
-    AssetNameBalance,
+    AssetNameBalance, AssetNameBalanceDebtCoverage,
     AssetNameDebt,
     AssetNamePrice,
     convertAssetsListToSupportedAssets,
@@ -161,6 +161,19 @@ describe('Smart loan', () => {
                 new AssetNameBalance("AVAX", BigNumber.from("0")),
                 new AssetNameBalance("ETH", BigNumber.from("0")),
                 new AssetNameBalance("MCKUSD", toWei("300")),
+            ])
+        });
+
+        it("should return all assets balances and debt coverages", async () => {
+            let result = await wrappedLoan.getAllAssetsBalancesDebtCoverages();
+            let assetsNameBalance = [];
+            for (const r of result) {
+                assetsNameBalance.push(new AssetNameBalanceDebtCoverage(fromBytes32(r[0]), r[1], r[2]));
+            }
+            expect(assetsNameBalance).to.eql([
+                new AssetNameBalanceDebtCoverage("AVAX", BigNumber.from("0"), toWei("0.8333333333333333")),
+                new AssetNameBalanceDebtCoverage("ETH", BigNumber.from("0"), toWei("0.8333333333333333")),
+                new AssetNameBalanceDebtCoverage("MCKUSD", toWei("300"), toWei("0.8333333333333333")),
             ])
         });
 
