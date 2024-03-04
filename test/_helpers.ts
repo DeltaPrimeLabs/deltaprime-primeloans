@@ -1111,6 +1111,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         [
             'initialize',
             'getAllAssetsBalances',
+            'getAllAssetsBalancesDebtCoverages',
             'getDebts',
             'getPercentagePrecision',
             'getAccountFrozenSince',
@@ -1333,6 +1334,18 @@ export class AssetNameBalance {
     constructor(name: string, balance: BigNumber) {
         this.name = name;
         this.balance = balance;
+    }
+}
+
+export class AssetNameBalanceDebtCoverage {
+    name: string;
+    balance: BigNumber;
+    debtCoverage: BigNumber;
+
+    constructor(name: string, balance: BigNumber, debtCoverage: BigNumber) {
+        this.name = name;
+        this.balance = balance;
+        this.debtCoverage = debtCoverage;
     }
 }
 
