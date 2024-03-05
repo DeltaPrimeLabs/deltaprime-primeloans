@@ -710,6 +710,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                     'getStakedPositionsPrices',
                     'getAllPricesForLiquidation',
                     'getDebt',
+                    'getTotalTraderJoeV2',
                     'getDebtWithPrices',
                     'getPrice',
                     'getPrices',
