@@ -5,7 +5,7 @@ import "../ReentrancyGuardKeccak.sol";
 import "../OnlyOwnerOrInsolvent.sol";
 import "../interfaces/joe-v2/ILBRouter.sol";
 import "../interfaces/joe-v2/ILBFactory.sol";
-import "../interfaces/joe-v2/IRewarder.sol";
+import "../interfaces/joe-v2/ITraderJoeV2Rewarder.sol";
 import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 
 //This path is updated during deployment
@@ -49,7 +49,7 @@ abstract contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, 
         return (amountX, amountY);
     }
 
-    function claimReward(IRewarder.MerkleEntry[] calldata merkleEntries) external nonReentrant onlyOwner {
+    function claimReward(ITraderJoeV2Rewarder.MerkleEntry[] calldata merkleEntries) external nonReentrant onlyOwner {
         uint256 length = merkleEntries.length;
         IERC20[] memory tokens = new IERC20[](length);
         uint256[] memory beforeBalances = new uint256[](length);
@@ -58,7 +58,7 @@ abstract contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, 
             beforeBalances[i] = tokens[i].balanceOf(address(this));
         }
 
-        IRewarder rewarder = IRewarder(REWARDER);
+        ITraderJoeV2Rewarder rewarder = ITraderJoeV2Rewarder(REWARDER);
         rewarder.batchClaim(merkleEntries);
 
         for (uint256 i; i != length; ++i) {
