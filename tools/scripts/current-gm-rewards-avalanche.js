@@ -35,7 +35,11 @@ async function runWithTimeout(promises, timeoutMs) {
         ]);
     } catch (error) {
         if (error.message === 'Timeout') {
-            currentSleepTimeMs += 5000;
+            if(currentSleepTimeMs < 15000){
+                currentSleepTimeMs += 5000;
+            } else {
+                currentSleepTimeMs = 0;
+            }
             console.log(`Operation timed out, retrying after ${currentSleepTimeMs/1000}seconds...`);
             await sleep(currentSleepTimeMs); // Sleep for 5000 milliseconds (5 seconds)
             return await runWithTimeout(promises, timeoutMs); // For automatic retry
@@ -51,8 +55,8 @@ async function promiseAllInBatches(task, items, batchSize) {
 
         console.log(`Processing from position ${position} to ${batchSize}`)
         const itemsForBatch = items.slice(position, position + batchSize);
-
-        results = [...results, ...await runWithTimeout(itemsForBatch.map(item => task(item)), 5000)];
+        currentSleepTimeMs = 0;
+        results = [...results, ...await runWithTimeout(itemsForBatch.map(item => task(item)), 2000)];
 
 
         position += batchSize;
@@ -66,7 +70,10 @@ async function fetchData(maxTimestamp) {
 
     const task = (loan) => fetch(` https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/gmx-incentives-remake/${loan}`)
 
-    let resps = await promiseAllInBatches(task, loans, 250);
+    console.log(`LONS: ${loans.length}`)
+    loans = loans.slice(3000, 4500);
+
+    let resps = await promiseAllInBatches(task, loans, 200);
 
 
     let jsons = await Promise.all(resps.map(json => json.json()))
@@ -101,7 +108,7 @@ async function fetchData(maxTimestamp) {
 
 
 
-    fs.writeFileSync('src/data/avalanche/GM_EPOCH_4.json', JSON.stringify(json1))
+    fs.writeFileSync('src/data/avalanche/GM_EPOCH_4_3.json', JSON.stringify(json1))
 
     console.log('collected Avax: ', collectedAvax)
 }
@@ -186,6 +193,6 @@ function checkNegativeAccounts() {
 
 
 }
-fetchData(Date.now())
+// fetchData(Date.now())
 // checkNegativeAccounts()
-// createDiffJson()
+createDiffJson()
