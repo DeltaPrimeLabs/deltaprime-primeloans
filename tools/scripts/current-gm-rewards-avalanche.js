@@ -14,13 +14,49 @@ let factory = new ethers.Contract('0x3Ea9D480295A73fd2aF95b4D96c2afF88b21B03D', 
 
 let collectedTotal = 0;
 
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Timeout function that rejects after a specified time
+function timeout(ms) {
+    return new Promise((resolve, reject) => setTimeout(() => reject(new Error('Timeout')), ms));
+}
+
+let currentSleepTimeMs = 0;
+
+// Function to perform your async operations with retry on timeout
+async function runWithTimeout(promises, timeoutMs) {
+    try {
+        // Race the promises against a timeout
+        return await Promise.race([
+            Promise.all(promises),
+            timeout(timeoutMs)
+        ]);
+    } catch (error) {
+        if (error.message === 'Timeout') {
+            currentSleepTimeMs += 5000;
+            console.log(`Operation timed out, retrying after ${currentSleepTimeMs/1000}seconds...`);
+            await sleep(currentSleepTimeMs); // Sleep for 5000 milliseconds (5 seconds)
+            return await runWithTimeout(promises, timeoutMs); // For automatic retry
+        }
+        throw error; // For other errors
+    }
+}
+
 async function promiseAllInBatches(task, items, batchSize) {
     let position = 0;
     let results = [];
     while (position < items.length) {
+
+        console.log(`Processing from position ${position} to ${batchSize}`)
         const itemsForBatch = items.slice(position, position + batchSize);
-        results = [...results, ...await Promise.all(itemsForBatch.map(item => task(item)))];
+
+        results = [...results, ...await runWithTimeout(itemsForBatch.map(item => task(item)), 5000)];
+
+
         position += batchSize;
+        // await sleep(1000); // Sleep for 5000 milliseconds (5 seconds)
     }
     return results;
 }
@@ -30,7 +66,7 @@ async function fetchData(maxTimestamp) {
 
     const task = (loan) => fetch(` https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/gmx-incentives-remake/${loan}`)
 
-    let resps = await promiseAllInBatches(task, loans, 50);
+    let resps = await promiseAllInBatches(task, loans, 250);
 
 
     let jsons = await Promise.all(resps.map(json => json.json()))
