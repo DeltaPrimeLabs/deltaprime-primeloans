@@ -208,10 +208,10 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
             if (address(this).balance > 0) {
                 uint256 transferAmount = address(this).balance * partToReturnBonus / 2 / 10 ** 18;
                 payable(DeploymentConstants.getStabilityPoolAddress()).safeTransferETH(transferAmount);
-                emit LiquidationTransfer(DeploymentConstants.getStabilityPoolAddress(), "AVAX", transferAmount, block.timestamp);
+                emit LiquidationTransfer(DeploymentConstants.getStabilityPoolAddress(), DeploymentConstants.getNativeTokenSymbol(), transferAmount, block.timestamp);
 
                 payable(DeploymentConstants.getTreasuryAddress()).safeTransferETH(transferAmount);
-                emit LiquidationFeesTransfer(DeploymentConstants.getTreasuryAddress(), "AVAX", transferAmount, block.timestamp);
+                emit LiquidationFeesTransfer(DeploymentConstants.getTreasuryAddress(), DeploymentConstants.getNativeTokenSymbol(), transferAmount, block.timestamp);
 
                 _decreaseExposure(tokenManager, DeploymentConstants.getNativeToken(), transferAmount*2);
             }
