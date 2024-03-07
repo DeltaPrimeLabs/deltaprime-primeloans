@@ -21,7 +21,7 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
     uint256 private constant _MAX_HEALTH_AFTER_LIQUIDATION = 1.042e18;
 
     //IMPORTANT: KEEP IT IDENTICAL ACROSS FACETS TO BE PROPERLY UPDATED BY DEPLOYMENT SCRIPTS
-    uint256 private constant _MAX_LIQUIDATION_BONUS = 200;
+    uint256 private constant _MAX_LIQUIDATION_BONUS = 100;
 
     using TransferHelper for address payable;
     using TransferHelper for address;
@@ -206,11 +206,14 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
         if(partToReturnBonus > 0){
             // Native token transfer
             if (address(this).balance > 0) {
-                emit LiquidationTransfer(DeploymentConstants.getStabilityPoolAddress(), "AVAX", address(this).balance * partToReturnBonus / 2 / 10 ** 18, block.timestamp);
-                payable(DeploymentConstants.getStabilityPoolAddress()).safeTransferETH(address(this).balance * partToReturnBonus / 2 / 10 ** 18);
+                uint256 transferAmount = address(this).balance * partToReturnBonus / 2 / 10 ** 18;
+                payable(DeploymentConstants.getStabilityPoolAddress()).safeTransferETH(transferAmount);
+                emit LiquidationTransfer(DeploymentConstants.getStabilityPoolAddress(), "AVAX", transferAmount, block.timestamp);
+                tokenManager.decreaseProtocolExposure(DeploymentConstants.getNativeTokenSymbol(), transferAmount);
 
-                emit LiquidationFeesTransfer(DeploymentConstants.getTreasuryAddress(), "AVAX", address(this).balance * partToReturnBonus / 10 ** 18, block.timestamp);
-                payable(DeploymentConstants.getTreasuryAddress()).safeTransferETH(address(this).balance * partToReturnBonus / 10 ** 18);
+                payable(DeploymentConstants.getTreasuryAddress()).safeTransferETH(transferAmount);
+                emit LiquidationFeesTransfer(DeploymentConstants.getTreasuryAddress(), "AVAX", transferAmount, block.timestamp);
+                tokenManager.decreaseProtocolExposure(DeploymentConstants.getNativeTokenSymbol(), transferAmount);
             }
 
             for (uint256 i; i < assetsOwned.length; i++) {
@@ -221,13 +224,14 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
                 uint256 balance = token.balanceOf(address(this));
 
                 if(balance > 0){
-                    address(token).safeTransfer(DeploymentConstants.getStabilityPoolAddress(), balance * partToReturnBonus / 2 / 10 ** 18);
-                    emit LiquidationTransfer(DeploymentConstants.getStabilityPoolAddress(), assetsOwned[i], balance * partToReturnBonus / 2 / 10 ** 18, block.timestamp);
-                    tokenManager.decreaseProtocolExposure(assetsOwned[i], balance * partToReturnBonus / 2 / 10 ** 18);
+                    uint256 transferAmount = balance * partToReturnBonus / 2 / 10 ** 18;
+                    address(token).safeTransfer(DeploymentConstants.getStabilityPoolAddress(), transferAmount);
+                    emit LiquidationTransfer(DeploymentConstants.getStabilityPoolAddress(), assetsOwned[i], transferAmount, block.timestamp);
+                    tokenManager.decreaseProtocolExposure(assetsOwned[i], transferAmount);
 
-                    address(token).safeTransfer(DeploymentConstants.getTreasuryAddress(), balance * partToReturnBonus / 2 /10 ** 18);
-                    emit LiquidationFeesTransfer(DeploymentConstants.getTreasuryAddress(), assetsOwned[i], balance * partToReturnBonus / 2 / 10 ** 18, block.timestamp);
-                    tokenManager.decreaseProtocolExposure(assetsOwned[i], balance * partToReturnBonus / 2 / 10 ** 18);
+                    address(token).safeTransfer(DeploymentConstants.getTreasuryAddress(), transferAmount);
+                    emit LiquidationFeesTransfer(DeploymentConstants.getTreasuryAddress(), assetsOwned[i], transferAmount, block.timestamp);
+                    tokenManager.decreaseProtocolExposure(assetsOwned[i], transferAmount);
 
                 }
 

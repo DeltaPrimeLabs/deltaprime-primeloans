@@ -79,7 +79,7 @@ describe('Test liquidator', () => {
 
 
         before("deploy factory, exchange, wrapped native token pool and USD pool", async () => {
-            [owner, depositor, borrower, borrower2, borrower3, borrower4] = await getFixedGasSigners(10000000);
+            [owner, depositor, borrower, borrower2, borrower3, borrower4] = await ethers.getSigners();
             let assetsList = ['AVAX', 'USDC'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'AVAX', airdropList: [borrower, depositor, borrower2, borrower3, borrower4]},
@@ -88,7 +88,10 @@ describe('Test liquidator', () => {
 
             diamondAddress = await deployDiamond();
 
-            smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
+            const provider = waffle.provider;
+            console.log(`Owner: ${owner.address}`)
+            console.log(fromWei(await provider.getBalance(owner.address)));
+            smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact, [], {gasLimit: 5_000_000, gasPrice: 22579213750}) as SmartLoansFactory;
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
             tokensPrices = await getTokensPricesMap(assetsList, "avalanche", getRedstonePrices, []);
