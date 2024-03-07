@@ -209,11 +209,11 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
                 uint256 transferAmount = address(this).balance * partToReturnBonus / 2 / 10 ** 18;
                 payable(DeploymentConstants.getStabilityPoolAddress()).safeTransferETH(transferAmount);
                 emit LiquidationTransfer(DeploymentConstants.getStabilityPoolAddress(), "AVAX", transferAmount, block.timestamp);
-                tokenManager.decreaseProtocolExposure(DeploymentConstants.getNativeTokenSymbol(), transferAmount);
 
                 payable(DeploymentConstants.getTreasuryAddress()).safeTransferETH(transferAmount);
                 emit LiquidationFeesTransfer(DeploymentConstants.getTreasuryAddress(), "AVAX", transferAmount, block.timestamp);
-                tokenManager.decreaseProtocolExposure(DeploymentConstants.getNativeTokenSymbol(), transferAmount);
+
+                _decreaseExposure(tokenManager, DeploymentConstants.getNativeToken(), transferAmount*2);
             }
 
             for (uint256 i; i < assetsOwned.length; i++) {
@@ -227,11 +227,11 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
                     uint256 transferAmount = balance * partToReturnBonus / 2 / 10 ** 18;
                     address(token).safeTransfer(DeploymentConstants.getStabilityPoolAddress(), transferAmount);
                     emit LiquidationTransfer(DeploymentConstants.getStabilityPoolAddress(), assetsOwned[i], transferAmount, block.timestamp);
-                    tokenManager.decreaseProtocolExposure(assetsOwned[i], transferAmount);
 
                     address(token).safeTransfer(DeploymentConstants.getTreasuryAddress(), transferAmount);
                     emit LiquidationFeesTransfer(DeploymentConstants.getTreasuryAddress(), assetsOwned[i], transferAmount, block.timestamp);
-                    tokenManager.decreaseProtocolExposure(assetsOwned[i], transferAmount);
+
+                    _decreaseExposure(tokenManager, address(token), transferAmount*2);
 
                 }
 
