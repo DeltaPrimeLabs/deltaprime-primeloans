@@ -12,7 +12,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
     let SmartLoanLiquidationFacet = await deploy("SmartLoanLiquidationFacet", {
         from: deployer,
-        gasLimit: 50000000,
+        gasLimit: 80000000,
         args: [],
     });
 
