@@ -21,7 +21,7 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
     uint256 private constant _MAX_HEALTH_AFTER_LIQUIDATION = 1.042e18;
 
     //IMPORTANT: KEEP IT IDENTICAL ACROSS FACETS TO BE PROPERLY UPDATED BY DEPLOYMENT SCRIPTS
-    uint256 private constant _MAX_LIQUIDATION_BONUS = 100;
+    uint256 private constant _MAX_LIQUIDATION_BONUS = 200;
 
     using TransferHelper for address payable;
     using TransferHelper for address;
