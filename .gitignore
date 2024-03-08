@@ -17,3 +17,5 @@ tools/liquidation/.private*
 .openzeppelin
 typechain
 tenderly.yaml
+
+.env
