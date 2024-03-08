@@ -25,6 +25,7 @@
     "size": "yarn run hardhat size-contracts"
   },
   "dependencies": {
+    "@layerzerolabs/solidity-examples": "^1.1.0",
     "redstone-sdk": "1.0.7",
     "@chainlink/contracts": "0.8.0",
     "@apollo/client": "^3.7.2",
