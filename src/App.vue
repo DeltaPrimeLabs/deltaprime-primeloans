@@ -105,15 +105,17 @@ import {mapActions, mapState} from 'vuex';
 import config from '@/config';
 
 const ethereum = window.ethereum;
+const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 import Vue from 'vue';
 import Button from './components/Button';
 import ProgressBar from './components/ProgressBar';
 import ThemeToggle from './components/ThemeToggle.vue';
-import {getCountdownString} from './utils/calculate';
+import {fromWei, getCountdownString} from './utils/calculate';
 import AppToggle from './components/AppToggle.vue';
 import ProtectedByBar from './components/ProtectedByBar.vue';
 import InfoIcon from './components/InfoIcon.vue';
 import TermsModal from './components/TermsModal.vue';
+import {combineLatest, forkJoin, map} from 'rxjs';
 
 export default {
   components: {
@@ -147,6 +149,7 @@ export default {
       darkMode: false,
       showNoWalletBanner: window.noWalletInstalled,
       isSavingsPage: false,
+      signingTermsInProgress: false,
     };
   },
   async created() {
@@ -217,7 +220,8 @@ export default {
   computed: {
     ...mapState('network', ['account', 'provider']),
     ...mapState('fundsStore', ['protocolPaused', 'oracleError', 'smartLoanContract']),
-    ...mapState('serviceRegistry', ['modalService', 'termsService', 'accountService']),
+    ...mapState('serviceRegistry', ['modalService', 'termsService', 'accountService', 'poolService']),
+    ...mapState('poolStore', ['pools'])
   },
   methods: {
     ...mapActions('network', ['initNetwork']),
@@ -326,25 +330,71 @@ export default {
     },
 
     checkTerms() {
-      this.accountService.observeAccountLoaded().subscribe(async account => {
-        const isSavingsPage = window.location.href.includes('pools');
-        const signedTerms = await this.termsService.checkTerms(account);
-        console.log(signedTerms);
-        const requiredCheckType = isSavingsPage ? 'SAVINGS' : 'PRIME_ACCOUNT';
-        const termsForCurrentPage = signedTerms.find(terms => terms.type === requiredCheckType);
-        if (termsForCurrentPage) {
-          console.log('terms signed');
-        } else {
-          const modalInstance = this.openModal(TermsModal);
-          modalInstance.$on('SIGN_TERMS', async () => {
-            const signResult = await this.termsService.signTerms(account, this.provider, isSavingsPage)
-            const paAddress = isSavingsPage ? null : this.smartLoanContract.address;
-            const type = isSavingsPage ? 'SAVINGS' : 'PRIME_ACCOUNT'
-            await this.termsService.saveSignedTerms(paAddress, account, signResult, type);
-            this.closeModal();
-          })
-        }
-      });
+      console.log('checking terms');
+      combineLatest([
+        this.accountService.observeAccountLoaded(),
+        this.accountService.observeSmartLoanContract$(),
+        this.poolService.observePools()
+      ])
+        .subscribe(([walletAddress, smartLoanContract, pools]) => {
+          console.warn('-_---__---__---__---___--__CHECK TERMS--___--___--__---__---___---');
+          console.log('account', walletAddress);
+          console.log('smartLoanContract', smartLoanContract);
+          console.log('pools', pools);
+          const isSavingsPage = window.location.href.includes('pools');
+
+          if (isSavingsPage) {
+            forkJoin(pools.map(pool => pool.contract.balanceOf(walletAddress)))
+              .subscribe(bigNumberBalances => {
+                const balances = bigNumberBalances.map(balance => fromWei(balance));
+                console.log(balances);
+                if (balances.every(balance => balance === 0)) {
+                  console.log('SAVINGS PAGE - no deposits - terms not required');
+                } else {
+                  console.log('SAVINGS PAGE - some deposit - checking terms');
+                  this.termsService.checkTerms(walletAddress).then(signedTerms => {
+                    const termsForCurrentPage = signedTerms.find(terms => terms.type === 'SAVINGS');
+                    console.log(termsForCurrentPage);
+                    if (termsForCurrentPage === undefined) {
+                      console.log('SAVINGS PAGE - some deposit - terms not signed');
+                      this.handleTermsSign(walletAddress);
+                    }
+                  })
+                }
+              });
+          } else {
+            console.log('PA PAGE - checking PA contract');
+            console.log(smartLoanContract);
+            if (smartLoanContract.address === NULL_ADDRESS) {
+              console.log('PA PAGE - no account - terms not required');
+            } else {
+              console.log('PA PAGE - account created - checking terms');
+              this.termsService.checkTerms(walletAddress).then(signedTerms => {
+                console.log(signedTerms);
+                const termsForCurrentPage = signedTerms.find(terms => terms.type === 'PRIME_ACCOUNT');
+                if (termsForCurrentPage === undefined) {
+                  console.log('PA PAGE - account created - terms not signed');
+                  if (!this.signingTermsInProgress) {
+                    this.handleTermsSign(walletAddress);
+                  }
+                } else {
+                  console.log('PA PAGE - account created - terms signed');
+                }
+              });
+            }
+          }
+        })
+    },
+
+    handleTermsSign(walletAddress, isSavings, paAddress) {
+      this.signingTermsInProgress = true;
+      const termsType = isSavings ? 'SAVINGS' : 'PRIME_ACCOUNT';
+      const modalInstance = this.openModal(TermsModal);
+      modalInstance.$on('SIGN_TERMS', async () => {
+        const signResult = await this.termsService.signTerms(walletAddress, this.provider, true)
+        await this.termsService.saveSignedTerms(paAddress, walletAddress, signResult, termsType);
+        this.closeModal();
+      })
     },
 
   },

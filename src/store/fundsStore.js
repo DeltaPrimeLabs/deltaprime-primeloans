@@ -599,29 +599,23 @@ export default {
       commit('setHistoricalSmartLoanContract', historicalSmartLoanContract);
       commit('setReadSmartLoanContract', readSmartLoanContract);
       commit('setSmartLoanContract', smartLoanContract);
-    },
-
-    async createLoan({state, rootState}) {
-      const provider = rootState.network.provider;
-
-      if (!(await signMessage(provider, loanTermsToSign, rootState.network.account))) return;
-
-      const transaction = (await wrapContract(state.smartLoanFactoryContract)).createLoan();
-
-      await awaitConfirmation(transaction, provider, 'createLoan');
+      rootState.serviceRegistry.accountService.emitSmartLoanContract(smartLoanContract);
     },
 
     async createLoanAndDeposit({state, rootState, commit}, {request}) {
       const provider = rootState.network.provider;
       const amountInWei = parseUnits(request.value.toString(), request.assetDecimals);
 
-      if (!(await signMessage(provider, loanTermsToSign, rootState.network.account))) return;
+      const signResult = await signMessage(provider, loanTermsToSign, rootState.network.account);
+      if (!signResult) return;
 
       const transaction = await (await wrapContract(state.smartLoanFactoryContract)).createLoan();
 
       let tx = await awaitConfirmation(transaction, provider, 'create loan');
 
       const smartLoanAddress = getLog(tx, SMART_LOAN_FACTORY.abi, 'SmartLoanCreated').args.accountAddress;
+
+      await rootState.serviceRegistry.termsService.saveSignedTerms(smartLoanAddress, rootState.network.account, signResult, 'PRIME_ACCOUNT');
 
       const fundToken = new ethers.Contract(request.assetAddress, erc20ABI, provider.getSigner());
 
@@ -671,7 +665,8 @@ export default {
       const provider = rootState.network.provider;
       const nativeAssetOptions = config.NATIVE_ASSET_TOGGLE_OPTIONS;
 
-      if (!(await signMessage(provider, loanTermsToSign, rootState.network.account))) return;
+      const signResult = await signMessage(provider, loanTermsToSign, rootState.network.account);
+      if (!signResult) return;
 
       //TODO: make it more robust
       if (asset === nativeAssetOptions[0]) {
@@ -700,6 +695,11 @@ export default {
       const transaction = config.chainId === 43114 ?
         await wrappedSmartLoanFactoryContract.createAndFundLoan(toBytes32(asset.symbol), fundTokenContract.address, amount)
         : await wrappedSmartLoanFactoryContract.createAndFundLoan(toBytes32(asset.symbol), amount);
+
+      const smartLoanAddress = getLog(transaction, SMART_LOAN_FACTORY.abi, 'SmartLoanCreated').args.accountAddress;
+
+      await rootState.serviceRegistry.termsService.saveSignedTerms(smartLoanAddress, rootState.network.account, signResult, 'PRIME_ACCOUNT');
+
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();

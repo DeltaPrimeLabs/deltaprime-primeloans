@@ -71,7 +71,9 @@ export default {
       const wallet = rootState.network.account;
 
       if (fromWei(await poolContract.balanceOf(wallet)) === 0) {
-        if (!(await signMessage(provider, depositTermsToSign, rootState.network.account, true))) return;
+        const signResult = await signMessage(provider, depositTermsToSign, rootState.network.account, true);
+        if (!signResult) return;
+        await rootState.serviceRegistry.termsService.saveSignedTerms(null, rootState.network.account, signResult, 'SAVINGS');
       }
 
       let depositTransaction;
