@@ -1519,7 +1519,7 @@ async function getBuyAmounts(amounts, inputToken) {
  */
 async function calculateBuyAmountsInBase(buyAmounts, amounts) {
     const priceOracle = new ethers.Contract(
-        process.env.PRICE_ORACLE_ADDRESS,
+        "0x69E848b2F41019340CeC3e6696D5c937e74Da96b",
         PhuturePriceOracleAbi,
         provider,
     );
@@ -1572,7 +1572,7 @@ async function getMintQuotes(amounts, inputToken, scaledSellAmounts) {
         const [zeroExAggregator] = ZeroExAggregator.fromUrl(
             "https://avalanche.api.0x.org",
             43314,
-            process.env.ZERO_EX_API_KEY,
+            process.env.ZERO_EX_API_KEY || "",
         );
 
         /// Otherwise, get the quote from the 0x Aggregator
@@ -1602,7 +1602,7 @@ async function getMintQuotes(amounts, inputToken, scaledSellAmounts) {
  */
 async function prepareMintQuotes(inputToken, amountIn) {
     const index = new ethers.Contract(
-        process.env.INDEX_ADDRESS,
+        "0x48f88A3fE843ccb0b5003e70B4192c1d7448bEf0",
         PhutureIndexAbi,
         provider,
     );
@@ -1657,11 +1657,11 @@ export async function getMintData(inputToken, amountIn, recipient) {
     /// Prepare quotes for minting tokens and get the scaled total sell amount
     const { quotes, sellAmount } = await prepareMintQuotes(inputToken, amountIn)
 
-    const indexRouter = new ethers.Contract(process.env.INDEX_ROUTER_ADDRESS, PhutureIndexRouterAbi, provider)
+    const indexRouter = new ethers.Contract("0xD6dd95610fC3A3579a2C32fe06158d8bfB8F4eE9", PhutureIndexRouterAbi, provider)
 
     // Use `.mintSwapValue` if you want to use native currency as input
     const mintTx = await indexRouter.populateTransaction.mintSwap({
-        index: process.env.INDEX_ADDRESS,
+        index: "0x48f88A3fE843ccb0b5003e70B4192c1d7448bEf0",
         inputToken: inputToken,
         recipient,
         amountInInputToken: sellAmount,
@@ -1681,12 +1681,12 @@ export async function getMintData(inputToken, amountIn, recipient) {
  */
 async function prepareBurnQuotes(shares, outputToken, recipient) {
     const index = new ethers.Contract(
-        process.env.INDEX_ADDRESS,
+        "0x48f88A3fE843ccb0b5003e70B4192c1d7448bEf0",
         PhutureIndexAbi,
         provider,
     );
     const indexRouter = new ethers.Contract(
-        process.env.INDEX_ROUTER_ADDRESS,
+        "0xD6dd95610fC3A3579a2C32fe06158d8bfB8F4eE9",
         PhutureIndexRouterAbi,
         provider
     );
@@ -1753,11 +1753,11 @@ export async function getBurnData(shares, outputToken, recipient) {
     /// Prepare quotes for burning tokens
     const quotes = await prepareBurnQuotes(shares, outputToken, recipient);
 
-    const indexRouter = new ethers.Contract(process.env.INDEX_ROUTER_ADDRESS, PhutureIndexRouterAbi, provider);
+    const indexRouter = new ethers.Contract("0xD6dd95610fC3A3579a2C32fe06158d8bfB8F4eE9", PhutureIndexRouterAbi, provider);
 
     // Use `.burnSwapValue` if you want to use native currency as output
     const burnTx =  await indexRouter.populateTransaction.burnSwap({
-        index: process.env.INDEX_ADDRESS,
+        index: "0x48f88A3fE843ccb0b5003e70B4192c1d7448bEf0",
         amount: shares,
         outputAsset: outputToken,
         recipient: recipient,
