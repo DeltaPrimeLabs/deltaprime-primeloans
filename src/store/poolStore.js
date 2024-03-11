@@ -190,6 +190,7 @@ export default {
       rootState.serviceRegistry.modalService.closeModal();
 
       console.log(approveTransaction);
+      await awaitConfirmation(approveTransaction, provider, 'approve');
 
       const paraSwapSDK = constructSimpleSDK({chainId: config.chainId, axios});
       const swapData = await getSwapData(
@@ -203,8 +204,6 @@ export default {
       )
 
       console.log(swapData);
-
-      await awaitConfirmation(approveTransaction, provider, 'approve');
 
       console.log('log(swapData.routeData.selector)', swapData.routeData.selector);
       console.log('log(swapData.routeData.data)', swapData.routeData.data);
