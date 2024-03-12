@@ -35,6 +35,10 @@
     <Banner v-if="oracleError">
       Data feeds error. Some functions might be not available.
     </Banner>
+
+    <Banner v-if="showPrimeAccountBanner">
+      GM APYs are temporarily overvalued. This will be resolved shortly.
+    </Banner>
     <Banner v-if="showArbitrumDepositorBanner" background="green-accent" :closable="true">
       Liquidity mining event is updated! Shortly after a pool hits $1M the next pool opens up.
       <a class="banner-link" href="https://medium.com/@Delta_Prime/relaunching-deltaprime-on-arbitrum-ac43bdd91ed5" target="_blank">
