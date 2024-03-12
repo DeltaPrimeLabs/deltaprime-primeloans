@@ -3,17 +3,19 @@ const { dynamoDb } = require('../utils/helpers');
 const getTermsInfoApi = (event, context, callback) => {
   const params = {
     TableName: process.env.TERMS_VERSION_TABLE,
-    Key: {
-      walletAddress: event.pathParameters.walletAddress
+    KeyConditionExpression: 'walletAddress = :walletAddress',
+    ExpressionAttributeValues: {
+      ':walletAddress': event.pathParameters.walletAddress
     }
   };
 
-  dynamoDb.get(params).promise()
+  dynamoDb.query(params).promise()
     .then(result => {
-      callback(null, {
+      const response = {
         statusCode: 200,
-        body: JSON.stringify(result.Item ? result.Item : {}),
-      });
+        body: JSON.stringify(result.Items),
+      };
+      callback(null, response);
     })
     .catch(error => {
       console.error(error);
@@ -34,7 +36,8 @@ const saveTermsInfoApi = (event, context, callback) => {
     walletAddress: data.walletAddress,
     paAddress: data.paAddress,
     signResult: data.signResult,
-    termsVersion: data.termsVersion
+    termsVersion: data.termsVersion,
+    type: data.type
   };
 
   const params = {

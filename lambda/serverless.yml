@@ -479,10 +479,16 @@ resources:
           -
             AttributeName: "walletAddress"
             AttributeType: "S"
+          -
+            AttributeName: "type"
+            AttributeType: "S"
         KeySchema:
           -
             AttributeName: "walletAddress"
             KeyType: "HASH"
+          -
+            AttributeName: "type"
+            KeyType: "RANGE"
         BillingMode: PAY_PER_REQUEST
         StreamSpecification:
           StreamViewType: "NEW_AND_OLD_IMAGES"
