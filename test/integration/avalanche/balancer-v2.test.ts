@@ -197,11 +197,11 @@ describe('Smart loan', () => {
             await wrappedLoan.borrow(toBytes32("AVAX"), toWei("300"));
 
             let swapData = await getSwapData('AVAX', 18, 'yyAVAX', 18, toWei('50'));
-            await wrappedLoan.paraSwap(swapData.selector, swapData.data, TOKEN_ADDRESSES['AVAX'], toWei('50'), TOKEN_ADDRESSES['yyAVAX'], 0);
+            await wrappedLoan.paraSwapV2(swapData.selector, swapData.data, TOKEN_ADDRESSES['AVAX'], toWei('50'), TOKEN_ADDRESSES['yyAVAX'], 1);
             swapData = await getSwapData('AVAX', 18, 'ggAVAX', 18, toWei('50'));
-            await wrappedLoan.paraSwap(swapData.selector, swapData.data, TOKEN_ADDRESSES['AVAX'], toWei('50'), TOKEN_ADDRESSES['ggAVAX'], 0);
+            await wrappedLoan.paraSwapV2(swapData.selector, swapData.data, TOKEN_ADDRESSES['AVAX'], toWei('50'), TOKEN_ADDRESSES['ggAVAX'], 1);
             swapData = await getSwapData('AVAX', 18, 'sAVAX', 18, toWei('50'));
-            await wrappedLoan.paraSwap(swapData.selector, swapData.data, TOKEN_ADDRESSES['AVAX'], toWei('50'), TOKEN_ADDRESSES['sAVAX'], 0);
+            await wrappedLoan.paraSwapV2(swapData.selector, swapData.data, TOKEN_ADDRESSES['AVAX'], toWei('50'), TOKEN_ADDRESSES['sAVAX'], 1);
 
             // transfer BPTs from whale address for testing
             await network.provider.request({

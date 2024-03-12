@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@redstone-finance/evm-connector/contracts/data-services/ArbitrumProdDataServiceConsumerBase.sol";
 import "../interfaces/ITokenManager.sol";
 import "../interfaces/facets/avalanche/ITraderJoeV2Facet.sol";
+import "../interfaces/IStakingPositions.sol";
 import {Uint256x256Math} from "../lib/joe-v2/math/Uint256x256Math.sol";
 import {PriceHelper} from "../lib/joe-v2/PriceHelper.sol";
 import "../Pool.sol";
@@ -140,6 +141,52 @@ contract HealthMeterFacetProd is ArbitrumProdDataServiceConsumerBase {
         return assetsWithNative;
     }
 
+    function getStakedPositionsPrices() public view returns(AssetPrice[] memory result) {
+        IStakingPositions.StakedPosition[] storage positions = DiamondStorageLib.stakedPositions();
+
+        bytes32[] memory symbols = new bytes32[](positions.length);
+        for(uint256 i=0; i<positions.length; i++) {
+            symbols[i] = positions[i].symbol;
+        }
+
+        uint256[] memory stakedPositionsPrices = getOracleNumericValuesWithDuplicatesFromTxMsg(symbols);
+        result = new AssetPrice[](stakedPositionsPrices.length);
+
+        for(uint i; i<stakedPositionsPrices.length; i++){
+            result[i] = AssetPrice({
+                asset: symbols[i],
+                price: stakedPositionsPrices[i]
+            });
+        }
+    }
+
+    function _getTWVStakedPositions() internal view returns (uint256) {
+        AssetPrice[] memory stakedPositionsPrices = getStakedPositionsPrices();
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        IStakingPositions.StakedPosition[] storage positions = DiamondStorageLib.stakedPositions();
+
+        uint256 weightedValueOfStaked;
+
+        for (uint256 i; i < positions.length; i++) {
+            if(stakedPositionsPrices[i].asset != positions[i].symbol){
+                revert PriceSymbolPositionMismatch();
+            }
+
+            (bool success, bytes memory result) = address(this).staticcall(abi.encodeWithSelector(positions[i].balanceSelector));
+
+            if (success) {
+                uint256 balance = abi.decode(result, (uint256));
+
+                IERC20Metadata token = IERC20Metadata(DeploymentConstants.getTokenManager().getAssetAddress(stakedPositionsPrices[i].asset, true));
+
+                weightedValueOfStaked += stakedPositionsPrices[i].price * balance * tokenManager.debtCoverageStaked(positions[i].identifier) / (10 ** token.decimals() * 10**8);
+            }
+
+
+        }
+        return weightedValueOfStaked;
+    }
+
     /**
      * Returns current health meter (0% - 100%) associated with the loan
      * @dev This function uses the redstone-evm-connector
@@ -157,6 +204,7 @@ contract HealthMeterFacetProd is ArbitrumProdDataServiceConsumerBase {
         uint256 borrowed = 0;
 
         weightedCollateralPlus += _getTotalTraderJoeV2Weighted();
+        weightedCollateralPlus += _getTWVStakedPositions();
 
         for (uint256 i = 0; i < ownedAssetsPrices.length; i++) {
             IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(ownedAssetsPrices[i].asset, true));
@@ -192,4 +240,7 @@ contract HealthMeterFacetProd is ArbitrumProdDataServiceConsumerBase {
 
         return 0;
     }
+
+    // ERRORS
+    error PriceSymbolPositionMismatch();
 }
