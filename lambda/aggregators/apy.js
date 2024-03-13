@@ -595,6 +595,11 @@ const gmxApyAggregator = async (event) => {
     timeout: 60000
   });
 
+  const notifications = await page.$$(".single-toast > header > svg");
+  for (let i = 0; i < notifications.length; i ++) {
+    await notifications[i].click();
+  }
+
   // fetch GM tokens' APYs on Arbitrum and Avalanche
   for (const [network, pools] of Object.entries(gmxApyConfig)) {
     if (network == "avalanche") {
@@ -612,10 +617,7 @@ const gmxApyAggregator = async (event) => {
 
       await dropdownBtns[1].click();
 
-      await page.goto(URL, {
-        waitUntil: "networkidle0",
-        timeout: 60000
-      });
+      await new Promise((resolve, reject) => setTimeout(resolve, 7000));
     }
 
     const marketRows = await page.$$(".token-table > tbody > tr");
