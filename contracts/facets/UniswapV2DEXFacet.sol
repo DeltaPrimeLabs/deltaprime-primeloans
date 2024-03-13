@@ -68,7 +68,7 @@ contract UniswapV2DEXFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerO
 
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         
-        _decreaseExposure(tokenManager, address(soldToken), soldToken.balanceOf(address(this)) - initialSellTokenBalance);
+        _decreaseExposure(tokenManager, address(soldToken), initialSellTokenBalance - soldToken.balanceOf(address(this)));
         _increaseExposure(tokenManager, address(boughtToken), boughtToken.balanceOf(address(this)) - initialBuyTokenBalance);
 
         emit Swap(msg.sender, _soldAsset, _boughtAsset, amounts[0], amounts[amounts.length - 1], block.timestamp);
