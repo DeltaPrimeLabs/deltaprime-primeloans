@@ -67,9 +67,6 @@
         </b>
       </a>
     </Banner>
-    <Banner v-if="showAvalanchePrimeAccountBanner" :closable="true">
-      GM APYs are temporarily overvalued. This will be resolved shortly.
-    </Banner>
     <div class="content">
       <div class="top-bar">
         <div class="top-bar__left-part">
