@@ -14,7 +14,7 @@
           additional fees for trading or
           borrowing.
         </div>
-        <div class="content__part">Stay safe Degen!</div>
+        <div class="content__part content__part--third">Stay safe Degen!</div>
       </div>
 
       <a href="https://deltaprime.io/" class="terms-link" target="_blank">
@@ -93,6 +93,10 @@ export default {
 
   &.content__part--first {
     font-weight: 600;
+  }
+
+  &.content__part--third {
+    text-align: end;
   }
 }
 
