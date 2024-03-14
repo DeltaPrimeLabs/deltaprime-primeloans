@@ -209,7 +209,7 @@ export async function signMessage(provider, message, wallet, depositor = false) 
 
   if (!result || !result.ok || result.status === 0) throw Error;
 
-  return true;
+  return signedMessage;
 }
 
 export function decodeOutput(abi, functionName, returnData, comment = '') {

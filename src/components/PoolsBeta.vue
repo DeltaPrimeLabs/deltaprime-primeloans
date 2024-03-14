@@ -176,7 +176,6 @@ export default {
           }
         )
       ).subscribe(walletAssetBalances => {
-        console.log(walletAssetBalances);
         walletAssetBalances.forEach((balance, index) => {
           depositAssetsWalletBalances[pools[index].asset.symbol] = balance;
         });

@@ -92,7 +92,6 @@ export default {
         'fund',
         'borrow',
         'swapToWavax',
-        'createLoan',
         'createAndFundLoan',
         'setupSmartLoanContract',
         'getAllAssetsBalances',
