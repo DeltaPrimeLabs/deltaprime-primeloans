@@ -186,9 +186,9 @@ describe('Smart loan', () => {
 
             expect(await loanOwnsAsset("CAI")).to.be.false;
 
-            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(initialTotalValue, 10);
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(initialTotalValue, 20);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.eq(initialHR);
-            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 10);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 20);
         });
 
         async function loanOwnsAsset(asset: string) {

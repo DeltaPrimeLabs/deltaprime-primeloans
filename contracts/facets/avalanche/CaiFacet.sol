@@ -42,6 +42,7 @@ contract CaiFacet is ReentrancyGuardKeccak, SolvencyMethods {
         address(fromToken).safeApprove(INDEX_ROUTER, fromAmount);
 
         uint256 beforeCaiBalance = IERC20(CAI).balanceOf(address(this));
+        uint256 beforeFromTokenBalance = IERC20(fromToken).balanceOf(address(this));
 
         (bool success, ) = INDEX_ROUTER.call((abi.encodePacked(selector, data)));
         require(success, "Mint failed");
@@ -52,18 +53,11 @@ contract CaiFacet is ReentrancyGuardKeccak, SolvencyMethods {
         address(CAI).safeApprove(INDEX_ROUTER, 0);
         address(CAI).safeApprove(INDEX_ROUTER, type(uint256).max);
 
-        // Add asset to ownedAssets
-        if (afterCaiBalance > 0) {
-            DiamondStorageLib.addOwnedAsset("CAI", CAI);
-        }
-
-        // Remove asset from ownedAssets if the asset balance is 0 after the swap
-        if (afterFromTokenBalance == 0) {
-            DiamondStorageLib.removeOwnedAsset(fromTokenSymbol);
-        }
-
         uint256 caiBoughtAmount = afterCaiBalance - beforeCaiBalance;
         require(caiBoughtAmount >= minOut, "Too little received");
+
+        _increaseExposure(tokenManager, CAI, caiBoughtAmount);
+        _decreaseExposure(tokenManager, fromToken, beforeFromTokenBalance - afterFromTokenBalance);
 
         emit CaiMinted(
             msg.sender,
@@ -91,6 +85,7 @@ contract CaiFacet is ReentrancyGuardKeccak, SolvencyMethods {
         address(CAI).safeApprove(INDEX_ROUTER, 0);
         address(CAI).safeApprove(INDEX_ROUTER, shares);
 
+        uint256 beforeCaiBalance = IERC20(CAI).balanceOf(address(this));
         uint256 beforeTokenBalance = IERC20(toToken).balanceOf(address(this));
 
         (bool success, ) = INDEX_ROUTER.call((abi.encodePacked(selector, data)));
@@ -99,18 +94,11 @@ contract CaiFacet is ReentrancyGuardKeccak, SolvencyMethods {
         uint256 afterCaiBalance = IERC20(CAI).balanceOf(address(this));
         uint256 afterTokenBalance = IERC20(toToken).balanceOf(address(this));
 
-        // Add asset to ownedAssets
-        if (afterCaiBalance == 0) {
-            DiamondStorageLib.removeOwnedAsset("CAI");
-        }
-
-        // Remove asset from ownedAssets if the asset balance is 0 after the swap
-        if (afterTokenBalance > 0) {
-            DiamondStorageLib.addOwnedAsset(toTokenSymbol, toToken);
-        }
-
         uint256 boughtAmount = afterTokenBalance - beforeTokenBalance;
         require(boughtAmount >= minOut, "Too little received");
+
+        _decreaseExposure(tokenManager, CAI, beforeCaiBalance - afterCaiBalance);
+        _increaseExposure(tokenManager, toToken, boughtAmount);
 
         emit CaiBurned(
             msg.sender,
