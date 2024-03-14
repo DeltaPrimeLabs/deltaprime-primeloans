@@ -575,45 +575,14 @@ export default {
         const firstTotalWorth = firstConfig.price * formatUnits(await firstERC20.balanceOf(this.lpToken.address), firstConfig.decimals);
         const secondTotalWorth = secondConfig.price * formatUnits(await secondERC20.balanceOf(this.lpToken.address), secondConfig.decimals);
 
-        return toWei((firstTotalWorth > secondTotalWorth ? 0.0007 : 0.0005).toString());
+        return toWei((firstTotalWorth > secondTotalWorth ? 0.0008 : 0.0006).toString());
       }
     },
 
     gmxV2WithdrawFee() {
       return async (sourceAsset, targetAsset, amountIn, amountOut) => {
-        return toWei('0.0007');
+        return toWei('0.0008');
       }
-    },
-
-    async calculateExecutionFee(isDeposit) {
-      const dataStore = new ethers.Contract(config.gmxV2DataStoreAddress, IDATA_STORE.abi, this.provider.getSigner());
-
-      //TODO: use multicall
-
-      //TODO: withdraw check
-
-      const estimatedGasLimit = isDeposit ?
-          fromWei(await dataStore.getUint(this.depositGasLimitKey(true))) * 10 ** 18 + config.gmxV2DepositCallbackGasLimit
-          :
-          fromWei(await dataStore.getUint(hashData(["bytes32"], [WITHDRAWAL_GAS_LIMIT_KEY]))) * 10 ** 18 + config.gmxV2DepositCallbackGasLimit;
-
-      let baseGasLimit = fromWei(await dataStore.getUint(ESTIMATED_GAS_FEE_BASE_AMOUNT)) * 10 ** 18;
-
-      let multiplierFactor = formatUnits(await dataStore.getUint(ESTIMATED_GAS_FEE_MULTIPLIER_FACTOR), 30);
-
-      const adjustedGasLimit = baseGasLimit + estimatedGasLimit * multiplierFactor;
-
-      const maxPriorityFeePerGas = (await provider.getFeeData()).maxPriorityFeePerGas.toNumber();
-      let gasPrice = (await provider.getGasPrice()).toNumber();
-
-      if (config.gmxV2UseMaxPriorityFeePerGas) gasPrice += maxPriorityFeePerGas;
-      gasPrice *= (1 + config.gmxV2GasPriceBuffer);
-      gasPrice += config.gmxV2GasPricePremium;
-
-
-      const deltaPrimeMultiplicator = 1.5;
-
-      return deltaPrimeMultiplicator * adjustedGasLimit * gasPrice / 10 ** 18;
     },
 
     async openAddFromWalletModal() {
