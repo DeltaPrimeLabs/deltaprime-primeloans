@@ -356,7 +356,7 @@ export default {
                     if (termsForCurrentPage === undefined) {
                       console.log('SAVINGS PAGE - some deposit - terms not signed');
                       if (!this.signingTermsInProgress) {
-                        this.handleTermsSign(walletAddress);
+                        this.handleTermsSign(walletAddress, true);
                       }
                     }
                   })
@@ -375,7 +375,7 @@ export default {
                 if (termsForCurrentPage === undefined) {
                   console.log('PA PAGE - account created - terms not signed');
                   if (!this.signingTermsInProgress) {
-                    this.handleTermsSign(walletAddress);
+                    this.handleTermsSign(walletAddress, false, smartLoanContract.address);
                   }
                 } else {
                   console.log('PA PAGE - account created - terms signed');
