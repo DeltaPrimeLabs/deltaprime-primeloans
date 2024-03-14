@@ -357,7 +357,9 @@ export default {
                     console.log(termsForCurrentPage);
                     if (termsForCurrentPage === undefined) {
                       console.log('SAVINGS PAGE - some deposit - terms not signed');
-                      this.handleTermsSign(walletAddress);
+                      if (!this.signingTermsInProgress) {
+                        this.handleTermsSign(walletAddress);
+                      }
                     }
                   })
                 }

@@ -6,8 +6,15 @@
       </div>
 
       <div class="modal__content">
-        Gm fren! In order to stay fully compliant, we had to update our terms and conditions.
-        Please give it a read below and sign the new T&C with your wallet. Apologies for any inconvenience!
+        <div class="content__part content__part--first">Gm fren! In order to stay fully compliant, we had to update our
+          terms and conditions. Please give it a read
+          below and sign the new T&C with your wallet. Apologies for any inconvenience!
+        </div>
+        <div class="content__part">Good to know: while DeltaPrime charges a small liquidation bonus, there are no
+          additional fees for trading or
+          borrowing.
+        </div>
+        <div class="content__part">Stay safe Degen!</div>
       </div>
 
       <a href="https://deltaprime.io/" class="terms-link" target="_blank">
@@ -32,8 +39,7 @@ export default {
     Modal,
   },
 
-  props: {
-  },
+  props: {},
 
   data() {
     return {
@@ -45,9 +51,7 @@ export default {
 
   },
 
-  computed: {
-
-  },
+  computed: {},
 
   methods: {
     submit() {
@@ -63,7 +67,7 @@ export default {
 @import "~@/styles/modal";
 
 .modal__content {
-  text-align: center;
+  text-align: justify;
 }
 
 .terms-link {
@@ -79,6 +83,16 @@ export default {
   &:hover {
     text-decoration: underline;
     cursor: pointer;
+  }
+}
+
+.content__part {
+  &:not(:first-child) {
+    margin-top: 20px;
+  }
+
+  &.content__part--first {
+    font-weight: 600;
   }
 }
 
