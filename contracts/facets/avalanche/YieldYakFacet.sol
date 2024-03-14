@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: bdee015765a0dd3731205df659aae576d57dd473;
+// Last deployed from commit: ec6e7a0ed7ef3d10f4007e7ebad336dc88392717;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -14,7 +14,6 @@ import "../../OnlyOwnerOrInsolvent.sol";
 import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
 import "../../interfaces/IWrappedNativeToken.sol";
 
-// TODO: Check STATUS (tokenManager) of Vault tokens before allowing to stake
 //This path is updated during deployment
 import "../../lib/local/DeploymentConstants.sol";
 
