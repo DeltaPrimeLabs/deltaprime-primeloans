@@ -8,22 +8,22 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deploy } = deployments;
     const { deployer, admin } = await getNamedAccounts();
 
-    // embedCommitHash("YieldYakSwapFacet", "./contracts/facets/avalanche");
-    //
-    // let YieldYakSwapFacet = await deploy("YieldYakSwapFacet", {
-    //     from: deployer,
-    //     gasLimit: 15000000,
-    //     args: [],
-    // });
-    //
-    //
-    // console.log(
-    //     `YieldYakSwapFacet implementation deployed at address: ${YieldYakSwapFacet.address}`
-    // );
+    embedCommitHash("YieldYakSwapFacet", "./contracts/facets/avalanche");
+
+    let YieldYakSwapFacet = await deploy("YieldYakSwapFacet", {
+        from: deployer,
+        gasLimit: 15000000,
+        args: [],
+    });
+
+
+    console.log(
+        `YieldYakSwapFacet implementation deployed at address: ${YieldYakSwapFacet.address}`
+    );
 
     await verifyContract(hre,
         {
-            address: '0xc76F00678b04AF2fB3f363E22A17D998190E72aD',
+            address: YieldYakSwapFacet.address,
             contract: `contracts/facets/avalanche/YieldYakSwapFacet.sol:YieldYakSwapFacet`,
             constructorArguments: []
         });
