@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 0567ff2fbc691703a896e44f304d3ea072803b61;
+// Last deployed from commit: 0baecd948fb05bd4ef8b2aa6a450534f1bda4f16;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -19,7 +19,7 @@ contract GLPFacetArbi is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     using TransferHelper for address;
 
     // Used to claim GLP fees
-    address private constant REWARD_ROUTER_ADDRESS = 0xA906F338CB21815cBc4Bc87ace9e68c87eF8d8F1;
+    address private constant REWARD_ROUTER_ADDRESS = 0x159854e14A862Df9E39E1D128b8e5F70B4A3cE9B;
     // Used to mint/redeem GLP
     address private constant GLP_REWARD_ROUTER_ADDRESS = 0xB95DB5B167D75e6d04227CfFFA61069348d271F5;
     // Used to approve tokens to mint GLP with

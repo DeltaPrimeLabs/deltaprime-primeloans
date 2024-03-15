@@ -12,7 +12,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
     embedCommitHash("LiquidationFlashloanArbitrum");
 
-    let diamondBeacon = await ethers.getContract("SmartLoanDiamondBeacon");
+    // let diamondBeacon = await ethers.getContract("SmartLoanDiamondBeacon");
 
     let result = await deploy("LiquidationFlashloanArbitrum", {
         from: deployer,

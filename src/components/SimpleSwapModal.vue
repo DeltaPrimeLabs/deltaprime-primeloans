@@ -16,7 +16,6 @@
                           :default-asset="sourceAsset"
                           :validators="sourceValidators"
                           :disabled="checkingPrices"
-                          :max="sourceAssetBalance"
                           :info="() => sourceAssetValue"
                           :typingTimeout="2000"
                           v-on:valueChange="sourceInputChange"
@@ -42,7 +41,7 @@
              v-bind:style="{ 'visibility': estimatedNeededTokens !== 0 && estimatedNeededTokens !== 0 ? 'visible' : 'hidden' }"
         >
           Price:&nbsp;<span
-            class="price-info__value">1 {{
+          class="price-info__value">1 {{
             targetAsset
           }} = {{ estimatedNeededTokens / estimatedReceivedTokens | smartRound }} {{ sourceAsset }}</span>
         </div>
@@ -58,8 +57,8 @@
         DEX slippage: <span class="deviation-value">{{ marketDeviation }}<span class="percent">%</span></span>
         <div class="info__icon__wrapper">
           <InfoIcon
-              class="info__icon"
-              :tooltip="{content: 'The difference between DEX and market prices.', placement: 'top', classes: 'info-tooltip'}"
+            class="info__icon"
+            :tooltip="{content: 'The difference between DEX and market prices.', placement: 'top', classes: 'info-tooltip'}"
           ></InfoIcon>
         </div>
       </div>
@@ -123,11 +122,14 @@ import config from '../config';
 import {formatUnits, parseUnits} from '../utils/calculate';
 import {BigNumber} from 'ethers';
 import SimpleInput from './SimpleInput';
-import TOKEN_ADDRESSES from '../../common/addresses/avalanche/token_addresses.json';
 import DeltaIcon from './DeltaIcon.vue';
 import InfoIcon from './InfoIcon.vue';
+import {constructSimpleSDK} from "@paraswap/sdk";
+import axios from "axios";
+import {getSwapData} from "../utils/paraSwapUtils";
 
 const ethers = require('ethers');
+let TOKEN_ADDRESSES;
 
 export default {
   name: 'SimpleSwapModal',
@@ -162,7 +164,6 @@ export default {
       targetAssetAmount: 0,
       userSlippage: 0,
       queryMethod: null,
-      lastChangedSource: true,
       sourceValidators: [],
       sourceWarnings: [],
       slippageWarning: '',
@@ -183,11 +184,13 @@ export default {
       adapters: null,
       maxButtonUsed: false,
       assetPrices: {},
+      swapData: {},
     };
   },
 
   mounted() {
-    setTimeout(() => {
+    setTimeout(async () => {
+      await this.setupFiles();
       this.setupSourceAssetOptions();
       this.setupTargetAssetOptions();
       this.setupSourceAsset();
@@ -210,6 +213,9 @@ export default {
   },
 
   methods: {
+    async setupFiles() {
+      TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
+    },
     submit() {
       this.transactionOngoing = true;
       const sourceAssetAmount = this.maxButtonUsed ? this.sourceAssetAmount * config.MAX_BUTTON_MULTIPLIER : this.sourceAssetAmount;
@@ -218,8 +224,7 @@ export default {
         targetAsset: this.targetAsset,
         sourceAmount: sourceAssetAmount,
         targetAmount: this.targetAssetAmount,
-        path: this.path,
-        adapters: this.adapters
+        swapData: this.swapData
       });
     },
 
@@ -234,26 +239,32 @@ export default {
         return;
       }
 
-      this.lastChangedSource = true;
       let decimals = this.sourceAssetData.decimals;
       let amountInWei = parseUnits(this.sourceAssetAmount.toFixed(decimals), BigNumber.from(decimals));
 
-      const queryResponse = await this.query(this.sourceAsset, this.targetAsset, amountInWei);
+      const sourceAssetAddress = TOKEN_ADDRESSES[this.sourceAsset];
+      const targetAssetAddress = TOKEN_ADDRESSES[this.targetAsset];
+      const paraSwapSDK = constructSimpleSDK({chainId: config.chainId, axios});
+      const swapData = await getSwapData(
+        paraSwapSDK,
+        config.depositSwapAddress,
+        sourceAssetAddress,
+        targetAssetAddress,
+        amountInWei,
+        config.ASSETS_CONFIG[this.sourceAsset].decimals,
+        config.ASSETS_CONFIG[this.targetAsset].decimals,
+      );
+      this.swapData = swapData;
+      console.log(this.swapData.simpleData);
 
-      let estimated;
-      if (queryResponse) {
-        if (queryResponse instanceof BigNumber) {
-          estimated = queryResponse;
-        } else {
-          this.path = queryResponse.path;
-          this.adapters = queryResponse.adapters;
-          estimated = queryResponse.amounts[queryResponse.amounts.length - 1];
-        }
-        this.estimatedNeededTokens = this.sourceAssetAmount;
-        this.estimatedReceivedTokens = parseFloat(formatUnits(estimated, BigNumber.from(this.targetAssetData.decimals)));
+      const estimated = swapData.simpleData.expectedAmount
 
-        this.updateSlippageWithAmounts();
-      }
+      this.estimatedNeededTokens = this.sourceAssetAmount;
+      this.estimatedReceivedTokens = parseFloat(formatUnits(estimated, BigNumber.from(this.targetAssetData.decimals)));
+      console.log(this.estimatedReceivedTokens);
+
+      this.updateSlippageWithAmounts();
+
     },
 
     async updateAmountsWithSlippage() {
@@ -267,7 +278,7 @@ export default {
       this.receivedAccordingToOracle = this.estimatedNeededTokens * this.assetPrices[this.sourceAssetData.symbol] / this.assetPrices[this.targetAssetData.symbol];
       dexSlippage = (this.receivedAccordingToOracle - this.estimatedReceivedTokens) / this.estimatedReceivedTokens;
 
-      const SLIPPAGE_MARGIN = 0.1;
+      const SLIPPAGE_MARGIN = 0.3;
       this.marketDeviation = parseFloat((100 * dexSlippage).toFixed(3));
 
       let updatedSlippage = SLIPPAGE_MARGIN + 100 * dexSlippage;

@@ -482,7 +482,7 @@ export default {
     yakWrapRouterAddress: '0x44f4737C3Bb4E5C1401AE421Bd34F135E0BB8394',
     yieldYakGlpWrapperAddress: '0x442DB6e78e54449B2a5f08A943Fa8a79041C797b',
     glpRewardsRouterAddress: '0x82147C5A7E850eA4E28155DF107F2590fD4ba327',
-    depositSwapAddress: "0x74B5C3499AbDe6D85B6287617195813455051713",
+    depositSwapAddress: "0xa0170E529f94C955f77Fcf14F57C7A7cDf0FDb71",
     gmxV2ReaderAddress: "0x73BA021ACF4Bb6741E82690DdB821e7936050f8C",
     gmxV2DataStoreAddress: "0x2F0b22339414ADeD7D5F06f9D604c7fF5b2fe3f6",
     gmxV2HighExecutionFee: 0,

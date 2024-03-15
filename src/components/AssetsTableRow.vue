@@ -170,6 +170,7 @@ import axios from 'axios';
 import TradingViewChart from "./TradingViewChart.vue";
 import Toggle from "./Toggle.vue";
 import {BigNumber} from "ethers";
+import SwapDebtModal from "./SwapDebtModal.vue";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -509,6 +510,7 @@ export default {
               );
 
               if (path.amounts[path.amounts.length - 1].gt(amountIn)) {
+                console.log(path);
                 return path;
               }
 
@@ -673,7 +675,7 @@ export default {
       modalInstance.dexOptions = Object.entries(config.SWAP_DEXS_CONFIG)
         .filter(([dexName, dexConfig]) => dexConfig.availableAssets.includes(this.asset.symbol))
         .map(([dexName, dexConfig]) => dexName);
-      modalInstance.swapDex = Object.keys(config.SWAP_DEXS_CONFIG)[0];
+      modalInstance.swapDex = Object.keys(config.SWAP_DEXS_CONFIG)[1];
       modalInstance.title = 'Swap debt';
       modalInstance.swapDebtMode = true;
       modalInstance.slippageMargin = 0.2;
@@ -701,7 +703,7 @@ export default {
       modalInstance.debt = this.fullLoanStatus.debt;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
       modalInstance.health = this.fullLoanStatus.health;
-      modalInstance.queryMethod = this.swapDebtQueryMethod();
+      modalInstance.queryMethod = this.paraSwapV2QueryMethod();
       modalInstance.$on('SWAP', swapEvent => {
         const swapDebtRequest = {
           ...swapEvent,

@@ -24,10 +24,14 @@
     "ethers": "^5.5.4",
     "graphql-request": "^6.1.0",
     "graphql-tag": "^2.12.6",
+    "jsonwebtoken": "^9.0.2",
     "node-fetch": "^2.7.0",
     "puppeteer": "^21.1.0",
     "puppeteer-core": "^21.1.0",
     "redstone-api": "^0.4.11"
   },
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "serverless-prune-plugin": "^2.0.2"
+  }
 }

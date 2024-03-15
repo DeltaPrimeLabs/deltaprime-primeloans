@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 4da64a8a04844045e51b88c6202064e16ea118aa;
+// Last deployed from commit: 9be978eee452f5d0645f568d47e3ca96b1d7c8ef;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -19,6 +19,11 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
     using TransferHelper for address payable;
     using TransferHelper for address;
 
+    address private constant PARA_TRANSFER_PROXY =
+        0x216B4B4Ba9F3e719726886d34a177484278Bfcae;
+    address private constant PARA_ROUTER =
+        0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57;
+
     /* ========== PUBLIC AND EXTERNAL MUTATIVE FUNCTIONS ========== */
 
     /**
@@ -27,7 +32,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
     * @param _fundedAsset asset to be funded
     * @param _amount to be funded
     **/
-    function fund(bytes32 _fundedAsset, uint256 _amount) public virtual {
+    function fund(bytes32 _fundedAsset, uint256 _amount) public virtual nonReentrant {
         IERC20Metadata token = getERC20TokenInstance(_fundedAsset, false);
         _amount = Math.min(_amount, token.balanceOf(msg.sender));
 
@@ -42,12 +47,19 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         emit Funded(msg.sender, _fundedAsset, _amount, block.timestamp);
     }
 
+    function addOwnedAsset(bytes32 _asset, address _address) external onlyWhitelistedLiquidators nonReentrant{
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        require(tokenManager.isTokenAssetActive(_address), "Asset not supported");
+
+        DiamondStorageLib.addOwnedAsset(_asset, _address);
+    }
+
     /**
     * Funds the loan with a specified amount of a GLP
     * @dev Requires approval for stakedGLP token on frontend side
     * @param _amount to be funded
     **/
-    function fundGLP(uint256 _amount) public virtual {
+    function fundGLP(uint256 _amount) public virtual nonReentrant {
         IERC20Metadata stakedGlpToken = IERC20Metadata(0xaE64d55a6f09E4263421737397D1fdFA71896a69);
         _amount = Math.min(_amount, stakedGlpToken.balanceOf(msg.sender));
         address(stakedGlpToken).safeTransferFrom(msg.sender, address(this), _amount);
@@ -110,7 +122,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
     * @param _asset to be borrowed
     * @param _amount of funds to borrow
     **/
-    function borrow(bytes32 _asset, uint256 _amount) external onlyOwner remainsSolvent {
+    function borrow(bytes32 _asset, uint256 _amount) external onlyOwner remainsSolvent nonReentrant {
         DiamondStorageLib.DiamondStorage storage ds = DiamondStorageLib.diamondStorage();
         ds._lastBorrowTimestamp = block.timestamp;
 
@@ -119,6 +131,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         pool.borrow(_amount);
 
         IERC20Metadata token = getERC20TokenInstance(_asset, false);
+        tokenManager.increaseProtocolExposure(_asset, _amount * 1e18 / 10 ** token.decimals());
         if (token.balanceOf(address(this)) > 0) {
             DiamondStorageLib.addOwnedAsset(_asset, address(token));
         }
@@ -133,14 +146,15 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
      * @param _asset to be repaid
      * @param _amount of funds to repay
      **/
-    function repay(bytes32 _asset, uint256 _amount) public payable {
+    function repay(bytes32 _asset, uint256 _amount) public payable nonReentrant {
         IERC20Metadata token = getERC20TokenInstance(_asset, true);
 
         if (_isSolvent()) {
             DiamondStorageLib.enforceIsContractOwner();
         }
 
-        Pool pool = Pool(DeploymentConstants.getTokenManager().getPoolAddress(_asset));
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        Pool pool = Pool(tokenManager.getPoolAddress(_asset));
 
         _amount = Math.min(_amount, token.balanceOf(address(this)));
         _amount = Math.min(_amount, pool.getBorrowed(address(this)));
@@ -154,8 +168,34 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         if (token.balanceOf(address(this)) == 0) {
             DiamondStorageLib.removeOwnedAsset(_asset);
         }
+        tokenManager.decreaseProtocolExposure(_asset, _amount * 1e18 / 10 ** token.decimals());
 
         emit Repaid(msg.sender, _asset, _amount, block.timestamp);
+    }
+
+    function withdrawUnsupportedToken(address token) external nonReentrant onlyOwner remainsSolvent {
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+
+        // _NOT_SUPPORTED = 0
+        require(tokenManager.tokenToStatus(token) == 0, "token supported");
+        require(tokenManager.debtCoverage(token) == 0, "token debt coverage != 0");
+
+        uint256 balance = IERC20(token).balanceOf(address(this));
+        require(balance > 0, "nothing to withdraw");
+        token.safeTransfer(msg.sender, balance);
+
+        emit WithdrawUnsupportedToken(msg.sender, token, balance, block.timestamp);
+    }
+
+    // TODO: Separate manager for unfreezing - not liquidators
+    function unfreezeAccount() external onlyWhitelistedLiquidators {
+        DiamondStorageLib.unfreezeAccount(msg.sender);
+    }
+
+    modifier onlyWhitelistedLiquidators() {
+        // External call in order to execute this method in the SmartLoanDiamondBeacon contract storage
+        require(SmartLoanLiquidationFacet(DeploymentConstants.getDiamondAddress()).isLiquidatorWhitelisted(msg.sender), "Only whitelisted liquidators can execute this method");
+        _;
     }
 
     /**
@@ -197,6 +237,40 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
             router.swapNoSplit(trade, address(this), 0);
         }
         
+        address(fromToken).safeApprove(address(fromAssetPool), 0);
+        address(fromToken).safeApprove(address(fromAssetPool), _repayAmount);
+        fromAssetPool.repay(_repayAmount);
+
+        if (fromToken.balanceOf(address(this)) > 0) {
+            DiamondStorageLib.addOwnedAsset(_fromAsset, address(fromToken));
+        } else {
+            DiamondStorageLib.removeOwnedAsset(_fromAsset);
+        }
+
+        emit DebtSwap(msg.sender, address(fromToken), address(toToken), _repayAmount, _borrowAmount, block.timestamp);
+    }
+
+    function swapDebtParaSwap(bytes32 _fromAsset, bytes32 _toAsset, uint256 _repayAmount, uint256 _borrowAmount, bytes4 selector, bytes memory data) external onlyOwner remainsSolvent nonReentrant {
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        Pool fromAssetPool = Pool(tokenManager.getPoolAddress(_fromAsset));
+        _repayAmount = Math.min(_repayAmount, fromAssetPool.getBorrowed(address(this)));
+
+        IERC20Metadata toToken = getERC20TokenInstance(_toAsset, false);
+        IERC20Metadata fromToken = getERC20TokenInstance(_fromAsset, false);
+
+        Pool toAssetPool = Pool(tokenManager.getPoolAddress(_toAsset));
+        toAssetPool.borrow(_borrowAmount);
+
+        {
+            // swap toAsset to fromAsset
+            address(toToken).safeApprove(PARA_TRANSFER_PROXY, 0);
+            address(toToken).safeApprove(PARA_TRANSFER_PROXY, _borrowAmount);
+
+            (bool success, ) = PARA_ROUTER.call((abi.encodePacked(selector, data)));
+            require(success, "Swap failed");
+        }
+
+        _repayAmount = Math.min(fromToken.balanceOf(address(this)), _repayAmount);
         address(fromToken).safeApprove(address(fromAssetPool), 0);
         address(fromToken).safeApprove(address(fromAssetPool), _repayAmount);
         fromAssetPool.repay(_repayAmount);
@@ -280,4 +354,13 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
      * @param timestamp of the repayment
      **/
     event Repaid(address indexed user, bytes32 indexed asset, uint256 amount, uint256 timestamp);
+
+    /**
+     * @dev emitted when unsupported token is withdrawn
+     * @param user the address withdrawing unsupported token
+     * @param token the unsupported token address
+     * @param amount of unsupported token withdrawn
+     * @param timestamp of the withdraw
+     **/
+    event WithdrawUnsupportedToken(address indexed user, address indexed token, uint256 amount, uint256 timestamp);
 }

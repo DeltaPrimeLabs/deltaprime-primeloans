@@ -25,4 +25,4 @@ const exportIncentives = async (event) => {
   return event;
 }
 
-exportIncentives()
+// exportIncentives()

@@ -11,7 +11,7 @@ import {
     VectorFinanceHelper,
     YieldYakHelper,
 } from "../typechain";
-import AVAX_TOKEN_ADDRESSES from '../common/addresses/avalanche/token_addresses.json';
+import AVAX_TOKEN_ADDRESSES from '../common/addresses/avax/token_addresses.json';
 import CELO_TOKEN_ADDRESSES from '../common/addresses/celo/token_addresses.json';
 import ARBITRUM_TOKEN_ADDRESSES from '../common/addresses/arbitrum/token_addresses.json';
 import ETHEREUM_TOKEN_ADDRESSES from '../common/addresses/ethereum/token_addresses.json';
@@ -29,7 +29,7 @@ import fetch from "node-fetch";
 import {execSync} from "child_process";
 import updateConstants from "../tools/scripts/update-constants"
 import {JsonRpcSigner} from "@ethersproject/providers";
-import addresses from "../common/addresses/avalanche/token_addresses.json";
+import addresses from "../common/addresses/avax/token_addresses.json";
 import addresses_arb from "../common/addresses/arbitrum/token_addresses.json";
 import { getSelectors } from "../tools/diamond/selectors";
 
@@ -624,7 +624,7 @@ export const getFixedGasSigners = async function (gasLimit: number) {
 };
 
 
-export const deployAllFacets = async function (diamondAddress: any, mock: boolean = true, chain = 'AVAX',  hardhatConfig: any = undefined, provider = undefined) {
+export const deployAllFacets = async function (diamondAddress: any, mock: boolean = true, chain = 'AVAX',  hardhatConfig: any = undefined, provider: any = undefined) {
     const diamondCut = provider ?
         new ethers.Contract(diamondAddress, IDiamondCutArtifact.abi, provider.getSigner())
         : (hardhatConfig && hardhatConfig.deployer) ?
@@ -636,7 +636,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         "ParaSwapFacet",
         diamondAddress,
         [
-            'paraSwap',
+            'paraSwapV2',
         ],
         hardhatConfig
     );
@@ -678,6 +678,8 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         ],
         hardhatConfig
     )
+    console.log(2)
+
     await deployFacet(
         "AssetsExposureController",
         diamondAddress,
@@ -755,6 +757,14 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                 'withdrawBtcUsdcGmxV2',
                 'withdrawAvaxUsdcGmxV2',
                 'withdrawEthUsdcGmxV2',
+            ],
+            hardhatConfig
+        )
+
+        await deployFacet(
+            "GmxV2CallbacksFacetAvalanche",
+            diamondAddress,
+            [
                 'afterDepositExecution',
                 'afterDepositCancellation',
                 'afterWithdrawalExecution',
@@ -774,6 +784,8 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                 'withdrawGLP',
                 'withdraw',
                 'swapDebt',
+                'swapDebtParaSwap',
+                'withdrawUnsupportedToken',
             ],
             hardhatConfig
         )
@@ -865,6 +877,23 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         await deployFacet("TraderJoeV2AutopoolsFacet", diamondAddress, [
             'stakeTraderJoeV2AutopoolAVAXUSDC',
             'unstakeTraderJoeV2AutopoolAVAXUSDC'
+        ],
+        hardhatConfig);
+
+        await deployFacet("BalancerV2Facet", diamondAddress, [
+            'joinPoolAndStakeBalancerV2',
+            'stakeBalancerV2',
+            'unstakeAndExitPoolBalancerV2',
+            'unstakeBalancerV2',
+            'claimRewardsBalancerV2',
+            'balancerGgAvaxBalance',
+            'balancerYyAvaxBalance',
+            'balancerSAvaxBalance',
+        ],
+        hardhatConfig);
+
+        await deployFacet("GogoPoolFacet", diamondAddress, [
+            'swapToGgAvax',
         ],
         hardhatConfig);
 
@@ -1024,7 +1053,22 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             diamondAddress,
             [
                 'depositEthUsdcGmxV2',
+                'depositArbUsdcGmxV2',
+                'depositLinkUsdcGmxV2',
+                'depositUniUsdcGmxV2',
+                'depositBtcUsdcGmxV2',
                 'withdrawEthUsdcGmxV2',
+                'withdrawArbUsdcGmxV2',
+                'withdrawLinkUsdcGmxV2',
+                'withdrawUniUsdcGmxV2',
+                'withdrawBtcUsdcGmxV2'
+            ],
+            hardhatConfig
+        )
+        await deployFacet(
+            "GmxV2CallbacksFacetArbitrum",
+            diamondAddress,
+            [
                 'afterDepositExecution',
                 'afterDepositCancellation',
                 'afterWithdrawalExecution',
@@ -1067,6 +1111,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         [
             'initialize',
             'getAllAssetsBalances',
+            'getAllAssetsBalancesDebtCoverages',
             'getDebts',
             'getPercentagePrecision',
             'getAccountFrozenSince',
@@ -1292,6 +1337,18 @@ export class AssetNameBalance {
     }
 }
 
+export class AssetNameBalanceDebtCoverage {
+    name: string;
+    balance: BigNumber;
+    debtCoverage: BigNumber;
+
+    constructor(name: string, balance: BigNumber, debtCoverage: BigNumber) {
+        this.name = name;
+        this.balance = balance;
+        this.debtCoverage = debtCoverage;
+    }
+}
+
 export class AssetNameDebt {
     name: string;
     debt: BigNumber;
@@ -1380,30 +1437,28 @@ export class StakedPosition {
     }
 }
 
-export const paraSwapRouteToSimpleData = (txParams: TransactionParams) => {
+export const parseParaSwapRouteData = (txParams: TransactionParams) => {
+    const selector = txParams.data.slice(0, 10);
     const data = "0x" + txParams.data.slice(10);
-    const [
-        decoded,
-    ] = ethers.utils.defaultAbiCoder.decode(
-        ["(address,address,uint256,uint256,uint256,address[],bytes,uint256[],uint256[],address,address,uint256,bytes,uint256,bytes16)"],
-        data
-    );
     return {
-        fromToken: decoded[0],
-        toToken: decoded[1],
-        fromAmount: decoded[2],
-        toAmount: decoded[3],
-        expectedAmount: decoded[4],
-        callees: decoded[5],
-        exchangeData: decoded[6],
-        startIndexes: decoded[7],
-        values: decoded[8],
-        beneficiary: decoded[9],
-        partner: decoded[10],
-        feePercent: decoded[11],
-        permit: decoded[12],
-        deadline: decoded[13],
-        uuid: decoded[14],
+        selector,
+        data
     };
 };
+
+export const getContractSelectors = (contract: Contract) => {
+    contract.interface.fragments.forEach(fragment => {
+        if (fragment.type === 'function') {
+            // Construct the function signature
+            const inputTypes = fragment.inputs.map(input => input.type).join(',');
+            const signature = `${fragment.name}(${inputTypes})`;
+
+            // Compute the selector
+            const selector = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(signature)).slice(0, 10); // '0x' followed by the 4-byte selector
+
+            console.log(`Method: ${fragment.name}, Selector: ${selector}`);
+        }
+    });
+}
+
 
