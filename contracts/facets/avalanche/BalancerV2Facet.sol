@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: f1f319fc0eb63159db16e913a87d78c8c7bf732b;
+// Last deployed from commit: 499a35c62f8a913d89f7faf78bf5c6b3cea2ee8b;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -29,7 +29,7 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent, IBalanc
      * Joins a pool and stakes in a gauge
      * @param request stake request
      **/
-    function joinPoolAndStakeBalancerV2(IBalancerV2Facet.StakeRequest memory request) external nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent {
+    function joinPoolAndStakeBalancerV2(IBalancerV2Facet.StakeRequest memory request) external nonReentrant onlyOwner remainsSolvent {
         uint256 stakedTokensLength = request.stakedTokens.length;
 
         if (stakedTokensLength != request.stakedAmounts.length) revert ArgArrayLengthsDiffer();
@@ -137,6 +137,8 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent, IBalanc
 
             // Add staked position
             DiamondStorageLib.addStakedPosition(position);
+
+            _increaseExposure(tokenManager, address(gauge), IERC20(gauge).balanceOf(address(this)) - initialGaugeBalance);
         }
 
         bytes32[] memory stakedAssets = new bytes32[](stakedTokensLength);
@@ -145,14 +147,10 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent, IBalanc
         // Remove deposit tokens if empty and prepare arrays for the event
         for (uint256 i; i < stakedTokensLength; ++i ) {
             if (request.stakedAmounts[i] > 0) {
-                IERC20Metadata token = IERC20Metadata(request.stakedTokens[i]);
-
-                if (token.balanceOf(address(this)) == 0) {
-                    DiamondStorageLib.removeOwnedAsset(tokenManager.tokenAddressToSymbol(address(token)));
-                }
+                _decreaseExposure(tokenManager, request.stakedTokens[i], request.stakedAmounts[i]);
 
                 stakedAssets[i] = tokenManager.tokenAddressToSymbol(request.stakedTokens[i]);
-                stakedAmounts[i] = initialDepositTokenBalances[i] - token.balanceOf(address(this));
+                stakedAmounts[i] = initialDepositTokenBalances[i] - IERC20Metadata(request.stakedTokens[i]).balanceOf(address(this));
             }
         }
 
@@ -171,7 +169,7 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent, IBalanc
      * @param poolId balancer pool id
      * @param amount stake amount
      **/
-    function stakeBalancerV2(bytes32 poolId, uint256 amount) external nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent {
+    function stakeBalancerV2(bytes32 poolId, uint256 amount) external nonReentrant onlyOwner remainsSolvent {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         IVault vault = IVault(MASTER_VAULT_ADDRESS);
@@ -202,9 +200,8 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent, IBalanc
         // Add staked position
         DiamondStorageLib.addStakedPosition(position);
 
-        if (IERC20(pool).balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset(poolSymbol);
-        }
+        _decreaseExposure(tokenManager, pool, amount);
+        _increaseExposure(tokenManager, address(gauge), IERC20(gauge).balanceOf(address(this)) - initialGaugeBalance);
 
         emit BptStaked(
             msg.sender,
@@ -220,14 +217,15 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent, IBalanc
      * Unstakes tokens a gauge and exits a pool
      * @param request unstake request
     **/
-    function unstakeAndExitPoolBalancerV2(IBalancerV2Facet.UnstakeRequest memory request) external nonReentrant onlyOwnerOrInsolvent recalculateAssetsExposure {
+    function unstakeAndExitPoolBalancerV2(IBalancerV2Facet.UnstakeRequest memory request) external nonReentrant onlyOwnerOrInsolvent {
         (address pool,) = IVault(MASTER_VAULT_ADDRESS).getPool(request.poolId);
         if (pool == address(0)) revert ZeroAddressPool();
 
         //poolToGauge checks as well if the pool is whitelisted
         IBalancerV2Gauge gauge = IBalancerV2Gauge(poolToGauge(pool));
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
-        if (!DeploymentConstants.getTokenManager().isTokenAssetActive(request.unstakedToken)) revert UnstakingToInactiveToken();
+        if (!tokenManager.isTokenAssetActive(request.unstakedToken)) revert UnstakingToInactiveToken();
         if (request.unstakedToken == address(pool) || request.unstakedToken == address(gauge)) revert UnstakingWrongToken();
 
         uint256 initialDepositTokenBalance = IERC20(request.unstakedToken).balanceOf(address(this));
@@ -281,11 +279,13 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent, IBalanc
         bytes32[] memory unstakedAssets = new bytes32[](1);
         uint256[] memory unstakedAmounts = new uint256[](1);
 
-        unstakedAssets[0] = DeploymentConstants.getTokenManager().tokenAddressToSymbol(request.unstakedToken);
+        unstakedAssets[0] = tokenManager.tokenAddressToSymbol(request.unstakedToken);
         unstakedAmounts[0] = IERC20(request.unstakedToken).balanceOf(address(this)) - initialDepositTokenBalance;
-        DiamondStorageLib.addOwnedAsset(unstakedAssets[0], address(request.unstakedToken));
-
         uint256 newGaugeBalance = IERC20(gauge).balanceOf(address(this));
+
+        _increaseExposure(tokenManager, request.unstakedToken, unstakedAmounts[0]);
+        _decreaseExposure(tokenManager, address(gauge), initialGaugeBalance - newGaugeBalance);
+
 
         if (newGaugeBalance == 0) {
             DiamondStorageLib.removeStakedPosition(poolToIdentifier(pool));
@@ -306,7 +306,7 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent, IBalanc
      * @param poolId balancer pool id
      * @param amount unstake amount
     **/
-    function unstakeBalancerV2(bytes32 poolId, uint256 amount) external nonReentrant onlyOwnerOrInsolvent recalculateAssetsExposure {
+    function unstakeBalancerV2(bytes32 poolId, uint256 amount) external nonReentrant onlyOwnerOrInsolvent {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         (address pool,) = IVault(MASTER_VAULT_ADDRESS).getPool(poolId);
@@ -331,7 +331,8 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent, IBalanc
         }
 
         bytes32 poolSymbol = tokenManager.tokenAddressToSymbol(pool);
-        DiamondStorageLib.addOwnedAsset(poolSymbol, pool);
+        _decreaseExposure(tokenManager, address(gauge), initialGaugeBalance - newGaugeBalance);
+        _increaseExposure(tokenManager, pool, IERC20(pool).balanceOf(address(this)) - initialDepositTokenBalance);
 
         emit BptUnstaked(
             msg.sender,
@@ -343,7 +344,7 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent, IBalanc
         );
     }
 
-    function claimRewardsBalancerV2(bytes32 poolId) external nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent {
+    function claimRewardsBalancerV2(bytes32 poolId) external nonReentrant onlyOwner remainsSolvent {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         (address pool,) = IVault(MASTER_VAULT_ADDRESS).getPool(poolId);
@@ -381,7 +382,7 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent, IBalanc
                 rewardToken = tokenManager.getAssetAddress(_rewardTokens[i], false);
                 uint256 claimedAmount = IERC20(rewardToken).balanceOf(address(this)) - initialBalances[i];
                 if(claimedAmount > 0) {
-                    DiamondStorageLib.addOwnedAsset(_rewardTokens[i], rewardToken);
+                    _increaseExposure(tokenManager, rewardToken, claimedAmount);
                     emit RewardClaimed(
                         msg.sender,
                         rewardToken,

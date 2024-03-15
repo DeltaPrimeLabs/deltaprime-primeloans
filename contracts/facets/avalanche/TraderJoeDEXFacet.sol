@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 71813826f564de63a2462d95b5c15944fcdf686e;
+// Last deployed from commit: 991f66d82490413f8ba0b6c862ef5c28302bb6ad;
 pragma solidity 0.8.17;
 
 import "../UniswapV2DEXFacet.sol";
@@ -34,6 +34,6 @@ contract TraderJoeDEXFacet is UniswapV2DEXFacet {
      * Returns address of UniswapV2-like exchange
      **/
     function getExchangeIntermediaryContract() public override returns (address) {
-        return 0x5302E909d1e93e30F05B5D6Eea766363D14F9892;
+        return 0x4eEcb72b47a32786e08581D6226e95d9AE3bB1Af;
     }
 }

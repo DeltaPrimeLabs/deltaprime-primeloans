@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 823fcca40bc6e67f5c296c8aa0426520d41a542f;
+// Last deployed from commit: 19d9982858f4feeff1ca98cbf31b07304a79ac7f;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -178,11 +178,7 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
             repaidInUSD += repayAmount * cachedPrices.assetsToRepayPrices[i].price * 10 ** 10 / 10 ** token.decimals();
 
             pool.repay(repayAmount);
-            tokenManager.decreaseProtocolExposure(config.assetsToRepay[i], repayAmount);
-
-            if (token.balanceOf(address(this)) == 0) {
-                DiamondStorageLib.removeOwnedAsset(config.assetsToRepay[i]);
-            }
+            _decreaseExposure(tokenManager, address(token), repayAmount - supplyAmount);
 
             emit LiquidationRepay(msg.sender, config.assetsToRepay[i], repayAmount, block.timestamp);
         }
