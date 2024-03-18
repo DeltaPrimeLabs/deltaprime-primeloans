@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
  * It could be used as a base building block for any index-based entities like deposits and loans.
  * The index is updated on a linear basis to the compounding happens when a user decide to accumulate the interests
  **/
-contract DeltaPrimeBridge is BaseOFTV2{
+contract PrimeBridge is BaseOFTV2{
     using SafeERC20 for IERC20;
 
     IERC20 internal immutable innerToken;

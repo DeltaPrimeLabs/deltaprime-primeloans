@@ -5,6 +5,6 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 
-contract DeltaPrime is ERC20, ERC20Permit {
+contract Prime is ERC20, ERC20Permit {
     constructor() ERC20("DeltaPrime", "PRIME") ERC20Permit("DeltaPrime") {}
 }

@@ -5,7 +5,7 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@layerzerolabs/solidity-examples/contracts/token/oft/v2/BaseOFTV2.sol";
 
-contract DeltaPrime_L2 is BaseOFTV2, ERC20 {
+contract Prime_L2 is BaseOFTV2, ERC20 {
     uint internal immutable ld2sdRate;
 
     constructor(
