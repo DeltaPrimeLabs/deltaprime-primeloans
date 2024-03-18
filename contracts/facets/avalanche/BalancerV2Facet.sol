@@ -199,6 +199,9 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent, IBalanc
 
         // Add staked position
         DiamondStorageLib.addStakedPosition(position);
+        if (IERC20(pool).balanceOf(address(this)) == 0) {
+            DiamondStorageLib.removeOwnedAsset(poolSymbol);
+        }
 
         emit BptStaked(
             msg.sender,
@@ -328,6 +331,7 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent, IBalanc
         }
 
         bytes32 poolSymbol = tokenManager.tokenAddressToSymbol(pool);
+        DiamondStorageLib.addOwnedAsset(poolSymbol, pool);
 
         emit BptUnstaked(
             msg.sender,
