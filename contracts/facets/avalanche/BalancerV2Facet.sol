@@ -138,7 +138,7 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent, IBalanc
             // Add staked position
             DiamondStorageLib.addStakedPosition(position);
 
-            _increaseExposure(tokenManager, address(gauge), IERC20(gauge).balanceOf(address(this)) - initialGaugeBalance);
+            _increaseExposure(tokenManager, address(pool), IERC20(gauge).balanceOf(address(this)) - initialGaugeBalance);
         }
 
         bytes32[] memory stakedAssets = new bytes32[](stakedTokensLength);
@@ -199,9 +199,6 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent, IBalanc
 
         // Add staked position
         DiamondStorageLib.addStakedPosition(position);
-
-        _decreaseExposure(tokenManager, pool, amount);
-        _increaseExposure(tokenManager, address(gauge), IERC20(gauge).balanceOf(address(this)) - initialGaugeBalance);
 
         emit BptStaked(
             msg.sender,
@@ -284,7 +281,7 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent, IBalanc
         uint256 newGaugeBalance = IERC20(gauge).balanceOf(address(this));
 
         _increaseExposure(tokenManager, request.unstakedToken, unstakedAmounts[0]);
-        _decreaseExposure(tokenManager, address(gauge), initialGaugeBalance - newGaugeBalance);
+        _decreaseExposure(tokenManager, address(pool), initialGaugeBalance - newGaugeBalance);
 
 
         if (newGaugeBalance == 0) {
@@ -331,8 +328,6 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent, IBalanc
         }
 
         bytes32 poolSymbol = tokenManager.tokenAddressToSymbol(pool);
-        _decreaseExposure(tokenManager, address(gauge), initialGaugeBalance - newGaugeBalance);
-        _increaseExposure(tokenManager, pool, IERC20(pool).balanceOf(address(this)) - initialDepositTokenBalance);
 
         emit BptUnstaked(
             msg.sender,
