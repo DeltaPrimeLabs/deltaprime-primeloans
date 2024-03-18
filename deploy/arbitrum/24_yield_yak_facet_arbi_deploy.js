@@ -134,44 +134,44 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         });
     console.log(`Verified YieldYakFacetArbi`);
 
-    const diamondContract = await ethers.getContract("SmartLoanDiamondBeacon");
-    console.log(`Diamond address: ${diamondContract.address}`);
-    const diamondCut = await ethers.getContractAt("IDiamondCut", diamondContract.address, deployer);
-    let contract = await ethers.getContract("YieldYakFacetArbi");
-    let [addSelectors, replaceSelectors] = await checkMethodsSelectorsAgainstDiamondLoupe(contract, diamondContract.address, deployer, false);
-
-    const facetCut = [
-        [
-            YieldYakFacetArbi.address,
-            FacetCutAction.Add,
-            addSelectors
-        ],
-        [
-            YieldYakFacetArbi.address,
-            FacetCutAction.Replace,
-            replaceSelectors
-        ]
-    ]
-
-    console.log(`Performing diamondCut with: ${facetCut}`)
-    await diamondCut.pause();
-    console.log('Paused')
-    await diamondCut.diamondCut(
-        facetCut,
-        ethers.constants.AddressZero,
-        []
-    )
-    await diamondCut.unpause();
-    console.log('Unpaused')
-    console.log(`DiamondCut finished`)
-    console.log('DiamondLoupe after diamondCut:')
-    await checkMethodsSelectorsAgainstDiamondLoupe(contract, diamondContract.address, deployer);
-
-    const tokenManagerTUP = await ethers.getContract("TokenManagerTUP");
-    const tokenManager = await ethers.getContractAt("TokenManager", tokenManagerTUP.address, deployer);
-    console.log(`Whitelisting YY_WOMBEX_DAI in TokenManager (${tokenManager.address})`)
-    await tokenManager.addTokenAssets([asset('YY_WOMBEX_DAI', 'arb')]);
-    console.log('Asset whitelisted successfully.')
+    // const diamondContract = await ethers.getContract("SmartLoanDiamondBeacon");
+    // console.log(`Diamond address: ${diamondContract.address}`);
+    // const diamondCut = await ethers.getContractAt("IDiamondCut", diamondContract.address, deployer);
+    // let contract = await ethers.getContract("YieldYakFacetArbi");
+    // let [addSelectors, replaceSelectors] = await checkMethodsSelectorsAgainstDiamondLoupe(contract, diamondContract.address, deployer, false);
+    //
+    // const facetCut = [
+    //     [
+    //         YieldYakFacetArbi.address,
+    //         FacetCutAction.Add,
+    //         addSelectors
+    //     ],
+    //     [
+    //         YieldYakFacetArbi.address,
+    //         FacetCutAction.Replace,
+    //         replaceSelectors
+    //     ]
+    // ]
+    //
+    // console.log(`Performing diamondCut with: ${facetCut}`)
+    // await diamondCut.pause();
+    // console.log('Paused')
+    // await diamondCut.diamondCut(
+    //     facetCut,
+    //     ethers.constants.AddressZero,
+    //     []
+    // )
+    // await diamondCut.unpause();
+    // console.log('Unpaused')
+    // console.log(`DiamondCut finished`)
+    // console.log('DiamondLoupe after diamondCut:')
+    // await checkMethodsSelectorsAgainstDiamondLoupe(contract, diamondContract.address, deployer);
+    //
+    // const tokenManagerTUP = await ethers.getContract("TokenManagerTUP");
+    // const tokenManager = await ethers.getContractAt("TokenManager", tokenManagerTUP.address, deployer);
+    // console.log(`Whitelisting YY_WOMBEX_DAI in TokenManager (${tokenManager.address})`)
+    // await tokenManager.addTokenAssets([asset('YY_WOMBEX_DAI', 'arb')]);
+    // console.log('Asset whitelisted successfully.')
 
 
 };

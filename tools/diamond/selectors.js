@@ -7,6 +7,7 @@ function getSelectors (contract) {
     const signatures = Object.keys(contract.interface.functions)
     const selectors = signatures.reduce((acc, val) => {
         if (val !== 'init(bytes)') {
+            console.log(`${val} -> ${contract.interface.getSighash(val)}`)
             acc.push(contract.interface.getSighash(val))
         }
         return acc

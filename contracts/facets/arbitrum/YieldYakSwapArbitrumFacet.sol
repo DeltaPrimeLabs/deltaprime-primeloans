@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: e9e05b6e564514c1bcd1b5e49f5e45250e72bf98;
+// Last deployed from commit: 19d9982858f4feeff1ca98cbf31b07304a79ac7f;
 pragma solidity 0.8.17;
 
 import "../avalanche/YieldYakSwapFacet.sol";

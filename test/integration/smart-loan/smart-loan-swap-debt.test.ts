@@ -220,7 +220,6 @@ describe("Smart loan", () => {
                     // @ts-ignore
                     disablePayloadsDryRun: true,
                 },
-                CACHE_LAYER_URLS.urls
             );
         });
 
@@ -289,7 +288,6 @@ describe("Smart loan", () => {
                         // @ts-ignore
                         disablePayloadsDryRun: true,
                     },
-                    CACHE_LAYER_URLS.urls
                 );
             await expect(
                 nonOwnerWrappedLoan.swapDebt(
