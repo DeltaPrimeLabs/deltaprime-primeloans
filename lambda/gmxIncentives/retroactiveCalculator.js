@@ -19,8 +19,8 @@ const redstone = require("redstone-api");
 
 // const Web3 = require('web3');
 // const fs = require("fs");
-const blockTimestampStart = 1707919200;
-const blockTimestampEnd = 1708454700;
+const blockTimestampStart = 1708955727;
+const blockTimestampEnd = 1710790718;
 
 const factoryAddress = constants.avalanche.factory;
 
@@ -89,12 +89,12 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
     const totalLoans = loanAddresses.length;
 
     let weeklyIncentives;
-    if (timestampInSeconds < 1707469800) {// 09.02.2024 10:10 CET
-      weeklyIncentives = 333.333;
-    } else if (timestampInSeconds < 1707568800) {// 10.02.2024 13:40 CET
-      weeklyIncentives = 833.333;
+    if (timestampInSeconds < 1710421200) {// 14.03 14:00 CET
+      weeklyIncentives = 1666;
+    } else if (timestampInSeconds < 1710535200) {// 15.03 21:40 CET
+      weeklyIncentives = 1000;
     } else {
-      weeklyIncentives = 1500;
+      weeklyIncentives = 225;
     }
     const incentivesPerInterval = weeklyIncentives / (60 * 60 * 24 * 7) * (60 * 60 * 4);
     const batchSize = 200;

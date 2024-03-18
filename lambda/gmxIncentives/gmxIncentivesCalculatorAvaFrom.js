@@ -127,6 +127,29 @@ const gmxIncentivesCalculatorAvaFrom = async (event) => {
 
   console.log("GMX incentives successfully updated.")
 
+  // save boost APY to DB
+  const boostApy = incentivesPerInterval / totalLeveragedGM * 6 * 24 * 365;
+  const params = {
+    TableName: process.env.APY_TABLE,
+    Key: {
+      id: "GM_BOOST"
+    },
+    AttributeUpdates: {
+      avaxApy: {
+        Value: Number(boostApy) ? boostApy : null,
+        Action: "PUT"
+      },
+      avaxTvl: {
+        Value: Number(gmTvl) ? gmTvl : null,
+        Action: "PUT"
+      }
+    }
+  };
+
+  await dynamoDb.update(params).promise();
+
+  console.log("GM boost APY on Avalanche saved.");
+
   return event;
 }
 
