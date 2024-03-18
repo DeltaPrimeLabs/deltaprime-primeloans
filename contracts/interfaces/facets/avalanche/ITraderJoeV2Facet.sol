@@ -31,6 +31,6 @@ interface ITraderJoeV2Facet {
 
     function getOwnedTraderJoeV2Bins() external view returns (TraderJoeV2Bin[] memory result);
 
-    function claimReward(ITraderJoeV2Rewarder.MerkleEntry[] calldata merkleEntries) external;
+    function claimReward(IRewarder.MerkleEntry[] calldata merkleEntries) external;
 
 }
