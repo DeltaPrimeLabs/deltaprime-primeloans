@@ -1,7 +1,7 @@
 pragma solidity ^0.8.17;
 
 import "../../joe-v2/ILBRouter.sol";
-import "../../joe-v2/ITraderJoeV2Rewarder.sol";
+import "../../joe-v2/IRewarder.sol";
 
 interface ITraderJoeV2Facet {
 

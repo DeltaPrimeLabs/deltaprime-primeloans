@@ -5,7 +5,7 @@ pragma solidity ^0.8.10;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 //originally IRewarder
-interface ITraderJoeV2Rewarder {
+interface IRewarder {
     /**
      * @dev Structure to store the Merkle tree entry. It contains:
      * - `market` is the address of the market.
