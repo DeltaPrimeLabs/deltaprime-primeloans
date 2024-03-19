@@ -6,15 +6,19 @@
       </div>
 
       <div class="modal__content">
-        <div class="content__part content__part--first">Gm fren! In order to stay fully compliant, we had to update our
-          terms and conditions. Please give it a read
-          below and sign the new T&C with your wallet. Apologies for any inconvenience!
+        <div class="content__part content__part--first">
+          Gm fren! In order to stay fully compliant, we had to update our terms and conditions.
+          Please give it a read below and sign the new T&C with your wallet. Apologies for any inconvenience!
         </div>
-        <div class="content__part">Good to know: while DeltaPrime charges a small liquidation bonus, there are no
-          additional fees for trading or
-          borrowing.
+
+        <div class="content__part">
+          If you don’t accept the changes, you should discontinue using our services and withdraw your funds within 14 days.
         </div>
-        <div class="content__part content__part--third">Stay safe Degen!</div>
+
+        <div class="content__part">
+          Good to know: while DeltaPrime charges a small liquidation bonus, there are no additional fees for trading or borrowing.
+        </div>
+        <div class="content__part content__part--last">Stay safe Degen!</div>
       </div>
 
       <a href="https://deltaprime.io/documents/DeltaPrime_Terms_of_Use.pdf" class="terms-link" target="_blank">
@@ -95,7 +99,7 @@ export default {
     font-weight: 600;
   }
 
-  &.content__part--third {
+  &.content__part--last {
     text-align: end;
   }
 }
