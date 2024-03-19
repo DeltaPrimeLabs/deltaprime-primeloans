@@ -143,7 +143,7 @@ describe('Smart loan', () => {
                 'lib',
                 5000,
                 "1.042e18",
-                100,
+                200,
                 "ETH",
                 "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
             );
