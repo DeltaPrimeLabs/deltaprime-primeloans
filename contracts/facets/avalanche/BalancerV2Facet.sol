@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 499a35c62f8a913d89f7faf78bf5c6b3cea2ee8b;
+// Last deployed from commit: 6f7f4cd9481c319d118ca12f8d2a3f8688dcf371;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -138,7 +138,7 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent, IBalanc
             // Add staked position
             DiamondStorageLib.addStakedPosition(position);
 
-            _increaseExposure(tokenManager, address(gauge), IERC20(gauge).balanceOf(address(this)) - initialGaugeBalance);
+            _increaseExposure(tokenManager, address(pool), IERC20(gauge).balanceOf(address(this)) - initialGaugeBalance);
         }
 
         bytes32[] memory stakedAssets = new bytes32[](stakedTokensLength);
@@ -199,9 +199,9 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent, IBalanc
 
         // Add staked position
         DiamondStorageLib.addStakedPosition(position);
-
-        _decreaseExposure(tokenManager, pool, amount);
-        _increaseExposure(tokenManager, address(gauge), IERC20(gauge).balanceOf(address(this)) - initialGaugeBalance);
+        if (IERC20(pool).balanceOf(address(this)) == 0) {
+            DiamondStorageLib.removeOwnedAsset(poolSymbol);
+        }
 
         emit BptStaked(
             msg.sender,
@@ -284,7 +284,7 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent, IBalanc
         uint256 newGaugeBalance = IERC20(gauge).balanceOf(address(this));
 
         _increaseExposure(tokenManager, request.unstakedToken, unstakedAmounts[0]);
-        _decreaseExposure(tokenManager, address(gauge), initialGaugeBalance - newGaugeBalance);
+        _decreaseExposure(tokenManager, address(pool), initialGaugeBalance - newGaugeBalance);
 
 
         if (newGaugeBalance == 0) {
@@ -331,8 +331,7 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent, IBalanc
         }
 
         bytes32 poolSymbol = tokenManager.tokenAddressToSymbol(pool);
-        _decreaseExposure(tokenManager, address(gauge), initialGaugeBalance - newGaugeBalance);
-        _increaseExposure(tokenManager, pool, IERC20(pool).balanceOf(address(this)) - initialDepositTokenBalance);
+        DiamondStorageLib.addOwnedAsset(poolSymbol, pool);
 
         emit BptUnstaked(
             msg.sender,
