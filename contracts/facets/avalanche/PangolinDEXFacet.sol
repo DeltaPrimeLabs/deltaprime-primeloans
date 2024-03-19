@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 71813826f564de63a2462d95b5c15944fcdf686e;
+// Last deployed from commit: 499a35c62f8a913d89f7faf78bf5c6b3cea2ee8b;
 pragma solidity 0.8.17;
 
 import "../UniswapV2DEXFacet.sol";
@@ -34,6 +34,6 @@ contract PangolinDEXFacet is UniswapV2DEXFacet {
      * Returns address of UniswapV2-like exchange
      **/
     function getExchangeIntermediaryContract() public override returns (address) {
-        return 0x19cEcCd6942ad38562Ee10bAfd44776ceB67e923;
+        return 0xdB5D94B8Ed491B058F3e74D029775A14477cF7fA;
     }
 }

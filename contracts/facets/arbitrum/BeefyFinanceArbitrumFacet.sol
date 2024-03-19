@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 45f08bc19838959bd87aa0b1a083ddbe9bc5e5b2;
+// Last deployed from commit: 19d9982858f4feeff1ca98cbf31b07304a79ac7f;
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -32,7 +32,7 @@ contract BeefyFinanceArbitrumFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolven
       * @dev This function uses the redstone-evm-connector
       * @param amount amount of SUSHI_DPX_ETH_LP to be staked
     **/
-    function stakeSushiDpxEthLpBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure remainsSolvent {
+    function stakeSushiDpxEthLpBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant remainsSolvent {
         _stakeLpBeefy(IBeefyFinance.BeefyStakingDetails({
             lpTokenAddress: SUSHI_DPX_ETH_LP,
             vaultAddress: MOO_SUSHI_DPX_ETH_LP,
@@ -47,7 +47,7 @@ contract BeefyFinanceArbitrumFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolven
       * @dev This function uses the redstone-evm-connector
       * @param amount amount of GMX to be staked
     **/
-    function stakeGmxBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure remainsSolvent {
+    function stakeGmxBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant remainsSolvent {
         _stakeLpBeefy(IBeefyFinance.BeefyStakingDetails({
             lpTokenAddress: GMX,
             vaultAddress: MOO_GMX,
@@ -64,7 +64,7 @@ contract BeefyFinanceArbitrumFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolven
       * @dev This function uses the redstone-evm-connector
       * @param amount amount of SUSHI_DPX_ETH_LP to be unstaked
     **/
-    function unstakeSushiDpxEthLpBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure {
+    function unstakeSushiDpxEthLpBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant {
             _unstakeLpBeefy(IBeefyFinance.BeefyStakingDetails({
             lpTokenAddress: SUSHI_DPX_ETH_LP,
             vaultAddress: MOO_SUSHI_DPX_ETH_LP,
@@ -79,7 +79,7 @@ contract BeefyFinanceArbitrumFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolven
       * @dev This function uses the redstone-evm-connector
       * @param amount amount of GMX to be unstaked
     **/
-    function unstakeGmxBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure {
+    function unstakeGmxBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant {
         _unstakeLpBeefy(IBeefyFinance.BeefyStakingDetails({
             lpTokenAddress: GMX,
             vaultAddress: MOO_GMX,
@@ -107,18 +107,14 @@ contract BeefyFinanceArbitrumFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolven
 
         stakingDetails.lpTokenAddress.safeApprove(stakingDetails.vaultAddress, 0);
         stakingDetails.lpTokenAddress.safeApprove(stakingDetails.vaultAddress, stakingDetails.amount);
-
+        
         IBeefyFinance vaultContract = IBeefyFinance(stakingDetails.vaultAddress);
+        uint256 initialVaultToken = vaultContract.balanceOf(address(this));
 
         vaultContract.deposit(stakingDetails.amount);
 
-        // Add/remove owned tokens
-        if(vaultContract.balanceOf(address(this)) > 0) {
-            DiamondStorageLib.addOwnedAsset(stakingDetails.vaultTokenSymbol, stakingDetails.vaultAddress);
-        }
-        if(IERC20(stakingDetails.lpTokenAddress).balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset(stakingDetails.lpTokenSymbol);
-        }
+        _increaseExposure(tokenManager, stakingDetails.vaultAddress, vaultContract.balanceOf(address(this)) - initialVaultToken);
+        _decreaseExposure(tokenManager, stakingDetails.lpTokenAddress, stakingDetails.amount);
 
         emit Staked(msg.sender, stakingDetails.lpTokenSymbol, stakingDetails.vaultAddress, stakingDetails.amount, block.timestamp);
     }
@@ -131,18 +127,15 @@ contract BeefyFinanceArbitrumFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolven
     function _unstakeLpBeefy(IBeefyFinance.BeefyStakingDetails memory stakingDetails) private {
         IBeefyFinance vaultContract = IBeefyFinance(stakingDetails.vaultAddress);
         uint256 initialStakedBalance = vaultContract.balanceOf(address(this));
+        uint256 initialLpBalance = IERC20(stakingDetails.lpTokenAddress).balanceOf(address(this));
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         require(initialStakedBalance >= stakingDetails.amount, "Cannot unstake more than was initially staked");
 
         vaultContract.withdraw(stakingDetails.amount);
 
-        // Add/remove owned tokens
-        if(IERC20(stakingDetails.lpTokenAddress).balanceOf(address(this)) > 0) {
-            DiamondStorageLib.addOwnedAsset(stakingDetails.lpTokenSymbol, stakingDetails.lpTokenAddress);
-        }
-        if(vaultContract.balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset(stakingDetails.vaultTokenSymbol);
-        }
+        _decreaseExposure(tokenManager, stakingDetails.vaultAddress, stakingDetails.amount);
+        _increaseExposure(tokenManager, stakingDetails.lpTokenAddress, IERC20(stakingDetails.lpTokenAddress).balanceOf(address(this)) - initialLpBalance);
 
         emit Unstaked(msg.sender, stakingDetails.lpTokenSymbol, stakingDetails.vaultAddress, stakingDetails.amount, block.timestamp);
     }
