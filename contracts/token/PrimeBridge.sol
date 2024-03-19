@@ -5,12 +5,6 @@ pragma solidity 0.8.17;
 import "@layerzerolabs/solidity-examples/contracts/token/oft/v2/BaseOFTV2.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-/**
- * LinearIndex
- * The contract contains logic for time-based index recalculation with minimal memory footprint.
- * It could be used as a base building block for any index-based entities like deposits and loans.
- * The index is updated on a linear basis to the compounding happens when a user decide to accumulate the interests
- **/
 contract PrimeBridge is BaseOFTV2{
     using SafeERC20 for IERC20;
 
