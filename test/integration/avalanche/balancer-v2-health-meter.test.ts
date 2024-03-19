@@ -197,11 +197,16 @@ describe('Smart loan', () => {
             await wrappedLoan.borrow(toBytes32("AVAX"), toWei("300"));
 
             let swapData = await getSwapData('AVAX', 18, 'yyAVAX', 18, toWei('50'));
+            console.log('swap 1')
             await wrappedLoan.paraSwapV2(swapData.selector, swapData.data, TOKEN_ADDRESSES['AVAX'], toWei('50'), TOKEN_ADDRESSES['yyAVAX'], 1);
+
+            console.log('swap 2')
             swapData = await getSwapData('AVAX', 18, 'ggAVAX', 18, toWei('50'));
             await wrappedLoan.paraSwapV2(swapData.selector, swapData.data, TOKEN_ADDRESSES['AVAX'], toWei('50'), TOKEN_ADDRESSES['ggAVAX'], 1);
-            swapData = await getSwapData('AVAX', 18, 'sAVAX', 18, toWei('50'));
-            await wrappedLoan.paraSwapV2(swapData.selector, swapData.data, TOKEN_ADDRESSES['AVAX'], toWei('50'), TOKEN_ADDRESSES['sAVAX'], 1);
+
+            // console.log('swap 3')
+            // swapData = await getSwapData('AVAX', 18, 'sAVAX', 18, toWei('50'));
+            // await wrappedLoan.paraSwapV2(swapData.selector, swapData.data, TOKEN_ADDRESSES['AVAX'], toWei('50'), TOKEN_ADDRESSES['sAVAX'], 1);
         });
 
         it("should fail to stake as a non-owner", async () => {
@@ -274,6 +279,35 @@ describe('Smart loan', () => {
 
             let balanceAfterStake = fromWei(await ggAvaxTokenContract.balanceOf(wrappedLoan.address));
             expect(balanceAfterStake).to.be.gt(0);
+
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 1);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.01);
+        });
+
+        it("should unstake ggAVAX from Balancer vault", async () => {
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+            let initialTWV = fromWei(await wrappedLoan.getThresholdWeightedValue());
+
+            let initialStakedBalance = await ggAvaxTokenContract.balanceOf(wrappedLoan.address);
+            let initialNotStakedBalance = await tokenContracts.get('BAL_ggAVAX_AVAX')!.balanceOf(wrappedLoan.address);
+            expect(initialStakedBalance).to.be.gt(0);
+            expect(initialNotStakedBalance).to.be.equal(0);
+
+            let hmBefore = fromWei(await wrappedLoan.getHealthMeter());
+            console.log("Health meter before: ", hmBefore);
+
+            await wrappedLoan.unstakeBalancerV2(
+                "0xc13546b97b9b1b15372368dc06529d7191081f5b00000000000000000000001d",
+                initialStakedBalance,
+            );
+            let hmAfter = fromWei(await wrappedLoan.getHealthMeter());
+            console.log("Health meter after: ", hmAfter);
+            expect(hmAfter).to.be.closeTo(hmBefore, 0.01);
+
+            let balanceAfterStake = fromWei(await ggAvaxTokenContract.balanceOf(wrappedLoan.address));
+            let finalNonStakedBalance = await tokenContracts.get('BAL_ggAVAX_AVAX')!.balanceOf(wrappedLoan.address);
+            expect(balanceAfterStake).to.be.eq(0);
+            expect(finalNonStakedBalance).to.be.equal(initialStakedBalance);
 
             expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(initialTWV, 1);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.01);
