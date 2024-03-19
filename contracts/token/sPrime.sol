@@ -21,17 +21,18 @@ contract sPrime is ReentrancyGuard, Ownable, ERC20 {
     using SafeCast for uint256;
     using Uint256x256Math for uint256;
 
+    struct RangeData {
+        uint24 lowerRange;
+        uint24 upperRange;
+        uint64 lastRebalance;
+        uint256 totalShare;
+    }
+
     uint256 private constant _PRECISION = 1e18;
-    uint256 private constant _BASIS_POINTS = 1e4;
-
     uint256 private constant _MAX_RANGE = 51;
-
-    uint8 private constant _OFFSET = 128;
     uint256 private constant _PACKED_DISTRIBS_SIZE = 16;
 
-    uint24 private _lowerRange;
-    uint24 private _upperRange;
-    uint64 private _lastRebalance;
+    mapping(uint256 => RangeData) private rangeList;
 
     IERC20 public immutable tokenX;
     IERC20 public immutable tokenY;
@@ -53,8 +54,8 @@ contract sPrime is ReentrancyGuard, Ownable, ERC20 {
      * @return lower The lower bound of the range.
      * @return upper The upper bound of the range.
      */
-    function getRange() external view returns (uint24 lower, uint24 upper) {
-        return (_lowerRange, _upperRange);
+    function getRange(uint256 index) external view returns (uint24 lower, uint24 upper) {
+        return (rangeList[index].lowerRange, rangeList[index].upperRange);
     }
 
     /**
@@ -62,8 +63,8 @@ contract sPrime is ReentrancyGuard, Ownable, ERC20 {
      * @return amountX The amount of token X.
      * @return amountY The amount of token Y.
      */
-    function getBalances() external view returns (uint256 amountX, uint256 amountY) {
-        return _getBalances();
+    function getBalances(uint256 index) external view returns (uint256 amountX, uint256 amountY) {
+        return _getBalances(index);
     }
 
     /**
@@ -80,8 +81,8 @@ contract sPrime is ReentrancyGuard, Ownable, ERC20 {
      * @notice Returns the last rebalance timestamp.
      * @return lastRebalance The last rebalance timestamp.
      */
-    function getLastRebalance() external view returns (uint256 lastRebalance) {
-        return _lastRebalance;
+    function getLastRebalance(uint256 index) external view returns (uint256 lastRebalance) {
+        return rangeList[index].lastRebalance;
     }
 
     /**
@@ -94,18 +95,18 @@ contract sPrime is ReentrancyGuard, Ownable, ERC20 {
      * @param slippageActiveId The slippage active id.
      * @param distributions The packed distributions. Each bytes16 of the distributions bytes is
      * (distributionX, distributionY) from the `newLower`to the `newUpper` range.
-     * @param amountX The amount of token X to deposit.
-     * @param amountY The amount of token Y to deposit.
      */
     function rebalance(
+        uint256 index,
         uint24 newLower,
         uint24 newUpper,
         uint24 desiredActiveId,
         uint24 slippageActiveId,
-        uint256 amountX,
-        uint256 amountY,
         bytes calldata distributions
     ) external onlyOwner {
+
+        (uint256 amountX, uint256 amountY) = _withdrawAndResetRange(index);
+
         // Check if the operator wants to deposit tokens.
         if (desiredActiveId > 0 || slippageActiveId > 0) {
             uint24 activeId;
@@ -114,7 +115,7 @@ contract sPrime is ReentrancyGuard, Ownable, ERC20 {
             // Get the distributions and the amounts to deposit
             bytes32[] memory liquidityConfigs = _getLiquidityConfigs(newLower, newUpper, distributions);
 
-            _depositToLB(newLower, newUpper, liquidityConfigs, amountX, amountY);
+            _depositToLB(index, newLower, newUpper, liquidityConfigs, amountX, amountY);
         }
     }
 
@@ -144,13 +145,13 @@ contract sPrime is ReentrancyGuard, Ownable, ERC20 {
      * @return amountX The balance of token X.
      * @return amountY The balance of token Y.
      */
-    function _getBalances() internal view returns (uint256 amountX, uint256 amountY) {
+    function _getBalances(uint256 index) internal view returns (uint256 amountX, uint256 amountY) {
         // Get the balances of the tokens in the contract.
         amountX = tokenX.balanceOf(address(this));
         amountY = tokenY.balanceOf(address(this));
 
         // Get the range of the tokens in the pool.
-        (uint24 lower, uint24 upper) = (_lowerRange, _upperRange);
+        (uint24 lower, uint24 upper) = (rangeList[index].lowerRange, rangeList[index].upperRange);
 
         // If the range is not empty, get the balances of the tokens in the range.
         if (upper != 0) {
@@ -249,16 +250,16 @@ contract sPrime is ReentrancyGuard, Ownable, ERC20 {
      * @param newLower The lower end of the new range.
      * @param newUpper The upper end of the new range.
      */
-    function _setRange(uint24 newLower, uint24 newUpper) internal {
+    function _setRange(uint256 index, uint24 newLower, uint24 newUpper) internal {
         require(newUpper != 0 && newLower <= newUpper, "InvalidRange");
         require(newUpper - newLower + 1 <= _MAX_RANGE, "RangeTooWide");
 
-        uint24 previousUpper = _upperRange;
+        uint24 previousUpper = rangeList[index].upperRange;
 
         require(previousUpper == 0, "RangeAlreadySet");
 
-        _lowerRange = newLower;
-        _upperRange = newUpper;
+        rangeList[index].lowerRange = newLower;
+        rangeList[index].upperRange = newUpper;
 
         emit RangeSet(newLower, newUpper);
     }
@@ -266,9 +267,9 @@ contract sPrime is ReentrancyGuard, Ownable, ERC20 {
     /**
      * @dev Resets the range.
      */
-    function _resetRange() internal {
-        _lowerRange = 0;
-        _upperRange = 0;
+    function _resetRange(uint256 index) internal {
+        rangeList[index].lowerRange = 0;
+        rangeList[index].upperRange = 0;
 
         emit RangeSet(0, 0);
     }
@@ -282,6 +283,7 @@ contract sPrime is ReentrancyGuard, Ownable, ERC20 {
      * @param amountY The amount of token Y to deposit.
      */
     function _depositToLB(
+        uint256 index,
         uint24 lower,
         uint24 upper,
         bytes32[] memory liquidityConfigs,
@@ -289,7 +291,7 @@ contract sPrime is ReentrancyGuard, Ownable, ERC20 {
         uint256 amountY
     ) internal {
         // Set the range, will check if the range is valid.
-        _setRange(lower, upper);
+        _setRange(index, lower, upper);
 
         require(amountX != 0 || amountY != 0, "ZeroAmounts");
 
@@ -306,76 +308,45 @@ contract sPrime is ReentrancyGuard, Ownable, ERC20 {
     /**
      * @dev Withdraws tokens from the pair and applies the AUM annual fee. This function will also reset the range.
      * Will never charge for more than a day of AUM fees, even if the sPrime contract has not been rebalanced for a longer period.
-     * @return pendingShares The amount of shares that were pending for withdrawal.
-     * @return pendingAmountX The amount of token X that was pending for withdrawal.
-     * @return pendingAmountY The amount of token Y that was pending for withdrawal.
      */
-    function _withdrawAndResetRange()
-        internal
-        returns (uint256 pendingShares, uint256 pendingAmountX, uint256 pendingAmountY)
-    {
+    function _withdrawAndResetRange(uint256 index) internal returns(uint256 totalBalanceX, uint256 totalBalanceY) {
         // Get the range and reset it.
-        (uint24 lowerRange, uint24 upperRange) = (_lowerRange, _upperRange);
-        if (upperRange > 0) _resetRange();
+        (uint24 lowerRange, uint24 upperRange) = (rangeList[index].lowerRange, rangeList[index].upperRange);
+        if (upperRange > 0) _resetRange(index);
 
-        // Get the total balance of the sPrime contract and the pending shares and amounts.
-        uint256 totalBalanceX;
-        uint256 totalBalanceY;
-
-        (totalBalanceX, totalBalanceY, pendingShares, pendingAmountX, pendingAmountY) =
-            _withdraw(lowerRange, upperRange, balanceOf(address(this)));
-
-        // Get the total balance of the sPrime contract.
-        totalBalanceX += pendingAmountX;
-        totalBalanceY += pendingAmountY;
+        (totalBalanceX, totalBalanceY) = _withdraw(lowerRange, upperRange, _PRECISION);
 
         // Ge the last rebalance timestamp and update it.
-        _lastRebalance = block.timestamp.safe64();
-
-        // If the total balance is 0, early return to not charge the AUM annual fee nor update it.
-        if (totalBalanceX == 0 && totalBalanceY == 0) return (pendingShares, pendingAmountX, pendingAmountY);
+        rangeList[index].lastRebalance = block.timestamp.safe64();
     }
 
     /**
      * @dev Withdraws tokens from the pair also withdraw the pending withdraws.
      * @param removedLower The lower end of the range to remove.
      * @param removedUpper The upper end of the range to remove.
-     * @param share The amount of shares to withdraw.
-     * @return amountX The amount of token X withdrawn.
-     * @return amountY The amount of token Y withdrawn.
-     * @return pendingShares The amount of shares withdrawn from the pending withdraws.
-     * @return pendingAmountX The amount of token X withdrawn from the pending withdraws.
-     * @return pendingAmountY The amount of token Y withdrawn from the pending withdraws.
+     * @param share The share amount to remove from the sPrime LP.
      */
     function _withdraw(uint24 removedLower, uint24 removedUpper, uint256 share)
         internal
-        returns (uint256 amountX, uint256 amountY, uint256 pendingShares, uint256 pendingAmountX, uint256 pendingAmountY)
+        returns (uint256 amountX, uint256 amountY)
     {
-        uint256 totalShares = totalSupply();
-        // Get the amount of shares pending for withdrawal.
-        pendingShares = share;
-
         // Withdraw from the Liquidity Book Pair and get the amounts of tokens in the sPrime contract.
-        (uint256 balanceX, uint256 balanceY) = _withdrawFromLB(removedLower, removedUpper);
-
-        // Get the amount of tokens to withdraw from the pending withdraws.
-        (pendingAmountX, pendingAmountY) = totalShares == 0 || pendingShares == 0
-            ? (0, 0)
-            : (pendingShares.mulDivRoundDown(balanceX, totalShares), pendingShares.mulDivRoundDown(balanceY, totalShares));
+        (uint256 balanceX, uint256 balanceY) = _withdrawFromLB(removedLower, removedUpper, share);
 
         // Get the amount that were not pending for withdrawal.
-        amountX = balanceX - pendingAmountX;
-        amountY = balanceY - pendingAmountY;
+        amountX = balanceX;
+        amountY = balanceY;
     }
 
     /**
      * @dev Withdraws tokens from the Liquidity Book Pair.
      * @param removedLower The lower end of the range to remove.
      * @param removedUpper The upper end of the range to remove.
+     * @param share The amount of share to withdraw.
      * @return balanceX The amount of token X in the sPrime contract.
      * @return balanceY The amount of token Y in the sPrime contract.
      */
-    function _withdrawFromLB(uint24 removedLower, uint24 removedUpper)
+    function _withdrawFromLB(uint24 removedLower, uint24 removedUpper, uint256 share)
         internal
         returns (uint256 balanceX, uint256 balanceY)
     {
@@ -396,7 +367,7 @@ contract sPrime is ReentrancyGuard, Ownable, ERC20 {
 
                 if (amount != 0) {
                     ids[length] = id;
-                    amounts[length] = amount;
+                    amounts[length] = amount * share / _PRECISION;
 
                     unchecked {
                         ++length;
@@ -411,7 +382,7 @@ contract sPrime is ReentrancyGuard, Ownable, ERC20 {
 
         // If the range is not empty, burn the tokens from the pair.
         if (length > 0) {
-            // If the length is different than the delta, update the arrays, this allows to avoid the zero shares error.
+            // If the length is different than the delta, update the arrays, this allows to avoid the zero share error.
             if (length != delta) {
                 assembly {
                     mstore(ids, length)
@@ -423,7 +394,39 @@ contract sPrime is ReentrancyGuard, Ownable, ERC20 {
         }
 
         // Get the amount of tokens in the sPrime contract.
-        balanceX = IERC20(tokenX).balanceOf(address(this));
-        balanceY = IERC20(tokenY).balanceOf(address(this));
+        balanceX = tokenX.balanceOf(address(this));
+        balanceY = tokenY.balanceOf(address(this));
+    }
+
+    /**
+     * @dev Users can use deposit function for depositing tokens to the specific bin.
+     * @param index The index of range list.
+     * @param amountX The amount of token X to deposit.
+     * @param amountY The amount of token Y to deposit.
+     * @param distributions The packed distributions. Each bytes16 of the distributions bytes is
+     * (distributionX, distributionY) from the `newLower`to the `newUpper` range.
+     */
+    function deposit(uint256 index, uint256 amountX, uint256 amountY, bytes calldata distributions) external {
+        uint24 _lowerRange = rangeList[index].lowerRange;
+        uint24 _upperRange = rangeList[index].upperRange;
+        bytes32[] memory liquidityConfigs = _getLiquidityConfigs(_lowerRange, _upperRange, distributions);
+
+        _depositToLB(index, _lowerRange, _upperRange, liquidityConfigs, amountX, amountY);
+    }
+
+    /**
+     * @dev Only the vault can call this function.
+     * @param index The index of range list.
+     * @param shareWithdraw The amount of share to withdraw.
+     */
+    function withdraw(uint256 index, uint256 shareWithdraw) external {
+        require(shareWithdraw <= balanceOf(_msgSender()), "Insufficient Balance");
+
+        // Withdraw all the tokens from the LB pool and return the amounts and the queued withdrawals.
+        (uint256 amountX, uint256 amountY) = _withdraw(rangeList[index].lowerRange, rangeList[index].upperRange, shareWithdraw * _PRECISION / rangeList[index].totalShare);
+
+        // Send the tokens to the vault.
+        tokenX.safeTransfer(_msgSender(), amountX);
+        tokenY.safeTransfer(_msgSender(), amountY);
     }
 }
