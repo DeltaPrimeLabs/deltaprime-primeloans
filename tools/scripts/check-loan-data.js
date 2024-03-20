@@ -1,11 +1,15 @@
 const loanAddress = "0x4a4B8C28922FfC8F1E7Ce0969B49962a926B1184";
 const jsonRPC = "https://api.avax.network/ext/bc/C/rpc";
+const redstoneProviderId = "redstone-avalanche-prod";
 
 const ARTIFACT = require(`../../artifacts/contracts/interfaces/SmartLoanGigaChadInterface.sol/SmartLoanGigaChadInterface.json`);
 const ethers = require("ethers");
 const fs = require("fs");
 const {wrapContract} = require("../../src/utils/blockchain");
 const {fromWei, fromBytes32} = require("../../test/_helpers");
+const {WrapperBuilder} = require("@redstone-finance/evm-connector");
+const config = require("../../src/config");
+const CACHE_LAYER_URLS = require("../../common/redstone-cache-layer-urls.json");
 
 const key = fs.readFileSync("./.secret").toString().trim();
 let mnemonicWallet = new ethers.Wallet(key);
@@ -23,7 +27,14 @@ async function run() {
 }
 
 async function prepare() {
-    wrappedLoan = await wrapContract(loan);
+    wrappedLoan = WrapperBuilder.wrap(loan).usingDataService(
+        {
+            dataServiceId: redstoneProviderId,
+            uniqueSignersCount: 3,
+            disablePayloadsDryRun: true
+        },
+        CACHE_LAYER_URLS.urls
+    );
 }
 
 async function getData() {
@@ -58,4 +69,8 @@ async function getData() {
     console.log('TWV: ', status[2])
     console.log('Health: ', status[3])
     console.log('Solvent: ', status[4] === 1e-18)
+
+
+    let healthMeter = fromWei(await wrappedLoan.getHealthMeter())
+    console.log(`Health meter: ${healthMeter}`)
 }
