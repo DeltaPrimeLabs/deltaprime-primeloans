@@ -159,6 +159,46 @@ const getGmBoostApyApi = (event, context, callback) => {
     });
 };
 
+const onScan = async (params, results = []) => {
+  try {
+    console.log(results.length);
+    const result = await dynamoDb.scan(params).promise();
+
+    if (typeof result.LastEvaluatedKey != 'undefined') {
+      results = [...results, ...result.Items];
+      params.ExclusiveStartKey = result.LastEvaluatedKey;
+      return onScan(params, results);
+    }
+  } catch(error) {
+    console.error(error);
+    callback(new Error('Couldn\'t Incentives.'));
+    return;
+  };
+}
+
+const getIncentivesByTimestamp = async (event, context, callback) => {
+  const timestamp = 1710356783;
+  const params = {
+    TableName: process.env.GMX_INCENTIVES_AVA_FROM_TABLE,
+    FilterExpression: '#timestamp = :by_timestamp',
+    ExpressionAttributeValues: {
+      ':by_timestamp': timestamp
+    },
+    ExpressionAttributeNames: {
+      '#timestamp': 'timestamp'
+    }
+  };
+
+  const items = await onScan(params);
+  let intervalIncentives = 0;
+
+  items.map(item => {
+    intervalIncentives += item.avaxCollected;
+  });
+  console.log(intervalIncentives)
+  console.log(items.length);
+}
+
 module.exports = {
   getGmxIncentivesApi,
   getGmxIncentivesFromApi,
