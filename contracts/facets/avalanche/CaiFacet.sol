@@ -27,7 +27,7 @@ contract CaiFacet is ReentrancyGuardKeccak, SolvencyMethods {
         address fromToken,
         uint256 fromAmount,
         uint256 minOut
-    ) external nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent {
+    ) external nonReentrant onlyOwner remainsSolvent {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         require(minOut > 0, "minOut needs to be > 0");
@@ -74,7 +74,7 @@ contract CaiFacet is ReentrancyGuardKeccak, SolvencyMethods {
         uint256 shares,
         address toToken,
         uint256 minOut
-    ) external nonReentrant onlyOwner recalculateAssetsExposure remainsSolvent {
+    ) external nonReentrant onlyOwner remainsSolvent {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         require(minOut > 0, "minOut needs to be > 0");
