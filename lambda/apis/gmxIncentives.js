@@ -176,6 +176,39 @@ const onScan = async (params, results = []) => {
   };
 }
 
+const getGmxIncentivesNewApi = (event, context, callback) => {
+  const params = {
+    TableName: 'gmx-incentives-retroactive-ava-new',
+    KeyConditionExpression: 'id = :id',
+    ExpressionAttributeValues: {
+      ':id': event.pathParameters.id.toLowerCase()
+    }
+  };
+
+  dynamoDb.query(params).promise()
+    .then(result => {
+      let accumulatedIncentives = 0;
+
+      result.Items.map((item) => {
+        accumulatedIncentives += Number(item.avaxCollected);
+      });
+
+      const response = {
+        statusCode: 200,
+        body: JSON.stringify({
+          total: accumulatedIncentives,
+          list: result.Items
+        }),
+      };
+      callback(null, response);
+    })
+    .catch(error => {
+      console.error(error);
+      callback(new Error('Couldn\'t fetch GMX Incentives values.'));
+      return;
+    });
+};
+
 const getIncentivesByTimestamp = async (event, context, callback) => {
   const timestamp = 1710356783;
   const params = {
@@ -204,5 +237,6 @@ module.exports = {
   getGmxIncentivesFromApi,
   getGmxIncentivesRetroactiveApi,
   getGmBoostApyApi,
-  getGmxIncentivesRemakeApi
+  getGmxIncentivesRemakeApi,
+  getGmxIncentivesNewApi
 }

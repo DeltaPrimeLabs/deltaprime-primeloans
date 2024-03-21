@@ -256,6 +256,14 @@ functions:
       - httpApi:
           method: get
           path: /gmx-incentives-retroactive/{id}
+  getGmxIncentivesNewApi:
+    handler: apis/gmxIncentives.getGmxIncentivesNewApi
+    memorySize: 512
+    description: Fetch new retroactive GMX incentives values from a week ago to certain timestamp for a loan on Avalanche
+    events:
+      - httpApi:
+          method: get
+          path: /gmx-incentives-new/{id}
   getGmxIncentivesRemakeApi:
     handler: apis/gmxIncentives.getGmxIncentivesRemakeApi
     memorySize: 512
