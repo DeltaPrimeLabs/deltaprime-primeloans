@@ -3,13 +3,16 @@ import {SwapSide} from '@paraswap/sdk';
 
 
 export const paraSwapRouteToSimpleData = (txParams) => {
+  console.log('paraSwapRouteToSimpleData');
   const data = '0x' + txParams.data.slice(10);
+  console.log(data);
   const [
     decoded,
   ] = ethers.utils.defaultAbiCoder.decode(
     ['(address,address,uint256,uint256,uint256,address[],bytes,uint256[],uint256[],address,address,uint256,bytes,uint256,bytes16)'],
     data
   );
+  console.log(decoded);
   return {
     fromToken: decoded[0],
     toToken: decoded[1],
@@ -30,6 +33,7 @@ export const paraSwapRouteToSimpleData = (txParams) => {
 };
 
 export const parseParaSwapRouteData = (txParams) => {
+  console.log('parseParaSwapRouteData');
   const selector = txParams.data.slice(0, 10);
   const data = "0x" + txParams.data.slice(10);
   return {
@@ -40,6 +44,7 @@ export const parseParaSwapRouteData = (txParams) => {
 
 
 export const getSwapData = async (paraSwapSDK, userAddress, srcTokenAddress, destTokenAddress, srcAmount, srcDecimals, destDecimals) => {
+  console.log('getSwapData');
   const priceRoute = await paraSwapSDK.swap.getRate({
     srcToken: srcTokenAddress,
     destToken: destTokenAddress,
@@ -49,6 +54,7 @@ export const getSwapData = async (paraSwapSDK, userAddress, srcTokenAddress, des
     srcDecimals: srcDecimals,
     destDecimals: destDecimals
   });
+  console.log(priceRoute);
   const txParams = await paraSwapSDK.swap.buildTx({
     srcToken: priceRoute.srcToken,
     destToken: priceRoute.destToken,
@@ -60,6 +66,7 @@ export const getSwapData = async (paraSwapSDK, userAddress, srcTokenAddress, des
   }, {
     ignoreChecks: true,
   });
+  console.log(txParams);
   return {
     simpleData: paraSwapRouteToSimpleData(txParams),
     routeData: parseParaSwapRouteData(txParams)

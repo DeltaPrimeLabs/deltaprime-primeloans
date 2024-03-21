@@ -233,6 +233,7 @@ export default {
     },
 
     async chooseBestTrade(basedOnSource = true) {
+      console.log('chooseBestTrade', basedOnSource);
       if (this.sourceAssetAmount == null) return;
       if (this.sourceAssetAmount === 0) {
         this.targetAssetAmount = 0;
@@ -242,9 +243,15 @@ export default {
       let decimals = this.sourceAssetData.decimals;
       let amountInWei = parseUnits(this.sourceAssetAmount.toFixed(decimals), BigNumber.from(decimals));
 
+      console.log(amountInWei);
+
       const sourceAssetAddress = TOKEN_ADDRESSES[this.sourceAsset];
       const targetAssetAddress = TOKEN_ADDRESSES[this.targetAsset];
       const paraSwapSDK = constructSimpleSDK({chainId: config.chainId, axios});
+      console.log('config.ASSETS_CONFIG[this.targetAsset].decimals', config.ASSETS_CONFIG[this.targetAsset].decimals);
+      console.log('config.ASSETS_CONFIG[this.targetAsset].decimals', config.ASSETS_CONFIG[this.sourceAsset].decimals);
+      console.log(this.sourceAsset);
+      console.log(this.targetAsset);
       const swapData = await getSwapData(
         paraSwapSDK,
         config.depositSwapAddress,
@@ -340,6 +347,7 @@ export default {
     },
 
     async sourceInputChange(changeEvent) {
+      console.log(changeEvent);
       this.maxButtonUsed = changeEvent.maxButtonUsed;
       this.checkingPrices = true;
       let targetInputChangeEvent;

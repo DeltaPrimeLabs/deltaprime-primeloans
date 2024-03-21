@@ -104,6 +104,7 @@ import CurrencyInput from './CurrencyInput';
 import config from '../config';
 import DeltaIcon from './DeltaIcon.vue';
 import {ContentLoader} from 'vue-content-loader';
+import {BigNumber} from 'ethers';
 
 export default {
   name: 'CurrencyComboInput',
@@ -256,6 +257,7 @@ export default {
     },
 
     currencyInputChange(value, disableEmitValue) {
+      console.log('currencyInputChange', value);
       this.assetAmount = value;
       if (!disableEmitValue) {
         this.emitValue();
@@ -272,6 +274,7 @@ export default {
 
     async emitValue() {
       const error = await this.$refs.currencyInput.forceValidationCheck();
+      console.log(this.assetAmount);
       this.$emit('valueChange', {
         chain: this.isBridge ? this.selectedChain : null,
         asset: this.selectedAsset.symbol,
@@ -282,6 +285,7 @@ export default {
     },
 
     setCurrencyInputValue(value) {
+      console.log('setCurrencyInputValue', value);
       return this.$refs.currencyInput.setValue(value);
     },
 
