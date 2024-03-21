@@ -5,6 +5,7 @@ pragma solidity 0.8.17;
 
 import "../lib/joe-v2/math/SafeCast.sol";
 import "../lib/joe-v2/PriceHelper.sol";
+import "../interfaces/ISPrime.sol";
 import "../interfaces/joe-v2/ILBPair.sol";
 import "../interfaces/joe-v2/ILBRouter.sol";
 import "../interfaces/joe-v2/ILBToken.sol";
@@ -16,20 +17,12 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract sPrime is ReentrancyGuard, Ownable, ERC20 {
+contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
     using SafeERC20 for IERC20;
     using LiquidityAmounts for address;
     using PriceHelper for uint24;
     using SafeCast for uint256;
     using Uint256x256Math for uint256;
-
-    struct PairInfo {
-        uint24 lowerRange;
-        uint24 upperRange;
-        uint64 lastRebalance;
-        uint256 totalShare;
-        address lbPair;
-    }
 
     uint256 private constant _PRECISION = 1e18;
     uint256 private constant _MAX_RANGE = 51;
@@ -37,15 +30,18 @@ contract sPrime is ReentrancyGuard, Ownable, ERC20 {
 
     // activeId => Bin Info
     mapping(uint24 => PairInfo) public pairList;
+    mapping(uint24 => bool) public pairStatus;
 
     IERC20 public immutable tokenX;
     IERC20 public immutable tokenY;
     ILBRouter public immutable lbRouter;
 
-    event RangeSet(uint24 activeInd, uint24 low, uint24 upper);
-
     /**
      * @dev Constructor of the contract.
+     * @param tokenX_ The address of token X.
+     * @param tokenY_ The address of token Y.
+     * @param lbRouter_ The address of the liquidity book router.
+     * @param name_ The name of the SPrime token. ex: PRIME-USDC LP
      */
     constructor(address tokenX_, address tokenY_, address lbRouter_, string memory name_) ERC20(name_, "sPrime"){
         tokenX = IERC20(tokenX_);
@@ -54,43 +50,52 @@ contract sPrime is ReentrancyGuard, Ownable, ERC20 {
     }
 
     /**
-     * @notice Returns the range of the sPrime contract.
-     * @return lower The lower bound of the range.
-     * @return upper The upper bound of the range.
+     * @notice Add a new bin for the PRIME-TOKEN pair.
+     * @dev Only the owner can call this function.
+     * @param activeId The unique identifier for the new bin.
+     * @param lower The lower bound of the range.
+     * @param upper The upper bound of the range.
+     * @param lbPair The address of the liquidity pair associated with the bin.
      */
-    function getRange(uint24 activeId) external view returns (uint24 lower, uint24 upper) {
-        PairInfo memory pair = pairList[activeId];
-        return (pair.lowerRange, pair.upperRange);
+    function addBins(uint24 activeId, uint24 lower, uint24 upper, address lbPair) external onlyOwner {
+        require(!pairStatus[activeId], "Active ID added already");
+        PairInfo memory newPairInfo = PairInfo({
+            lowerRange: 0,
+            upperRange: 0,
+            lastRebalance: block.timestamp.safe64(),
+            totalShare: 0,
+            lbPair: lbPair
+        });
+
+        pairList[activeId] = newPairInfo;
+        pairStatus[activeId] = true;
+
+        _setRange(activeId, lower, upper);
     }
 
     /**
-     * @notice Returns the balances of the sPrime contract.
-     * @return amountX The amount of token X.
-     * @return amountY The amount of token Y.
+     * @notice Remove a bin for the PRIME-TOKEN pair.
+     * @dev Only the owner can call this function.
+     * @param activeId The identifier of the bin to be removed.
      */
-    function getBalances(uint24 activeId) external view returns (uint256 amountX, uint256 amountY) {
-        return _getBalances(activeId);
+    function removeBins(uint24 activeId) external onlyOwner {
+        require(pairStatus[activeId], "Active ID not existing");
+
+        delete pairList[activeId];
+        pairStatus[activeId] = false;
+
+        _resetRange(activeId);
     }
 
     /**
-     * @notice Returns the last rebalance timestamp.
-     * @return lastRebalance The last rebalance timestamp.
-     */
-    function getLastRebalance(uint24 activeId) external view returns (uint256 lastRebalance) {
-        return pairList[activeId].lastRebalance;
-    }
-
-    /**
-     * @notice Rebalances the sPrime contract by withdrawing the entire position and depositing the new position.
-     * It will deposit the tokens following the amounts valued in Y.
-     * @dev Only the operator can call this function.
-     * @param activeId The id that should be rebalanced.
+     * @notice Rebalances the SPrime contract by withdrawing the entire position and depositing a new position within specified bounds.
+     * It deposits tokens following the amounts valued in Y.
+     * @param activeId The id of the bin to be rebalanced.
      * @param newLower The lower bound of the new range.
      * @param newUpper The upper bound of the new range.
      * @param desiredActiveId The desired active id.
      * @param slippageActiveId The slippage active id.
-     * @param distributions The packed distributions. Each bytes16 of the distributions bytes is
-     * (distributionX, distributionY) from the `newLower`to the `newUpper` range.
+     * @param distributions The packed distributions of tokens.
      */
     function rebalance(
         uint24 activeId,
@@ -140,6 +145,7 @@ contract sPrime is ReentrancyGuard, Ownable, ERC20 {
 
     /**
      * @dev Returns the balances of the contract, including those deposited in the LB pool.
+     * @param activeId The active id of the pair.
      * @return amountX The balance of token X.
      * @return amountY The balance of token Y.
      */
@@ -164,6 +170,13 @@ contract sPrime is ReentrancyGuard, Ownable, ERC20 {
         }
     }
 
+    /**
+    * @dev Returns the total weight of tokens in a liquidity pair.
+    * @param pair The address of the liquidity pair.
+    * @param amountX The amount of token X.
+    * @param amountY The amount of token Y.
+    * @return weight The total weight of tokens in the liquidity pair.
+    */
     function _getTotalWeight(address pair, uint256 amountX, uint256 amountY) internal view returns(uint256 weight) {
         (, uint128 amountXToY, ) = lbRouter.getSwapOut(ILBPair(pair), uint128(amountX), address(tokenX) < address(tokenY));
         weight = amountY + amountXToY;
@@ -177,6 +190,7 @@ contract sPrime is ReentrancyGuard, Ownable, ERC20 {
      * @param newUpper The upper end of the new range.
      * @param desiredActiveId The desired active id.
      * @param slippageActiveId The allowed slippage of the active id.
+     * @return Adjusted lower and upper bounds of the new range.
      */
     function _adjustRange(uint24 activeId, uint24 newLower, uint24 newUpper, uint24 desiredActiveId, uint24 slippageActiveId) internal pure returns (uint24, uint24)
     {
@@ -240,6 +254,7 @@ contract sPrime is ReentrancyGuard, Ownable, ERC20 {
 
     /**
      * @dev Sets the range only if it is not already set. Will revert if the range is already set.
+     * @param activeId The active id of the pair.
      * @param newLower The lower end of the new range.
      * @param newUpper The upper end of the new range.
      */
@@ -261,6 +276,7 @@ contract sPrime is ReentrancyGuard, Ownable, ERC20 {
 
     /**
      * @dev Resets the range.
+     * @param activeId The active id of the pair
      */
     function _resetRange(uint24 activeId) internal {
         PairInfo storage pair = pairList[activeId];
@@ -309,18 +325,22 @@ contract sPrime is ReentrancyGuard, Ownable, ERC20 {
     /**
      * @dev Withdraws tokens from the lbPair and applies the AUM annual fee. This function will also reset the range.
      * Will never charge for more than a day of AUM fees, even if the sPrime scontract has not been rebalanced for a longer period.
+     * @param activeId The active Id of the pair
+     * @param share The amount of share to withdraw.
+     * @return totalBalanceX The amount of token X withdrawn.
+     * @return totalBalanceY The amount of token Y withdrawn.
      */
-    function _withdrawAndResetRange(uint24 activeId, uint256 shares) internal returns(uint256 totalBalanceX, uint256 totalBalanceY) {
+    function _withdrawAndResetRange(uint24 activeId, uint256 share) internal returns(uint256 totalBalanceX, uint256 totalBalanceY) {
         PairInfo storage pair = pairList[activeId];
 
         // Get the range and reset it.
         (uint24 lowerRange, uint24 upperRange) = (pair.lowerRange, pair.upperRange);
         if (upperRange > 0) _resetRange(activeId);
 
-        (totalBalanceX, totalBalanceY) = _withdrawFromLB(pair.lbPair, lowerRange, upperRange, shares * _PRECISION / pair.totalShare);
+        (totalBalanceX, totalBalanceY) = _withdrawFromLB(pair.lbPair, lowerRange, upperRange, share * _PRECISION / pair.totalShare);
 
-        _burn(_msgSender(), shares);
-        pair.totalShare -= shares;
+        _burn(_msgSender(), share);
+        pair.totalShare -= share;
 
         // Ge the last rebalance timestamp and update it.
         pair.lastRebalance = block.timestamp.safe64();
@@ -331,8 +351,8 @@ contract sPrime is ReentrancyGuard, Ownable, ERC20 {
      * @param removedLower The lower end of the range to remove.
      * @param removedUpper The upper end of the range to remove.
      * @param share The amount of share to withdraw.
-     * @return balanceX The amount of token X in the sPrime contract.
-     * @return balanceY The amount of token Y in the sPrime contract.
+     * @return balanceX The amount of token X received.
+     * @return balanceY The amount of token Y received.
      */
     function _withdrawFromLB(address lbPair, uint24 removedLower, uint24 removedUpper, uint256 share)
         internal
