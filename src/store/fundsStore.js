@@ -2947,7 +2947,6 @@ export default {
         actualSwapSourceDecimals,
         actualSwapTargetDecimals
       );
-      console.log(swapData.simpleData);
 
       const transaction = await wrappedLoan.swapDebtParaSwap(
         toBytes32(swapDebtRequest.sourceAsset),

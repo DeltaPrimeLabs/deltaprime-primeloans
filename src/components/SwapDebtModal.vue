@@ -296,7 +296,7 @@ export default {
       this.swapData = swapData;
       console.log(this.swapData);
 
-      const estimated = swapData.simpleData.expectedAmount
+      const estimated = swapData.simpleData.destAmount;
       console.log(estimated);
 
       this.estimatedNeededTokens = this.sourceAssetAmount;

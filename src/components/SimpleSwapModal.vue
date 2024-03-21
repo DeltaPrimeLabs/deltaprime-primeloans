@@ -264,7 +264,7 @@ export default {
       this.swapData = swapData;
       console.log(this.swapData.simpleData);
 
-      const estimated = swapData.simpleData.expectedAmount
+      const estimated = swapData.simpleData.destAmount;
 
       this.estimatedNeededTokens = this.sourceAssetAmount;
       this.estimatedReceivedTokens = parseFloat(formatUnits(estimated, BigNumber.from(this.targetAssetData.decimals)));
