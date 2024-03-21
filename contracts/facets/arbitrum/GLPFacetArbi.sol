@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 0baecd948fb05bd4ef8b2aa6a450534f1bda4f16;
+// Last deployed from commit: 19d9982858f4feeff1ca98cbf31b07304a79ac7f;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -27,9 +27,10 @@ contract GLPFacetArbi is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     // sGLP
     address private constant GLP_TOKEN_ADDRESS = 0x5402B5F40310bDED796c7D0F3FF6683f5C0cFfdf;
 
-    function claimGLpFees() external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent {
+    function claimGLpFees() external nonReentrant onlyOwner noBorrowInTheSameBlock remainsSolvent {
         IRewardRouterV2 rewardRouter = IRewardRouterV2(REWARD_ROUTER_ADDRESS);
         IRewardTracker rewardTracker = IRewardTracker(rewardRouter.feeGlpTracker());
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         require(rewardTracker.claimable(address(this)) > 0, "There are no claimable fees");
 
@@ -39,16 +40,14 @@ contract GLPFacetArbi is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         rewardRouter.claimFees();
 
         uint256 postClaimingWethBalance = wethToken.balanceOf(address(this));
+        uint256 wethClaimed = postClaimingWethBalance - initialWethBalance;
 
-        // Add asset to ownedAssets
-        if ((initialWethBalance == 0) && (postClaimingWethBalance > 0)) {
-            DiamondStorageLib.addOwnedAsset("ETH", address(wethToken));
-        }
+        _increaseExposure(tokenManager, address(wethToken), wethClaimed);
 
-        emit GLPFeesClaim(msg.sender, postClaimingWethBalance - initialWethBalance, block.timestamp);
+        emit GLPFeesClaim(msg.sender, wethClaimed, block.timestamp);
     }
 
-    function mintAndStakeGlp(address _token, uint256 _amount, uint256 _minUsdg, uint256 _minGlp) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent{
+    function mintAndStakeGlp(address _token, uint256 _amount, uint256 _minUsdg, uint256 _minGlp) external nonReentrant onlyOwner noBorrowInTheSameBlock remainsSolvent{
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         require(tokenManager.isTokenAssetActive(GLP_TOKEN_ADDRESS), "GLP not supported.");
         require(tokenManager.isTokenAssetActive(_token), "Asset not supported.");
@@ -72,15 +71,8 @@ contract GLPFacetArbi is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         require((glpToken.balanceOf(address(this)) - glpInitialBalance) == glpOutputAmount, "GLP minted and balance difference mismatch");
         require(glpOutputAmount >=_minGlp, "Insufficient output amount");
 
-        // Add asset to ownedAssets
-        if (glpToken.balanceOf(address(this)) > 0) {
-            DiamondStorageLib.addOwnedAsset("GLP", GLP_TOKEN_ADDRESS);
-        }
-
-        // Remove asset from ownedAssets if the asset balance is 0 after the mint
-        if (tokenToMintWith.balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset(tokenToMintWithSymbol);
-        }
+        _increaseExposure(tokenManager, GLP_TOKEN_ADDRESS, glpOutputAmount);
+        _decreaseExposure(tokenManager, _token, _amount);
 
         emit GLPMint(
             msg.sender,
@@ -92,7 +84,7 @@ contract GLPFacetArbi is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
     }
 
-    function unstakeAndRedeemGlp(address _tokenOut, uint256 _glpAmount, uint256 _minOut) external nonReentrant onlyOwnerOrInsolvent noBorrowInTheSameBlock recalculateAssetsExposure    {
+    function unstakeAndRedeemGlp(address _tokenOut, uint256 _glpAmount, uint256 _minOut) external nonReentrant onlyOwnerOrInsolvent noBorrowInTheSameBlock   {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         require(tokenManager.isTokenAssetActive(_tokenOut), "Asset not supported.");
 
@@ -111,15 +103,8 @@ contract GLPFacetArbi is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         require((redeemedToken.balanceOf(address(this)) - redeemedTokenInitialBalance) == redeemedAmount, "Redeemed token amount and balance difference mismatch");
         require(redeemedAmount >= _minOut, "Insufficient output amount");
 
-        // Add asset to ownedAssets
-        if (redeemedToken.balanceOf(address(this)) > 0) {
-            DiamondStorageLib.addOwnedAsset(redeemedTokenSymbol, _tokenOut);
-        }
-
-        // Remove asset from ownedAssets if the asset balance is 0 after the redemption
-        if (glpToken.balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset("GLP");
-        }
+        _decreaseExposure(tokenManager, GLP_TOKEN_ADDRESS, _glpAmount);
+        _increaseExposure(tokenManager, _tokenOut, redeemedAmount);
 
         emit GLPRedemption(
             msg.sender,

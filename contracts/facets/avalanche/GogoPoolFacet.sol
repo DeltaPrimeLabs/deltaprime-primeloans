@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: b3669c6573ea2a912832a0c29e4bf62b96fc58b7;
+// Last deployed from commit: 499a35c62f8a913d89f7faf78bf5c6b3cea2ee8b;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -24,28 +24,23 @@ contract GogoPoolFacet is ReentrancyGuardKeccak, SolvencyMethods {
         external
         nonReentrant
         onlyOwner
-        recalculateAssetsExposure
         remainsSolvent
     {
         IWrappedNativeToken wrapped = IWrappedNativeToken(DeploymentConstants.getNativeToken());
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+
         _amount = Math.min(wrapped.balanceOf(address(this)), _amount);
         require(_amount > 0, "Amount has to be greater than 0");
 
         wrapped.withdraw(_amount);
 
-        IGgAvax ggAvax = IGgAvax(GG_AVAX);
+        uint256 initialGgAvaxBalance = IERC20(GG_AVAX).balanceOf(address(this));
 
+        IGgAvax ggAvax = IGgAvax(GG_AVAX);
         ggAvax.depositAVAX{value: _amount}();
 
-        // Add asset to ownedAssets
-        if (IERC20(GG_AVAX).balanceOf(address(this)) > 0) {
-            DiamondStorageLib.addOwnedAsset("ggAVAX", GG_AVAX);
-        }
-
-        // Remove asset from ownedAssets if the asset balance is 0 after the swap
-        if (IERC20(address(wrapped)).balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset("AVAX");
-        }
+        _increaseExposure(tokenManager, GG_AVAX, IERC20(GG_AVAX).balanceOf(address(this)) - initialGgAvaxBalance);
+        _decreaseExposure(tokenManager, address(wrapped), _amount);
     }
 
     modifier onlyOwner() {
