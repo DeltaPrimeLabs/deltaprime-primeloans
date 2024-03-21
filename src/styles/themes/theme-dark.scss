@@ -612,4 +612,13 @@
   --bar__logo--hover-atomica: url("/src/assets/icons/securityLogos/atomica--dark--hover.svg");
   --bar__logo--hover-salus: url("/src/assets/icons/securityLogos/salus--dark--hover.svg");
   // endregion
+
+  // region PercentageGauge
+  --percentage-gauge__gradient: conic-gradient(from -0.33turn, #{$pale-red}, #{$paler-red} 0.13turn, #{$not-vivid-pink} 0.26turn, #{$purplish-pink} 0.37turn, #{$deep-lilac} 0.5turn, #{$deep-blue} 0.63turn, #{$pale-red});
+  --percentage-gauge__shadow: drop-shadow(1px 1px 8px #{$dark-space}cc);
+  --percentage-gauge__number-color: #{$purplish-pink};
+  --percentage-gauge__indicator-color: #{$pale-fuchsia};
+  --percentage-gauge__indicator-shadow: 0.7px 0.7px 4.1px 0 #{$dark-space}b2;
+  --percentage-gauge__labels-color: #{$washed-blue};
+  // endregion
 }
