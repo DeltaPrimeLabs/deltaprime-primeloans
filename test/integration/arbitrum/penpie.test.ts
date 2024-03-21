@@ -75,6 +75,7 @@ describe('Smart loan', () => {
             wstEthBalance: BigNumber,
             weEthBalance: BigNumber,
             rsEthBalance: BigNumber,
+            tokenManager: MockTokenManager,
             poolContracts: Map<string, Contract> = new Map(),
             tokenContracts: Map<string, Contract> = new Map(),
             lendingPools: Array<PoolAsset> = [],
@@ -136,9 +137,9 @@ describe('Smart loan', () => {
 
             tokensPrices = await getTokensPricesMap(assetsList.filter(el => !(['PNP', 'ezETH', 'weETH', 'rsETH', ...penpieLpTokens].includes(el))), "arbitrum", getRedstonePrices, [
                 {symbol: 'PNP', value: 2.75},
-                {symbol: 'ezETH', value: 3300},
-                {symbol: 'weETH', value: 3300},
-                {symbol: 'rsETH', value: 3300},
+                {symbol: 'ezETH', value: 3500},
+                {symbol: 'weETH', value: 3500},
+                {symbol: 'rsETH', value: 3500},
                 ...penpieLpTokens.map(symbol => ({
                     symbol, value: 7500
                 })),
@@ -147,7 +148,7 @@ describe('Smart loan', () => {
             addMissingTokenContracts(tokenContracts, assetsList, 'ARBITRUM');
             supportedAssets = convertAssetsListToSupportedAssets(assetsList, [], 'ARBITRUM');
 
-            let tokenManager = await deployContract(
+            tokenManager = await deployContract(
                 owner,
                 MockTokenManagerArtifact,
                 []
@@ -155,6 +156,29 @@ describe('Smart loan', () => {
 
             await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
             await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
+
+            await tokenManager.setIdentifiersToExposureGroups([toBytes32("ETH")], [toBytes32("ETH_GROUP")]);
+            await tokenManager.setMaxProtocolsExposure([toBytes32("ETH_GROUP")], [toWei("5000")]);
+            await tokenManager.setIdentifiersToExposureGroups([toBytes32("ezETH")], [toBytes32("ezETH_GROUP")]);
+            await tokenManager.setMaxProtocolsExposure([toBytes32("ezETH_GROUP")], [toWei("5000")]);
+            await tokenManager.setIdentifiersToExposureGroups([toBytes32("wstETH")], [toBytes32("wstETH_GROUP")]);
+            await tokenManager.setMaxProtocolsExposure([toBytes32("wstETH_GROUP")], [toWei("5000")]);
+            await tokenManager.setIdentifiersToExposureGroups([toBytes32("weETH")], [toBytes32("weETH_GROUP")]);
+            await tokenManager.setMaxProtocolsExposure([toBytes32("weETH_GROUP")], [toWei("5000")]);
+            await tokenManager.setIdentifiersToExposureGroups([toBytes32("rsETH")], [toBytes32("rsETH_GROUP")]);
+            await tokenManager.setMaxProtocolsExposure([toBytes32("rsETH_GROUP")], [toWei("5000")]);
+            await tokenManager.setIdentifiersToExposureGroups([toBytes32("PENPIE_EZETH_LP")], [toBytes32("PENPIE_EZETH_LP_GROUP")]);
+            await tokenManager.setMaxProtocolsExposure([toBytes32("PENPIE_EZETH_LP_GROUP")], [toWei("5000")]);
+            await tokenManager.setIdentifiersToExposureGroups([toBytes32("PENPIE_WSTETH_LP")], [toBytes32("PENPIE_WSTETH_LP_GROUP")]);
+            await tokenManager.setMaxProtocolsExposure([toBytes32("PENPIE_WSTETH_LP_GROUP")], [toWei("5000")]);
+            await tokenManager.setIdentifiersToExposureGroups([toBytes32("PENPIE_EETH_LP")], [toBytes32("PENPIE_EETH_LP_GROUP")]);
+            await tokenManager.setMaxProtocolsExposure([toBytes32("PENPIE_EETH_LP_GROUP")], [toWei("5000")]);
+            await tokenManager.setIdentifiersToExposureGroups([toBytes32("PENPIE_RSETH_LP")], [toBytes32("PENPIE_RSETH_LP_GROUP")]);
+            await tokenManager.setMaxProtocolsExposure([toBytes32("PENPIE_RSETH_LP_GROUP")], [toWei("5000")]);
+            await tokenManager.setIdentifiersToExposureGroups([toBytes32("PENPIE_WSTETHSILO_LP")], [toBytes32("PENPIE_WSTETHSILO_LP_GROUP")]);
+            await tokenManager.setMaxProtocolsExposure([toBytes32("PENPIE_WSTETHSILO_LP_GROUP")], [toWei("5000")]);
+            await tokenManager.setIdentifiersToExposureGroups([toBytes32("PENPIE_EETHSILO_LP")], [toBytes32("PENPIE_EETHSILO_LP_GROUP")]);
+            await tokenManager.setMaxProtocolsExposure([toBytes32("PENPIE_EETHSILO_LP_GROUP")], [toWei("5000")]);
 
             await smartLoansFactory.initialize(diamondAddress, tokenManager.address);
 
@@ -336,9 +360,17 @@ describe('Smart loan', () => {
             });
             const { data: { contractCallParams: { 3: guessPtReceivedFromSy, 4: input, 5: limit } } } = await axios.get(`${pendleApiBaseUrl}/v1/addLiquiditySingleToken?${queryParams}`);
 
+            const beforeLpExposure = await getAssetExposure(lpToken);
+            const beforeTokenExposure = await getAssetExposure(asset);
+
             await wrappedLoan.stakePenpie(toBytes32(asset), amount, market, minLpOut, guessPtReceivedFromSy, input, limit);
 
             expect(await loanOwnsAsset(lpToken)).to.be.true;
+            const afterLpExposure = await getAssetExposure(lpToken);
+            const afterTokenExposure = await getAssetExposure(asset);
+
+            expect(beforeTokenExposure.current.sub(afterTokenExposure.current)).to.be.eq(amount);
+            expect(afterLpExposure.current).to.be.gt(beforeLpExposure.current);
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 1600);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.0001);
@@ -359,9 +391,17 @@ describe('Smart loan', () => {
             });
             const { data: { contractCallParams: { 3: output, 4: limit } } } = await axios.get(`${pendleApiBaseUrl}/v1/removeLiquiditySingleToken?${queryParams}`);
 
+            const beforeLpExposure = await getAssetExposure(lpToken);
+            const beforeTokenExposure = await getAssetExposure(asset);
+
             await wrappedLoan.unstakePenpie(toBytes32(asset), amount, market, minOut, output, limit);
 
             expect(await loanOwnsAsset(lpToken)).to.be.false;
+            const afterLpExposure = await getAssetExposure(lpToken);
+            const afterTokenExposure = await getAssetExposure(asset);
+
+            expect(beforeLpExposure.current.sub(afterLpExposure.current)).to.be.eq(amount);
+            expect(afterTokenExposure.current).to.be.gt(beforeTokenExposure.current);
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 1600);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.01);
@@ -375,6 +415,12 @@ describe('Smart loan', () => {
                 }
             }
             return false;
+        }
+
+        async function getAssetExposure(asset: string) {
+            const group = await tokenManager.identifierToExposureGroup(toBytes32(asset));
+            const exposure = await tokenManager.groupToExposure(group);
+            return exposure;
         }
     });
 });
