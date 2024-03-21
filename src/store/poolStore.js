@@ -3,10 +3,16 @@ import DEPOSIT_SWAP from '@artifacts/contracts/DepositSwap.sol/DepositSwap.json'
 import {formatUnits, fromWei, parseUnits} from '@/utils/calculate';
 import erc20ABI from '../../test/abis/ERC20.json';
 import config from '@/config';
+import {toWei} from "../utils/calculate";
+import {constructSimpleSDK} from "@paraswap/sdk";
+import axios from "axios";
+import {getSwapData} from "../utils/paraSwapUtils";
 
 
 const ethers = require('ethers');
 const SUCCESS_DELAY_AFTER_TRANSACTION = 1000;
+let TOKEN_ADDRESSES;
+
 
 export default {
   namespaced: true,
@@ -25,8 +31,13 @@ export default {
   },
   actions: {
 
+    async loadDeployments() {
+      TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
+    },
+
     async poolStoreSetup({dispatch}) {
       await dispatch('setupPools');
+      await dispatch('loadDeployments');
     },
 
     async setupPools({rootState, commit, dispatch}) {
@@ -160,11 +171,18 @@ export default {
     },
 
     async swapDeposit({state, rootState, dispatch}, {swapDepositRequest}) {
+      console.log(swapDepositRequest);
       const provider = rootState.network.provider;
 
       const depositSwapContract = new ethers.Contract(config.depositSwapAddress, DEPOSIT_SWAP.abi, provider.getSigner());
       const sourceAmountInWei = parseUnits(swapDepositRequest.sourceAmount, config.ASSETS_CONFIG[swapDepositRequest.sourceAsset].decimals);
       const targetAmountInWei = parseUnits(swapDepositRequest.targetAmount, config.ASSETS_CONFIG[swapDepositRequest.targetAsset].decimals);
+
+      const sourceAssetAddress = TOKEN_ADDRESSES[swapDepositRequest.sourceAsset];
+      const targetAssetAddress = TOKEN_ADDRESSES[swapDepositRequest.targetAsset];
+
+      const sourceAssetDecimals = config.ASSETS_CONFIG[swapDepositRequest.sourceAsset].decimals;
+      const targetAssetDecimals = config.ASSETS_CONFIG[swapDepositRequest.targetAsset].decimals;
 
       const approveTransaction = await swapDepositRequest.sourcePoolContract
         .connect(provider.getSigner())
@@ -173,15 +191,39 @@ export default {
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
 
+      console.log(approveTransaction);
       await awaitConfirmation(approveTransaction, provider, 'approve');
 
-
-      const depositSwapTransaction = await depositSwapContract.depositSwap(
+      const paraSwapSDK = constructSimpleSDK({chainId: config.chainId, axios});
+      const swapData = await getSwapData(
+        paraSwapSDK,
+        config.depositSwapAddress,
+        sourceAssetAddress,
+        targetAssetAddress,
         sourceAmountInWei,
-        targetAmountInWei,
-        swapDepositRequest.path,
-        swapDepositRequest.adapters,
+        sourceAssetDecimals,
+        targetAssetDecimals
+      )
+
+      console.log(swapData);
+
+      console.log('log(swapData.routeData.selector)', swapData.routeData.selector);
+      console.log('log(swapData.routeData.data)', swapData.routeData.data);
+      console.log('log(sourceAssetAddress)', sourceAssetAddress);
+      console.log('log(sourceAmountInWei)', sourceAmountInWei);
+      console.log('log(targetAssetAddress)', targetAssetAddress);
+      console.log('log(targetAmountInWei)', targetAmountInWei);
+
+      const depositSwapTransaction = await depositSwapContract.depositSwapParaSwap(
+        swapData.routeData.selector,
+        swapData.routeData.data,
+        sourceAssetAddress,
+        sourceAmountInWei,
+        targetAssetAddress,
+        targetAmountInWei
       );
+
+      console.log(depositSwapTransaction);
 
       await awaitConfirmation(depositSwapTransaction, provider, 'depositSwap');
 

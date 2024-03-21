@@ -2,10 +2,10 @@
   <div id="modal" class="swap-modal-component modal-component">
     <Modal>
       <div class="modal__title">
-        Swap deposit
+        Swap debt
       </div>
       <div class="asset-info">
-        Deposited:
+        Borrowed:
         <span v-if="sourceAssetBalance" class="asset-info__value">{{
             Number(sourceAssetBalance) | smartRound(10, true)
           }}</span>
@@ -16,6 +16,7 @@
                           :default-asset="sourceAsset"
                           :validators="sourceValidators"
                           :disabled="checkingPrices"
+                          :max="sourceAssetBalance"
                           :info="() => sourceAssetValue"
                           :typingTimeout="2000"
                           v-on:valueChange="sourceInputChange"
@@ -74,26 +75,46 @@
           </div>
           <div class="summary__horizontal__divider"></div>
           <div class="summary__values">
+            <div class="summary__value__pair">
+              <div class="summary__label"
+                   v-bind:class="{'summary__label--error': healthAfterTransaction < MIN_ALLOWED_HEALTH}">
+                Health:
+              </div>
+              <div class="summary__value">
+                <span class="summary__value--error"
+                      v-if="healthAfterTransaction < MIN_ALLOWED_HEALTH">
+                  {{ healthAfterTransaction | percent }}
+                </span>
+                <span v-else>
+                  {{ healthAfterTransaction | percent }}
+                </span>
+                <BarGaugeBeta :min="0" :max="1" :value="healthAfterTransaction" :slim="true"
+                              :display-inline="true"></BarGaugeBeta>
+              </div>
+            </div>
+            <div class="summary__divider divider--long light"></div>
+
 
             <div class="summary__value__pair">
               <div class="summary__label">
-                {{ sourceAsset }} deposit:
+                {{ sourceAsset }} borrowed:
               </div>
               <div class="summary__value">
                 {{
-                  formatTokenBalance(Number(assetBalances[sourceAsset]) - Number(sourceAssetAmount)) > 0 ? formatTokenBalance(Number(assetBalances[sourceAsset]) - Number(sourceAssetAmount)) : 0
+                  formatTokenBalance(Number(debtsPerAsset[sourceAsset].debt) - Number(sourceAssetAmount)) > 0 ? formatTokenBalance(Number(debtsPerAsset[sourceAsset].debt) - Number(sourceAssetAmount)) : 0
                 }}
               </div>
             </div>
 
             <div class="summary__divider divider--long light"></div>
 
+
             <div class="summary__value__pair">
               <div class="summary__label">
-                {{ targetAsset }} deposit:
+                {{ targetAsset }} borrowed:
               </div>
               <div class="summary__value">
-                {{ formatTokenBalance(Number(assetBalances[targetAsset]) + Number(targetAssetAmount)) }}
+                {{ formatTokenBalance(Number(debtsPerAsset[targetAsset].debt) + Number(targetAssetAmount)) }}
               </div>
             </div>
           </div>
@@ -119,7 +140,7 @@ import Button from './Button';
 import CurrencyComboInput from './CurrencyComboInput';
 import BarGaugeBeta from './BarGaugeBeta';
 import config from '../config';
-import {formatUnits, parseUnits} from '../utils/calculate';
+import {calculateHealth, formatUnits, parseUnits} from '../utils/calculate';
 import {BigNumber} from 'ethers';
 import SimpleInput from './SimpleInput';
 import DeltaIcon from './DeltaIcon.vue';
@@ -132,7 +153,7 @@ const ethers = require('ethers');
 let TOKEN_ADDRESSES;
 
 export default {
-  name: 'SimpleSwapModal',
+  name: 'SwapDebtModal',
   components: {
     InfoIcon,
     DeltaIcon,
@@ -185,6 +206,23 @@ export default {
       maxButtonUsed: false,
       assetPrices: {},
       swapData: {},
+      debtsPerAsset: {},
+      healthAfterTransaction: 0,
+      MIN_ALLOWED_HEALTH: config.MIN_ALLOWED_HEALTH,
+      lpAssets: {},
+      concentratedLpAssets: {},
+      traderJoeV2LpAssets: {},
+      gmxV2Assets: {},
+      levelLpAssets: {},
+      levelLpBalances: {},
+      lpBalances: {},
+      concentratedLpBalances: {},
+      gmxV2Balances: {},
+      balancerLpBalances: {},
+      balancerLpAssets: {},
+      farms: {},
+      debt: {},
+      health: {},
     };
   },
 
@@ -197,6 +235,7 @@ export default {
       this.setupTargetAsset();
       this.setupValidators();
       this.setupWarnings();
+      this.calculateHealthAfterTransaction();
     });
   },
 
@@ -255,15 +294,17 @@ export default {
         config.ASSETS_CONFIG[this.targetAsset].decimals,
       );
       this.swapData = swapData;
-      console.log(this.swapData.simpleData);
+      console.log(this.swapData);
 
       const estimated = swapData.simpleData.expectedAmount
+      console.log(estimated);
 
       this.estimatedNeededTokens = this.sourceAssetAmount;
       this.estimatedReceivedTokens = parseFloat(formatUnits(estimated, BigNumber.from(this.targetAssetData.decimals)));
       console.log(this.estimatedReceivedTokens);
 
       this.updateSlippageWithAmounts();
+      this.calculateHealthAfterTransaction();
 
     },
 
@@ -407,7 +448,7 @@ export default {
     },
 
     calculateSourceAssetBalance() {
-      const sourceAssetBalance = this.assetBalances[this.sourceAsset];
+      const sourceAssetBalance = this.debtsPerAsset[this.sourceAsset].debt;
       this.sourceAssetBalance = sourceAssetBalance;
     },
 
@@ -445,6 +486,112 @@ export default {
           }
         },
       ];
+    },
+
+    calculateHealthAfterTransaction() {
+      let tokens = [];
+      for (const [symbol, data] of Object.entries(this.assets)) {
+        let borrowed = this.debtsPerAsset[symbol] ? parseFloat(this.debtsPerAsset[symbol].debt) : 0;
+        let balance = parseFloat(this.assetBalances[symbol]);
+
+        if (this.swapDebtMode) {
+          if (symbol === this.sourceAsset) {
+            borrowed -= this.sourceAssetAmount;
+            balance -= this.sourceAssetAmount;
+          }
+
+          if (symbol === this.targetAsset) {
+            borrowed += this.targetAssetAmount;
+            balance += this.targetAssetAmount;
+          }
+
+        } else {
+          if (symbol === this.sourceAsset) {
+            balance -= this.sourceAssetAmount;
+          }
+
+          if (symbol === this.targetAsset) {
+            balance += this.targetAssetAmount;
+          }
+        }
+
+        tokens.push({price: data.price, balance: balance, borrowed: borrowed, debtCoverage: data.debtCoverage});
+      }
+
+      for (const [symbol, data] of Object.entries(this.lpAssets)) {
+        tokens.push({
+          price: data.price,
+          balance: parseFloat(this.lpBalances[symbol]),
+          borrowed: 0,
+          debtCoverage: data.debtCoverage
+        });
+      }
+
+      for (const [symbol, data] of Object.entries(this.concentratedLpAssets)) {
+        tokens.push({
+          price: data.price,
+          balance: parseFloat(this.concentratedLpBalances[symbol]),
+          borrowed: 0,
+          debtCoverage: data.debtCoverage,
+          symbol: symbol
+        });
+      }
+
+      for (const [symbol, data] of Object.entries(this.levelLpAssets)) {
+        tokens.push({
+          price: data.price,
+          balance: parseFloat(this.levelLpBalances[symbol]),
+          borrowed: 0,
+          debtCoverage: data.debtCoverage
+        });
+      }
+
+      for (const [symbol, data] of Object.entries(this.balancerLpAssets)) {
+        if (this.balancerLpBalances) {
+          let balance = parseFloat(this.balancerLpBalances[symbol]);
+
+          tokens.push({
+            price: data.price,
+            balance: balance ? balance : 0,
+            borrowed: 0,
+            debtCoverage: data.debtCoverage
+          });
+        }
+      }
+
+      for (const [symbol, data] of Object.entries(this.gmxV2Assets)) {
+        let balance = parseFloat(this.gmxV2Balances[symbol]);
+
+        if (symbol === this.sourceAsset) {
+          balance -= this.sourceAssetAmount;
+        }
+
+        if (symbol === this.targetAsset) {
+          balance += this.targetAssetAmount;
+        }
+
+        tokens.push({
+          price: data.price,
+          balance: balance,
+          borrowed: 0,
+          debtCoverage: data.debtCoverage
+        });
+      }
+
+      for (const [, farms] of Object.entries(this.farms)) {
+        farms.forEach(farm => {
+          tokens.push({
+            price: farm.price,
+            balance: typeof farm.totalBalance === 'string' ? parseFloat(farm.totalBalance) : farm.totalBalance,
+            borrowed: 0,
+            debtCoverage: farm.debtCoverage
+          });
+        });
+      }
+
+      let lbTokens = Object.values(this.traderJoeV2LpAssets);
+
+      this.healthAfterTransaction = calculateHealth(tokens, lbTokens);
     },
   }
 };

@@ -101,4 +101,4 @@ const getLastWeekHistory = async (event) => {
   return event;
 }
 
-getLastWeekHistory();
+// getLastWeekHistory();

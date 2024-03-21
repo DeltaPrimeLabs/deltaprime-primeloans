@@ -139,7 +139,9 @@ export async function calculateGmxV2ExecutionFee(
   gasPrice *= (1 + gmxV2GasPriceBuffer);
   gasPrice += gmxV2GasPricePremium;
 
-  return adjustedGasLimit * gasPrice / 10**18;
+  const deltaPrimeMultiplicator = 1.1;
+
+  return deltaPrimeMultiplicator * adjustedGasLimit * gasPrice / 10**18;
 }
 
 export async function handleCall(fun, args, onSuccess, onFail) {

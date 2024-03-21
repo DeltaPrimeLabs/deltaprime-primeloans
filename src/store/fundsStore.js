@@ -25,6 +25,7 @@ import IBALANCER_V2_GAUGE from '/artifacts/contracts/interfaces/balancer-v2/IBal
 import {decodeFunctionData} from "viem";
 import {expect} from "chai";
 import YAK_ROUTER_ABI from "../../test/abis/YakRouter.json";
+import {getSwapData} from "../utils/paraSwapUtils";
 
 const toBytes32 = require('ethers').utils.formatBytes32String;
 const fromBytes32 = require('ethers').utils.parseBytes32String;
@@ -2919,19 +2920,42 @@ export default {
         [swapDebtRequest.targetAsset]
       ]);
 
-      let sourceDecimals = config.ASSETS_CONFIG[swapDebtRequest.sourceAsset].decimals;
-      let sourceAmount = parseUnits(parseFloat(swapDebtRequest.sourceAmount).toFixed(sourceDecimals), sourceDecimals);
+      const sourceDecimals = config.ASSETS_CONFIG[swapDebtRequest.sourceAsset].decimals;
+      const sourceAmount = parseUnits(parseFloat(swapDebtRequest.sourceAmount).toFixed(sourceDecimals), sourceDecimals);
+      const sourceTokenAddress = TOKEN_ADDRESSES[swapDebtRequest.sourceAsset];
 
-      let targetDecimals = config.ASSETS_CONFIG[swapDebtRequest.targetAsset].decimals;
-      let targetAmount = parseUnits(parseFloat(swapDebtRequest.targetAmount).toFixed(targetDecimals), targetDecimals);
+      const targetDecimals = config.ASSETS_CONFIG[swapDebtRequest.targetAsset].decimals;
+      const targetAmount = parseUnits(parseFloat(swapDebtRequest.targetAmount).toFixed(targetDecimals), targetDecimals);
+      const targetTokenAddress = TOKEN_ADDRESSES[swapDebtRequest.targetAsset];
 
-      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).swapDebt(
+      const actualSwapSourceTokenAddress = targetTokenAddress;
+      const actualSwapTargetTokenAddress = sourceTokenAddress;
+      const actualSwapSourceAmount = targetAmount;
+      const actualSwapTargetAmount = sourceAmount;
+      const actualSwapSourceDecimals = targetDecimals;
+      const actualSwapTargetDecimals = sourceDecimals;
+
+      let wrappedLoan = await wrapContract(state.smartLoanContract, loanAssets);
+      console.warn('------___-____-___--___--__---___-SWAP DATA_------___---__---__--__---__--___');
+      const paraSwapSDK = constructSimpleSDK({chainId: config.chainId, axios});
+      const swapData = await getSwapData(
+        paraSwapSDK,
+        wrappedLoan.address,
+        actualSwapSourceTokenAddress,
+        actualSwapTargetTokenAddress,
+        actualSwapSourceAmount,
+        actualSwapSourceDecimals,
+        actualSwapTargetDecimals
+      );
+      console.log(swapData.simpleData);
+
+      const transaction = await wrappedLoan.swapDebtParaSwap(
         toBytes32(swapDebtRequest.sourceAsset),
         toBytes32(swapDebtRequest.targetAsset),
         sourceAmount,
         targetAmount,
-        swapDebtRequest.path,
-        swapDebtRequest.adapters
+        swapData.routeData.selector,
+        swapData.routeData.data,
       );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
