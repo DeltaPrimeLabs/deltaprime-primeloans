@@ -38,6 +38,7 @@
     "@openzeppelin/contracts-upgradeable": "^4.4.1",
     "@pangolindex/exchange-contracts": "github:pangolindex/exchange-contracts",
     "@paraswap/sdk": "^6.2.4",
+    "@phuture/sdk": "^0.4.11",
     "@redstone-finance/evm-connector": "0.2.5",
     "@tenderly/hardhat-tenderly": "^1.7.7",
     "@traderjoe-xyz/sdk": "^4.1.0",
