@@ -4,7 +4,7 @@ const dynamoDb = new AWS.DynamoDB.DocumentClient();
 
 const getGmxIncentivesApi = (event, context, callback) => {
   const params = {
-    TableName: event.queryStringParameters.network === 'arbitrum' ? process.env.GMX_INCENTIVES_ARB_TABLE : process.env.GMX_INCENTIVES_AVA_TABLE,
+    TableName: event.queryStringParameters.network === 'arbitrum' ? process.env.GMX_INCENTIVES_ARB_TABLE : process.env.GMX_INCENTIVES_RETROACTIVE_AVA_NEW_TABLE,
     Key: {
       id: event.pathParameters.id.toLowerCase()
     }
@@ -27,7 +27,7 @@ const getGmxIncentivesApi = (event, context, callback) => {
 
 const getGmxIncentivesFromApi = (event, context, callback) => {
   const params = {
-    TableName: process.env.GMX_INCENTIVES_AVA_FROM_TABLE,
+    TableName: process.env.GMX_INCENTIVES_RETROACTIVE_AVA_NEW_TABLE,
     KeyConditionExpression: 'id = :id',
     ExpressionAttributeValues: {
       ':id': event.pathParameters.id.toLowerCase()
@@ -178,7 +178,7 @@ const onScan = async (params, results = []) => {
 
 const getGmxIncentivesNewApi = (event, context, callback) => {
   const params = {
-    TableName: 'gmx-incentives-retroactive-ava-new',
+    TableName: process.env.GMX_INCENTIVES_RETROACTIVE_AVA_NEW_TABLE,
     KeyConditionExpression: 'id = :id',
     ExpressionAttributeValues: {
       ':id': event.pathParameters.id.toLowerCase()
@@ -208,29 +208,6 @@ const getGmxIncentivesNewApi = (event, context, callback) => {
       return;
     });
 };
-
-const getIncentivesByTimestamp = async (event, context, callback) => {
-  const timestamp = 1710356783;
-  const params = {
-    TableName: process.env.GMX_INCENTIVES_AVA_FROM_TABLE,
-    FilterExpression: '#timestamp = :by_timestamp',
-    ExpressionAttributeValues: {
-      ':by_timestamp': timestamp
-    },
-    ExpressionAttributeNames: {
-      '#timestamp': 'timestamp'
-    }
-  };
-
-  const items = await onScan(params);
-  let intervalIncentives = 0;
-
-  items.map(item => {
-    intervalIncentives += item.avaxCollected;
-  });
-  console.log(intervalIncentives)
-  console.log(items.length);
-}
 
 module.exports = {
   getGmxIncentivesApi,

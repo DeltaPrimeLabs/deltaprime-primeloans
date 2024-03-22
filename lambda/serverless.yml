@@ -34,6 +34,7 @@ provider:
     GMX_INCENTIVES_AVA_TABLE: gmx-incentives-ava-${opt:stage, "dev"}
     GMX_INCENTIVES_AVA_FROM_TABLE: gmx-incentives-ava-from-${opt:stage, "dev"}
     GMX_INCENTIVES_AVA_RETROACTIVE_TABLE: gmx-incentives-ava-retroactive-${opt:stage, "dev"}
+    GMX_INCENTIVES_RETROACTIVE_AVA_NEW_TABLE: gmx-incentives-retroactive-ava-new
     GMX_INCENTIVES_ARB_TABLE: gmx-incentives-arb-${opt:stage, "dev"}
     GM_OPEN_INTEREST_TABLE: gm-open-interest-${opt:stage, "dev"}
     REFERRAL_TABLE: referral-${opt:stage, "dev"}
@@ -415,6 +416,28 @@ resources:
         StreamSpecification:
           StreamViewType: "NEW_AND_OLD_IMAGES"
         TableName: ${self:provider.environment.GMX_INCENTIVES_AVA_RETROACTIVE_TABLE}
+    # gmxIncentivesRetroactiveAvaNewTable:
+    #   Type: AWS::DynamoDB::Table
+    #   DeletionPolicy: Retain
+    #   Properties:
+    #     AttributeDefinitions:
+    #       -
+    #         AttributeName: "id"
+    #         AttributeType: "S"
+    #       -
+    #         AttributeName: "timestamp"
+    #         AttributeType: "N"
+    #     KeySchema:
+    #       -
+    #         AttributeName: "id"
+    #         KeyType: "HASH"
+    #       -
+    #         AttributeName: "timestamp"
+    #         KeyType: "RANGE"
+    #     BillingMode: PAY_PER_REQUEST
+    #     StreamSpecification:
+    #       StreamViewType: "NEW_AND_OLD_IMAGES"
+    #     TableName: ${self:provider.environment.GMX_INCENTIVES_RETROACTIVE_AVA_NEW_TABLE}
     gmxIncentivesArbTable:
       Type: AWS::DynamoDB::Table
       DeletionPolicy: Retain
