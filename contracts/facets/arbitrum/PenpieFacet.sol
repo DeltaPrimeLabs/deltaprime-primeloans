@@ -31,7 +31,7 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     /**
      * @dev This function uses the redstone-evm-connector
      **/
-    function stakePenpie(
+    function depositToPendleAndStakeInPenpie(
         bytes32 asset,
         uint256 amount,
         address market,
@@ -75,7 +75,7 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     /**
      * @dev This function uses the redstone-evm-connector
      **/
-    function unstakePenpie(
+    function unstakeFromPenpieAndWithdrawFromPendle(
         bytes32 asset,
         uint256 amount,
         address market,

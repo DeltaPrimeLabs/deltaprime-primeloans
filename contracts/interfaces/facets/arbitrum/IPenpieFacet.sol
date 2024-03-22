@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 import "../../arbitrum/IPendleRouter.sol";
 
 interface IPenpieFacet {
-    function stakePenpie(
+    function depositToPendleAndStakeInPenpie(
         bytes32 asset,
         uint256 amount,
         address market,
@@ -13,7 +13,7 @@ interface IPenpieFacet {
         IPendleRouter.LimitOrderData memory limit
     ) external;
 
-    function unstakePenpie(
+    function unstakeFromPenpieAndWithdrawFromPendle(
         bytes32 asset,
         uint256 amount,
         address market,

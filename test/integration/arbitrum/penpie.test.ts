@@ -272,7 +272,7 @@ describe('Smart loan', () => {
                     optData: "0x"
                 }
             ];
-            await expect(nonOwnerWrappedLoan.stakePenpie(...mockArgs)).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.depositToPendleAndStakeInPenpie(...mockArgs)).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
         });
 
         it("should fail to unstake as a non-owner", async () => {
@@ -301,7 +301,7 @@ describe('Smart loan', () => {
                     optData: "0x"
                 }
             ];
-            await expect(nonOwnerWrappedLoan.unstakePenpie(...mockArgs)).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.unstakeFromPenpieAndWithdrawFromPendle(...mockArgs)).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
         });
 
         it("should stake", async () => {
@@ -356,7 +356,7 @@ describe('Smart loan', () => {
             const beforeLpExposure = await getAssetExposure(lpToken);
             const beforeTokenExposure = await getAssetExposure(asset);
 
-            await wrappedLoan.stakePenpie(toBytes32(asset), amount, market, minLpOut, guessPtReceivedFromSy, input, limit);
+            await wrappedLoan.depositToPendleAndStakeInPenpie(toBytes32(asset), amount, market, minLpOut, guessPtReceivedFromSy, input, limit);
 
             expect(await loanOwnsAsset(lpToken)).to.be.true;
             const afterLpExposure = await getAssetExposure(lpToken);
@@ -387,7 +387,7 @@ describe('Smart loan', () => {
             const beforeLpExposure = await getAssetExposure(lpToken);
             const beforeTokenExposure = await getAssetExposure(asset);
 
-            await wrappedLoan.unstakePenpie(toBytes32(asset), amount, market, minOut, output, limit);
+            await wrappedLoan.unstakeFromPenpieAndWithdrawFromPendle(toBytes32(asset), amount, market, minOut, output, limit);
 
             expect(await loanOwnsAsset(lpToken)).to.be.false;
             const afterLpExposure = await getAssetExposure(lpToken);
