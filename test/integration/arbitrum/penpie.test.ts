@@ -1,14 +1,11 @@
 import {ethers, waffle} from 'hardhat'
-import chai, {expect, util} from 'chai'
+import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
-import { constructSimpleSDK, SimpleFetchSDK, SwapSide, ContractMethod } from '@paraswap/sdk';
+import {constructSimpleSDK, ContractMethod, SimpleFetchSDK, SwapSide} from '@paraswap/sdk';
 import axios from 'axios';
 
 import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
-import liquidityRouterInterface from '../../abis/LevelFinanceLiquidityRouter.json';
-import ILevelFinanceArtifact
-    from '../../../artifacts/contracts/interfaces/facets/arbitrum/ILevelFinance.sol/ILevelFinance.json';
 import AddressProviderArtifact from '../../../artifacts/contracts/AddressProvider.sol/AddressProvider.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
@@ -17,37 +14,25 @@ import {
     convertAssetsListToSupportedAssets,
     convertTokenPricesMapToMockPrices,
     deployAllFacets,
-    deployAndInitExchangeContract,
     deployPools,
-    erc20ABI,
     fromBytes32,
     fromWei,
-    formatUnits,
     getFixedGasSigners,
     getRedstonePrices,
     getTokensPricesMap,
-    LPAbi,
+    parseParaSwapRouteData,
     PoolAsset,
     PoolInitializationObject,
     recompileConstantsFile,
-    time,
     toBytes32,
     toWei,
-    parseParaSwapRouteData,
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
-import {
-    AddressProvider,
-    MockTokenManager,
-    SmartLoanGigaChadInterface,
-    SmartLoansFactory,
-    SushiSwapIntermediary,
-} from "../../../typechain";
-import {BigNumber, BigNumberish, Contract, constants} from "ethers";
+import {AddressProvider, MockTokenManager, SmartLoanGigaChadInterface, SmartLoansFactory,} from "../../../typechain";
+import {BigNumber, BigNumberish, Contract} from "ethers";
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
 import TOKEN_ADDRESSES from '../../../common/addresses/arbitrum/token_addresses.json';
-import { parseUnits, parseEther } from 'ethers/lib/utils'
 
 chai.use(solidity);
 
@@ -157,28 +142,27 @@ describe('Smart loan', () => {
             await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
             await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
-            await tokenManager.setIdentifiersToExposureGroups([toBytes32("ETH")], [toBytes32("ETH_GROUP")]);
-            await tokenManager.setMaxProtocolsExposure([toBytes32("ETH_GROUP")], [toWei("5000")]);
-            await tokenManager.setIdentifiersToExposureGroups([toBytes32("ezETH")], [toBytes32("ezETH_GROUP")]);
-            await tokenManager.setMaxProtocolsExposure([toBytes32("ezETH_GROUP")], [toWei("5000")]);
-            await tokenManager.setIdentifiersToExposureGroups([toBytes32("wstETH")], [toBytes32("wstETH_GROUP")]);
-            await tokenManager.setMaxProtocolsExposure([toBytes32("wstETH_GROUP")], [toWei("5000")]);
-            await tokenManager.setIdentifiersToExposureGroups([toBytes32("weETH")], [toBytes32("weETH_GROUP")]);
-            await tokenManager.setMaxProtocolsExposure([toBytes32("weETH_GROUP")], [toWei("5000")]);
-            await tokenManager.setIdentifiersToExposureGroups([toBytes32("rsETH")], [toBytes32("rsETH_GROUP")]);
-            await tokenManager.setMaxProtocolsExposure([toBytes32("rsETH_GROUP")], [toWei("5000")]);
-            await tokenManager.setIdentifiersToExposureGroups([toBytes32("PENPIE_EZETH_LP")], [toBytes32("PENPIE_EZETH_LP_GROUP")]);
-            await tokenManager.setMaxProtocolsExposure([toBytes32("PENPIE_EZETH_LP_GROUP")], [toWei("5000")]);
-            await tokenManager.setIdentifiersToExposureGroups([toBytes32("PENPIE_WSTETH_LP")], [toBytes32("PENPIE_WSTETH_LP_GROUP")]);
-            await tokenManager.setMaxProtocolsExposure([toBytes32("PENPIE_WSTETH_LP_GROUP")], [toWei("5000")]);
-            await tokenManager.setIdentifiersToExposureGroups([toBytes32("PENPIE_EETH_LP")], [toBytes32("PENPIE_EETH_LP_GROUP")]);
-            await tokenManager.setMaxProtocolsExposure([toBytes32("PENPIE_EETH_LP_GROUP")], [toWei("5000")]);
-            await tokenManager.setIdentifiersToExposureGroups([toBytes32("PENPIE_RSETH_LP")], [toBytes32("PENPIE_RSETH_LP_GROUP")]);
-            await tokenManager.setMaxProtocolsExposure([toBytes32("PENPIE_RSETH_LP_GROUP")], [toWei("5000")]);
-            await tokenManager.setIdentifiersToExposureGroups([toBytes32("PENPIE_WSTETHSILO_LP")], [toBytes32("PENPIE_WSTETHSILO_LP_GROUP")]);
-            await tokenManager.setMaxProtocolsExposure([toBytes32("PENPIE_WSTETHSILO_LP_GROUP")], [toWei("5000")]);
-            await tokenManager.setIdentifiersToExposureGroups([toBytes32("PENPIE_EETHSILO_LP")], [toBytes32("PENPIE_EETHSILO_LP_GROUP")]);
-            await tokenManager.setMaxProtocolsExposure([toBytes32("PENPIE_EETHSILO_LP_GROUP")], [toWei("5000")]);
+            const exposureGroups = [
+                "ETH_GROUP", "ezETH_GROUP", "wstETH_GROUP", "weETH_GROUP", "rsETH_GROUP",
+                "PENPIE_EZETH_LP_GROUP", "PENPIE_WSTETH_LP_GROUP", "PENPIE_EETH_LP_GROUP",
+                "PENPIE_RSETH_LP_GROUP", "PENPIE_WSTETHSILO_LP_GROUP", "PENPIE_EETHSILO_LP_GROUP"
+            ];
+
+            const identifiers = [
+                "ETH", "ezETH", "wstETH", "weETH", "rsETH",
+                "PENPIE_EZETH_LP", "PENPIE_WSTETH_LP", "PENPIE_EETH_LP",
+                "PENPIE_RSETH_LP", "PENPIE_WSTETHSILO_LP", "PENPIE_EETHSILO_LP"
+            ];
+
+            await tokenManager.setIdentifiersToExposureGroups(
+                identifiers.map(toBytes32),
+                exposureGroups.map(toBytes32)
+            );
+
+            await tokenManager.setMaxProtocolsExposure(
+                exposureGroups.map(toBytes32),
+                Array(exposureGroups.length).fill(toWei("5000"))
+            );
 
             await smartLoansFactory.initialize(diamondAddress, tokenManager.address);
 
@@ -321,28 +305,37 @@ describe('Smart loan', () => {
         });
 
         it("should stake", async () => {
-            await testStake("ETH", ezETHMarket, toWei('2'), 1, "PENPIE_EZETH_LP");
-            await testStake("wstETH", wstETHMarket, wstEthBalance, 1, "PENPIE_WSTETH_LP");
-            await testStake("weETH", eETHMarket, weEthBalance, 1, "PENPIE_EETH_LP");
-            await testStake("rsETH", rsETHMarket, rsEthBalance, 1, "PENPIE_RSETH_LP");
-            await testStake("ETH", wstETHSiloMarket, toWei('2'), 1, "PENPIE_WSTETHSILO_LP");
-            await testStake("ETH", eETHSiloMarket, toWei('2'), 1, "PENPIE_EETHSILO_LP");
+            const stakeTests = [
+                { asset: "ETH", market: ezETHMarket, amount: toWei('2'), minLpOut: 1, lpToken: "PENPIE_EZETH_LP" },
+                { asset: "wstETH", market: wstETHMarket, amount: wstEthBalance, minLpOut: 1, lpToken: "PENPIE_WSTETH_LP" },
+                { asset: "weETH", market: eETHMarket, amount: weEthBalance, minLpOut: 1, lpToken: "PENPIE_EETH_LP" },
+                { asset: "rsETH", market: rsETHMarket, amount: rsEthBalance, minLpOut: 1, lpToken: "PENPIE_RSETH_LP" },
+                { asset: "ETH", market: wstETHSiloMarket, amount: toWei('2'), minLpOut: 1, lpToken: "PENPIE_WSTETHSILO_LP" },
+                { asset: "ETH", market: eETHSiloMarket, amount: toWei('2'), minLpOut: 1, lpToken: "PENPIE_EETHSILO_LP" }
+            ];
+
+            for (const test of stakeTests) {
+                console.log(`Testing staking ${test.asset}...`)
+                await testStake(test.asset, test.market, test.amount, test.minLpOut, test.lpToken);
+            }
         });
 
         it("should unstake", async () => {
-            let ezEthLpBalance = await tokenContracts.get('PENPIE_EZETH_LP')!.balanceOf(wrappedLoan.address);
-            let wstEthLpBalance = await tokenContracts.get('PENPIE_WSTETH_LP')!.balanceOf(wrappedLoan.address);
-            let eEthLpBalance = await tokenContracts.get('PENPIE_EETH_LP')!.balanceOf(wrappedLoan.address);
-            let rsEthLpBalance = await tokenContracts.get('PENPIE_RSETH_LP')!.balanceOf(wrappedLoan.address);
-            let wstEthSiloLpBalance = await tokenContracts.get('PENPIE_WSTETHSILO_LP')!.balanceOf(wrappedLoan.address);
-            let eEthSiloLpBalance = await tokenContracts.get('PENPIE_EETHSILO_LP')!.balanceOf(wrappedLoan.address);
+            it("should unstake", async () => {
+                const unstakeTests = [
+                    { asset: "ezETH", market: ezETHMarket, amount: await tokenContracts.get('PENPIE_EZETH_LP')!.balanceOf(wrappedLoan.address), minOut: 1, lpToken: "PENPIE_EZETH_LP" },
+                    { asset: "wstETH", market: wstETHMarket, amount: await tokenContracts.get('PENPIE_WSTETH_LP')!.balanceOf(wrappedLoan.address), minOut: 1, lpToken: "PENPIE_WSTETH_LP" },
+                    { asset: "weETH", market: eETHMarket, amount: await tokenContracts.get('PENPIE_EETH_LP')!.balanceOf(wrappedLoan.address), minOut: 1, lpToken: "PENPIE_EETH_LP" },
+                    { asset: "rsETH", market: rsETHMarket, amount: await tokenContracts.get('PENPIE_RSETH_LP')!.balanceOf(wrappedLoan.address), minOut: 1, lpToken: "PENPIE_RSETH_LP" },
+                    { asset: "ETH", market: wstETHSiloMarket, amount: await tokenContracts.get('PENPIE_WSTETHSILO_LP')!.balanceOf(wrappedLoan.address), minOut: 1, lpToken: "PENPIE_WSTETHSILO_LP" },
+                    { asset: "ETH", market: eETHSiloMarket, amount: await tokenContracts.get('PENPIE_EETHSILO_LP')!.balanceOf(wrappedLoan.address), minOut: 1, lpToken: "PENPIE_EETHSILO_LP" }
+                ];
 
-            await testUnstake("ezETH", ezETHMarket, ezEthLpBalance, 1, "PENPIE_EZETH_LP");
-            await testUnstake("wstETH", wstETHMarket, wstEthLpBalance, 1, "PENPIE_WSTETH_LP");
-            await testUnstake("weETH", eETHMarket, eEthLpBalance, 1, "PENPIE_EETH_LP");
-            await testUnstake("rsETH", rsETHMarket, rsEthLpBalance, 1, "PENPIE_RSETH_LP");
-            await testUnstake("ETH", wstETHSiloMarket, wstEthSiloLpBalance, 1, "PENPIE_WSTETHSILO_LP");
-            await testUnstake("ETH", eETHSiloMarket, eEthSiloLpBalance, 1, "PENPIE_EETHSILO_LP");
+                for (const test of unstakeTests) {
+                    console.log(`Testing unstaking ${test.asset}...`)
+                    await testUnstake(test.asset, test.market, test.amount, test.minOut, test.lpToken);
+                }
+            });
         });
 
         async function testStake(asset: string, market: string, amount: BigNumber, minLpOut: BigNumberish, lpToken: string) {
