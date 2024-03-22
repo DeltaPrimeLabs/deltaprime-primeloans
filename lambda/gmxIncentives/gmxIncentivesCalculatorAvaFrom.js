@@ -87,12 +87,6 @@ const gmxIncentivesCalculatorAvaFrom = async (event) => {
     }
     const fifthEnd = Math.floor(Date.now() / 1000);
     const end = Math.floor(Date.now() / 1000);
-    console.log(`****************************************`)
-    console.log(end - start);
-    console.log(secondEnd - secondStart);
-    console.log(thirdEnd - thirdStart);
-    console.log(fourthEnd - fourthStart);
-    console.log(fifthEnd - fifthStart);
   }
 
   console.log(`${Object.entries(loanQualifications).length} loans analyzed.`);
