@@ -59,7 +59,7 @@ const EthDater = require("ethereum-block-by-date");
 
 const ethers = require('ethers');
 import GM_DISTRIBUTED_ARBITRUM from '../data/arbitrum/GM_EPOCH_9.json';
-import GM_DISTRIBUTED_AVALANCHE from '../data/avalanche/GM_EPOCH_5.json';
+import GM_DISTRIBUTED_AVALANCHE from '../data/avalanche/GM_EPOCH_6_reset.json';
 import {wrapContract} from "../utils/blockchain";
 import DeltaIcon from "./DeltaIcon.vue";
 import BarGaugeBeta from "./BarGaugeBeta.vue";
@@ -183,7 +183,7 @@ export default {
             harvested = GM_DISTRIBUTED_ARBITRUM[this.smartLoanContract.address.toLowerCase()] ? GM_DISTRIBUTED_ARBITRUM[this.smartLoanContract.address.toLowerCase()] : 0;
             collectedToken = collectedResponse.arbCollected;
           } else {
-            collectedResponse = await (await fetch(`https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/gmx-incentives-remake/${smartLoanContract.address}`)).json();
+            collectedResponse = await (await fetch(`https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/gmx-incentives-new/${smartLoanContract.address}`)).json();
             harvested = GM_DISTRIBUTED_AVALANCHE[this.smartLoanContract.address] ? GM_DISTRIBUTED_AVALANCHE[this.smartLoanContract.address] : 0;
             collectedToken = collectedResponse.total;
           }
