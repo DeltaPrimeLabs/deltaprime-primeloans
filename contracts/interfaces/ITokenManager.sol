@@ -30,6 +30,8 @@ interface ITokenManager {
     function removeTokenAssets ( bytes32[] memory _tokenAssets ) external;
     function renounceOwnership (  ) external;
     function setDebtCoverage ( address token, uint256 coverage ) external;
+    function setMaxProtocolsExposure (bytes32[] memory groupIdentifiers, uint256[] memory maxExposures) external;
+    function setIdentifiersToExposureGroups (bytes32[] memory identifiers, bytes32[] memory exposureGroups) external;
     function setDebtCoverageStaked ( bytes32 stakedAsset, uint256 coverage ) external;
     function supportedTokensList ( uint256 ) external view returns ( address );
     function tokenAddressToSymbol ( address ) external view returns ( bytes32 );
