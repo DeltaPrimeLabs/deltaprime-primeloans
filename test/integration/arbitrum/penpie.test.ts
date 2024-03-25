@@ -355,6 +355,7 @@ describe('Smart loan', () => {
 
             const beforeLpExposure = await getAssetExposure(lpToken);
             const beforeTokenExposure = await getAssetExposure(asset);
+            expect(await loanOwnsAsset(lpToken)).to.be.false;
 
             await wrappedLoan.depositToPendleAndStakeInPenpie(toBytes32(asset), amount, market, minLpOut, guessPtReceivedFromSy, input, limit);
 
@@ -386,6 +387,7 @@ describe('Smart loan', () => {
 
             const beforeLpExposure = await getAssetExposure(lpToken);
             const beforeTokenExposure = await getAssetExposure(asset);
+            expect(await loanOwnsAsset(lpToken)).to.be.true;
 
             await wrappedLoan.unstakeFromPenpieAndWithdrawFromPendle(toBytes32(asset), amount, market, minOut, output, limit);
 
