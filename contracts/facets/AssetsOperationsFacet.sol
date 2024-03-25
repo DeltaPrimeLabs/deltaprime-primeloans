@@ -7,7 +7,7 @@ import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "../ReentrancyGuardKeccak.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
-import "../lib/SolvencyMethods.sol";
+import "../OnlyOwnerOrInsolvent.sol";
 import "../interfaces/ITokenManager.sol";
 import "./SmartLoanLiquidationFacet.sol";
 import "../interfaces/facets/IYieldYakRouter.sol";
@@ -15,7 +15,7 @@ import "../interfaces/facets/IYieldYakRouter.sol";
 //this path is updated during deployment
 import "../lib/local/DeploymentConstants.sol";
 
-contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
+contract AssetsOperationsFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     using TransferHelper for address payable;
     using TransferHelper for address;
 
@@ -238,7 +238,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         emit DebtSwap(msg.sender, address(fromToken), address(toToken), _repayAmount, _borrowAmount, block.timestamp);
     }
 
-    function swapDebtParaSwap(bytes32 _fromAsset, bytes32 _toAsset, uint256 _repayAmount, uint256 _borrowAmount, bytes4 selector, bytes memory data) external onlyOwner remainsSolvent nonReentrant {
+    function swapDebtParaSwap(bytes32 _fromAsset, bytes32 _toAsset, uint256 _repayAmount, uint256 _borrowAmount, bytes4 selector, bytes memory data) external onlyOwnerOrInsolvent remainsSolvent nonReentrant {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         Pool fromAssetPool = Pool(tokenManager.getPoolAddress(_fromAsset));
         _repayAmount = Math.min(_repayAmount, fromAssetPool.getBorrowed(address(this)));
