@@ -1014,6 +1014,15 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             hardhatConfig
         )
         await deployFacet(
+            "PenpieFacet",
+            diamondAddress,
+            [
+                'depositToPendleAndStakeInPenpie',
+                'unstakeFromPenpieAndWithdrawFromPendle',
+            ],
+            hardhatConfig
+        )
+        await deployFacet(
             "LevelFinanceFacet",
             diamondAddress,
             [
