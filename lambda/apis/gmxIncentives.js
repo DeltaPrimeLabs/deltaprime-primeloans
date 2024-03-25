@@ -159,23 +159,6 @@ const getGmBoostApyApi = (event, context, callback) => {
     });
 };
 
-const onScan = async (params, results = []) => {
-  try {
-    console.log(results.length);
-    const result = await dynamoDb.scan(params).promise();
-
-    if (typeof result.LastEvaluatedKey != 'undefined') {
-      results = [...results, ...result.Items];
-      params.ExclusiveStartKey = result.LastEvaluatedKey;
-      return onScan(params, results);
-    }
-  } catch(error) {
-    console.error(error);
-    callback(new Error('Couldn\'t Incentives.'));
-    return;
-  };
-}
-
 const getGmxIncentivesNewApi = (event, context, callback) => {
   const params = {
     TableName: process.env.GMX_INCENTIVES_RETROACTIVE_AVA_NEW_TABLE,
