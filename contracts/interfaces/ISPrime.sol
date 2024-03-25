@@ -26,13 +26,10 @@ interface ISPrime {
         uint256 totalShare;
         address lbPair;
     }
-    
-    // Owner functions
-    function addBins(uint24 activeId, uint24 lower, uint24 upper, address lbPair) external;
-    function removeBins(uint24 activeId) external;
 
     // Interactive functions
     function rebalance(
+        uint16 binStep,
         uint24 activeId,
         uint24 newLower,
         uint24 newUpper,
@@ -40,6 +37,18 @@ interface ISPrime {
         uint24 slippageActiveId,
         bytes calldata distributions
     ) external;
-    function deposit(uint24 activeId, uint256 amountX, uint256 amountY, bytes calldata distributions) external;
-    function withdraw(uint24 activeId, uint256 shareWithdraw) external;
+    
+    function deposit(
+        uint16 binStep,
+        uint24 activeId,
+        uint256 amountX,
+        uint256 amountY,
+        bytes calldata distributions
+    ) external;
+
+    function withdraw(
+        uint16 binStep,
+        uint24 activeId,
+        uint256 shareWithdraw
+    ) external;
 }

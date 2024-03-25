@@ -6,9 +6,7 @@ pragma solidity 0.8.17;
 import "../lib/joe-v2/math/SafeCast.sol";
 import "../lib/joe-v2/PriceHelper.sol";
 import "../interfaces/ISPrime.sol";
-import "../interfaces/joe-v2/ILBPair.sol";
 import "../interfaces/joe-v2/ILBRouter.sol";
-import "../interfaces/joe-v2/ILBToken.sol";
 import "../lib/joe-v2/LiquidityAmounts.sol";
 import "../lib/joe-v2/math/Uint256x256Math.sol";
 import "../lib/joe-v2/math/LiquidityConfigurations.sol";
@@ -28,13 +26,14 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
     uint256 private constant _MAX_RANGE = 51;
     uint256 private constant _PACKED_DISTRIBS_SIZE = 16;
 
-    // activeId => Bin Info
-    mapping(uint24 => PairInfo) public pairList;
-    mapping(uint24 => bool) public pairStatus;
+    // binStep => activeId => Pair Info
+    mapping(uint16 => mapping(uint24 => PairInfo)) public pairList;
+    mapping(uint16 => mapping(uint24 => bool)) public pairStatus;
 
     IERC20 public immutable tokenX;
     IERC20 public immutable tokenY;
     ILBRouter public immutable lbRouter;
+    ILBFactory public immutable lbFactory;
 
     /**
      * @dev Constructor of the contract.
@@ -47,18 +46,20 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
         tokenX = IERC20(tokenX_);
         tokenY = IERC20(tokenY_);
         lbRouter = ILBRouter(lbRouter_);
+        lbFactory = lbRouter.getFactory();
     }
 
     /**
      * @notice Add a new bin for the PRIME-TOKEN pair.
-     * @dev Only the owner can call this function.
+     * @param binStep The binStep for the pair.
      * @param activeId The unique identifier for the new bin.
      * @param lower The lower bound of the range.
      * @param upper The upper bound of the range.
-     * @param lbPair The address of the liquidity pair associated with the bin.
      */
-    function addBins(uint24 activeId, uint24 lower, uint24 upper, address lbPair) external onlyOwner {
-        require(!pairStatus[activeId], "Active ID added already");
+    function _addBins(uint16 binStep, uint24 activeId, uint24 lower, uint24 upper) internal {
+        address lbPair = address(lbFactory.getLBPairInformation(tokenX, tokenY, binStep).LBPair);
+
+        require(!pairStatus[binStep][activeId], "Active ID added already");
         PairInfo memory newPairInfo = PairInfo({
             lowerRange: 0,
             upperRange: 0,
@@ -67,29 +68,16 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
             lbPair: lbPair
         });
 
-        pairList[activeId] = newPairInfo;
-        pairStatus[activeId] = true;
+        pairList[binStep][activeId] = newPairInfo;
+        pairStatus[binStep][activeId] = true;
 
-        _setRange(activeId, lower, upper);
-    }
-
-    /**
-     * @notice Remove a bin for the PRIME-TOKEN pair.
-     * @dev Only the owner can call this function.
-     * @param activeId The identifier of the bin to be removed.
-     */
-    function removeBins(uint24 activeId) external onlyOwner {
-        require(pairStatus[activeId], "Active ID not existing");
-
-        delete pairList[activeId];
-        pairStatus[activeId] = false;
-
-        _resetRange(activeId);
+        _setRange(binStep, activeId, lower, upper);
     }
 
     /**
      * @notice Rebalances the SPrime contract by withdrawing the entire position and depositing a new position within specified bounds.
      * It deposits tokens following the amounts valued in Y.
+     * @param binStep The binStep for the pair.
      * @param activeId The id of the bin to be rebalanced.
      * @param newLower The lower bound of the new range.
      * @param newUpper The upper bound of the new range.
@@ -98,6 +86,7 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
      * @param distributions The packed distributions of tokens.
      */
     function rebalance(
+        uint16 binStep,
         uint24 activeId,
         uint24 newLower,
         uint24 newUpper,
@@ -106,7 +95,7 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
         bytes calldata distributions
     ) external {
 
-        (uint256 amountX, uint256 amountY) = _withdrawAndResetRange(activeId, balanceOf(_msgSender()));
+        (uint256 amountX, uint256 amountY) = _withdrawAndResetRange(binStep, activeId, balanceOf(_msgSender()));
 
         // Check if the operator wants to deposit tokens.
         if (desiredActiveId > 0 || slippageActiveId > 0) {
@@ -116,9 +105,9 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
             bytes32[] memory liquidityConfigs = _getLiquidityConfigs(newLower, newUpper, distributions);
 
             // Set the range, will check if the range is valid.
-            _setRange(desiredActiveId, newLower, newUpper);
+            _setRange(binStep, desiredActiveId, newLower, newUpper);
 
-            _depositToLB(desiredActiveId, liquidityConfigs, amountX, amountY);
+            _depositToLB(binStep, desiredActiveId, liquidityConfigs, amountX, amountY);
         }
     }
 
@@ -145,12 +134,13 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
 
     /**
      * @dev Returns the balances of the contract, including those deposited in the LB pool.
+     * @param binStep The binStep for the pair.
      * @param activeId The active id of the pair.
      * @return amountX The balance of token X.
      * @return amountY The balance of token Y.
      */
-    function _getBalances(uint24 activeId) internal view returns (uint256 amountX, uint256 amountY) {
-        PairInfo memory pair = pairList[activeId];
+    function _getBalances(uint16 binStep, uint24 activeId) internal view returns (uint256 amountX, uint256 amountY) {
+        PairInfo memory pair = pairList[binStep][activeId];
 
         // Get the balances of the tokens in the contract.
         amountX = tokenX.balanceOf(address(this));
@@ -254,12 +244,13 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
 
     /**
      * @dev Sets the range only if it is not already set. Will revert if the range is already set.
+     * @param binStep The binStep for the pair.
      * @param activeId The active id of the pair.
      * @param newLower The lower end of the new range.
      * @param newUpper The upper end of the new range.
      */
-    function _setRange(uint24 activeId, uint24 newLower, uint24 newUpper) internal {
-        PairInfo storage pair = pairList[activeId];
+    function _setRange(uint16 binStep, uint24 activeId, uint24 newLower, uint24 newUpper) internal {
+        PairInfo storage pair = pairList[binStep][activeId];
 
         require(newUpper != 0 && newLower <= newUpper, "InvalidRange");
         require(newUpper - newLower + 1 <= _MAX_RANGE, "RangeTooWide");
@@ -276,10 +267,11 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
 
     /**
      * @dev Resets the range.
+     * @param binStep The binStep for the pair.
      * @param activeId The active id of the pair
      */
-    function _resetRange(uint24 activeId) internal {
-        PairInfo storage pair = pairList[activeId];
+    function _resetRange(uint16 binStep, uint24 activeId) internal {
+        PairInfo storage pair = pairList[binStep][activeId];
 
         pair.lowerRange = 0;
         pair.upperRange = 0;
@@ -289,18 +281,20 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
 
     /**
      * @dev Deposits tokens into the lbPair.
+     * @param binStep The binStep for the pair.
      * @param activeId The active Id.
      * @param liquidityConfigs The liquidity configurations, encoded as bytes32.
      * @param amountX The amount of token X to deposit.
      * @param amountY The amount of token Y to deposit.
      */
     function _depositToLB(
+        uint16 binStep,
         uint24 activeId,
         bytes32[] memory liquidityConfigs,
         uint256 amountX,
         uint256 amountY
     ) internal {
-        PairInfo memory pair = pairList[activeId];
+        PairInfo memory pair = pairList[binStep][activeId];
 
         require(amountX != 0 || amountY != 0, "ZeroAmounts");
 
@@ -313,7 +307,7 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
         // Mint the liquidity tokens.
         ILBPair(lbPair).mint(address(this), liquidityConfigs, address(this));
 
-        (uint256 totalBalanceX, uint256 totalBalanceY) = _getBalances(activeId);
+        (uint256 totalBalanceX, uint256 totalBalanceY) = _getBalances(binStep, activeId);
         uint256 share = pair.totalShare * _getTotalWeight(lbPair, amountX, amountY) / _getTotalWeight(lbPair, totalBalanceX, totalBalanceY);
 
         _mint(_msgSender(), share);
@@ -325,17 +319,18 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
     /**
      * @dev Withdraws tokens from the lbPair and applies the AUM annual fee. This function will also reset the range.
      * Will never charge for more than a day of AUM fees, even if the sPrime scontract has not been rebalanced for a longer period.
+     * @param binStep The binStep for the pair.
      * @param activeId The active Id of the pair
      * @param share The amount of share to withdraw.
      * @return totalBalanceX The amount of token X withdrawn.
      * @return totalBalanceY The amount of token Y withdrawn.
      */
-    function _withdrawAndResetRange(uint24 activeId, uint256 share) internal returns(uint256 totalBalanceX, uint256 totalBalanceY) {
-        PairInfo storage pair = pairList[activeId];
+    function _withdrawAndResetRange(uint16 binStep, uint24 activeId, uint256 share) internal returns(uint256 totalBalanceX, uint256 totalBalanceY) {
+        PairInfo storage pair = pairList[binStep][activeId];
 
         // Get the range and reset it.
         (uint24 lowerRange, uint24 upperRange) = (pair.lowerRange, pair.upperRange);
-        if (upperRange > 0) _resetRange(activeId);
+        if (upperRange > 0) _resetRange(binStep, activeId);
 
         (totalBalanceX, totalBalanceY) = _withdrawFromLB(pair.lbPair, lowerRange, upperRange, share * _PRECISION / pair.totalShare);
 
@@ -406,27 +401,29 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
 
     /**
      * @dev Users can use deposit function for depositing tokens to the specific bin.
+     * @param binStep The binStep for the pair.
      * @param activeId The activeId of range list.
      * @param amountX The amount of token X to deposit.
      * @param amountY The amount of token Y to deposit.
      * @param distributions The packed distributions. Each bytes16 of the distributions bytes is
      * (distributionX, distributionY) from the `newLower`to the `newUpper` range.
      */
-    function deposit(uint24 activeId, uint256 amountX, uint256 amountY, bytes calldata distributions) external {
-        PairInfo memory pair = pairList[activeId];
+    function deposit(uint16 binStep, uint24 activeId, uint256 amountX, uint256 amountY, bytes calldata distributions) external {
+        PairInfo memory pair = pairList[binStep][activeId];
 
         bytes32[] memory liquidityConfigs = _getLiquidityConfigs(pair.lowerRange, pair.upperRange, distributions);
 
-        _depositToLB(activeId, liquidityConfigs, amountX, amountY);
+        _depositToLB(binStep, activeId, liquidityConfigs, amountX, amountY);
     }
 
     /**
      * @dev Only the vault can call this function.
+     * @param binStep The binStep for the pair.
      * @param activeId The activeId of range list.
      * @param shareWithdraw The amount of share to withdraw.
      */
-    function withdraw(uint24 activeId, uint256 shareWithdraw) external {
-        PairInfo storage pair = pairList[activeId];
+    function withdraw(uint16 binStep, uint24 activeId, uint256 shareWithdraw) external {
+        PairInfo storage pair = pairList[binStep][activeId];
 
         require(shareWithdraw <= balanceOf(_msgSender()), "Insufficient Balance");
 
