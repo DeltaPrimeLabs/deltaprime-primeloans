@@ -298,6 +298,9 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
 
         require(amountX != 0 || amountY != 0, "ZeroAmounts");
 
+        (uint256 totalBalanceX, uint256 totalBalanceY) = _getBalances(binStep, activeId);
+        uint256 share = pair.totalShare * _getTotalWeight(lbPair, amountX, amountY) / _getTotalWeight(lbPair, totalBalanceX, totalBalanceY);
+
         // Get the lbPair address and transfer the tokens to the lbPair.
         address lbPair = pair.lbPair;
 
@@ -306,9 +309,6 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
 
         // Mint the liquidity tokens.
         ILBPair(lbPair).mint(address(this), liquidityConfigs, address(this));
-
-        (uint256 totalBalanceX, uint256 totalBalanceY) = _getBalances(binStep, activeId);
-        uint256 share = pair.totalShare * _getTotalWeight(lbPair, amountX, amountY) / _getTotalWeight(lbPair, totalBalanceX, totalBalanceY);
 
         _mint(_msgSender(), share);
 
