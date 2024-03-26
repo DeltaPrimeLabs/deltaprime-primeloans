@@ -332,9 +332,10 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
         (uint24 lowerRange, uint24 upperRange) = (pair.lowerRange, pair.upperRange);
         if (upperRange > 0) _resetRange(binStep, activeId);
 
+        _burn(_msgSender(), share);
+
         (totalBalanceX, totalBalanceY) = _withdrawFromLB(pair.lbPair, lowerRange, upperRange, share * _PRECISION / pair.totalShare);
 
-        _burn(_msgSender(), share);
         pair.totalShare -= share;
 
         // Ge the last rebalance timestamp and update it.
@@ -417,7 +418,6 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
     }
 
     /**
-     * @dev Only the vault can call this function.
      * @param binStep The binStep for the pair.
      * @param activeId The activeId of range list.
      * @param shareWithdraw The amount of share to withdraw.
@@ -428,9 +428,10 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
         require(shareWithdraw <= balanceOf(_msgSender()), "Insufficient Balance");
 
         // Withdraw all the tokens from the LB pool and return the amounts and the queued withdrawals.
+        _burn(_msgSender(), shareWithdraw);
+
         (uint256 amountX, uint256 amountY) = _withdrawFromLB(pair.lbPair, pair.lowerRange, pair.upperRange, shareWithdraw * _PRECISION / pair.totalShare);
 
-        _burn(_msgSender(), shareWithdraw);
         pair.totalShare -= shareWithdraw;
 
         // Send the tokens to the vault.
