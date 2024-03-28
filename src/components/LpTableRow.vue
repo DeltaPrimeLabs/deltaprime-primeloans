@@ -393,7 +393,9 @@ export default {
       modalInstance.lpTokenBalance = Number(this.lpBalances[this.lpToken.symbol]);
       modalInstance.firstAssetBalance = this.assetBalances[this.lpToken.primary];
       modalInstance.secondAssetBalance = this.assetBalances[this.lpToken.secondary];
+      modalInstance.areAmountsLinked = true;
       modalInstance.$on('PROVIDE_LIQUIDITY', provideLiquidityEvent => {
+        console.log(provideLiquidityEvent);
         if (this.smartLoanContract) {
           const provideLiquidityRequest = {
             symbol: this.lpToken.symbol,

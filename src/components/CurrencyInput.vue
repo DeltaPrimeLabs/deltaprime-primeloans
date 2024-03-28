@@ -209,6 +209,7 @@ export default {
     },
 
     async setValue(value) {
+      console.log('CurrencyInput.setValue', value);
       this.value = value;
       this.internalValue = String(value);
       this.disabledStringifiedValue = smartRound(value, 20, true)
