@@ -16,6 +16,9 @@
         ></DeltaIcon>
         {{ toTokenData }}
       </div>
+      <div class="modal-top-info">
+        Estimated Duration: {{ estimatedDuration ? estimatedDuration : '-' }}
+      </div>
 
       <template v-if="cancelled || execution && execution.status === 'FAILED'">
         <div class="button-wrapper button-group">
@@ -41,9 +44,10 @@ import Button from './Button';
 import { formatUnits } from 'ethers/lib/utils';
 import DeltaIcon from './DeltaIcon';
 import { ethers } from 'ethers';
+import moment from 'moment';
 
 export default {
-  name: 'DepositModal',
+  name: 'ResumeBridgeModal',
   components: {
     Button,
     Modal,
@@ -67,13 +71,15 @@ export default {
       execution: null,
       fromData: null,
       toData: null,
-      isLoading: false
+      isLoading: false,
+      estimatedDuration: null
     };
   },
 
   mounted() {
     setTimeout(() => {
       this.setupRoute();
+      this.getEstimatedDuration();
     });
   },
 
@@ -86,7 +92,7 @@ export default {
     toTokenData() {
       if (!this.toData) return;
       return `${Number(this.toData.toAmount).toFixed(4)} ${this.toData.toToken.symbol} on ${this.toData.toChain.name}`;
-    }
+    },
   },
 
   methods: {
@@ -170,6 +176,12 @@ export default {
 
       this.closeModal();
       this.isLoading = false;
+    },
+
+    getEstimatedDuration() {
+      const formatString = 'D [days], H [hours], m [minutes], s [seconds]';
+      const estimatedDuration = this.lifiService.getEstimatedDuration(this.route);
+      this.estimatedDuration = moment.duration(estimatedDuration, 'seconds').format(formatString);
     },
 
     deleteTransfer() {

@@ -239,7 +239,7 @@ export default class LifiService {
     }
 
     progressBarService.emitProgressBarInProgressState(statusInfo);
-    await switchChain(config.chainId, signer);
+    await switchChain(route.toChainId, signer);
 
     if (!route.steps || route.steps.length === 0) {
       console.log("something wrong with bridge.");
