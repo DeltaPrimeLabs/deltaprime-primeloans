@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 70f3282b1751e5abb80bec8675a5d2be940a592e;
+// Last deployed from commit: 6d86e26ff5a23ee2fa4ddb079d0569c41d45f7dd;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -7,13 +7,13 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../../ReentrancyGuardKeccak.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
-import "../../lib/SolvencyMethods.sol";
+import "../../OnlyOwnerOrInsolvent.sol";
 import "../../interfaces/IWrappedNativeToken.sol";
 
 //This path is updated during deployment
 import "../../lib/local/DeploymentConstants.sol";
 
-contract CaiFacet is ReentrancyGuardKeccak, SolvencyMethods {
+contract CaiFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     using TransferHelper for address;
 
     address private constant INDEX_ROUTER =
@@ -74,7 +74,7 @@ contract CaiFacet is ReentrancyGuardKeccak, SolvencyMethods {
         uint256 shares,
         address toToken,
         uint256 minOut
-    ) external nonReentrant onlyOwner remainsSolvent {
+    ) external nonReentrant onlyOwnerOrInsolvent remainsSolvent {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         require(minOut > 0, "minOut needs to be > 0");
