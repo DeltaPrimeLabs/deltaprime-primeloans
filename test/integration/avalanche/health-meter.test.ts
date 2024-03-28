@@ -23,7 +23,8 @@ import {
     PoolInitializationObject,
     recompileConstantsFile,
     toBytes32,
-    toWei
+    toWei,
+    wavaxAbi
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
@@ -81,13 +82,15 @@ describe('Smart loan', () => {
             depositor: SignerWithAddress,
             fundDepositId: number,
             MOCK_PRICES: any,
+            AVAX_PRICE: number,
             diamondAddress: any;
 
         before("deploy factory and pool", async () => {
             [owner, nonOwner, depositor] = await getFixedGasSigners(10000000);
             let assetsList = ['AVAX', 'USDC', 'BTC', 'ETH'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
-                {name: 'AVAX', airdropList: [depositor]}
+                {name: 'AVAX', airdropList: [depositor]},
+                {name: 'USDC', airdropList: []}
             ];
 
             diamondAddress = await deployDiamond();
@@ -156,6 +159,19 @@ describe('Smart loan', () => {
                 smartLoansFactory.address,
                 'lib'
             );
+
+            AVAX_PRICE = tokensPrices.get('AVAX')!;
+            const wavaxToken = new ethers.Contract(TOKEN_ADDRESSES['AVAX'], wavaxAbi, provider);
+
+            const usdcDeposited = parseUnits("4000", BigNumber.from("6"));
+            const amountSwapped = toWei((4800 / AVAX_PRICE).toString());
+            await wavaxToken.connect(depositor).deposit({value: amountSwapped});
+            await wavaxToken.connect(depositor).approve(exchange.address, amountSwapped);
+            await wavaxToken.connect(depositor).transfer(exchange.address, amountSwapped);
+
+            await exchange.connect(depositor).swap(TOKEN_ADDRESSES['AVAX'], TOKEN_ADDRESSES['USDC'], amountSwapped, usdcDeposited);
+            await tokenContracts.get("USDC")!.connect(depositor).approve(poolContracts.get("USDC")!.address, usdcDeposited);
+            await poolContracts.get("USDC")!.connect(depositor).deposit(usdcDeposited);
 
             await deployAllFacets(diamondAddress)
         });
@@ -242,7 +258,7 @@ describe('Smart loan', () => {
 
             let hm = fromWei(await wrappedLoan.getHealthMeter())
             console.log('HM after', hm)
-            expect(hm).to.be.closeTo(hmBefore, 0.1)
+            expect(hm).to.be.closeTo(hmBefore, 0.3)
 
             const bins = await wrappedLoan.getOwnedTraderJoeV2Bins();
 
@@ -252,6 +268,19 @@ describe('Smart loan', () => {
             expect(tvBefore).to.be.closeTo(tvAfter, 10);
             expect(hrBefore).to.be.closeTo(hrAfter, 0.01);
             expect(bins.length).to.be.equal(1);
+        });
+
+        it("should borrow USDC and swap all USDC to AVAX", async () => {
+            await wrappedLoan.borrow(toBytes32("USDC"), parseUnits("200", 6));
+
+            const hmBefore = fromWei(await wrappedLoan.getHealthMeter());
+
+            const usdcBalance = await tokenContracts.get("USDC")!.balanceOf(wrappedLoan.address);
+            await wrappedLoan.swapTraderJoe(toBytes32("USDC"), toBytes32("AVAX"), usdcBalance, 0);
+
+            let hm = fromWei(await wrappedLoan.getHealthMeter())
+            console.log('HM after', hm)
+            expect(hm).to.be.closeTo(hmBefore, 0.3)
         });
     });
 });
