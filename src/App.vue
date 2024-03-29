@@ -81,7 +81,7 @@
           <ThemeToggle class="top-bar__theme-toggle"></ThemeToggle>
           <div v-if="isSavingsPage" class="protocol-insurance">
             <span>Reserve Fund:</span>
-            <span class="insurance-value">$1,759,000</span>
+            <span class="insurance-value">$2,340,000</span>
             <InfoIcon class="info__icon"
                       :tooltip="{content: 'Protocol Reserve Fund and Atomica insurance pools.', classes: 'info-tooltip'}"
                       :classes="'info-tooltip'"></InfoIcon>
