@@ -3284,5 +3284,94 @@ export default {
       }, config.refreshDelay);
     },
 
+    async mintCAI({state, rootState, commit, dispatch}, {mintCAIRequest}) {
+      console.log('mintCAIRequest', mintCAIRequest);
+      const provider = rootState.network.provider;
+
+      const loanAssets = mergeArrays([(
+        await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG)
+      ]);
+
+      const assetAddress = TOKEN_ADDRESSES[mintCAIRequest.sourceAsset];
+      const assetDecimals = config.ASSETS_CONFIG[mintCAIRequest.sourceAsset].decimals;
+      const caiDecimals = config.ASSETS_CONFIG.CAI.decimals;
+
+      const wrappedLoan = await wrapContract(state.smartLoanContract, loanAssets);
+      console.log(wrappedLoan);
+      const transaction = await wrappedLoan
+        .mintCai(
+          mintCAIRequest.mintData.selector,
+          mintCAIRequest.mintData.data,
+          assetAddress,
+          parseUnits(mintCAIRequest.amount.toFixed(assetDecimals), assetDecimals),
+          parseUnits(mintCAIRequest.calculatedTargetAmount.toFixed(caiDecimals), caiDecimals),
+        );
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      let tx = await awaitConfirmation(transaction, provider, 'mint CAI');
+      // TODO take the values from the event
+      // const caiMintedEvent = getLog(tx, SMART_LOAN.abi, 'CaiMinted');
+      // console.log('caiMintedEvent', caiMintedEvent);
+      // const caiMintedAmount = formatUnits(caiMintedEvent.args.caiBoughtAmount, caiDecimals);
+      // const fromTokenAmount = formatUnits(caiMintedEvent.args.fromAmount, assetDecimals);
+
+      const caiMintedAmount = mintCAIRequest.calculatedTargetAmount;
+      const fromTokenAmount = mintCAIRequest.amount;
+
+      const caiBalanceAfterTransaction = Number(state.assetBalances['CAI']) + Number(caiMintedAmount);
+      const assetBalanceAfterTransaction = Number(state.assetBalances[mintCAIRequest.sourceAsset]) - Number(fromTokenAmount);
+
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate('CAI', caiBalanceAfterTransaction, false, true);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate(mintCAIRequest.sourceAsset, assetBalanceAfterTransaction, false, true);
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, config.refreshDelay);
+    },
+
+    async burnCAI({state, rootState, commit, dispatch}, {burnCAIRequest}) {
+      console.log('burnCAIRequest', burnCAIRequest);
+      const provider = rootState.network.provider;
+
+      const loanAssets = mergeArrays([(
+        await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG)
+      ]);
+
+      const assetAddress = TOKEN_ADDRESSES[burnCAIRequest.sourceAsset];
+      const assetDecimals = config.ASSETS_CONFIG[burnCAIRequest.sourceAsset].decimals;
+
+      const wrappedLoan = await wrapContract(state.smartLoanContract, loanAssets);
+      console.log(wrappedLoan);
+      const transaction = await wrappedLoan
+        .burnCai(burnCAIRequest.burnData.selector, burnCAIRequest.burnData.data, assetAddress, parseUnits(burnCAIRequest.amount.toFixed(assetDecimals), assetDecimals), toWei('0.00000001'));
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      let tx = await awaitConfirmation(transaction, provider, 'burn CAI');
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, config.refreshDelay);
+    }
+
   }
 };
