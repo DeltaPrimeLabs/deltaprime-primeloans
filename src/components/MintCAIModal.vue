@@ -98,7 +98,7 @@
       </div>
 
       <div class="button-wrapper">
-        <Button :label="'Borrow'" v-on:click="submit()" :disabled="calculatingValues || sourceInputError"
+        <Button :label="mintMode ? 'Mint' : 'Burn'" v-on:click="submit()" :disabled="calculatingValues || sourceInputError"
                 :waiting="calculatingValues || transactionOngoing"></Button>
       </div>
     </Modal>
@@ -115,8 +115,7 @@ import config from '../config';
 import {calculateHealth, parseUnits} from '../utils/calculate';
 import CurrencyComboInput from './CurrencyComboInput.vue';
 import DeltaIcon from './DeltaIcon.vue';
-import {mapState} from 'vuex';
-import {getMintData} from '../utils/caiUtils';
+import {getBurnData, getMintData} from '../utils/caiUtils';
 import SimpleInput from './SimpleInput.vue';
 import InfoIcon from './InfoIcon.vue';
 
@@ -179,13 +178,14 @@ export default {
       sourceAssetBalance: 0,
       smartLoanContractAddress: null,
       mintData: null,
+      burnData: null,
       sourceAmount: null,
       userSlippage: 2,
       customSlippage: 1,
       currentSourceInputChangeEvent: null,
       calculatedTargetAmount: 0,
       calculatingValues: false,
-      sourceInputError: false
+      sourceInputError: false,
     };
   },
 
@@ -207,13 +207,23 @@ export default {
   methods: {
     submit() {
       this.transactionOngoing = true;
-      this.$emit('MINT_CAI', {
-          mintData: this.mintData,
-          asset: this.mintSourceAsset,
-          amount: this.sourceAmount,
-          calculatedTargetAmount: this.calculatedTargetAmount
-        }
-      );
+      if (this.mintMode) {
+        this.$emit('MINT_CAI', {
+            mintData: this.mintData,
+            asset: this.mintSourceAsset,
+            amount: this.sourceAmount,
+            calculatedTargetAmount: this.calculatedTargetAmount
+          }
+        );
+      } else {
+        this.$emit('BURN_CAI', {
+            burnData: this.burnData,
+            asset: this.targetAsset,
+            amount: this.sourceAmount,
+            calculatedTargetAmount: this.calculatedTargetAmount
+          }
+        );
+      }
     },
 
     sourceInputChange(inputChangeEvent) {
@@ -222,11 +232,16 @@ export default {
       this.sourceInputError = inputChangeEvent.error;
       this.sourceAsset = inputChangeEvent.asset;
       this.calculateSourceAssetBalance(inputChangeEvent.asset);
-      this.calculateTargetAmount(inputChangeEvent);
+      if (this.mintMode) {
+        this.calculateMintTargetAmount();
+      } else {
+        this.calculateBurnTargetAmount();
+      }
     },
 
     targetInputChange(value) {
       console.log(value);
+      this.targetAsset = value.asset;
     },
 
     calculateHealthAfterTransaction() {
@@ -336,6 +351,8 @@ export default {
     },
 
     setupSourceAssetOptions() {
+      console.log('setupSourceAssetOptions');
+      console.log('this.sourceAssets', this.sourceAssets);
       this.sourceAssetOptions = [];
 
       this.sourceAssets.forEach(assetSymbol => {
@@ -374,11 +391,12 @@ export default {
     },
 
     calculateSourceAssetBalance(asset) {
-      const sourceAssetBalance = this.assetBalances[asset];
-      this.sourceAssetBalance = sourceAssetBalance;
+      console.log(this.assetBalances);
+      console.log(this.sourceAssetBalance);
+      this.sourceAssetBalance = this.assetBalances[asset];
     },
 
-    async calculateTargetAmount() {
+    async calculateMintTargetAmount() {
       this.calculatingValues = true;
       console.log('this.currentSourceInputChangeEvent', this.currentSourceInputChangeEvent);
       console.log('this.customSlippage', this.customSlippage);
@@ -403,10 +421,42 @@ export default {
       this.calculatingValues = false;
     },
 
+    async calculateBurnTargetAmount() {
+      this.calculatingValues = true;
+      console.log('this.currentSourceInputChangeEvent', this.currentSourceInputChangeEvent);
+      console.log('this.customSlippage', this.customSlippage);
+      const priceCAI = config.ASSETS_CONFIG['CAI'].price;
+      const targetAssetPrice = config.ASSETS_CONFIG[this.targetAsset].price;
+      console.log(priceCAI);
+      console.log(this.currentSourceInputChangeEvent);
+      const sourceAssetDecimals = this.sourceAssetData.decimals;
+      console.log(sourceAssetDecimals);
+      const burnData = await getBurnData(
+        parseUnits(this.currentSourceInputChangeEvent.value.toFixed(sourceAssetDecimals), sourceAssetDecimals),
+        TOKEN_ADDRESSES[this.targetAsset],
+        this.smartLoanContractAddress
+      );
+      console.log(burnData);
+      this.burnData = burnData;
+      this.sourceAmount = this.currentSourceInputChangeEvent.value;
+
+      const calculatedTargetAmount = (this.sourceAmount * priceCAI * (1 - this.customSlippage / 100)) / targetAssetPrice;
+      console.log('calculatedTargetAmount', calculatedTargetAmount);
+
+      this.$refs.targetInput.setCurrencyInputValue(calculatedTargetAmount);
+      this.calculatedTargetAmount = calculatedTargetAmount;
+      this.calculateHealthAfterTransaction();
+      this.calculatingValues = false;
+    },
+
     userSlippageChange(slippageChange) {
       console.log('user slippage change');
       this.customSlippage = slippageChange.value;
-      this.calculateTargetAmount();
+      if (this.mintMode) {
+        this.calculateMintTargetAmount();
+      } else {
+        this.calculateBurnTargetAmount();
+      }
     }
 
   }

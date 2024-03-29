@@ -183,3 +183,91 @@ export async function getMintData(inputToken, amountIn, recipient) {
 
   return splitCallData(mintTx.data);
 }
+
+async function prepareBurnQuotes(shares, outputToken, recipient) {
+  const index = new ethers.Contract(
+    "0x48f88A3fE843ccb0b5003e70B4192c1d7448bEf0",
+    PhutureIndexAbi,
+    provider,
+  );
+  const indexRouter = new ethers.Contract(
+    "0xD6dd95610fC3A3579a2C32fe06158d8bfB8F4eE9",
+    PhutureIndexRouterAbi,
+    provider
+  );
+
+  /// Retrieve the current index anatomy and inactive anatomy from the index contract
+  const [{ _assets, _weights }, inactiveAnatomy, burnTokensAmounts] =
+    await Promise.all([
+      index.anatomy(),
+      index.inactiveAnatomy(),
+      indexRouter.callStatic.burnWithAmounts(
+        {
+          index: index.address,
+          recipient,
+          amount: shares,
+        },
+        {
+          from: recipient,
+        },
+      ),
+    ])
+
+  /// Merge the active and inactive anatomy into a single array
+  const constituents = [
+    ..._assets.map((asset, i) => ({ asset, weight: _weights[i] })),
+    ...inactiveAnatomy.map((asset) => ({ asset, weight: 0 })),
+  ]
+
+  /// Prepare quotes for burning tokens
+  const quotes = constituents.map(async ({ asset }, constituentIndex) => {
+    const amount = burnTokensAmounts[constituentIndex] || BigNumber.from(0)
+    /// If the amount is zero or the asset is the output token, return an empty quote
+    if (!amount || amount.isZero() || asset === outputToken) {
+      return {
+        swapTarget: constants.AddressZero,
+        assetQuote: [],
+        buyAssetMinAmount: 0,
+      }
+    }
+
+    const [zeroExAggregator] = ZeroExAggregator.fromUrl(
+      "https://avalanche.api.0x.org",
+      43314,
+      '6e843079-8fe1-4f5f-ab54-835dd1bd7639'
+    );
+    /// Use the 0x Aggregator to get a quote for burning the token
+    const zeroExResult = await zeroExAggregator.quote(
+      asset,
+      outputToken,
+      amount.mul(98).div(100),
+    )
+
+    return {
+      swapTarget: zeroExResult.to,
+      buyAssetMinAmount: zeroExResult.buyAmount,
+      assetQuote: zeroExResult.data,
+    }
+  })
+
+  /// Use `Promise.all` to resolve all the quotes concurrently
+  return await Promise.all(quotes)
+}
+
+export async function getBurnData(shares, outputToken, recipient) {
+  /// Prepare quotes for burning tokens
+  const quotes = await prepareBurnQuotes(shares, outputToken, recipient);
+
+  const indexRouter = new ethers.Contract("0xD6dd95610fC3A3579a2C32fe06158d8bfB8F4eE9", PhutureIndexRouterAbi, provider);
+
+  // Use `.burnSwapValue` if you want to use native currency as output
+  const burnTx =  await indexRouter.populateTransaction.burnSwap({
+    index: "0x48f88A3fE843ccb0b5003e70B4192c1d7448bEf0",
+    amount: shares,
+    outputAsset: outputToken,
+    recipient: recipient,
+    quotes,
+  });
+
+  return splitCallData(burnTx.data);
+}

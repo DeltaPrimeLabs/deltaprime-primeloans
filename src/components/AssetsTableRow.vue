@@ -968,6 +968,7 @@ export default {
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
+          modalInstance.transactionOngoing = false;
         }).then(() => {
         });
       });
@@ -976,10 +977,11 @@ export default {
 
     async openCAIBurnModal() {
       const modalInstance = this.openModal(MintCAIModal);
+      modalInstance.mintMode = false;
       modalInstance.sourceAssets = ['CAI'];
       modalInstance.targetAssets = config.CAI_BURN_TARGET_ASSETS;
       modalInstance.targetAsset = 'AVAX';
-      modalInstance.sourceAssets = 'CAI';
+      modalInstance.sourceAsset = 'CAI';
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.smartLoanContractAddress = this.smartLoanContract.address;
       modalInstance.assets = this.assets;
@@ -1000,14 +1002,16 @@ export default {
       modalInstance.$on('BURN_CAI', burnCAIEvent => {
         console.log('burnCAIEvent', burnCAIEvent);
         const burnCAIRequest = {
-          sourceAsset: burnCAIEvent.asset,
+          targetAsset: burnCAIEvent.asset,
           amount: burnCAIEvent.amount,
-          burnData: burnCAIEvent.burnData
+          burnData: burnCAIEvent.burnData,
+          calculatedTargetAmount: burnCAIEvent.calculatedTargetAmount
         };
         this.handleTransaction(this.burnCAI, {burnCAIRequest: burnCAIRequest}, () => {
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
+          modalInstance.transactionOngoing = false;
         }).then(() => {
         });
       });
@@ -1145,6 +1149,8 @@ export default {
       console.warn(error.code);
       console.warn(error.message);
       console.log(String(error));
+      const caiMintOrBurnSlippageError = error.message.includes('Too little received');
+      console.warn(caiMintOrBurnSlippageError);
 
       if (!error) {
         return;
@@ -1156,7 +1162,11 @@ export default {
             this.progressBarService.emitProgressBarErrorState('The selected aggregator could not find a route. Please switch aggregator, increase slippage or try again later.')
             break;
           case 'UNPREDICTABLE_GAS_LIMIT':
-            this.progressBarService.emitProgressBarErrorState('Could not estimate gas for transaction. Please switch aggregator, or try again later.')
+            if (caiMintOrBurnSlippageError) {
+              this.progressBarService.emitProgressBarErrorState('Insufficient slippage. Please try again later with higher slippage.')
+            } else {
+              this.progressBarService.emitProgressBarErrorState('Could not estimate gas for transaction. Please switch aggregator, or try again later.')
+            }
             break;
           case 4001:
             this.progressBarService.emitProgressBarCancelledState()
@@ -1168,7 +1178,7 @@ export default {
           this.progressBarService.emitProgressBarErrorState('Insufficient slippage.');
         }
       }
-      this.cleanupAfterError(error.code !== -32000);
+      this.cleanupAfterError(error.code !== -32000 && !caiMintOrBurnSlippageError);
     },
 
     cleanupAfterError(closeModal = true) {

@@ -22,10 +22,10 @@ import axios from 'axios';
 import LB_TOKEN from '/artifacts/contracts/interfaces/joe-v2/ILBToken.sol/ILBToken.json'
 import MULTICALL from '/artifacts/contracts/lib/Multicall3.sol/Multicall3.json'
 import IBALANCER_V2_GAUGE from '/artifacts/contracts/interfaces/balancer-v2/IBalancerV2Gauge.sol/IBalancerV2Gauge.json'
-import {decodeFunctionData} from "viem";
-import {expect} from "chai";
-import YAK_ROUTER_ABI from "../../test/abis/YakRouter.json";
-import {getSwapData} from "../utils/paraSwapUtils";
+import {decodeFunctionData} from 'viem';
+import {expect} from 'chai';
+import YAK_ROUTER_ABI from '../../test/abis/YakRouter.json';
+import {getSwapData} from '../utils/paraSwapUtils';
 
 const toBytes32 = require('ethers').utils.formatBytes32String;
 const fromBytes32 = require('ethers').utils.parseBytes32String;
@@ -317,7 +317,7 @@ export default {
       } else {
         try {
           let params = {
-            TableName: "apys-prod"
+            TableName: 'apys-prod'
           };
 
           const apyDoc = await (await fetch('https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/apys')).json();
@@ -978,7 +978,7 @@ export default {
         binBalancePrimary,
         binBalanceSecondary,
         binTotalSupply
-      } = await dispatch("fetchTraderJoeV2LpUnderlyingBalances", {
+      } = await dispatch('fetchTraderJoeV2LpUnderlyingBalances', {
         lbPairAddress: lpAsset.address,
         binIds: loanBinIds,
         lpToken: lpAsset
@@ -1013,7 +1013,7 @@ export default {
       Object.keys(traderJoeV2LpAssets).forEach(async assetSymbol => {
         const lpAsset = traderJoeV2LpAssets[assetSymbol];
 
-        await dispatch("refreshTraderJoeV2LpUnderlyingBalancesAndLiquidity", {lpAsset});
+        await dispatch('refreshTraderJoeV2LpUnderlyingBalancesAndLiquidity', {lpAsset});
       });
     },
 
@@ -2270,7 +2270,7 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'deposit TraderJoe V2 LP token');
 
-      const {cumulativeTokenXAmount, cumulativeTokenYAmount} = await dispatch("fetchTraderJoeV2LpUnderlyingBalances", {
+      const {cumulativeTokenXAmount, cumulativeTokenYAmount} = await dispatch('fetchTraderJoeV2LpUnderlyingBalances', {
         lbPairAddress: fundLiquidityRequest.pair,
         binIds: fundLiquidityRequest.ids,
         lpToken: fundLiquidityRequest.lpToken
@@ -2285,7 +2285,7 @@ export default {
         .emitExternalAssetBalanceUpdate(fundLiquidityRequest.secondAsset, secondAssetBalanceAfterTransaction, false, true);
 
       const lpAsset = state.traderJoeV2LpAssets[fundLiquidityRequest.lpToken.symbol];
-      await dispatch("refreshTraderJoeV2LpUnderlyingBalancesAndLiquidity", {lpAsset});
+      await dispatch('refreshTraderJoeV2LpUnderlyingBalancesAndLiquidity', {lpAsset});
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {
@@ -2316,7 +2316,7 @@ export default {
       );
 
       const lpAsset = state.traderJoeV2LpAssets[withdrawLiquidityRequest.lpToken.symbol];
-      await dispatch("refreshTraderJoeV2LpUnderlyingBalancesAndLiquidity", {lpAsset});
+      await dispatch('refreshTraderJoeV2LpUnderlyingBalancesAndLiquidity', {lpAsset});
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
@@ -2365,7 +2365,7 @@ export default {
 
       // update underlying assets' balances
       const lpAsset = state.traderJoeV2LpAssets[addLiquidityRequest.symbol];
-      await dispatch("refreshTraderJoeV2LpUnderlyingBalancesAndLiquidity", {lpAsset});
+      await dispatch('refreshTraderJoeV2LpUnderlyingBalancesAndLiquidity', {lpAsset});
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {
@@ -2398,7 +2398,7 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'unwind traderjoe v2 token');
 
-      const {cumulativeTokenXAmount, cumulativeTokenYAmount} = await dispatch("fetchTraderJoeV2LpUnderlyingBalances", {
+      const {cumulativeTokenXAmount, cumulativeTokenYAmount} = await dispatch('fetchTraderJoeV2LpUnderlyingBalances', {
         lbPairAddress: removeLiquidityRequest.lbPairAddress,
         binIds: removeLiquidityRequest.remainingBinIds,
         lpToken: removeLiquidityRequest.lpToken
@@ -2412,7 +2412,7 @@ export default {
         .emitExternalAssetBalanceUpdate(removeLiquidityRequest.secondAsset, secondAssetBalanceAfterTransaction, false, true);
 
       const lpAsset = state.traderJoeV2LpAssets[removeLiquidityRequest.symbol];
-      await dispatch("refreshTraderJoeV2LpUnderlyingBalancesAndLiquidity", {lpAsset});
+      await dispatch('refreshTraderJoeV2LpUnderlyingBalancesAndLiquidity', {lpAsset});
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {
@@ -2869,7 +2869,7 @@ export default {
       });
 
       const selector = txParams.data.substr(0, 10);
-      const data = "0x" + txParams.data.substr(10);
+      const data = '0x' + txParams.data.substr(10);
 
       const transaction = await wrappedLoan.paraSwapV2(
         selector,
@@ -3310,7 +3310,6 @@ export default {
         );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
-      rootState.serviceRegistry.modalService.closeModal();
 
       let tx = await awaitConfirmation(transaction, provider, 'mint CAI');
       // TODO take the values from the event
@@ -3329,6 +3328,9 @@ export default {
         .emitExternalAssetBalanceUpdate('CAI', caiBalanceAfterTransaction, false, true);
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate(mintCAIRequest.sourceAsset, assetBalanceAfterTransaction, false, true);
+
+      rootState.serviceRegistry.modalService.closeModal();
+
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {
@@ -3350,20 +3352,40 @@ export default {
         Object.keys(config.POOLS_CONFIG)
       ]);
 
-      const assetAddress = TOKEN_ADDRESSES[burnCAIRequest.sourceAsset];
-      const assetDecimals = config.ASSETS_CONFIG[burnCAIRequest.sourceAsset].decimals;
+      const assetAddress = TOKEN_ADDRESSES[burnCAIRequest.targetAsset];
+      const assetDecimals = config.ASSETS_CONFIG[burnCAIRequest.targetAsset].decimals;
+
+      console.log(assetAddress);
 
       const wrappedLoan = await wrapContract(state.smartLoanContract, loanAssets);
       console.log(wrappedLoan);
+      let caiDecimals = config.ASSETS_CONFIG['CAI'].decimals;
       const transaction = await wrappedLoan
-        .burnCai(burnCAIRequest.burnData.selector, burnCAIRequest.burnData.data, assetAddress, parseUnits(burnCAIRequest.amount.toFixed(assetDecimals), assetDecimals), toWei('0.00000001'));
+        .burnCai(
+          burnCAIRequest.burnData.selector,
+          burnCAIRequest.burnData.data,
+          parseUnits(burnCAIRequest.amount.toFixed(caiDecimals), caiDecimals),
+          assetAddress,
+          parseUnits(burnCAIRequest.calculatedTargetAmount.toFixed(assetDecimals), assetDecimals)
+        );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
-      rootState.serviceRegistry.modalService.closeModal();
 
       let tx = await awaitConfirmation(transaction, provider, 'burn CAI');
 
+      const caiBurnedAmount = burnCAIRequest.amount;
+      const toTokenAmount = burnCAIRequest.calculatedTargetAmount;
+
+      const caiBalanceAfterTransaction = Number(state.assetBalances['CAI']) - Number(caiBurnedAmount);
+      const assetBalanceAfterTransaction = Number(state.assetBalances[burnCAIRequest.targetAsset]) + Number(toTokenAmount);
+
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate('CAI', caiBalanceAfterTransaction, false, true);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate(burnCAIRequest.targetAsset, assetBalanceAfterTransaction, false, true);
+
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      rootState.serviceRegistry.modalService.closeModal();
       setTimeout(() => {
         rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
       }, SUCCESS_DELAY_AFTER_TRANSACTION);
