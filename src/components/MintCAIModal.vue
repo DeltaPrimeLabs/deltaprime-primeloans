@@ -9,6 +9,10 @@
         Burn CAI
       </div>
 
+      <div class="modal-top-desc">
+        Minting/burning CAI can result in a high slippage. <br> If that's the case, please use swap function instead.
+      </div>
+
       <div class="asset-info">
         Available:
         <span v-if="sourceAssetBalance && sourceAssetData" class="asset-info__value">{{
