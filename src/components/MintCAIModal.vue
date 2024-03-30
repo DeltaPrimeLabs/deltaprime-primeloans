@@ -235,6 +235,7 @@ export default {
       this.currentSourceInputChangeEvent = inputChangeEvent;
       this.sourceInputError = inputChangeEvent.error;
       this.sourceAsset = inputChangeEvent.asset;
+      this.setupSourceAsset();
       this.calculateSourceAssetBalance(inputChangeEvent.asset);
       if (this.mintMode) {
         this.calculateMintTargetAmount();
@@ -365,7 +366,8 @@ export default {
           symbol: assetSymbol,
           short: asset.short,
           name: asset.name,
-          logo: `src/assets/logo/${assetSymbol.toLowerCase()}.${asset.logoExt ? asset.logoExt : 'svg'}`
+          logo: `src/assets/logo/${assetSymbol.toLowerCase()}.${asset.logoExt ? asset.logoExt : 'svg'}`,
+          decimals: asset.decimals
         };
         console.log('sourceAssetOptions');
         this.sourceAssetOptions.push(assetOption);
@@ -382,7 +384,8 @@ export default {
           symbol: assetSymbol,
           short: asset.short,
           name: asset.name,
-          logo: `src/assets/logo/${assetSymbol.toLowerCase()}.${asset.logoExt ? asset.logoExt : 'svg'}`
+          logo: `src/assets/logo/${assetSymbol.toLowerCase()}.${asset.logoExt ? asset.logoExt : 'svg'}`,
+          decimals: asset.decimals
         };
         this.targetAssetOptions.push(assetOption);
         console.log('targetAssetOptions');
