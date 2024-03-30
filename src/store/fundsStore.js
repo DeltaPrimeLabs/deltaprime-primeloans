@@ -3291,7 +3291,8 @@ export default {
       const loanAssets = mergeArrays([(
         await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
         (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
-        Object.keys(config.POOLS_CONFIG)
+        Object.keys(config.POOLS_CONFIG),
+        ['CAI']
       ]);
 
       const assetAddress = TOKEN_ADDRESSES[mintCAIRequest.sourceAsset];
@@ -3349,7 +3350,8 @@ export default {
       const loanAssets = mergeArrays([(
         await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
         (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
-        Object.keys(config.POOLS_CONFIG)
+        Object.keys(config.POOLS_CONFIG),
+        [burnCAIRequest.targetAsset]
       ]);
 
       const assetAddress = TOKEN_ADDRESSES[burnCAIRequest.targetAsset];
