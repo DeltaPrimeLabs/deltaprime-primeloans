@@ -19,7 +19,8 @@ async function getBuyAmounts(amounts, inputToken) {
   /// Prepare buy amounts for each asset
   const buyAmounts = amounts.map(async ({ asset, amount }) => {
     /// If the asset is the input token or the amount is zero, return the asset and amount
-    if (asset === inputToken || amount.isZero()) {
+    if (asset.toLowerCase() === inputToken.toLowerCase() || amount.isZero()) {
+      console.log('asset is input token or amount is zero');
       return {
         asset,
         swapTarget: constants.AddressZero,
@@ -35,6 +36,11 @@ async function getBuyAmounts(amounts, inputToken) {
     );
 
     /// Otherwise, get the buy amount from the 0x Aggregator
+    console.log('get buy amounts');
+    console.log('inputToken', inputToken);
+    console.log('asset', asset);
+    console.log('amount', amount);
+
     const zeroExResult = await zeroExAggregator.quote(inputToken, asset, amount)
 
     return {
@@ -85,7 +91,7 @@ async function getMintQuotes(amounts, inputToken, scaledSellAmounts) {
     const scaledSellAmount = scaledSellAmounts[i]
 
     /// If the asset is the input token or the scaled sell amount is zero, return the asset and amount
-    if (asset === inputToken || scaledSellAmount.isZero()) {
+    if (asset.toLowerCase() === inputToken.toLowerCase() || scaledSellAmount.isZero()) {
       return {
         asset,
         swapTarget: constants.AddressZero,
@@ -129,12 +135,21 @@ async function prepareMintQuotes(inputToken, amountIn) {
   /// Retrieve the current index anatomy and inactive anatomy from the index contract
   const { _assets, _weights } = await index.anatomy()
 
+  console.log('anatomy', _assets, _weights);
+
   /// Prepare amounts for each asset
-  const amounts = _assets.map((asset, i) => ({
+  let amounts = _assets.map((asset, i) => ({
     asset,
     amount: BigNumber.from(amountIn).mul(_weights[i]).div(255),
     weight: _weights[i],
   }))
+
+  console.log('prepare mint quotes', inputToken, amountIn);
+  console.log('amounts', amounts);
+
+  // amounts = amounts.filter(amount => amount.asset.toLowerCase() !== inputToken.toLowerCase());
+
+  console.log('amounts after filter', amounts);
 
   /// Get the buy amounts for the given amounts and input token
   const buyAmounts = await getBuyAmounts(amounts, inputToken)
@@ -167,6 +182,7 @@ async function prepareMintQuotes(inputToken, amountIn) {
 }
 
 export async function getMintData(inputToken, amountIn, recipient) {
+  console.log('get mint data', inputToken);
   /// Prepare quotes for minting tokens and get the scaled total sell amount
   const { quotes, sellAmount } = await prepareMintQuotes(inputToken, amountIn)
 
@@ -223,7 +239,7 @@ async function prepareBurnQuotes(shares, outputToken, recipient) {
   const quotes = constituents.map(async ({ asset }, constituentIndex) => {
     const amount = burnTokensAmounts[constituentIndex] || BigNumber.from(0)
     /// If the amount is zero or the asset is the output token, return an empty quote
-    if (!amount || amount.isZero() || asset === outputToken) {
+    if (!amount || amount.isZero() || asset.toLowerCase() === outputToken.toLowerCase()) {
       return {
         swapTarget: constants.AddressZero,
         assetQuote: [],
@@ -255,6 +271,7 @@ async function prepareBurnQuotes(shares, outputToken, recipient) {
 }
 
 export async function getBurnData(shares, outputToken, recipient) {
+  console.log('get burn data');
   /// Prepare quotes for burning tokens
   const quotes = await prepareBurnQuotes(shares, outputToken, recipient);
 
@@ -268,6 +285,8 @@ export async function getBurnData(shares, outputToken, recipient) {
     recipient: recipient,
     quotes,
   });
+
+  console.log(burnTx);
 
   return splitCallData(burnTx.data);
 }

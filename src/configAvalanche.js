@@ -48,7 +48,7 @@ export default {
     SWAP_DEXS_CONFIG: {
         YakSwap: {
             displayName: 'YakSwap',
-            availableAssets: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'EUROC', 'GLP', 'sAVAX', 'GMX', 'JOE', 'QI', 'PNG', 'PTP', 'yyAVAX'],
+            availableAssets: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'EUROC', 'GLP', 'sAVAX', 'GMX', 'CAI', 'JOE', 'QI', 'PNG', 'PTP', 'yyAVAX'],
             slippageMargin: 0.02
         },
         ParaSwapV2: {
@@ -61,8 +61,8 @@ export default {
             slippageMargin: 0.1
         }
     },
-    CAI_MINT_SOURCE_ASSETS: ['AVAX', 'USDC', 'USDT'],
-    CAI_BURN_TARGET_ASSETS: ['AVAX', 'USDC', 'USDT'],
+    CAI_MINT_SOURCE_ASSETS: ['JOE', 'sAVAX', 'AVAX', 'QI'],
+    CAI_BURN_TARGET_ASSETS: ['JOE', 'sAVAX', 'AVAX', 'QI'],
     paraSwapDefaultSlippage: 1,
     showParaSwapWarning: true,
     ASSET_FILTER_TOKENS_OPTIONS: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'sAVAX'],

@@ -413,6 +413,7 @@ export default {
       console.log(this.currentSourceInputChangeEvent);
       const sourceAssetDecimals = this.sourceAssetData.decimals;
       console.log(sourceAssetDecimals);
+      console.log(this.sourceAsset);
       const mintData = await getMintData(TOKEN_ADDRESSES[this.sourceAsset], parseUnits(String(this.currentSourceInputChangeEvent.value), sourceAssetDecimals), this.smartLoanContractAddress);
       console.log(mintData);
       this.mintData = mintData;
