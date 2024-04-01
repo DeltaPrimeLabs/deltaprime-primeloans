@@ -15,12 +15,10 @@ interface ISPrime {
         uint256 totalShare;
     }
 
-    // Interactive functions
-    function rebalance(
-        uint256 centerId,
-        uint256 activeIdDesired, 
-        uint256 idSlippage
-    ) external;
+    struct UserShare {
+        uint256 share;
+        uint256 centerId;
+    }
     
     function deposit(
         uint256 activeIdDesired, 
@@ -30,7 +28,6 @@ interface ISPrime {
     ) external;
 
     function withdraw(
-        uint256 centerId,
         uint256 shareWithdraw
     ) external;
 }

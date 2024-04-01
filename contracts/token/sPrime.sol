@@ -25,12 +25,14 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
 
     // centerId => Pair Info
     mapping(uint256 => PairInfo) public pairList;
+    mapping(address => UserShare) public userShares;
     mapping(uint256 => bool) public pairStatus;
 
     IERC20 public immutable tokenX;
     IERC20 public immutable tokenY;
     ILBPair public immutable lbPair;
-    ILBRouter public immutable lbRouter;
+    uint16 internal constant DEFAULT_BIN_STEP = 10;
+    uint256 internal constant DEFAULT_SLIPPAGE = 10;
 
     int256[] private deltaIds;
     uint256[] private distributionX;
@@ -38,24 +40,28 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
 
     /**
      * @dev Constructor of the contract.
-     * @param lbRouter_ The address of the liquidity book router.
      * @param lbPair_ The address of the pair pool.
      * @param name_ The name of the SPrime token. ex: PRIME-USDC LP
      * @param distributionX_ Pre-defined distribution X
      * @param distributionY_ Pre-defined distribution Y
      * @param deltaIds_ Delta id for bins
      */
-    constructor(address lbRouter_, address lbPair_, string memory name_, uint256[] memory distributionX_, uint256[] memory distributionY_, int256[] memory deltaIds_) ERC20(name_, "sPrime"){
+    constructor(address lbPair_, string memory name_, uint256[] memory distributionX_, uint256[] memory distributionY_, int256[] memory deltaIds_) ERC20(name_, "sPrime"){
         require(deltaIds_.length == distributionX_.length && deltaIds_.length == distributionY_.length, "Length Mismatch");
         lbPair = ILBPair(lbPair_);
         tokenX = lbPair.getTokenX();
         tokenY = lbPair.getTokenY();
-        lbRouter = ILBRouter(lbRouter_);
 
         deltaIds = deltaIds_;
         distributionX = distributionX_;
         distributionY = distributionY_;
     }
+
+    function getJoeV2RouterAddress() public view virtual returns (address){
+        return 0xb4315e873dBcf96Ffd0acd8EA43f689D8c20fB30;
+    }
+
+
 
     /**
      * @notice Add a new bin for the PRIME-TOKEN pair.
@@ -72,27 +78,6 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
 
         pairList[centerId] = newPairInfo;
         pairStatus[centerId] = true;
-    }
-
-    /**
-     * @notice Rebalances the SPrime contract by withdrawing the entire position and depositing a new position within specified bounds.
-     * It deposits tokens following the amounts valued in Y.
-     * @param centerId The id of the bin to be rebalanced.
-     * @param activeIdDesired The desired active id.
-     * @param idSlippage The slippage active id to avoid the slippage.
-     */
-    function rebalance(
-        uint256 centerId,
-        uint256 activeIdDesired, 
-        uint256 idSlippage
-    ) external {
-        (uint256 amountX, uint256 amountY) = _withdrawAndUpdateShare(centerId, balanceOf(_msgSender()));
-
-        uint256 activeId = lbPair.getActiveId();
-
-        require(activeIdDesired + idSlippage >= activeId && activeId + idSlippage >= activeIdDesired, "Slippage High");
-
-        _depositToLB(activeId, amountX, amountY);
     }
 
     /**
@@ -126,7 +111,8 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
     * @return weight The total weight of tokens in the liquidity pair.
     */
     function _getTotalWeight(address pair, uint256 amountX, uint256 amountY) internal view returns(uint256 weight) {
-        (, uint128 amountXToY, ) = lbRouter.getSwapOut(ILBPair(pair), uint128(amountX), address(tokenX) < address(tokenY));
+        ILBRouter traderJoeV2Router = ILBRouter(getJoeV2RouterAddress());
+        (, uint128 amountXToY, ) = traderJoeV2Router.getSwapOut(ILBPair(pair), uint128(amountX), address(tokenX) < address(tokenY));
         weight = amountY + amountXToY;
     }
 
@@ -156,39 +142,30 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
         }
     }
 
-    /**
-     * @dev Deposits tokens into the lbPair.
-     * @param centerId The active Id.
-     * @param amountX The amount of token X to deposit.
-     * @param amountY The amount of token Y to deposit.
-     */
-    function _depositToLB(
-        uint256 centerId,
-        uint256 amountX,
-        uint256 amountY
-    ) internal {
-        (bytes32[] memory liquidityConfigs, uint256[] memory depositIds) = _getLiquidityConfigs(centerId);
+    function _depositToLB(ILBRouter.LiquidityParameters memory liquidityParameters) internal {
+        ILBRouter traderJoeV2Router = ILBRouter(getJoeV2RouterAddress());
+
+        (uint256 amountXAdded,uint256 amountYAdded,,,uint256[] memory depositIds, ) = traderJoeV2Router.addLiquidity(liquidityParameters);
+        
+        int256 _activeId = int256(depositIds[0]) - liquidityParameters.deltaIds[0];
+        uint256 centerId = uint256(_activeId);
 
         if(pairStatus[centerId] == false) {
             _addBins(centerId, depositIds);
         }
 
         PairInfo memory pair = pairList[centerId];
-
-        require(amountX != 0 || amountY != 0, "ZeroAmounts");
-
         (uint256 totalBalanceX, uint256 totalBalanceY) = _getBalances(centerId);
-        uint256 share = pair.totalShare * _getTotalWeight(address(lbPair), amountX, amountY) / _getTotalWeight(address(lbPair), totalBalanceX, totalBalanceY);
-
-        if (amountX > 0) tokenX.safeTransfer(address(lbPair), amountX);
-        if (amountY > 0) tokenY.safeTransfer(address(lbPair), amountY);
-
-        // Mint the liquidity tokens.
-        lbPair.mint(address(this), liquidityConfigs, address(this));
+        
+        uint256 share = pair.totalShare * _getTotalWeight(address(lbPair), amountXAdded, amountYAdded) / _getTotalWeight(address(lbPair), totalBalanceX - amountXAdded, totalBalanceY - amountYAdded);
 
         _mint(_msgSender(), share);
-
         pair.totalShare += share;
+
+        userShares[_msgSender()] = UserShare({
+            share: share,
+            centerId: centerId
+        });
     }
 
     /**
@@ -207,6 +184,7 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
         (totalBalanceX, totalBalanceY) = _withdrawFromLB(pair.depositIds, share * _PRECISION / pair.totalShare);
 
         pair.totalShare -= share;
+        userShares[_msgSender()].share -= share;
 
         // Ge the last rebalance timestamp and update it.
         pair.lastRebalance = block.timestamp.safe64();
@@ -277,20 +255,49 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
      */
     function deposit(uint256 activeIdDesired, uint256 idSlippage, uint256 amountX, uint256 amountY) external {
         
-        uint256 activeId = lbPair.getActiveId();
-        require(activeIdDesired + idSlippage >= activeId && activeId + idSlippage >= activeIdDesired, "Slippage High");
+        tokenX.safeTransferFrom(_msgSender(), address(this), amountX);
+        tokenY.safeTransferFrom(_msgSender(), address(this), amountY);
+
+        if(userShares[_msgSender()].share > 0) {
+            (uint256 amountXReceived, uint256 amountYReceived) = _withdrawAndUpdateShare(userShares[_msgSender()].centerId, balanceOf(_msgSender()));
+            amountX = amountX + amountXReceived;
+            amountY = amountY + amountYReceived;
+        }
+        
+        ILBRouter.LiquidityParameters memory liquidityParameters = ILBRouter.LiquidityParameters({
+            tokenX: tokenX,
+            tokenY: tokenY,
+            binStep: DEFAULT_BIN_STEP,
+            amountX: amountX,
+            amountY: amountY,
+            amountXMin: 0,
+            amountYMin: 0,
+            activeIdDesired: activeIdDesired,
+            idSlippage: idSlippage,
+            deltaIds: deltaIds,
+            distributionX: distributionX,
+            distributionY: distributionY,
+            to: address(this),
+            refundTo: _msgSender(),
+            deadline: block.timestamp + 1000
+        });
+
+        tokenX.safeApprove(getJoeV2RouterAddress(), 0);
+        tokenY.safeApprove(getJoeV2RouterAddress(), 0);
+
+        tokenX.safeApprove(getJoeV2RouterAddress(), amountX);
+        tokenY.safeApprove(getJoeV2RouterAddress(), amountY);
     
-        _depositToLB(activeId, amountX, amountY);
+        _depositToLB(liquidityParameters);
     }
 
     /**
-     * @param centerId The centerId of range list.
      * @param shareWithdraw The amount of share to withdraw.
      */
-    function withdraw(uint256 centerId, uint256 shareWithdraw) external {
-        PairInfo storage pair = pairList[centerId];
+    function withdraw(uint256 shareWithdraw) external {
+        require(shareWithdraw <= userShares[_msgSender()].share, "Insufficient Balance");
 
-        require(shareWithdraw <= balanceOf(_msgSender()), "Insufficient Balance");
+        PairInfo storage pair = pairList[userShares[_msgSender()].centerId];
 
         // Withdraw all the tokens from the LB pool and return the amounts and the queued withdrawals.
         _burn(_msgSender(), shareWithdraw);
@@ -298,6 +305,7 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
         (uint256 amountX, uint256 amountY) = _withdrawFromLB(pair.depositIds, shareWithdraw * _PRECISION / pair.totalShare);
 
         pair.totalShare -= shareWithdraw;
+        userShares[_msgSender()].share -= shareWithdraw;
 
         // Send the tokens to the vault.
         tokenX.safeTransfer(_msgSender(), amountX);
