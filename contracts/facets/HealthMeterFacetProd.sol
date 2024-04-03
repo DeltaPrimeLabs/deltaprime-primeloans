@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: e1bd17725100f1f22f85949540badc7bd2fb4ea0;
+// Last deployed from commit: 6994573d571acec43c908afa321729e454450d71;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import "@redstone-finance/evm-connector/contracts/data-services/AvalancheDataServiceConsumerBase.sol";
+import "@redstone-finance/evm-connector/contracts/data-services/ArbitrumProdDataServiceConsumerBase.sol";
 import "../interfaces/ITokenManager.sol";
 import "../interfaces/facets/avalanche/ITraderJoeV2Facet.sol";
 import "../interfaces/IStakingPositions.sol";
@@ -14,7 +14,7 @@ import "../Pool.sol";
 //This path is updated during deployment
 import "../lib/local/DeploymentConstants.sol";
 
-contract HealthMeterFacetProd is AvalancheDataServiceConsumerBase {
+contract HealthMeterFacetProd is ArbitrumProdDataServiceConsumerBase {
     using PriceHelper for uint256;
     using Uint256x256Math for uint256;
 
