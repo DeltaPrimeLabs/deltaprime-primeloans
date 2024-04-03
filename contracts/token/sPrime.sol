@@ -144,7 +144,7 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
                 tokenPath: tokenPathDynamic
             });
 
-            uint256 amountOut = traderJoeV2Router.swapExactTokensForTokens(amountIn, 0, path, address(this), block.timestamp + 100);
+            uint256 amountOut = traderJoeV2Router.swapExactTokensForTokens(amountIn, 0, path, address(this), block.timestamp + 1000);
 
             (amountX, amountY) = swapTokenX ? (amountX - amountIn, amountY + amountOut) : (amountX + amountOut, amountY - amountIn);
         }
@@ -296,7 +296,7 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
             amountX = amountX + amountXReceived;
             amountY = amountY + amountYReceived;
         }
-        
+
         (amountX, amountY) = _getUpdatedAmounts(amountX, amountY);
 
         ILBRouter.LiquidityParameters memory liquidityParameters = ILBRouter.LiquidityParameters({
@@ -350,10 +350,41 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
 
             if (to != address(0)) {
                 if (userShares[to].share > 0) {
-                    // Should process the rebalance for the existing position
+                    // Should process the rebalance for the existing position and the receiving position
+                    (uint256 amountXTo, uint256 amountYTo) = _withdrawAndUpdateShare(userShares[to].centerId, userShares[to].share);
+                    (uint256 amountXFrom, uint256 amountYFrom) = _withdrawAndUpdateShare(userShares[from].centerId, amount);
+                    (uint256 amountX, uint256 amountY) = _getUpdatedAmounts(amountXTo + amountXFrom, amountYTo + amountYFrom);
+                    (amountX, amountY) = _getUpdatedAmounts(amountX, amountY);
+
+                    ILBRouter.LiquidityParameters memory liquidityParameters = ILBRouter.LiquidityParameters({
+                        tokenX: tokenX,
+                        tokenY: tokenY,
+                        binStep: DEFAULT_BIN_STEP,
+                        amountX: amountX,
+                        amountY: amountY,
+                        amountXMin: 0,
+                        amountYMin: 0,
+                        activeIdDesired: lbPair.getActiveId(),
+                        idSlippage: 1,
+                        deltaIds: deltaIds,
+                        distributionX: distributionX,
+                        distributionY: distributionY,
+                        to: to,
+                        refundTo: address(this),
+                        deadline: block.timestamp + 1000
+                    });
+
+                    tokenX.safeApprove(getJoeV2RouterAddress(), 0);
+                    tokenY.safeApprove(getJoeV2RouterAddress(), 0);
+
+                    tokenX.safeApprove(getJoeV2RouterAddress(), amountX);
+                    tokenY.safeApprove(getJoeV2RouterAddress(), amountY);
+                
+                    _depositToLB(liquidityParameters);
+                    return;
                 }
                 userShares[to].centerId = centerId;
-                userShares[to].share += amount;   
+                userShares[to].share = amount;
             } else {
                 pairList[centerId].totalShare -= amount;
             }
