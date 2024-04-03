@@ -1,6 +1,6 @@
 //update for Arbitrum
 const TOKEN_ADDRESSES = require('../../common/addresses/avalanche/token_addresses.json');
-
+const FILE_NAME = "historical_prices_interval_30s";
 const EthDater = require('ethereum-block-by-date');
 
 const jsonRPC = "https://api.avax.network/ext/bc/C/rpc";
@@ -26,21 +26,21 @@ const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch
 
 // const START_TIMESTAMP = 1701172800;
 //TODO: failed
-const START_TIMESTAMP = 1701950400;//20 Feb
-const END_TIMESTAMP = 1704888000;
-const NO_OF_DAYS = 5;
+const START_TIMESTAMP = 1706700228;
+// const END_TIMESTAMP = 1711884247;
+const END_TIMESTAMP = 1706700228 + 90;
+const NO_OF_INTERVALS = 3;
 
 
-async function run() {
-    // let json = {};
-    let json = JSON.parse(fs.readFileSync('historical_prices.json'))
+async function  run() {
+    let json = {};
 
     let timestamp = START_TIMESTAMP;
 
     let dates = [];
     let start = START_TIMESTAMP;
-    const interval = 24 * 3600;
-    let iterationEndTimestamp = START_TIMESTAMP + NO_OF_DAYS * interval;
+    const interval = 30;
+    let iterationEndTimestamp = START_TIMESTAMP + NO_OF_INTERVALS * interval;
     let end = start + interval;
 
     while (end <= END_TIMESTAMP) {
@@ -62,38 +62,33 @@ async function run() {
         console.log(`${new Date(dates[dates.length - 1] * 1000)} ${dates[dates.length - 1]}`)
 
 
-        fs.writeFileSync('historical_prices.json', JSON.stringify(json))
 
         dates = [];
 
         start = iterationEndTimestamp;
         end = start + interval;
-        iterationEndTimestamp += NO_OF_DAYS * interval;
+        iterationEndTimestamp += NO_OF_INTERVALS * interval;
 
     }
 
 
-    // console.log(dates.length)
-    //
-    //
-    // console.log(res)
-    // console.log(Object.keys(res).length)
+    while (timestamp < END_TIMESTAMP) {
+        console.log(`${new Date(timestamp * 1000)} ${timestamp}`)
 
-    // while (timestamp < END_TIMESTAMP) {
-    //     console.log(`${new Date(timestamp * 1000)} ${timestamp}`)
-    //
-    //     let feeds = await getData(timestamp);
-    //
-    //     Object.entries(([k,v]) => {
-    //         json[timestamp][k] = v.value;
-    //     });
-    //
-    //     json[timestamp] = feeds;
-    //     fs.writeFileSync('historical_prices.json', JSON.stringify(json))
-    //
-    //     timestamp += interval;
-    // }
-    //
+        let feeds = await getData(timestamp);
+
+        console.log(feeds)
+
+        Object.entries(([k,v]) => {
+            json[timestamp][k] = v.value;
+        });
+
+        json[timestamp] = feeds;
+        fs.writeFileSync(`${FILE_NAME}.json`, JSON.stringify(json))
+
+        timestamp += interval;
+    }
+
 
 }
 
@@ -133,6 +128,8 @@ async function getData(timestamp) {
 }
 
 run()
+
+
 
 
 

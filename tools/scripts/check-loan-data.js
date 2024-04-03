@@ -1,11 +1,15 @@
-const loanAddress = "0x4a4B8C28922FfC8F1E7Ce0969B49962a926B1184";
-const jsonRPC = "https://api.avax.network/ext/bc/C/rpc";
+import {WrapperBuilder} from "@redstone-finance/evm-connector";
+import CACHE_LAYER_URLS from "../../common/redstone-cache-layer-urls.json";
 
+const loanAddress = "0xf74Dfb08B599727400d53fe92197c9Ed310230A6";
+const jsonRPC = "https://arbitrum-mainnet.core.chainstack.com/9a30fb13b2159a76c8e143c52d5579bf";
+const DATA_SERVICE_ID = "redstone-arbitrum-prod";
 const ARTIFACT = require(`../../artifacts/contracts/interfaces/SmartLoanGigaChadInterface.sol/SmartLoanGigaChadInterface.json`);
 const ethers = require("ethers");
 const fs = require("fs");
-const {wrapContract} = require("../../src/utils/blockchain");
-const {fromWei, fromBytes32} = require("../../test/_helpers");
+
+const fromWei = val => parseFloat(ethers.utils.formatEther(val));
+const fromBytes32 = ethers.utils.parseBytes32String;
 
 const key = fs.readFileSync("./.secret").toString().trim();
 let mnemonicWallet = new ethers.Wallet(key);
@@ -15,6 +19,20 @@ let wallet = mnemonicWallet.connect(provider);
 let loan = new ethers.Contract(loanAddress, ARTIFACT.abi, wallet);
 let wrappedLoan;
 
+export const wrapContract = async function wrapContract(contract, assets) {
+    //for more symbols in data feed it's more optimal to not specify asset list
+    const providedAssets = (assets && assets.length <= 5) ? assets : undefined;
+
+    return WrapperBuilder.wrap(contract).usingDataService(
+        {
+            dataServiceId: DATA_SERVICE_ID,
+            uniqueSignersCount: 3,
+            dataFeeds: providedAssets,
+            disablePayloadsDryRun: true
+        },
+        CACHE_LAYER_URLS.urls
+    );
+};
 run().then(() => console.log('Finished!'))
 
 async function run() {
@@ -58,4 +76,9 @@ async function getData() {
     console.log('TWV: ', status[2])
     console.log('Health: ', status[3])
     console.log('Solvent: ', status[4] === 1e-18)
+
+    let owned = (await wrappedLoan.getAllOwnedAssets()).map(el => fromBytes32(el));
+
+    console.log(owned)
+
 }
