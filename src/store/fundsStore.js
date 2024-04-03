@@ -26,6 +26,7 @@ import {decodeFunctionData} from 'viem';
 import {expect} from 'chai';
 import YAK_ROUTER_ABI from '../../test/abis/YakRouter.json';
 import {getSwapData} from '../utils/paraSwapUtils';
+import {getBurnData} from '../utils/caiUtils';
 
 const toBytes32 = require('ethers').utils.formatBytes32String;
 const fromBytes32 = require('ethers').utils.parseBytes32String;
@@ -3356,19 +3357,27 @@ export default {
 
       const assetAddress = TOKEN_ADDRESSES[burnCAIRequest.targetAsset];
       const assetDecimals = config.ASSETS_CONFIG[burnCAIRequest.targetAsset].decimals;
+      const caiDecimals = config.ASSETS_CONFIG.CAI.decimals;
 
       console.log(assetAddress);
 
+      const shares = parseUnits(burnCAIRequest.amount.toFixed(caiDecimals), caiDecimals);
+
+      const burnData = await getBurnData(
+        shares,
+        assetAddress,
+        state.smartLoanContract.address
+      )
+
       const wrappedLoan = await wrapContract(state.smartLoanContract, loanAssets);
       console.log(wrappedLoan);
-      let caiDecimals = config.ASSETS_CONFIG['CAI'].decimals;
       const transaction = await wrappedLoan
         .burnCai(
-          burnCAIRequest.burnData.selector,
-          burnCAIRequest.burnData.data,
+          burnData.selector,
+          burnData.data,
           parseUnits(burnCAIRequest.amount.toFixed(caiDecimals), caiDecimals),
           assetAddress,
-          parseUnits(burnCAIRequest.calculatedTargetAmount.toFixed(assetDecimals), assetDecimals)
+          parseUnits(burnCAIRequest.calculatedTargetAmount.toFixed(assetDecimals), assetDecimals),
         );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();

@@ -1,5 +1,7 @@
-import {BigNumber, constants} from 'ethers';
+import {BigNumber, constants, utils} from 'ethers';
 import {ZeroExAggregator} from '@phuture/sdk';
+import {BaseIndex__factory} from '@phuture/index/src/types';
+import {IndexRouter__factory} from '@phuture/index-router/src/types';
 export const PhuturePriceOracleAbi = require('../../test/abis/PhuturePriceOracle.json');
 export const PhutureIndexAbi = require('../../test/abis/PhutureIndex.json');
 export const PhutureIndexRouterAbi = require('../../test/abis/PhutureIndexRouter.json');
@@ -270,10 +272,132 @@ async function prepareBurnQuotes(shares, outputToken, recipient) {
   return await Promise.all(quotes)
 }
 
+async function prepareQuotes(shares, outputToken, recipientAddress) {
+  const INDEX_ADDRESS = '0x48f88A3fE843ccb0b5003e70B4192c1d7448bEf0';
+  const INDEX_ROUTER_ADDRESS = '0xD6dd95610fC3A3579a2C32fe06158d8bfB8F4eE9';
+  const BALANCE_OF_SLOT = 8;
+  const ALLOWANCE_SLOT = 9;
+
+  const index = BaseIndex__factory.connect(INDEX_ADDRESS, provider)
+  const indexRouter = IndexRouter__factory.connect(INDEX_ROUTER_ADDRESS, provider)
+
+  const [zeroExAggregator] = ZeroExAggregator.fromUrl(
+    "https://avalanche.api.0x.org",
+    43314,
+    '6e843079-8fe1-4f5f-ab54-835dd1bd7639'
+  );
+
+  const balanceOfOwnerSlot = utils.keccak256(
+    utils.defaultAbiCoder.encode(
+      ['address', 'uint256'],
+      [recipientAddress, BALANCE_OF_SLOT],
+    ),
+  )
+
+  const allowanceOwnerSlot = utils.keccak256(
+    utils.defaultAbiCoder.encode(
+      ['address', 'uint256'],
+      [recipientAddress, ALLOWANCE_SLOT],
+    ),
+  )
+  const spenderSlot = utils.keccak256(
+    utils.defaultAbiCoder.encode(
+      ['address', 'bytes32'],
+      [INDEX_ROUTER_ADDRESS, allowanceOwnerSlot],
+    ),
+  )
+
+  const stateDiff = {
+    [INDEX_ADDRESS]: {
+      stateDiff: {
+        [balanceOfOwnerSlot]: utils.hexZeroPad(
+          utils.hexValue(BigNumber.from(shares)),
+          32,
+        ),
+        [spenderSlot]: utils.hexZeroPad(
+          utils.hexValue(BigNumber.from(shares)),
+          32,
+        ),
+      },
+    },
+  }
+
+  /// Retrieve the current index anatomy and inactive anatomy from the index contract
+  const [{ _assets, _weights }, inactiveAnatomy, rawBurnTokensAmounts] =
+    await Promise.all([
+      index.anatomy(),
+      index.inactiveAnatomy(),
+      provider.send('eth_call', [
+        {
+          from: recipientAddress,
+          to: indexRouter.address,
+          data: indexRouter.interface.encodeFunctionData('burnWithAmounts', [
+            {
+              index: index.address,
+              recipient: recipientAddress,
+              amount: shares,
+            },
+          ]),
+        },
+        'latest',
+        stateDiff,
+      ]),
+    ])
+
+  const [burnTokensAmounts] = new utils.AbiCoder().decode(
+    ['uint[]'],
+    rawBurnTokensAmounts,
+  )
+
+  console.log('Burn Tokens Amounts:')
+  console.table(
+    burnTokensAmounts.map((amount, i) => ({
+      asset: _assets[i],
+      amount: amount.toString(),
+    })),
+  )
+
+  /// Merge the active and inactive anatomy into a single array
+  const constituents = [
+    ..._assets.map((asset, i) => ({ asset, weight: _weights[i] })),
+    ...inactiveAnatomy.map((asset) => ({ asset, weight: 0 })),
+  ]
+
+  /// Prepare quotes for burning tokens
+  const quotes = constituents.map(async ({ asset }, constituentIndex) => {
+    const amount = burnTokensAmounts[constituentIndex] || BigNumber.from(0)
+    /// If the amount is zero or the asset is the output token, return an empty quote
+    if (!amount || amount.isZero() || asset.toLowerCase() === outputToken.toLowerCase()) {
+      return {
+        swapTarget: constants.AddressZero,
+        assetQuote: [],
+        buyAssetMinAmount: 0,
+      }
+    }
+
+    /// Use the 0x Aggregator to get a quote for burning the token
+    const zeroExResult = await zeroExAggregator.quote(
+      asset,
+      outputToken,
+      amount.mul(999999).div(1000000),
+    )
+
+    return {
+      swapTarget: zeroExResult.to,
+      buyAssetMinAmount: zeroExResult.buyAmount,
+      assetQuote: zeroExResult.data,
+    }
+  })
+
+  /// Use `Promise.all` to resolve all the quotes concurrently
+  return await Promise.all(quotes)
+}
+
+
 export async function getBurnData(shares, outputToken, recipient) {
   console.log('get burn data');
   /// Prepare quotes for burning tokens
-  const quotes = await prepareBurnQuotes(shares, outputToken, recipient);
+  const quotes = await prepareQuotes(shares, outputToken, recipient);
 
   const indexRouter = new ethers.Contract("0xD6dd95610fC3A3579a2C32fe06158d8bfB8F4eE9", PhutureIndexRouterAbi, provider);
 

@@ -439,13 +439,13 @@ export default {
       console.log(this.currentSourceInputChangeEvent);
       const sourceAssetDecimals = this.sourceAssetData.decimals;
       console.log(sourceAssetDecimals);
-      const burnData = await getBurnData(
+/*      const burnData = await getBurnData(
         parseUnits(this.currentSourceInputChangeEvent.value.toFixed(sourceAssetDecimals), sourceAssetDecimals),
         TOKEN_ADDRESSES[this.targetAsset],
         this.smartLoanContractAddress
-      );
-      console.log(burnData);
-      this.burnData = burnData;
+      );*/
+      // console.log(burnData);
+      this.burnData = null;
       this.sourceAmount = this.currentSourceInputChangeEvent.value;
 
       const calculatedTargetAmount = (this.sourceAmount * priceCAI * (1 - this.customSlippage / 100)) / targetAssetPrice;
