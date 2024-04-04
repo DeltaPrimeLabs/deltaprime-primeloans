@@ -247,6 +247,9 @@ export default {
     targetInputChange(value) {
       console.log(value);
       this.targetAsset = value.asset;
+      if (!this.mintMode) {
+        this.calculateBurnTargetAmount();
+      }
     },
 
     calculateHealthAfterTransaction() {

@@ -203,6 +203,7 @@ export async function getMintData(inputToken, amountIn, recipient) {
 }
 
 async function prepareBurnQuotes(shares, outputToken, recipient) {
+  const BURN_SLIPPAGE = 0.03;
   const index = new ethers.Contract(
     "0x48f88A3fE843ccb0b5003e70B4192c1d7448bEf0",
     PhutureIndexAbi,
@@ -277,6 +278,7 @@ async function prepareQuotes(shares, outputToken, recipientAddress) {
   const INDEX_ROUTER_ADDRESS = '0xD6dd95610fC3A3579a2C32fe06158d8bfB8F4eE9';
   const BALANCE_OF_SLOT = 8;
   const ALLOWANCE_SLOT = 9;
+  const BURN_SLIPPAGE = 0.03;
 
   const index = BaseIndex__factory.connect(INDEX_ADDRESS, provider)
   const indexRouter = IndexRouter__factory.connect(INDEX_ROUTER_ADDRESS, provider)
@@ -375,16 +377,26 @@ async function prepareQuotes(shares, outputToken, recipientAddress) {
       }
     }
 
+    zeroExAggregator.slippageProtection = true;
     /// Use the 0x Aggregator to get a quote for burning the token
     const zeroExResult = await zeroExAggregator.quote(
       asset,
       outputToken,
       amount.mul(999999).div(1000000),
+      {
+        slippagePercentage: 0.03,
+      }
     )
+
+    console.log('zeroExResult', zeroExResult);
+    const buyAssetMinAmount =  BigNumber.from(zeroExResult.buyAmount)
+      .mul(1000 - BURN_SLIPPAGE * 1000)
+      .div(1000);
+    console.log('buyAssetMinAmount', buyAssetMinAmount);
 
     return {
       swapTarget: zeroExResult.to,
-      buyAssetMinAmount: zeroExResult.buyAmount,
+      buyAssetMinAmount: buyAssetMinAmount,
       assetQuote: zeroExResult.data,
     }
   })
