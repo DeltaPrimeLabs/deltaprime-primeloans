@@ -65,13 +65,13 @@ async function promiseAllInBatches(task, items, batchSize) {
     return results;
 }
 
-async function fetchData(maxTimestamp) {
+async function fetchData(maxTimestamp, file) {
     let loans = await factory.getAllLoans();
 
-    const task = (loan) => fetch(` https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/gmx-incentives-remake/${loan}`)
+    const task = (loan) => fetch(`https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/gmx-incentives-new/${loan}`)
 
     console.log(`LONS: ${loans.length}`)
-    loans = loans.slice(0, 1000);
+    loans = loans.slice(3000, 4000);
 
     let resps = await promiseAllInBatches(task, loans, 200);
 
@@ -82,7 +82,7 @@ async function fetchData(maxTimestamp) {
 
     let json = {};
     try {
-        json = JSON.parse(fs.readFileSync('src/data/avalanche/GM_EPOCH_6.json'));
+        json = JSON.parse(fs.readFileSync(`src/data/avalanche/${file}.json`));
     } catch (e) {
         console.log('No file')
     }
@@ -91,11 +91,11 @@ async function fetchData(maxTimestamp) {
         json[loans[i]] = j.list.filter(el => el.timestamp <= maxTimestamp).reduce((sum, el) => sum + el.avaxCollected, 0)
     })
 
-    fs.writeFileSync('src/data/avalanche/GM_EPOCH_6.json', JSON.stringify(json))
+    fs.writeFileSync(`src/data/avalanche/${file}.json`, JSON.stringify(json))
 
     let collectedAvax = 0;
 
-    let json1 = JSON.parse(fs.readFileSync('src/data/avalanche/GM_EPOCH_6.json'))
+    let json1 = JSON.parse(fs.readFileSync(`src/data/avalanche/${file}.json`))
 
 
     Object.entries(json1).forEach(
@@ -136,9 +136,9 @@ function includeDoubleFunded() {
 
 }
 
-function createDiffJson() {
-    let json0 = JSON.parse(fs.readFileSync('src/data/avalanche/GM_EPOCH_5.json'))
-    let json1 = JSON.parse(fs.readFileSync('src/data/avalanche/GM_EPOCH_6.json'))
+function createDiffJson(file1, file2) {
+    let json0 = JSON.parse(fs.readFileSync(`src/data/avalanche/${file1}.json`))
+    let json1 = JSON.parse(fs.readFileSync(`src/data/avalanche/${file2}.json`))
     let json2 = {};
 
     let collectedAvax = 0;
@@ -149,7 +149,7 @@ function createDiffJson() {
         }
     )
 
-    fs.writeFileSync('src/data/avalanche/GM_EPOCH_5_diff.json', JSON.stringify(json2))
+    fs.writeFileSync(`src/data/avalanche/${file2}_diff.json`, JSON.stringify(json2))
 
     console.log('distributed Avax in this epoch: ', collectedAvax)
 
@@ -187,7 +187,7 @@ function checkNegativeAccounts() {
 
 
 }
-// fetchData(Date.now())
+// fetchData(Date.now(), "GM_EPOCH_8")
 // checkNegativeAccounts()
-createDiffJson()
+createDiffJson( "GM_EPOCH_7", "GM_EPOCH_8")
 // analyzeJson()
