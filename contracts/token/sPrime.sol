@@ -284,8 +284,8 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
      */
     function deposit(uint256 activeIdDesired, uint256 idSlippage, uint256 amountX, uint256 amountY) public {
         
-        tokenX.safeTransferFrom(_msgSender(), address(this), amountX);
-        tokenY.safeTransferFrom(_msgSender(), address(this), amountY);
+        if(amountX > 0) tokenX.safeTransferFrom(_msgSender(), address(this), amountX);
+        if(amountY > 0) tokenY.safeTransferFrom(_msgSender(), address(this), amountY);
 
         if(userShares[_msgSender()].share > 0) {
             (uint256 amountXReceived, uint256 amountYReceived) = _withdrawAndUpdateShare(userShares[_msgSender()].centerId, userShares[_msgSender()].share);
