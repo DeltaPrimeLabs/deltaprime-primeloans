@@ -88,10 +88,6 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
     function _getBalances(uint256 centerId) internal view returns (uint256 amountX, uint256 amountY) {
         PairInfo memory pair = pairList[centerId];
 
-        // Get the balances of the tokens in the contract.
-        amountX = tokenX.balanceOf(address(this));
-        amountY = tokenY.balanceOf(address(this));
-
         // Get the range of the tokens in the pool.
         // If the range is not empty, get the balances of the tokens in the range.
         if (pairStatus[centerId] == true) {
@@ -349,42 +345,34 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
             require(userShares[from].share > amount, "Insufficient");
 
             if (to != address(0)) {
-                if (userShares[to].share > 0) {
+                UserShare storage userTo = userShares[to];
+                if (userTo.share > 0) {
                     // Should process the rebalance for the existing position and the receiving position
-                    (uint256 amountXTo, uint256 amountYTo) = _withdrawAndUpdateShare(userShares[to].centerId, userShares[to].share);
+                    (bytes32[] memory liquidityConfigs, ) = _getLiquidityConfigs(userTo.centerId);
+                    PairInfo memory pair = pairList[userTo.centerId];
+
+                    (uint256 beforeBalanceX, uint256 beforeBalanceY) = _getBalances(centerId);
+
                     (uint256 amountXFrom, uint256 amountYFrom) = _withdrawAndUpdateShare(userShares[from].centerId, amount);
-                    (uint256 amountX, uint256 amountY) = _getUpdatedAmounts(amountXTo + amountXFrom, amountYTo + amountYFrom);
-                    (amountX, amountY) = _getUpdatedAmounts(amountX, amountY);
 
-                    ILBRouter.LiquidityParameters memory liquidityParameters = ILBRouter.LiquidityParameters({
-                        tokenX: tokenX,
-                        tokenY: tokenY,
-                        binStep: DEFAULT_BIN_STEP,
-                        amountX: amountX,
-                        amountY: amountY,
-                        amountXMin: 0,
-                        amountYMin: 0,
-                        activeIdDesired: lbPair.getActiveId(),
-                        idSlippage: 1,
-                        deltaIds: deltaIds,
-                        distributionX: distributionX,
-                        distributionY: distributionY,
-                        to: to,
-                        refundTo: address(this),
-                        deadline: block.timestamp + 1000
-                    });
+                    if (amountXFrom > 0) tokenX.safeTransfer(address(lbPair), amountXFrom);
+                    if (amountYFrom > 0) tokenY.safeTransfer(address(lbPair), amountYFrom);
 
-                    tokenX.safeApprove(getJoeV2RouterAddress(), 0);
-                    tokenY.safeApprove(getJoeV2RouterAddress(), 0);
+                    // Mint the liquidity tokens.
+                    lbPair.mint(address(this), liquidityConfigs, address(this));
 
-                    tokenX.safeApprove(getJoeV2RouterAddress(), amountX);
-                    tokenY.safeApprove(getJoeV2RouterAddress(), amountY);
-                
-                    _depositToLB(liquidityParameters);
-                    return;
+                    (uint256 afterBalanceX, uint256 afterBalanceY) = _getBalances(centerId);
+                    uint256 afterWeight = _getTotalWeight(afterBalanceX, afterBalanceY);
+                    uint256 beforeWeight = _getTotalWeight(beforeBalanceX, beforeBalanceY);
+
+                    uint256 share = pair.totalShare * (afterWeight - beforeWeight) / beforeWeight;
+
+                    userTo.share += share;
+
+                } else {
+                    userTo.centerId = centerId;
+                    userTo.share = amount;
                 }
-                userShares[to].centerId = centerId;
-                userShares[to].share = amount;
             } else {
                 pairList[centerId].totalShare -= amount;
             }
