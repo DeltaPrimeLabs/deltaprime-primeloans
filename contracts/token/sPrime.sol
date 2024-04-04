@@ -22,7 +22,7 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
     uint256 private constant _PRECISION = 1e18;
     uint256 private constant _MAX_RANGE = 51;
     uint256 private constant _PACKED_DISTRIBS_SIZE = 16;
-    uint256 private constant _MAX_SIPPIAGE = 51;
+    uint256 private constant _MAX_SIPPIAGE = 5;
 
     // centerId => Pair Info
     mapping(uint256 => PairInfo) public pairList;
