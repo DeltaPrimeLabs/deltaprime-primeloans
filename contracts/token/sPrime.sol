@@ -46,17 +46,26 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
 
     /**
     * @dev Constructor of the contract.
-    * @param lbPair_ The address of the pair pool.
+    * @param tokenX_ The address of the token X.
+    * @param tokenY_ The address of the token Y.
     * @param name_ The name of the SPrime token. ex: PRIME-USDC LP
     * @param distributionX_ Pre-defined distribution X
     * @param distributionY_ Pre-defined distribution Y
     * @param deltaIds_ Delta id for bins
     */
-    constructor(address lbPair_, string memory name_, uint256[] memory distributionX_, uint256[] memory distributionY_, int256[] memory deltaIds_) ERC20(name_, "sPrime"){
+    constructor(address tokenX_, address tokenY_, string memory name_, uint256[] memory distributionX_, uint256[] memory distributionY_, int256[] memory deltaIds_) ERC20(name_, "sPrime"){
         require(deltaIds_.length == distributionX_.length && deltaIds_.length == distributionY_.length, "Length Mismatch");
-        lbPair = ILBPair(lbPair_);
-        tokenX = lbPair.getTokenX();
-        tokenY = lbPair.getTokenY();
+
+        (tokenX_, tokenY_) = tokenX_ < tokenY_ ? (tokenX_, tokenY_) : (tokenY_, tokenX_);
+
+        tokenX = IERC20(tokenX_);
+        tokenY = IERC20(tokenY_);
+
+        ILBRouter traderJoeV2Router = ILBRouter(getJoeV2RouterAddress());
+        ILBFactory lbFactory = traderJoeV2Router.getFactory();
+        ILBFactory.LBPairInformation memory pairInfo = lbFactory.getLBPairInformation(tokenX, tokenY, DEFAULT_BIN_STEP);
+
+        lbPair = pairInfo.LBPair;
 
         deltaIds = deltaIds_;
         distributionX = distributionX_;
@@ -113,7 +122,7 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
      */
     function _getTotalWeight(uint256 amountX, uint256 amountY) internal view returns(uint256 weight) {
         ILBRouter traderJoeV2Router = ILBRouter(getJoeV2RouterAddress());
-        (, uint128 amountXToY, ) = traderJoeV2Router.getSwapOut(lbPair, uint128(amountX), address(tokenX) < address(tokenY));
+        (, uint128 amountXToY, ) = traderJoeV2Router.getSwapOut(lbPair, uint128(amountX), true);
         weight = amountY + amountXToY;
     }
 
@@ -124,7 +133,7 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
     */
     function _getUpdatedAmounts(uint256 amountX, uint256 amountY) internal returns(uint256, uint256) {
         ILBRouter traderJoeV2Router = ILBRouter(getJoeV2RouterAddress());
-        (, uint128 amountXToY, ) = traderJoeV2Router.getSwapOut(lbPair, uint128(amountX), address(tokenX) < address(tokenY));
+        (, uint128 amountXToY, ) = traderJoeV2Router.getSwapOut(lbPair, uint128(amountX), true);
         bool swapTokenX = amountY < amountXToY;
         uint256 diff = swapTokenX ? amountXToY - amountY : amountY - amountXToY;
 

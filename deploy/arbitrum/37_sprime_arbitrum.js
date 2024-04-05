@@ -41,25 +41,26 @@ export const spotUniform = {
 module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deploy } = deployments;
     const { deployer, admin } = await getNamedAccounts();
-    const LB_PAIR_ADDRESS = "";
+    const PRIME_ADDRESS = "";
+    const TOKEN_ADDRESS = "";
     const PAIR_NAME = "";
 
     embedCommitHash("SPrime", "./contracts/token");
 
-    let HealthMeterFacetProd = await deploy("SPrime", {
+    let sPrime = await deploy("SPrime", {
         from: deployer,
         gasLimit: 100000000,
-        args: [LB_PAIR_ADDRESS, PAIR_NAME, spotUniform.distributionX, spotUniform.distributionY, spotUniform.deltaIds],
+        args: [PRIME_ADDRESS, TOKEN_ADDRESS, PAIR_NAME, spotUniform.distributionX, spotUniform.distributionY, spotUniform.deltaIds],
     });
 
 
     console.log(
-        `SPrime deployed at address: ${HealthMeterFacetProd.address}`
+        `SPrime deployed at address: ${sPrime.address}`
     );
 
     await verifyContract(hre,
         {
-            address: HealthMeterFacetProd.address,
+            address: sPrime.address,
             contract: `contracts/token/sPrime.sol:SPrime`,
             constructorArguments: []
         });
