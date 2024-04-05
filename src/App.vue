@@ -42,9 +42,9 @@
       Data feeds error. Some functions might be not available.
     </Banner>
 
-    <Banner v-if="showPrimeAccountBanner" :closable="true">
+<!--    <Banner v-if="showPrimeAccountBanner" :closable="true">
       GM positions temporarily illiquid. Please see Discord before redeeming GM
-    </Banner>
+    </Banner>-->
 
     <Banner v-if="showArbitrumDepositorBanner" background="green-accent" :closable="true">
       Liquidity mining event is updated! Shortly after a pool hits $1M the next pool opens up.
