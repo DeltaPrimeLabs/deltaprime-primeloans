@@ -3,6 +3,7 @@
 
 pragma solidity 0.8.17;
 
+// Importing necessary libraries and interfaces
 import "../lib/joe-v2/math/SafeCast.sol";
 import "../interfaces/ISPrime.sol";
 import "../interfaces/joe-v2/ILBRouter.sol";
@@ -14,39 +15,43 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+// SPrime contract declaration
 contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
-    using SafeERC20 for IERC20;
-    using LiquidityAmounts for address;
-    using SafeCast for uint256;
+    using SafeERC20 for IERC20; // Using SafeERC20 for IERC20 for safe token transfers
+    using LiquidityAmounts for address; // Using LiquidityAmounts for address for getting amounts of liquidity
+    using SafeCast for uint256; // Using SafeCast for uint256 for safe type casting
 
+    // Constants declaration
     uint256 private constant _PRECISION = 1e18;
     uint256 private constant _MAX_RANGE = 51;
     uint256 private constant _PACKED_DISTRIBS_SIZE = 16;
     uint256 private constant _MAX_SIPPIAGE = 5;
 
-    // centerId => Pair Info
+    // Mapping for storing pair information and user shares
     mapping(uint256 => PairInfo) public pairList;
     mapping(address => UserShare) public userShares;
     mapping(uint256 => bool) public pairStatus;
 
+    // Immutable variables for storing token and pair information
     IERC20 public immutable tokenX;
     IERC20 public immutable tokenY;
     ILBPair public immutable lbPair;
     uint16 internal constant DEFAULT_BIN_STEP = 10;
     uint256 internal constant DEFAULT_SLIPPAGE = 10;
 
+    // Arrays for storing deltaIds and distributions
     int256[] private deltaIds;
     uint256[] private distributionX;
     uint256[] private distributionY;
 
     /**
-     * @dev Constructor of the contract.
-     * @param lbPair_ The address of the pair pool.
-     * @param name_ The name of the SPrime token. ex: PRIME-USDC LP
-     * @param distributionX_ Pre-defined distribution X
-     * @param distributionY_ Pre-defined distribution Y
-     * @param deltaIds_ Delta id for bins
-     */
+    * @dev Constructor of the contract.
+    * @param lbPair_ The address of the pair pool.
+    * @param name_ The name of the SPrime token. ex: PRIME-USDC LP
+    * @param distributionX_ Pre-defined distribution X
+    * @param distributionY_ Pre-defined distribution Y
+    * @param deltaIds_ Delta id for bins
+    */
     constructor(address lbPair_, string memory name_, uint256[] memory distributionX_, uint256[] memory distributionY_, int256[] memory deltaIds_) ERC20(name_, "sPrime"){
         require(deltaIds_.length == distributionX_.length && deltaIds_.length == distributionY_.length, "Length Mismatch");
         lbPair = ILBPair(lbPair_);
@@ -58,15 +63,19 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
         distributionY = distributionY_;
     }
 
+    /**
+     * @dev Returns the address of the JoeV2Router.
+     * @return The address of the JoeV2Router.
+     */
     function getJoeV2RouterAddress() public view virtual returns (address){
         return 0xb4315e873dBcf96Ffd0acd8EA43f689D8c20fB30;
     }
 
     /**
-     * @notice Add a new bin for the PRIME-TOKEN pair.
-     * @param centerId The unique identifier for the new bin.
-     * @param ids Deposit IDs for the pair.
-     */
+    * @dev Adds a new bin for the PRIME-TOKEN pair.
+    * @param centerId The unique identifier for the new bin.
+    * @param ids Deposit IDs for the pair.
+    */
     function _addBins(uint256 centerId, uint256[] memory ids) internal {
         require(!pairStatus[centerId], "Active ID added already");
         PairInfo memory newPairInfo = PairInfo({
@@ -80,16 +89,16 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
     }
 
     /**
-     * @dev Returns the balances of the contract, including those deposited in the LB pool.
-     * @param centerId The active id of the pair.
-     * @return amountX The balance of token X.
-     * @return amountY The balance of token Y.
-     */
+    * @dev Returns the balances of the contract, including those deposited in the LB pool.
+    * @param centerId The active id of the pair.
+    * @return amountX The balance of token X.
+    * @return amountY The balance of token Y.
+    */
     function _getBalances(uint256 centerId) internal view returns (uint256 amountX, uint256 amountY) {
         PairInfo memory pair = pairList[centerId];
 
-        // Get the range of the tokens in the pool.
-        // If the range is not empty, get the balances of the tokens in the range.
+        amountX = 0;
+        amountY = 0;
         if (pairStatus[centerId] == true) {
             (uint256 depositedX, uint256 depositedY) = address(this).getAmountsOf(pair.depositIds, address(lbPair));
 
@@ -99,15 +108,20 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
     }
 
     /**
-    * @dev Returns the total weight of tokens in a liquidity pair.
-    * @return weight The total weight of tokens in the liquidity pair.
-    */
+     * @dev Returns the total weight of tokens in a liquidity pair.
+     * @return weight The total weight of tokens in the liquidity pair.
+     */
     function _getTotalWeight(uint256 amountX, uint256 amountY) internal view returns(uint256 weight) {
         ILBRouter traderJoeV2Router = ILBRouter(getJoeV2RouterAddress());
         (, uint128 amountXToY, ) = traderJoeV2Router.getSwapOut(lbPair, uint128(amountX), address(tokenX) < address(tokenY));
         weight = amountY + amountXToY;
     }
 
+    /**
+    * @dev Returns the updated amounts of tokens.
+    * @return amountX The updated amount of token X.
+    * @return amountY The updated amount of token Y.
+    */
     function _getUpdatedAmounts(uint256 amountX, uint256 amountY) internal returns(uint256, uint256) {
         ILBRouter traderJoeV2Router = ILBRouter(getJoeV2RouterAddress());
         (, uint128 amountXToY, ) = traderJoeV2Router.getSwapOut(lbPair, uint128(amountX), address(tokenX) < address(tokenY));
@@ -148,16 +162,16 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
         return (amountX, amountY);
     }
 
-    /*
-     * @dev Returns the liquidity configurations for the given range.
-     * @param centerId The active id of the pair.
-     * @return liquidityConfigs The liquidity configurations for the given range.
-     * @return depositIds Deposit ID list.
-     */
+    /**
+    * @dev Returns the liquidity configurations for the given range.
+    * @param centerId The active id of the pair.
+    * @return liquidityConfigs The liquidity configurations for the given range.
+    * @return depositIds Deposit ID list.
+    */
     function _getLiquidityConfigs(uint256 centerId)
-        internal
-        view
-        returns (bytes32[] memory liquidityConfigs, uint256[] memory depositIds)
+    internal
+    view
+    returns (bytes32[] memory liquidityConfigs, uint256[] memory depositIds)
     {
         liquidityConfigs = new bytes32[](deltaIds.length);
         depositIds = new uint256[](deltaIds.length);
@@ -174,11 +188,15 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
         }
     }
 
+    /**
+    * @dev Deposits tokens to the LB.
+    * @param liquidityParameters The parameters for the liquidity.
+    */
     function _depositToLB(ILBRouter.LiquidityParameters memory liquidityParameters) internal {
         ILBRouter traderJoeV2Router = ILBRouter(getJoeV2RouterAddress());
 
         (uint256 amountXAdded,uint256 amountYAdded,,,uint256[] memory depositIds, ) = traderJoeV2Router.addLiquidity(liquidityParameters);
-        
+
         int256 _activeId = int256(depositIds[0]) - liquidityParameters.deltaIds[0];
         uint256 centerId = uint256(_activeId);
 
@@ -188,7 +206,7 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
 
         PairInfo memory pair = pairList[centerId];
         (uint256 totalBalanceX, uint256 totalBalanceY) = _getBalances(centerId);
-        
+
         uint256 share = pair.totalShare * _getTotalWeight(amountXAdded, amountYAdded) / _getTotalWeight(totalBalanceX - amountXAdded, totalBalanceY - amountYAdded);
 
         _mint(_msgSender(), share);
@@ -201,13 +219,12 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
     }
 
     /**
-     * @dev Withdraws tokens from the lbPair and applies the AUM annual fee. This function will also reset the range.
-     * Will never charge for more than a day of AUM fees, even if the sPrime scontract has not been rebalanced for a longer period.
-     * @param centerId The active Id of the pair
-     * @param share The amount of share to withdraw.
-     * @return totalBalanceX The amount of token X withdrawn.
-     * @return totalBalanceY The amount of token Y withdrawn.
-     */
+    * @dev Withdraws tokens from the lbPair and applies the AUM annual fee. This function will also reset the range.
+    * @param centerId The active Id of the pair
+    * @param share The amount of share to withdraw.
+    * @return totalBalanceX The amount of token X withdrawn.
+    * @return totalBalanceY The amount of token Y withdrawn.
+    */
     function _withdrawAndUpdateShare(uint256 centerId, uint256 share) internal returns(uint256 totalBalanceX, uint256 totalBalanceY) {
         PairInfo storage pair = pairList[centerId];
 
@@ -220,15 +237,15 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
     }
 
     /**
-     * @dev Withdraws tokens from the Liquidity Book Pair.
-     * @param depositIds Deposit ID list.
-     * @param share The amount of share to withdraw.
-     * @return balanceX The amount of token X received.
-     * @return balanceY The amount of token Y received.
-     */
+    * @dev Withdraws tokens from the Liquidity Book Pair.
+    * @param depositIds Deposit ID list.
+    * @param share The amount of share to withdraw.
+    * @return balanceX The amount of token X received.
+    * @return balanceY The amount of token Y received.
+    */
     function _withdrawFromLB(uint256[] memory depositIds, uint256 share)
-        internal
-        returns (uint256 balanceX, uint256 balanceY)
+    internal
+    returns (uint256 balanceX, uint256 balanceY)
     {
         uint256 length;
         // Get the lbPair address and the delta between the upper and lower range.
@@ -275,15 +292,14 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
     }
 
     /**
-     * @dev Users can use deposit function for depositing tokens to the specific bin.
-     * @param activeIdDesired The active id that user wants to add liquidity from
-     * @param idSlippage The number of id that are allowed to slip
-     * @param amountX The amount of token X to deposit.
-     * @param amountY The amount of token Y to deposit.
-     * (distributionX, distributionY) from the `newLower`to the `newUpper` range.
-     */
+    * @dev Users can use deposit function for depositing tokens to the specific bin.
+    * @param activeIdDesired The active id that user wants to add liquidity from
+    * @param idSlippage The number of id that are allowed to slip
+    * @param amountX The amount of token X to deposit.
+    * @param amountY The amount of token Y to deposit.
+    */
     function deposit(uint256 activeIdDesired, uint256 idSlippage, uint256 amountX, uint256 amountY) public {
-        
+
         if(amountX > 0) tokenX.safeTransferFrom(_msgSender(), address(this), amountX);
         if(amountY > 0) tokenY.safeTransferFrom(_msgSender(), address(this), amountY);
 
@@ -318,10 +334,14 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
 
         tokenX.safeApprove(getJoeV2RouterAddress(), amountX);
         tokenY.safeApprove(getJoeV2RouterAddress(), amountY);
-    
+
         _depositToLB(liquidityParameters);
     }
 
+    /**
+    * @dev Users can use withdraw function for withdrawing their share.
+    * @param shareWithdraw The amount of share to withdraw.
+    */
     function withdraw(uint256 shareWithdraw) external {
         require(shareWithdraw <= userShares[_msgSender()].share, "Insufficient Balance");
 
@@ -332,16 +352,22 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
 
         (uint256 amountX, uint256 amountY) = _withdrawFromLB(pair.depositIds, shareWithdraw * _PRECISION / pair.totalShare);
 
-        // Send the tokens to the vault.
+        // Send the tokens to the user.
         tokenX.safeTransfer(_msgSender(), amountX);
         tokenY.safeTransfer(_msgSender(), amountY);
     }
 
+    /**
+    * @dev The hook that happens before token transfer.
+    * @param from The address to transfer from.
+    * @param to The address to transfer to.
+    * @param amount The amount to transfer.
+    */
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override {
         if (from != address(0)) {
-            
+
             uint256 centerId = userShares[from].centerId;
-    
+
             require(userShares[from].share > amount, "Insufficient");
 
             if (to != address(0)) {

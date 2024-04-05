@@ -41,7 +41,6 @@ export const spotUniform = {
 module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deploy } = deployments;
     const { deployer, admin } = await getNamedAccounts();
-    const LB_ROUTER_ADDRESS = "";
     const LB_PAIR_ADDRESS = "";
     const PAIR_NAME = "";
 
@@ -50,7 +49,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     let HealthMeterFacetProd = await deploy("SPrime", {
         from: deployer,
         gasLimit: 100000000,
-        args: [LB_ROUTER_ADDRESS, LB_PAIR_ADDRESS, PAIR_NAME, spotUniform.distributionX, spotUniform.distributionY, spotUniform.deltaIds],
+        args: [LB_PAIR_ADDRESS, PAIR_NAME, spotUniform.distributionX, spotUniform.distributionY, spotUniform.deltaIds],
     });
 
 
