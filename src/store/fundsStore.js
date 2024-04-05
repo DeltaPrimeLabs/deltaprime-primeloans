@@ -3366,7 +3366,8 @@ export default {
       const burnData = await getBurnData(
         shares,
         assetAddress,
-        state.smartLoanContract.address
+        state.smartLoanContract.address,
+        burnCAIRequest.maxSlippage
       )
 
       const wrappedLoan = await wrapContract(state.smartLoanContract, loanAssets);

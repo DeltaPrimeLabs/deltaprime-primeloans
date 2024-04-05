@@ -50,7 +50,7 @@
       <div class="slippage-bar">
         <div class="slippage-info">
           <span class="slippage-label">Max. acceptable slippage:</span>
-          <SimpleInput :percent="true" :default-value="userSlippage" v-on:newValue="userSlippageChange"></SimpleInput>
+          <SimpleInput :percent="true" :default-value="customSlippage" v-on:newValue="userSlippageChange"></SimpleInput>
           <span class="percent">%</span>
         </div>
       </div>
@@ -184,8 +184,7 @@ export default {
       mintData: null,
       burnData: null,
       sourceAmount: null,
-      userSlippage: 2,
-      customSlippage: 1,
+      customSlippage: 2,
       currentSourceInputChangeEvent: null,
       calculatedTargetAmount: 0,
       calculatingValues: false,
@@ -224,7 +223,8 @@ export default {
             burnData: this.burnData,
             asset: this.targetAsset,
             amount: this.sourceAmount,
-            calculatedTargetAmount: this.calculatedTargetAmount
+            calculatedTargetAmount: this.calculatedTargetAmount,
+            maxSlippage: this.customSlippage / 100
           }
         );
       }
@@ -435,7 +435,6 @@ export default {
     async calculateBurnTargetAmount() {
       this.calculatingValues = true;
       console.log('this.currentSourceInputChangeEvent', this.currentSourceInputChangeEvent);
-      console.log('this.customSlippage', this.customSlippage);
       const priceCAI = config.ASSETS_CONFIG['CAI'].price;
       const targetAssetPrice = config.ASSETS_CONFIG[this.targetAsset].price;
       console.log(priceCAI);
@@ -452,6 +451,7 @@ export default {
       this.sourceAmount = this.currentSourceInputChangeEvent.value;
 
       const calculatedTargetAmount = (this.sourceAmount * priceCAI * (1 - this.customSlippage / 100)) / targetAssetPrice;
+      console.log('this.customSlippage', this.customSlippage);
       console.log('calculatedTargetAmount', calculatedTargetAmount);
 
       this.$refs.targetInput.setCurrencyInputValue(calculatedTargetAmount);

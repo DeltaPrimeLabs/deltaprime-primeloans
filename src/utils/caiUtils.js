@@ -273,12 +273,11 @@ async function prepareBurnQuotes(shares, outputToken, recipient) {
   return await Promise.all(quotes)
 }
 
-async function prepareQuotes(shares, outputToken, recipientAddress) {
+async function prepareBurnQuotes(shares, outputToken, recipientAddress, maxSlippage) {
   const INDEX_ADDRESS = '0x48f88A3fE843ccb0b5003e70B4192c1d7448bEf0';
   const INDEX_ROUTER_ADDRESS = '0xD6dd95610fC3A3579a2C32fe06158d8bfB8F4eE9';
   const BALANCE_OF_SLOT = 8;
   const ALLOWANCE_SLOT = 9;
-  const BURN_SLIPPAGE = 0.03;
 
   const index = BaseIndex__factory.connect(INDEX_ADDRESS, provider)
   const indexRouter = IndexRouter__factory.connect(INDEX_ROUTER_ADDRESS, provider)
@@ -389,8 +388,9 @@ async function prepareQuotes(shares, outputToken, recipientAddress) {
     )
 
     console.log('zeroExResult', zeroExResult);
+    console.log('maxSlippage: ', maxSlippage)
     const buyAssetMinAmount =  BigNumber.from(zeroExResult.buyAmount)
-      .mul(1000 - BURN_SLIPPAGE * 1000)
+      .mul(1000 - maxSlippage * 1000)
       .div(1000);
     console.log('buyAssetMinAmount', buyAssetMinAmount);
 
@@ -406,10 +406,10 @@ async function prepareQuotes(shares, outputToken, recipientAddress) {
 }
 
 
-export async function getBurnData(shares, outputToken, recipient) {
+export async function getBurnData(shares, outputToken, recipient, maxSlippage) {
   console.log('get burn data');
   /// Prepare quotes for burning tokens
-  const quotes = await prepareQuotes(shares, outputToken, recipient);
+  const quotes = await prepareBurnQuotes(shares, outputToken, recipient, maxSlippage);
 
   const indexRouter = new ethers.Contract("0xD6dd95610fC3A3579a2C32fe06158d8bfB8F4eE9", PhutureIndexRouterAbi, provider);
 

@@ -1005,7 +1005,8 @@ export default {
           targetAsset: burnCAIEvent.asset,
           amount: burnCAIEvent.amount,
           burnData: burnCAIEvent.burnData,
-          calculatedTargetAmount: burnCAIEvent.calculatedTargetAmount
+          calculatedTargetAmount: burnCAIEvent.calculatedTargetAmount,
+          maxSlippage: burnCAIEvent.maxSlippage
         };
         this.handleTransaction(this.burnCAI, {burnCAIRequest: burnCAIRequest}, () => {
           this.$forceUpdate();
