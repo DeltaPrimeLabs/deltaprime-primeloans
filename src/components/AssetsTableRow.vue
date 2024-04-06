@@ -16,7 +16,7 @@
         <img v-if="asset.symbol === 'BTC' && avalancheChain"
              src="src/assets/icons/icon_circle_star.svg"
              class="point-star-icon"
-             v-tooltip="{content: 'Borrow $1000+ BTC and deposit in GMX BTC-USDC pool, to enter the daily $200 raffle.', classes: 'info-tooltip'}" />
+             v-tooltip="{content: 'Borrow $1000+ BTC and deposit in GMX BTC-USDC pool, to enter the daily $200 raffle.', classes: 'info-tooltip'}"/>
       </div>
 
       <div class="table__cell table__cell--double-value balance">
@@ -106,10 +106,10 @@
                     v-on:click="actionClick('SWAP')">
         </IconButton>
         <IconButtonMenuBeta
-            class="actions__icon-button"
-            :config="moreActionsConfig"
-            v-on:iconButtonClick="actionClick"
-            :disabled="disableAllButtons || asset.inactive || asset.unsupported || noSmartLoan">
+          class="actions__icon-button"
+          :config="moreActionsConfig"
+          v-on:iconButtonClick="actionClick"
+          :disabled="disableAllButtons || asset.inactive || asset.unsupported || noSmartLoan">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -167,10 +167,11 @@ import DeltaIcon from './DeltaIcon.vue';
 import IconButton from './IconButton.vue';
 import {constructSimpleSDK, ContractMethod, SwapSide} from '@paraswap/sdk';
 import axios from 'axios';
-import TradingViewChart from "./TradingViewChart.vue";
-import Toggle from "./Toggle.vue";
-import {BigNumber} from "ethers";
-import SwapDebtModal from "./SwapDebtModal.vue";
+import TradingViewChart from './TradingViewChart.vue';
+import Toggle from './Toggle.vue';
+import {BigNumber} from 'ethers';
+import SwapDebtModal from './SwapDebtModal.vue';
+import MintCAIModal from './MintCAIModal.vue';
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -275,23 +276,25 @@ export default {
   },
   methods: {
     ...mapActions('fundsStore',
-        [
-          'swap',
-          'paraSwapV2',
-          'swapDebt',
-          'fund',
-          'borrow',
-          'withdraw',
-          'withdrawNativeToken',
-          'repay',
-          'createAndFundLoan',
-          'createLoanAndDeposit',
-          'fundNativeToken',
-          'wrapNativeToken',
-          'mintAndStakeGlp',
-          'unstakeAndRedeemGlp',
-          'claimGLPRewards'
-        ]),
+      [
+        'swap',
+        'paraSwapV2',
+        'swapDebt',
+        'fund',
+        'borrow',
+        'withdraw',
+        'withdrawNativeToken',
+        'repay',
+        'createAndFundLoan',
+        'createLoanAndDeposit',
+        'fundNativeToken',
+        'wrapNativeToken',
+        'mintAndStakeGlp',
+        'unstakeAndRedeemGlp',
+        'claimGLPRewards',
+        'mintCAI',
+        'burnCAI',
+      ]),
     ...mapActions('network', ['updateBalance']),
     async setupFiles() {
       TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
@@ -345,6 +348,17 @@ export default {
             key: 'CLAIM_GLP_REWARDS',
             name: 'Claim GLP rewards',
           } : null,
+
+          this.asset.symbol === 'CAI' ? {
+            key: 'CAI_MINT',
+            name: 'Mint CAI',
+          } : null,
+
+          this.asset.symbol === 'CAI' ? {
+            key: 'CAI_BURN',
+            name: 'Burn CAI',
+          } : null,
+
           {
             key: 'WITHDRAW',
             name: 'Withdraw collateral',
@@ -482,50 +496,6 @@ export default {
       };
     },
 
-    swapDebtQueryMethod() {
-      return async (sourceAsset, targetAsset, amountIn, amountOut) => {
-        const tknFrom = TOKEN_ADDRESSES[sourceAsset];
-        const tknTo = TOKEN_ADDRESSES[targetAsset];
-
-          const yakRouter = new ethers.Contract(config.yakRouterAddress, YAK_ROUTER_ABI, provider.getSigner());
-
-          const maxHops = 3;
-          const gasPrice = ethers.utils.parseUnits('0', 'gwei');
-
-          const MAX_TRY_AMOUNT = 20;
-
-          let i = 0;
-          let targetBorrowedAmount = amountOut;
-
-          while (i < MAX_TRY_AMOUNT) {
-            console.log(i);
-            try {
-              let path = await yakRouter.findBestPathWithGas(
-                  targetBorrowedAmount,
-                  tknFrom,
-                  tknTo,
-                  maxHops,
-                  gasPrice,
-                  {gasLimit: 1e12}
-              );
-
-              if (path.amounts[path.amounts.length - 1].gt(amountIn)) {
-                console.log(path);
-                return path;
-              }
-
-              targetBorrowedAmount = targetBorrowedAmount.mul(BigNumber.from('10005')).div(BigNumber.from('10000'));
-            } catch (e) {
-              this.handleTransactionError(e);
-            } finally {
-              i++;
-            }
-          }
-
-        this.handleTransactionError(Error('Could not find a path.'));
-      }
-    },
-
     actionClick(key) {
       if (!this.disableAllButtons || (this.noSmartLoan && this.asset.debtCoverage > 0 && key === 'ADD_FROM_WALLET')) {
         switch (key) {
@@ -555,6 +525,12 @@ export default {
             break;
           case 'CLAIM_GLP_REWARDS':
             this.claimGLPRewardsAction();
+            break;
+          case 'CAI_MINT':
+            this.openCAIMintModal();
+            break;
+          case 'CAI_BURN':
+            this.openCAIBurnModal();
             break;
         }
       }
@@ -623,7 +599,7 @@ export default {
       modalInstance.dexOptions = Object.entries(config.SWAP_DEXS_CONFIG)
         .filter(([dexName, dexConfig]) => dexConfig.availableAssets.includes(this.asset.symbol))
         .map(([dexName, dexConfig]) => dexConfig.displayName);
-      modalInstance.swapDex = Object.entries(config.SWAP_DEXS_CONFIG).filter(([k,v]) => v.availableAssets.includes(this.asset.symbol))[0][0];
+      modalInstance.swapDex = Object.entries(config.SWAP_DEXS_CONFIG).filter(([k, v]) => v.availableAssets.includes(this.asset.symbol))[0][0];
       modalInstance.swapDebtMode = false;
       modalInstance.sourceAsset = this.asset.symbol;
       modalInstance.sourceAssetBalance = this.assetBalances[this.asset.symbol];
@@ -957,6 +933,91 @@ export default {
       });
     },
 
+    async openCAIMintModal() {
+      const modalInstance = this.openModal(MintCAIModal);
+      modalInstance.sourceAssets = config.CAI_MINT_SOURCE_ASSETS;
+      modalInstance.targetAssets = ['CAI'];
+      modalInstance.sourceAsset = 'AVAX';
+      modalInstance.targetAsset = 'CAI';
+      modalInstance.assetBalances = this.assetBalances;
+      modalInstance.smartLoanContractAddress = this.smartLoanContract.address;
+      modalInstance.assets = this.assets;
+      modalInstance.debtsPerAsset = this.debtsPerAsset;
+      modalInstance.lpAssets = this.lpAssets;
+      modalInstance.lpBalances = this.lpBalances;
+      modalInstance.concentratedLpAssets = this.concentratedLpAssets;
+      modalInstance.concentratedLpBalances = this.concentratedLpBalances;
+      modalInstance.levelLpAssets = this.levelLpAssets;
+      modalInstance.levelLpBalances = this.levelLpBalances;
+      modalInstance.balancerLpAssets = this.balancerLpAssets;
+      modalInstance.balancerLpBalances = this.balancerLpBalances;
+      modalInstance.gmxV2Assets = this.gmxV2Assets;
+      modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.farms = this.farms;
+      modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
+
+      modalInstance.$on('MINT_CAI', mintCAIEvent => {
+        console.log('mintCAIEvent', mintCAIEvent);
+        const mintCAIRequest = {
+          sourceAsset: mintCAIEvent.asset,
+          amount: mintCAIEvent.amount,
+          mintData: mintCAIEvent.mintData,
+          calculatedTargetAmount: mintCAIEvent.calculatedTargetAmount
+        };
+        this.handleTransaction(this.mintCAI, {mintCAIRequest: mintCAIRequest}, () => {
+          this.$forceUpdate();
+        }, (error) => {
+          this.handleTransactionError(error);
+          modalInstance.transactionOngoing = false;
+        }).then(() => {
+        });
+      });
+    },
+
+
+    async openCAIBurnModal() {
+      const modalInstance = this.openModal(MintCAIModal);
+      modalInstance.mintMode = false;
+      modalInstance.sourceAssets = ['CAI'];
+      modalInstance.targetAssets = config.CAI_BURN_TARGET_ASSETS;
+      modalInstance.targetAsset = 'AVAX';
+      modalInstance.sourceAsset = 'CAI';
+      modalInstance.assetBalances = this.assetBalances;
+      modalInstance.smartLoanContractAddress = this.smartLoanContract.address;
+      modalInstance.assets = this.assets;
+      modalInstance.debtsPerAsset = this.debtsPerAsset;
+      modalInstance.lpAssets = this.lpAssets;
+      modalInstance.lpBalances = this.lpBalances;
+      modalInstance.concentratedLpAssets = this.concentratedLpAssets;
+      modalInstance.concentratedLpBalances = this.concentratedLpBalances;
+      modalInstance.levelLpAssets = this.levelLpAssets;
+      modalInstance.levelLpBalances = this.levelLpBalances;
+      modalInstance.balancerLpAssets = this.balancerLpAssets;
+      modalInstance.balancerLpBalances = this.balancerLpBalances;
+      modalInstance.gmxV2Assets = this.gmxV2Assets;
+      modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.farms = this.farms;
+      modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
+
+      modalInstance.$on('BURN_CAI', burnCAIEvent => {
+        console.log('burnCAIEvent', burnCAIEvent);
+        const burnCAIRequest = {
+          targetAsset: burnCAIEvent.asset,
+          amount: burnCAIEvent.amount,
+          burnData: burnCAIEvent.burnData,
+          calculatedTargetAmount: burnCAIEvent.calculatedTargetAmount,
+          maxSlippage: burnCAIEvent.maxSlippage
+        };
+        this.handleTransaction(this.burnCAI, {burnCAIRequest: burnCAIRequest}, () => {
+          this.$forceUpdate();
+        }, (error) => {
+          this.handleTransactionError(error);
+          modalInstance.transactionOngoing = false;
+        }).then(() => {
+        });
+      });
+    },
+
     async getWalletAssetBalance() {
       const tokenContract = new ethers.Contract(config.ASSETS_CONFIG[this.asset.symbol].address, erc20ABI, this.provider.getSigner());
       const walletTokenBalance = await this.getWalletTokenBalance(this.account, this.asset.symbol, tokenContract, config.ASSETS_CONFIG[this.asset.symbol].decimals);
@@ -1089,6 +1150,8 @@ export default {
       console.warn(error.code);
       console.warn(error.message);
       console.log(String(error));
+      const caiMintOrBurnSlippageError = error.message.includes('Too little received');
+      console.warn(caiMintOrBurnSlippageError);
 
       if (!error) {
         return;
@@ -1100,7 +1163,11 @@ export default {
             this.progressBarService.emitProgressBarErrorState('The selected aggregator could not find a route. Please switch aggregator, increase slippage or try again later.')
             break;
           case 'UNPREDICTABLE_GAS_LIMIT':
-            this.progressBarService.emitProgressBarErrorState('Could not estimate gas for transaction. Please switch aggregator, or try again later.')
+            if (caiMintOrBurnSlippageError) {
+              this.progressBarService.emitProgressBarErrorState('Insufficient slippage. Please try again later with higher slippage.')
+            } else {
+              this.progressBarService.emitProgressBarErrorState('Could not estimate gas for transaction. Please switch aggregator, or try again later.')
+            }
             break;
           case 4001:
             this.progressBarService.emitProgressBarCancelledState()
@@ -1112,7 +1179,7 @@ export default {
           this.progressBarService.emitProgressBarErrorState('Insufficient slippage.');
         }
       }
-      this.cleanupAfterError(error.code !== -32000);
+      this.cleanupAfterError(error.code !== -32000 && !caiMintOrBurnSlippageError);
     },
 
     cleanupAfterError(closeModal = true) {
