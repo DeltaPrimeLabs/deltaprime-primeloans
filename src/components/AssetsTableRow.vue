@@ -13,10 +13,6 @@
             Profit APY:&nbsp;{{ asset.apy / 100 | percent }}
           </div>
         </div>
-        <img v-if="asset.symbol === 'BTC' && avalancheChain"
-             src="src/assets/icons/icon_circle_star.svg"
-             class="point-star-icon"
-             v-tooltip="{content: 'Borrow $1000+ BTC and deposit in GMX BTC-USDC pool, to enter the daily $200 raffle.', classes: 'info-tooltip'}" />
       </div>
 
       <div class="table__cell table__cell--double-value balance">
