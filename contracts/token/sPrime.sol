@@ -36,7 +36,7 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
     IERC20 public immutable tokenX;
     IERC20 public immutable tokenY;
     ILBPair public immutable lbPair;
-    uint16 internal constant DEFAULT_BIN_STEP = 10;
+    uint16 internal constant DEFAULT_BIN_STEP = 25;
     uint256 internal constant DEFAULT_SLIPPAGE = 10;
 
     // Arrays for storing deltaIds and distributions
@@ -118,12 +118,30 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
 
     /**
      * @dev Returns the total weight of tokens in a liquidity pair.
+     * @param amountX Token X Amount.
+     * @param amountY Token Y Amount.
      * @return weight The total weight of tokens in the liquidity pair.
      */
     function _getTotalWeight(uint256 amountX, uint256 amountY) internal view returns(uint256 weight) {
-        ILBRouter traderJoeV2Router = ILBRouter(getJoeV2RouterAddress());
-        (, uint128 amountXToY, ) = traderJoeV2Router.getSwapOut(lbPair, uint128(amountX), true);
+        uint256 amountXToY = _getTokenYFromTokenX(amountX);
         weight = amountY + amountXToY;
+    }
+
+
+    /**
+     * @dev Returns the estimated token Y amount from token X.
+     * @param amountX Token X Amount.
+     * @return amountY Token Y Amount to return.
+     */
+    function _getTokenYFromTokenX(uint256 amountX) internal view returns(uint256 amountY) {
+        (uint128 reserverA, uint128 reserveB) = lbPair.getReserves();
+        if(reserverA > 0) {
+            ILBRouter traderJoeV2Router = ILBRouter(getJoeV2RouterAddress());
+            (, uint128 amountXToY, ) = traderJoeV2Router.getSwapOut(lbPair, uint128(amountX), true);
+            amountY = amountXToY;
+        } else {
+            amountY = 0;
+        }
     }
 
     /**
@@ -133,7 +151,7 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
     */
     function _getUpdatedAmounts(uint256 amountX, uint256 amountY) internal returns(uint256, uint256) {
         ILBRouter traderJoeV2Router = ILBRouter(getJoeV2RouterAddress());
-        (, uint128 amountXToY, ) = traderJoeV2Router.getSwapOut(lbPair, uint128(amountX), true);
+        uint256 amountXToY = _getTokenYFromTokenX(amountX);
         bool swapTokenX = amountY < amountXToY;
         uint256 diff = swapTokenX ? amountXToY - amountY : amountY - amountXToY;
 
