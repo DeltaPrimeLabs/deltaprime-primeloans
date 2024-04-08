@@ -10,7 +10,7 @@
       </div>
 
       <div class="modal-top-desc">
-        Minting/burning CAI can result in a high slippage. <br> If that's the case, please use swap function instead.
+        If you encounter a high slippage, please use swap function instead
       </div>
 
       <div class="asset-info">
@@ -25,6 +25,7 @@
                           :asset-options="sourceAssetOptions"
                           :default-asset="sourceAsset"
                           :validators="sourceValidators"
+                          :warnings="sourceWarnings"
                           :disabled="checkingPrices"
                           :typingTimeout="2000"
                           v-on:valueChange="sourceInputChange"
@@ -102,7 +103,8 @@
       </div>
 
       <div class="button-wrapper">
-        <Button :label="mintMode ? 'Mint' : 'Burn'" v-on:click="submit()" :disabled="calculatingValues || sourceInputError"
+        <Button :label="mintMode ? 'Mint' : 'Burn'" v-on:click="submit()"
+                :disabled="calculatingValues || sourceInputError"
                 :waiting="calculatingValues || transactionOngoing"></Button>
       </div>
     </Modal>
@@ -124,6 +126,7 @@ import SimpleInput from './SimpleInput.vue';
 import InfoIcon from './InfoIcon.vue';
 
 let TOKEN_ADDRESSES;
+const SMALL_SOURCE_ASSET_AMOUNT_THRESHOLD_USD = 30;
 
 export default {
   name: 'MintCAIModal',
@@ -173,6 +176,7 @@ export default {
       currencyInputError: true,
       transactionOngoing: false,
       sourceValidators: [],
+      sourceWarnings: [],
       targetValidators: [],
       checkingPrices: false,
       ongoingTyping: false,
@@ -199,6 +203,7 @@ export default {
       this.setupTargetAssetOptions();
       this.calculateHealthAfterTransaction();
       this.setupValidators();
+      this.setupSourceWarnings();
       this.setupSourceAsset();
       this.calculateSourceAssetBalance(this.sourceAsset);
       this.setupValidators();
@@ -358,6 +363,21 @@ export default {
       ];
     },
 
+    setupSourceWarnings() {
+      this.sourceWarnings = [
+        {
+          validate: (value) => {
+            const numberValue = Number(value);
+            const sourceAssetPrice = config.ASSETS_CONFIG[this.sourceAsset].price;
+            const sourceAssetValueUSD = numberValue * sourceAssetPrice;
+            if (numberValue !== 0 && sourceAssetValueUSD < SMALL_SOURCE_ASSET_AMOUNT_THRESHOLD_USD) {
+              return 'For small amounts we recommend using swap'
+            }
+          }
+        }
+      ]
+    },
+
     setupSourceAssetOptions() {
       console.log('setupSourceAssetOptions');
       console.log('this.sourceAssets', this.sourceAssets);
@@ -441,11 +461,11 @@ export default {
       console.log(this.currentSourceInputChangeEvent);
       const sourceAssetDecimals = this.sourceAssetData.decimals;
       console.log(sourceAssetDecimals);
-/*      const burnData = await getBurnData(
-        parseUnits(this.currentSourceInputChangeEvent.value.toFixed(sourceAssetDecimals), sourceAssetDecimals),
-        TOKEN_ADDRESSES[this.targetAsset],
-        this.smartLoanContractAddress
-      );*/
+      /*      const burnData = await getBurnData(
+              parseUnits(this.currentSourceInputChangeEvent.value.toFixed(sourceAssetDecimals), sourceAssetDecimals),
+              TOKEN_ADDRESSES[this.targetAsset],
+              this.smartLoanContractAddress
+            );*/
       // console.log(burnData);
       this.burnData = null;
       this.sourceAmount = this.currentSourceInputChangeEvent.value;
