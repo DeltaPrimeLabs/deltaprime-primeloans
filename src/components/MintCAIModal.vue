@@ -126,7 +126,8 @@ import SimpleInput from './SimpleInput.vue';
 import InfoIcon from './InfoIcon.vue';
 
 let TOKEN_ADDRESSES;
-const SMALL_SOURCE_ASSET_AMOUNT_THRESHOLD_USD = 30;
+const ASSET_VALUE_WARNING_THRESHOLD = 30;
+const ASSET_VALUE_ERROR_THRESHOLD = 10;
 
 export default {
   name: 'MintCAIModal',
@@ -360,6 +361,18 @@ export default {
             }
           },
         },
+        {
+          validate: (value) => {
+            if (this.mintMode) {
+              const numberValue = Number(value);
+              const sourceAssetPrice = config.ASSETS_CONFIG[this.sourceAsset].price;
+              const sourceAssetValueUSD = numberValue * sourceAssetPrice;
+              if (numberValue !== 0 && sourceAssetValueUSD < ASSET_VALUE_ERROR_THRESHOLD) {
+                return 'Amount to low please use swap instead';
+              }
+            }
+          }
+        }
       ];
     },
 
@@ -370,8 +383,8 @@ export default {
             const numberValue = Number(value);
             const sourceAssetPrice = config.ASSETS_CONFIG[this.sourceAsset].price;
             const sourceAssetValueUSD = numberValue * sourceAssetPrice;
-            if (numberValue !== 0 && sourceAssetValueUSD < SMALL_SOURCE_ASSET_AMOUNT_THRESHOLD_USD) {
-              return 'For small amounts we recommend using swap'
+            if (numberValue !== 0 && sourceAssetValueUSD < ASSET_VALUE_WARNING_THRESHOLD) {
+              return 'For small amounts we recommend using swap';
             }
           }
         }
