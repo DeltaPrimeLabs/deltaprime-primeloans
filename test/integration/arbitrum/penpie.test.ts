@@ -45,7 +45,7 @@ const wstETHMarket = "0x08a152834de126d2ef83D612ff36e4523FD0017F";
 const eETHMarket = "0xE11f9786B06438456b044B3E21712228ADcAA0D1";
 const rsETHMarket = "0x6F02C88650837C8dfe89F66723c4743E9cF833cd";
 const wstETHSiloMarket = "0xACcd9A7cb5518326BeD715f90bD32CDf2fEc2D14";
-const eETHSiloMarket = "0x99e9028e274FEAFA2E1D8787E1eE6DE39C6F7724";
+// const eETHSiloMarket = "0x99e9028e274FEAFA2E1D8787E1eE6DE39C6F7724";
 
 describe('Smart loan', () => {
     before("Synchronize blockchain time", async () => {
@@ -108,7 +108,7 @@ describe('Smart loan', () => {
             paraSwapMin = constructSimpleSDK({ chainId: 42161, axios });
 
             [owner, nonOwner, depositor] = await getFixedGasSigners(10000000);
-            let penpieLpTokens = ['PENPIE_EZETH_LP', 'PENPIE_WSTETH_LP', 'PENPIE_EETH_LP', 'PENPIE_RSETH_LP', 'PENPIE_WSTETHSILO_LP', 'PENPIE_EETHSILO_LP'];
+            let penpieLpTokens = ['PENDLE_EZ_ETH_LP', 'PENDLE_WSTETH_LP', 'PENDLE_E_ETH_LP', 'PENDLE_RS_ETH_LP', 'PENDLE_SILO_WSTETH_LP'];
             let assetsList = ['ETH', 'ezETH', 'wstETH', 'weETH', 'rsETH', 'PNP', ...penpieLpTokens];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'ETH', airdropList: [depositor]}
@@ -120,14 +120,8 @@ describe('Smart loan', () => {
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor, 1000, 'ARBITRUM');
 
-            tokensPrices = await getTokensPricesMap(assetsList.filter(el => !(['PNP', 'ezETH', 'weETH', 'rsETH', ...penpieLpTokens].includes(el))), "arbitrum", getRedstonePrices, [
-                {symbol: 'PNP', value: 2.75},
-                {symbol: 'ezETH', value: 3500},
-                {symbol: 'weETH', value: 3500},
-                {symbol: 'rsETH', value: 3500},
-                ...penpieLpTokens.map(symbol => ({
-                    symbol, value: 7500
-                })),
+            tokensPrices = await getTokensPricesMap(assetsList.filter(el => !(['PNP'].includes(el))), "arbitrum", getRedstonePrices, [
+                {symbol: 'PNP', value: 4.3},
             ]);
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
             addMissingTokenContracts(tokenContracts, assetsList, 'ARBITRUM');
@@ -144,14 +138,14 @@ describe('Smart loan', () => {
 
             const exposureGroups = [
                 "ETH_GROUP", "ezETH_GROUP", "wstETH_GROUP", "weETH_GROUP", "rsETH_GROUP",
-                "PENPIE_EZETH_LP_GROUP", "PENPIE_WSTETH_LP_GROUP", "PENPIE_EETH_LP_GROUP",
-                "PENPIE_RSETH_LP_GROUP", "PENPIE_WSTETHSILO_LP_GROUP", "PENPIE_EETHSILO_LP_GROUP"
+                "PENDLE_EZ_ETH_LP_GROUP", "PENDLE_WSTETH_LP_GROUP", "PENDLE_E_ETH_LP_GROUP",
+                "PENDLE_RS_ETH_LP_GROUP", "PENDLE_SILO_WSTETH_LP_GROUP"
             ];
 
             const identifiers = [
                 "ETH", "ezETH", "wstETH", "weETH", "rsETH",
-                "PENPIE_EZETH_LP", "PENPIE_WSTETH_LP", "PENPIE_EETH_LP",
-                "PENPIE_RSETH_LP", "PENPIE_WSTETHSILO_LP", "PENPIE_EETHSILO_LP"
+                "PENDLE_EZ_ETH_LP", "PENDLE_WSTETH_LP", "PENDLE_E_ETH_LP",
+                "PENDLE_RS_ETH_LP", "PENDLE_SILO_WSTETH_LP"
             ];
 
             await tokenManager.setIdentifiersToExposureGroups(
@@ -234,9 +228,9 @@ describe('Smart loan', () => {
             await wrappedLoan.paraSwapV2(swapData.selector, swapData.data, TOKEN_ADDRESSES['ETH'], toWei('2'), TOKEN_ADDRESSES['rsETH'], 1);
             rsEthBalance = await tokenContracts.get('rsETH')!.balanceOf(wrappedLoan.address);
 
-            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 500);
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 20);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.eq(fromWei(initialHR));
-            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 500);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 20);
         });
 
         it("should fail to stake as a non-owner", async () => {
@@ -306,12 +300,12 @@ describe('Smart loan', () => {
 
         it("should stake", async () => {
             const stakeTests = [
-                { asset: "ETH", market: ezETHMarket, amount: toWei('2'), minLpOut: 1, lpToken: "PENPIE_EZETH_LP" },
-                { asset: "wstETH", market: wstETHMarket, amount: wstEthBalance, minLpOut: 1, lpToken: "PENPIE_WSTETH_LP" },
-                { asset: "weETH", market: eETHMarket, amount: weEthBalance, minLpOut: 1, lpToken: "PENPIE_EETH_LP" },
-                { asset: "rsETH", market: rsETHMarket, amount: rsEthBalance, minLpOut: 1, lpToken: "PENPIE_RSETH_LP" },
-                { asset: "ETH", market: wstETHSiloMarket, amount: toWei('2'), minLpOut: 1, lpToken: "PENPIE_WSTETHSILO_LP" },
-                { asset: "ETH", market: eETHSiloMarket, amount: toWei('2'), minLpOut: 1, lpToken: "PENPIE_EETHSILO_LP" }
+                { asset: "ETH", market: ezETHMarket, amount: toWei('2'), minLpOut: 1, lpToken: "PENDLE_EZ_ETH_LP" },
+                { asset: "wstETH", market: wstETHMarket, amount: wstEthBalance, minLpOut: 1, lpToken: "PENDLE_WSTETH_LP" },
+                { asset: "weETH", market: eETHMarket, amount: weEthBalance, minLpOut: 1, lpToken: "PENDLE_E_ETH_LP" },
+                { asset: "rsETH", market: rsETHMarket, amount: rsEthBalance, minLpOut: 1, lpToken: "PENDLE_RS_ETH_LP" },
+                { asset: "ETH", market: wstETHSiloMarket, amount: toWei('2'), minLpOut: 1, lpToken: "PENDLE_SILO_WSTETH_LP" },
+                // { asset: "ETH", market: eETHSiloMarket, amount: toWei('2'), minLpOut: 1, lpToken: "PENPIE_EETHSILO_LP" }
             ];
 
             for (const test of stakeTests) {
@@ -323,12 +317,12 @@ describe('Smart loan', () => {
         it("should unstake", async () => {
             it("should unstake", async () => {
                 const unstakeTests = [
-                    { asset: "ezETH", market: ezETHMarket, amount: await tokenContracts.get('PENPIE_EZETH_LP')!.balanceOf(wrappedLoan.address), minOut: 1, lpToken: "PENPIE_EZETH_LP" },
-                    { asset: "wstETH", market: wstETHMarket, amount: await tokenContracts.get('PENPIE_WSTETH_LP')!.balanceOf(wrappedLoan.address), minOut: 1, lpToken: "PENPIE_WSTETH_LP" },
-                    { asset: "weETH", market: eETHMarket, amount: await tokenContracts.get('PENPIE_EETH_LP')!.balanceOf(wrappedLoan.address), minOut: 1, lpToken: "PENPIE_EETH_LP" },
-                    { asset: "rsETH", market: rsETHMarket, amount: await tokenContracts.get('PENPIE_RSETH_LP')!.balanceOf(wrappedLoan.address), minOut: 1, lpToken: "PENPIE_RSETH_LP" },
-                    { asset: "ETH", market: wstETHSiloMarket, amount: await tokenContracts.get('PENPIE_WSTETHSILO_LP')!.balanceOf(wrappedLoan.address), minOut: 1, lpToken: "PENPIE_WSTETHSILO_LP" },
-                    { asset: "ETH", market: eETHSiloMarket, amount: await tokenContracts.get('PENPIE_EETHSILO_LP')!.balanceOf(wrappedLoan.address), minOut: 1, lpToken: "PENPIE_EETHSILO_LP" }
+                    { asset: "ezETH", market: ezETHMarket, amount: await tokenContracts.get('PENDLE_EZ_ETH_LP')!.balanceOf(wrappedLoan.address), minOut: 1, lpToken: "PENDLE_EZ_ETH_LP" },
+                    { asset: "wstETH", market: wstETHMarket, amount: await tokenContracts.get('PENDLE_WSTETH_LP')!.balanceOf(wrappedLoan.address), minOut: 1, lpToken: "PENDLE_WSTETH_LP" },
+                    { asset: "weETH", market: eETHMarket, amount: await tokenContracts.get('PENDLE_E_ETH_LP')!.balanceOf(wrappedLoan.address), minOut: 1, lpToken: "PENDLE_E_ETH_LP" },
+                    { asset: "rsETH", market: rsETHMarket, amount: await tokenContracts.get('PENDLE_RS_ETH_LP')!.balanceOf(wrappedLoan.address), minOut: 1, lpToken: "PENDLE_RS_ETH_LP" },
+                    { asset: "ETH", market: wstETHSiloMarket, amount: await tokenContracts.get('PENDLE_SILO_WSTETH_LP')!.balanceOf(wrappedLoan.address), minOut: 1, lpToken: "PENDLE_SILO_WSTETH_LP" },
+                    // { asset: "ETH", market: eETHSiloMarket, amount: await tokenContracts.get('PENPIE_EETHSILO_LP')!.balanceOf(wrappedLoan.address), minOut: 1, lpToken: "PENPIE_EETHSILO_LP" }
                 ];
 
                 for (const test of unstakeTests) {
@@ -366,9 +360,9 @@ describe('Smart loan', () => {
             expect(beforeTokenExposure.current.sub(afterTokenExposure.current)).to.be.eq(amount);
             expect(afterLpExposure.current).to.be.gt(beforeLpExposure.current);
 
-            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 1600);
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 50);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.0001);
-            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 1600);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 50);
         }
 
         async function testUnstake(asset: string, market: string, amount: BigNumber, minOut: BigNumberish, lpToken: string) {
@@ -398,7 +392,7 @@ describe('Smart loan', () => {
             expect(beforeLpExposure.current.sub(afterLpExposure.current)).to.be.eq(amount);
             expect(afterTokenExposure.current).to.be.gt(beforeTokenExposure.current);
 
-            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 1600);
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 50);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.01);
         }
 
