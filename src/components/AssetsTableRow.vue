@@ -934,7 +934,7 @@ export default {
     },
 
     async claimGLPRewardsAction() {
-      const rewardsDecimals = this.avalancheChain ? config.ASSETS_CONFIG.AVAX.decimals : config.ASSETS_CONFIG.ARB.decimals;
+      const rewardsDecimals = this.avalancheChain ? config.ASSETS_CONFIG.AVAX.decimals : config.ASSETS_CONFIG.ETH.decimals;
       const glpRewardRouterContract = new ethers.Contract(config.glpRewardsRouterAddress, GLP_REWARD_ROUTER.abi, this.provider.getSigner());
       const feeGLPTrackerAddress = await glpRewardRouterContract.feeGlpTracker();
       const feeGLPTrackedContract = new ethers.Contract(feeGLPTrackerAddress, GLP_REWARD_TRACKER.abi, this.provider.getSigner());
@@ -942,7 +942,7 @@ export default {
       const modalInstance = this.openModal(ClaimGLPRewardsModal);
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.glpRewardsToClaim = rewards;
-      modalInstance.glpRewardsAsset = 'AVAX';
+      modalInstance.glpRewardsAsset = this.avalancheChain ? 'AVAX' : 'ETH';
 
       modalInstance.$on('CLAIM', () => {
         this.handleTransaction(this.claimGLPRewards, () => {
