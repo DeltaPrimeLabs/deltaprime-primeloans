@@ -61,236 +61,236 @@ describe("Pool ERC20 token functions", () => {
         );
     });
 
-    // describe("transfer", () => {
-    //
-    //     it("should revert if not enough balance", async () => {
-    //         await mockToken.connect(user1).approve(sut.address, toWei("1.0"));
-    //         await sut.connect(user1).deposit(toWei("1.0"));
-    //
-    //         await expect(sut.connect(user1).transfer(user2.address, toWei("1.1")))
-    //             .to.be.revertedWith(customError("TransferAmountExceedsBalance", toWei("1.1"), toWei("1.0")));
-    //     });
-    //
-    //     it("should accumulate user1 interest prior to transferring the funds", async () => {
-    //         // given
-    //         await mockToken.connect(user1).approve(sut.address, toWei("1.0"));
-    //         await sut.connect(user1).deposit(toWei("1.0"));
-    //
-    //         await sut.connect(user1).borrow(toWei("0.7"));
-    //         await time.increase(time.duration.years(1));
-    //
-    //         // note: after accumulating interest user1 should be able to transfer
-    //         // more funds than originally deposited
-    //         // when
-    //
-    //         expect(await balanceOf(user1)).to.be.closeTo(1.042, 0.00001);
-    //
-    //         await sut.connect(user1).transfer(user2.address, toWei("1.04"));
-    //
-    //         // then
-    //         expect(await balanceOf(user2)).to.be.equal(1.04);
-    //         expect(await balanceOf(user1)).to.be.closeTo(0.002000001331811263, 0.000001);
-    //     });
-    //
-    //     it("should accumulate user2 interest prior to transferring the funds", async () => {
-    //         // given
-    //         await mockToken.connect(user1).approve(sut.address, toWei("1.0"));
-    //         await sut.connect(user1).depositOnBehalf(toWei("1.0"), user1.address);
-    //
-    //         await mockToken.connect(user2).approve(sut.address, toWei("2.0"));
-    //         await sut.connect(user2).deposit(toWei("2.0"));
-    //
-    //         await sut.connect(user3).borrow(toWei("2.0"));
-    //         await time.increase(time.duration.years(1));
-    //
-    //         expect(await balanceOf(user1)).to.be.closeTo(1.032, 0.000001);
-    //
-    //         // when
-    //         await sut.connect(user1).transfer(user2.address, toWei("1.03"));
-    //
-    //         // then
-    //         expect(await balanceOf(user1)).to.be.closeTo(0.002000001014713342, 0.000001);
-    //         expect(await balanceOf(user2)).to.be.closeTo(3.0940000020294267 , 0.000001);
-    //     });
-    //
-    // });
-    //
-    // describe("approve", () => {
-    //     it("should revert upon setting an allowance for a zero address", async () => {
-    //         await expect(sut.connect(user1).approve(ethers.constants.AddressZero, toWei("1.05"))).
-    //         to.be.revertedWith(customError("SpenderZeroAddress"));
-    //     });
-    //
-    //     it("should properly assign amount to different spenders within one owner", async () => {
-    //         await mockToken.connect(user1).approve(sut.address, toWei("5.0"));
-    //         await sut.connect(user1).deposit(toWei("5.0"));
-    //
-    //         await sut.connect(user1).approve(user2.address, toWei("1.05"));
-    //         await sut.connect(user1).approve(user3.address, toWei("2.03"));
-    //         await sut.connect(user1).approve(user4.address, toWei("1.27"));
-    //
-    //         // then
-    //         expect(fromWei(await sut.allowance(user1.address, user2.address)))
-    //             .to.be.equal(1.05);
-    //         expect(fromWei(await sut.allowance(user1.address, user3.address)))
-    //             .to.be.equal(2.03);
-    //         expect(fromWei(await sut.allowance(user1.address, user4.address)))
-    //             .to.be.equal(1.27);
-    //     });
-    //
-    //     it("should properly assign amount to different spenders for different owners", async () => {
-    //         // given
-    //         await mockToken.connect(user1).approve(sut.address, toWei("5.0"));
-    //         await sut.connect(user1).deposit(toWei("5.0"));
-    //
-    //         await mockToken.connect(user2).approve(sut.address, toWei("3.0"));
-    //         await sut.connect(user2).deposit(toWei("3.0"));
-    //
-    //         // when
-    //         await sut.connect(user1).approve(user2.address, toWei("2.33"));
-    //         await sut.connect(user1).approve(user3.address, toWei("1.89"));
-    //         await sut.connect(user2).approve(user3.address, toWei("1.89"));
-    //         await sut.connect(user2).approve(user4.address, toWei("2.33"));
-    //
-    //         // then
-    //         expect(fromWei(await sut.allowance(user1.address, user2.address)))
-    //             .to.be.equal(2.33);
-    //         expect(fromWei(await sut.allowance(user1.address, user3.address)))
-    //             .to.be.equal(1.89);
-    //         expect(fromWei(await sut.allowance(user1.address, user4.address)))
-    //             .to.be.equal(0);
-    //
-    //         expect(fromWei(await sut.allowance(user2.address, user2.address)))
-    //             .to.be.equal(0);
-    //         expect(fromWei(await sut.allowance(user2.address, user3.address)))
-    //             .to.be.equal(1.89);
-    //         expect(fromWei(await sut.allowance(user2.address, user4.address)))
-    //             .to.be.equal(2.33);
-    //     });
-    // })
-    //
-    // describe("increaseAllowance", () => {
-    //     it("should revert upon increasing an allowance for a zero address", async () => {
-    //         await expect(sut.connect(user1).increaseAllowance(ethers.constants.AddressZero, toWei("1"))).
-    //         to.be.revertedWith(customError("SpenderZeroAddress"));
-    //     });
-    //
-    //     it("should increase an allowance", async () => {
-    //         await sut.connect(user1).increaseAllowance(user2.address, toWei("1"));
-    //         await sut.connect(user1).increaseAllowance(user2.address, toWei("3"));
-    //         expect(await sut.allowance(user1.address, user2.address)).to.be.equal(toWei("4"))
-    //     });
-    // });
-    //
-    // describe("decreaseAllowance", () => {
-    //     it("should revert upon decreasing an allowance for a zero address", async () => {
-    //         await expect(sut.connect(user1).decreaseAllowance(ethers.constants.AddressZero, toWei("1"))).
-    //         to.be.revertedWith(customError("SpenderZeroAddress"));
-    //     });
-    //
-    //     it("should decrease an allowance", async () => {
-    //         await sut.connect(user1).approve(user2.address, toWei("6"));
-    //         await sut.connect(user1).decreaseAllowance(user2.address, toWei("1"));
-    //         await sut.connect(user1).decreaseAllowance(user2.address, toWei("2"));
-    //         expect(await sut.allowance(user1.address, user2.address)).to.be.equal(toWei("3"))
-    //     });
-    //
-    //     it("should revert upon decreasing an allowance for below the current allowance level", async () => {
-    //         await expect(sut.connect(user1).decreaseAllowance(user2.address, toWei("100"))).to.be.revertedWith(customError("InsufficientAllowance", toWei("100"), 0));
-    //     });
-    //
-    // });
-    //
-    // describe("transferFrom", () => {
-    //     it("should revert if amount is higher than user1 balance", async () => {
-    //         await mockToken.connect(user1).approve(sut.address, toWei("2.0"));
-    //         await sut.connect(user1).deposit(toWei("2.0"));
-    //
-    //         await sut.connect(user1).approve(user2.address, toWei("2.0"));
-    //         await sut.connect(user1).withdraw(toWei("1.0"));
-    //
-    //         await expect(sut.connect(user2).transferFrom(user1.address, user2.address, toWei("1.01")))
-    //             .to.be.revertedWith(customError("TransferAmountExceedsBalance", toWei("1.01"), toWei("1.0")));
-    //     });
-    //
-    //     it("should revert if caller's allowance for user1's tokens is too low", async () => {
-    //         await mockToken.connect(user1).approve(sut.address, toWei("1.0"));
-    //         await sut.connect(user1).deposit(toWei("1.0"));
-    //
-    //         await sut.connect(user1).approve(user2.address, toWei("0.5"));
-    //
-    //         await expect(sut.connect(user2).transferFrom(user1.address, user2.address, toWei("0.55")))
-    //             // .to.be.revertedWith("Not enough tokens allowed");
-    //             .to.be.revertedWith(customError("InsufficientAllowance", toWei("0.55"), toWei("0.5")));
-    //     });
-    //
-    //     it("should decrease allowance by the transfer amount", async () => {
-    //         await mockToken.connect(user1).approve(sut.address, toWei("1.0"));
-    //         await sut.connect(user1).deposit(toWei("1.0"));
-    //
-    //         await sut.connect(user1).approve(user5.address, toWei("0.5"));
-    //
-    //         await sut.connect(user5).transferFrom(user1.address, user3.address, toWei("0.4"));
-    //         expect(fromWei(await sut.allowance(user1.address, user5.address)))
-    //             .to.be.equal(0.1);
-    //     });
-    //
-    //     it("should decrease balance of the user1 after transfer from user1 to user3", async () => {
-    //         await mockToken.connect(user1).approve(sut.address, toWei("2.0"));
-    //         await sut.connect(user1).deposit(toWei("2.0"));
-    //
-    //         await sut.connect(user1).approve(user5.address, toWei("1.5"));
-    //
-    //         await sut.connect(user5).transferFrom(user1.address, user3.address, toWei("1.2"));
-    //         expect(await balanceOf(user1)).to.be.closeTo(0.8, 0.000001);
-    //     });
-    //
-    //     it("should not decrease balance of the msg.user5", async () => {
-    //         await mockToken.connect(user1).approve(sut.address, toWei("3.9"));
-    //         await sut.connect(user1).deposit(toWei("3.9"));
-    //
-    //         await mockToken.connect(user5).approve(sut.address, toWei("5.2"));
-    //         await sut.connect(user5).deposit(toWei("5.2"));
-    //
-    //         await mockToken.connect(user3).approve(sut.address, toWei("4.0"));
-    //         await sut.connect(user3).deposit(toWei("4.0"));
-    //
-    //         await sut.connect(user1).approve(user5.address, toWei("2.0"));
-    //
-    //         await sut.connect(user5).transferFrom(user1.address, user3.address, toWei("0.89"));
-    //
-    //         expect(await balanceOf(user5)).to.be.closeTo(5.2, 0.00001);
-    //     });
-    //
-    //     it("should increase balance of the user3 after transfer from user1", async () => {
-    //         await mockToken.connect(user1).approve(sut.address, toWei("3.9"));
-    //         await sut.connect(user1).deposit(toWei("3.9"));
-    //
-    //         await mockToken.connect(user3).approve(sut.address, toWei("1.0"));
-    //         await sut.connect(user3).deposit(toWei("1.0"));
-    //
-    //         await sut.connect(user1).approve(user5.address, toWei("0.9"));
-    //
-    //         await sut.connect(user5).transferFrom(user1.address, user3.address, toWei("0.89"));
-    //         expect(await balanceOf(user3)).to.be.closeTo(1.89, 0.000001);
-    //     });
-    //
-    //     it("should accumulate interest of the user1 and user3", async () => {
-    //         await mockToken.connect(user1).approve(sut.address, toWei("3.9"));
-    //         await sut.connect(user1).deposit(toWei("3.9"));
-    //
-    //         await mockToken.connect(user3).approve(sut.address, toWei("1.0"));
-    //         await sut.connect(user3).deposit(toWei("1.0"));
-    //
-    //         await sut.connect(user1).approve(user5.address, toWei("3.9"));
-    //
-    //         await time.increase(time.duration.years(5));
-    //         await sut.connect(user5).transferFrom(user1.address, user3.address, toWei("1.0"));
-    //
-    //         expect(await balanceOf(user1)).to.be.closeTo(2.9, 0.000001);
-    //         expect(await balanceOf(user3)).to.be.closeTo(2, 0.000001);
-    //     });
-    // });
+    describe("transfer", () => {
+
+        it("should revert if not enough balance", async () => {
+            await mockToken.connect(user1).approve(sut.address, toWei("1.0"));
+            await sut.connect(user1).deposit(toWei("1.0"));
+
+            await expect(sut.connect(user1).transfer(user2.address, toWei("1.1")))
+                .to.be.revertedWith("TransferAmountExceedsBalance");
+        });
+
+        it("should accumulate user1 interest prior to transferring the funds", async () => {
+            // given
+            await mockToken.connect(user1).approve(sut.address, toWei("1.0"));
+            await sut.connect(user1).deposit(toWei("1.0"));
+
+            await sut.connect(user1).borrow(toWei("0.7"));
+            await time.increase(time.duration.years(1));
+
+            // note: after accumulating interest user1 should be able to transfer
+            // more funds than originally deposited
+            // when
+
+            expect(await balanceOf(user1)).to.be.closeTo(1.042, 0.00001);
+
+            await sut.connect(user1).transfer(user2.address, toWei("1.04"));
+
+            // then
+            expect(await balanceOf(user2)).to.be.equal(1.04);
+            expect(await balanceOf(user1)).to.be.closeTo(0.002000001331811263, 0.000001);
+        });
+
+        it("should accumulate user2 interest prior to transferring the funds", async () => {
+            // given
+            await mockToken.connect(user1).approve(sut.address, toWei("1.0"));
+            await sut.connect(user1).depositOnBehalf(toWei("1.0"), user1.address);
+
+            await mockToken.connect(user2).approve(sut.address, toWei("2.0"));
+            await sut.connect(user2).deposit(toWei("2.0"));
+
+            await sut.connect(user3).borrow(toWei("2.0"));
+            await time.increase(time.duration.years(1));
+
+            expect(await balanceOf(user1)).to.be.closeTo(1.032, 0.000001);
+
+            // when
+            await sut.connect(user1).transfer(user2.address, toWei("1.03"));
+
+            // then
+            expect(await balanceOf(user1)).to.be.closeTo(0.002000001014713342, 0.000001);
+            expect(await balanceOf(user2)).to.be.closeTo(3.0940000020294267 , 0.000001);
+        });
+
+    });
+
+    describe("approve", () => {
+        it("should revert upon setting an allowance for a zero address", async () => {
+            await expect(sut.connect(user1).approve(ethers.constants.AddressZero, toWei("1.05"))).
+            to.be.revertedWith("SpenderZeroAddress");
+        });
+
+        it("should properly assign amount to different spenders within one owner", async () => {
+            await mockToken.connect(user1).approve(sut.address, toWei("5.0"));
+            await sut.connect(user1).deposit(toWei("5.0"));
+
+            await sut.connect(user1).approve(user2.address, toWei("1.05"));
+            await sut.connect(user1).approve(user3.address, toWei("2.03"));
+            await sut.connect(user1).approve(user4.address, toWei("1.27"));
+
+            // then
+            expect(fromWei(await sut.allowance(user1.address, user2.address)))
+                .to.be.equal(1.05);
+            expect(fromWei(await sut.allowance(user1.address, user3.address)))
+                .to.be.equal(2.03);
+            expect(fromWei(await sut.allowance(user1.address, user4.address)))
+                .to.be.equal(1.27);
+        });
+
+        it("should properly assign amount to different spenders for different owners", async () => {
+            // given
+            await mockToken.connect(user1).approve(sut.address, toWei("5.0"));
+            await sut.connect(user1).deposit(toWei("5.0"));
+
+            await mockToken.connect(user2).approve(sut.address, toWei("3.0"));
+            await sut.connect(user2).deposit(toWei("3.0"));
+
+            // when
+            await sut.connect(user1).approve(user2.address, toWei("2.33"));
+            await sut.connect(user1).approve(user3.address, toWei("1.89"));
+            await sut.connect(user2).approve(user3.address, toWei("1.89"));
+            await sut.connect(user2).approve(user4.address, toWei("2.33"));
+
+            // then
+            expect(fromWei(await sut.allowance(user1.address, user2.address)))
+                .to.be.equal(2.33);
+            expect(fromWei(await sut.allowance(user1.address, user3.address)))
+                .to.be.equal(1.89);
+            expect(fromWei(await sut.allowance(user1.address, user4.address)))
+                .to.be.equal(0);
+
+            expect(fromWei(await sut.allowance(user2.address, user2.address)))
+                .to.be.equal(0);
+            expect(fromWei(await sut.allowance(user2.address, user3.address)))
+                .to.be.equal(1.89);
+            expect(fromWei(await sut.allowance(user2.address, user4.address)))
+                .to.be.equal(2.33);
+        });
+    })
+
+    describe("increaseAllowance", () => {
+        it("should revert upon increasing an allowance for a zero address", async () => {
+            await expect(sut.connect(user1).increaseAllowance(ethers.constants.AddressZero, toWei("1"))).
+            to.be.revertedWith("SpenderZeroAddress");
+        });
+
+        it("should increase an allowance", async () => {
+            await sut.connect(user1).increaseAllowance(user2.address, toWei("1"));
+            await sut.connect(user1).increaseAllowance(user2.address, toWei("3"));
+            expect(await sut.allowance(user1.address, user2.address)).to.be.equal(toWei("4"))
+        });
+    });
+
+    describe("decreaseAllowance", () => {
+        it("should revert upon decreasing an allowance for a zero address", async () => {
+            await expect(sut.connect(user1).decreaseAllowance(ethers.constants.AddressZero, toWei("1"))).
+            to.be.revertedWith("SpenderZeroAddress");
+        });
+
+        it("should decrease an allowance", async () => {
+            await sut.connect(user1).approve(user2.address, toWei("6"));
+            await sut.connect(user1).decreaseAllowance(user2.address, toWei("1"));
+            await sut.connect(user1).decreaseAllowance(user2.address, toWei("2"));
+            expect(await sut.allowance(user1.address, user2.address)).to.be.equal(toWei("3"))
+        });
+
+        it("should revert upon decreasing an allowance for below the current allowance level", async () => {
+            await expect(sut.connect(user1).decreaseAllowance(user2.address, toWei("100"))).to.be.revertedWith("InsufficientAllowance");
+        });
+
+    });
+
+    describe("transferFrom", () => {
+        it("should revert if amount is higher than user1 balance", async () => {
+            await mockToken.connect(user1).approve(sut.address, toWei("2.0"));
+            await sut.connect(user1).deposit(toWei("2.0"));
+
+            await sut.connect(user1).approve(user2.address, toWei("2.0"));
+            await sut.connect(user1).withdraw(toWei("1.0"));
+
+            await expect(sut.connect(user2).transferFrom(user1.address, user2.address, toWei("1.01")))
+                .to.be.revertedWith("TransferAmountExceedsBalance");
+        });
+
+        it("should revert if caller's allowance for user1's tokens is too low", async () => {
+            await mockToken.connect(user1).approve(sut.address, toWei("1.0"));
+            await sut.connect(user1).deposit(toWei("1.0"));
+
+            await sut.connect(user1).approve(user2.address, toWei("0.5"));
+
+            await expect(sut.connect(user2).transferFrom(user1.address, user2.address, toWei("0.55")))
+                // .to.be.revertedWith("Not enough tokens allowed");
+                .to.be.revertedWith("InsufficientAllowance");
+        });
+
+        it("should decrease allowance by the transfer amount", async () => {
+            await mockToken.connect(user1).approve(sut.address, toWei("1.0"));
+            await sut.connect(user1).deposit(toWei("1.0"));
+
+            await sut.connect(user1).approve(user5.address, toWei("0.5"));
+
+            await sut.connect(user5).transferFrom(user1.address, user3.address, toWei("0.4"));
+            expect(fromWei(await sut.allowance(user1.address, user5.address)))
+                .to.be.equal(0.1);
+        });
+
+        it("should decrease balance of the user1 after transfer from user1 to user3", async () => {
+            await mockToken.connect(user1).approve(sut.address, toWei("2.0"));
+            await sut.connect(user1).deposit(toWei("2.0"));
+
+            await sut.connect(user1).approve(user5.address, toWei("1.5"));
+
+            await sut.connect(user5).transferFrom(user1.address, user3.address, toWei("1.2"));
+            expect(await balanceOf(user1)).to.be.closeTo(0.8, 0.000001);
+        });
+
+        it("should not decrease balance of the msg.user5", async () => {
+            await mockToken.connect(user1).approve(sut.address, toWei("3.9"));
+            await sut.connect(user1).deposit(toWei("3.9"));
+
+            await mockToken.connect(user5).approve(sut.address, toWei("5.2"));
+            await sut.connect(user5).deposit(toWei("5.2"));
+
+            await mockToken.connect(user3).approve(sut.address, toWei("4.0"));
+            await sut.connect(user3).deposit(toWei("4.0"));
+
+            await sut.connect(user1).approve(user5.address, toWei("2.0"));
+
+            await sut.connect(user5).transferFrom(user1.address, user3.address, toWei("0.89"));
+
+            expect(await balanceOf(user5)).to.be.closeTo(5.2, 0.00001);
+        });
+
+        it("should increase balance of the user3 after transfer from user1", async () => {
+            await mockToken.connect(user1).approve(sut.address, toWei("3.9"));
+            await sut.connect(user1).deposit(toWei("3.9"));
+
+            await mockToken.connect(user3).approve(sut.address, toWei("1.0"));
+            await sut.connect(user3).deposit(toWei("1.0"));
+
+            await sut.connect(user1).approve(user5.address, toWei("0.9"));
+
+            await sut.connect(user5).transferFrom(user1.address, user3.address, toWei("0.89"));
+            expect(await balanceOf(user3)).to.be.closeTo(1.89, 0.000001);
+        });
+
+        it("should accumulate interest of the user1 and user3", async () => {
+            await mockToken.connect(user1).approve(sut.address, toWei("3.9"));
+            await sut.connect(user1).deposit(toWei("3.9"));
+
+            await mockToken.connect(user3).approve(sut.address, toWei("1.0"));
+            await sut.connect(user3).deposit(toWei("1.0"));
+
+            await sut.connect(user1).approve(user5.address, toWei("3.9"));
+
+            await time.increase(time.duration.years(5));
+            await sut.connect(user5).transferFrom(user1.address, user3.address, toWei("1.0"));
+
+            expect(await balanceOf(user1)).to.be.closeTo(2.9, 0.000001);
+            expect(await balanceOf(user3)).to.be.closeTo(2, 0.000001);
+        });
+    });
 
     describe("totalSupply with multiple depositors", () => {
         it("should properly sum total tokens supply - minting", async () => {
