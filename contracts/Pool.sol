@@ -44,14 +44,21 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
     uint8 internal _decimals;
 
-    mapping(address => uint256) public _locks;
-    mapping(address => uint256) public _lockedBalances;
+    mapping(address => uint256) public lockedUntil;
+    mapping(address => uint256) public lockedBalances;
 
-    function lockBalance(uint256 amount, uint256 lockTime) public {
+    function lockDeposit(uint256 amount, uint256 lockTime) public {
         require(balanceOf(msg.sender) >= amount, "Insufficient balance to lock");
         require(lockTime <= 3 * 365 days, "Cannot lock for more than 3 years");
-        _locks[msg.sender] = block.timestamp + lockTime;
-        _lockedBalances[msg.sender] = amount;
+        require(amount >= lockedBalances[msg.sender], "Cannot decrease locked amount");
+        uint256 remainingLockTime = 0;
+        if (block.timestamp < lockedUntil[msg.sender]) {
+            remainingLockTime = lockedUntil[msg.sender] - block.timestamp;
+        }
+        require(lockTime >= remainingLockTime, "Cannot decrease lock time");
+
+        lockedUntil[msg.sender] = block.timestamp + lockTime;
+        lockedBalances[msg.sender] = amount;
     }
 
 
@@ -146,7 +153,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
     /* ========== MUTATIVE FUNCTIONS ========== */
     function transfer(address recipient, uint256 amount) external override nonReentrant returns (bool) {
-        require(block.timestamp > _locks[msg.sender] || amount <= balanceOf(msg.sender) - _lockedBalances[msg.sender], "Balance is locked");
+        require(block.timestamp > lockedUntil[msg.sender] || amount <= balanceOf(msg.sender) - lockedBalances[msg.sender], "Balance is locked");
         if(recipient == address(0)) revert TransferToZeroAddress();
 
         if(recipient == address(this)) revert TransferToPoolAddress();
@@ -215,7 +222,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     }
 
     function transferFrom(address sender, address recipient, uint256 amount) external override nonReentrant returns (bool) {
-        require(block.timestamp > _locks[sender] || amount <= balanceOf(sender) - _lockedBalances[sender], "Balance is locked");
+        require(block.timestamp > lockedUntil[sender] || amount <= balanceOf(sender) - lockedBalances[sender], "Balance is locked");
         if(_allowed[sender][msg.sender] < amount) revert InsufficientAllowance(amount, _allowed[sender][msg.sender]);
 
         if(recipient == address(0)) revert TransferToZeroAddress();
@@ -300,7 +307,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      * @dev _amount the amount to be withdrawn
      **/
     function withdraw(uint256 _amount) external nonReentrant {
-        require(block.timestamp > _locks[msg.sender] || _amount <= balanceOf(msg.sender) - _lockedBalances[msg.sender], "Balance is locked");
+        require(block.timestamp > lockedUntil[msg.sender] || _amount <= balanceOf(msg.sender) - lockedBalances[msg.sender], "Balance is locked");
         _accumulateDepositInterest(msg.sender);
         _amount = Math.min(_amount, _deposited[msg.sender]);
 
