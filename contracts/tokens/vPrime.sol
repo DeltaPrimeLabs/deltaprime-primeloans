@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../interfaces/IBorrowersRegistry.sol";
+import {vPrimeController} from "./vPrimeController.sol";
 
 /**
  * @dev Extension of ERC20 to support Compound-like voting and delegation. This version is more generic than Compound's,
@@ -32,21 +33,19 @@ contract vPrime is ERC20Permit, Ownable {
         uint256 maxVPrimeCap;
     }
 
-    bytes32 private constant _DELEGATION_TYPEHASH =
-    keccak256("Delegation(address delegatee,uint256 nonce,uint256 expiry)");
-
     mapping(address => Checkpoint[]) private _checkpoints;
     Checkpoint[] private _totalSupplyCheckpoints;
     IBorrowersRegistry public borrowersRegistry;
     // add a storage address array that will store addreses of whitelisted pools
     address[] public whitelistedPools;
+    address[] public whitelistedSPrime;
 
-    constructor(address[] memory whitelistedPools, address borrowersRegistryAddress)
+    constructor(address[] memory _whitelistedPools, address _borrowersRegistryAddress)
     ERC20("vPRIME Governance Token", "vPRIME")
     ERC20Permit("vPRIME Governance Token")
     {
-        whitelistedPools = whitelistedPools;
-        borrowersRegistry = IBorrowersRegistry(borrowersRegistryAddress);
+        whitelistedPools = _whitelistedPools;
+        borrowersRegistry = IBorrowersRegistry(_borrowersRegistryAddress);
     }
 
     /**
@@ -68,12 +67,22 @@ contract vPrime is ERC20Permit, Ownable {
     }
 
     /**
+* @notice Updates the list of whitelisted SPrime contracts.
+ * @dev Can only be called by the contract owner.
+ * @param newWhitelistedSPrimes An array of addresses representing the new list of whitelisted sPrime contracts.
+ */
+    function updateWhitelistedSPrimes(address[] memory newWhitelistedSPrimes) external onlyOwner {
+        whitelistedSPrime = newWhitelistedSPrimes;
+    }
+
+    /**
  * @notice Checks if the sender is whitelisted.
  * @dev Checks if the sender is whitelisted in the borrowersRegistry or is one of the whitelisted pools.
  * @return bool Returns true if the sender is whitelisted, false otherwise.
  */
     function isWhitelisted(address account) public virtual view returns (bool) {
-        return borrowersRegistry.canBorrow(account) || isWhitelistedPool(account);
+        // TODO: change it in a way that only the vPrimeController will be whitelisted
+        return borrowersRegistry.canBorrow(account) || isWhitelistedPool(account) || isWhitelistedSPrime(account);
     }
 
     /**
@@ -85,6 +94,15 @@ contract vPrime is ERC20Permit, Ownable {
     function isWhitelistedPool(address poolAddress) internal view returns (bool) {
         for (uint i = 0; i < whitelistedPools.length; i++) {
             if (whitelistedPools[i] == poolAddress) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function isWhitelistedSPrime(address sPrimeAddress) internal view returns (bool) {
+        for (uint i = 0; i < whitelistedSPrime.length; i++) {
+            if (whitelistedSPrime[i] == sPrimeAddress) {
                 return true;
             }
         }
