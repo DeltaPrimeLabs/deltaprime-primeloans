@@ -6,13 +6,16 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
+import "@redstone-finance/evm-connector/contracts/core/ProxyConnector.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./interfaces/IIndex.sol";
 import "./interfaces/IRatesCalculator.sol";
 import "./interfaces/IBorrowersRegistry.sol";
 import "./interfaces/IPoolRewarder.sol";
 import "./VestingDistributor.sol";
+import "./tokens/vPrimeController.sol";
 
 
 /**
@@ -21,8 +24,9 @@ import "./VestingDistributor.sol";
  * Depositors are rewarded with the interest rates collected from borrowers.
  * The interest rates calculation is delegated to an external calculator contract.
  */
-contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
+contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyConnector {
     using TransferHelper for address payable;
+    using Math for uint256;
 
     uint256 public totalSupplyCap;
 
@@ -46,6 +50,8 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
     mapping(address => uint256) public lockedUntil;
     mapping(address => uint256) public lockedBalances;
+    vPrimeController public vPrimeControllerContract;
+
 
     function lockDeposit(uint256 amount, uint256 lockTime) public {
         require(balanceOf(msg.sender) >= amount, "Insufficient balance to lock");
@@ -59,6 +65,10 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
         lockedUntil[msg.sender] = block.timestamp + lockTime;
         lockedBalances[msg.sender] = amount;
+    }
+
+    function setVPrimeControllerOwner(vPrimeController _vPrimeController) public onlyOwner {
+        vPrimeControllerContract = _vPrimeController;
     }
 
 
@@ -184,6 +194,18 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
         emit Transfer(account, recipient, amount);
 
+        proxyCalldata(
+            address(vPrimeControllerContract),
+            abi.encodeWithSignature("updateVPrimeSnapshot(address)", msg.sender),
+            false
+        );
+
+        proxyCalldata(
+            address(vPrimeControllerContract),
+            abi.encodeWithSignature("updateVPrimeSnapshot(address)", recipient),
+            false
+        );
+
         return true;
     }
 
@@ -252,6 +274,18 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
         emit Transfer(sender, recipient, amount);
 
+        proxyCalldata(
+            address(vPrimeControllerContract),
+            abi.encodeWithSignature("updateVPrimeSnapshot(address)", sender),
+            false
+        );
+
+        proxyCalldata(
+            address(vPrimeControllerContract),
+            abi.encodeWithSignature("updateVPrimeSnapshot(address)", recipient),
+            false
+        );
+
         return true;
     }
 
@@ -292,6 +326,12 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         }
 
         emit DepositOnBehalfOf(msg.sender, _of, _amount, block.timestamp);
+
+        proxyCalldata(
+            address(vPrimeControllerContract),
+            abi.encodeWithSignature("updateVPrimeSnapshot(address)", _of),
+            false
+        );
     }
 
     function _transferToPool(address from, uint256 amount) internal virtual {
@@ -329,6 +369,12 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         }
 
         emit Withdrawal(msg.sender, _amount, block.timestamp);
+
+        proxyCalldata(
+            address(vPrimeControllerContract),
+            abi.encodeWithSignature("updateVPrimeSnapshot(address)", msg.sender),
+            false
+        );
     }
 
     /**
