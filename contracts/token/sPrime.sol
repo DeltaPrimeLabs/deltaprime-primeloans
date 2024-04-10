@@ -14,6 +14,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "hardhat/console.sol";
 
 // SPrime contract declaration
 contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
@@ -29,7 +30,7 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
 
     // Mapping for storing pair information and user shares
     mapping(uint256 => PairInfo) public pairList;
-    mapping(address => UserShare) public userShares;
+    mapping(address => UserInfo) public userInfo;
     mapping(uint256 => bool) public pairStatus;
 
     // Immutable variables for storing token and pair information
@@ -56,7 +57,7 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
     constructor(address tokenX_, address tokenY_, string memory name_, uint256[] memory distributionX_, uint256[] memory distributionY_, int256[] memory deltaIds_) ERC20(name_, "sPrime"){
         require(deltaIds_.length == distributionX_.length && deltaIds_.length == distributionY_.length, "Length Mismatch");
 
-        (tokenX_, tokenY_) = tokenX_ < tokenY_ ? (tokenX_, tokenY_) : (tokenY_, tokenX_);
+        (tokenX_, tokenY_) = tokenX_ > tokenY_ ? (tokenY_, tokenX_) : (tokenX_, tokenY_);
 
         tokenX = IERC20(tokenX_);
         tokenY = IERC20(tokenY_);
@@ -134,7 +135,7 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
      * @return amountY Token Y Amount to return.
      */
     function _getTokenYFromTokenX(uint256 amountX) internal view returns(uint256 amountY) {
-        (uint128 reserverA, uint128 reserveB) = lbPair.getReserves();
+        (uint128 reserverA, ) = lbPair.getReserves();
         if(reserverA > 0) {
             ILBRouter traderJoeV2Router = ILBRouter(getJoeV2RouterAddress());
             (, uint128 amountXToY, ) = traderJoeV2Router.getSwapOut(lbPair, uint128(amountX), true);
@@ -152,40 +153,42 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
     function _getUpdatedAmounts(uint256 amountX, uint256 amountY) internal returns(uint256, uint256) {
         ILBRouter traderJoeV2Router = ILBRouter(getJoeV2RouterAddress());
         uint256 amountXToY = _getTokenYFromTokenX(amountX);
-        bool swapTokenX = amountY < amountXToY;
-        uint256 diff = swapTokenX ? amountXToY - amountY : amountY - amountXToY;
 
-        if(amountY * _MAX_SIPPIAGE / 100 < diff) {
-            uint256 amountIn = swapTokenX ? amountX * diff / amountXToY / 2 : diff / 2;
+        if(amountXToY != 0) {
+            bool swapTokenX = amountY < amountXToY;
+            uint256 diff = swapTokenX ? amountXToY - amountY : amountY - amountXToY;
 
-            IERC20[] memory tokenPathDynamic = new IERC20[](2);
-            if (swapTokenX) {
-                tokenPathDynamic[0] = tokenX;
-                tokenPathDynamic[1] = tokenY;
-            } else {
-                tokenPathDynamic[0] = tokenY;
-                tokenPathDynamic[1] = tokenX;
+            if(amountY * _MAX_SIPPIAGE / 100 < diff) {
+                uint256 amountIn = swapTokenX ? amountX * diff / amountXToY / 2 : diff / 2;
+
+                IERC20[] memory tokenPathDynamic = new IERC20[](2);
+                if (swapTokenX) {
+                    tokenPathDynamic[0] = tokenX;
+                    tokenPathDynamic[1] = tokenY;
+                } else {
+                    tokenPathDynamic[0] = tokenY;
+                    tokenPathDynamic[1] = tokenX;
+                }
+
+                ILBRouter.Version[] memory versionsDynamic = new ILBRouter.Version[](2);
+                versionsDynamic[0] = ILBRouter.Version.V2_1;
+                versionsDynamic[1] = ILBRouter.Version.V2_1;
+
+                uint256[] memory binStepsDynamic = new uint256[](2);
+                binStepsDynamic[0] = DEFAULT_BIN_STEP;
+                binStepsDynamic[1] = DEFAULT_BIN_STEP;
+
+                ILBRouter.Path memory path = ILBRouter.Path({
+                    pairBinSteps: binStepsDynamic,
+                    versions: versionsDynamic,
+                    tokenPath: tokenPathDynamic
+                });
+
+                uint256 amountOut = traderJoeV2Router.swapExactTokensForTokens(amountIn, 0, path, address(this), block.timestamp + 1000);
+
+                (amountX, amountY) = swapTokenX ? (amountX - amountIn, amountY + amountOut) : (amountX + amountOut, amountY - amountIn);
             }
-
-            ILBRouter.Version[] memory versionsDynamic = new ILBRouter.Version[](2);
-            versionsDynamic[0] = ILBRouter.Version.V2_1;
-            versionsDynamic[1] = ILBRouter.Version.V2_1;
-
-            uint256[] memory binStepsDynamic = new uint256[](2);
-            binStepsDynamic[0] = DEFAULT_BIN_STEP;
-            binStepsDynamic[1] = DEFAULT_BIN_STEP;
-
-            ILBRouter.Path memory path = ILBRouter.Path({
-                pairBinSteps: binStepsDynamic,
-                versions: versionsDynamic,
-                tokenPath: tokenPathDynamic
-            });
-
-            uint256 amountOut = traderJoeV2Router.swapExactTokensForTokens(amountIn, 0, path, address(this), block.timestamp + 1000);
-
-            (amountX, amountY) = swapTokenX ? (amountX - amountIn, amountY + amountOut) : (amountX + amountOut, amountY - amountIn);
         }
-
         return (amountX, amountY);
     }
 
@@ -222,6 +225,13 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
     function _depositToLB(ILBRouter.LiquidityParameters memory liquidityParameters) internal {
         ILBRouter traderJoeV2Router = ILBRouter(getJoeV2RouterAddress());
 
+        tokenX.safeApprove(address(traderJoeV2Router), 0);
+        tokenY.safeApprove(address(traderJoeV2Router), 0);
+
+        tokenX.safeApprove(address(traderJoeV2Router), liquidityParameters.amountX);
+        tokenY.safeApprove(address(traderJoeV2Router), liquidityParameters.amountY);
+        console.log(address(tokenX));
+        console.log(address(lbPair.getTokenX()));
         (uint256 amountXAdded,uint256 amountYAdded,,,uint256[] memory depositIds, ) = traderJoeV2Router.addLiquidity(liquidityParameters);
 
         int256 _activeId = int256(depositIds[0]) - liquidityParameters.deltaIds[0];
@@ -233,15 +243,20 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
 
         PairInfo memory pair = pairList[centerId];
         (uint256 totalBalanceX, uint256 totalBalanceY) = _getBalances(centerId);
-
-        uint256 share = pair.totalShare * _getTotalWeight(amountXAdded, amountYAdded) / _getTotalWeight(totalBalanceX - amountXAdded, totalBalanceY - amountYAdded);
+        
+        uint256 share = _getTotalWeight(amountXAdded, amountYAdded);
+        if(pair.totalShare > 0) {
+            share = pair.totalShare * share / (_getTotalWeight(totalBalanceX, totalBalanceY) - share);
+        }
 
         _mint(_msgSender(), share);
         pair.totalShare += share;
 
-        userShares[_msgSender()] = UserShare({
+        userInfo[_msgSender()] = UserInfo({
             share: share,
-            centerId: centerId
+            centerId: centerId,
+            locked: 0,
+            unlockAt: 0
         });
     }
 
@@ -330,8 +345,8 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
         if(amountX > 0) tokenX.safeTransferFrom(_msgSender(), address(this), amountX);
         if(amountY > 0) tokenY.safeTransferFrom(_msgSender(), address(this), amountY);
 
-        if(userShares[_msgSender()].share > 0) {
-            (uint256 amountXReceived, uint256 amountYReceived) = _withdrawAndUpdateShare(userShares[_msgSender()].centerId, userShares[_msgSender()].share);
+        if(userInfo[_msgSender()].share > 0) {
+            (uint256 amountXReceived, uint256 amountYReceived) = _withdrawAndUpdateShare(userInfo[_msgSender()].centerId, userInfo[_msgSender()].share);
             amountX = amountX + amountXReceived;
             amountY = amountY + amountYReceived;
         }
@@ -353,14 +368,8 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
             distributionY: distributionY,
             to: address(this),
             refundTo: _msgSender(),
-            deadline: block.timestamp + 1000
+            deadline: block.timestamp + 10000
         });
-
-        tokenX.safeApprove(getJoeV2RouterAddress(), 0);
-        tokenY.safeApprove(getJoeV2RouterAddress(), 0);
-
-        tokenX.safeApprove(getJoeV2RouterAddress(), amountX);
-        tokenY.safeApprove(getJoeV2RouterAddress(), amountY);
 
         _depositToLB(liquidityParameters);
     }
@@ -370,9 +379,9 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
     * @param shareWithdraw The amount of share to withdraw.
     */
     function withdraw(uint256 shareWithdraw) external {
-        require(shareWithdraw <= userShares[_msgSender()].share, "Insufficient Balance");
+        require(shareWithdraw <= userInfo[_msgSender()].share, "Insufficient Balance");
 
-        PairInfo storage pair = pairList[userShares[_msgSender()].centerId];
+        PairInfo storage pair = pairList[userInfo[_msgSender()].centerId];
 
         // Withdraw all the tokens from the LB pool and return the amounts and the queued withdrawals.
         _burn(_msgSender(), shareWithdraw);
@@ -384,6 +393,21 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
         tokenY.safeTransfer(_msgSender(), amountY);
     }
 
+    function lockBalance(uint256 amount, uint256 lockPeriod) public {
+        require(balanceOf(msg.sender) >= amount, "Insufficient balance to lock");
+        require(lockPeriod <= 3 * 365 days, "Cannot lock for more than 3 years");
+        
+        userInfo[_msgSender()].locked += amount;
+        userInfo[_msgSender()].unlockAt = block.timestamp + lockPeriod;
+    }
+
+    function releaseBalance() public {
+        require(userInfo[_msgSender()].unlockAt <= block.timestamp, "Still in the lock period");
+
+        userInfo[_msgSender()].locked = 0;
+        userInfo[_msgSender()].unlockAt = 0;
+    }
+
     /**
     * @dev The hook that happens before token transfer.
     * @param from The address to transfer from.
@@ -391,14 +415,19 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
     * @param amount The amount to transfer.
     */
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override {
+
         if (from != address(0)) {
 
-            uint256 centerId = userShares[from].centerId;
+            if(to != address(0)) {
+                require(userInfo[from].share - userInfo[from].locked >= amount, "Insufficient balance to transfer");
+            }
 
-            require(userShares[from].share > amount, "Insufficient");
+            uint256 centerId = userInfo[from].centerId;
+
+            require(userInfo[from].share > amount, "Insufficient");
 
             if (to != address(0)) {
-                UserShare storage userTo = userShares[to];
+                UserInfo storage userTo = userInfo[to];
                 if (userTo.share > 0) {
                     // Should process the rebalance for the existing position and the receiving position
                     (bytes32[] memory liquidityConfigs, ) = _getLiquidityConfigs(userTo.centerId);
@@ -406,7 +435,7 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
 
                     (uint256 beforeBalanceX, uint256 beforeBalanceY) = _getBalances(centerId);
 
-                    (uint256 amountXFrom, uint256 amountYFrom) = _withdrawAndUpdateShare(userShares[from].centerId, amount);
+                    (uint256 amountXFrom, uint256 amountYFrom) = _withdrawAndUpdateShare(userInfo[from].centerId, amount);
 
                     if (amountXFrom > 0) tokenX.safeTransfer(address(lbPair), amountXFrom);
                     if (amountYFrom > 0) tokenY.safeTransfer(address(lbPair), amountYFrom);
@@ -429,7 +458,7 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
             } else {
                 pairList[centerId].totalShare -= amount;
             }
-            userShares[from].share -= amount;
+            userInfo[from].share -= amount;
         }
     }
 }

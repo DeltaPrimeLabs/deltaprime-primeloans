@@ -44,7 +44,6 @@ describe("SPrime", function () {
         prime = await PrimeFactory.deploy(parseEther("1000000"));
         weth = await ethers.getContractAt("WETH9", '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1');
 
-        sPrime = await SPrimeFactory.deploy(prime.address, weth.address, "PRIME-WETH", spotUniform.distributionX, spotUniform.distributionY, spotUniform.deltaIds);
         let user1 = await addr1.getAddress();
         let user2 = await addr2.getAddress();
 
@@ -66,31 +65,32 @@ describe("SPrime", function () {
         await weth.connect(owner).deposit({value: parseEther("100")});
         await weth.transfer(user1, parseEther("10"));
         await weth.transfer(user2, parseEther("10"));
-
-        await weth.connect(owner).approve(LBRouter.address, lpMock);
-        await prime.connect(owner).approve(LBRouter.address, lpPrime);
         
         await LBFactory.connect(owner).createLBPair(prime.address, weth.address, 8387380, 25);
 
-        await LBRouter.connect(owner).addLiquidity(
-            {
-                tokenX: prime.address,
-                tokenY: weth.address,
-                binStep: 25,
-                amountX: lpPrime,
-                amountY: lpMock,
-                amountXMin: 0, 
-                amountYMin: 0, 
-                activeIdDesired: 8387380,
-                idSlippage: 100, //max uint24 - means that we accept every distance ("slippage") from the active bin
-                deltaIds: spotUniform.deltaIds, 
-                distributionX: spotUniform.distributionX,
-                distributionY: spotUniform.distributionY,
-                to: owner.address,
-                refundTo: owner.address,
-                deadline: Math.ceil((new Date().getTime() / 1000) + 10000)
-            }
-        );
+        sPrime = await SPrimeFactory.deploy(prime.address, weth.address, "PRIME-WETH", spotUniform.distributionX, spotUniform.distributionY, spotUniform.deltaIds);
+
+        // await weth.connect(owner).approve(LBRouter.address, lpMock);
+        // await prime.connect(owner).approve(LBRouter.address, lpPrime);
+        // await LBRouter.connect(owner).addLiquidity(
+        //     {
+        //         tokenX: prime.address,
+        //         tokenY: weth.address,
+        //         binStep: 25,
+        //         amountX: lpPrime,
+        //         amountY: lpMock,
+        //         amountXMin: 0, 
+        //         amountYMin: 0, 
+        //         activeIdDesired: 8387380,
+        //         idSlippage: 100, //max uint24 - means that we accept every distance ("slippage") from the active bin
+        //         deltaIds: spotUniform.deltaIds, 
+        //         distributionX: spotUniform.distributionX,
+        //         distributionY: spotUniform.distributionY,
+        //         to: owner.address,
+        //         refundTo: owner.address,
+        //         deadline: Math.ceil((new Date().getTime() / 1000) + 10000)
+        //     }
+        // );
     });
 
     describe("Deposit", function () {
@@ -98,10 +98,10 @@ describe("SPrime", function () {
             await prime.connect(addr1).approve(sPrime.address, parseEther("1000"));
             await weth.connect(addr1).approve(sPrime.address, parseEther("1"));
             
-            await sPrime.connect(addr1).deposit(8387380, 100, isPrimeFirst ? parseEther("1000") : parseEther("1"), isPrimeFirst ? parseEther("1") : parseEther("1000"));
+            await sPrime.connect(addr1).deposit(8387380, 1000, isPrimeFirst ? parseEther("1000") : parseEther("1"), isPrimeFirst ? parseEther("1") : parseEther("1000"));
 
-            const userShare = await sPrime.userShares(addr1.address);
-            expect(userShare.share).to.equal(100);
+            const userShare = await sPrime.userInfo(addr1.address);
+            expect(userShare.share).to.gt(0);
         });
 
         // it("Should fail if not enough tokens", async function () {

@@ -20,9 +20,11 @@ interface ISPrime {
      * @param share The amount of share the user has in the pair.
      * @param centerId The active id of the pair the user has a share in.
      */
-    struct UserShare {
+    struct UserInfo {
         uint256 share;
+        uint256 locked;
         uint256 centerId;
+        uint256 unlockAt;
     }
 
     /**
