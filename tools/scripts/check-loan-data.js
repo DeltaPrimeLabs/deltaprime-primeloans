@@ -19,13 +19,13 @@ let wallet = mnemonicWallet.connect(provider);
 let loan = new ethers.Contract(loanAddress, ARTIFACT.abi, wallet);
 let wrappedLoan;
 
-export const wrapContract = async function wrapContract(contract, assets) {
+export const wrapContract = async function wrapContract(contract, assets, dataServiceId) {
     //for more symbols in data feed it's more optimal to not specify asset list
     const providedAssets = (assets && assets.length <= 5) ? assets : undefined;
 
     return WrapperBuilder.wrap(contract).usingDataService(
         {
-            dataServiceId: DATA_SERVICE_ID,
+            dataServiceId: dataServiceId ? dataServiceId : DATA_SERVICE_ID,
             uniqueSignersCount: 3,
             dataFeeds: providedAssets,
             disablePayloadsDryRun: true
@@ -33,7 +33,7 @@ export const wrapContract = async function wrapContract(contract, assets) {
         CACHE_LAYER_URLS.urls
     );
 };
-run().then(() => console.log('Finished!'))
+// run().then(() => console.log('Finished!'))
 
 async function run() {
     await prepare();

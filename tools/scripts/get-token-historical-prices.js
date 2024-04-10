@@ -1,6 +1,6 @@
 //update for Arbitrum
 const TOKEN_ADDRESSES = require('../../common/addresses/avalanche/token_addresses.json');
-const FILE_NAME = "historical_prices_interval_30s";
+const FILE_NAME = "historical_prices";
 const EthDater = require('ethereum-block-by-date');
 
 const jsonRPC = "https://api.avax.network/ext/bc/C/rpc";
@@ -26,20 +26,21 @@ const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch
 
 // const START_TIMESTAMP = 1701172800;
 //TODO: failed
-const START_TIMESTAMP = 1706700228;
+const START_TIMESTAMP = 1709208000;
 // const END_TIMESTAMP = 1711884247;
-const END_TIMESTAMP = 1706700228 + 90;
-const NO_OF_INTERVALS = 3;
+const END_TIMESTAMP = 1712400720;
+const NO_OF_INTERVALS = 1;
+const INTERVAL = 3600 * 24 * 5; //5 DAYS
 
 
 async function  run() {
-    let json = {};
+    let json = JSON.parse(fs.readFileSync(`${FILE_NAME}.json`))
 
     let timestamp = START_TIMESTAMP;
 
     let dates = [];
     let start = START_TIMESTAMP;
-    const interval = 30;
+    const interval = INTERVAL;
     let iterationEndTimestamp = START_TIMESTAMP + NO_OF_INTERVALS * interval;
     let end = start + interval;
 
