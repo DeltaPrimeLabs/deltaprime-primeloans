@@ -1,6 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-import { parseEther } from 'viem';
+import { formatEther, parseEther } from 'viem';
 import {
     ILBFactory,
     ILBRouter, ILBToken,
@@ -34,8 +34,6 @@ describe("SPrime", function () {
     // Contracts
     let weth, prime, sPrime;
 
-    let isPrimeFirst;
-
     beforeEach(async function () {
 
         SPrimeFactory = await ethers.getContractFactory("SPrime");
@@ -47,19 +45,9 @@ describe("SPrime", function () {
         let user1 = await addr1.getAddress();
         let user2 = await addr2.getAddress();
 
-        if(prime.address < weth.address ) {
-            isPrimeFirst = true;
-        } else {
-            isPrimeFirst = false;
-        }
-
         await prime.transfer(user1, parseEther("100000"));
         await prime.transfer(user2, parseEther("100000"));
 
-        let lpPrime = parseEther("1000");
-        let lpMock = parseEther("1");
-
-        let LBRouter = new ethers.Contract('0xb4315e873dBcf96Ffd0acd8EA43f689D8c20fB30', LBRouterAbi) as ILBRouter;
         let LBFactory = new ethers.Contract('0x8e42f2F4101563bF679975178e880FD87d3eFd4e', LBFactoryAbi) as ILBFactory;
 
         await weth.connect(owner).deposit({value: parseEther("100")});
@@ -70,27 +58,6 @@ describe("SPrime", function () {
 
         sPrime = await SPrimeFactory.deploy(prime.address, weth.address, "PRIME-WETH", spotUniform.distributionX, spotUniform.distributionY, spotUniform.deltaIds);
 
-        // await weth.connect(owner).approve(LBRouter.address, lpMock);
-        // await prime.connect(owner).approve(LBRouter.address, lpPrime);
-        // await LBRouter.connect(owner).addLiquidity(
-        //     {
-        //         tokenX: prime.address,
-        //         tokenY: weth.address,
-        //         binStep: 25,
-        //         amountX: lpPrime,
-        //         amountY: lpMock,
-        //         amountXMin: 0, 
-        //         amountYMin: 0, 
-        //         activeIdDesired: 8387380,
-        //         idSlippage: 100, //max uint24 - means that we accept every distance ("slippage") from the active bin
-        //         deltaIds: spotUniform.deltaIds, 
-        //         distributionX: spotUniform.distributionX,
-        //         distributionY: spotUniform.distributionY,
-        //         to: owner.address,
-        //         refundTo: owner.address,
-        //         deadline: Math.ceil((new Date().getTime() / 1000) + 10000)
-        //     }
-        // );
     });
 
     describe("Deposit", function () {
@@ -98,52 +65,116 @@ describe("SPrime", function () {
             await prime.connect(addr1).approve(sPrime.address, parseEther("1000"));
             await weth.connect(addr1).approve(sPrime.address, parseEther("1"));
             
-            await sPrime.connect(addr1).deposit(8387380, 1000, isPrimeFirst ? parseEther("1000") : parseEther("1"), isPrimeFirst ? parseEther("1") : parseEther("1000"));
+            await sPrime.connect(addr1).deposit(8387380, 1000, parseEther("1000"), parseEther("1"));
 
             const userShare = await sPrime.userInfo(addr1.address);
             expect(userShare.share).to.gt(0);
         });
 
-        // it("Should fail if not enough tokens", async function () {
-        //     await expect(sPrime.connect(addr2).deposit(1, 1, 1000, 2000)).to.be.revertedWith("Insufficient Balance");
-        // });
+        it("Should deposit two times without rebalance", async function () {
+            await prime.connect(addr1).approve(sPrime.address, parseEther("2000"));
+            await weth.connect(addr1).approve(sPrime.address, parseEther("2"));
+            
+            await sPrime.connect(addr1).deposit(8387380, 1000, parseEther("1000"), parseEther("1"));
 
-        // it("Should fail if invalid active id", async function () {
-        //     await expect(sPrime.connect(addr1).deposit(0, 1, 100, 200)).to.be.revertedWith("Invalid active id");
-        // });
+            let userShare = await sPrime.userInfo(addr1.address);
+            expect(userShare.share).to.gt(0);
+
+            await sPrime.connect(addr1).deposit(8387380, 1000, parseEther("1000"), parseEther("1"));
+
+            userShare = await sPrime.userInfo(addr1.address);
+            expect(userShare.share).to.gt(0);
+        });
+
+        it("Should deposit with token swap to use equal amount", async function () {
+            await prime.connect(addr2).approve(sPrime.address, parseEther("10000"));
+            await weth.connect(addr2).approve(sPrime.address, parseEther("10"));
+            
+            await sPrime.connect(addr2).deposit(8387380, 1000, parseEther("10000"), parseEther("10"));
+
+
+            await prime.connect(addr1).approve(sPrime.address, parseEther("2000"));
+            await weth.connect(addr1).approve(sPrime.address, parseEther("2"));
+            
+            await sPrime.connect(addr1).deposit(8387380, 1000, parseEther("100"), parseEther("0.1"));
+
+            let userShare = await sPrime.userInfo(addr1.address);
+            expect(userShare.share).to.gt(0);
+            const oldShare = userShare.share;
+            await sPrime.connect(addr1).deposit(8387380, 1000, parseEther("1"), parseEther("0.05"));
+
+            userShare = await sPrime.userInfo(addr1.address);
+            expect(userShare.share).to.gt(oldShare);
+        });
+
+        it("Should fail if not enough tokens", async function () {
+            await prime.connect(addr2).approve(sPrime.address, parseEther("100000"));
+            await weth.connect(addr2).approve(sPrime.address, parseEther("100"));
+            await expect(sPrime.connect(addr2).deposit(8387380, 1000, parseEther("100000"), parseEther("100"))).to.be.revertedWith("ERC20: transfer amount exceeds balance");
+        });
+
+        it("Should fail if invalid active id", async function () {
+            await prime.connect(addr1).approve(sPrime.address, parseEther("1000"));
+            await weth.connect(addr1).approve(sPrime.address, parseEther("1"));
+            
+            await expect(sPrime.connect(addr1).deposit(83873, 1000, parseEther("1000"), parseEther("1"))).to.be.revertedWith("");
+        });
     });
 
-    // describe("Withdraw", function () {
-    //     it("Should withdraw correctly", async function () {
-    //         await sPrime.connect(addr1).deposit(1, 1, 100, 200);
-    //         await sPrime.connect(addr1).withdraw(50);
-    //         const userShare = await sPrime.userShares(addr1.address);
-    //         expect(userShare.share).to.equal(50);
-    //     });
+    describe("Withdraw", function () {
+        it("Should withdraw correctly", async function () {
+            await prime.connect(addr1).approve(sPrime.address, parseEther("1000"));
+            await weth.connect(addr1).approve(sPrime.address, parseEther("1"));
+            
+            await sPrime.connect(addr1).deposit(8387380, 1000, parseEther("1000"), parseEther("1"));
 
-    //     it("Should fail if not enough shares", async function () {
-    //         await sPrime.connect(addr1).deposit(1, 1, 100, 200);
-    //         await expect(sPrime.connect(addr1).withdraw(200)).to.be.revertedWith("Insufficient Balance");
-    //     });
+            let userShare = await sPrime.userInfo(addr1.address);
+            await sPrime.connect(addr1).withdraw(userShare.share);
 
-    //     it("Should fail if invalid active id", async function () {
-    //         await expect(sPrime.connect(addr1).withdraw(0)).to.be.revertedWith("Invalid active id");
-    //     });
-    // });
+            userShare = await sPrime.userInfo(addr1.address);
+            expect(userShare.share).to.equal(0);
+        });
 
-    // describe("_beforeTokenTransfer", function () {
-    //     it("Should transfer tokens correctly", async function () {
-    //         await sPrime.connect(addr1).deposit(1, 1, 100, 200);
-    //         await sPrime.connect(addr1).transfer(addr2.address, 50);
-    //         const userShare = await sPrime.balanceOf(addr2.address);
-    //         expect(userShare).to.equal(50);
-    //     });
+        it("Should receive different amount because of token swap", async function () {
+            await prime.connect(addr2).approve(sPrime.address, parseEther("10000"));
+            await weth.connect(addr2).approve(sPrime.address, parseEther("10"));
+            
+            await sPrime.connect(addr2).deposit(8387380, 1000, parseEther("10000"), parseEther("10"));
 
-    //     it("Should fail if not enough balance", async function () {
-    //         await sPrime.connect(addr1).deposit(1, 1, 100, 200);
-    //         await expect(sPrime.connect(addr1).transfer(addr2.address, 200)).to.be.revertedWith("Insufficient Balance");
-    //     });
-    // });
+
+            await prime.connect(addr1).approve(sPrime.address, parseEther("2000"));
+            await weth.connect(addr1).approve(sPrime.address, parseEther("2"));
+            
+            await sPrime.connect(addr1).deposit(8387380, 1000, parseEther("100"), parseEther("0.1"));
+
+            let userShare = await sPrime.userInfo(addr1.address);
+            expect(userShare.share).to.gt(0);
+            const oldShare = userShare.share;
+            await sPrime.connect(addr1).deposit(8387380, 1000, parseEther("1"), parseEther("0.05"));
+
+            userShare = await sPrime.userInfo(addr1.address);
+            expect(userShare.share).to.gt(0);
+            const initialPrimeBalance = await prime.balanceOf(addr1.address);
+            const initialWEthBalance = await weth.balanceOf(addr1.address);
+            await sPrime.connect(addr1).withdraw(userShare.share);
+            const afterPrimeBalance = await prime.balanceOf(addr1.address);
+            const afterWEthBalance = await weth.balanceOf(addr1.address);
+
+            console.log("Input Prime Amount: ", parseEther("1010"));
+            console.log("Received Prime After Withdraw: ", afterPrimeBalance - initialPrimeBalance);
+            console.log("Input WETH Amount: ", parseEther("2"));
+            console.log("Received WETH After Withdraw: ", afterWEthBalance - initialWEthBalance);
+        });
+        
+        it("Should fail if trys to withdraw more shares than the balance", async function () {
+            await prime.connect(addr1).approve(sPrime.address, parseEther("1000"));
+            await weth.connect(addr1).approve(sPrime.address, parseEther("1"));
+            
+            await sPrime.connect(addr1).deposit(8387380, 1000, parseEther("1000"), parseEther("1"));
+
+            await expect(sPrime.connect(addr1).withdraw(parseEther("1000"))).to.be.revertedWith("Insufficient Balance");
+        });
+    });
 
     describe("getJoeV2RouterAddress", function () {
         it("Should return correct address", async function () {
