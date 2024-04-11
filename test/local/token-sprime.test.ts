@@ -117,7 +117,7 @@ describe("SPrime", function () {
             await prime.connect(addr1).approve(sPrime.address, parseEther("1000"));
             await weth.connect(addr1).approve(sPrime.address, parseEther("1"));
             
-            await expect(sPrime.connect(addr1).deposit(83873, 1000, parseEther("1000"), parseEther("1"))).to.be.revertedWith("");
+            await expect(sPrime.connect(addr1).deposit(83873, 1000, parseEther("1000"), parseEther("1"))).to.be.revertedWith("Slippage High");
         });
     });
 

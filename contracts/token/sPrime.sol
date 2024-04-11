@@ -215,47 +215,6 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
     }
 
     /**
-    * @dev Deposits tokens to the LB.
-    * @param liquidityParameters The parameters for the liquidity.
-    */
-    function _depositToLB(ILBRouter.LiquidityParameters memory liquidityParameters) internal {
-        ILBRouter traderJoeV2Router = ILBRouter(getJoeV2RouterAddress());
-
-        tokenX.safeApprove(address(traderJoeV2Router), 0);
-        tokenY.safeApprove(address(traderJoeV2Router), 0);
-
-        tokenX.safeApprove(address(traderJoeV2Router), liquidityParameters.amountX);
-        tokenY.safeApprove(address(traderJoeV2Router), liquidityParameters.amountY);
-
-        (uint256 amountXAdded,uint256 amountYAdded,,,uint256[] memory depositIds, ) = traderJoeV2Router.addLiquidity(liquidityParameters);
-
-        int256 _activeId = int256(depositIds[0]) - liquidityParameters.deltaIds[0];
-        uint256 centerId = uint256(_activeId);
-
-        if(pairStatus[centerId] == false) {
-            _addBins(centerId, depositIds);
-        }
-
-        PairInfo storage pair = pairList[centerId];
-        (uint256 totalBalanceX, uint256 totalBalanceY) = _getBalances(centerId);
-        
-        uint256 share = _getTotalWeight(amountXAdded, amountYAdded);
-        if(pair.totalShare > 0) {
-            share = pair.totalShare * share / (_getTotalWeight(totalBalanceX, totalBalanceY) - share);
-        }
-
-        _mint(_msgSender(), share);
-        pair.totalShare += share;
-
-        userInfo[_msgSender()] = UserInfo({
-            share: share,
-            centerId: centerId,
-            locked: 0,
-            unlockAt: 0
-        });
-    }
-
-    /**
     * @dev Withdraws tokens from the lbPair and applies the AUM annual fee. This function will also reset the range.
     * @param centerId The active Id of the pair
     * @param share The amount of share to withdraw.
@@ -336,35 +295,66 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
     * @param amountY The amount of token Y to deposit.
     */
     function deposit(uint256 activeIdDesired, uint256 idSlippage, uint256 amountX, uint256 amountY) public {
-
         if(amountX > 0) tokenX.safeTransferFrom(_msgSender(), address(this), amountX);
         if(amountY > 0) tokenY.safeTransferFrom(_msgSender(), address(this), amountY);
 
         if(userInfo[_msgSender()].share > 0) {
             (amountX, amountY) = _withdrawAndUpdateShare(userInfo[_msgSender()].centerId, userInfo[_msgSender()].share);
         }
-
+        
         (amountX, amountY) = _getUpdatedAmounts(amountX, amountY);
+        
+        uint256 activeId = lbPair.getActiveId();
+        require(activeIdDesired + idSlippage >= activeId && activeId + idSlippage >= activeIdDesired, "Slippage High");
+        
+        uint256 share = _depositToLB(_msgSender(), activeId, amountX, amountY);
 
-        ILBRouter.LiquidityParameters memory liquidityParameters = ILBRouter.LiquidityParameters({
-            tokenX: tokenX,
-            tokenY: tokenY,
-            binStep: DEFAULT_BIN_STEP,
-            amountX: amountX,
-            amountY: amountY,
-            amountXMin: 0,
-            amountYMin: 0,
-            activeIdDesired: activeIdDesired,
-            idSlippage: idSlippage,
-            deltaIds: deltaIds,
-            distributionX: distributionX,
-            distributionY: distributionY,
-            to: address(this),
-            refundTo: _msgSender(),
-            deadline: block.timestamp + 10000
-        });
+        userInfo[_msgSender()].centerId = activeId;
+        userInfo[_msgSender()].share = share;
+    }
 
-        _depositToLB(liquidityParameters);
+    /**
+     * @dev Deposits tokens into the lbPair.
+     * @param user The user address to receive sPrime.
+     * @param centerId The active Id.
+     * @param amountX The amount of token X to deposit.
+     * @param amountY The amount of token Y to deposit.
+     * @return share The amount sPrime token to mint.
+     */
+    function _depositToLB(
+        address user,
+        uint256 centerId,
+        uint256 amountX,
+        uint256 amountY
+    ) internal returns (uint256 share) {
+
+        (bytes32[] memory liquidityConfigs, uint256[] memory depositIds) = _getLiquidityConfigs(centerId);
+
+        (uint256 beforeBalanceX, uint256 beforeBalanceY) = _getBalances(centerId);
+
+        if(pairStatus[centerId] == false) {
+            _addBins(centerId, depositIds);
+        }
+
+        PairInfo storage pair = pairList[centerId];
+
+        if (amountX > 0) tokenX.safeTransfer(address(lbPair), amountX);
+        if (amountY > 0) tokenY.safeTransfer(address(lbPair), amountY);
+
+        // Mint the liquidity tokens.
+        lbPair.mint(address(this), liquidityConfigs, user);
+
+        (uint256 afterBalanceX, uint256 afterBalanceY) = _getBalances(centerId);
+        uint256 afterWeight = _getTotalWeight(afterBalanceX, afterBalanceY);
+        uint256 beforeWeight = _getTotalWeight(beforeBalanceX, beforeBalanceY);
+
+        share = afterWeight;
+        if(pair.totalShare > 0) {
+            share = pair.totalShare * (afterWeight - beforeWeight) / beforeWeight;
+        }
+
+        _mint(user, share);
+        pair.totalShare += share;
     }
 
     /**
@@ -421,27 +411,13 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
 
             if (to != address(0)) {
                 UserInfo storage userTo = userInfo[to];
-                if (userTo.share > 0) {
-                    // Should process the rebalance for the existing position and the receiving position
-                    (bytes32[] memory liquidityConfigs, ) = _getLiquidityConfigs(userTo.centerId);
-                    PairInfo memory pair = pairList[userTo.centerId];
-
-                    (uint256 beforeBalanceX, uint256 beforeBalanceY) = _getBalances(centerId);
-
+                if(userTo.centerId == centerId) {
+                    userTo.share += amount;
+                } else if (userTo.share > 0) {
+                    // Should process the rebalance for the existing position and the receiving position                                        
                     (uint256 amountXFrom, uint256 amountYFrom) = _withdrawAndUpdateShare(userInfo[from].centerId, amount);
 
-                    if (amountXFrom > 0) tokenX.safeTransfer(address(lbPair), amountXFrom);
-                    if (amountYFrom > 0) tokenY.safeTransfer(address(lbPair), amountYFrom);
-
-                    // Mint the liquidity tokens.
-                    lbPair.mint(address(this), liquidityConfigs, address(this));
-
-                    (uint256 afterBalanceX, uint256 afterBalanceY) = _getBalances(centerId);
-                    uint256 afterWeight = _getTotalWeight(afterBalanceX, afterBalanceY);
-                    uint256 beforeWeight = _getTotalWeight(beforeBalanceX, beforeBalanceY);
-
-                    uint256 share = pair.totalShare * (afterWeight - beforeWeight) / beforeWeight;
-
+                    uint256 share = _depositToLB(to, userTo.centerId, amountXFrom, amountYFrom);
                     userTo.share += share;
 
                 } else {
@@ -450,6 +426,9 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
                 }
             } else {
                 pairList[centerId].totalShare -= amount;
+                if(pairList[centerId].totalShare == 0) {
+                    pairStatus[centerId] = false;
+                }
             }
             userInfo[from].share -= amount;
         }
