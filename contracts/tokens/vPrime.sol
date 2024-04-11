@@ -7,8 +7,8 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "../interfaces/IBorrowersRegistry.sol";
 import {vPrimeController} from "./vPrimeController.sol";
+import "hardhat/console.sol";
 
 /**
  * @dev Extension of ERC20 to support Compound-like voting and delegation. This version is more generic than Compound's,
@@ -28,86 +28,38 @@ import {vPrimeController} from "./vPrimeController.sol";
 contract vPrime is ERC20Permit, Ownable {
     struct Checkpoint {
         uint32 blockTimestamp;
-        uint224 balance;
+        uint256 balance;
         int256 rate; // Tokens per second
         uint256 maxVPrimeCap;
     }
 
     mapping(address => Checkpoint[]) private _checkpoints;
     Checkpoint[] private _totalSupplyCheckpoints;
-    IBorrowersRegistry public borrowersRegistry;
-    // add a storage address array that will store addreses of whitelisted pools
-    address[] public whitelistedPools;
-    address[] public whitelistedSPrime;
+    address public vPrimeControllerAddress;
 
-    constructor(address[] memory _whitelistedPools, address _borrowersRegistryAddress)
+    constructor()
     ERC20("vPRIME Governance Token", "vPRIME")
     ERC20Permit("vPRIME Governance Token")
-    {
-        whitelistedPools = _whitelistedPools;
-        borrowersRegistry = IBorrowersRegistry(_borrowersRegistryAddress);
+    {}
+
+    /**
+    * @notice Sets the address of the vPrimeController contract.
+    * @dev Can only be called by the contract owner.
+    * @param _vPrimeControllerAddress The address of the vPrimeController contract.
+    */
+    function setVPrimeControllerAddress(address _vPrimeControllerAddress) external onlyOwner {
+        vPrimeControllerAddress = _vPrimeControllerAddress;
     }
 
     /**
- * @notice Sets the address of the BorrowersRegistry contract.
- * @dev Can only be called by the contract owner.
- * @param setBorrowersRegistryAddress The address of the new BorrowersRegistry contract.
- */
-    function setBorrowersRegistry(address setBorrowersRegistryAddress) external onlyOwner {
-        borrowersRegistry = IBorrowersRegistry(setBorrowersRegistryAddress);
-    }
-
-    /**
- * @notice Updates the list of whitelisted pools.
- * @dev Can only be called by the contract owner.
- * @param newWhitelistedPools An array of addresses representing the new list of whitelisted pools.
- */
-    function updateWhitelistedPools(address[] memory newWhitelistedPools) external onlyOwner {
-        whitelistedPools = newWhitelistedPools;
-    }
-
-    /**
-* @notice Updates the list of whitelisted SPrime contracts.
- * @dev Can only be called by the contract owner.
- * @param newWhitelistedSPrimes An array of addresses representing the new list of whitelisted sPrime contracts.
- */
-    function updateWhitelistedSPrimes(address[] memory newWhitelistedSPrimes) external onlyOwner {
-        whitelistedSPrime = newWhitelistedSPrimes;
-    }
-
-    /**
- * @notice Checks if the sender is whitelisted.
- * @dev Checks if the sender is whitelisted in the borrowersRegistry or is one of the whitelisted pools.
- * @return bool Returns true if the sender is whitelisted, false otherwise.
- */
+    * @notice Checks if an address is whitelisted.
+    * @param account The address to check.
+    * @return bool Returns true if the address is whitelisted, false otherwise.
+    */
     function isWhitelisted(address account) public virtual view returns (bool) {
-        // TODO: change it in a way that only the vPrimeController will be whitelisted
-        return borrowersRegistry.canBorrow(account) || isWhitelistedPool(account) || isWhitelistedSPrime(account);
+        return account == vPrimeControllerAddress;
     }
 
-    /**
- * @notice Checks if a pool address is whitelisted.
- * @dev Iterates through the list of whitelisted pools and checks if the provided pool address is in the list.
- * @param poolAddress The address of the pool to check.
- * @return bool Returns true if the pool address is whitelisted, false otherwise.
- */
-    function isWhitelistedPool(address poolAddress) internal view returns (bool) {
-        for (uint i = 0; i < whitelistedPools.length; i++) {
-            if (whitelistedPools[i] == poolAddress) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    function isWhitelistedSPrime(address sPrimeAddress) internal view returns (bool) {
-        for (uint i = 0; i < whitelistedSPrime.length; i++) {
-            if (whitelistedSPrime[i] == sPrimeAddress) {
-                return true;
-            }
-        }
-        return false;
-    }
 
     // Function to adjust balance for a whitelisted address
     // It will be called either by PrimeAccount contract (upon deposit/withdrawal) or by any of the whitelisted pools (for despositors)
@@ -122,8 +74,14 @@ contract vPrime is ERC20Permit, Ownable {
         uint256 lastRecordedVotes = getVotes(user);
         uint256 currentVotesBalance = balanceOf(user);
         int256 votesDiff = int256(currentVotesBalance) - int256(lastRecordedVotes);
+        console.log('last recorded votes: %s', lastRecordedVotes);
+        console.log('current votes balance: %s', currentVotesBalance);
+        if(votesDiff > 0){
+            console.log('votes diff: %s', uint256(votesDiff));
+        }
         if(votesDiff > 0) {
             _mint(user, uint256(votesDiff));
+            console.log('WRITING CKP FOR user: %s: ', user);
             _writeCheckpoint(_checkpoints[user], _add, uint256(votesDiff), rate, newMaxVPrimeCap);
         } else if(votesDiff < 0) {
             _burn(user, uint256(-votesDiff));
@@ -281,7 +239,7 @@ contract vPrime is ERC20Permit, Ownable {
     function _mint(address account, uint256 amount) internal virtual override {
         super._mint(account, amount);
         require(totalSupply() <= _maxSupply(), "ERC20Votes: total supply risks overflowing votes");
-
+        console.log('writing ckp for total supply');
         _writeCheckpointWithoutRateAndCap(_totalSupplyCheckpoints, _add, amount);
     }
 
@@ -300,15 +258,22 @@ contract vPrime is ERC20Permit, Ownable {
         if(_checkpoints[account].length == 0) {
             return 0;
         }
+        console.log("ckp length: ", _checkpoints[account].length);
         Checkpoint memory cp = _checkpoints[account][_checkpoints[account].length - 1];
 
         uint256 elapsedTime = block.timestamp - cp.blockTimestamp;
         uint256 newBalance;
 
         if (cp.rate >= 0) {
+            console.log("Rate is positive", uint256(cp.rate));
+            console.log("Elapsed time", elapsedTime);
+            console.log("elapsed time in days", elapsedTime / 1 days);
             uint256 balanceIncrease = uint256(cp.rate) * elapsedTime;
+            console.log("Balance increase", balanceIncrease);
             newBalance = cp.balance + balanceIncrease;
+            console.log("New balance", newBalance);
             if (newBalance > cp.maxVPrimeCap) {
+                console.log("New balance exceeds max cap", cp.maxVPrimeCap);
                 return cp.maxVPrimeCap;
             }
         } else {
@@ -345,25 +310,33 @@ contract vPrime is ERC20Permit, Ownable {
     ) private returns (uint256 oldWeight, uint256 newWeight) {
         uint256 pos = ckpts.length;
 
-        unchecked {
-            Checkpoint memory oldCkpt = pos == 0 ? Checkpoint(0, 0, 0, 0) : _unsafeAccess(ckpts, pos - 1);
-
-            oldWeight = oldCkpt.balance;
-            newWeight = op(oldWeight, delta);
-
-            if (pos > 0 && oldCkpt.blockTimestamp == clock()) {
-                _unsafeAccess(ckpts, pos - 1).balance = SafeCast.toUint224(newWeight);
-                _unsafeAccess(ckpts, pos - 1).rate = rate;
-                _unsafeAccess(ckpts, pos - 1).maxVPrimeCap = maxVPrimeCap;
-            } else {
-                ckpts.push(Checkpoint({
-                    blockTimestamp: SafeCast.toUint32(clock()),
-                    balance: SafeCast.toUint224(newWeight),
-                    rate: rate,
-                    maxVPrimeCap: maxVPrimeCap
-                }));
-            }
+        // for loop console log all ckpts balances
+        for (uint256 i = 0; i < pos; i++) {
+            console.log('balance at pos %s: %s', i, ckpts[i].balance);
         }
+
+        console.log('pos: ', pos);
+        Checkpoint memory oldCkpt = pos == 0 ? Checkpoint(0, 0, 0, 0) : ckpts[pos - 1];
+
+        oldWeight = oldCkpt.balance;
+        newWeight = op(oldWeight, delta);
+        console.log("Old weight: %s, New weight: %s", oldWeight, newWeight);
+
+        if (pos > 0 && oldCkpt.blockTimestamp == clock()) {
+            console.log('case 1');
+            oldCkpt.balance = newWeight;
+            oldCkpt.rate = rate;
+            oldCkpt.maxVPrimeCap = maxVPrimeCap;
+        } else {
+            console.log('case 2');
+            ckpts.push(Checkpoint({
+                blockTimestamp: SafeCast.toUint32(clock()),
+                balance: newWeight,
+                rate: rate,
+                maxVPrimeCap: maxVPrimeCap
+            }));
+        }
+
     }
 
     function _add(uint256 a, uint256 b) private pure returns (uint256) {

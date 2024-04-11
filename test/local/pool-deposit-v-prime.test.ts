@@ -20,7 +20,7 @@ import {
     convertTokenPricesMapToMockPrices,
     customError,
     fromWei,
-    getFixedGasSigners, PoolAsset,
+    getFixedGasSigners, pool, PoolAsset,
     time, toBytes32,
     toWei
 } from "../_helpers";
@@ -58,7 +58,7 @@ describe('Pool with variable utilisation interest rates', () => {
         mockVariableUtilisationRatesCalculator;
 
     before(async () => {
-        [owner, depositor, depositor2, depositor3] = await getFixedGasSigners(10000000);
+        [owner, depositor, depositor2, depositor3] = await getFixedGasSigners(100000000);
         mockVariableUtilisationRatesCalculator = await deployMockContract(owner, VariableUtilisationRatesCalculatorArtifact.abi);
         mockToken = (await deployContract(owner, MockTokenArtifact, [[depositor.address, depositor2.address, depositor3.address]])) as MockToken;
         let supportedAssets = [new Asset(toBytes32("MOCK_TOKEN"), mockToken.address)];
@@ -67,6 +67,23 @@ describe('Pool with variable utilisation interest rates', () => {
 
         poolContract = (await deployContract(owner, PoolArtifact)) as Pool;
         let lendingPools = [new PoolAsset(toBytes32("MOCK_TOKEN"), poolContract.address)];
+
+        const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
+        const depositIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
+        await depositIndex.initialize(poolContract.address);
+        const borrowingIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
+        await borrowingIndex.initialize(poolContract.address);
+
+        await poolContract.initialize(
+            mockVariableUtilisationRatesCalculator.address,
+            borrowersRegistry.address,
+            depositIndex.address,
+            borrowingIndex.address,
+            mockToken.address,
+            ZERO,
+            0
+        );
+
         smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
 
         let tokenManager = await deployContract(
@@ -100,10 +117,8 @@ describe('Pool with variable utilisation interest rates', () => {
         vPrimeContract = await deployContract(
             owner,
             VPrimeArtifact,
-            [[poolContract.address], smartLoansFactory.address]
+            []
         ) as Contract;
-
-        await vPrimeContract.updateWhitelistedSPrimes([sPrimeContract.address]);
 
         vPrimeControllerContract = await deployContract(
             owner,
@@ -117,27 +132,10 @@ describe('Pool with variable utilisation interest rates', () => {
             dataPoints: MOCK_PRICES,
         });
 
-        await vPrimeContract.updateWhitelistedSPrimes([vPrimeControllerContract.address]);
-        console.log(`vPrimeControllerContract: ${vPrimeControllerContract.address}`)
+        await poolContract.setVPrimeController(vPrimeControllerContract.address);
 
+        await vPrimeContract.setVPrimeControllerAddress(vPrimeControllerContract.address);
         await sPrimeContract.setVPrimeControllerContract(vPrimeControllerContract.address);
-
-
-        const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
-        const depositIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
-        await depositIndex.initialize(poolContract.address);
-        const borrowingIndex = (await deployContract(owner, LinearIndexArtifact)) as LinearIndex;
-        await borrowingIndex.initialize(poolContract.address);
-
-        await poolContract.initialize(
-            mockVariableUtilisationRatesCalculator.address,
-            borrowersRegistry.address,
-            depositIndex.address,
-            borrowingIndex.address,
-            mockToken.address,
-            ZERO,
-            0
-        );
     });
 
     it("should check initial pool, vPrime, sPrime balances and vPrimePairsCount", async () => {
@@ -200,13 +198,115 @@ describe('Pool with variable utilisation interest rates', () => {
         expect(await vPrimeContract.balanceOf(depositor.address)).to.equal(0);
         expect(fromWei(await sPrimeContract.balanceOf(depositor.address))).to.equal(1);
         expect(await vPrimeControllerContract.getDepositorVPrimePairsCount(depositor.address)).to.equal(1);
-        expect(fromWei(await vPrimeControllerContract.getUserDepositDollarValueAcrossWhiteListedPools(depositor.address))).to.closeTo(10, 1e-6);
+        expect(fromWei(await vPrimeControllerContract.getUserDepositDollarValueAcrossWhiteListedPools(depositor.address))).to.be.closeTo(10, 1e-6);
         expect(fromWei(await vPrimeControllerContract.getUserSPrimeDollarValue(depositor.address))).to.equal(2);
-        let rateAndMaxCap = await vPrimeControllerContract.getDepositorVPrimeRateAndMaxCap(depositor.address);
-        let rate = rateAndMaxCap[0];
-        let maxCap = rateAndMaxCap[1];
-        expect(maxCap.toNumber()).to.closeTo(15, 1e-6);
-        expect(rate).to.closeTo(158548959918, 1);
+        const [rate, maxCap] = await vPrimeControllerContract.getDepositorVPrimeRateAndMaxCap(depositor.address);
+        const newRate = (15-0) * 1e18 / 365 / 24 / 60 / 60 / 3;
+        expect(fromWei(maxCap)).to.be.closeTo(15, 1e-6);
+        expect(rate).to.be.closeTo(newRate.toFixed(0), 1000);
+    });
+
+    // check vPrime balance after 1 year
+    it("should check vPrime balance after 1 year", async () => {
+        const oneYear = 365 * 24 * 60 * 60;
+        await time.increase(oneYear);
+        expect(fromWei(await vPrimeContract.balanceOf(depositor.address))).to.be.closeTo(5, 1e-6);
+    });
+
+    // should deposit another 10 MOCK_TOKENs
+    it("depositor should deposit another 10 MOCK_TOKENs", async () => {
+        let wrappedPool = WrapperBuilder
+            // @ts-ignore
+            .wrap(poolContract.connect(depositor))
+            .usingSimpleNumericMock({
+                mockSignersCount: 3,
+                dataPoints: MOCK_PRICES,
+            });
+        await mockToken.connect(depositor).approve(poolContract.address, toWei("10"));
+        await wrappedPool.deposit(toWei("10"));
+        expect(await mockToken.balanceOf(poolContract.address)).to.equal(toWei("20"));
+
+        const currentDeposits = await poolContract.balanceOf(depositor.address);
+        expect(fromWei(currentDeposits)).to.be.closeTo(20.5, 1e-6);
+
+        expect(fromWei(await vPrimeContract.balanceOf(depositor.address))).to.be.closeTo(5, 1e-6);
+        expect(fromWei(await sPrimeContract.balanceOf(depositor.address))).to.equal(1);
+        expect(await vPrimeControllerContract.getDepositorVPrimePairsCount(depositor.address)).to.equal(2);
+        expect(fromWei(await vPrimeControllerContract.getUserDepositDollarValueAcrossWhiteListedPools(depositor.address))).to.be.closeTo(20.5, 1e-6);
+        expect(fromWei(await vPrimeControllerContract.getUserSPrimeDollarValue(depositor.address))).to.equal(2);
+        const [rate, maxCap] = await vPrimeControllerContract.getDepositorVPrimeRateAndMaxCap(depositor.address);
+        expect(fromWei(maxCap)).to.be.closeTo(30, 1e-6);
+        const newRate = (30 - 5) * 1e18 / 365 / 24 / 60 / 60 / 3;
+        expect(rate).to.be.closeTo(newRate.toFixed(0), 100000);
+    });
+
+    // Should check vPrime balance after 2 years
+    it("should check vPrime balance after 2 years", async () => {
+        const twoYears = 2 * 365 * 24 * 60 * 60;
+        await time.increase(twoYears);
+        expect(fromWei(await vPrimeContract.balanceOf(depositor.address))).to.be.closeTo(21.666667, 1e-6);
+    });
+
+    // Should withdraw 10 MOCK_TOKENs and the vPrime balance should decrease to 15 over 14 days
+    it("should withdraw 10 MOCK_TOKENs and the vPrime balance should decrease to 15 over 14 days", async () => {
+        let wrappedPool = WrapperBuilder
+            // @ts-ignore
+            .wrap(poolContract.connect(depositor))
+            .usingSimpleNumericMock({
+                mockSignersCount: 3,
+                dataPoints: MOCK_PRICES,
+            });
+        expect(fromWei(await vPrimeContract.balanceOf(depositor.address))).to.be.closeTo(21.666667, 1e-6);
+        await wrappedPool.withdraw(toWei("10"));
+        expect(fromWei(await vPrimeContract.balanceOf(depositor.address))).to.be.closeTo(21.666667, 1e-6);
+
+        expect(await mockToken.balanceOf(poolContract.address)).to.equal(toWei("10"));
+        expect(fromWei(await poolContract.balanceOf(depositor.address))).to.be.closeTo(12.55, 1e-6);
+
+        expect(await vPrimeControllerContract.getDepositorVPrimePairsCount(depositor.address)).to.equal(1);
+        const [rate, maxCap] = await vPrimeControllerContract.getDepositorVPrimeRateAndMaxCap(depositor.address);
+        expect(fromWei(maxCap)).to.be.closeTo(15, 1e-6);
+        let votesDiff = (15 - 21.666667);
+        let secondsIn14Days = 14 * 24 * 60 * 60;
+        const newRate =  toWei((votesDiff).toString()).div(secondsIn14Days);
+
+        expect(rate).to.be.closeTo(newRate, 100000);
+
+
+        const oneDay = 24 * 60 * 60;
+        await time.increase(oneDay * 14);
+        expect(fromWei(await vPrimeContract.balanceOf(depositor.address))).to.be.closeTo(15, 1e-6);
+    });
+
+    // should withdraw 2 sPrime and the vPrime balance should decrease to 7.5 over 7 days
+    it("should withdraw 2 sPrime and the vPrime balance should decrease to 7.5 over 7 days", async () => {
+        expect(fromWei(await vPrimeContract.balanceOf(depositor.address))).to.be.closeTo(15, 1e-6);
+        await sPrimeContract.decreaseBalance(depositor.address, toWei("1"));
+        expect(fromWei(await sPrimeContract.balanceOf(depositor.address))).to.equal(0);
+        expect(fromWei(await vPrimeContract.balanceOf(depositor.address))).to.be.closeTo(15, 1e-6);
+
+        expect(await vPrimeControllerContract.getDepositorVPrimePairsCount(depositor.address)).to.equal(0);
+        expect(fromWei(await vPrimeControllerContract.getUserDepositDollarValueAcrossWhiteListedPools(depositor.address))).to.be.closeTo(12.574, 1e-4);
+        expect(fromWei(await vPrimeControllerContract.getUserSPrimeDollarValue(depositor.address))).to.equal(0);
+        const [rate, maxCap] = await vPrimeControllerContract.getDepositorVPrimeRateAndMaxCap(depositor.address);
+        expect(fromWei(maxCap)).to.be.closeTo(0, 1e-6);
+        let votesDiff = (0 - 15);
+        let secondsIn14Days = 14 * 24 * 60 * 60;
+        const newRate =  toWei((votesDiff).toString()).div(secondsIn14Days);
+
+        expect(rate).to.be.closeTo(newRate, 100000);
+
+        const oneDay = 24 * 60 * 60;
+        await time.increase(oneDay * 7);
+        expect(fromWei(await vPrimeContract.balanceOf(depositor.address))).to.be.closeTo(7.5, 1e-6);
+    });
+
+    // vPrimeBalance should go down to 0 over next 7 days
+    it("vPrimeBalance should go down to 0 over next 7 days", async () => {
+        expect(fromWei(await vPrimeContract.balanceOf(depositor.address))).to.be.closeTo(7.5, 1e-6);
+        const oneDay = 24 * 60 * 60;
+        await time.increase(oneDay * 7);
+        expect(fromWei(await vPrimeContract.balanceOf(depositor.address))).to.be.closeTo(0, 1e-6);
     });
 
 });
