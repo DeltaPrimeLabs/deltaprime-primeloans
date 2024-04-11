@@ -31,6 +31,7 @@ contract vPrimeController is Ownable, RedstoneConsumerNumericBase, AuthorisedMoc
     vPrime public vPrimeContract;
     uint256 public constant DEPOSITOR_YEARLY_V_PRIME_RATE = 5;
     uint256 public constant MAX_V_PRIME_VESTING_YEARS = 3;
+    uint256 public constant V_PRIME_DETERIORATION_DAYS = 14;
 
     constructor(Pool[] memory _whitelistedPools, SPrimeMock[] memory _whitelistedSPrimeContracts, ITokenManager _tokenManager, vPrime _vPrime) {
         whitelistedPools = _whitelistedPools;
@@ -92,10 +93,14 @@ contract vPrimeController is Ownable, RedstoneConsumerNumericBase, AuthorisedMoc
 
     function getDepositorVPrimeRateAndMaxCap(address userAddress) public view returns (int256, uint256){
         uint256 vPrimePairsCount = getDepositorVPrimePairsCount(userAddress);
-        uint256 vPrimeMaxCap = vPrimePairsCount * DEPOSITOR_YEARLY_V_PRIME_RATE * MAX_V_PRIME_VESTING_YEARS;
+        uint256 vPrimeMaxCap = vPrimePairsCount * DEPOSITOR_YEARLY_V_PRIME_RATE * MAX_V_PRIME_VESTING_YEARS * 1e18;
         uint256 currentVPrimeBalance = IERC20(vPrimeContract).balanceOf(userAddress);
         int256 vPrimeRate = int256(vPrimeMaxCap) - int256(currentVPrimeBalance);
-        vPrimeRate = vPrimeRate / int256(MAX_V_PRIME_VESTING_YEARS) * 1e18 / 365 days;
+        if(vPrimeRate < 0){
+            vPrimeRate = vPrimeRate / int256(V_PRIME_DETERIORATION_DAYS) / 1 days;
+        } else{
+            vPrimeRate = vPrimeRate / int256(MAX_V_PRIME_VESTING_YEARS) / 365 days;
+        }
         return (vPrimeRate, vPrimeMaxCap);
     }
 

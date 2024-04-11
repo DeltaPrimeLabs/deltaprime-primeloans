@@ -8,8 +8,4 @@ contract vPrimeMock is vPrime {
     function isWhitelisted(address account) public override view returns (bool) {
         return true;
     }
-
-    constructor(address[] memory whitelistedPools, address borrowersRegistryAddress)
-    vPrime(whitelistedPools, borrowersRegistryAddress)
-    {}
 }

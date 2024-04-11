@@ -16,6 +16,7 @@ import "./interfaces/IBorrowersRegistry.sol";
 import "./interfaces/IPoolRewarder.sol";
 import "./VestingDistributor.sol";
 import "./tokens/vPrimeController.sol";
+import "hardhat/console.sol";
 
 
 /**
@@ -67,7 +68,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyCo
         lockedBalances[msg.sender] = amount;
     }
 
-    function setVPrimeControllerOwner(vPrimeController _vPrimeController) public onlyOwner {
+    function setVPrimeController(vPrimeController _vPrimeController) public onlyOwner {
         vPrimeControllerContract = _vPrimeController;
     }
 
@@ -370,6 +371,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyCo
 
         emit Withdrawal(msg.sender, _amount, block.timestamp);
 
+        console.log('going to update upon withdrawal');
         proxyCalldata(
             address(vPrimeControllerContract),
             abi.encodeWithSignature("updateVPrimeSnapshot(address)", msg.sender),
