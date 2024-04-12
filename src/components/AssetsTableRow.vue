@@ -1154,7 +1154,7 @@ export default {
       let caiMintOrBurnSlippageError;
 
       if (typeof error === 'string') {
-        if (error.includes('CAI')) {
+        if (error && error.includes('CAI')) {
           caiMintOrBurnSlippageError = true;
         }
       } else {
