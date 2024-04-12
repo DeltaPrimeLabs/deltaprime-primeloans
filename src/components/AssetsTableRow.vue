@@ -1150,7 +1150,16 @@ export default {
       console.warn(error.code);
       console.warn(error.message);
       console.log(String(error));
-      let caiMintOrBurnSlippageError = error.message.includes('Too little received') || (error.data && error.data.message.includes('Too little received'));
+
+      let caiMintOrBurnSlippageError;
+
+      if (typeof error === 'string') {
+        if (error.includes('CAI')) {
+          caiMintOrBurnSlippageError = true;
+        }
+      } else {
+        caiMintOrBurnSlippageError = error.message.includes('Too little received') || (error.data && error.data.message.includes('Too little received'));
+      }
 
       console.warn(caiMintOrBurnSlippageError);
 
