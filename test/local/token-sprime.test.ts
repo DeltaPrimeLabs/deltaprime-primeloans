@@ -19,7 +19,8 @@ const spotUniform = {
 
 const LBRouterAbi = [
     'function addLiquidity((address tokenX, address tokenY, uint256 binStep, uint256 amountX, uint256 amountY, uint256 amountXMin, uint256 amountYMin, uint256 activeIdDesired, uint256 idSlippage, int256[] deltaIds, uint256[] distributionX, uint256[] distributionY, address to, address refundTo, uint256 deadline))',
-    'event DepositedToBins(address indexed sender,address indexed to,uint256[] ids,bytes32[] amounts)',
+    'function swapExactTokensForTokens(uint256 amountIn,uint256 amountOutMin, (uint256[] pairBinSteps, uint8[] versions, address[] tokenPath), address to,uint256 deadline) external returns (uint256 amountOut)',
+    'event DepositedToBins(address indexed sender,address indexed to,uint256[] ids,bytes32[] amounts)'
 ];
   
 const LBFactoryAbi = [
@@ -28,7 +29,7 @@ const LBFactoryAbi = [
 
 describe("SPrime", function () {
     // Contract Factory
-    let SPrimeFactory, PrimeFactory;
+    let SPrimeFactory, PrimeFactory, LBRouter;
     // Wallets
     let owner, addr1, addr2;
     // Contracts
@@ -49,7 +50,7 @@ describe("SPrime", function () {
         await prime.transfer(user2, parseEther("100000"));
 
         let LBFactory = new ethers.Contract('0x8e42f2F4101563bF679975178e880FD87d3eFd4e', LBFactoryAbi) as ILBFactory;
-
+        LBRouter = new ethers.Contract('0xb4315e873dBcf96Ffd0acd8EA43f689D8c20fB30', LBRouterAbi) as ILBRouter;
         await weth.connect(owner).deposit({value: parseEther("100")});
         await weth.transfer(user1, parseEther("10"));
         await weth.transfer(user2, parseEther("10"));
@@ -118,6 +119,78 @@ describe("SPrime", function () {
             await weth.connect(addr1).approve(sPrime.address, parseEther("1"));
             
             await expect(sPrime.connect(addr1).deposit(83873, 1000, parseEther("1000"), parseEther("1"))).to.be.revertedWith("Slippage High");
+        });
+    });
+
+    describe("Rebalance", function () {
+        it("Rebalance after some token swap", async function () {
+            await prime.connect(addr1).approve(sPrime.address, parseEther("2000"));
+            await weth.connect(addr1).approve(sPrime.address, parseEther("2"));
+            
+            await sPrime.connect(addr1).deposit(8387380, 1000, parseEther("1000"), parseEther("1"));
+
+            let userShare = await sPrime.userInfo(addr1.address);
+            expect(userShare.share).to.gt(0);
+            
+            const oldCenterId = userShare.centerId;
+            
+            await prime.connect(addr2).approve(LBRouter.address, parseEther("10"));
+            const path = {
+                pairBinSteps: [25],
+                versions: [2],
+                tokenPath: [prime.address, weth.address]
+            }
+            
+            await LBRouter.connect(addr2).swapExactTokensForTokens(parseEther("10"), 0, path, addr2.address, 1880333856);
+
+            await sPrime.connect(addr1).deposit(8387380, 100, 0, 0);
+
+            userShare = await sPrime.userInfo(addr1.address);
+            expect(userShare.centerId).to.not.equal(oldCenterId);
+
+        });
+
+        it("Should receive rebalanced position", async function () {
+            await prime.connect(addr1).approve(sPrime.address, parseEther("1000"));
+            await weth.connect(addr1).approve(sPrime.address, parseEther("1"));
+            
+            await sPrime.connect(addr1).deposit(8387380, 1000, parseEther("1000"), parseEther("1"));
+
+            await prime.connect(addr2).approve(sPrime.address, parseEther("1000"));
+            await weth.connect(addr2).approve(sPrime.address, parseEther("1"));
+            
+            await sPrime.connect(addr2).deposit(8387380, 1000, parseEther("1000"), parseEther("1"));
+
+            // Fetching User 1 Status
+            let userShare = await sPrime.userInfo(addr1.address);
+            expect(userShare.share).to.gt(0);
+            const oldCenterId = userShare.centerId;
+
+            userShare = await sPrime.userInfo(addr2.address);
+            expect(userShare.share).to.gt(0);
+            
+            await prime.connect(addr2).approve(LBRouter.address, parseEther("100"));
+            const path = {
+                pairBinSteps: [25],
+                versions: [2],
+                tokenPath: [prime.address, weth.address]
+            }
+            
+            await LBRouter.connect(addr2).swapExactTokensForTokens(parseEther("100"), 0, path, addr2.address, 1880333856);
+
+            console.log("Processed Token Swap");
+            // Rebalancing User 1's position
+            await sPrime.connect(addr1).deposit(8387380, 100, 0, 0);
+            userShare = await sPrime.userInfo(addr1.address);
+            expect(userShare.centerId).to.not.equal(oldCenterId);
+            const user1InitialShare = userShare.share;
+
+            // Transfer share from User 2 to User 1
+            const user2Balance = await sPrime.balanceOf(addr2.address);
+            await sPrime.connect(addr2).transfer(addr1.address, user2Balance / 2);
+
+            userShare = await sPrime.userInfo(addr1.address);
+            expect(userShare.share).to.gt(user1InitialShare);
         });
     });
 
