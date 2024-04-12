@@ -735,6 +735,7 @@ export default {
     },
 
     async getAllAssetsBalances({state, commit, rootState, dispatch}) {
+      let hasDeprecatedAssets = false;
       console.log('getAllAssetsBalances')
       const dataRefreshNotificationService = rootState.serviceRegistry.dataRefreshEventService;
       const balances = {};
@@ -750,12 +751,24 @@ export default {
           let symbol = fromBytes32(asset.name);
           if (config.ASSETS_CONFIG[symbol]) {
             balances[symbol] = formatUnits(asset.balance.toString(), config.ASSETS_CONFIG[symbol].decimals);
+            if (config.ASSETS_CONFIG[symbol].droppingSupport && balances[symbol] > 0) {
+              console.warn('Has depracated asset' + symbol);
+              hasDeprecatedAssets = true;
+            }
           }
           if (config.LP_ASSETS_CONFIG[symbol]) {
             lpBalances[symbol] = formatUnits(asset.balance.toString(), config.LP_ASSETS_CONFIG[symbol].decimals);
+            if (config.LP_ASSETS_CONFIG[symbol].droppingSupport && balances[symbol] > 0) {
+              console.warn('Has depracated asset' + symbol);
+              hasDeprecatedAssets = true;
+            }
           }
           if (config.CONCENTRATED_LP_ASSETS_CONFIG[symbol]) {
             concentratedLpBalances[symbol] = formatUnits(asset.balance.toString(), config.CONCENTRATED_LP_ASSETS_CONFIG[symbol].decimals);
+            if (config.CONCENTRATED_LP_ASSETS_CONFIG[symbol].droppingSupport && balances[symbol] > 0) {
+              console.warn('Has depracated asset' + symbol);
+              hasDeprecatedAssets = true;
+            }
           }
           if (config.BALANCER_LP_ASSETS_CONFIG[symbol]) {
             balancerLpBalances[symbol] = formatUnits(asset.balance.toString(), config.BALANCER_LP_ASSETS_CONFIG[symbol].decimals);
@@ -765,6 +778,10 @@ export default {
           }
         }
       );
+      if (hasDeprecatedAssets) {
+        console.warn('hasDeprecatedAssets');
+        rootState.serviceRegistry.deprecatedAssetsService.emitHasDeprecatedAssets();
+      }
 
       if (config.LEVEL_LP_ASSETS_CONFIG) {
         let result = await state.multicallContract.callStatic.aggregate(
@@ -3283,6 +3300,5 @@ export default {
         await dispatch('updateFunds');
       }, config.refreshDelay);
     },
-
   }
 };

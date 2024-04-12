@@ -62,6 +62,10 @@
       The Arbitrum chain is fully congested resulting in failed transactions across apps. Please join our <a
       href='https://discord.gg/57EdDsvhxK' target='_blank'><b>Discord</b></a> to learn more
     </Banner>
+
+    <Banner v-if="showDeprecatedAssetsBanner">
+      We are dropping support to some tokens of your Prime Account. Please review your portfolio
+    </Banner>
     <Banner v-if="showAvalancheDepositorBanner" background="green" :closable="true">
       BTC APY will be boosted this Wednesday.
       <a class="banner-link"
@@ -152,6 +156,7 @@ export default {
       showNoWalletBanner: window.noWalletInstalled,
       isSavingsPage: false,
       signingTermsInProgress: false,
+      showDeprecatedAssetsBanner: false,
     };
   },
   async created() {
@@ -218,11 +223,12 @@ export default {
     });
     this.watchCloseModal();
     this.checkTerms();
+    this.watchHasDeprecatedAssets();
   },
   computed: {
     ...mapState('network', ['account', 'provider']),
     ...mapState('fundsStore', ['protocolPaused', 'oracleError', 'smartLoanContract']),
-    ...mapState('serviceRegistry', ['modalService', 'termsService', 'accountService', 'poolService']),
+    ...mapState('serviceRegistry', ['modalService', 'termsService', 'accountService', 'poolService', 'deprecatedAssetsService']),
     ...mapState('poolStore', ['pools'])
   },
   methods: {
@@ -398,6 +404,15 @@ export default {
         const signResult = await this.termsService.signTerms(walletAddress, this.provider, true)
         await this.termsService.saveSignedTerms(paAddress, walletAddress, signResult, termsType);
         this.closeModal();
+      })
+    },
+
+    watchHasDeprecatedAssets() {
+      this.deprecatedAssetsService.observeHasDeprecatedAssets().subscribe(hasDeprecatedAssets => {
+        console.warn('DEPRECATED ASSETS', hasDeprecatedAssets);
+        if (hasDeprecatedAssets) {
+          this.showDeprecatedAssetsBanner = true;
+        }
       })
     },
 

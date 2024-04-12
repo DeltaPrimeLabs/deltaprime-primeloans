@@ -5,7 +5,12 @@
       <div class="table__cell asset">
         <img class="asset__icon" :src="getAssetIcon(asset.symbol)">
         <div class="asset__info">
-          <div class="asset__name">{{ asset.symbol }}</div>
+          <div class="asset__name">
+            {{ asset.symbol }}
+            <img v-if="asset.droppingSupport && assetBalances[asset.symbol] > 0"
+                 src="src/assets/icons/warning.svg"
+                 v-tooltip="{content: `We will drop support to this asset on ${ asset.debtCoverage > 0.1 ? '26.04.2024 12:00 CET' : '19.04.2024 12:00 CET'}. Please withdraw or swap to another token.`, classes: 'info-tooltip long'}">
+          </div>
           <div class="asset__loan" v-if="borrowApyPerPool && borrowApyPerPool[asset.symbol] !== undefined">
             Borrow&nbsp;APY:&nbsp;{{ borrowApyPerPool[asset.symbol] | percent }}
           </div>
