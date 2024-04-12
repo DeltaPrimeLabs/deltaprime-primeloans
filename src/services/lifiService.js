@@ -8,6 +8,7 @@ import { switchChain } from '../utils/blockchain';
 
 export default class LifiService {
   lifi$ = new Subject();
+  routeUpdated$ = new Subject();
 
   emitLifi(lifiData) {
     this.lifi$.next(lifiData);
@@ -15,6 +16,14 @@ export default class LifiService {
 
   observeLifi() {
     return this.lifi$.asObservable();
+  }
+
+  emitRouteUpdated(route) {
+    this.routeUpdated$.next(route);
+  }
+
+  observeRouteUpdated() {
+    return this.routeUpdated$.asObservable();
   }
 
   cachedBalances = {};
@@ -103,6 +112,8 @@ export default class LifiService {
 
   getStatusInfo(route) {
     const statusInfo = {};
+    const estimatedDuration = this.getEstimatedDuration(route);
+
     route.steps.map((step) => {
       if (!step.execution) return;
       const processes = step.execution.process;
@@ -110,21 +121,33 @@ export default class LifiService {
       processes.map(process => {
         if (process.status === 'DONE' || process.status === 'FAILED') return;
 
+        statusInfo.message = "The bridge transaction in progress. Do not close this tab. Estimated remaining time: ";
+        statusInfo.estimatedDuration = estimatedDuration;
+
         if (process.message) {
-          statusInfo.message = process.message;
-
-          if (process.substatusMessage) {
-            statusInfo.message = ` ${process.substatusMessage}`;
-          }
-
           if (process.type === 'TOKEN_ALLOWANCE' || process.type === 'CROSS_CHAIN') {
             statusInfo.txLink = process.txLink;
           }
-        } else if (process.type === 'SWITCH_CHAIN') {
-          statusInfo.message = 'Switching chain.';
         } else if (process.error) {
           statusInfo.message = process.error.htmlMessage;
         }
+
+        // if (process.message) {
+        //   statusInfo.message = process.message;
+
+        //   if (process.substatusMessage) {
+        //     statusInfo.message = ` ${process.substatusMessage}`;
+        //   }
+
+        //   if (process.type === 'TOKEN_ALLOWANCE' || process.type === 'CROSS_CHAIN') {
+        //     statusInfo.message = `The bridge transaction in progress. Do not close this tab. Estimated remaining time: ${estimatedDuration}.`;
+        //     statusInfo.txLink = process.txLink;
+        //   }
+        // } else if (process.type === 'SWITCH_CHAIN') {
+        //   statusInfo.message = 'Switching chain.';
+        // } else if (process.error) {
+        //   statusInfo.message = process.error.htmlMessage;
+        // }
       })
     });
 
@@ -132,6 +155,15 @@ export default class LifiService {
   }
 
   getEstimatedDuration(route) {
+    // const history = JSON.parse(localStorage.getItem('active-bridge-deposit'));
+
+    // if (history) {
+    //   const remainingDuration = history[route.fromAddress.toLowerCase()].remainingDuration;
+
+    //   if (remainingDuration > 0) return remainingDuration;
+    //   if (remainingDuration == 0) return 120;
+    // }
+
     let duration = 0;
     route.steps.map((step) => duration += step.estimate.executionDuration);
 
@@ -164,13 +196,19 @@ export default class LifiService {
       // save route state to local storage for different wallet address
       if (!updatedRoute) return;
 
+      this.emitRouteUpdated(updatedRoute);
+
       const statusInfo = this.getStatusInfo(updatedRoute);
-      progressBarService.emitProgressBarInProgressState(statusInfo);
+      console.log(statusInfo);
+      progressBarService.emitProgressBarInProgressState({
+        ...statusInfo,
+      });
 
       const history = JSON.parse(localStorage.getItem('active-bridge-deposit'));
       const updatedHistory = {
         ...history,
         [updatedRoute.fromAddress.toLowerCase()]: {
+          ...(history && history[updatedRoute.fromAddress.toLowerCase()]),
           route: updatedRoute,
           targetSymbol,
           depositNativeToken,
@@ -211,64 +249,69 @@ export default class LifiService {
       return params;
     }
 
-    const estimatedDuration = this.getEstimatedDuration(chosenRoute);
-    progressBarService.requestProgressBar(estimatedDuration);
+    try {
+      const estimatedDuration = this.getEstimatedDuration(chosenRoute);
+      progressBarService.requestProgressBar(estimatedDuration);
 
-    const routeOptions = {
-      updateRouteHook,
-      switchChainHook,
-      updateTransactionRequestHook: updateGasConfig,
-      acceptExchangeRateUpdateHook: acceptExchangeRateUpdate
-    };
-    let route;
+      const routeOptions = {
+        updateRouteHook,
+        switchChainHook,
+        updateTransactionRequestHook: updateGasConfig,
+        acceptExchangeRateUpdateHook: acceptExchangeRateUpdate
+      };
+      let route;
 
-    if (!resume) {
-      route = await lifi.resumeRoute(signer, chosenRoute, routeOptions);
-    } else {
-      route = await lifi.executeRoute(signer, chosenRoute, routeOptions);
-    }
-    console.log('bridge transactions completed.');
+      if (!resume) {
+        route = await lifi.resumeRoute(signer, chosenRoute, routeOptions);
+      } else {
+        route = await lifi.executeRoute(signer, chosenRoute, routeOptions);
+      }
+      console.log('bridge transactions completed.');
 
-    const processes = route.steps[route.steps.length - 1].execution.process;
-    const lastStep = processes[processes.length - 1];
-    const statusInfo = {};
+      const processes = route.steps[route.steps.length - 1].execution.process;
+      const lastStep = processes[processes.length - 1];
+      const statusInfo = {};
 
-    if (lastStep.status === 'DONE') {
-      statusInfo.message = lastStep.message;
-      if (lastStep.txLink) statusInfo.txLink = lastStep.txLink;
-    }
+      if (lastStep.status === 'DONE') {
+        statusInfo.message = lastStep.message;
+        if (lastStep.txLink) statusInfo.txLink = lastStep.txLink;
+      }
 
-    progressBarService.emitProgressBarInProgressState(statusInfo);
-    await switchChain(route.toChainId, signer);
+      progressBarService.emitProgressBarInProgressState(statusInfo);
+      await switchChain(route.toChainId, signer);
 
-    if (!route.steps || route.steps.length === 0) {
-      console.log("something wrong with bridge.");
-      return;
-    }
+      if (!route.steps || route.steps.length === 0) {
+        console.log("something wrong with bridge.");
+        return;
+      }
 
-    // if bridge only without deposit, don't execute deposit and return here
-    if (disableDeposit) {
+      // if bridge only without deposit, don't execute deposit and return here
+      if (disableDeposit) {
+        const history = JSON.parse(localStorage.getItem('active-bridge-deposit'));
+        delete history[route.fromAddress.toLowerCase()];
+        localStorage.setItem('active-bridge-deposit', JSON.stringify(history));
+        return;
+      }
+
+      const bridgeExecution = route.steps[route.steps.length - 1].execution;
+      const depositAmount = formatUnits(bridgeExecution.toAmount, bridgeExecution.toToken.decimals);
+      const depositRequest = {
+        assetSymbol: targetSymbol,
+        amount: depositAmount,
+        depositNativeToken: depositNativeToken
+      };
+
+      await depositFunc({ depositRequest: depositRequest });
       const history = JSON.parse(localStorage.getItem('active-bridge-deposit'));
       delete history[route.fromAddress.toLowerCase()];
       localStorage.setItem('active-bridge-deposit', JSON.stringify(history));
-      return;
+
+      return {
+        amount: depositAmount
+      };
+    } catch (error) {
+      console.log(error);
+      this.closeModal();
     }
-
-    const bridgeExecution = route.steps[route.steps.length - 1].execution;
-    const depositAmount = formatUnits(bridgeExecution.toAmount, bridgeExecution.toToken.decimals);
-    const depositRequest = {
-      assetSymbol: targetSymbol,
-      amount: depositAmount,
-      depositNativeToken: depositNativeToken
-    };
-
-    await depositFunc({ depositRequest: depositRequest });
-    const history = JSON.parse(localStorage.getItem('active-bridge-deposit'));
-    delete history[route.fromAddress.toLowerCase()];
-    localStorage.setItem('active-bridge-deposit', JSON.stringify(history));
-
-    return {
-      amount: depositAmount
-    };
   }
 }

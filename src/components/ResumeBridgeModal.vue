@@ -4,8 +4,8 @@
       <div class="modal__title">
         Active Bridge Transfer 
       </div>
-      <div class="modal-top-desc">
-        <b>You have uncompleted Bridge Transactions<span v-if="!cancelled && execution && execution.status !== 'FAILED'"> in progress</span>.</b>
+      <div class="modal-top-desc description">
+        <b>Your bridge transaction is in progress.<span v-if="cancelled || execution && execution.status === 'FAILED'"> Please click "Resume" to continue.</span> Do not close this Tab until its finished.</b>
       </div>
       <div class="modal-top-info">
         {{ fromTokenData }}
@@ -16,8 +16,49 @@
         ></DeltaIcon>
         {{ toTokenData }}
       </div>
-      <div class="modal-top-info">
+      <!-- <div class="modal-top-info">
         Estimated Duration: {{ estimatedDuration ? estimatedDuration : '-' }}
+      </div> -->
+
+      <div class="modal-top-info" v-if="route">
+        <div class="bridge-step" v-for="step in route.steps">
+          <div class="bridge-process" v-for="process in step.execution.process">
+            <template v-if="process.status === 'DONE'">
+              <div class="process__icon">
+                <DeltaIcon class="process__state process__state--enabled"
+                          :icon-src="'src/assets/icons/check-simple.svg'" :size="16"></DeltaIcon>
+              </div>
+              <span class="process__message">{{ process.message }}</span>
+            </template>
+            <template v-else>
+              <template v-if="process.status === 'FAILED'">
+                <div class="process__icon">
+                  <DeltaIcon class="process__state process__state--disabled"
+                            :icon-src="'src/assets/icons/x-simple.svg'" :size="16"></DeltaIcon>
+                </div>
+                <template v-if="process.type === 'SWITCH_CHAIN'">
+                  <span class="process__message">Switching chain failed.</span>
+                </template>
+                <template v-else>
+                  <span v-if="process.error.htmlMessage" class="process__message" v-html="process.error.htmlMessage"></span>
+                  <div v-else class="process__message">
+                    <span v-if="process.error.message">{{ process.error.message }}</span>
+                    <span v-else>Transaction failed.</span>
+                  </div>
+                </template>
+              </template>
+              <template v-else>
+                <div class="process__icon">
+                  <vue-loaders-ball-beat color="#A6A3FF" scale="0.5"></vue-loaders-ball-beat>
+                </div>
+                <div class="process__message">
+                  <span v-if="process.status === 'ACTION_REQUIRED'">Please sign the transaction.</span>
+                  <code v-else>{{ process.message }}</code>
+                </div>
+              </template>
+            </template>
+          </div>
+        </div>
       </div>
 
       <template v-if="cancelled || execution && execution.status === 'FAILED'">
@@ -26,9 +67,10 @@
             :label="'Resume'"
             v-on:click="resumeTransfer()"
             :disabled="isLoading"
+            :waiting="transactionOngoing"
           ></Button>
           <Button
-            :label="'Delete'"
+            :label="'Abort'"
             v-on:click="deleteTransfer()"
             :disabled="isLoading"
           ></Button>
@@ -58,7 +100,7 @@ export default {
     account: null,
     activeTransfer: null,
     lifiData: null,
-    depositFunc: null
+    depositFunc: null,
   },
 
   data() {
@@ -72,7 +114,8 @@ export default {
       fromData: null,
       toData: null,
       isLoading: false,
-      estimatedDuration: null
+      estimatedDuration: null,
+      transactionOngoing: false
     };
   },
 
@@ -80,6 +123,7 @@ export default {
     setTimeout(() => {
       this.setupRoute();
       this.getEstimatedDuration();
+      this.watchRouteUpdated();
     });
   },
 
@@ -129,7 +173,14 @@ export default {
       }
     },
 
+    watchRouteUpdated() {
+      this.lifiService.observeRouteUpdated().subscribe(async updatedRoute => {
+        this.route = updatedRoute;
+      });
+    },
+
     async resumeTransfer() {
+      this.transactionOngoing = true;
       this.isLoading = true;
 
       try {
@@ -142,7 +193,7 @@ export default {
           signer: signer,
           depositFunc: this.depositFunc,
           targetSymbol: this.targetSymbol,
-          disableDeposit: this.disableDeposit
+          disableDeposit: this.disableDeposit,
         }
         const transferRes = await this.lifiService.bridgeAndDeposit({
           bridgeRequest,
@@ -168,9 +219,9 @@ export default {
 
           localStorage.setItem('active-bridge-deposit', JSON.stringify(updatedHistory));
         } else {
-          const { route } = JSON.parse(this.activeTransfer);
-          const statusInfo = this.lifiService.getStatusInfo(route);
-          this.progressBarService.emitProgressBarErrorState(statusInfo);
+          const { route } = this.activeTransfer;
+          // const statusInfo = this.lifiService.getStatusInfo(route);
+          this.progressBarService.emitProgressBarErrorState();
         }
       }
 
@@ -203,6 +254,41 @@ export default {
 
 .button-group {
   justify-content: space-evenly;
+}
+
+.description {
+  text-align: center;
+}
+
+.bridge-step {
+  width: 100%;
+  padding: 0 40px;
+}
+
+.bridge-process {
+  padding: 10px;
+  display: flex;
+}
+
+.process__message {
+  margin-left: 10px;
+  flex: 1;
+  // inline-size: 100%;
+  // overflow-wrap: break-word;
+}
+
+.process__icon {
+  width: 60px;
+  display: flex;
+  justify-content: center;
+}
+
+.process__state--enabled {
+  background: var(--partner-info-modal__measure-state-indicator-color--enabled);
+}
+
+.process__state--disabled {
+  background: var(--partner-info-modal__measure-state-indicator-color--disabled);
 }
 
 </style>

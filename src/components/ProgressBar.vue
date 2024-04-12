@@ -10,8 +10,8 @@
       <div v-if="state === 'MINING'" class="text-overlay__text text-overlay__in-progress">Waiting for confirmation...</div>
       <div v-if="state === 'IN_PROGRESS' && !statusInfo" class="text-overlay__text text-overlay__in-progress">Waiting for confirmation...</div>
       <div v-if="state === 'IN_PROGRESS' && statusInfo && statusInfo.message" class="text-overlay__text text-overlay__in-progress">
-        <div v-if="statusInfo.message">{{ statusInfo.message }}&nbsp;</div>
-        <a v-if="statusInfo.txLink" :href='statusInfo.txLink' target='_blank'>See transaction here.</a>
+        <div v-if="statusInfo.message">{{ statusInfo.message }}<span v-if="estimatedDuration">{{ estimatedDurationInFormat }}</span>&nbsp; </div>
+        <div>Check status <span @click="openResumeBridgeModal()">here</span></div>
       </div>
       <div v-if="state === 'SUCCESS'" class="text-overlay__text text-overlay__success">
         Success
@@ -30,9 +30,11 @@
 </template>
 
 <script>
-import {mapState} from 'vuex';
-import {delay, interval, startWith, timer} from 'rxjs';
+import {mapActions, mapState} from 'vuex';
+import {delay, interval, startWith, timer, combineLatest} from 'rxjs';
 import DeltaIcon from "./DeltaIcon.vue";
+import ResumeBridgeModal from './ResumeBridgeModal';
+import moment from 'moment';
 
 export default {
   name: 'ProgressBar',
@@ -47,17 +49,27 @@ export default {
       state: 'IN_PROGRESS',
       duration: 0,
       additionalInfo: null,
-      statusInfo: null
+      statusInfo: null,
+      estimatedDuration: null,
+      countStarted: false
     };
   },
   computed: {
-    ...mapState('serviceRegistry', ['progressBarService']),
+    ...mapState('serviceRegistry', ['progressBarService', 'lifiService']),
+    ...mapState('network', ['account', 'accountBalance', 'provider']),
+
+    estimatedDurationInFormat() {
+      const formatString = 'D [days], H [hours], m [minutes], s [seconds]';
+      return moment.duration(this.estimatedDuration, 'seconds').format(formatString);
+    },
   },
   mounted() {
     this.watchProgressBarRequest();
     this.watchProgressBarState();
   },
   methods: {
+    ...mapActions('poolStore', ['deposit']),
+
     watchProgressBarRequest() {
       this.progressBarService.progressBarRequested$.subscribe((progressBarRequest) => {
         if (!this.progressBarVisible) {
@@ -74,6 +86,13 @@ export default {
         this.additionalInfo = stateChangeEvent.additionalInfo;
         this.statusInfo = stateChangeEvent.statusInfo;
         const duration = stateChangeEvent.duration ? stateChangeEvent.duration : 3000
+
+        const history = JSON.parse(localStorage.getItem('active-bridge-deposit'));
+        const remainingDuration = history && history[this.account.toLowerCase()].remainingDuration;
+        console.log(remainingDuration)
+
+        if (stateChangeEvent.statusInfo) this.estimatedDuration = remainingDuration ? remainingDuration : stateChangeEvent.statusInfo.estimatedDuration;
+
         if (this.progressBarVisible) {
           if (this.state === 'SUCCESS' || this.state === 'ERROR' || this.state === 'CANCELLED') {
             timer(duration).subscribe(() => {
@@ -82,6 +101,17 @@ export default {
           }
         }
       });
+    },
+
+    watchActiveRoute() {
+      this.lifiService.observeLifi()
+        .subscribe(async (lifiData) => {
+          this.lifiData = lifiData;
+
+          const history = JSON.parse(localStorage.getItem('active-bridge-deposit'));
+
+          this.activeTransfer = history && history[this.account.toLowerCase()];
+        });
     },
 
     showProgressBar(duration) {
@@ -94,6 +124,59 @@ export default {
         });
       });
     },
+
+    openResumeBridgeModal() {
+      this.closeModal();
+      const modalInstance = this.openModal(ResumeBridgeModal);
+      modalInstance.account = this.account;
+      modalInstance.activeTransfer = this.activeTransfer;
+      modalInstance.lifiData = this.lifiData;
+      modalInstance.lifiService = this.lifiService;
+      modalInstance.progressBarService = this.progressBarService;
+      modalInstance.depositFunc = this.deposit;
+      modalInstance.$on('BRIDGE_DEPOSIT_RESUME', (transferRes) => {
+        if (!transferRes) return;
+        const pools = this.poolsList.map(pool => {
+          return {
+            ...pool,
+            deposit: pool.asset.symbol === this.activeTransfer.targetSymbol
+              ? Number(pool.deposit) + Number(transferRes.amount)
+              : pool.deposit
+          };
+        });
+
+        this.poolsList = pools;
+      });
+    },
+  },
+
+  watch: {
+    account(newAccount) {
+      if (newAccount) {
+        this.watchActiveRoute();
+      }
+    },
+
+    estimatedDuration: {
+      handler(value) {
+        if (value > 0) {
+          setTimeout(() => {
+            const history = JSON.parse(localStorage.getItem('active-bridge-deposit'));
+
+            if (this.estimatedDuration) {
+              history[this.account.toLowerCase()].remainingDuration = this.estimatedDuration;
+              localStorage.setItem('active-bridge-deposit', JSON.stringify(history));
+            }
+
+            console.log(this.estimatedDuration)
+            this.estimatedDuration--;
+          }, 1000);
+
+          // this.countStarted = true;
+        }
+      },
+      immediate: true
+    }
   }
 };
 </script>
