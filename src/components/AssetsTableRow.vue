@@ -1179,7 +1179,7 @@ export default {
               this.progressBarService.emitProgressBarErrorState('Insufficient slippage. Please try again later with higher slippage.')
             } else {
               caiMintOrBurnSlippageError = true;
-              this.progressBarService.emitProgressBarErrorState('Transaction failed due to MetaMask error. Please try adjusting gas limit or use swap instead.')
+              this.progressBarService.emitProgressBarErrorState('due to MetaMask error. Please try adjusting gas limit or use swap instead.')
             }
         }
       } else {
