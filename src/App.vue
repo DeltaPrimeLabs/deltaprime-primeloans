@@ -218,6 +218,9 @@ export default {
     });
     this.watchCloseModal();
     this.checkTerms();
+    setTimeout(() => {
+      this.checkWallet();
+    }, 500)
   },
   computed: {
     ...mapState('network', ['account', 'provider']),
@@ -401,6 +404,25 @@ export default {
       })
     },
 
+    checkWallet() {
+      console.warn('--------__---__------___--___--__---___checking wallet--------___---___-___--___---__--___--__');
+      if (this.provider && this.provider.provider) {
+        console.log('provider', this.provider.provider)
+        if (this.provider.provider.isRabby) {
+          console.warn('RABBY');
+          window.isRabby = true;
+          window.isMetaMask = false;
+          return;
+        }
+
+        if (this.provider.provider.isMetaMask) {
+          console.warn('METAMASK');
+          window.isMetaMask = true;
+          window.isRabby = false;
+          return;
+        }
+      }
+    },
   },
   destroyed() {
     clearInterval(this.gasPriceIntervalId);

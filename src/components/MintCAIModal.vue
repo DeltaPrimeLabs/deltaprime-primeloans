@@ -13,6 +13,10 @@
         If you encounter a high slippage, please use swap function instead
       </div>
 
+      <div v-if="isMetaMask" class="modal-top-desc metamask-warning">
+        Metamask overestimates gas fees, so the actual fees will be lower
+      </div>
+
       <div class="asset-info">
         Available:
         <span v-if="sourceAssetBalance && sourceAssetData" class="asset-info__value">{{
@@ -194,11 +198,13 @@ export default {
       calculatedTargetAmount: 0,
       calculatingValues: false,
       sourceInputError: false,
+      isMetaMask: false,
     };
   },
 
   async mounted() {
     TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
+    this.isMetaMask = window.isMetaMask;
     setTimeout(() => {
       this.setupSourceAssetOptions();
       this.setupTargetAssetOptions();
@@ -546,6 +552,12 @@ export default {
       background: var(--swap-modal__reverse-swap-icon-color);
     }
   }
+}
+
+.metamask-warning {
+  font-weight: 500;
+  margin: 20px 0;
+  color: var(--modal__top-info-warning-color);
 }
 
 </style>
