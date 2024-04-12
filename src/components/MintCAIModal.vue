@@ -14,7 +14,20 @@
       </div>
 
       <div v-if="isMetaMask" class="modal-top-desc metamask-warning">
-        Metamask overestimates gas fees, so the actual fees will be lower
+        Some
+        <span v-if="mintMode">mint</span>
+        <span v-if="!mintMode">burn</span>
+        transactions in MetaMask can fail due to insufficient gas limit estimated by this wallet.
+        If that's your case, please:
+        <br/>
+        adjust <b>gas limit</b>
+        in your Metamask during transaction
+        (<a class="metamask-warning__link" href="https://support.metamask.io/hc/en-us/articles/360022895972-How-to-customize-gas-settings">link</a>)
+        <br/>
+        or use Rabby
+        (<a class="metamask-warning__link" href="https://chromewebstore.google.com/detail/rabby-wallet/acmacodkjbdgmoleebolmdjonilkdbch">link</a>)
+        <br/>
+        or convert CAI using the swap function.
       </div>
 
       <div class="asset-info">
@@ -555,9 +568,18 @@ export default {
 }
 
 .metamask-warning {
+  display: block;
   font-weight: 500;
   margin: 20px 0;
   color: var(--modal__top-info-warning-color);
+}
+
+.metamask-warning__link {
+  color: var(--modal__top-info-warning-link-color) !important;
+  text-decoration: underline !important;
+  &:hover {
+    cursor: pointer !important;
+  }
 }
 
 </style>

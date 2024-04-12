@@ -3287,7 +3287,6 @@ export default {
 
     async mintCAI({state, rootState, commit, dispatch}, {mintCAIRequest}) {
       console.log('window.isMetaMask', window.isMetaMask);
-      const metamaskMintCaiGasLimit = 10000000;
       console.log('mintCAIRequest', mintCAIRequest);
       const provider = rootState.network.provider;
 
@@ -3311,7 +3310,6 @@ export default {
           assetAddress,
           parseUnits(mintCAIRequest.amount.toFixed(assetDecimals), assetDecimals),
           parseUnits(mintCAIRequest.calculatedTargetAmount.toFixed(caiDecimals), caiDecimals),
-          window.isMetaMask ? {gasLimit: metamaskMintCaiGasLimit} : {}
         );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
@@ -3349,7 +3347,6 @@ export default {
 
     async burnCAI({state, rootState, commit, dispatch}, {burnCAIRequest}) {
       console.log('window.isMetaMask', window.isMetaMask);
-      const metamaskBurnCaiGasLimit = 16000000;
       console.log('burnCAIRequest', burnCAIRequest);
       const provider = rootState.network.provider;
 
@@ -3384,7 +3381,6 @@ export default {
           parseUnits(burnCAIRequest.amount.toFixed(caiDecimals), caiDecimals),
           assetAddress,
           parseUnits(burnCAIRequest.calculatedTargetAmount.toFixed(assetDecimals), assetDecimals),
-          window.isMetaMask ? {gasLimit: metamaskBurnCaiGasLimit} : {}
         );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
