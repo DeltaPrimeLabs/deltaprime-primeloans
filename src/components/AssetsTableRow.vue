@@ -1150,7 +1150,8 @@ export default {
       console.warn(error.code);
       console.warn(error.message);
       console.log(String(error));
-      const caiMintOrBurnSlippageError = error.message.includes('Too little received') || error.data.message.includes('Too little received');
+      let caiMintOrBurnSlippageError = error.message.includes('Too little received') || (error.data && error.data.message.includes('Too little received'));
+
       console.warn(caiMintOrBurnSlippageError);
 
       if (!error) {
@@ -1173,8 +1174,12 @@ export default {
             this.progressBarService.emitProgressBarCancelledState()
             break;
           case -32603:
+            console.log('error code -32603');
             if (caiMintOrBurnSlippageError) {
               this.progressBarService.emitProgressBarErrorState('Insufficient slippage. Please try again later with higher slippage.')
+            } else {
+              caiMintOrBurnSlippageError = true;
+              this.progressBarService.emitProgressBarErrorState('Transaction failed due to MetaMask error. Please try adjusting gas limit or use swap instead.')
             }
         }
       } else {
