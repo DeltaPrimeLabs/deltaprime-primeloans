@@ -1152,10 +1152,14 @@ export default {
       console.log(String(error));
 
       let caiMintOrBurnSlippageError;
+      let outOfGasMetamaskError;
 
       if (typeof error === 'string') {
         if (error && error.includes('CAI')) {
-          caiMintOrBurnSlippageError = true;
+          outOfGasMetamaskError = true;
+          this.progressBarService.emitProgressBarErrorState('due to MetaMask error. Please try adjusting gas limit or use swap instead.')
+          this.cleanupAfterError(false);
+          return;
         }
       } else {
         caiMintOrBurnSlippageError = error.message.includes('Too little received') || (error.data && error.data.message.includes('Too little received'));
