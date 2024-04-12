@@ -18,7 +18,7 @@
         <DeltaIcon class="text-overlay__icon" :icon-src="'src/assets/icons/tick-white.svg'" :size="20"></DeltaIcon>
       </div>
       <div v-if="state === 'ERROR'" class="text-overlay__text text-overlay__error">
-        Transaction Failed <span v-if="additionalInfo">. {{additionalInfo}}</span>
+        Transaction Failed <span v-if="additionalInfo"> {{additionalInfo}}</span>
         <DeltaIcon class="text-overlay__icon" :icon-src="'src/assets/icons/x-white.svg'" :size="20"></DeltaIcon>
       </div>
       <div v-if="state === 'CANCELLED'" class="text-overlay__text text-overlay__cancelled">
