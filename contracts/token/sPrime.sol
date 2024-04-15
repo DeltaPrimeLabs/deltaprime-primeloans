@@ -79,6 +79,24 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
     }
 
     /**
+     * @dev Returns the estimated token Y amount from token X.
+     * @param amountX Token X Amount.
+     * @return status Rebalance status
+     */
+    function rebalanceStatus(uint256 amountX) public view returns(bool) {
+        bool status = false;
+        (uint128 reserverA, ) = lbPair.getReserves();
+        if(reserverA > 0) {
+            ILBRouter traderJoeV2Router = ILBRouter(getJoeV2RouterAddress());
+            (uint128 amountInLeft, , ) = traderJoeV2Router.getSwapOut(lbPair, uint128(amountX), true);
+            if(amountInLeft == 0) {
+                status = true;
+            }
+        }
+        return status;
+    }
+
+    /**
     * @dev Adds a new bin for the PRIME-TOKEN pair.
     * @param centerId The unique identifier for the new bin.
     * @param ids Deposit IDs for the pair.
