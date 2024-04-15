@@ -13,7 +13,7 @@
         If you encounter a high slippage, please use swap function instead
       </div>
 
-      <div v-if="isMetaMask" class="modal-top-desc metamask-warning">
+      <div class="modal-top-desc metamask-warning">
         Some
         <span v-if="mintMode">mint</span>
         <span v-if="!mintMode">burn</span>
