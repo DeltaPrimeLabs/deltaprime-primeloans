@@ -141,6 +141,7 @@
   --modal__border: linear-gradient(145deg, #{$deep-fuchsia} 13%, #{$plum} 56%, #{$dark-teal} 98%);
   --modal__box-shadow: 4px 4px 20px 0 #{$dark-space}66;
   --modal__top-info-color: #{$storm-blue};
+  --modal__top-info-warning-color: #{$mist-orange};
   --modal__top-info-divider-color: #{$mist-space};
   --modal__close-button-container-color: #{$pale-lilac};
   --modal__backdrop-backdrop-filter: blur(45px);
@@ -162,7 +163,7 @@
   --currency-input__max-background: transparent;
   --currency-input__max-background--hover: transparent;
   --currency-input__error-info-warngin-color: #{$mist-blue};
-  --currency-input__warning-color: #{$pale-red};
+  --currency-input__warning-color: #{$mist-orange};
   --currency-input__error-color: #{$pale-red};
   // endregion
 
