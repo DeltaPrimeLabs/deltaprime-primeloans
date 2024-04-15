@@ -133,7 +133,6 @@ describe('Pool with variable utilisation interest rates', () => {
         });
 
         await poolContract.setVPrimeController(vPrimeControllerContract.address);
-
         await vPrimeContract.setVPrimeControllerAddress(vPrimeControllerContract.address);
         await sPrimeContract.setVPrimeControllerContract(vPrimeControllerContract.address);
     });

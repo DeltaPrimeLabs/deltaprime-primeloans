@@ -8,7 +8,6 @@ import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import {vPrimeController} from "./vPrimeController.sol";
-import "hardhat/console.sol";
 
 /**
  * @dev Extension of ERC20 to support Compound-like voting and delegation. This version is more generic than Compound's,
@@ -74,14 +73,9 @@ contract vPrime is ERC20Permit, Ownable {
         uint256 lastRecordedVotes = getVotes(user);
         uint256 currentVotesBalance = balanceOf(user);
         int256 votesDiff = int256(currentVotesBalance) - int256(lastRecordedVotes);
-        console.log('last recorded votes: %s', lastRecordedVotes);
-        console.log('current votes balance: %s', currentVotesBalance);
-        if(votesDiff > 0){
-            console.log('votes diff: %s', uint256(votesDiff));
-        }
+
         if(votesDiff > 0) {
             _mint(user, uint256(votesDiff));
-            console.log('WRITING CKP FOR user: %s: ', user);
             _writeCheckpoint(_checkpoints[user], _add, uint256(votesDiff), rate, newMaxVPrimeCap);
         } else if(votesDiff < 0) {
             _burn(user, uint256(-votesDiff));
@@ -126,7 +120,7 @@ contract vPrime is ERC20Permit, Ownable {
         return uint48(block.timestamp);
     }
     /**
-     * @dev Description of the clock
+     * @dev Description of the clockx
      */
     // solhint-disable-next-line func-name-mixedcase
     function CLOCK_MODE() public pure returns (string memory) {
@@ -239,7 +233,6 @@ contract vPrime is ERC20Permit, Ownable {
     function _mint(address account, uint256 amount) internal virtual override {
         super._mint(account, amount);
         require(totalSupply() <= _maxSupply(), "ERC20Votes: total supply risks overflowing votes");
-        console.log('writing ckp for total supply');
         _writeCheckpointWithoutRateAndCap(_totalSupplyCheckpoints, _add, amount);
     }
 
@@ -258,22 +251,15 @@ contract vPrime is ERC20Permit, Ownable {
         if(_checkpoints[account].length == 0) {
             return 0;
         }
-        console.log("ckp length: ", _checkpoints[account].length);
         Checkpoint memory cp = _checkpoints[account][_checkpoints[account].length - 1];
 
         uint256 elapsedTime = block.timestamp - cp.blockTimestamp;
         uint256 newBalance;
 
         if (cp.rate >= 0) {
-            console.log("Rate is positive", uint256(cp.rate));
-            console.log("Elapsed time", elapsedTime);
-            console.log("elapsed time in days", elapsedTime / 1 days);
             uint256 balanceIncrease = uint256(cp.rate) * elapsedTime;
-            console.log("Balance increase", balanceIncrease);
             newBalance = cp.balance + balanceIncrease;
-            console.log("New balance", newBalance);
             if (newBalance > cp.maxVPrimeCap) {
-                console.log("New balance exceeds max cap", cp.maxVPrimeCap);
                 return cp.maxVPrimeCap;
             }
         } else {
@@ -286,6 +272,8 @@ contract vPrime is ERC20Permit, Ownable {
                 newBalance = cp.balance - balanceDecrease;
                 if (newBalance < cp.maxVPrimeCap) {
                     return cp.maxVPrimeCap;
+                } else {
+                    return newBalance;
                 }
             }
         }
@@ -309,26 +297,16 @@ contract vPrime is ERC20Permit, Ownable {
         uint256 maxVPrimeCap
     ) private returns (uint256 oldWeight, uint256 newWeight) {
         uint256 pos = ckpts.length;
-
-        // for loop console log all ckpts balances
-        for (uint256 i = 0; i < pos; i++) {
-            console.log('balance at pos %s: %s', i, ckpts[i].balance);
-        }
-
-        console.log('pos: ', pos);
         Checkpoint memory oldCkpt = pos == 0 ? Checkpoint(0, 0, 0, 0) : ckpts[pos - 1];
 
         oldWeight = oldCkpt.balance;
         newWeight = op(oldWeight, delta);
-        console.log("Old weight: %s, New weight: %s", oldWeight, newWeight);
 
         if (pos > 0 && oldCkpt.blockTimestamp == clock()) {
-            console.log('case 1');
             oldCkpt.balance = newWeight;
             oldCkpt.rate = rate;
             oldCkpt.maxVPrimeCap = maxVPrimeCap;
         } else {
-            console.log('case 2');
             ckpts.push(Checkpoint({
                 blockTimestamp: SafeCast.toUint32(clock()),
                 balance: newWeight,
