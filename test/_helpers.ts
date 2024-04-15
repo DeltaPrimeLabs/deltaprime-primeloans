@@ -32,6 +32,7 @@ import {JsonRpcSigner} from "@ethersproject/providers";
 import addresses from "../common/addresses/avax/token_addresses.json";
 import addresses_arb from "../common/addresses/arbitrum/token_addresses.json";
 import { getSelectors } from "../tools/diamond/selectors";
+import {WrapperBuilder} from "@redstone-finance/evm-connector";
 
 const {deployFacet} = require('../tools/diamond/deploy-diamond');
 
@@ -534,7 +535,8 @@ export const deployPools = async function(
     owner: SignerWithAddress | JsonRpcSigner,
     depositor: SignerWithAddress | Wallet,
     depositAmount: number = 1000,
-    chain: string = 'AVAX'
+    chain: string = 'AVAX',
+    mockPrices: any = []
 ) {
     for (const token of tokens) {
         let {
@@ -544,7 +546,7 @@ export const deployPools = async function(
         for (const user of token.airdropList) {
             if (token.name == 'AVAX' || token.name == 'MCKUSD') {
                 await tokenContract!.connect(user).approve(poolContract.address, toWei(depositAmount.toString()));
-                await poolContract.connect(user).deposit(toWei(depositAmount.toString()));
+                await (WrapperBuilder.wrap(poolContract.connect(user)).usingSimpleNumericMock(mockPrices)).deposit(toWei(depositAmount.toString()));
             }
         }
         lendingPools.push(new PoolAsset(toBytes32(token.name), poolContract.address));
@@ -631,7 +633,6 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         await ethers.getContractAt('IDiamondCut', diamondAddress, hardhatConfig.deployer)
         : await ethers.getContractAt('IDiamondCut', diamondAddress);
     await diamondCut.pause();
-
     await deployFacet(
         "ParaSwapFacet",
         diamondAddress,
@@ -678,7 +679,6 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         ],
         hardhatConfig
     )
-    console.log(2)
 
     await deployFacet(
         "AssetsExposureController",
@@ -1079,7 +1079,6 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         )
     }
     if (chain == 'ETHEREUM') {
-        console.log('here')
     }
     if (chain == 'CELO') {
         await deployFacet("UbeswapDEXFacet", diamondAddress, ['swapUbeswap'], hardhatConfig)

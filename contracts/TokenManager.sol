@@ -57,6 +57,22 @@ contract TokenManager is OwnableUpgradeable {
     mapping(address => mapping(bytes32 => uint256)) public pendingUserExposure;
     mapping(bytes32 => uint256) public pendingProtocolExposure;
 
+    address public vPrimeControllerAddress;
+
+    /**
+    * Returns the address of the vPrimeController contract
+     */
+    function getVPrimeControllerAddress() public view returns (address) {
+        return vPrimeControllerAddress;
+    }
+
+    /**
+    * Sets the address of the vPrimeController contract
+     */
+    function setVPrimeControllerAddress(address _vPrimeControllerAddress) public onlyOwner {
+        vPrimeControllerAddress = _vPrimeControllerAddress;
+    }
+
     function initialize(Asset[] memory tokenAssets, poolAsset[] memory poolAssets) external initializer {
         __Ownable_init();
 
