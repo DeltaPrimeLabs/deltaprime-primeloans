@@ -18,16 +18,22 @@
         <span v-if="mintMode">mint</span>
         <span v-if="!mintMode">burn</span>
         transactions in MetaMask can fail due to insufficient gas limit estimated by this wallet.
-        If that's your case, please:
-        <br/>
-        adjust <b>gas limit</b>
-        in your Metamask during transaction
-        (<a class="metamask-warning__link" href="https://support.metamask.io/hc/en-us/articles/360022895972-How-to-customize-gas-settings">link</a>)
-        <br/>
-        or use Rabby
-        (<a class="metamask-warning__link" href="https://chromewebstore.google.com/detail/rabby-wallet/acmacodkjbdgmoleebolmdjonilkdbch">link</a>)
-        <br/>
-        or convert CAI using the swap function.
+        If that's your case, please try one of the following:
+        <ul>
+          <li>
+          adjust <b>gas limit</b>
+          in your Metamask during transaction
+          (<a class="metamask-warning__link" href="https://support.metamask.io/hc/en-us/articles/360022895972-How-to-customize-gas-settings">link</a>)
+          </li>
+          <li>
+          switch to the Rabby wallet
+          (<a class="metamask-warning__link" href="https://chromewebstore.google.com/detail/rabby-wallet/acmacodkjbdgmoleebolmdjonilkdbch">link</a>)
+          </li>
+          <li>
+          convert CAI using the swap function.
+          </li>
+        </ul>
+
       </div>
 
       <div class="asset-info">
