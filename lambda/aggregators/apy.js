@@ -695,10 +695,17 @@ const fetchAssetApy = async () => {
   const ggAvaxApr = parseFloat((await (await panels[2].getProperty("textContent")).jsonValue()).split('APR')[1].split('%')[0].trim());
   console.log("ggAVAX APR: ", ggAvaxApr);
 
+  // CAI API
+  const caiApiUrl = "https://api.phuture.finance/apy/43114/0x48f88A3fE843ccb0b5003e70B4192c1d7448bEf0";
+  const caiApiRes = await (await fetch(caiApiUrl)).json();
+  const caiApr = caiApiRes.data.apy;
+  console.log("CAI APR: ", caiApr);
+
   return {
     sAvaxApr,
     yyAvaxApr,
-    ggAvaxApr
+    ggAvaxApr,
+    caiApr
   }
 }
 
@@ -772,7 +779,7 @@ const balanerApyAggregator = async (event) => {
 }
 
 const assetStakingApyAggregator = async (event) => {
-  const { sAvaxApr, yyAvaxApr, ggAvaxApr } = await fetchAssetApy();
+  const { sAvaxApr, yyAvaxApr, ggAvaxApr, caiApr } = await fetchAssetApy();
 
   let params = {
     TableName: process.env.APY_TABLE,
@@ -810,6 +817,20 @@ const assetStakingApyAggregator = async (event) => {
     AttributeUpdates: {
       apy: {
         Value: Number(ggAvaxApr) ? ggAvaxApr : null,
+        Action: "PUT"
+      }
+    }
+  };
+  await dynamoDb.update(params).promise();
+
+  params = {
+    TableName: process.env.APY_TABLE,
+    Key: {
+      id: "CAI"
+    },
+    AttributeUpdates: {
+      apy: {
+        Value: Number(caiApr) ? caiApr : null,
         Action: "PUT"
       }
     }
