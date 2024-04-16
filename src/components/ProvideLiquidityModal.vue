@@ -166,11 +166,13 @@ export default {
     },
 
     async firstInputChange(change) {
+      console.log('firstInputChange', change);
       this.firstAmount = change;
       if (this.areAmountsLinked) {
         this.secondAmount = this.firstAmount * this.lpToken.firstPrice / this.lpToken.secondPrice;
         this.$refs.secondInput.setValue(this.secondAmount !== 0 ? this.secondAmount.toFixed(this.secondAsset.decimals) : 0);
       }
+      console.log(this.secondAmount);
       console.log('firstInputChange')
       this.firstInputError = await this.$refs.firstInput.forceValidationCheck();
       console.log('this.firstInputError: ', this.firstInputError)
@@ -180,6 +182,7 @@ export default {
     },
 
     async secondInputChange(change) {
+      console.log('secondInputChange', change);
       this.secondAmount = change;
       if (this.areAmountsLinked) {
         this.firstAmount = this.secondAmount * this.lpToken.secondPrice / this.lpToken.firstPrice;

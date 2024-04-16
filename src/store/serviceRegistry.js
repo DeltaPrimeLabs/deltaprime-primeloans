@@ -22,6 +22,7 @@ import LifiService from '../services/lifiService';
 import NotifiService from '../services/notifiService';
 import TraderJoeService from '../services/traderJoeService';
 import TermsService from '../services/termsService';
+import DeprecatedAssetsService from '../services/deprecatedAssetsService';
 
 export default {
   namespaced: true,
@@ -49,6 +50,7 @@ export default {
     lifiService: new LifiService(),
     notifiService: new NotifiService(),
     traderJoeService: new TraderJoeService(),
-    termsService: new TermsService()
+    termsService: new TermsService(),
+    deprecatedAssetsService: new DeprecatedAssetsService(),
   },
 };

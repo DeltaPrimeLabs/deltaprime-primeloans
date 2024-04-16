@@ -21,3 +21,5 @@ functions/config.json
 typechain
 tenderly.yaml
 chromium.zip
+
+.env

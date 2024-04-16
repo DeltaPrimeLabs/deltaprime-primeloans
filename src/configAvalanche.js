@@ -29,17 +29,18 @@ export default {
       "BTC": {name: "BTC", symbol: "BTC", logoExt: "png", decimals: 8, address: addresses.BTC, debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:BTCUSDT"},
       "ETH": {name: "ETH", symbol: "ETH", decimals: 18, address: addresses.ETH, debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:ETHUSDT"},
       "USDT": {name: "USDT", symbol: "USDT", decimals: 6, address: addresses.USDT, isStableCoin: true, debtCoverage: 0.83333333333, tradingViewSymbol: "COINBASE:USDTUSD"},
-      "USDT.e": {inactive: true, name: "USDT.e", symbol: "USDT.e", decimals: 6, address: addresses['USDT.e'],  isStableCoin: true, debtCoverage: 0.83333333333, tradingViewSymbol: "TRADERJOE:USDTEUSDT_74B651"},
+      "USDT.e": {droppingSupport: true, inactive: true, name: "USDT.e", symbol: "USDT.e", decimals: 6, address: addresses['USDT.e'],  isStableCoin: true, debtCoverage: 0, tradingViewSymbol: "TRADERJOE:USDTEUSDT_74B651"},
       "EUROC": {name: "EUROC", symbol: "EUROC", logoExt: "png", decimals: 6, address: addresses.EUROC, debtCoverage: 0.83333333333, groupIdentifier: "EUROC_GROUP", tradingViewSymbol: "COINBASE:EUROCUSD"},
       "GLP": {name: "GLP", symbol: "GLP", logoExt: "png", decimals: 18, address: addresses.GLP, debtCoverage: 0.83333333333, swappableAssets: ['BTC', 'ETH', 'USDC'], tradingViewSymbol: ""},
       "sAVAX": {name: "sAVAX", symbol: "sAVAX", decimals: 18, address: addresses.sAVAX, debtCoverage: 0.83333333333, apy: 6.06, tradingViewSymbol: "TRADERJOE:SAVAXWAVAX_4B946C.USD"},
       "yyAVAX": {name: "yyAVAX", symbol: "yyAVAX", logoExt: "png", decimals: 18, address: addresses.yyAVAX, debtCoverage: 0.83333333333, apy: 4.86, tradingViewSymbol: "TRADERJOE:YYAVAXUSDC_0512AB.USD"},
       "ggAVAX": {name: "ggAVAX", symbol: "ggAVAX", logoExt: "png", decimals: 18, address: addresses.ggAVAX, debtCoverage: 0.83333333333, apy: 5.04, useParaSwapV2: true },
       "GMX": {name: "GMX", symbol: "GMX", logoExt: "png", decimals: 18, address: addresses.GMX, debtCoverage: 0.83333333333, groupIdentifier: "GMX_GROUP", tradingViewSymbol: "BINANCE:GMXUSDT"},
+      "CAI": {name: "CAI", symbol: "CAI", logoExt: "png", decimals: 18, address: addresses.CAI, debtCoverage: 0.83333333333, apy: 5.57, tradingViewSymbol: "BITMART:CAIUSDT"},
       "JOE": {name: "JOE", symbol: "JOE", logoExt: "png", decimals: 18, address: addresses.JOE, debtCoverage: 0.8, groupIdentifier: "JOE_GROUP", tradingViewSymbol: "BINANCE:JOEUSDT"},
       "QI": {name: "QI", symbol: "QI", decimals: 18, address: addresses.QI, debtCoverage: 0, tradingViewSymbol: "BINANCE:QIUSDT"},
       "PNG": {name: "PNG", symbol: "PNG", logoExt: "png", decimals: 18, address: addresses.PNG, debtCoverage: 0, tradingViewSymbol: "COINBASE:PNGUSD"},
-      "PTP": {name: "PTP", symbol: "PTP", logoExt: "png", decimals: 18, address: addresses.PTP, debtCoverage: 0, tradingViewSymbol: "COINEX:PTPUSDT"},
+      "PTP": {droppingSupport: true, name: "PTP", symbol: "PTP", logoExt: "png", decimals: 18, address: addresses.PTP, debtCoverage: 0, tradingViewSymbol: "COINEX:PTPUSDT"},
       "BAL": {unsupported: true, name: "BAL", symbol: "BAL", logoExt: "png", decimals: 18, address: addresses.BAL, debtCoverage: 0, tradingViewSymbol: "BINANCE:BALUSDT"},
       "GGP": {unsupported: true, name: "GGP", symbol: "GGP", logoExt: "png", decimals: 18, address: addresses.GGP, debtCoverage: 0, tradingViewSymbol: "TRADERJOE:GGPWAVAX_AE671E.USD"},
     },
@@ -47,12 +48,12 @@ export default {
     SWAP_DEXS_CONFIG: {
         YakSwap: {
             displayName: 'YakSwap',
-            availableAssets: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'EUROC', 'GLP', 'sAVAX', 'GMX', 'JOE', 'QI', 'PNG', 'PTP', 'yyAVAX'],
+            availableAssets: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'EUROC', 'GLP', 'sAVAX', 'GMX', 'CAI', 'JOE', 'QI', 'PNG', 'PTP', 'yyAVAX'],
             slippageMargin: 0.02
         },
         ParaSwapV2: {
             displayName: 'ParaSwap',
-            availableAssets: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'sAVAX', 'QI', 'PNG', 'PTP', 'yyAVAX', 'ggAVAX'],
+            availableAssets: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'sAVAX', 'CAI', 'QI', 'PNG', 'PTP', 'yyAVAX', 'ggAVAX'],
             slippageMargin: 0.05
         },
         GmxV2: {
@@ -60,6 +61,8 @@ export default {
             slippageMargin: 0.1
         }
     },
+    CAI_MINT_SOURCE_ASSETS: ['JOE', 'sAVAX', 'AVAX', 'QI'],
+    CAI_BURN_TARGET_ASSETS: ['JOE', 'sAVAX', 'AVAX', 'QI'],
     paraSwapDefaultSlippage: 1,
     showParaSwapWarning: true,
     ASSET_FILTER_TOKENS_OPTIONS: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'sAVAX'],
@@ -89,20 +92,20 @@ export default {
         }
     },
     LP_ASSETS_CONFIG: {
-        "PNG_AVAX_USDC_LP": { primary: 'USDC', secondary: 'AVAX', name: "AVAX-USDC", dex: 'Pangolin',  symbol: 'PNG_AVAX_USDC_LP', decimals: 18, address: addresses.PNG_AVAX_USDC_LP, debtCoverage: 0.83333333333},
-        "PNG_AVAX_USDT_LP": { primary: 'USDT', secondary: 'AVAX', name: "AVAX-USDT", dex: 'Pangolin',  symbol: 'PNG_AVAX_USDT_LP', decimals: 18, address: addresses.PNG_AVAX_USDT_LP, debtCoverage: 0.83333333333},
-        "PNG_AVAX_ETH_LP": { primary: 'ETH', secondary: 'AVAX', name: "AVAX-ETH", dex: 'Pangolin',  symbol: 'PNG_AVAX_ETH_LP', decimals: 18, address: addresses.PNG_AVAX_ETH_LP, debtCoverage: 0.83333333333},
-        "TJ_AVAX_USDC_LP": { primary: 'USDC', secondary: 'AVAX', name: "AVAX-USDC", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_USDC_LP', decimals: 18, address: addresses.TJ_AVAX_USDC_LP, debtCoverage: 0.83333333333},
-        "TJ_AVAX_USDT_LP": { primary: 'USDT', secondary: 'AVAX', name: "AVAX-USDT", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_USDT_LP', decimals: 18, address: addresses.TJ_AVAX_USDT_LP, debtCoverage: 0.83333333333},
-        "TJ_AVAX_ETH_LP": { primary: 'ETH', secondary: 'AVAX', name: "AVAX-ETH", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_ETH_LP', decimals: 18, address: addresses.TJ_AVAX_ETH_LP, debtCoverage: 0.83333333333},
-        "TJ_AVAX_BTC_LP": { primary: 'BTC', secondary: 'AVAX', name: "AVAX-BTC", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_BTC_LP', decimals: 18, address: addresses.TJ_AVAX_BTC_LP, debtCoverage: 0.83333333333},
-        "TJ_AVAX_sAVAX_LP": { primary: 'sAVAX', secondary: 'AVAX', name: "AVAX-sAVAX", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_sAVAX_LP', decimals: 18, address: addresses.TJ_AVAX_sAVAX_LP, debtCoverage: 0.83333333333},
+        "PNG_AVAX_USDC_LP": { droppingSupport: true, primary: 'USDC', secondary: 'AVAX', name: "AVAX-USDC", dex: 'Pangolin',  symbol: 'PNG_AVAX_USDC_LP', decimals: 18, address: addresses.PNG_AVAX_USDC_LP, debtCoverage: 0.83333333333},
+        "PNG_AVAX_USDT_LP": { droppingSupport: true, primary: 'USDT', secondary: 'AVAX', name: "AVAX-USDT", dex: 'Pangolin',  symbol: 'PNG_AVAX_USDT_LP', decimals: 18, address: addresses.PNG_AVAX_USDT_LP, debtCoverage: 0.83333333333},
+        "PNG_AVAX_ETH_LP": { droppingSupport: true, primary: 'ETH', secondary: 'AVAX', name: "AVAX-ETH", dex: 'Pangolin',  symbol: 'PNG_AVAX_ETH_LP', decimals: 18, address: addresses.PNG_AVAX_ETH_LP, debtCoverage: 0.83333333333},
+        "TJ_AVAX_USDC_LP": { droppingSupport: true, primary: 'USDC', secondary: 'AVAX', name: "AVAX-USDC", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_USDC_LP', decimals: 18, address: addresses.TJ_AVAX_USDC_LP, debtCoverage: 0.83333333333},
+        "TJ_AVAX_USDT_LP": { droppingSupport: true, primary: 'USDT', secondary: 'AVAX', name: "AVAX-USDT", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_USDT_LP', decimals: 18, address: addresses.TJ_AVAX_USDT_LP, debtCoverage: 0.83333333333},
+        "TJ_AVAX_ETH_LP": { droppingSupport: true, primary: 'ETH', secondary: 'AVAX', name: "AVAX-ETH", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_ETH_LP', decimals: 18, address: addresses.TJ_AVAX_ETH_LP, debtCoverage: 0.83333333333},
+        "TJ_AVAX_BTC_LP": { droppingSupport: true, primary: 'BTC', secondary: 'AVAX', name: "AVAX-BTC", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_BTC_LP', decimals: 18, address: addresses.TJ_AVAX_BTC_LP, debtCoverage: 0.83333333333},
+        "TJ_AVAX_sAVAX_LP": { droppingSupport: true, primary: 'sAVAX', secondary: 'AVAX', name: "AVAX-sAVAX", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_sAVAX_LP', decimals: 18, address: addresses.TJ_AVAX_sAVAX_LP, debtCoverage: 0.83333333333},
     },
     CONCENTRATED_LP_ASSETS_CONFIG: {
-        "SHLB_AVAX-USDC_B": { primary: 'AVAX', secondary: 'USDC', name: "AVAX-USDC", dex: 'SteakHut',  symbol: 'SHLB_AVAX-USDC_B', addMethod: 'stakeSteakHutAVAXUSDC', removeMethod: 'unstakeSteakHutAVAXUSDC', decimals: 18, address: addresses["SHLB_AVAX-USDC_B"], tvl: 180000, debtCoverage: 0.83333333333},
-        "SHLB_BTC.b-AVAX_B": { primary: 'BTC', secondary: 'AVAX', name: "BTC.b-AVAX", dex: 'SteakHut',  symbol: 'SHLB_BTC.b-AVAX_B', addMethod: 'stakeSteakHutBTCAVAX', removeMethod: 'unstakeSteakHutBTCAVAX', decimals: 18, address: addresses["SHLB_BTC.b-AVAX_B"], tvl: 44000, debtCoverage: 0.83333333333},
-        "SHLB_USDT.e-USDt_C": { inactive: true, primary: 'USDT.e', secondary: 'USDT', name: "USDT.e-USDT", dex: 'SteakHut',  symbol: 'SHLB_USDT.e-USDt_C', addMethod: 'stakeSteakHutUSDTeUSDT', removeMethod: 'unstakeSteakHutUSDTeUSDT', decimals: 18, address: addresses["SHLB_USDT.e-USDt_C"], tvl: 513000, debtCoverage: 0.83333333333},
-        "SHLB_EUROC-USDC_V2_1_B": { primary: 'EUROC', secondary: 'USDC', name: "EUROC-USDC", dex: 'SteakHut',  symbol: 'SHLB_EUROC-USDC_V2_1_B', addMethod: 'stakeSteakHutEUROCUSDC', removeMethod: 'unstakeSteakHutEUROCUSDC', decimals: 18, address: addresses["SHLB_EUROC-USDC_V2_1_B"], tvl: 1985000, debtCoverage: 0.83333333333},
+        "SHLB_AVAX-USDC_B": {droppingSupport: true, primary: 'AVAX', secondary: 'USDC', name: "AVAX-USDC", dex: 'SteakHut',  symbol: 'SHLB_AVAX-USDC_B', addMethod: 'stakeSteakHutAVAXUSDC', removeMethod: 'unstakeSteakHutAVAXUSDC', decimals: 18, address: addresses["SHLB_AVAX-USDC_B"], tvl: 180000, debtCoverage: 0.83333333333},
+        "SHLB_BTC.b-AVAX_B": { droppingSupport: true, primary: 'BTC', secondary: 'AVAX', name: "BTC.b-AVAX", dex: 'SteakHut',  symbol: 'SHLB_BTC.b-AVAX_B', addMethod: 'stakeSteakHutBTCAVAX', removeMethod: 'unstakeSteakHutBTCAVAX', decimals: 18, address: addresses["SHLB_BTC.b-AVAX_B"], tvl: 44000, debtCoverage: 0.83333333333},
+        "SHLB_USDT.e-USDt_C": { droppingSupport: true, inactive: true, primary: 'USDT.e', secondary: 'USDT', name: "USDT.e-USDT", dex: 'SteakHut',  symbol: 'SHLB_USDT.e-USDt_C', addMethod: 'stakeSteakHutUSDTeUSDT', removeMethod: 'unstakeSteakHutUSDTeUSDT', decimals: 18, address: addresses["SHLB_USDT.e-USDt_C"], tvl: 513000, debtCoverage: 0},
+        "SHLB_EUROC-USDC_V2_1_B": { droppingSupport: true, primary: 'EUROC', secondary: 'USDC', name: "EUROC-USDC", dex: 'SteakHut',  symbol: 'SHLB_EUROC-USDC_V2_1_B', addMethod: 'stakeSteakHutEUROCUSDC', removeMethod: 'unstakeSteakHutEUROCUSDC', decimals: 18, address: addresses["SHLB_EUROC-USDC_V2_1_B"], tvl: 1985000, debtCoverage: 0.83333333333},
     },
     BALANCER_LP_ASSETS_CONFIG: {
         'BAL_sAVAX_AVAX': { primary: 'sAVAX', secondary: 'AVAX', name: 'sAVAX-AVAX', dex: 'Balancer', symbol: 'BAL_sAVAX_AVAX', debtCoverage: 0.83333333333, decimals: 18, tvl: 5350000, address: addresses['BAL_sAVAX_AVAX'], gaugeAddress: addresses['BAL_S_AVAX_MAIN'], rewardTokens: ['QI'], addMethod: 'joinPoolAndStakeBalancerV2', removeMethod: 'unstakeAndExitPoolBalancerV2', gaugeBalanceMethod: 'balancerSAvaxBalance', poolId: '0xfd2620c9cfcec7d152467633b3b0ca338d3d78cc00000000000000000000001c'},
@@ -215,6 +218,7 @@ export default {
         ],
         sAVAX: [
             {
+                droppingSupport: true,
                 protocol: 'YIELD_YAK',
                 protocolIdentifier: 'YY_PTP_sAVAX',
                 autoCompounding: true,
@@ -233,7 +237,7 @@ export default {
                 rewardTokens: ['sAVAX'],
                 strategy: 'Platypus',
                 banner: 'Due to the recent Platypus exploit, deposits in their farms have been disabled.',
-                refreshDelay: 60000
+                refreshDelay: 60000,
             },
             {
                 protocol: 'VECTOR_FINANCE',
@@ -361,6 +365,7 @@ export default {
         ],
         PNG_AVAX_USDC_LP: [
             {
+                droppingSupport: true,
                 protocol: 'YIELD_YAK',
                 protocolIdentifier: 'YY_PNG_AVAX_USDC_LP',
                 autoCompounding: true,
@@ -381,6 +386,7 @@ export default {
         ],
         PNG_AVAX_ETH_LP: [
             {
+                droppingSupport: true,
                 protocol: 'YIELD_YAK',
                 protocolIdentifier: 'YY_PNG_AVAX_ETH_LP',
                 autoCompounding: true,
@@ -401,6 +407,7 @@ export default {
         ],
         TJ_AVAX_USDC_LP: [
             {
+                droppingSupport: true,
                 protocol: 'YIELD_YAK',
                 protocolIdentifier: 'YY_TJ_AVAX_USDC_LP',
                 autoCompounding: true,
@@ -421,6 +428,7 @@ export default {
         ],
         TJ_AVAX_ETH_LP: [
             {
+                droppingSupport: true,
                 protocol: 'YIELD_YAK',
                 protocolIdentifier: 'YY_TJ_AVAX_ETH_LP',
                 autoCompounding: true,
@@ -441,6 +449,7 @@ export default {
         ],
         TJ_AVAX_sAVAX_LP: [
             {
+                droppingSupport: true,
                 protocol: 'YIELD_YAK',
                 protocolIdentifier: 'YY_TJ_AVAX_sAVAX_LP',
                 autoCompounding: true,
@@ -454,7 +463,7 @@ export default {
                 token: 'TJ_AVAX_sAVAX_LP',
                 rewardsInfo: 'These are the rewards that you accumulated. These are staked too.',
                 isTokenLp: true,
-                debtCoverage: 0.83333333333,
+                debtCoverage: 0,
                 strategy: 'TraderJoe',
                 refreshDelay: 60000,
                 banner: 'Rewards for this farm have been turned off, removing compounding benefits. Therefore, depositing into this farm has been disabled.'

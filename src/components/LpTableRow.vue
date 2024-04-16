@@ -3,6 +3,10 @@
     <div class="table__row" v-if="lpToken">
       <div class="table__cell asset">
         <DoubleAssetIcon :primary="lpToken.primary" :secondary="lpToken.secondary"></DoubleAssetIcon>
+        <img style="margin-left: 5px"
+             v-if="lpToken.droppingSupport && lpBalances[lpToken.symbol] > 0"
+             src="src/assets/icons/warning.svg"
+             v-tooltip="{content: `We will drop support to this asset on 26.04.2024 12:00 CET. Please withdraw or swap to another token.`, classes: 'info-tooltip long'}">
         <div class="asset__info">
           <div class="asset__name">{{ lpToken.primary }} - {{ lpToken.secondary }}</div>
           <div class="asset__dex">
@@ -393,7 +397,9 @@ export default {
       modalInstance.lpTokenBalance = Number(this.lpBalances[this.lpToken.symbol]);
       modalInstance.firstAssetBalance = this.assetBalances[this.lpToken.primary];
       modalInstance.secondAssetBalance = this.assetBalances[this.lpToken.secondary];
+      modalInstance.areAmountsLinked = true;
       modalInstance.$on('PROVIDE_LIQUIDITY', provideLiquidityEvent => {
+        console.log(provideLiquidityEvent);
         if (this.smartLoanContract) {
           const provideLiquidityRequest = {
             symbol: this.lpToken.symbol,

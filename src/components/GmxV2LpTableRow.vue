@@ -9,10 +9,6 @@
             by <a v-on:click="openProfileModal"><b>GMX V2</b></a>
           </div>
         </div>
-        <img v-if="lpToken.symbol === 'GM_BTC_BTCb_USDC'"
-             src="src/assets/icons/icon_circle_star.svg"
-             class="point-star-icon"
-             v-tooltip="{content: 'Deposit $1000+ borrowed BTC in this pool, to enter the daily $200 raffle.', classes: 'info-tooltip'}" />
       </div>
 
       <div class="table__cell table__cell--double-value balance">

@@ -42,6 +42,10 @@
       Data feeds error. Some functions might be not available.
     </Banner>
 
+<!--    <Banner v-if="showPrimeAccountBanner" :closable="true">
+      GM positions temporarily illiquid. Please see Discord before redeeming GM
+    </Banner>-->
+
     <Banner v-if="showArbitrumDepositorBanner" background="green-accent" :closable="true">
       Liquidity mining event is updated! Shortly after a pool hits $1M the next pool opens up.
       <a class="banner-link" href="https://medium.com/@Delta_Prime/relaunching-deltaprime-on-arbitrum-ac43bdd91ed5"
@@ -54,12 +58,13 @@
     <!--    <Banner v-if="showArbitrumPrimeAccountBanner" background="green-accent" :closable="true">
           Last chance to mint GM for the current milestone
         </Banner>-->
-    <Banner v-if="showAvalanchePrimeAccountBanner" :closable="true">
-      AVAX collected for the GM incentive program is currently overvalued. This will be resolved soon.
-    </Banner>
     <Banner v-if="showArbitrumCongestionBanner" :closable="true">
       The Arbitrum chain is fully congested resulting in failed transactions across apps. Please join our <a
       href='https://discord.gg/57EdDsvhxK' target='_blank'><b>Discord</b></a> to learn more
+    </Banner>
+
+    <Banner v-if="showDeprecatedAssetsBanner">
+      We are dropping support to some tokens of your Prime Account. Please review your portfolio
     </Banner>
     <Banner v-if="showAvalancheDepositorBanner" background="green" :closable="true">
       BTC APY will be boosted this Wednesday.
@@ -80,7 +85,7 @@
           <ThemeToggle class="top-bar__theme-toggle"></ThemeToggle>
           <div v-if="isSavingsPage" class="protocol-insurance">
             <span>Reserve Fund:</span>
-            <span class="insurance-value">$1,759,000</span>
+            <span class="insurance-value">$2,340,000</span>
             <InfoIcon class="info__icon"
                       :tooltip="{content: 'Protocol Reserve Fund and Atomica insurance pools.', classes: 'info-tooltip'}"
                       :classes="'info-tooltip'"></InfoIcon>
@@ -151,6 +156,7 @@ export default {
       showNoWalletBanner: window.noWalletInstalled,
       isSavingsPage: false,
       signingTermsInProgress: false,
+      showDeprecatedAssetsBanner: false,
     };
   },
   async created() {
@@ -217,11 +223,15 @@ export default {
     });
     this.watchCloseModal();
     this.checkTerms();
+    this.watchHasDeprecatedAssets();
+    setTimeout(() => {
+      this.checkWallet();
+    }, 500)
   },
   computed: {
     ...mapState('network', ['account', 'provider']),
     ...mapState('fundsStore', ['protocolPaused', 'oracleError', 'smartLoanContract']),
-    ...mapState('serviceRegistry', ['modalService', 'termsService', 'accountService', 'poolService']),
+    ...mapState('serviceRegistry', ['modalService', 'termsService', 'accountService', 'poolService', 'deprecatedAssetsService']),
     ...mapState('poolStore', ['pools'])
   },
   methods: {
@@ -400,6 +410,34 @@ export default {
       })
     },
 
+    watchHasDeprecatedAssets() {
+      this.deprecatedAssetsService.observeHasDeprecatedAssets().subscribe(hasDeprecatedAssets => {
+        console.warn('DEPRECATED ASSETS', hasDeprecatedAssets);
+        if (hasDeprecatedAssets) {
+          this.showDeprecatedAssetsBanner = true;
+        }
+      })
+    },
+
+    checkWallet() {
+      console.warn('--------__---__------___--___--__---___checking wallet--------___---___-___--___---__--___--__');
+      if (this.provider && this.provider.provider) {
+        console.log('provider', this.provider.provider)
+        if (this.provider.provider.isRabby) {
+          console.warn('RABBY');
+          window.isRabby = true;
+          window.isMetaMask = false;
+          return;
+        }
+
+        if (this.provider.provider.isMetaMask) {
+          console.warn('METAMASK');
+          window.isMetaMask = true;
+          window.isRabby = false;
+          return;
+        }
+      }
+    },
   },
   destroyed() {
     clearInterval(this.gasPriceIntervalId);

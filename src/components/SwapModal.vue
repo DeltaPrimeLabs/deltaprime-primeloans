@@ -417,12 +417,14 @@ export default {
           console.log(estimatedReceivedTokens);
           this.updateSlippageWithAmounts(estimatedReceivedTokens);
         } else {
+          console.log('queryResponse', queryResponse);
+          console.log(queryResponse instanceof BigNumber);
           this.calculatingSwapRoute = false;
           if (queryResponse.dex === 'PARA_SWAP') {
             estimated = queryResponse.amounts[queryResponse.amounts.length - 1];
             this.paraSwapRate = queryResponse.swapRate;
           } else {
-            if (queryResponse instanceof BigNumber) {
+            if (queryResponse instanceof BigNumber || !queryResponse.path) {
               estimated = queryResponse;
             } else {
               this.path = queryResponse.path;
