@@ -22,10 +22,7 @@ describe('vPrime tests', () => {
         vPrime = await deployContract(
             user1,
             MockVPrimeArtifact,
-            [
-                [],
-                ethers.constants.AddressZero,
-            ]
+            []
         ) as VPrimeMock;
     })
 
@@ -40,8 +37,8 @@ describe('vPrime tests', () => {
 
         let rateUser1 = 2000 / (60*60*24);
         let rateUser2 = 4000 / (60*60*24);
-        await vPrime.adjustBalance(user1.address, toWei(rateUser1.toString()), toWei("1500")); // 1 day = 60*60*24 seconds = 86400
-        await vPrime.adjustBalance(user2.address, toWei(rateUser2.toString()), toWei("3000")); // 1 day = 60*60*24 seconds = 86400
+        await vPrime.adjustRateAndCap(user1.address, toWei(rateUser1.toString()), toWei("1500")); // 1 day = 60*60*24 seconds = 86400
+        await vPrime.adjustRateAndCap(user2.address, toWei(rateUser2.toString()), toWei("3000")); // 1 day = 60*60*24 seconds = 86400
 
         await time.increase(time.duration.hours(6))
 
@@ -67,7 +64,7 @@ describe('vPrime tests', () => {
 
     it("[balance decrease] should adjust users balances and check them every 6 hours", async () => {
         let rateUser2 = -1000 / (60*60*24);
-        await vPrime.adjustBalance(user2.address, toWei(rateUser2.toString()), toWei("2700")); // 1 day = 60*60*24 seconds = 86400
+        await vPrime.adjustRateAndCap(user2.address, toWei(rateUser2.toString()), toWei("2700")); // 1 day = 60*60*24 seconds = 86400
         expect(fromWei(await vPrime.balanceOf(user2.address))).to.be.closeTo(3000, 0.3);
 
         await time.increase(time.duration.hours(6))

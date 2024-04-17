@@ -43,8 +43,9 @@ contract vPrimeController is Ownable, RedstoneConsumerNumericBase, AuthorisedMoc
         vPrimeContract = _vPrime;
     }
 
-    function getUserDepositDollarValueAcrossWhiteListedPools(address userAddress) public view returns (uint256) {
-        uint256 totalDollarValue = 0;
+    function getUserDepositDollarValueAcrossWhiteListedPoolsVestedAndNonVested(address userAddress) public view returns (uint256 fullyVestedBalance, uint256 nonVestedBalance) {
+        uint256 fullyVestedDollarValue = 0;
+        uint256 nonVestedDollarValue = 0;
         bytes32[] memory poolsTokenSymbols = new bytes32[](whitelistedPools.length);
         for (uint i = 0; i < whitelistedPools.length; i++) {
             poolsTokenSymbols[i] = tokenManager.tokenAddressToSymbol(whitelistedPools[i].tokenAddress());
@@ -54,9 +55,11 @@ contract vPrimeController is Ownable, RedstoneConsumerNumericBase, AuthorisedMoc
         for (uint i = 0; i < whitelistedPools.length; i++) {
             uint256 poolBalance = IERC20(whitelistedPools[i]).balanceOf(userAddress);
             uint256 poolDollarValue = poolBalance * prices[i] * 1e10 / 10 ** whitelistedPools[i].decimals();
-            totalDollarValue += poolDollarValue;
+            uint256 fullyVestedToTotalBalanceRatio = whitelistedSPrimeContracts[i].getFullyVestedLockedBalanceToNonVestedRatio(userAddress);
+            fullyVestedDollarValue += poolDollarValue * fullyVestedToTotalBalanceRatio / 1e18;
+            nonVestedDollarValue += poolDollarValue * (1e18 - fullyVestedToTotalBalanceRatio) / 1e18;
         }
-        return totalDollarValue;
+        return (fullyVestedDollarValue, nonVestedDollarValue);
     }
 
     function getUserBorrowedDollarValueAcrossWhitelistedPools(address userAddress) public view returns (uint256) {
@@ -75,7 +78,19 @@ contract vPrimeController is Ownable, RedstoneConsumerNumericBase, AuthorisedMoc
         return totalDollarValue;
     }
 
-    function getUserSPrimeDollarValue(address userAddress) public view returns (uint256) {
+    function getUserSPrimeDollarValueVestedAndNonVested(address userAddress) public view returns (uint256 fullyVestedBalance, uint256 nonVestedBalance) {
+        uint256 fullyVestedDollarValue = 0;
+        uint256 nonVestedDollarValue = 0;
+        for (uint i = 0; i < whitelistedSPrimeContracts.length; i++) {
+            uint256 sPrimeDollarValue = whitelistedSPrimeContracts[i].getUserDepositDollarValue(userAddress);
+            uint256 fullyVestedToTotalBalanceRatio = whitelistedSPrimeContracts[i].getFullyVestedLockedBalanceToNonVestedRatio(userAddress);
+            fullyVestedDollarValue += sPrimeDollarValue * fullyVestedToTotalBalanceRatio / 1e18;
+            nonVestedDollarValue += sPrimeDollarValue * (1e18 - fullyVestedToTotalBalanceRatio) / 1e18;
+        }
+        return (fullyVestedDollarValue, nonVestedDollarValue);
+    }
+
+    function getUserSPrimeDollarValue(address userAddress) public view returns (uint256 totalDollarValue) {
         uint256 totalDollarValue = 0;
         for (uint i = 0; i < whitelistedSPrimeContracts.length; i++) {
             uint256 sPrimeDollarValue = whitelistedSPrimeContracts[i].getUserDepositDollarValue(userAddress);
@@ -86,8 +101,11 @@ contract vPrimeController is Ownable, RedstoneConsumerNumericBase, AuthorisedMoc
 
     function getBorrowerVPrimePairsCount(address userAddress) public view returns (uint256){
         uint256 userBorrowedDollarValue = getUserBorrowedDollarValueAcrossWhitelistedPools(userAddress);
-        uint256 userSPrimeDollarValue = getUserSPrimeDollarValue(userAddress);
-        uint256 borrowerVPrimePairsCount = Math.min(userBorrowedDollarValue / 10, userSPrimeDollarValue) / 1e18;
+        (uint256 userSPrimeDollarValueFullyVested, uint256 userSPrimeDollarValueNonVested) = getUserSPrimeDollarValueVestedAndNonVested(userAddress);
+        uint256 borrowerVPrimePairsCount = Math.min
+            (userBorrowedDollarValue / 10,
+            (userSPrimeDollarValueFullyVested + userSPrimeDollarValueNonVested)
+        ) / 1e18;
         return borrowerVPrimePairsCount;
     }
 
@@ -108,35 +126,66 @@ contract vPrimeController is Ownable, RedstoneConsumerNumericBase, AuthorisedMoc
     * For every $10 deposited and $1 $sPRIME staked into one of DeltaPrime’s liquidity pools, your balance increases with 5 $vPRIME per year.
     * Only full 10-1 pairs can produce $vPRIME.
     */
-    function getDepositorVPrimePairsCount(address userAddress) public view returns (uint256){
-        uint256 userDepositDollarValue = getUserDepositDollarValueAcrossWhiteListedPools(userAddress);
-        uint256 userSPrimeDollarValue = getUserSPrimeDollarValue(userAddress);
-        uint256 depositAndSPrime10To1PairsCount = Math.min(userDepositDollarValue / 10, userSPrimeDollarValue) / 1e18;
-        return depositAndSPrime10To1PairsCount;
+    function getDepositorVPrimePairsCount(address userAddress) public view returns (uint256 depositVestedPairsCount, uint256 depositNonVestedPairsCount){
+        (uint256 userDepositFullyVestedDollarValue, uint256 userDepositNonVestedDollarValue) = getUserDepositDollarValueAcrossWhiteListedPoolsVestedAndNonVested(userAddress);
+        (uint256 userSPrimeDollarValueFullyVested, uint256 userSPrimeDollarValueNonVested) = getUserSPrimeDollarValueVestedAndNonVested(userAddress);
+        uint256 depositVestedPairsCount = Math.min(userDepositFullyVestedDollarValue / 10, userSPrimeDollarValueFullyVested) / 1e18;
+        uint256 depositNonVestedPairsCount = Math.min(userDepositNonVestedDollarValue / 10, userSPrimeDollarValueNonVested) / 1e18;
+        return (depositVestedPairsCount, depositNonVestedPairsCount);
     }
 
-    function getDepositorVPrimeRateAndMaxCap(address userAddress) public view returns (int256, uint256){
-        uint256 vPrimePairsCount = getDepositorVPrimePairsCount(userAddress);
-        uint256 vPrimeMaxCap = vPrimePairsCount * DEPOSITOR_YEARLY_V_PRIME_RATE * MAX_V_PRIME_VESTING_YEARS * 1e18;
+    function getDepositorVPrimeRateAndMaxCap(address userAddress) public view returns (int256, uint256, uint256){
+        console.log('x1');
+        (uint256 vPrimePairsCountVested, uint256 vPrimePairsCountNonVested) = getDepositorVPrimePairsCount(userAddress);
+        console.log('x2');
+
+        uint256 vPrimeMaxCap = (vPrimePairsCountVested + vPrimePairsCountNonVested) * DEPOSITOR_YEARLY_V_PRIME_RATE * MAX_V_PRIME_VESTING_YEARS * 1e18;
+        uint256 alreadyVestedVPrimeBalance = vPrimePairsCountVested * DEPOSITOR_YEARLY_V_PRIME_RATE * MAX_V_PRIME_VESTING_YEARS * 1e18;
         uint256 currentVPrimeBalance = IERC20(vPrimeContract).balanceOf(userAddress);
+        bool balanceShouldBeReplaced = false;
+        if(currentVPrimeBalance < alreadyVestedVPrimeBalance){
+            currentVPrimeBalance = alreadyVestedVPrimeBalance;
+            balanceShouldBeReplaced = true;
+        }
         int256 vPrimeRate = int256(vPrimeMaxCap) - int256(currentVPrimeBalance);
         if(vPrimeRate < 0){
             vPrimeRate = vPrimeRate / int256(V_PRIME_DETERIORATION_DAYS) / 1 days;
-        } else{
+        } else {
             vPrimeRate = vPrimeRate / int256(MAX_V_PRIME_VESTING_YEARS) / 365 days;
         }
-        return (vPrimeRate, vPrimeMaxCap);
+        if(balanceShouldBeReplaced){
+            return (vPrimeRate, vPrimeMaxCap, alreadyVestedVPrimeBalance);
+        } else {
+            return (vPrimeRate, vPrimeMaxCap, 0);
+        }
     }
 
     function updateVPrimeSnapshot(address userAddress) public {
         int256 vPrimeRate;
         uint256 vPrimeMaxCap;
+        uint256 alreadyVestedPrimeBalance;
+        console.log('y1');
         if(borrowersRegistry.canBorrow(userAddress)){   // It's a PrimeAccount
+            console.log('y2');
             (vPrimeRate, vPrimeMaxCap) = getBorrowerVPrimeRateAndMaxCap(userAddress);
+            console.log('y3');
+            vPrimeContract.adjustRateAndCap(userAddress, vPrimeRate, vPrimeMaxCap);
+            console.log('y4');
         } else {
-            (vPrimeRate, vPrimeMaxCap) = getDepositorVPrimeRateAndMaxCap(userAddress);
+            console.log('y5');
+            (vPrimeRate, vPrimeMaxCap, alreadyVestedPrimeBalance) = getDepositorVPrimeRateAndMaxCap(userAddress);
+            console.log('y6');
+            // alreadyVestedPrimeBalance > 0 mean that the already vested vPrime is higher than the current balance
+            if(alreadyVestedPrimeBalance > 0){
+                console.log('y7');
+                vPrimeContract.adjustRateCapAndBalance(userAddress, vPrimeRate, vPrimeMaxCap, alreadyVestedPrimeBalance);
+                console.log('y8');
+            } else {
+                console.log('y9');
+                vPrimeContract.adjustRateAndCap(userAddress, vPrimeRate, vPrimeMaxCap);
+                console.log('y10');
+            }
         }
-        vPrimeContract.adjustBalance(userAddress, vPrimeRate, vPrimeMaxCap);
     }
 
     /**

@@ -67,7 +67,7 @@ contract vPrime is ERC20Permit, Ownable {
     // PA will call this function in case of borrow/repay/mintSPrime/redeemSPrime
     // Pools will call this function in case of deposit/withdraw
     // sPrime can also call this function in case of mint/redeem (both for PAs and depositors, but checking different conditions for each)
-    function adjustBalance(address user, int256 rate, uint256 newMaxVPrimeCap) external {
+    function adjustRateAndCap(address user, int256 rate, uint256 newMaxVPrimeCap) external {
         require(isWhitelisted(_msgSender()), "Caller is not whitelisted");
 
         uint256 lastRecordedVotes = getVotes(user);
@@ -82,6 +82,23 @@ contract vPrime is ERC20Permit, Ownable {
             _writeCheckpoint(_checkpoints[user], _subtract, uint256(-votesDiff), rate, newMaxVPrimeCap);
         } else {
             _writeCheckpoint(_checkpoints[user], _add, 0, rate, newMaxVPrimeCap);
+        }
+    }
+
+    function adjustRateCapAndBalance(address user, int256 rate, uint256 newMaxVPrimeCap, uint256 balance) external {
+        require(isWhitelisted(_msgSender()), "Caller is not whitelisted");
+
+        uint256 lastRecordedVotes = getVotes(user);
+        int256 votesDiff = int256(balance) - int256(lastRecordedVotes);
+
+        if(votesDiff > 0) {
+            _mint(user, uint256(votesDiff));
+            _writeCheckpointOverwriteBalance(_checkpoints[user], balance, rate, newMaxVPrimeCap);
+        } else if(votesDiff < 0) {
+            _burn(user, uint256(-votesDiff));
+            _writeCheckpointOverwriteBalance(_checkpoints[user], balance, rate, newMaxVPrimeCap);
+        } else {
+            _writeCheckpointOverwriteBalance(_checkpoints[user], lastRecordedVotes, rate, newMaxVPrimeCap);
         }
     }
 
@@ -261,6 +278,8 @@ contract vPrime is ERC20Permit, Ownable {
             newBalance = cp.balance + balanceIncrease;
             if (newBalance > cp.maxVPrimeCap) {
                 return cp.maxVPrimeCap;
+            } else {
+                return newBalance;
             }
         } else {
             // If rate is negative, convert to positive for calculation, then subtract
@@ -277,8 +296,6 @@ contract vPrime is ERC20Permit, Ownable {
                 }
             }
         }
-
-        return newBalance;
     }
 
     function _writeCheckpointWithoutRateAndCap(
@@ -314,7 +331,29 @@ contract vPrime is ERC20Permit, Ownable {
                 maxVPrimeCap: maxVPrimeCap
             }));
         }
+    }
 
+    function _writeCheckpointOverwriteBalance(
+        Checkpoint[] storage ckpts,
+        uint256 balance,
+        int256 rate,
+        uint256 maxVPrimeCap
+    ) private returns (uint256 oldWeight, uint256 newWeight) {
+        uint256 pos = ckpts.length;
+        Checkpoint memory oldCkpt = pos == 0 ? Checkpoint(0, 0, 0, 0) : ckpts[pos - 1];
+
+        if (pos > 0 && oldCkpt.blockTimestamp == clock()) {
+            oldCkpt.balance = balance;
+            oldCkpt.rate = rate;
+            oldCkpt.maxVPrimeCap = maxVPrimeCap;
+        } else {
+            ckpts.push(Checkpoint({
+                blockTimestamp: SafeCast.toUint32(clock()),
+                balance: balance,
+                rate: rate,
+                maxVPrimeCap: maxVPrimeCap
+            }));
+        }
     }
 
     function _add(uint256 a, uint256 b) private pure returns (uint256) {
