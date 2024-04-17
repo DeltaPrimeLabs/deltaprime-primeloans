@@ -18,7 +18,7 @@ export const formatUnits = ethers.utils.formatUnits;
 const STABILITY_POOL_ADDRESS = "0x8Ac151296Ae72a8AeE01ECB33cd8Ad9842F2704f";
 const FEES_TREASURY_ADDRESS = "0x18C244c62372dF1b933CD455769f9B4DdB820F0C";
 const CHAIN = "avalanche";
-const jsonRPC = "https://avalanche-mainnet.core.chainstack.com/ext/bc/C/rpc/0968db18a01a90bac990ff00df6f7da1";
+const jsonRPC = "https://api.avax.network/ext/bc/C/rpc";
 
 const key = fs.readFileSync("./.secret").toString().trim();
 let mnemonicWallet = new ethers.Wallet(key);
@@ -99,8 +99,8 @@ const DECIMALS = {
 
 const EVENT_NAME = "Liquidate"; //event name
 
-const START_TIMESTAMP = 1673352000; //10.01.2023
-const END_TIMESTAMP = 1712059200; //01.04.2024
+const START_TIMESTAMP = 1712059200; //02.04.2024
+const END_TIMESTAMP = 1713079306; //21.09.2024
 // const START_TIMESTAMP = 1705752000;
 // const END_TIMESTAMP = 1708430400;
 

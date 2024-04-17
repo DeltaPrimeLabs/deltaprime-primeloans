@@ -26,9 +26,9 @@ const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch
 
 // const START_TIMESTAMP = 1701172800;
 //TODO: failed
-const START_TIMESTAMP = 1709208000;
+const START_TIMESTAMP = 1711800000;
 // const END_TIMESTAMP = 1711884247;
-const END_TIMESTAMP = 1712400720;
+const END_TIMESTAMP = 1713080059;
 const NO_OF_INTERVALS = 1;
 const INTERVAL = 3600 * 24 * 5; //5 DAYS
 
