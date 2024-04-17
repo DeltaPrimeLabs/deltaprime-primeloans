@@ -49,23 +49,45 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyCo
 
     uint8 internal _decimals;
 
-    mapping(address => uint256) public lockedUntil;
-    mapping(address => uint256) public lockedBalances;
+    struct LockDetails {
+        uint256 lockTime;
+        uint256 amount;
+        uint256 unlockTime;
+    }
+    mapping(address => LockDetails[]) public locks;
+    uint256 public constant MAX_LOCK_TIME = 3 * 365 days;
+
     vPrimeController public vPrimeControllerContract;
+
+    function getLockedBalance(address account) public view returns (uint256) {
+        uint256 lockedBalance = 0;
+        for (uint i = 0; i < locks[account].length; i++) {
+            if (locks[account][i].unlockTime > block.timestamp) {
+                lockedBalance += locks[account][i].amount;
+            }
+        }
+        return lockedBalance;
+    }
 
 
     function lockDeposit(uint256 amount, uint256 lockTime) public {
-        require(balanceOf(msg.sender) >= amount, "Insufficient balance to lock");
-        require(lockTime <= 3 * 365 days, "Cannot lock for more than 3 years");
-        require(amount >= lockedBalances[msg.sender], "Cannot decrease locked amount");
-        uint256 remainingLockTime = 0;
-        if (block.timestamp < lockedUntil[msg.sender]) {
-            remainingLockTime = lockedUntil[msg.sender] - block.timestamp;
-        }
-        require(lockTime >= remainingLockTime, "Cannot decrease lock time");
+        uint256 lockedBalance = getLockedBalance(msg.sender);
+        require(balanceOf(msg.sender) - lockedBalance >= amount, "Insufficient balance to lock");
+        require(lockTime <= MAX_LOCK_TIME, "Cannot lock for more than 3 years");
 
-        lockedUntil[msg.sender] = block.timestamp + lockTime;
-        lockedBalances[msg.sender] = amount;
+        locks[msg.sender].push(LockDetails(lockTime, amount, block.timestamp + lockTime));
+    }
+
+
+    function getFullyVestedLockedBalanceToNonVestedRatio(address account) public view returns (uint256) {
+        uint256 totalBalance = balanceOf(account);
+        uint256 fullyVestedBalance = 0;
+        for (uint i = 0; i < locks[account].length; i++) {
+            if (locks[account][i].unlockTime <= block.timestamp) {
+                fullyVestedBalance += locks[account][i].amount * locks[account][i].lockTime / MAX_LOCK_TIME;
+            }
+        }
+        return totalBalance == 0 ? 0 : fullyVestedBalance * 1e18 / totalBalance;
     }
 
     function setVPrimeController(vPrimeController _vPrimeController) public onlyOwner {
@@ -164,7 +186,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyCo
 
     /* ========== MUTATIVE FUNCTIONS ========== */
     function transfer(address recipient, uint256 amount) external override nonReentrant returns (bool) {
-        require(block.timestamp > lockedUntil[msg.sender] || amount <= balanceOf(msg.sender) - lockedBalances[msg.sender], "Balance is locked");
+        require(isWithdrawalAmountAvailable(msg.sender, amount) , "Balance is locked");
         if(recipient == address(0)) revert TransferToZeroAddress();
 
         if(recipient == address(this)) revert TransferToPoolAddress();
@@ -245,7 +267,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyCo
     }
 
     function transferFrom(address sender, address recipient, uint256 amount) external override nonReentrant returns (bool) {
-        require(block.timestamp > lockedUntil[sender] || amount <= balanceOf(sender) - lockedBalances[sender], "Balance is locked");
+        require(isWithdrawalAmountAvailable(sender, amount) , "Balance is locked");
         if(_allowed[sender][msg.sender] < amount) revert InsufficientAllowance(amount, _allowed[sender][msg.sender]);
 
         if(recipient == address(0)) revert TransferToZeroAddress();
@@ -304,13 +326,18 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyCo
      * It updates `_of` user deposited balance, total deposited and rates
      **/
     function depositOnBehalf(uint256 _amount, address _of) public virtual nonReentrant {
+        console.log('1');
         if(_amount == 0) revert ZeroDepositAmount();
         require(_of != address(0), "Address zero");
         require(_of != address(this), "Cannot deposit on behalf of pool");
 
+        console.log('2');
+
         _amount = Math.min(_amount, IERC20(tokenAddress).balanceOf(msg.sender));
 
         _accumulateDepositInterest(_of);
+
+        console.log('3');
 
         if(totalSupplyCap != 0){
             if(_deposited[address(this)] + _amount > totalSupplyCap) revert TotalSupplyCapBreached();
@@ -328,11 +355,13 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyCo
 
         emit DepositOnBehalfOf(msg.sender, _of, _amount, block.timestamp);
 
+        console.log('4');
         proxyCalldata(
             address(vPrimeControllerContract),
             abi.encodeWithSignature("updateVPrimeSnapshot(address)", _of),
             false
         );
+        console.log('5');
     }
 
     function _transferToPool(address from, uint256 amount) internal virtual {
@@ -343,12 +372,18 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyCo
         tokenAddress.safeTransfer(to, amount);
     }
 
+    function isWithdrawalAmountAvailable(address account, uint256 amount) public view returns (bool) {
+        uint256 lockedBalance = getLockedBalance(account);
+        return amount <= balanceOf(account) - lockedBalance;
+    }
+
     /**
      * Withdraws selected amount from the user deposits
      * @dev _amount the amount to be withdrawn
      **/
     function withdraw(uint256 _amount) external nonReentrant {
-        require(block.timestamp > lockedUntil[msg.sender] || _amount <= balanceOf(msg.sender) - lockedBalances[msg.sender], "Balance is locked");
+        require(isWithdrawalAmountAvailable(msg.sender, _amount) , "Balance is locked");
+
         _accumulateDepositInterest(msg.sender);
         _amount = Math.min(_amount, _deposited[msg.sender]);
 
