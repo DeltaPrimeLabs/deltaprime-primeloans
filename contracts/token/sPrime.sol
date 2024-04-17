@@ -7,17 +7,21 @@ pragma solidity 0.8.17;
 import "../lib/joe-v2/math/SafeCast.sol";
 import "../interfaces/ISPrime.sol";
 import "../interfaces/joe-v2/ILBRouter.sol";
+import "../interfaces/ITokenManager.sol";
 import "../lib/joe-v2/LiquidityAmounts.sol";
 import "../lib/joe-v2/math/Uint256x256Math.sol";
 import "../lib/joe-v2/math/LiquidityConfigurations.sol";
+import "../lib/SolvencyMethods.sol";
+import "../lib/local/DeploymentConstants.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 // SPrime contract declaration
-contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
-    using SafeERC20 for IERC20; // Using SafeERC20 for IERC20 for safe token transfers
+contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20, SolvencyMethods {
+    using SafeERC20 for IERC20Metadata; // Using SafeERC20 for IERC20 for safe token transfers
     using LiquidityAmounts for address; // Using LiquidityAmounts for address for getting amounts of liquidity
     using SafeCast for uint256; // Using SafeCast for uint256 for safe type casting
 
@@ -33,8 +37,8 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
     mapping(uint256 => bool) public pairStatus;
 
     // Immutable variables for storing token and pair information
-    IERC20 public immutable tokenX;
-    IERC20 public immutable tokenY;
+    IERC20Metadata public immutable tokenX;
+    IERC20Metadata public immutable tokenY;
     ILBPair public immutable lbPair;
     uint16 internal constant DEFAULT_BIN_STEP = 25;
     uint256 internal constant DEFAULT_SLIPPAGE = 10;
@@ -56,8 +60,8 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
     constructor(address tokenX_, address tokenY_, string memory name_, uint256[] memory distributionX_, uint256[] memory distributionY_, int256[] memory deltaIds_) ERC20(name_, "sPrime"){
         require(deltaIds_.length == distributionX_.length && deltaIds_.length == distributionY_.length, "Length Mismatch");
 
-        tokenX = IERC20(tokenX_);
-        tokenY = IERC20(tokenY_);
+        tokenX = IERC20Metadata(tokenX_);
+        tokenY = IERC20Metadata(tokenY_);
 
         ILBRouter traderJoeV2Router = ILBRouter(getJoeV2RouterAddress());
         ILBFactory lbFactory = traderJoeV2Router.getFactory();
@@ -94,6 +98,40 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
             }
         }
         return status;
+    }
+
+    /**
+     * @dev Check if the active id is in the user position range
+     * @param user User Address.
+     * @return status bin status
+     */
+    function binInRange(address user) public view returns(bool) {
+        bool status = false;
+        uint256[] memory depositIds = pairList[userInfo[user].centerId].depositIds;
+        uint256 activeId = lbPair.getActiveId();
+        if(depositIds[0] <= activeId && depositIds[depositIds.length - 1] >= activeId) {
+            status = true;
+        }
+        return status;
+    }
+
+    /**
+     * @dev Returns the estimated USD value of the user position
+     * @param user User Address
+     * @return totalValue Total Value in USD for the user's position.
+     */
+    function getUserPosition(address user) public view returns (uint256 totalValue) {
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        uint256 centerId = userInfo[user].centerId;
+        uint256 pairSupply = pairList[centerId].totalShare;
+
+        (uint256 totalX, uint256 totalY) = _getBalances(centerId);
+        (uint256 amountX, uint256 amountY) = (totalX * userInfo[user].share / pairSupply, totalY * userInfo[user].share / pairSupply);
+        amountY = amountY + _getTokenYFromTokenX(amountX);
+
+        uint256 tokenYPrice = getPrice(tokenManager.tokenAddressToSymbol(address(tokenY)));
+
+        totalValue = tokenYPrice * amountY / tokenY.decimals();
     }
 
     /**
@@ -152,9 +190,8 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20 {
     function _getTokenYFromTokenX(uint256 amountX) internal view returns(uint256 amountY) {
         (uint128 reserverA, ) = lbPair.getReserves();
         if(reserverA > 0) {
-            ILBRouter traderJoeV2Router = ILBRouter(getJoeV2RouterAddress());
-            (, uint128 amountXToY, ) = traderJoeV2Router.getSwapOut(lbPair, uint128(amountX), true);
-            amountY = amountXToY;
+            uint256 price = PriceHelper.convert128x128PriceToDecimal(lbPair.getPriceFromId(lbPair.getActiveId())); 
+            amountY = amountX * price / 1e18;
         } else {
             amountY = 0;
         }
