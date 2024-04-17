@@ -24,6 +24,7 @@ export default {
   methods: {
     close() {
       this.closeModal();
+      this.$emit('modalClosed');
     }
   },
   props: {

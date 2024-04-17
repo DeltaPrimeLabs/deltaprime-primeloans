@@ -11,7 +11,7 @@
       <div v-if="state === 'IN_PROGRESS' && !statusInfo" class="text-overlay__text text-overlay__in-progress">Waiting for confirmation...</div>
       <div v-if="state === 'IN_PROGRESS' && statusInfo && statusInfo.message" class="text-overlay__text text-overlay__in-progress">
         <div v-if="statusInfo.message">{{ statusInfo.message }}<span v-if="estimatedDuration">{{ estimatedDurationInFormat }}</span>&nbsp; </div>
-        <div>Check status <span @click="openResumeBridgeModal()">here</span></div>
+        <div>Check status <span class="btn-hover" @click="openResumeBridgeModal">here</span></div>
       </div>
       <div v-if="state === 'SUCCESS'" class="text-overlay__text text-overlay__success">
         Success
@@ -51,7 +51,7 @@ export default {
       additionalInfo: null,
       statusInfo: null,
       estimatedDuration: null,
-      countStarted: false
+      timer: null
     };
   },
   computed: {
@@ -60,12 +60,11 @@ export default {
 
     estimatedDurationInFormat() {
       const formatString = 'D [days], H [hours], m [minutes], s [seconds]';
-      return moment.duration(this.estimatedDuration, 'seconds').format(formatString);
+      return this.estimatedDuration <= 0 ? "In progress" : moment.duration(this.estimatedDuration, 'seconds').format(formatString);
     },
   },
   mounted() {
     this.watchProgressBarRequest();
-    this.watchProgressBarState();
   },
   methods: {
     ...mapActions('poolStore', ['deposit']),
@@ -89,9 +88,8 @@ export default {
 
         const history = JSON.parse(localStorage.getItem('active-bridge-deposit'));
         const remainingDuration = history && history[this.account.toLowerCase()].remainingDuration;
-        console.log(remainingDuration)
 
-        if (stateChangeEvent.statusInfo) this.estimatedDuration = remainingDuration ? remainingDuration : stateChangeEvent.statusInfo.estimatedDuration;
+        if (stateChangeEvent.state == 'IN_PROGRESS' && stateChangeEvent.statusInfo) this.estimatedDuration = remainingDuration ? remainingDuration : stateChangeEvent.statusInfo.estimatedDuration;
 
         if (this.progressBarVisible) {
           if (this.state === 'SUCCESS' || this.state === 'ERROR' || this.state === 'CANCELLED') {
@@ -126,7 +124,7 @@ export default {
     },
 
     openResumeBridgeModal() {
-      this.closeModal();
+      if (this.lifiService.modalOpened) return;
       const modalInstance = this.openModal(ResumeBridgeModal);
       modalInstance.account = this.account;
       modalInstance.activeTransfer = this.activeTransfer;
@@ -136,31 +134,36 @@ export default {
       modalInstance.depositFunc = this.deposit;
       modalInstance.$on('BRIDGE_DEPOSIT_RESUME', (transferRes) => {
         if (!transferRes) return;
-        const pools = this.poolsList.map(pool => {
-          return {
-            ...pool,
-            deposit: pool.asset.symbol === this.activeTransfer.targetSymbol
-              ? Number(pool.deposit) + Number(transferRes.amount)
-              : pool.deposit
-          };
-        });
+        // const pools = this.poolsList.map(pool => {
+        //   return {
+        //     ...pool,
+        //     deposit: pool.asset.symbol === this.activeTransfer.targetSymbol
+        //       ? Number(pool.deposit) + Number(transferRes.amount)
+        //       : pool.deposit
+        //   };
+        // });
 
-        this.poolsList = pools;
+        // this.poolsList = pools;
       });
     },
   },
 
   watch: {
-    account(newAccount) {
-      if (newAccount) {
-        this.watchActiveRoute();
+    account: {
+      handler(value) {
+        if (value) {
+          this.watchActiveRoute();
+          this.watchProgressBarState();
+        }
       }
     },
 
     estimatedDuration: {
       handler(value) {
-        if (value > 0) {
-          setTimeout(() => {
+        if (value > 0 && this.lifiService.countStart) {
+
+          clearTimeout(this.timer);
+          this.timer = setTimeout(() => {
             const history = JSON.parse(localStorage.getItem('active-bridge-deposit'));
 
             if (this.estimatedDuration) {
@@ -168,11 +171,8 @@ export default {
               localStorage.setItem('active-bridge-deposit', JSON.stringify(history));
             }
 
-            console.log(this.estimatedDuration)
             this.estimatedDuration--;
           }, 1000);
-
-          // this.countStarted = true;
         }
       },
       immediate: true
@@ -253,6 +253,11 @@ export default {
 
         .text-overlay__icon {
           background: var(--progress-bar__text-overlay-color);
+        }
+        
+        .btn-hover {
+          color: var(--progress-bar__text-overlay-btn-hover-color);
+          cursor: pointer;
         }
       }
 

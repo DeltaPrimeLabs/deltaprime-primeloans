@@ -133,13 +133,15 @@ export default {
           const history = JSON.parse(localStorage.getItem('active-bridge-deposit'));
           const activeTransfer = history && history[this.account.toLowerCase()];
 
-          if (activeTransfer) {
+          if (activeTransfer && !this.lifiService.modalOpened) {
+            console.log('-----------------------------');
             this.openResumeBridgeModal(activeTransfer);
           }
         });
     },
 
     openResumeBridgeModal(activeTransfer) {
+      this.lifiService.modalOpened = true;
       const modalInstance = this.openModal(ResumeBridgeModal);
       modalInstance.account = this.account;
       modalInstance.activeTransfer = activeTransfer;

@@ -1,6 +1,6 @@
 <template>
   <div id="modal" class="resume-bridge-modal-component modal-component">
-    <Modal>
+    <Modal v-on:modalClosed="handleModalClosed">
       <div class="modal__title">
         Active Bridge Transfer 
       </div>
@@ -239,6 +239,10 @@ export default {
       this.lifiService.removeRoute(this.lifiData.lifi, this.route);
       this.closeModal();
     },
+
+    handleModalClosed() {
+      this.lifiService.modalOpened = false;
+    }
   }
 };
 </script>

@@ -9,6 +9,8 @@ import { switchChain } from '../utils/blockchain';
 export default class LifiService {
   lifi$ = new Subject();
   routeUpdated$ = new Subject();
+  modalOpend = false;
+  countStart = null;
 
   emitLifi(lifiData) {
     this.lifi$.next(lifiData);
@@ -98,7 +100,6 @@ export default class LifiService {
         fromAmount: parseUnits(fromAmount, assetDecimals).toString()
       };
       const result = await lifi.getRoutes(request);
-      console.log(result.routes);
 
       return result.routes;
     } catch(error) {
@@ -195,11 +196,11 @@ export default class LifiService {
     const updateRouteHook = (updatedRoute) => {
       // save route state to local storage for different wallet address
       if (!updatedRoute) return;
+      this.countStart = true;
 
       this.emitRouteUpdated(updatedRoute);
 
       const statusInfo = this.getStatusInfo(updatedRoute);
-      console.log(statusInfo);
       progressBarService.emitProgressBarInProgressState({
         ...statusInfo,
       });
@@ -310,6 +311,7 @@ export default class LifiService {
         amount: depositAmount
       };
     } catch (error) {
+      this.countStart = false;
       console.log(error);
       this.closeModal();
     }
