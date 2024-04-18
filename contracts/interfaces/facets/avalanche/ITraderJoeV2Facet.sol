@@ -1,7 +1,7 @@
 pragma solidity ^0.8.17;
 
 import "../../joe-v2/ILBRouter.sol";
-import "../../joe-v2/ITraderJoeV2Rewarder.sol";
+import "../../joe-v2/IRewarder.sol";
 
 interface ITraderJoeV2Facet {
 
@@ -31,6 +31,6 @@ interface ITraderJoeV2Facet {
 
     function getOwnedTraderJoeV2Bins() external view returns (TraderJoeV2Bin[] memory result);
 
-    function claimReward(ITraderJoeV2Rewarder.MerkleEntry[] calldata merkleEntries) external;
+    function claimReward(IRewarder.MerkleEntry[] calldata merkleEntries) external;
 
 }

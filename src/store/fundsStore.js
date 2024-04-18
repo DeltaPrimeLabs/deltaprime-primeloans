@@ -10,8 +10,6 @@ import {formatUnits, fromWei, parseUnits, toWei} from '@/utils/calculate';
 import config from '@/config';
 import redstone from 'redstone-api';
 import {BigNumber, utils} from 'ethers';
-import * as AWS from 'aws-sdk';
-import awsConfig from '../../.secrets/awsConfig.json';
 import {getBinPrice, mergeArrays, paraSwapRouteToSimpleData, removePaddedTrailingZeros} from '../utils/calculate';
 import wrappedAbi from '../../test/abis/WAVAX.json';
 import erc20ABI from '../../test/abis/ERC20.json';
@@ -24,9 +22,11 @@ import axios from 'axios';
 import LB_TOKEN from '/artifacts/contracts/interfaces/joe-v2/ILBToken.sol/ILBToken.json'
 import MULTICALL from '/artifacts/contracts/lib/Multicall3.sol/Multicall3.json'
 import IBALANCER_V2_GAUGE from '/artifacts/contracts/interfaces/balancer-v2/IBalancerV2Gauge.sol/IBalancerV2Gauge.json'
-import {decodeFunctionData} from "viem";
-import {expect} from "chai";
-import YAK_ROUTER_ABI from "../../test/abis/YakRouter.json";
+import {decodeFunctionData} from 'viem';
+import {expect} from 'chai';
+import YAK_ROUTER_ABI from '../../test/abis/YakRouter.json';
+import {getSwapData} from '../utils/paraSwapUtils';
+import {getBurnData} from '../utils/caiUtils';
 
 const toBytes32 = require('ethers').utils.formatBytes32String;
 const fromBytes32 = require('ethers').utils.parseBytes32String;
@@ -44,16 +44,6 @@ let TOKEN_ADDRESSES;
 
 let readProvider;
 let multicallContract;
-
-
-AWS.config.update({
-  region: 'us-east-1',
-  endpoint: 'dynamodb.us-east-1.amazonaws.com',
-  accessKeyId: awsConfig.accessKey,
-  secretAccessKey: awsConfig.secretKey
-});
-
-const docClient = new AWS.DynamoDB.DocumentClient();
 
 export default {
   namespaced: true,
@@ -328,13 +318,14 @@ export default {
       } else {
         try {
           let params = {
-            TableName: "apys-prod"
+            TableName: 'apys-prod'
           };
 
-          const apyDoc = await docClient.scan(params).promise();
+          const apyDoc = await (await fetch('https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/apys')).json();
+
           const apys = {};
 
-          apyDoc.Items.map(apy => {
+          apyDoc.map(apy => {
             apys[apy.id] = {...apy};
           });
 
@@ -610,29 +601,23 @@ export default {
       commit('setHistoricalSmartLoanContract', historicalSmartLoanContract);
       commit('setReadSmartLoanContract', readSmartLoanContract);
       commit('setSmartLoanContract', smartLoanContract);
-    },
-
-    async createLoan({state, rootState}) {
-      const provider = rootState.network.provider;
-
-      if (!(await signMessage(provider, loanTermsToSign, rootState.network.account))) return;
-
-      const transaction = (await wrapContract(state.smartLoanFactoryContract)).createLoan();
-
-      await awaitConfirmation(transaction, provider, 'createLoan');
+      rootState.serviceRegistry.accountService.emitSmartLoanContract(smartLoanContract);
     },
 
     async createLoanAndDeposit({state, rootState, commit}, {request}) {
       const provider = rootState.network.provider;
       const amountInWei = parseUnits(request.value.toString(), request.assetDecimals);
 
-      if (!(await signMessage(provider, loanTermsToSign, rootState.network.account))) return;
+      const signResult = await signMessage(provider, loanTermsToSign, rootState.network.account);
+      if (!signResult) return;
 
       const transaction = await (await wrapContract(state.smartLoanFactoryContract)).createLoan();
 
       let tx = await awaitConfirmation(transaction, provider, 'create loan');
 
       const smartLoanAddress = getLog(tx, SMART_LOAN_FACTORY.abi, 'SmartLoanCreated').args.accountAddress;
+
+      await rootState.serviceRegistry.termsService.saveSignedTerms(smartLoanAddress, rootState.network.account, signResult, 'PRIME_ACCOUNT');
 
       const fundToken = new ethers.Contract(request.assetAddress, erc20ABI, provider.getSigner());
 
@@ -682,7 +667,8 @@ export default {
       const provider = rootState.network.provider;
       const nativeAssetOptions = config.NATIVE_ASSET_TOGGLE_OPTIONS;
 
-      if (!(await signMessage(provider, loanTermsToSign, rootState.network.account))) return;
+      const signResult = await signMessage(provider, loanTermsToSign, rootState.network.account);
+      if (!signResult) return;
 
       //TODO: make it more robust
       if (asset === nativeAssetOptions[0]) {
@@ -711,6 +697,11 @@ export default {
       const transaction = config.chainId === 43114 ?
         await wrappedSmartLoanFactoryContract.createAndFundLoan(toBytes32(asset.symbol), fundTokenContract.address, amount)
         : await wrappedSmartLoanFactoryContract.createAndFundLoan(toBytes32(asset.symbol), amount);
+
+      const smartLoanAddress = getLog(transaction, SMART_LOAN_FACTORY.abi, 'SmartLoanCreated').args.accountAddress;
+
+      await rootState.serviceRegistry.termsService.saveSignedTerms(smartLoanAddress, rootState.network.account, signResult, 'PRIME_ACCOUNT');
+
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
@@ -745,6 +736,7 @@ export default {
     },
 
     async getAllAssetsBalances({state, commit, rootState, dispatch}) {
+      let hasDeprecatedAssets = false;
       console.log('getAllAssetsBalances')
       const dataRefreshNotificationService = rootState.serviceRegistry.dataRefreshEventService;
       const balances = {};
@@ -760,12 +752,24 @@ export default {
           let symbol = fromBytes32(asset.name);
           if (config.ASSETS_CONFIG[symbol]) {
             balances[symbol] = formatUnits(asset.balance.toString(), config.ASSETS_CONFIG[symbol].decimals);
+            if (config.ASSETS_CONFIG[symbol].droppingSupport && balances[symbol] > 0) {
+              console.warn('Has depracated asset' + symbol);
+              hasDeprecatedAssets = true;
+            }
           }
           if (config.LP_ASSETS_CONFIG[symbol]) {
             lpBalances[symbol] = formatUnits(asset.balance.toString(), config.LP_ASSETS_CONFIG[symbol].decimals);
+            if (config.LP_ASSETS_CONFIG[symbol].droppingSupport && balances[symbol] > 0) {
+              console.warn('Has depracated asset' + symbol);
+              hasDeprecatedAssets = true;
+            }
           }
           if (config.CONCENTRATED_LP_ASSETS_CONFIG[symbol]) {
             concentratedLpBalances[symbol] = formatUnits(asset.balance.toString(), config.CONCENTRATED_LP_ASSETS_CONFIG[symbol].decimals);
+            if (config.CONCENTRATED_LP_ASSETS_CONFIG[symbol].droppingSupport && balances[symbol] > 0) {
+              console.warn('Has depracated asset' + symbol);
+              hasDeprecatedAssets = true;
+            }
           }
           if (config.BALANCER_LP_ASSETS_CONFIG[symbol]) {
             balancerLpBalances[symbol] = formatUnits(asset.balance.toString(), config.BALANCER_LP_ASSETS_CONFIG[symbol].decimals);
@@ -775,6 +779,10 @@ export default {
           }
         }
       );
+      if (hasDeprecatedAssets) {
+        console.warn('hasDeprecatedAssets');
+        rootState.serviceRegistry.deprecatedAssetsService.emitHasDeprecatedAssets();
+      }
 
       if (config.LEVEL_LP_ASSETS_CONFIG) {
         let result = await state.multicallContract.callStatic.aggregate(
@@ -988,7 +996,7 @@ export default {
         binBalancePrimary,
         binBalanceSecondary,
         binTotalSupply
-      } = await dispatch("fetchTraderJoeV2LpUnderlyingBalances", {
+      } = await dispatch('fetchTraderJoeV2LpUnderlyingBalances', {
         lbPairAddress: lpAsset.address,
         binIds: loanBinIds,
         lpToken: lpAsset
@@ -1023,7 +1031,7 @@ export default {
       Object.keys(traderJoeV2LpAssets).forEach(async assetSymbol => {
         const lpAsset = traderJoeV2LpAssets[assetSymbol];
 
-        await dispatch("refreshTraderJoeV2LpUnderlyingBalancesAndLiquidity", {lpAsset});
+        await dispatch('refreshTraderJoeV2LpUnderlyingBalancesAndLiquidity', {lpAsset});
       });
     },
 
@@ -2280,7 +2288,7 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'deposit TraderJoe V2 LP token');
 
-      const {cumulativeTokenXAmount, cumulativeTokenYAmount} = await dispatch("fetchTraderJoeV2LpUnderlyingBalances", {
+      const {cumulativeTokenXAmount, cumulativeTokenYAmount} = await dispatch('fetchTraderJoeV2LpUnderlyingBalances', {
         lbPairAddress: fundLiquidityRequest.pair,
         binIds: fundLiquidityRequest.ids,
         lpToken: fundLiquidityRequest.lpToken
@@ -2295,7 +2303,7 @@ export default {
         .emitExternalAssetBalanceUpdate(fundLiquidityRequest.secondAsset, secondAssetBalanceAfterTransaction, false, true);
 
       const lpAsset = state.traderJoeV2LpAssets[fundLiquidityRequest.lpToken.symbol];
-      await dispatch("refreshTraderJoeV2LpUnderlyingBalancesAndLiquidity", {lpAsset});
+      await dispatch('refreshTraderJoeV2LpUnderlyingBalancesAndLiquidity', {lpAsset});
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {
@@ -2326,7 +2334,7 @@ export default {
       );
 
       const lpAsset = state.traderJoeV2LpAssets[withdrawLiquidityRequest.lpToken.symbol];
-      await dispatch("refreshTraderJoeV2LpUnderlyingBalancesAndLiquidity", {lpAsset});
+      await dispatch('refreshTraderJoeV2LpUnderlyingBalancesAndLiquidity', {lpAsset});
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
@@ -2375,7 +2383,7 @@ export default {
 
       // update underlying assets' balances
       const lpAsset = state.traderJoeV2LpAssets[addLiquidityRequest.symbol];
-      await dispatch("refreshTraderJoeV2LpUnderlyingBalancesAndLiquidity", {lpAsset});
+      await dispatch('refreshTraderJoeV2LpUnderlyingBalancesAndLiquidity', {lpAsset});
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {
@@ -2408,7 +2416,7 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'unwind traderjoe v2 token');
 
-      const {cumulativeTokenXAmount, cumulativeTokenYAmount} = await dispatch("fetchTraderJoeV2LpUnderlyingBalances", {
+      const {cumulativeTokenXAmount, cumulativeTokenYAmount} = await dispatch('fetchTraderJoeV2LpUnderlyingBalances', {
         lbPairAddress: removeLiquidityRequest.lbPairAddress,
         binIds: removeLiquidityRequest.remainingBinIds,
         lpToken: removeLiquidityRequest.lpToken
@@ -2422,7 +2430,7 @@ export default {
         .emitExternalAssetBalanceUpdate(removeLiquidityRequest.secondAsset, secondAssetBalanceAfterTransaction, false, true);
 
       const lpAsset = state.traderJoeV2LpAssets[removeLiquidityRequest.symbol];
-      await dispatch("refreshTraderJoeV2LpUnderlyingBalancesAndLiquidity", {lpAsset});
+      await dispatch('refreshTraderJoeV2LpUnderlyingBalancesAndLiquidity', {lpAsset});
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {
@@ -2879,7 +2887,7 @@ export default {
       });
 
       const selector = txParams.data.substr(0, 10);
-      const data = "0x" + txParams.data.substr(10);
+      const data = '0x' + txParams.data.substr(10);
 
       const transaction = await wrappedLoan.paraSwapV2(
         selector,
@@ -2930,19 +2938,41 @@ export default {
         [swapDebtRequest.targetAsset]
       ]);
 
-      let sourceDecimals = config.ASSETS_CONFIG[swapDebtRequest.sourceAsset].decimals;
-      let sourceAmount = parseUnits(parseFloat(swapDebtRequest.sourceAmount).toFixed(sourceDecimals), sourceDecimals);
+      const sourceDecimals = config.ASSETS_CONFIG[swapDebtRequest.sourceAsset].decimals;
+      const sourceAmount = parseUnits(parseFloat(swapDebtRequest.sourceAmount).toFixed(sourceDecimals), sourceDecimals);
+      const sourceTokenAddress = TOKEN_ADDRESSES[swapDebtRequest.sourceAsset];
 
-      let targetDecimals = config.ASSETS_CONFIG[swapDebtRequest.targetAsset].decimals;
-      let targetAmount = parseUnits(parseFloat(swapDebtRequest.targetAmount).toFixed(targetDecimals), targetDecimals);
+      const targetDecimals = config.ASSETS_CONFIG[swapDebtRequest.targetAsset].decimals;
+      const targetAmount = parseUnits(parseFloat(swapDebtRequest.targetAmount).toFixed(targetDecimals), targetDecimals);
+      const targetTokenAddress = TOKEN_ADDRESSES[swapDebtRequest.targetAsset];
 
-      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).swapDebt(
+      const actualSwapSourceTokenAddress = targetTokenAddress;
+      const actualSwapTargetTokenAddress = sourceTokenAddress;
+      const actualSwapSourceAmount = targetAmount;
+      const actualSwapTargetAmount = sourceAmount;
+      const actualSwapSourceDecimals = targetDecimals;
+      const actualSwapTargetDecimals = sourceDecimals;
+
+      let wrappedLoan = await wrapContract(state.smartLoanContract, loanAssets);
+      console.warn('------___-____-___--___--__---___-SWAP DATA_------___---__---__--__---__--___');
+      const paraSwapSDK = constructSimpleSDK({chainId: config.chainId, axios});
+      const swapData = await getSwapData(
+        paraSwapSDK,
+        wrappedLoan.address,
+        actualSwapSourceTokenAddress,
+        actualSwapTargetTokenAddress,
+        actualSwapSourceAmount,
+        actualSwapSourceDecimals,
+        actualSwapTargetDecimals
+      );
+
+      const transaction = await wrappedLoan.swapDebtParaSwap(
         toBytes32(swapDebtRequest.sourceAsset),
         toBytes32(swapDebtRequest.targetAsset),
         sourceAmount,
         targetAmount,
-        swapDebtRequest.path,
-        swapDebtRequest.adapters
+        swapData.routeData.selector,
+        swapData.routeData.data,
       );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
@@ -3271,6 +3301,130 @@ export default {
         await dispatch('updateFunds');
       }, config.refreshDelay);
     },
+
+    async mintCAI({state, rootState, commit, dispatch}, {mintCAIRequest}) {
+      console.log('window.isMetaMask', window.isMetaMask);
+      console.log('mintCAIRequest', mintCAIRequest);
+      const provider = rootState.network.provider;
+
+      const loanAssets = mergeArrays([(
+        await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+        ['CAI']
+      ]);
+
+      const assetAddress = TOKEN_ADDRESSES[mintCAIRequest.sourceAsset];
+      const assetDecimals = config.ASSETS_CONFIG[mintCAIRequest.sourceAsset].decimals;
+      const caiDecimals = config.ASSETS_CONFIG.CAI.decimals;
+
+      const wrappedLoan = await wrapContract(state.smartLoanContract, loanAssets);
+      console.log(wrappedLoan);
+      const transaction = await wrappedLoan
+        .mintCai(
+          mintCAIRequest.mintData.selector,
+          mintCAIRequest.mintData.data,
+          assetAddress,
+          parseUnits(mintCAIRequest.amount.toFixed(assetDecimals), assetDecimals),
+          parseUnits(mintCAIRequest.calculatedTargetAmount.toFixed(caiDecimals), caiDecimals),
+        );
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+
+      let tx = await awaitConfirmation(transaction, provider, 'mint CAI');
+      // TODO take the values from the event
+      // const caiMintedEvent = getLog(tx, SMART_LOAN.abi, 'CaiMinted');
+      // console.log('caiMintedEvent', caiMintedEvent);
+      // const caiMintedAmount = formatUnits(caiMintedEvent.args.caiBoughtAmount, caiDecimals);
+      // const fromTokenAmount = formatUnits(caiMintedEvent.args.fromAmount, assetDecimals);
+
+      const caiMintedAmount = mintCAIRequest.calculatedTargetAmount;
+      const fromTokenAmount = mintCAIRequest.amount;
+
+      const caiBalanceAfterTransaction = Number(state.assetBalances['CAI']) + Number(caiMintedAmount);
+      const assetBalanceAfterTransaction = Number(state.assetBalances[mintCAIRequest.sourceAsset]) - Number(fromTokenAmount);
+
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate('CAI', caiBalanceAfterTransaction, false, true);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate(mintCAIRequest.sourceAsset, assetBalanceAfterTransaction, false, true);
+
+      rootState.serviceRegistry.modalService.closeModal();
+
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, config.refreshDelay);
+    },
+
+    async burnCAI({state, rootState, commit, dispatch}, {burnCAIRequest}) {
+      console.log('window.isMetaMask', window.isMetaMask);
+      console.log('burnCAIRequest', burnCAIRequest);
+      const provider = rootState.network.provider;
+
+      const loanAssets = mergeArrays([(
+        await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+        [burnCAIRequest.targetAsset]
+      ]);
+
+      const assetAddress = TOKEN_ADDRESSES[burnCAIRequest.targetAsset];
+      const assetDecimals = config.ASSETS_CONFIG[burnCAIRequest.targetAsset].decimals;
+      const caiDecimals = config.ASSETS_CONFIG.CAI.decimals;
+
+      console.log(assetAddress);
+
+      const shares = parseUnits(burnCAIRequest.amount.toFixed(caiDecimals), caiDecimals);
+
+      const burnData = await getBurnData(
+        shares,
+        assetAddress,
+        state.smartLoanContract.address,
+        burnCAIRequest.maxSlippage
+      )
+
+      const wrappedLoan = await wrapContract(state.smartLoanContract, loanAssets);
+      console.log(wrappedLoan);
+      const transaction = await wrappedLoan
+        .burnCai(
+          burnData.selector,
+          burnData.data,
+          parseUnits(burnCAIRequest.amount.toFixed(caiDecimals), caiDecimals),
+          assetAddress,
+          parseUnits(burnCAIRequest.calculatedTargetAmount.toFixed(assetDecimals), assetDecimals),
+        );
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+
+      let tx = await awaitConfirmation(transaction, provider, 'burn CAI');
+
+      const caiBurnedAmount = burnCAIRequest.amount;
+      const toTokenAmount = burnCAIRequest.calculatedTargetAmount;
+
+      const caiBalanceAfterTransaction = Number(state.assetBalances['CAI']) - Number(caiBurnedAmount);
+      const assetBalanceAfterTransaction = Number(state.assetBalances[burnCAIRequest.targetAsset]) + Number(toTokenAmount);
+
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate('CAI', caiBalanceAfterTransaction, false, true);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate(burnCAIRequest.targetAsset, assetBalanceAfterTransaction, false, true);
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      rootState.serviceRegistry.modalService.closeModal();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, config.refreshDelay);
+    }
 
   }
 };

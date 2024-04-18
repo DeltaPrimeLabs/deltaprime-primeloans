@@ -140,6 +140,7 @@
   --modal__border: linear-gradient(143deg, #{$delta-washed} 26%, #{$washed-orange} 60%, #{$washed-raspberry} 91%);
   --modal__box-shadow: 4px 4px 20px 0 #{$cloud-lilac}26;
   --modal__top-info-color: #{$steel-gray};
+  --modal__top-info-warning-color: #{$orange};
   --modal__top-info-divider-color: #{$smoke-gray};
   --modal__close-button-container-color: #{$delta-accent};
   --modal__backdrop-backdrop-filter: blur(25px);
@@ -161,7 +162,7 @@
   --currency-input__max-background: #{$white}33;
   --currency-input__max-background--hover: #{$white}e5;
   --currency-input__error-info-warngin-color: #{$steel-gray};
-  --currency-input__warning-color: #{$red};
+  --currency-input__warning-color: #{$orange};
   --currency-input__error-color: #{$red};
   // endregion
 
@@ -610,5 +611,12 @@
   --bar__logo--hover-hexagate: url("/src/assets/icons/securityLogos/hexagate--light--hover.png");
   --bar__logo--hover-atomica: url("/src/assets/icons/securityLogos/atomica--light--hover.svg");
   --bar__logo--hover-salus: url("/src/assets/icons/securityLogos/salus--light--hover.svg");
+  // endregion
+
+  // region ProtocolInsurance
+  --protocol-insurance-text: #{$dark-gray};
+  --protocol-insurance-value: #{$black};
+  --protocol-insurance-border: #{$delta-light};
+  --protocol-insurance-background: #{$violet-mist};
   // endregion
 }

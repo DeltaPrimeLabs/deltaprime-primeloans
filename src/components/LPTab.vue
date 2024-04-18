@@ -320,17 +320,19 @@ export default {
     },
 
     async fetchOpenInterestData() {
-      const data = await (await fetch('https://cavsise1n4.execute-api.us-east-1.amazonaws.com/gm-open-interests')).json();
-      const newOpenInterestData = {}
-      Object.keys(data[0])
-        .filter(key => key !== 'id')
-        .forEach(tokenName => {
-          newOpenInterestData[tokenName] = data.map(dataEntry => ({
-            y: dataEntry[tokenName] * 100,
-            x: Number(dataEntry.id),
-          }))
-        })
-      this.openInterestData = newOpenInterestData;
+      const data = await (await fetch('https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/gm-open-interests')).json();
+      const mappedData = {};
+      const tokens = Object.keys(data[0]).filter(key => key !== 'id');
+      tokens.forEach(token => {
+        mappedData[token] = []
+      });
+
+      data.forEach(dataPoint => {
+        tokens.forEach(token => {
+          mappedData[token].push({x: Number(dataPoint.id), y: dataPoint[token] * 100})
+        });
+      });
+      this.openInterestData = mappedData;
     },
 
     setupLpTableHeaderConfig() {
@@ -630,7 +632,7 @@ export default {
             sortable: false,
             class: 'composition',
             id: 'COMPOSITION',
-            tooltip: `How close we are to completing the protocol mission: $${config.gmxV2IncentivesMilestone / 1000000}M GM TVL. Deadline: ${config.gmxV2IncentivesDeadline}. Failing the mission results in reduced incentives.`
+            tooltip: `How close we are to completing the protocol mission: $${config.gmxV2IncentivesMilestone / 1000000}M GM TVL.`
           },
           {
             label: 'Your eligible GM',
@@ -658,7 +660,7 @@ export default {
             sortable: false,
             class: 'trend-level',
             id: 'TREND',
-            tooltip: `The total amount of ${token} you have collected this week. Collected ${token} will be distributed weekly. This number is not included in your collateral value, until the ${token} is distributed to all Prime Accounts. This number resets to 0 after the collected ${token} is added to your assets on Monday.`
+            tooltip: `The total amount of ${token} you have collected this week. Collected ${token} will be distributed weekly. This number is not included in your collateral value, until the ${token} is distributed to all Prime Accounts. This number resets to 0 after the collected ${token} is added to your assets on Wednesday.`
           },
         ]
       };

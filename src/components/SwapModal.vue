@@ -10,7 +10,7 @@
         <Toggle v-on:change="swapDexChange" :options="dexOptions"></Toggle>
       </div>
 
-      <div class="modal-top-desc" v-if="swapDex === 'ParaSwapV2' && showParaSwapWarning">
+      <div class="modal-top-desc" v-if="swapDex === 'ParaSwapV2' && showParaSwapWarning && !swapDebtMode">
         <div>
           <b>Caution: Paraswap slippage vastly exceeds YakSwap. Use with caution.</b>
         </div>
@@ -22,7 +22,7 @@
         </div>
       </div>
 
-      <div class="modal-top-desc" v-if="['YakSwap', 'ParaSwapV2'].includes(swapDex)">
+      <div class="modal-top-desc" v-if="['YakSwap', 'ParaSwapV2'].includes(swapDex) && !swapDebtMode">
         <div>
           <b>Token availability might change with different aggregators.</b>
         </div>
@@ -374,12 +374,7 @@ export default {
 
     async query(sourceAsset, targetAsset, amountIn, amountOut) {
       if (this.swapDebtMode) {
-        console.log('heeereeee')
-        console.log('queryMethods')
-        console.log(this.queryMethods)
-        console.log('this.swapDex')
-        console.log(this.swapDex)
-        return await this.queryMethod(sourceAsset, targetAsset, amountIn, amountOut);
+        return await this.queryMethod(targetAsset, sourceAsset, amountIn);
       } else {
         return await this.queryMethods[this.swapDex](sourceAsset, targetAsset, amountIn);
       }
@@ -395,6 +390,7 @@ export default {
 
       this.lastChangedSource = true;
       let sourceDecimals = this.sourceAssetData.decimals;
+      console.log(sourceDecimals);
       let sourceAmountInWei = parseUnits(this.sourceAssetAmount.toFixed(sourceDecimals), BigNumber.from(sourceDecimals));
       let targetDecimals = this.targetAssetData.decimals;
       let oracleReceivedAmountInWei = parseUnits(this.receivedAccordingToOracle.toFixed(targetDecimals), BigNumber.from(targetDecimals));
@@ -404,7 +400,7 @@ export default {
       const queryResponse =
           this.swapDebtMode
           ?
-          await this.query(this.targetAsset, this.sourceAsset, sourceAmountInWei, oracleReceivedAmountInWei)
+          await this.query(this.targetAsset, this.sourceAsset, sourceAmountInWei)
           :
           await this.query(this.sourceAsset, this.targetAsset, sourceAmountInWei);
 
@@ -412,20 +408,23 @@ export default {
       let estimated;
       if (queryResponse) {
         if (this.swapDebtMode) {
-          estimated = queryResponse.amounts[0];
+          console.log(queryResponse);
+          estimated = queryResponse.amounts[queryResponse.amounts.length - 1];
           console.log('estimated')
+          console.log(estimated);
           this.calculatingSwapRoute = false;
-          console.log(fromWei(estimated))
-          this.path = queryResponse.path;
-          this.adapters = queryResponse.adapters;
-          this.updateSlippageWithAmounts(parseFloat(formatUnits(estimated, BigNumber.from(this.targetAssetData.decimals))));
+          const estimatedReceivedTokens = parseFloat(formatUnits(estimated, BigNumber.from(this.targetAssetData.decimals)));
+          console.log(estimatedReceivedTokens);
+          this.updateSlippageWithAmounts(estimatedReceivedTokens);
         } else {
+          console.log('queryResponse', queryResponse);
+          console.log(queryResponse instanceof BigNumber);
           this.calculatingSwapRoute = false;
           if (queryResponse.dex === 'PARA_SWAP') {
             estimated = queryResponse.amounts[queryResponse.amounts.length - 1];
             this.paraSwapRate = queryResponse.swapRate;
           } else {
-            if (queryResponse instanceof BigNumber) {
+            if (queryResponse instanceof BigNumber || !queryResponse.path) {
               estimated = queryResponse;
             } else {
               this.path = queryResponse.path;

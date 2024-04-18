@@ -20,13 +20,17 @@ library DeploymentConstants {
 
     address private constant _NATIVE_ADDRESS = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
 
-    address private constant _DIAMOND_BEACON_ADDRESS = 0x8A93d247134d91e0de6f96547cB0204e5BE8e5D8;
+    address private constant _DIAMOND_BEACON_ADDRESS = 0x8bCe54ff8aB45CB075b044AE117b8fD91F9351aB;
 
-    address private constant _SMART_LOANS_FACTORY_ADDRESS = 0xCA8c8688914e0F7096c920146cd0Ad85cD7Ae8b9;
+    address private constant _SMART_LOANS_FACTORY_ADDRESS = 0x26B862f640357268Bd2d9E95bc81553a2Aa81D7E;
 
-    address private constant _TOKEN_MANAGER_ADDRESS = 0x4bf010f1b9beDA5450a8dD702ED602A104ff65EE;
+    address private constant _TOKEN_MANAGER_ADDRESS = 0x2b5A4e5493d4a54E717057B127cf0C000C876f9B;
 
-    address private constant _ADDRESS_PROVIDER = 0x986aaa537b8cc170761FDAC6aC4fc7F9d8a20A8C;
+    address private constant _ADDRESS_PROVIDER = 0x1780bCf4103D3F501463AD3414c7f4b654bb7aFd;
+
+    address private constant _FEES_TREASURY_ADDREESS = 0x764a9756994f4E6cd9358a6FcD924d566fC2e666;
+
+    address private constant _STABILITY_POOL_ADDREESS = 0x6B9836D18978a2e865A935F12F4f958317DA4619;
 
     //implementation-specific
 
@@ -60,6 +64,14 @@ library DeploymentConstants {
 
     function getAddressProvider() internal pure returns (address) {
         return _ADDRESS_PROVIDER;
+    }
+
+    function getTreasuryAddress() internal pure returns (address) {
+        return _FEES_TREASURY_ADDREESS;
+    }
+
+    function getStabilityPoolAddress() internal pure returns (address) {
+        return _STABILITY_POOL_ADDREESS;
     }
 
     /**

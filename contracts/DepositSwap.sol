@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: ;
+// Last deployed from commit: e458289996cc5bb1378ce9654eedc316f5beefdf;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -8,50 +8,19 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./interfaces/facets/IYieldYakRouter.sol";
 import "./Pool.sol";
 
-contract DepositSwap {
+abstract contract DepositSwap {
     using SafeERC20 for IERC20;
 
-    address public constant WAVAX_POOL_TUP = 0xD26E504fc642B96751fD55D3E68AF295806542f5;
-    address public constant USDC_POOL_TUP = 0x2323dAC85C6Ab9bd6a8B5Fb75B0581E31232d12b;
-    address public constant USDT_POOL_TUP = 0xd222e10D7Fe6B7f9608F14A8B5Cf703c74eFBcA1;
-    address public constant ETH_POOL_TUP = 0xD7fEB276ba254cD9b34804A986CE9a8C3E359148;
-    address public constant BTC_POOL_TUP = 0x475589b0Ed87591A893Df42EC6076d2499bB63d0;
+    address private constant PARA_TRANSFER_PROXY =
+        0x216B4B4Ba9F3e719726886d34a177484278Bfcae;
+    address private constant PARA_ROUTER =
+        0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57;
 
-    address public constant WAVAX = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
-    address public constant WETH = 0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB;
-    address public constant USDC = 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E;
-    address public constant USDT = 0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7;
-    address public constant BTC = 0x152b9d0FdC40C096757F570A51E494bd4b943E50;
+    function _isTokenSupported(address token) internal virtual pure returns (bool);
 
-    function _isTokenSupported(address token) private pure returns (bool) {
-        if(
-            token == WAVAX ||
-            token == WETH ||
-            token == USDC ||
-            token == USDT ||
-            token == BTC
-        ){
-            return true;
-        }
-        return false;
-    }
+    function _tokenToPoolTUPMapping(address token) internal virtual pure returns (Pool);
 
-    function _tokenToPoolTUPMapping(address token) private pure returns (Pool){
-        if(token == WAVAX){
-            return Pool(WAVAX_POOL_TUP);
-        } else if (token == WETH){
-            return Pool(ETH_POOL_TUP);
-        } else if (token == USDC){
-            return Pool(USDC_POOL_TUP);
-        } else if (token == USDT){
-            return Pool(USDT_POOL_TUP);
-        } else if (token == BTC){
-            return Pool(BTC_POOL_TUP);
-        }
-        revert("Pool not supported");
-    }
-
-    function _withdrawFromPool(Pool pool, IERC20 token, uint256 amount, address user) private {
+    function _withdrawFromPool(Pool pool, IERC20 token, uint256 amount, address user) internal {
         uint256 userInitialFromTokenDepositBalance = pool.balanceOf(user);
         uint256 poolInitialBalance = pool.balanceOf(address(this));
 
@@ -69,7 +38,7 @@ contract DepositSwap {
         require(token.balanceOf(address(this)) == poolInitialTokenBalance + amount, "Post-withdrawal contract fromToken balance is incorrect");
     }
 
-    function _depositToPool(Pool pool, IERC20 token, uint256 amount, address user) private {
+    function _depositToPool(Pool pool, IERC20 token, uint256 amount, address user) internal {
         uint256 contractInitialToTokenBalance = token.balanceOf(address(this));
         uint256 userInitialToTokenDepositBalance = pool.balanceOf(user);
         uint256 poolInitialBalance = pool.balanceOf(address(this));
@@ -89,7 +58,7 @@ contract DepositSwap {
         require(pool.balanceOf(user) == userInitialToTokenDepositBalance + amount, "Post-transfer user deposit balance is incorrect");
     }
 
-    function _yakSwap(address[] calldata path, address[] calldata adapters, uint256 amountIn, uint256 amountOut) private {
+    function _yakSwap(address[] calldata path, address[] calldata adapters, uint256 amountIn, uint256 amountOut) internal {
         IERC20(path[0]).safeApprove(YY_ROUTER(), 0);
         IERC20(path[0]).safeApprove(YY_ROUTER(), amountIn);
 
@@ -128,7 +97,43 @@ contract DepositSwap {
         _depositToPool(toPool, IERC20(toToken), IERC20(toToken).balanceOf(address(this)), user);
     }
 
-    function YY_ROUTER() internal virtual pure returns (address) {
-        return 0xC4729E56b831d74bBc18797e0e17A295fA77488c;
+    // Needs approval on the fromToken Pool
+    function depositSwapParaSwap(
+        bytes4 selector,
+        bytes memory data,
+        address fromToken,
+        uint256 fromAmount,
+        address toToken,
+        uint256 minOut
+    ) public {
+        require(_isTokenSupported(fromToken), "fromToken not supported");
+        require(_isTokenSupported(toToken), "toToken not supported");
+
+        require(minOut > 0, "minOut needs to be > 0");
+        require(fromAmount > 0, "Amount of tokens to sell needs to be > 0");
+
+        Pool fromPool = _tokenToPoolTUPMapping(fromToken);
+        Pool toPool = _tokenToPoolTUPMapping(toToken);
+
+        address user = msg.sender;
+        fromAmount = Math.min(fromPool.balanceOf(user), fromAmount);
+
+        _withdrawFromPool(fromPool, IERC20(fromToken), fromAmount, user);
+
+        IERC20(fromToken).safeApprove(PARA_TRANSFER_PROXY, 0);
+        IERC20(fromToken).safeApprove(
+            PARA_TRANSFER_PROXY,
+            fromAmount
+        );
+
+        (bool success, ) = PARA_ROUTER.call((abi.encodePacked(selector, data)));
+        require(success, "Swap failed");
+
+        uint256 amountOut = IERC20(toToken).balanceOf(address(this));
+        require(amountOut >= minOut, "Too little received");
+
+        _depositToPool(toPool, IERC20(toToken), amountOut, user);
     }
+
+    function YY_ROUTER() internal virtual pure returns (address);
 }

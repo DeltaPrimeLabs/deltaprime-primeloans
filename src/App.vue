@@ -6,13 +6,15 @@
     </Banner>
     <Banner v-if="showNoWalletBanner">
       You have no wallet installed. Please download and activate
-      <a class="banner-link" href="https://chrome.google.com/webstore/detail/rabby-wallet/acmacodkjbdgmoleebolmdjonilkdbch" target="_blank">
+      <a class="banner-link"
+         href="https://chrome.google.com/webstore/detail/rabby-wallet/acmacodkjbdgmoleebolmdjonilkdbch" target="_blank">
         <b>
           Rabby
         </b>
       </a>
       or
-      <a class="banner-link" href="https://chrome.google.com/webstore/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn" target="_blank">
+      <a class="banner-link" href="https://chrome.google.com/webstore/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn"
+         target="_blank">
         <b>
           Metamask
         </b>
@@ -21,36 +23,58 @@
     <Banner v-if="showConnectBanner">
       You are not connected to Metamask. <a class="banner-link" @click="initNetwork"><b>Click here</b></a> to connect.
     </Banner>
-    <Banner v-if="showInterestRateBanner" background="green-accent"  :closable="true">
-      Interest rate model will be updated at 12:00 CET. <a class="banner-link" href="https://discord.com/channels/889510301421166643/912702114252329060/1180080211254050897"><b>Read more</b></a>.
+    <Banner v-if="showInterestRateBanner" background="green-accent" :closable="true">
+      Interest rate model will be updated at 12:00 CET. <a class="banner-link"
+                                                           href="https://discord.com/channels/889510301421166643/912702114252329060/1180080211254050897"><b>Read
+      more</b></a>.
     </Banner>
     <Banner v-if="showMetamaskBanner">
       Please download and activate
-      <a class="banner-link" href="https://chrome.google.com/webstore/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn" target="_blank"><b>Metamask
+      <a class="banner-link" href="https://chrome.google.com/webstore/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn"
+         target="_blank"><b>Metamask
         plugin</b></a>.
     </Banner>
-    <Banner v-if="highGasPrice && !showMetamaskBanner && !showNetworkBanner && !showArbitrumCongestionBanner" :closable="true">
+    <Banner v-if="highGasPrice && !showMetamaskBanner && !showNetworkBanner && !showArbitrumCongestionBanner"
+            :closable="true">
       Gas prices are high at the moment. Be careful with your transactions.
     </Banner>
     <Banner v-if="oracleError">
       Data feeds error. Some functions might be not available.
     </Banner>
+
+<!--    <Banner v-if="showPrimeAccountBanner" :closable="true">
+      GM positions temporarily illiquid. Please see Discord before redeeming GM
+    </Banner>-->
+
     <Banner v-if="showArbitrumDepositorBanner" background="green-accent" :closable="true">
       Liquidity mining event is updated! Shortly after a pool hits $1M the next pool opens up.
-      <a class="banner-link" href="https://medium.com/@Delta_Prime/relaunching-deltaprime-on-arbitrum-ac43bdd91ed5" target="_blank">
+      <a class="banner-link" href="https://medium.com/@Delta_Prime/relaunching-deltaprime-on-arbitrum-ac43bdd91ed5"
+         target="_blank">
         <b>
           Read more.
         </b>
       </a>
     </Banner>
-<!--    <Banner v-if="showArbitrumPrimeAccountBanner" background="green-accent" :closable="true">
-      Last chance to mint GM for the current milestone
-    </Banner>-->
+    <!--    <Banner v-if="showArbitrumPrimeAccountBanner" background="green-accent" :closable="true">
+          Last chance to mint GM for the current milestone
+        </Banner>-->
     <Banner v-if="showArbitrumCongestionBanner" :closable="true">
-      The Arbitrum chain is fully congested resulting in failed transactions across apps. Please join our <a href='https://discord.gg/57EdDsvhxK' target='_blank'><b>Discord</b></a> to learn more
+      The Arbitrum chain is fully congested resulting in failed transactions across apps. Please join our <a
+      href='https://discord.gg/57EdDsvhxK' target='_blank'><b>Discord</b></a> to learn more
     </Banner>
-<!--    <Banner v-if="showAvalancheDepositorBanner" background="green-accent" :closable="true"></Banner>-->
-<!--    <Banner v-if="showAvalanchePrimeAccountBanner" background="green-accent" :closable="true"></Banner>-->
+
+    <Banner v-if="showDeprecatedAssetsBanner">
+      We are dropping support to some tokens of your Prime Account. Please review your portfolio
+    </Banner>
+    <Banner v-if="showAvalancheDepositorBanner" background="green" :closable="true">
+      BTC APY will be boosted this Wednesday.
+      <a class="banner-link"
+         href="https://discord.com/channels/889510301421166643/912702114252329060/1211682978258878504" target="_blank">
+        <b>
+          Learn more.
+        </b>
+      </a>
+    </Banner>
     <div class="content">
       <div class="top-bar">
         <div class="top-bar__left-part">
@@ -59,6 +83,13 @@
           </a>
           <AppToggle class="top-bar__app-toggle"></AppToggle>
           <ThemeToggle class="top-bar__theme-toggle"></ThemeToggle>
+          <div v-if="isSavingsPage" class="protocol-insurance">
+            <span>Reserve Fund:</span>
+            <span class="insurance-value">$2,340,000</span>
+            <InfoIcon class="info__icon"
+                      :tooltip="{content: 'Protocol Reserve Fund and Atomica insurance pools.', classes: 'info-tooltip'}"
+                      :classes="'info-tooltip'"></InfoIcon>
+          </div>
         </div>
         <!--      <div class="connect" v-if="!account" v-on:click="initNetwork()">Connect to wallet</div>-->
         <Wallet class="wallet"/>
@@ -80,16 +111,21 @@ import {mapActions, mapState} from 'vuex';
 import config from '@/config';
 
 const ethereum = window.ethereum;
+const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 import Vue from 'vue';
 import Button from './components/Button';
 import ProgressBar from './components/ProgressBar';
-import ThemeToggle from "./components/ThemeToggle.vue";
-import {getCountdownString} from "./utils/calculate";
-import AppToggle from "./components/AppToggle.vue";
-import ProtectedByBar from "./components/ProtectedByBar.vue";
+import ThemeToggle from './components/ThemeToggle.vue';
+import {fromWei, getCountdownString} from './utils/calculate';
+import AppToggle from './components/AppToggle.vue';
+import ProtectedByBar from './components/ProtectedByBar.vue';
+import InfoIcon from './components/InfoIcon.vue';
+import TermsModal from './components/TermsModal.vue';
+import {combineLatest, forkJoin, map} from 'rxjs';
 
 export default {
   components: {
+    InfoIcon,
     ProtectedByBar,
     AppToggle,
     ThemeToggle,
@@ -115,9 +151,12 @@ export default {
       showAvalancheDepositorBanner: false,
       showAvalanchePrimeAccountBanner: false,
       showArbitrumCongestionBanner: false,
-      remainingTime: "",
+      remainingTime: '',
       darkMode: false,
       showNoWalletBanner: window.noWalletInstalled,
+      isSavingsPage: false,
+      signingTermsInProgress: false,
+      showDeprecatedAssetsBanner: false,
     };
   },
   async created() {
@@ -148,6 +187,7 @@ export default {
 
     if (window.location.href.includes('pools')) {
       this.showDepositBanner = true;
+      this.isSavingsPage = true;
     }
 
     if (window.location.href.includes('prime-account')) {
@@ -169,7 +209,7 @@ export default {
         // this.showAvalancheDepositorBanner = true;
       }
       if (window.location.href.includes('prime-account')) {
-        // this.showAvalanchePrimeAccountBanner = true;
+        this.showAvalanchePrimeAccountBanner = true;
       }
     }
   },
@@ -182,11 +222,17 @@ export default {
       }
     });
     this.watchCloseModal();
+    this.checkTerms();
+    this.watchHasDeprecatedAssets();
+    setTimeout(() => {
+      this.checkWallet();
+    }, 500)
   },
   computed: {
     ...mapState('network', ['account', 'provider']),
-    ...mapState('fundsStore', ['protocolPaused', 'oracleError']),
-    ...mapState('serviceRegistry', ['modalService']),
+    ...mapState('fundsStore', ['protocolPaused', 'oracleError', 'smartLoanContract']),
+    ...mapState('serviceRegistry', ['modalService', 'termsService', 'accountService', 'poolService', 'deprecatedAssetsService']),
+    ...mapState('poolStore', ['pools'])
   },
   methods: {
     ...mapActions('network', ['initNetwork']),
@@ -285,7 +331,7 @@ export default {
     },
 
     hasUnwindedGlp() {
-      return ["0x2716f9dd4058b2e2023a79100795c1647f9a5cfa", "0xc991663FA798E5f27C854EE751285C23796EF6f6", "0xB0399dAC8f4D4100b49b2a7B3873481114229D18", "0x57356793365301b26bD8dA93a7249C92A2003b1D", "0xfb5845A7128149215a92B7dd01985C31EdA3A202", "0x76Ee7EE3C1B60e2bcA3Effb3d266BF0688BF4297", "0xfA713713B1ACd89A00e6b35512161630d5ea90de", "0xc5dE27336E04e4A6EB1A766323d3AD1d21efA767", "0xfE6776498f7b814A6b7b69fc37cDf8A993B01708", "0xC69aDFF7F2f28d5339fCe333259B1d804ffA44B3", "0x648349e02C549986C8ef2b75514d73040D581Acc", "0x6f36736A0D146e8B2DE5d580fe181Aa2f9f46D2a", "0x8aC228d85989cea83b8C07b8829524214C92Fee8", "0x5D80a1c0a5084163F1D2620c1B1F43209cd4dB12", "0x6C21A841d6f029243AF87EF01f6772F05832144b", "0x8c1A4C98C470900567FB9e764243c89cDa79400C", "0x254D63d3eDfDf71a50D8Fa51B7D5083b46381E5a", "0xB8e6F532f6FeE638d369228E87af10A79ecaaf63", "0xbCc8cB0a825c61355a460da85159f1B43D5d49AB", "0xF20EeBD5E7B0b812CF2A892772439C1B945287fE"].includes(this.account);
+      return ['0x2716f9dd4058b2e2023a79100795c1647f9a5cfa', '0xc991663FA798E5f27C854EE751285C23796EF6f6', '0xB0399dAC8f4D4100b49b2a7B3873481114229D18', '0x57356793365301b26bD8dA93a7249C92A2003b1D', '0xfb5845A7128149215a92B7dd01985C31EdA3A202', '0x76Ee7EE3C1B60e2bcA3Effb3d266BF0688BF4297', '0xfA713713B1ACd89A00e6b35512161630d5ea90de', '0xc5dE27336E04e4A6EB1A766323d3AD1d21efA767', '0xfE6776498f7b814A6b7b69fc37cDf8A993B01708', '0xC69aDFF7F2f28d5339fCe333259B1d804ffA44B3', '0x648349e02C549986C8ef2b75514d73040D581Acc', '0x6f36736A0D146e8B2DE5d580fe181Aa2f9f46D2a', '0x8aC228d85989cea83b8C07b8829524214C92Fee8', '0x5D80a1c0a5084163F1D2620c1B1F43209cd4dB12', '0x6C21A841d6f029243AF87EF01f6772F05832144b', '0x8c1A4C98C470900567FB9e764243c89cDa79400C', '0x254D63d3eDfDf71a50D8Fa51B7D5083b46381E5a', '0xB8e6F532f6FeE638d369228E87af10A79ecaaf63', '0xbCc8cB0a825c61355a460da85159f1B43D5d49AB', '0xF20EeBD5E7B0b812CF2A892772439C1B945287fE'].includes(this.account);
     },
 
     watchCloseModal() {
@@ -294,6 +340,104 @@ export default {
       })
     },
 
+    checkTerms() {
+      console.log('checking terms');
+      combineLatest([
+        this.accountService.observeAccountLoaded(),
+        this.accountService.observeSmartLoanContract$(),
+        this.poolService.observePools()
+      ])
+        .subscribe(([walletAddress, smartLoanContract, pools]) => {
+          console.warn('-_---__---__---__---___--__CHECK TERMS--___--___--__---__---___---');
+          console.log('account', walletAddress);
+          console.log('smartLoanContract', smartLoanContract);
+          console.log('pools', pools);
+          const isSavingsPage = window.location.href.includes('pools');
+
+          if (isSavingsPage) {
+            forkJoin(pools.map(pool => pool.contract.balanceOf(walletAddress)))
+              .subscribe(bigNumberBalances => {
+                const balances = bigNumberBalances.map(balance => fromWei(balance));
+                console.log(balances);
+                if (balances.every(balance => balance === 0)) {
+                  console.log('SAVINGS PAGE - no deposits - terms not required');
+                } else {
+                  console.log('SAVINGS PAGE - some deposit - checking terms');
+                  this.termsService.checkTerms(walletAddress).then(signedTerms => {
+                    const termsForCurrentPage = signedTerms.find(terms => terms.type === 'SAVINGS');
+                    console.log(termsForCurrentPage);
+                    if (termsForCurrentPage === undefined) {
+                      console.log('SAVINGS PAGE - some deposit - terms not signed');
+                      if (!this.signingTermsInProgress) {
+                        this.handleTermsSign(walletAddress, true);
+                      }
+                    }
+                  })
+                }
+              });
+          } else {
+            console.log('PA PAGE - checking PA contract');
+            console.log(smartLoanContract);
+            if (smartLoanContract.address === NULL_ADDRESS) {
+              console.log('PA PAGE - no account - terms not required');
+            } else {
+              console.log('PA PAGE - account created - checking terms');
+              this.termsService.checkTerms(walletAddress).then(signedTerms => {
+                console.log(signedTerms);
+                const termsForCurrentPage = signedTerms.find(terms => terms.type === 'PRIME_ACCOUNT');
+                if (termsForCurrentPage === undefined) {
+                  console.log('PA PAGE - account created - terms not signed');
+                  if (!this.signingTermsInProgress) {
+                    this.handleTermsSign(walletAddress, false, smartLoanContract.address);
+                  }
+                } else {
+                  console.log('PA PAGE - account created - terms signed');
+                }
+              });
+            }
+          }
+        })
+    },
+
+    handleTermsSign(walletAddress, isSavings, paAddress) {
+      this.signingTermsInProgress = true;
+      const termsType = isSavings ? 'SAVINGS' : 'PRIME_ACCOUNT';
+      const modalInstance = this.openModal(TermsModal);
+      modalInstance.$on('SIGN_TERMS', async () => {
+        const signResult = await this.termsService.signTerms(walletAddress, this.provider, true)
+        await this.termsService.saveSignedTerms(paAddress, walletAddress, signResult, termsType);
+        this.closeModal();
+      })
+    },
+
+    watchHasDeprecatedAssets() {
+      this.deprecatedAssetsService.observeHasDeprecatedAssets().subscribe(hasDeprecatedAssets => {
+        console.warn('DEPRECATED ASSETS', hasDeprecatedAssets);
+        if (hasDeprecatedAssets) {
+          this.showDeprecatedAssetsBanner = true;
+        }
+      })
+    },
+
+    checkWallet() {
+      console.warn('--------__---__------___--___--__---___checking wallet--------___---___-___--___---__--___--__');
+      if (this.provider && this.provider.provider) {
+        console.log('provider', this.provider.provider)
+        if (this.provider.provider.isRabby) {
+          console.warn('RABBY');
+          window.isRabby = true;
+          window.isMetaMask = false;
+          return;
+        }
+
+        if (this.provider.provider.isMetaMask) {
+          console.warn('METAMASK');
+          window.isMetaMask = true;
+          window.isRabby = false;
+          return;
+        }
+      }
+    },
   },
   destroyed() {
     clearInterval(this.gasPriceIntervalId);
@@ -410,6 +554,28 @@ a {
 .top-bar__theme-toggle,
 .top-bar__app-toggle, {
   margin-left: 24px;
+}
+
+.protocol-insurance {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  height: 27px;
+  padding: 0 13px;
+  margin-left: 14px;
+  color: var(--protocol-insurance-text);
+  border: 1px solid var(--protocol-insurance-border);
+  border-radius: 16px;
+  font-size: $font-size-xsm;
+  font-weight: 500;
+  background-color: var(--protocol-insurance-background);
+
+  .insurance-value {
+    color: var(--protocol-insurance-value);
+    font-weight: 600;
+    margin: 0 6px;
+  }
 }
 
 </style>

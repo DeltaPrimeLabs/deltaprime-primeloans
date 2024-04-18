@@ -1,7 +1,11 @@
 import {ethers, network, waffle} from "hardhat";
-import {BigNumber, BigNumberish, Contract, Wallet} from "ethers";
+import { config } from "dotenv";
+import {BigNumber, BigNumberish, Contract, Wallet, constants, providers} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import { TransactionParams } from '@paraswap/sdk';
+import {
+    ZeroExAggregator,
+} from "@phuture/sdk";
 import {
     MockToken,
     Pool,
@@ -11,7 +15,7 @@ import {
     VectorFinanceHelper,
     YieldYakHelper,
 } from "../typechain";
-import AVAX_TOKEN_ADDRESSES from '../common/addresses/avalanche/token_addresses.json';
+import AVAX_TOKEN_ADDRESSES from '../common/addresses/avax/token_addresses.json';
 import CELO_TOKEN_ADDRESSES from '../common/addresses/celo/token_addresses.json';
 import ARBITRUM_TOKEN_ADDRESSES from '../common/addresses/arbitrum/token_addresses.json';
 import ETHEREUM_TOKEN_ADDRESSES from '../common/addresses/ethereum/token_addresses.json';
@@ -29,7 +33,7 @@ import fetch from "node-fetch";
 import {execSync} from "child_process";
 import updateConstants from "../tools/scripts/update-constants"
 import {JsonRpcSigner} from "@ethersproject/providers";
-import addresses from "../common/addresses/avalanche/token_addresses.json";
+import addresses from "../common/addresses/avax/token_addresses.json";
 import addresses_arb from "../common/addresses/arbitrum/token_addresses.json";
 import { getSelectors } from "../tools/diamond/selectors";
 
@@ -42,8 +46,13 @@ export const LPAbi = require('./abis/LP.json');
 export const wavaxAbi = require('./abis/WAVAX.json');
 export const yakRouterAbi = require('./abis/YakRouter.json');
 export const GLPManagerRewarderAbi = require('./abis/GLPManagerRewarder.json');
+export const PhuturePriceOracleAbi = require('./abis/PhuturePriceOracle.json');
+export const PhutureIndexAbi = require('./abis/PhutureIndex.json');
+export const PhutureIndexRouterAbi = require('./abis/PhutureIndexRouter.json');
 
 export const ZERO = ethers.constants.AddressZero;
+
+config();
 
 const token_addresses = {
     avax: addresses,
@@ -624,7 +633,7 @@ export const getFixedGasSigners = async function (gasLimit: number) {
 };
 
 
-export const deployAllFacets = async function (diamondAddress: any, mock: boolean = true, chain = 'AVAX',  hardhatConfig: any = undefined, provider = undefined) {
+export const deployAllFacets = async function (diamondAddress: any, mock: boolean = true, chain = 'AVAX',  hardhatConfig: any = undefined, provider: any = undefined) {
     const diamondCut = provider ?
         new ethers.Contract(diamondAddress, IDiamondCutArtifact.abi, provider.getSigner())
         : (hardhatConfig && hardhatConfig.deployer) ?
@@ -636,7 +645,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         "ParaSwapFacet",
         diamondAddress,
         [
-            'paraSwap',
+            'paraSwapV2',
         ],
         hardhatConfig
     );
@@ -678,6 +687,8 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         ],
         hardhatConfig
     )
+    console.log(2)
+
     await deployFacet(
         "AssetsExposureController",
         diamondAddress,
@@ -708,6 +719,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                     'getStakedPositionsPrices',
                     'getAllPricesForLiquidation',
                     'getDebt',
+                    'getTotalTraderJoeV2',
                     'getDebtWithPrices',
                     'getPrice',
                     'getPrices',
@@ -755,6 +767,14 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                 'withdrawBtcUsdcGmxV2',
                 'withdrawAvaxUsdcGmxV2',
                 'withdrawEthUsdcGmxV2',
+            ],
+            hardhatConfig
+        )
+
+        await deployFacet(
+            "GmxV2CallbacksFacetAvalanche",
+            diamondAddress,
+            [
                 'afterDepositExecution',
                 'afterDepositCancellation',
                 'afterWithdrawalExecution',
@@ -774,6 +794,8 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                 'withdrawGLP',
                 'withdraw',
                 'swapDebt',
+                'swapDebtParaSwap',
+                'withdrawUnsupportedToken',
             ],
             hardhatConfig
         )
@@ -867,6 +889,33 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             'unstakeTraderJoeV2AutopoolAVAXUSDC'
         ],
         hardhatConfig);
+
+        await deployFacet("BalancerV2Facet", diamondAddress, [
+            'joinPoolAndStakeBalancerV2',
+            'stakeBalancerV2',
+            'unstakeAndExitPoolBalancerV2',
+            'unstakeBalancerV2',
+            'claimRewardsBalancerV2',
+            'balancerGgAvaxBalance',
+            'balancerYyAvaxBalance',
+            'balancerSAvaxBalance',
+        ],
+        hardhatConfig);
+
+        await deployFacet("GogoPoolFacet", diamondAddress, [
+            'swapToGgAvax',
+        ],
+        hardhatConfig);
+
+        await deployFacet(
+            "CaiFacet",
+            diamondAddress,
+            [
+                'mintCai',
+                'burnCai',
+            ],
+            hardhatConfig
+        );
 
         if (mock) {
             await deployFacet("UniswapV3FacetMock", diamondAddress, ['mintLiquidityUniswapV3', 'increaseLiquidityUniswapV3', 'decreaseLiquidityUniswapV3', 'burnLiquidityUniswapV3', 'getOwnedUniswapV3TokenIds'], hardhatConfig)
@@ -1024,7 +1073,22 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             diamondAddress,
             [
                 'depositEthUsdcGmxV2',
+                'depositArbUsdcGmxV2',
+                'depositLinkUsdcGmxV2',
+                'depositUniUsdcGmxV2',
+                'depositBtcUsdcGmxV2',
                 'withdrawEthUsdcGmxV2',
+                'withdrawArbUsdcGmxV2',
+                'withdrawLinkUsdcGmxV2',
+                'withdrawUniUsdcGmxV2',
+                'withdrawBtcUsdcGmxV2'
+            ],
+            hardhatConfig
+        )
+        await deployFacet(
+            "GmxV2CallbacksFacetArbitrum",
+            diamondAddress,
+            [
                 'afterDepositExecution',
                 'afterDepositCancellation',
                 'afterWithdrawalExecution',
@@ -1067,6 +1131,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         [
             'initialize',
             'getAllAssetsBalances',
+            'getAllAssetsBalancesDebtCoverages',
             'getDebts',
             'getPercentagePrecision',
             'getAccountFrozenSince',
@@ -1250,7 +1315,7 @@ export async function deployAndInitializeLendingPool(owner: any, tokenName: stri
     return {'poolContract': pool, 'tokenContract': tokenContract}
 }
 
-export async function recompileConstantsFile(chain: string, contractName: string, exchanges: Array<{ facetPath: string, contractAddress: string }>, tokenManagerAddress: string, addressProviderAddress: string, diamondBeaconAddress: string, smartLoansFactoryAddress: string, subpath: string, maxLTV: number = 5000, minSelloutLTV: string = "1.042e18", maxLiquidationBonus: number = 100, nativeAssetSymbol: string = 'AVAX', nativeAssetAddress: string = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7') {
+export async function recompileConstantsFile(chain: string, contractName: string, exchanges: Array<{ facetPath: string, contractAddress: string }>, tokenManagerAddress: string, addressProviderAddress: string, diamondBeaconAddress: string, smartLoansFactoryAddress: string, subpath: string, maxLTV: number = 5000, minSelloutLTV: string = "1.042e18", maxLiquidationBonus: number = 200, nativeAssetSymbol: string = 'AVAX', nativeAssetAddress: string = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7') {
     const subPath = subpath ? subpath + '/' : "";
     const artifactsDirectory = `../artifacts/contracts/${subPath}/${chain}/${contractName}.sol/${contractName}.json`;
     delete require.cache[require.resolve(artifactsDirectory)]
@@ -1289,6 +1354,18 @@ export class AssetNameBalance {
     constructor(name: string, balance: BigNumber) {
         this.name = name;
         this.balance = balance;
+    }
+}
+
+export class AssetNameBalanceDebtCoverage {
+    name: string;
+    balance: BigNumber;
+    debtCoverage: BigNumber;
+
+    constructor(name: string, balance: BigNumber, debtCoverage: BigNumber) {
+        this.name = name;
+        this.balance = balance;
+        this.debtCoverage = debtCoverage;
     }
 }
 
@@ -1380,30 +1457,326 @@ export class StakedPosition {
     }
 }
 
-export const paraSwapRouteToSimpleData = (txParams: TransactionParams) => {
-    const data = "0x" + txParams.data.slice(10);
-    const [
-        decoded,
-    ] = ethers.utils.defaultAbiCoder.decode(
-        ["(address,address,uint256,uint256,uint256,address[],bytes,uint256[],uint256[],address,address,uint256,bytes,uint256,bytes16)"],
-        data
-    );
+export const parseParaSwapRouteData = (txParams: TransactionParams) => {
+    return splitCallData(txParams.data);
+};
+
+export const splitCallData = (calldata: string) => {
+    const selector = calldata.slice(0, 10);
+    const data = "0x" + calldata.slice(10);
     return {
-        fromToken: decoded[0],
-        toToken: decoded[1],
-        fromAmount: decoded[2],
-        toAmount: decoded[3],
-        expectedAmount: decoded[4],
-        callees: decoded[5],
-        exchangeData: decoded[6],
-        startIndexes: decoded[7],
-        values: decoded[8],
-        beneficiary: decoded[9],
-        partner: decoded[10],
-        feePercent: decoded[11],
-        permit: decoded[12],
-        deadline: decoded[13],
-        uuid: decoded[14],
+        selector,
+        data
     };
 };
 
+export const getContractSelectors = (contract: Contract) => {
+    contract.interface.fragments.forEach(fragment => {
+        if (fragment.type === 'function') {
+            // Construct the function signature
+            const inputTypes = fragment.inputs.map(input => input.type).join(',');
+            const signature = `${fragment.name}(${inputTypes})`;
+
+            // Compute the selector
+            const selector = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(signature)).slice(0, 10); // '0x' followed by the 4-byte selector
+
+            console.log(`Method: ${fragment.name}, Selector: ${selector}`);
+        }
+    });
+}
+
+/**
+ * Retrieves the buy amounts for the given amounts and input token.
+ * @param amounts - An array of objects containing asset and amount.
+ * @param inputToken - The input token.
+ * @returns A promise that resolves to an array of objects containing buy amounts and other details.
+ */
+async function getBuyAmounts(amounts, inputToken) {
+    /// Prepare buy amounts for each asset
+    const buyAmounts = amounts.map(async ({ asset, amount }) => {
+        /// If the asset is the input token or the amount is zero, return the asset and amount
+        if (asset === inputToken || amount.isZero()) {
+            return {
+                asset,
+                swapTarget: constants.AddressZero,
+                buyAssetMinAmount: amount,
+                assetQuote: [],
+            }
+        }
+
+        const [zeroExAggregator] = ZeroExAggregator.fromUrl(
+            "https://avalanche.api.0x.org",
+            43314,
+            process.env.ZERO_EX_API_KEY,
+        );
+
+        /// Otherwise, get the buy amount from the 0x Aggregator
+        const zeroExResult = await zeroExAggregator.quote(inputToken, asset, amount)
+
+        return {
+            asset,
+            swapTarget: zeroExResult.to,
+            buyAssetMinAmount: BigNumber.from(zeroExResult.buyAmount).mul(99).div(100).toString(),
+            assetQuote: zeroExResult.data,
+        }
+    })
+
+    /// Use `Promise.all` to resolve all buy amounts concurrently
+    return await Promise.all(buyAmounts)
+}
+
+/**
+ * Calculates the buy amounts in base currency.
+ * @param buyAmounts - An array of objects containing asset and buy asset min amount.
+ * @param amounts - An array of objects containing asset, amount, and weight.
+ * @returns A promise that resolves to an array of objects containing asset and quoted buy amount.
+ */
+async function calculateBuyAmountsInBase(buyAmounts, amounts) {
+    const priceOracle = new ethers.Contract(
+        "0x69E848b2F41019340CeC3e6696D5c937e74Da96b",
+        PhuturePriceOracleAbi,
+        provider,
+    );
+
+    /// Calculate the buy amounts in base currency
+    const buyAmountsInBase = buyAmounts.map(
+        async ({ asset, buyAssetMinAmount }, amountIndex) => {
+            /// Get the price of the asset in base currency from the PriceOracle
+            /// Note: `callStatic` is used because this is not a view function
+            const price = await priceOracle.callStatic.refreshedAssetPerBaseInUQ(
+                asset,
+            )
+
+            /// Calculate the quoted buy amount in base currency
+            const quotedBuyAmount = BigNumber.from(buyAssetMinAmount)
+                .mul(BigNumber.from(2).pow(112))
+                .mul(255)
+                .div(price.mul(amounts[amountIndex]!.weight))
+
+            return { asset, quotedBuyAmount }
+        },
+    )
+
+    /// Use `Promise.all` to resolve all buy amounts in base currency concurrently
+    return await Promise.all(buyAmountsInBase)
+}
+
+/**
+ * Retrieves quotes for the given amounts, input token, and scaled sell amounts.
+ * @param amounts - An array of objects containing asset and amount.
+ * @param inputToken - The input token.
+ * @param scaledSellAmounts - An array of scaled sell amounts.
+ * @returns A promise that resolves to an array of quotes for the given amounts.
+ */
+async function getMintQuotes(amounts, inputToken, scaledSellAmounts) {
+    /// Prepare quotes for each asset
+    const quotes = amounts.map(async ({ asset }, i) => {
+        const scaledSellAmount = scaledSellAmounts[i] as BigNumber
+
+        /// If the asset is the input token or the scaled sell amount is zero, return the asset and amount
+        if (asset === inputToken || scaledSellAmount.isZero()) {
+            return {
+            asset,
+            swapTarget: constants.AddressZero,
+            buyAssetMinAmount: scaledSellAmounts[i]!,
+            assetQuote: [],
+            }
+        }
+
+        const [zeroExAggregator] = ZeroExAggregator.fromUrl(
+            "https://avalanche.api.0x.org",
+            43314,
+            process.env.ZERO_EX_API_KEY || "",
+        );
+
+        /// Otherwise, get the quote from the 0x Aggregator
+        const zeroExResult = await zeroExAggregator.quote(
+            inputToken,
+            asset,
+            scaledSellAmount,
+        )
+
+        return {
+            asset,
+            buyAssetMinAmount: BigNumber.from(zeroExResult.buyAmount).mul(99).div(100),
+            swapTarget: zeroExResult.to,
+            assetQuote: zeroExResult.data,
+        }
+    })
+
+    /// Use `Promise.all` to resolve all quotes concurrently
+    return await Promise.all(quotes)
+}
+
+/**
+ * Prepares quotes for minting tokens.
+ * @param inputToken - The input token for the mint operation.
+ * @param amountIn - The amount of input token to mint.
+ * @returns A promise that resolves to an object containing quotes and the total sell amount.
+ */
+async function prepareMintQuotes(inputToken, amountIn) {
+    const index = new ethers.Contract(
+        "0x48f88A3fE843ccb0b5003e70B4192c1d7448bEf0",
+        PhutureIndexAbi,
+        provider,
+    );
+
+    /// Retrieve the current index anatomy and inactive anatomy from the index contract
+    const { _assets, _weights } = await index.anatomy()
+
+    /// Prepare amounts for each asset
+    const amounts = _assets.map((asset, i) => ({
+        asset,
+        amount: BigNumber.from(amountIn).mul(_weights[i]).div(255),
+        weight: _weights[i],
+    }))
+
+    /// Get the buy amounts for the given amounts and input token
+    const buyAmounts = await getBuyAmounts(amounts, inputToken)
+
+    /// Calculate the buy amounts in base currency
+    const buyAmountsInBase = await calculateBuyAmountsInBase(buyAmounts, amounts)
+
+    /// Find the minimum buy amount in base currency
+    const minBuyAmount = buyAmountsInBase.reduce((min, curr) =>
+        min.quotedBuyAmount.lte(curr.quotedBuyAmount) ? min : curr,
+    )
+
+    /// Scale the sell amounts based on the minimum buy amount
+    const scaledSellAmounts: any[] = Object.values(amounts).map(({ amount }, i) =>
+        amount
+            .mul(minBuyAmount.quotedBuyAmount)
+            .div(buyAmountsInBase[i].quotedBuyAmount),
+    )
+
+    /// Get quotes for the given amounts, input token, and scaled sell amounts
+    const quotes = await getMintQuotes(amounts, inputToken, scaledSellAmounts)
+
+    /// Calculate the total sell amount
+    const sellAmount = scaledSellAmounts.reduce(
+        (sum, curr) => sum.add(curr),
+        BigNumber.from(0),
+    )
+
+    return { quotes, sellAmount }
+}
+
+/**
+ * Prepares quotes for minting tokens.
+ * @param inputToken - The input token for the mint operation.
+ * @param amountIn - The amount of input token to mint.
+ * @returns A promise that resolves to an object containing quotes and the total sell amount.
+ */
+export async function getMintData(inputToken, amountIn, recipient) {
+    /// Prepare quotes for minting tokens and get the scaled total sell amount
+    const { quotes, sellAmount } = await prepareMintQuotes(inputToken, amountIn)
+
+    const indexRouter = new ethers.Contract("0xD6dd95610fC3A3579a2C32fe06158d8bfB8F4eE9", PhutureIndexRouterAbi, provider)
+
+    // Use `.mintSwapValue` if you want to use native currency as input
+    const mintTx = await indexRouter.populateTransaction.mintSwap({
+        index: "0x48f88A3fE843ccb0b5003e70B4192c1d7448bEf0",
+        inputToken: inputToken,
+        recipient,
+        amountInInputToken: sellAmount,
+        quotes,
+    });
+
+    return splitCallData(mintTx.data);
+}
+
+/**
+ * Prepares quotes for burning tokens.
+ *
+ * @param shares - The number of shares to burn.
+ * @param outputToken - The output token for the burn operation.
+ * @param recipient - The recipient address
+ * @returns A promise that resolves to an array of quotes for burning tokens.
+ */
+async function prepareBurnQuotes(shares, outputToken, recipient) {
+    const index = new ethers.Contract(
+        "0x48f88A3fE843ccb0b5003e70B4192c1d7448bEf0",
+        PhutureIndexAbi,
+        provider,
+    );
+    const indexRouter = new ethers.Contract(
+        "0xD6dd95610fC3A3579a2C32fe06158d8bfB8F4eE9",
+        PhutureIndexRouterAbi,
+        provider
+    );
+
+    /// Retrieve the current index anatomy and inactive anatomy from the index contract
+    const [{ _assets, _weights }, inactiveAnatomy, burnTokensAmounts] =
+        await Promise.all([
+            index.anatomy(),
+            index.inactiveAnatomy(),
+            indexRouter.callStatic.burnWithAmounts(
+                {
+                    index: index.address,
+                    recipient,
+                    amount: shares,
+                },
+                {
+                    from: recipient,
+                },
+            ),
+        ])
+
+    /// Merge the active and inactive anatomy into a single array
+    const constituents = [
+        ..._assets.map((asset, i) => ({ asset, weight: _weights[i] })),
+        ...inactiveAnatomy.map((asset) => ({ asset, weight: 0 })),
+    ]
+
+    /// Prepare quotes for burning tokens
+    const quotes = constituents.map(async ({ asset }, constituentIndex) => {
+        const amount = burnTokensAmounts[constituentIndex] || BigNumber.from(0)
+        /// If the amount is zero or the asset is the output token, return an empty quote
+        if (!amount || amount.isZero() || asset === outputToken) {
+            return {
+                swapTarget: constants.AddressZero,
+                assetQuote: [],
+                buyAssetMinAmount: 0,
+            }
+        }
+
+        const [zeroExAggregator] = ZeroExAggregator.fromUrl(
+            "https://avalanche.api.0x.org",
+            43314,
+            process.env.ZERO_EX_API_KEY,
+        );
+        /// Use the 0x Aggregator to get a quote for burning the token
+        const zeroExResult = await zeroExAggregator.quote(
+            asset,
+            outputToken,
+            amount.mul(98).div(100),
+        )
+
+        return {
+            swapTarget: zeroExResult.to,
+            buyAssetMinAmount: zeroExResult.buyAmount,
+            assetQuote: zeroExResult.data,
+        }
+    })
+
+    /// Use `Promise.all` to resolve all the quotes concurrently
+    return await Promise.all(quotes)
+}
+
+export async function getBurnData(shares, outputToken, recipient) {
+    /// Prepare quotes for burning tokens
+    const quotes = await prepareBurnQuotes(shares, outputToken, recipient);
+
+    const indexRouter = new ethers.Contract("0xD6dd95610fC3A3579a2C32fe06158d8bfB8F4eE9", PhutureIndexRouterAbi, provider);
+
+    // Use `.burnSwapValue` if you want to use native currency as output
+    const burnTx =  await indexRouter.populateTransaction.burnSwap({
+        index: "0x48f88A3fE843ccb0b5003e70B4192c1d7448bEf0",
+        amount: shares,
+        outputAsset: outputToken,
+        recipient: recipient,
+        quotes,
+    });
+
+    return splitCallData(burnTx.data);
+}

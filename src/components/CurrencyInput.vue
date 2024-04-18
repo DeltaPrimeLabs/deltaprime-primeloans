@@ -30,7 +30,7 @@
       </div>
     </div>
     <div class="info"
-         v-if="!error"
+         v-if="!error && !warning"
          :style="{'order': flexDirection === 'row' ? 1 : ''}">
       <div
           v-if="info && value && !isNaN(value) && !waiting && !ongoingErrorCheck"
@@ -47,7 +47,7 @@
     <div class="warning"
          v-if="warning && !error && !waiting && !ongoingErrorCheck">
       <span>
-        <img src="src/assets/icons/error.svg"/>
+        <img src="src/assets/icons/warning.svg"/>
         {{ warning }}
       </span>
     </div>
@@ -209,6 +209,7 @@ export default {
     },
 
     async setValue(value) {
+      console.log('CurrencyInput.setValue', value);
       this.value = value;
       this.internalValue = String(value);
       this.disabledStringifiedValue = smartRound(value, 20, true)

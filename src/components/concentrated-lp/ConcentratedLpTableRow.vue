@@ -3,6 +3,10 @@
     <div class="table__row" v-if="lpToken" :class="{'inactive': lpToken.inactive}">
       <div class="table__cell asset">
         <DoubleAssetIcon :primary="lpToken.primary" :secondary="lpToken.secondary"></DoubleAssetIcon>
+        <img style="margin-left: 5px"
+             v-if="lpToken.droppingSupport && concentratedLpTokenBalances[lpToken.symbol] > 0"
+             src="src/assets/icons/warning.svg"
+             v-tooltip="{content: `We will drop support to this asset on ${ lpToken.debtCoverage > 0.1 ? '26.04.2024 12:00 CET' : '19.04.2024 12:00 CET'}. Please withdraw or swap to another token.`, classes: 'info-tooltip long'}">
         <div class="asset__info">
           <div class="asset__name">{{ lpToken.primary }} - {{ lpToken.secondary }}</div>
           <div class="asset__dex">

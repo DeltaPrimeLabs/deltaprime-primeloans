@@ -12,7 +12,7 @@ import gql from "graphql-tag";
 import TOKEN_ADDRESSES from '../../common/addresses/avalanche/token_addresses.json';
 import erc20ABI from '../../test/abis/ERC20.json';
 
-import MULTICALL from '/artifacts/contracts/lib/Multicall3.sol/Multicall3.json'
+import MULTICALL from '../../artifacts/contracts/lib/Multicall3.sol/Multicall3.json'
 import {decodeOutput} from "./blockchain";
 
 const ethers = require('ethers');
