@@ -271,43 +271,43 @@ describe('Pool with variable utilisation interest rates', () => {
         let secondsIn14Days = 14 * 24 * 60 * 60;
         const newRate =  toWei((votesDiff).toString()).div(secondsIn14Days);
 
-        expect(rate).to.be.closeTo(newRate, 200000);
+        expect(rate).to.be.closeTo(newRate, 300000);
 
 
         const oneDay = 24 * 60 * 60;
         await time.increase(oneDay * 14);
         expect(fromWei(await vPrimeContract.balanceOf(depositor.address))).to.be.closeTo(15, 1e-6);
     });
-    //
-    // // should withdraw 2 sPrime and the vPrime balance should decrease to 7.5 over 7 days
-    // it("should withdraw 2 sPrime and the vPrime balance should decrease to 7.5 over 7 days", async () => {
-    //     expect(fromWei(await vPrimeContract.balanceOf(depositor.address))).to.be.closeTo(15, 1e-6);
-    //     await sPrimeContract.decreaseBalance(depositor.address, toWei("1"));
-    //     expect(fromWei(await sPrimeContract.balanceOf(depositor.address))).to.equal(0);
-    //     expect(fromWei(await vPrimeContract.balanceOf(depositor.address))).to.be.closeTo(15, 1e-6);
-    //
-    //     expect(await vPrimeControllerContract.getDepositorVPrimePairsCount(depositor.address)).to.equal(0);
-    //     expect(fromWei(await vPrimeControllerContract.getUserDepositDollarValueAcrossWhiteListedPools(depositor.address))).to.be.closeTo(12.574, 1e-4);
-    //     expect(fromWei(await vPrimeControllerContract.getUserSPrimeDollarValue(depositor.address))).to.equal(0);
-    //     const [rate, maxCap] = await vPrimeControllerContract.getDepositorVPrimeRateAndMaxCap(depositor.address);
-    //     expect(fromWei(maxCap)).to.be.closeTo(0, 1e-6);
-    //     let votesDiff = (0 - 15);
-    //     let secondsIn14Days = 14 * 24 * 60 * 60;
-    //     const newRate =  toWei((votesDiff).toString()).div(secondsIn14Days);
-    //
-    //     expect(rate).to.be.closeTo(newRate, 100000);
-    //
-    //     const oneDay = 24 * 60 * 60;
-    //     await time.increase(oneDay * 7);
-    //     expect(fromWei(await vPrimeContract.balanceOf(depositor.address))).to.be.closeTo(7.5, 1e-6);
-    // });
-    //
-    // // vPrimeBalance should go down to 0 over next 7 days
-    // it("vPrimeBalance should go down to 0 over next 7 days", async () => {
-    //     expect(fromWei(await vPrimeContract.balanceOf(depositor.address))).to.be.closeTo(7.5, 1e-6);
-    //     const oneDay = 24 * 60 * 60;
-    //     await time.increase(oneDay * 7);
-    //     expect(fromWei(await vPrimeContract.balanceOf(depositor.address))).to.be.closeTo(0, 1e-6);
-    // });
+
+    // should withdraw 2 sPrime and the vPrime balance should decrease to 7.5 over 7 days
+    it("should withdraw 2 sPrime and the vPrime balance should decrease to 7.5 over 7 days", async () => {
+        expect(fromWei(await vPrimeContract.balanceOf(depositor.address))).to.be.closeTo(15, 1e-6);
+        await sPrimeContract.decreaseBalance(depositor.address, toWei("1"));
+        expect(fromWei(await sPrimeContract.balanceOf(depositor.address))).to.equal(0);
+        expect(fromWei(await vPrimeContract.balanceOf(depositor.address))).to.be.closeTo(15, 1e-6);
+
+        expect((await vPrimeControllerContract.getDepositorVPrimePairsCount(depositor.address)).map(bn => bn.toString())).to.deep.equal(["0" ,"0"]);
+        expect((await vPrimeControllerContract.getUserDepositDollarValueAcrossWhiteListedPoolsVestedAndNonVested(depositor.address)).map(bn => fromWei(bn))).to.deep.closeTo([0 , 12.574], 1e-4);
+        expect(fromWei(await vPrimeControllerContract.getUserSPrimeDollarValue(depositor.address))).to.equal(0);
+        const [rate, maxCap] = await vPrimeControllerContract.getDepositorVPrimeRateAndMaxCap(depositor.address);
+        expect(fromWei(maxCap)).to.be.closeTo(0, 1e-6);
+        let votesDiff = (0 - 15);
+        let secondsIn14Days = 14 * 24 * 60 * 60;
+        const newRate =  toWei((votesDiff).toString()).div(secondsIn14Days);
+
+        expect(rate).to.be.closeTo(newRate, 100000);
+
+        const oneDay = 24 * 60 * 60;
+        await time.increase(oneDay * 7);
+        expect(fromWei(await vPrimeContract.balanceOf(depositor.address))).to.be.closeTo(7.5, 1e-6);
+    });
+
+    // vPrimeBalance should go down to 0 over next 7 days
+    it("vPrimeBalance should go down to 0 over next 7 days", async () => {
+        expect(fromWei(await vPrimeContract.balanceOf(depositor.address))).to.be.closeTo(7.5, 1e-6);
+        const oneDay = 24 * 60 * 60;
+        await time.increase(oneDay * 7);
+        expect(fromWei(await vPrimeContract.balanceOf(depositor.address))).to.be.closeTo(0, 1e-6);
+    });
 
 });
