@@ -709,7 +709,7 @@ const fetchAssetApy = async () => {
   }
 }
 
-const balanerApyAggregator = async (event) => {
+const balancerTvlAndApyAggregator = async (event) => {
   const { sAvaxApr, yyAvaxApr, ggAvaxApr } = await fetchAssetApy();
   const assetAprs = {
     "avalanche": {
@@ -748,6 +748,9 @@ const balanerApyAggregator = async (event) => {
         const pool = poolRows[matchId];
         const poolColumns = await pool.$$("td");
 
+        const vaultTvl = parseFloat((await (await poolColumns[2].getProperty("textContent")).jsonValue()).split('$')[1].replaceAll(',','').trim());
+        console.log(identifier, vaultTvl);
+
         const assetAppreciation = assetAprs[network][identifier] / 2;
         const vaultApy = parseFloat((await (await poolColumns[4].getProperty("textContent")).jsonValue()).split('%')[0].trim());
         const poolApy = ((1 + vaultApy / 100.0) * (1 + assetAppreciation / 100.0) - 1) * 100;
@@ -763,6 +766,9 @@ const balanerApyAggregator = async (event) => {
             lp_apy: {
               Value: Number(poolApy) ? poolApy / 100 : null,
               Action: "PUT"
+            },
+            tvl: {
+              Value: Number(vaultTvl) ? vaultTvl : null
             }
           }
         };
@@ -850,6 +856,6 @@ module.exports = {
   sushiApyAggregator,
   beefyApyAggregator,
   gmxApyAggregator,
-  balanerApyAggregator,
+  balancerTvlAndApyAggregator,
   assetStakingApyAggregator
 }

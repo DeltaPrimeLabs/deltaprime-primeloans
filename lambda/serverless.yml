@@ -161,8 +161,8 @@ functions:
     description: Fetch GM token APYs from GMX website.
     events:
       - schedule: rate(5 minutes)
-  balanerApyAggregator:
-    handler: aggregators/apy.balanerApyAggregator
+  balancerTvlAndApyAggregator:
+    handler: aggregators/apy.balancerTvlAndApyAggregator
     memorySize: 2048
     timeout: 300
     description: Fetch pool APYs from Balancer website.
