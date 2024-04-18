@@ -22,9 +22,19 @@ interface ISPrime {
      */
     struct UserInfo {
         uint256 share;
-        uint256 locked;
         uint256 centerId;
-        uint256 unlockAt;
+    }
+
+    /**
+    * @dev Struct representing details of a locked amount.
+    * @param lockPeriod The duration for which the amount is locked.
+    * @param amount The amount that is locked.
+    * @param unlockTime The timestamp when the locked amount will be able to released.
+    */
+    struct LockDetails {
+        uint256 lockPeriod;
+        uint256 amount;
+        uint256 unlockTime;
     }
 
     /**

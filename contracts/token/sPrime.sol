@@ -34,6 +34,7 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20, SolvencyMethods {
     // Mapping for storing pair information and user shares
     mapping(uint256 => PairInfo) public pairList;
     mapping(address => UserInfo) public userInfo;
+    mapping(address => LockDetails[]) public locks;
     mapping(uint256 => bool) public pairStatus;
 
     // Immutable variables for storing token and pair information
@@ -42,6 +43,7 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20, SolvencyMethods {
     ILBPair public immutable lbPair;
     uint16 internal constant DEFAULT_BIN_STEP = 25;
     uint256 internal constant DEFAULT_SLIPPAGE = 10;
+    uint256 public constant MAX_LOCK_TIME = 3 * 365 days;
 
     // Arrays for storing deltaIds and distributions
     int256[] private deltaIds;
@@ -135,6 +137,37 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20, SolvencyMethods {
     }
 
     /**
+    * @dev Returns the ratio of fully vested locked balance to non-vested balance for an account.
+    * @param account The address of the account.
+    * @return The ratio of fully vested locked balance to total balance
+    */
+    function getFullyVestedLockedBalanceToNonVestedRatio(address account) public view returns (uint256) {
+        uint256 totalBalance = balanceOf(account);
+        uint256 fullyVestedBalance = 0;
+        for (uint i = 0; i < locks[account].length; i++) {
+            if (locks[account][i].unlockTime <= block.timestamp) {
+                fullyVestedBalance += locks[account][i].amount * locks[account][i].lockPeriod / MAX_LOCK_TIME;
+            }
+        }
+        return totalBalance == 0 ? 0 : fullyVestedBalance * 1e18 / totalBalance;
+    }
+
+    /**
+    * @dev Returns the total locked balance of an account.
+    * @param account The address of the account.
+    * @return The total locked balance of the account.
+    */
+    function getLockedBalance(address account) public view returns (uint256) {
+        uint256 lockedBalance = 0;
+        for (uint i = 0; i < locks[account].length; i++) {
+            if (locks[account][i].unlockTime > block.timestamp) {
+                lockedBalance += locks[account][i].amount;
+            }
+        }
+        return lockedBalance;
+    }
+
+    /**
     * @dev Adds a new bin for the PRIME-TOKEN pair.
     * @param centerId The unique identifier for the new bin.
     * @param ids Deposit IDs for the pair.
@@ -205,10 +238,10 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20, SolvencyMethods {
     function _getUpdatedAmounts(uint256 amountX, uint256 amountY) internal returns(uint256, uint256) {
         ILBRouter traderJoeV2Router = ILBRouter(getJoeV2RouterAddress());
         uint256 amountXToY = _getTokenYFromTokenX(amountX);
-
         if(amountXToY != 0) {
             bool swapTokenX = amountY < amountXToY;
             uint256 diff = swapTokenX ? amountXToY - amountY : amountY - amountXToY;
+
             if(amountY * _MAX_SIPPIAGE / 100 < diff) {
                 uint256 amountIn = swapTokenX ? amountX * diff / amountXToY / 2 : diff / 2;
 
@@ -234,7 +267,6 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20, SolvencyMethods {
                     versions: versionsDynamic,
                     tokenPath: tokenPathDynamic
                 });
-
                 uint256 amountOut = traderJoeV2Router.swapExactTokensForTokens(amountIn, 0, path, address(this), block.timestamp + 1000);
 
                 (amountX, amountY) = swapTokenX ? (amountX - amountIn, amountY + amountOut) : (amountX + amountOut, amountY - amountIn);
@@ -278,7 +310,6 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20, SolvencyMethods {
     */
     function _withdrawAndUpdateShare(uint256 centerId, uint256 share) internal returns(uint256 totalBalanceX, uint256 totalBalanceY) {
         PairInfo storage pair = pairList[centerId];
-
         (totalBalanceX, totalBalanceY) = _withdrawFromLB(pair.depositIds, share * _PRECISION / pair.totalShare);
 
         _burn(_msgSender(), share);
@@ -352,11 +383,9 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20, SolvencyMethods {
     function deposit(uint256 activeIdDesired, uint256 idSlippage, uint256 amountX, uint256 amountY) public {
         if(amountX > 0) tokenX.safeTransferFrom(_msgSender(), address(this), amountX);
         if(amountY > 0) tokenY.safeTransferFrom(_msgSender(), address(this), amountY);
-
         if(userInfo[_msgSender()].share > 0) {
             (amountX, amountY) = _withdrawAndUpdateShare(userInfo[_msgSender()].centerId, userInfo[_msgSender()].share);
         }
-        
         (amountX, amountY) = _getUpdatedAmounts(amountX, amountY);
         
         uint256 activeId = lbPair.getActiveId();
@@ -402,12 +431,11 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20, SolvencyMethods {
         (uint256 afterBalanceX, uint256 afterBalanceY) = _getBalances(centerId);
         uint256 afterWeight = _getTotalWeight(afterBalanceX, afterBalanceY);
         uint256 beforeWeight = _getTotalWeight(beforeBalanceX, beforeBalanceY);
-
+    
         share = afterWeight;
         if(pair.totalShare > 0) {
             share = pair.totalShare * (afterWeight - beforeWeight) / beforeWeight;
         }
-
         _mint(user, share);
         pair.totalShare += share;
     }
@@ -418,6 +446,8 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20, SolvencyMethods {
     */
     function withdraw(uint256 shareWithdraw) external {
         require(shareWithdraw <= userInfo[_msgSender()].share, "Insufficient Balance");
+        uint256 lockedBalance = getLockedBalance(_msgSender());
+        require(balanceOf(_msgSender()) >= shareWithdraw + lockedBalance, "Balance is locked");
 
         PairInfo storage pair = pairList[userInfo[_msgSender()].centerId];
 
@@ -431,19 +461,32 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20, SolvencyMethods {
         tokenY.safeTransfer(_msgSender(), amountY);
     }
 
+    /**
+    * @dev Locks a specified amount of balance for a specified lock period.
+    * @param amount The amount of balance to be locked.
+    * @param lockPeriod The duration for which the balance will be locked.
+    */
     function lockBalance(uint256 amount, uint256 lockPeriod) public {
-        require(balanceOf(msg.sender) >= amount, "Insufficient balance to lock");
-        require(lockPeriod <= 3 * 365 days, "Cannot lock for more than 3 years");
-        
-        userInfo[_msgSender()].locked += amount;
-        userInfo[_msgSender()].unlockAt = block.timestamp + lockPeriod;
+        uint256 lockedBalance = getLockedBalance(_msgSender());
+        require(balanceOf(_msgSender()) >= amount + lockedBalance, "Insufficient balance to lock");
+        require(lockPeriod <= MAX_LOCK_TIME, "Cannot lock for more than 3 years");
+        locks[_msgSender()].push(LockDetails({
+            lockPeriod: lockPeriod,
+            amount: amount,
+            unlockTime: block.timestamp + lockPeriod
+        }));
     }
 
-    function releaseBalance() public {
-        require(userInfo[_msgSender()].unlockAt <= block.timestamp, "Still in the lock period");
+    /**
+    * @dev Releases a locked balance at a specified index.
+    * @param index The index of the lock to be released.
+    */
+    function releaseBalance(uint256 index) public {
+        require(locks[_msgSender()][index].unlockTime <= block.timestamp, "Still in the lock period");
+        uint256 length = locks[_msgSender()].length;
+        locks[_msgSender()][index] = locks[_msgSender()][length - 1];
 
-        userInfo[_msgSender()].locked = 0;
-        userInfo[_msgSender()].unlockAt = 0;
+        locks[_msgSender()].pop();
     }
 
     /**
@@ -457,7 +500,8 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20, SolvencyMethods {
         if (from != address(0)) {
 
             if(to != address(0)) {
-                require(userInfo[from].share - userInfo[from].locked >= amount, "Insufficient balance to transfer");
+                uint256 lockedBalance = getLockedBalance(from);
+                require(balanceOf(from) >= amount + lockedBalance, "Balance is locked");
             }
 
             uint256 centerId = userInfo[from].centerId;
