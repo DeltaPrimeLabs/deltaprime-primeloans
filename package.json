@@ -25,10 +25,9 @@
     "size": "yarn run hardhat size-contracts"
   },
   "dependencies": {
-    "redstone-sdk": "1.0.7",
-    "@chainlink/contracts": "0.8.0",
     "@apollo/client": "^3.7.2",
     "@babel/plugin-proposal-optional-chaining": "^7.16.7",
+    "@chainlink/contracts": "0.8.0",
     "@growthbunker/vuetimeline": "^0.1.17",
     "@nomiclabs/hardhat-etherscan": "^3.0.1",
     "@openzeppelin/contracts": "^4.1.0",
@@ -48,6 +47,7 @@
     "apollo-boost": "^0.4.9",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "browserify-zlib": "^0.2.0",
+    "chai-deep-closeto": "^0.1.1",
     "chart.js": "^2.9.4",
     "clean-webpack-plugin": "^4.0.0",
     "console-browserify": "^1.2.0",
@@ -70,6 +70,7 @@
     "prettier-plugin-solidity": "^1.0.0-beta.19",
     "redstone-api": "^0.4.6",
     "redstone-oracles-smartweave-contracts": "^1.0.6",
+    "redstone-sdk": "1.0.7",
     "replace-in-file": "^6.3.5",
     "rxjs": "^7.6.0",
     "solidity-docgen": "^0.3.13",
