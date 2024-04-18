@@ -71,7 +71,7 @@ async function fetchData(maxTimestamp, file) {
     const task = (loan) => fetch(`https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/gmx-incentives-new/${loan}`)
 
     console.log(`LONS: ${loans.length}`)
-    loans = loans.slice(3000, 4000);
+    loans = loans.slice(3400, 3800);
 
     let resps = await promiseAllInBatches(task, loans, 200);
 
@@ -155,8 +155,27 @@ function createDiffJson(file1, file2) {
 
 }
 
-function analyzeJson() {
-    let json1 = JSON.parse(fs.readFileSync('src/data/avalanche/GM_EPOCH_6.json'))
+function createAddJson(file1, file2, file3) {
+    let json0 = JSON.parse(fs.readFileSync(`src/data/avalanche/${file1}.json`))
+    let json1 = JSON.parse(fs.readFileSync(`src/data/avalanche/${file2}.json`))
+    let json2 = {};
+
+    let collectedAvax = 0;
+    Object.entries(json1).forEach(
+        ([k,v]) => {
+            json2[k] = (json1[k] ? json1[k] : 0) + (json0[k] ? json0[k] : 0)
+            collectedAvax += json2[k];
+        }
+    )
+
+    fs.writeFileSync(`src/data/avalanche/${file3}.json`, JSON.stringify(json2))
+
+    console.log('distributed Avax in this epoch: ', collectedAvax)
+
+}
+
+function analyzeJson(filename) {
+    let json1 = JSON.parse(fs.readFileSync(`src/data/avalanche/${filename}.json`))
 
     let collectedAvax = 0;
     Object.entries(json1).forEach(
@@ -187,7 +206,8 @@ function checkNegativeAccounts() {
 
 
 }
-// fetchData(Date.now(), "GM_EPOCH_8")
+// fetchData(Date.now(), "GM_EPOCH_10")
 // checkNegativeAccounts()
-createDiffJson( "GM_EPOCH_7", "GM_EPOCH_8")
-// analyzeJson()
+createDiffJson( "GM_EPOCH_9", "GM_EPOCH_10")
+// createAddJson( "GM_EPOCH_8", "GM_EPOCH_9_diff", "GM_EPOCH_9")
+// analyzeJson("GM_EPOCH_9")
