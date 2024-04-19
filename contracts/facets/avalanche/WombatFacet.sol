@@ -247,7 +247,7 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         _increaseExposure(tokenManager, address(unstakeToken), amountOut);
-        handleRewards(tokenManager, pid, reward, additionalRewards);
+        handleRewards(pid, reward, additionalRewards);
     }
 
     function _depositNative(
@@ -324,21 +324,23 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         _increaseExposure(tokenManager, address(wrapped), amountOut);
-        handleRewards(tokenManager, pid, reward, additionalRewards);
+        handleRewards(pid, reward, additionalRewards);
     }
 
     function handleRewards(
-        ITokenManager tokenManager,
         uint256 pid,
         uint256 reward,
         uint256[] memory additionalRewards
     ) internal {
         (, , address rewarder, , , , ) = IWombatMaster(WOMBAT_MASTER).poolInfo(pid);
-        _increaseExposure(tokenManager, WOM_TOKEN, reward);
+        address owner = DiamondStorageLib.contractOwner();
+        address(WOM_TOKEN).safeTransfer(owner, reward);
         if (rewarder != address(0)) {
             address[] memory rewardTokens = IMultiRewarder(rewarder).rewardTokens();
             for (uint256 i; i != rewardTokens.length; ++i) {
-                _increaseExposure(tokenManager, rewardTokens[i], additionalRewards[i]);
+                if (additionalRewards[i] > 0) {
+                    address(rewardTokens[i]).safeTransfer(owner, additionalRewards[i]);
+                }
             }
         }
     }
