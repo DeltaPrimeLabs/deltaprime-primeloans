@@ -46,7 +46,7 @@
       </div>
 
       <div class="table__cell table__cell--double-value loan">
-        {{ formatTvl(lpToken.tvl) }}
+        {{ formatTvl(tvl) }}
       </div>
 
       <div class="table__cell table__cell--double-value apr" v-bind:class="{'apr--with-warning': lpToken.aprWarning}">
@@ -154,6 +154,7 @@ export default {
       this.watchExternalAssetBalanceUpdate();
       this.watchRefreshLP();
       this.setupApr();
+      this.setupTvl();
     })
   },
 
@@ -329,6 +330,10 @@ export default {
     async setupApr() {
       if (!this.lpToken.apy) return;
       this.apr = this.lpToken.apy;
+    },
+
+    async setupTvl() {
+      this.tvl = (await (await fetch(`https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/levelTvl/${this.lpToken.symbol}`)).json()).tvl;
     },
 
     toggleChart() {
