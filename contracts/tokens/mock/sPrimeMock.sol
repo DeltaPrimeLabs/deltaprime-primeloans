@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@redstone-finance/evm-connector/contracts/core/ProxyConnector.sol";
 import {SolvencyFacetProd} from "../../facets/SolvencyFacetProd.sol";
 import "../vPrimeController.sol";
-import "hardhat/console.sol";
 
 contract SPrimeMock is ERC20, Ownable, ProxyConnector {
     struct LockDetails {
@@ -39,11 +38,12 @@ contract SPrimeMock is ERC20, Ownable, ProxyConnector {
         uint256 totalBalance = balanceOf(account);
         uint256 fullyVestedBalance = 0;
         for (uint i = 0; i < locks[account].length; i++) {
-            if (locks[account][i].unlockTime <= block.timestamp) {
+            if (locks[account][i].unlockTime > block.timestamp) {
                 fullyVestedBalance += locks[account][i].amount * locks[account][i].lockTime / MAX_LOCK_TIME;
             }
         }
-        return totalBalance == 0 ? 0 : fullyVestedBalance * 1e18 / totalBalance;
+
+        return totalBalance == 0 ? 0 : fullyVestedBalance * (1e18 + 10) / totalBalance; // Adding 10 wei to avoid rounding errors
     }
 
     function setVPrimeControllerContract(address _vPrimeControllerContract) public onlyOwner {
@@ -78,6 +78,12 @@ contract SPrimeMock is ERC20, Ownable, ProxyConnector {
             amount: amount,
             unlockTime: block.timestamp + lockTime
         }));
+        // TODO: Add event
+        proxyCalldata(
+            address(vPrimeControllerContract),
+            abi.encodeWithSignature("updateVPrimeSnapshot(address)", msg.sender),
+            false
+        );
     }
 
     // We can either proxy RS calldata from vPrimeController to this function or call it directly with already extracted prices in vPrimeController
