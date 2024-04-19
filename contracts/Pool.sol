@@ -16,7 +16,6 @@ import "./interfaces/IBorrowersRegistry.sol";
 import "./interfaces/IPoolRewarder.sol";
 import "./VestingDistributor.sol";
 import "./tokens/vPrimeController.sol";
-import "hardhat/console.sol";
 
 
 /**
@@ -74,8 +73,13 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyCo
         uint256 lockedBalance = getLockedBalance(msg.sender);
         require(balanceOf(msg.sender) - lockedBalance >= amount, "Insufficient balance to lock");
         require(lockTime <= MAX_LOCK_TIME, "Cannot lock for more than 3 years");
-
         locks[msg.sender].push(LockDetails(lockTime, amount, block.timestamp + lockTime));
+        // TODO: Add event
+        proxyCalldata(
+            address(vPrimeControllerContract),
+            abi.encodeWithSignature("updateVPrimeSnapshot(address)", msg.sender),
+            false
+        );
     }
 
 
@@ -83,11 +87,11 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyCo
         uint256 totalBalance = balanceOf(account);
         uint256 fullyVestedBalance = 0;
         for (uint i = 0; i < locks[account].length; i++) {
-            if (locks[account][i].unlockTime <= block.timestamp) {
+            if (locks[account][i].unlockTime > block.timestamp) { // Lock is still active
                 fullyVestedBalance += locks[account][i].amount * locks[account][i].lockTime / MAX_LOCK_TIME;
             }
         }
-        return totalBalance == 0 ? 0 : fullyVestedBalance * 1e18 / totalBalance;
+        return totalBalance == 0 ? 0 : fullyVestedBalance * (1e18 + 10) / totalBalance; // Adding 10 wei to avoid rounding errors
     }
 
     function setVPrimeController(vPrimeController _vPrimeController) public onlyOwner {
@@ -326,18 +330,13 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyCo
      * It updates `_of` user deposited balance, total deposited and rates
      **/
     function depositOnBehalf(uint256 _amount, address _of) public virtual nonReentrant {
-        console.log('1');
         if(_amount == 0) revert ZeroDepositAmount();
         require(_of != address(0), "Address zero");
         require(_of != address(this), "Cannot deposit on behalf of pool");
 
-        console.log('2');
-
         _amount = Math.min(_amount, IERC20(tokenAddress).balanceOf(msg.sender));
 
         _accumulateDepositInterest(_of);
-
-        console.log('3');
 
         if(totalSupplyCap != 0){
             if(_deposited[address(this)] + _amount > totalSupplyCap) revert TotalSupplyCapBreached();
@@ -355,13 +354,11 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyCo
 
         emit DepositOnBehalfOf(msg.sender, _of, _amount, block.timestamp);
 
-        console.log('4');
         proxyCalldata(
             address(vPrimeControllerContract),
             abi.encodeWithSignature("updateVPrimeSnapshot(address)", _of),
             false
         );
-        console.log('5');
     }
 
     function _transferToPool(address from, uint256 amount) internal virtual {
@@ -406,7 +403,6 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyCo
 
         emit Withdrawal(msg.sender, _amount, block.timestamp);
 
-        console.log('going to update upon withdrawal');
         proxyCalldata(
             address(vPrimeControllerContract),
             abi.encodeWithSignature("updateVPrimeSnapshot(address)", msg.sender),
