@@ -27,11 +27,11 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     /* ========== PUBLIC AND EXTERNAL MUTATIVE FUNCTIONS ========== */
 
     /**
-    * Adds an asset to the ownedAssets array
-    * @param _asset asset to be added
+    * Removes an asset from the ownedAssets array
+    * @param _asset asset to be removed
     * @param _address address of the asset
     **/
-    function removeOwnedAsset(bytes32 _asset, address _address) external onlyWhitelistedLiquidators nonReentrant {
+    function removeUnsupportedOwnedAsset(bytes32 _asset, address _address) external onlyWhitelistedLiquidators nonReentrant {
     ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
     // Check if the asset exists in the TokenManager
