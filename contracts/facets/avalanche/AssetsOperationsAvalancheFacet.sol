@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 556b7a3c39da6350be92f3e50b129cba4454e2c0;
+// Last deployed from commit: dd9b57ea0c079e7be2d46134fba51f23c0de5b49;
 pragma solidity 0.8.17;
 
 import "../AssetsOperationsFacet.sol";

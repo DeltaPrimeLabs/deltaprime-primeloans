@@ -36,9 +36,16 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
     // Check if the asset exists in the TokenManager
     require(tokenManager.tokenToStatus(_address) == 0, "Asset is still supported");
+    require(tokenManager.tokenAddressToSymbol(_address) == bytes32(0), "Asset address to symbol not empty");
     require(tokenManager.debtCoverage(_address) == 0, "Asset still has debt coverage");
-    require(tokenManager.identifierToExposureGroup[_asset] == bytes32(0), "Asset still has exposure group");
-    require(tokenManager.assetToTokenAddress.contains(_asset) == false, "Asset still exists in assetToTokenAddress");
+    require(tokenManager.identifierToExposureGroup(_asset) == bytes32(0), "Asset still has exposure group");
+
+    bytes32[] memory allAssets = tokenManager.getAllTokenAssets();
+    // Loop through all assets and check if the asset exists
+    for (uint i = 0; i < allAssets.length; i++) {
+        require(allAssets[i] != _asset, "Asset exists in TokenManager");
+    }
+
 
     // Remove the asset from the ownedAssets array
     DiamondStorageLib.removeOwnedAsset(_asset);
