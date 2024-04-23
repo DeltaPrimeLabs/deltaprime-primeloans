@@ -605,6 +605,11 @@ export default {
       if (sourceInputChangeEvent) {
         this.sourceInputError = sourceInputChangeEvent.error;
       }
+      // TODO remove after we will drop support for deprecated assets
+      if (config.ASSETS_CONFIG[this.targetAsset].droppingSupport) {
+        this.targetInputError = true;
+      }
+
     },
 
     ongoingTyping(event) {
@@ -677,6 +682,13 @@ export default {
 
             if (value > allowed) {
               return `Max. allowed amount is ${allowed.toFixed(2)}.`;
+            }
+          }
+        },
+        {
+          validate: async (value) => {
+            if (config.ASSETS_CONFIG[this.targetAsset].droppingSupport) {
+              return 'Unable to swap to deprecated asset.';
             }
           }
         }

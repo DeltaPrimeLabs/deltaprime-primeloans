@@ -88,7 +88,7 @@
 
       <div class="table__cell actions">
         <IconButton class="action-button"
-                    :disabled="((disableAllButtons) && (!(asset.debtCoverage > 0 && noSmartLoan)) || asset.inactive || asset.unsupported)"
+                    :disabled="((disableAllButtons) && (!(asset.debtCoverage > 0 && noSmartLoan)) || asset.inactive || asset.unsupported || asset.droppingSupport)"
                     :icon-src="'src/assets/icons/plus.svg'" :size="26"
                     v-tooltip="{content: 'Deposit collateral', classes: 'button-tooltip'}"
                     v-on:click="actionClick('ADD_FROM_WALLET')">
