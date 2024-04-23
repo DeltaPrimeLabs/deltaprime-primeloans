@@ -10,12 +10,6 @@
         <Toggle v-on:change="swapDexChange" :options="dexOptions"></Toggle>
       </div>
 
-      <div class="modal-top-desc" v-if="swapDex === 'ParaSwapV2' && showParaSwapWarning && !swapDebtMode">
-        <div>
-          <b>Caution: Paraswap slippage vastly exceeds YakSwap. Use with caution.</b>
-        </div>
-      </div>
-
       <div class="modal-top-desc" v-if="swapDex === 'YakSwap' && showYakSwapWarning">
         <div>
           <b>We recommend using Paraswap for swaps of $50K+.</b>
@@ -83,7 +77,7 @@
         </div>
       </div>
 
-      <div class="slippage-bar">
+      <div class="slippage-bar" v-if="feeMethods && feeMethods[swapDex]">
         <div class="slippage-info">
           <span class="slippage-label">Max. acceptable slippage:</span>
           <SimpleInput :percent="true" :default-value="userSlippage" v-on:newValue="userSlippageChange"></SimpleInput>
@@ -111,6 +105,34 @@
           </div>
         </div>
       </div>
+
+
+      <div class="price-impact-option price-impact">
+        <div class="label-with-separator">
+          Acceptable Price Impact
+          <InfoIcon
+            class="label__info-icon"
+            :tooltip="{ content: 'Choose price impact you are willing to take. Lower values might results in failed transaction', placement: 'top', classes: 'info-tooltip' }"
+          ></InfoIcon>
+        </div>
+        <div class="price-impact-option__content">
+          <div
+            v-for="(option, key) in priceImpactOptions"
+            :key="key"
+            :class="['price-impact-option-tile', selectedPriceImpactOption === key ? 'active' : '', option.disabled ? 'disabled' : '']"
+            v-on:click="() => handlePriceImpactClick(key)"
+          >
+            <img class="price-impact-icon" :src="option.imgSrc" />
+            <div class="price-impact-label">
+              {{ option.name }} {{option.value | percent}}
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+
+
       <div v-if="slippageWarning" class="slippage-warning">
         <img src="src/assets/icons/error.svg"/>
         {{ slippageWarning }}
@@ -307,6 +329,8 @@ export default {
       swapDexsConfig: config.SWAP_DEXS_CONFIG,
       reverseSwapDisabled: false,
       calculatingSwapRoute: false,
+      priceImpactOptions: config.SWAP_MODAL_PRICE_IMPACT_OPTIONS,
+      selectedPriceImpactOption: Object.keys(config.SWAP_MODAL_PRICE_IMPACT_OPTIONS)[0]
     };
   },
 
@@ -484,14 +508,14 @@ export default {
     },
 
     setSlippageWarning() {
-      this.slippageWarning = '';
-      if (this.userSlippage > 2) {
-        this.slippageWarning = 'Slippage exceeds 2%. Be careful.';
-      } else if (this.userSlippage < this.marketDeviation) {
-        this.slippageWarning = 'Slippage below current DEX slippage. Transaction will likely fail.';
-      } else if (parseFloat((this.userSlippage - this.marketDeviation).toFixed(3)) < 0.01) {
-        this.slippageWarning = 'Slippage close to current DEX slippage. Transaction can fail.';
-      }
+      // this.slippageWarning = '';
+      // if (this.userSlippage > 2) {
+      //   this.slippageWarning = 'Slippage exceeds 2%. Be careful.';
+      // } else if (this.userSlippage < this.marketDeviation) {
+      //   this.slippageWarning = 'Slippage below current DEX slippage. Transaction will likely fail.';
+      // } else if (parseFloat((this.userSlippage - this.marketDeviation).toFixed(3)) < 0.01) {
+      //   this.slippageWarning = 'Slippage close to current DEX slippage. Transaction can fail.';
+      // }
     },
 
     setupSourceAssetOptions() {
@@ -688,6 +712,16 @@ export default {
 
       if (this.customTargetValidators) {
         this.targetValidators.push(...this.customTargetValidators);
+      }
+    },
+
+    async handlePriceImpactClick(key) {
+      console.log(key);
+      if (!this.priceImpactOptions[key].disabled) {
+        this.selectedPriceImpactOption = key;
+        this.userSlippage = this.priceImpactOptions[key].value;
+
+        await this.updateAmountsWithSlippage();
       }
     },
 
@@ -895,5 +929,94 @@ export default {
 .dex-toggle {
   margin-bottom: 30px;
 }
+
+.price-impact-option {
+  display: flex;
+  flex-direction: column;
+  &.price-impact {
+    margin-top: 10px;
+  }
+  .label-with-separator {
+    font-family: Montserrat;
+    font-size: $font-size-sm;
+    font-weight: 600;
+    font-stretch: normal;
+    font-style: normal;
+    line-height: normal;
+    letter-spacing: normal;
+    text-align: left;
+    color: var(--swap-modal__label-with-separator);
+    display: flex;
+    align-items: center;
+    &:after {
+      content: "";
+      display: block;
+      background-color: var(--swap-modal__label-with-separator-background);
+      height: 2px;
+      flex-grow: 1;
+      margin-left: 10px;
+    }
+    .label__info-icon {
+      margin-left: 8px;;
+    }
+  }
+  .price-impact-option__content {
+    width: 100%;
+    margin: 30px 0;
+    display: flex;
+    justify-content: space-between;
+    .price-impact-option-tile {
+      width: 170px;
+      height: 100px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 18px 0 6px;
+      border-radius: 15px;
+      border: var(--swap-modal__liquidity-shape-border);
+      cursor: pointer;
+
+      &.disabled {
+        cursor: initial;
+      }
+
+      .price-impact-icon {
+        margin: 0 37px;
+        filter: grayscale(1);
+        opacity: 0.75;
+        width: 40px;
+        height: 40px;
+      }
+      .price-impact-label {
+        margin-top: 6px;
+        font-family: Montserrat;
+        font-size: $font-size-sm;
+        font-weight: 500;
+        font-stretch: normal;
+        font-style: normal;
+        line-height: normal;
+        letter-spacing: normal;
+        text-align: left;
+      }
+      &.active {
+        border: var(--swap-modal__liquidity-shape-border-active);
+        box-shadow: var(--swap-modal__liquidity-shape-box-shadow);
+        background-color: var(--swap-modal__liquidity-shape-background);
+        .price-impact-icon {
+          filter: grayscale(0);
+          opacity: 1;
+        }
+        .price-impact-label {
+          font-weight: 600;
+        }
+      }
+      &:hover &:not(.disabled) {
+        border-color: var(--swap-modal__liquidity-shape-border-hover);
+      }
+    }
+  }
+}
+
 
 </style>

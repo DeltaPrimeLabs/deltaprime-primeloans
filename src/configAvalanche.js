@@ -46,21 +46,28 @@ export default {
     },
 
     SWAP_DEXS_CONFIG: {
-        YakSwap: {
-            displayName: 'YakSwap',
-            availableAssets: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'EUROC', 'GLP', 'sAVAX', 'GMX', 'CAI', 'JOE', 'QI', 'PNG', 'PTP', 'yyAVAX'],
-            slippageMargin: 0.02
-        },
         ParaSwapV2: {
             displayName: 'ParaSwap',
             availableAssets: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'sAVAX', 'CAI', 'QI', 'PNG', 'PTP', 'yyAVAX', 'ggAVAX'],
             slippageMargin: 0.05
+        },
+        YakSwap: {
+            displayName: 'YakSwap',
+            availableAssets: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'EUROC', 'GLP', 'sAVAX', 'GMX', 'CAI', 'JOE', 'QI', 'PNG', 'PTP', 'yyAVAX'],
+            slippageMargin: 0.02
         },
         GmxV2: {
             availableAssets: [],
             slippageMargin: 0.1
         }
     },
+
+    SWAP_MODAL_PRICE_IMPACT_OPTIONS: {
+      low: {value: 0.005, name: 'Low', imgSrc: 'src/assets/icons/check.png'},
+      medium: {value: 0.01, name: 'Medium', imgSrc: 'src/assets/icons/warning.svg'},
+      high: {value: 0.02, name: 'High', imgSrc: 'src/assets/icons/error.svg'}
+    },
+
     CAI_MINT_SOURCE_ASSETS: ['JOE', 'sAVAX', 'AVAX', 'QI'],
     CAI_BURN_TARGET_ASSETS: ['JOE', 'sAVAX', 'AVAX', 'QI'],
     paraSwapDefaultSlippage: 1,

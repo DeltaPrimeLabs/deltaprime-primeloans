@@ -46,15 +46,15 @@ export default {
     },
 
     SWAP_DEXS_CONFIG: {
-        YakSwap: {
-            displayName: 'YakSwap',
-            availableAssets: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'GLP', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH', 'GRAIL', 'WOO', 'MAGIC', 'JOE'],
-            slippageMargin: 0.02
-        },
         ParaSwapV2: {
             displayName: 'ParaSwap',
             availableAssets: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH', 'GRAIL', 'WOO', 'MAGIC', 'JOE'],
             slippageMargin: 0.05
+        },
+        YakSwap: {
+            displayName: 'YakSwap',
+            availableAssets: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'GLP', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH', 'GRAIL', 'WOO', 'MAGIC', 'JOE'],
+            slippageMargin: 0.02
         },
         Level: {
             availableAssets: [],
@@ -65,6 +65,11 @@ export default {
             slippageMargin: 0.1
         }
     },
+    SWAP_MODAL_PRICE_IMPACT_OPTIONS: [
+        {value: 0.5, label: 'Low', imageSrc: 'src/assets/icons/liquidity_shape_spot_on.svg'},
+        {value: 1, label: 'Medium', imageSrc: 'src/assets/icons/liquidity_shape_curve_on.svg'},
+        {value: 2, label: 'High', imageSrc: 'src/assets/icons/liquidity_shape_bid-ask_on.svg'}
+    ],
     paraSwapDefaultSlippage: 0.02,
     showYakSwapWarning: true,
     ASSET_FILTER_TOKENS_OPTIONS: ['ETH', 'DPX',],
