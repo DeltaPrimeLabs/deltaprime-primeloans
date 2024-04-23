@@ -6,12 +6,10 @@ interface ISPrime {
     /**
      * @dev Struct representing information about a pair.
      * @param depositIds Deposit ID list.
-     * @param lastRebalance The timestamp of the last rebalance.
      * @param totalShare The total share of the pair.
      */
     struct PairInfo {
         uint256[] depositIds;
-        uint64 lastRebalance;
         uint256 totalShare;
     }
 
@@ -21,8 +19,8 @@ interface ISPrime {
      * @param centerId The active id of the pair the user has a share in.
      */
     struct UserInfo {
-        uint256 share;
-        uint256 centerId;
+        uint256 amount;
+        uint256[] tokenIds;
     }
 
     /**
@@ -58,4 +56,8 @@ interface ISPrime {
     function withdraw(
         uint256 shareWithdraw
     ) external;
+
+    function getLBPair() external view returns(address);
+    function getTokenX() external view returns(address);
+    function getTokenY() external view returns(address);
 }
