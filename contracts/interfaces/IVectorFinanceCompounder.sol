@@ -28,4 +28,6 @@ interface IVectorFinanceCompounder {
     function migrateAllUserDepositsToManual() external;
 
     function getDepositTokensForShares(uint256 amount) external view returns (uint256);
+
+    function userDepositToken(address user) external view returns (uint256);
 }

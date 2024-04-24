@@ -1,5 +1,5 @@
 <template>
-  <div id="modal" class="pool-withdraw-modal-component modal-component">
+  <div id="modal" v-if="pool" class="pool-withdraw-modal-component modal-component">
     <Modal :height="getModalHeight">
       <div class="modal__title">
         Withdraw
@@ -7,20 +7,23 @@
 
       <div class="modal-top-info">
         <div class="top-info__label">APY:</div>
-        <div class="top-info__value">{{ apy | percent }}</div>
+        <div class="top-info__value">{{ apy + miningApy | percent }}</div>
         <div class="top-info__divider"></div>
         <div class="top-info__label">Deposit:</div>
         <div class="top-info__value">{{ deposit | smartRound }}<span class="top-info__currency">{{ assetSymbol }}</span></div>
       </div>
 
-      <CurrencyInput :symbol="assetSymbol" v-on:newValue="withdrawValueChange" ></CurrencyInput>
+      <CurrencyInput :symbol="assetSymbol"
+                     v-on:newValue="withdrawValueChange"
+                     :validators="validators"
+                     :max="deposit">
+      </CurrencyInput>
 
       <div class="transaction-summary-wrapper">
         <TransactionResultSummaryBeta>
           <div class="summary__title">
             <div class="pool">
-              <img v-if="assetSymbol === 'AVAX'" class="pool__icon" src="src/assets/logo/avax.svg">
-              <img v-if="assetSymbol === 'USDC'" class="pool__icon" src="src/assets/logo/usdc.svg">
+              <img class="pool__icon" v-if="assetSymbol" :src="getAssetIcon(assetSymbol)">
               <div class="pool__name">{{ assetSymbol }} Pool</div>
               ,
             </div>
@@ -28,21 +31,29 @@
           </div>
           <div class="summary__horizontal__divider"></div>
           <div class="summary__values">
-            <div>
+            <div class="summary__value__pair">
               <div class="summary__label">
                 Deposit:
               </div>
               <div class="summary__value">
-                {{ Number(deposit) - Number(withdrawValue) > 0 ? deposit - withdrawValue : 0 | smartRound }} <span class="currency">{{ assetSymbol }}</span>
+                {{ Number(deposit) - Number(withdrawValue) > 0 ? deposit - withdrawValue : 0 | smartRound(8, true) }} <span class="currency">{{ assetSymbol }}</span>
               </div>
             </div>
-            <div class="summary__divider"></div>
-            <div>
+            <div class="summary__divider divider--long"></div>
+            <div class="summary__value__pair">
               <div class="summary__label">
-                Daily interest ≈
+                Mean daily interest (365D):
               </div>
-              <div class="summary__value">
-                {{ calculateDailyInterest | smartRound }} <span class="currency">{{ assetSymbol }}</span>
+              <div class="value__wrapper">
+                <div class="summary__value">
+                  ≈ {{ calculateDailyInterest | smartRound(8, true) }}
+                  <span class="currency">{{ assetSymbol }}</span>
+                </div>
+                +
+                <div class="summary__value">
+                  ≈ {{ calculateDailyMiningInterestInSPrime | smartRound(8, true) }}$
+                  <span class="currency">sPRIME</span>
+                </div>
               </div>
             </div>
           </div>
@@ -54,7 +65,11 @@
       </div>
 
       <div class="button-wrapper">
-        <Button :label="'Withdraw'" v-on:click="submit()" :waiting="transactionOngoing"></Button>
+        <Button :label="'Withdraw'"
+                v-on:click="submit()"
+                :waiting="transactionOngoing"
+                :disabled="inputValidationError">
+        </Button>
       </div>
     </Modal>
   </div>
@@ -66,6 +81,7 @@ import TransactionResultSummaryBeta from './TransactionResultSummaryBeta';
 import CurrencyInput from './CurrencyInput';
 import Button from './Button';
 import Toggle from './Toggle';
+import config from "../config";
 
 
 export default {
@@ -79,6 +95,7 @@ export default {
   },
 
   props: {
+    pool: null,
     apy: null,
     available: null,
     deposit: null,
@@ -90,18 +107,27 @@ export default {
       withdrawValue: 0,
       selectedWithdrawAsset: 'AVAX',
       transactionOngoing: false,
+      inputValidationError: false,
+      validators: [],
     }
   },
 
   mounted() {
-    this.selectedWithdrawAsset = 'AVAX'
+    this.selectedWithdrawAsset = 'AVAX';
+    this.setupValidators();
   },
 
   computed: {
     calculateDailyInterest() {
-      const value = this.deposit - this.withdrawValue;
-      if (value > 0) {
-        return this.apy / 365 * value;
+      if (this.withdrawValue <= Number(this.deposit)) {
+        return (this.apy) / 365 * (Number(this.deposit) - this.withdrawValue);
+      } else {
+        return 0;
+      }
+    },
+    calculateDailyMiningInterestInSPrime() {
+      if (this.withdrawValue <= Number(this.deposit)) {
+        return (this.miningApy) / 365 * (Number(this.deposit) - this.withdrawValue) * this.pool.assetPrice;
       } else {
         return 0;
       }
@@ -109,6 +135,12 @@ export default {
 
     getModalHeight() {
       return this.assetSymbol === 'AVAX' ? '561px' : null;
+    },
+
+    miningApy() {
+      if (!this.pool || this.pool.tvl === 0) return 0;
+      return (config.chainId === 42161) ?  0 * 1000 * 365 / 4 / (this.pool.tvl * this.pool.assetPrice)
+          : 0 * Math.max((1 - this.pool.tvl * this.pool.assetPrice / 4000000) * 0.1, 0);
     },
   },
 
@@ -124,11 +156,24 @@ export default {
 
 
     withdrawValueChange(event) {
-      this.withdrawValue = event.value;
+      this.withdrawValue = Number(event.value);
+      this.inputValidationError = event.error;
     },
 
     assetToggleChange(asset) {
       this.selectedWithdrawAsset = asset;
+    },
+
+    setupValidators() {
+      this.validators = [
+        {
+          validate: (value) => {
+            if (value > Number(this.deposit)) {
+              return 'Withdraw amount exceeds balance';
+            }
+          }
+        }
+      ];
     },
   }
 };

@@ -40,13 +40,17 @@
 }
 
 .solid-block-wrapper {
-  background-color: #6b70ed;
+  background-color: var(--bubble__solid-block-wrapper-background);
   border-radius: 20px;
   padding: 16px 30px;
   width: 329px;
   font-weight: 500;
   font-size: 16px;
-  color: white;
+  color: var(--bubble__solid-block-wrapper-color);
+
+  .delta-icon {
+    background: var(--bubble__solid-block-wrapper-color);
+  }
 }
 
 .arrow-wrapper {

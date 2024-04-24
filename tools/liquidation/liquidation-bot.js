@@ -1,7 +1,7 @@
 import LOAN_FACTORYTUP from '../../deployments/avalanche/SmartLoansFactoryTUP.json'
 import LOAN_FACTORY from '../../deployments/avalanche/SmartLoansFactory.json'
-import addresses from '../../common/addresses/avax/token_addresses.json';
-import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
+import addresses from '../../common/addresses/avalanche/token_addresses.json';
+import TOKEN_ADDRESSES from '../../common/addresses/avalanche/token_addresses.json';
 import {erc20ABI, fromBytes32, getLiquidationAmounts} from "../../test/_helpers";
 import TOKEN_MANAGER from '../../deployments/avalanche/TokenManager.json';
 import TOKEN_MANAGER_TUP from '../../deployments/avalanche/TokenManagerTUP.json';

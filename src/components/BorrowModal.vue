@@ -10,7 +10,7 @@
         <div class="top-info__value">{{ loanAPY | percent }}</div>
         <div class="top-info__divider"></div>
         <div class="top-info__label">Available in pool:</div>
-        <div class="top-info__value">{{ poolTVL | smartRound }}<span class="top-info__currency"> {{
+        <div class="top-info__value">{{ (poolTVL * maxUtilisation) - totalBorrowedFromPool | smartRound }}<span class="top-info__currency"> {{
             asset.symbol
           }}</span></div>
       </div>
@@ -18,7 +18,8 @@
       <CurrencyInput :symbol="asset.symbol"
                      :validators="validators"
                      v-on:inputChange="inputChange"
-                     v-on:newValue="currencyInputChange">
+                     v-on:newValue="currencyInputChange"
+                     :info="() => sourceAssetValue">
       </CurrencyInput>
 
       <div class="transaction-summary-wrapper">
@@ -87,12 +88,25 @@ export default {
     asset: {},
     assets: {},
     assetBalances: {},
+    lpAssets: {},
+    lpBalances: {},
+    concentratedLpAssets: {},
+    concentratedLpBalances: {},
+    levelLpAssets: {},
+    levelLpBalances: {},
+    traderJoeV2LpAssets: {},
+    gmxV2Assets: {},
+    gmxV2Balances: {},
+    balancerLpAssets: {},
+    balancerLpBalances: {},
     farms: {},
     debtsPerAsset: {},
     assetBalance: Number,
     debt: Number,
     thresholdWeightedValue: Number,
     loanAPY: Number,
+    availableInPool: Number,
+    totalBorrowedFromPool: Number,
     poolTVL: Number,
     maxUtilisation: Number
   },
@@ -106,6 +120,7 @@ export default {
       transactionOngoing: false,
       MIN_ALLOWED_HEALTH: config.MIN_ALLOWED_HEALTH,
       maxBorrow: 0,
+      valueAsset: "USDC",
     };
   },
 
@@ -115,6 +130,18 @@ export default {
       this.setupValidators();
       this.calculateMaxBorrow();
     });
+  },
+
+  computed: {
+    sourceAssetValue() {
+      const nativeSymbol = config.nativeToken;
+      const sourceAssetUsdPrice = Number(this.value) * this.asset.price;
+      const nativeUsdPrice = config.ASSETS_CONFIG[nativeSymbol].price;
+
+      if (this.valueAsset === "USDC") return `~ $${sourceAssetUsdPrice.toFixed(2)}`;
+      // otherwise return amount in AVAX
+      return `~ ${(sourceAssetUsdPrice / nativeUsdPrice).toFixed(2)} ${nativeSymbol}`;
+    },
   },
 
   methods: {
@@ -156,6 +183,41 @@ export default {
         });
       }
 
+      for (const [symbol, data] of Object.entries(this.concentratedLpAssets)) {
+        tokens.push({
+          price: data.price,
+          balance: parseFloat(this.concentratedLpBalances[symbol]),
+          borrowed: 0,
+          debtCoverage: data.debtCoverage
+        });
+      }
+
+      for (const [symbol, data] of Object.entries(this.levelLpAssets)) {
+        tokens.push({
+          price: data.price,
+          balance: parseFloat(this.levelLpBalances[symbol]),
+          borrowed: 0,
+          debtCoverage: data.debtCoverage
+        });
+      }
+
+      for (const [symbol, data] of Object.entries(this.balancerLpAssets)) {
+        if (this.balancerLpBalances) {
+          let balance = parseFloat(this.balancerLpBalances[symbol]);
+
+          tokens.push({price: data.price, balance: balance ? balance : 0, borrowed: 0, debtCoverage: data.debtCoverage});
+        }
+      }
+
+      for (const [symbol, data] of Object.entries(this.gmxV2Assets)) {
+        tokens.push({
+          price: data.price,
+          balance: parseFloat(this.gmxV2Balances[symbol]),
+          borrowed: 0,
+          debtCoverage: data.debtCoverage
+        });
+      }
+
       for (const [, farms] of Object.entries(this.farms)) {
         farms.forEach(farm => {
           tokens.push({
@@ -167,7 +229,9 @@ export default {
         });
       }
 
-      this.healthAfterTransaction = calculateHealth(tokens);
+      let lbTokens = Object.values(this.traderJoeV2LpAssets);
+
+      this.healthAfterTransaction = calculateHealth(tokens, lbTokens);
     },
 
     setupValidators() {
@@ -181,7 +245,7 @@ export default {
         },
         {
           validate: (value) => {
-            if (this.value > this.maxUtilisation * this.poolTVL) {
+            if (this.totalBorrowedFromPool + this.value > this.maxUtilisation * this.poolTVL) {
               return `You can borrow up to ${this.maxUtilisation * 100}% of this pool's TVL`;
             }
           }

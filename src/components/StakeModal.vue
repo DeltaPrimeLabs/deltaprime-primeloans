@@ -20,14 +20,16 @@
                      :symbol-secondary="asset.secondary"
                      v-on:newValue="stakeValueChange"
                      :validators="validators"
-                     :max="available">
+                     :max="available"
+                     :info="() => sourceAssetValue">
       </CurrencyInput>
       <CurrencyInput ref="currencyInput"
                      v-else
                      :symbol="asset.symbol"
                      v-on:newValue="stakeValueChange"
                      :validators="validators"
-                     :max="available">
+                     :max="available"
+                     :info="() => sourceAssetValue">
       </CurrencyInput>
       <div class="transaction-summary-wrapper">
         <TransactionResultSummaryBeta>
@@ -61,10 +63,10 @@
             <div class="summary__value__pair">
 
               <div class="summary__label">
-                Daily interest:
+                Mean daily interest (365D):
               </div>
               <div class="summary__value">
-                ≈ {{ calculateDailyInterest | smartRound(10, true) }} <div class="currency">{{ asset.name }}</div>
+                ≈ $ {{ calculateDailyInterest | smartRound(10, true) }}
               </div>
             </div>
           </div>
@@ -114,6 +116,7 @@ export default {
       transactionOngoing: false,
       currencyInputError: true,
       maxButtonUsed: false,
+      valueAsset: "USDC",
     };
   },
 
@@ -122,14 +125,23 @@ export default {
   },
   computed: {
     calculateDailyInterest() {
-      return this.apy / 365 * (Number(this.underlyingTokenStaked) + Number(this.stakeValue));
-    }
+      return (this.apy / 365 * (Number(this.underlyingTokenStaked) + Number(this.stakeValue))) * this.asset.price;
+    },
+
+    sourceAssetValue() {
+      const nativeSymbol = config.nativeToken;
+      const sourceAssetUsdPrice = Number(this.stakeValue) * this.asset.price;
+      const nativeUsdPrice = config.ASSETS_CONFIG[nativeSymbol].price;
+
+      if (this.valueAsset === "USDC") return `~ $${sourceAssetUsdPrice.toFixed(2)}`;
+      // otherwise return amount in AVAX
+      return `~ ${(sourceAssetUsdPrice / nativeUsdPrice).toFixed(2)} ${nativeSymbol}`;
+    },
   },
 
   methods: {
     submit() {
       this.transactionOngoing = true;
-      console.log(this.stakeValue);
       const stakeValue = this.maxButtonUsed ? parseFloat(this.stakeValue) * config.MAX_BUTTON_MULTIPLIER : parseFloat(this.stakeValue);
       this.$emit('STAKE', stakeValue.toFixed(this.asset.decimals));
     },

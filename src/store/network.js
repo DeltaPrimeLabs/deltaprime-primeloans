@@ -2,18 +2,21 @@ const ethers = require('ethers');
 let ethereum = window.ethereum;
 import Vue from "vue";
 import redstone from 'redstone-api';
+import config from "../config";
 
 export default {
   namespaced: true,
   state: {
     provider: null,
     account: null,
-    accountBalance: null,
-    avaxPrice: null
+    accountBalance: null
   },
   mutations: {
     setProvider(state, provider) {
       state.provider = provider;
+    },
+    setHistoricalProvider(state, historicalProvider) {
+      state.historicalProvider = historicalProvider;
     },
     setAccount(state, account) {
       state.account = account;
@@ -31,15 +34,17 @@ export default {
       await dispatch('initProvider');
       await dispatch('initAccount');
       await dispatch('updateBalance');
-      await dispatch('updateAvaxPrice');
     },
     async initProvider({ commit, rootState }) {
       await ethereum.request({ method: 'eth_requestAccounts' });
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const provider = new ethers.providers.Web3Provider(window.ethereum, 'any');
       window.provider = provider;
 
       await commit('setProvider', provider);
       rootState.serviceRegistry.providerService.emitProviderCreated();
+
+      const historicalProvider = new ethers.providers.JsonRpcProvider(config.historicalRpcUrl);
+      await commit('setHistoricalProvider', historicalProvider);
     },
     async initAccount({ commit, state, rootState }) {
       if (state.account) {
@@ -52,7 +57,7 @@ export default {
       if (accounts.length > 0) {
         const mainAccount = accounts[0];
         commit('setAccount', mainAccount);
-        rootState.serviceRegistry.accountService.emitAccountLoaded();
+        rootState.serviceRegistry.accountService.emitAccountLoaded(mainAccount);
       } else {
         Vue.$toast.error("No accounts available");
       }
@@ -62,10 +67,6 @@ export default {
       const balance = parseFloat(ethers.utils.formatEther(await state.provider.getBalance(mainAccount)));
 
       commit('setAccountBalance', balance);
-    },
-    async updateAvaxPrice({ commit }) {
-      const avaxPrice = (await redstone.getPrice("AVAX", { provider: 'redstone-avalanche'})).value;
-      commit('setAvaxPrice', avaxPrice);
     }
   },
 };

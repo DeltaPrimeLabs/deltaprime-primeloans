@@ -18,14 +18,16 @@
                      :symbol-secondary="asset.secondary"
                      v-on:newValue="unstakeValueChange"
                      :validators="validators"
-                     :max="staked">
+                     :max="staked"
+                     :info="() => sourceAssetValue">
       </CurrencyInput>
       <CurrencyInput ref="currencyInput"
                      v-else
                      :symbol="asset.symbol"
                      v-on:newValue="unstakeValueChange"
                      :validators="validators"
-                     :max="staked">
+                     :max="staked"
+                     :info="() => sourceAssetValue">
       </CurrencyInput>
 
 
@@ -44,10 +46,10 @@
             </div>
             <div class="summary__divider"></div>
             <div class="summary__label">
-              Daily interest ≈
+              Mean daily interest (365D):
             </div>
             <div class="summary__value">
-              {{ calculateDailyInterest | smartRound(8, true) }} <span class="currency">&nbsp;{{ asset.name }}</span>
+              ≈ $ {{ calculateDailyInterest | smartRound(8, true) }}
             </div>
           </div>
         </TransactionResultSummaryBeta>
@@ -96,6 +98,7 @@ export default {
       validators: [],
       transactionOngoing: false,
       currencyInputError: true,
+      valueAsset: "USDC",
     }
   },
 
@@ -109,21 +112,30 @@ export default {
       if (staked <= 0) {
         return 0;
       } else {
-        return this.apy / 365 * staked;
+        return this.apy / 365 * staked * this.asset.price;
       }
-    }
+    },
+
+    sourceAssetValue() {
+      const nativeSymbol = config.nativeToken;
+      const sourceAssetUsdPrice = Number(this.unstakeValue) * this.asset.price;
+      const nativeUsdPrice = config.ASSETS_CONFIG[nativeSymbol].price;
+
+      if (this.valueAsset === "USDC") return `~ $${sourceAssetUsdPrice.toFixed(2)}`;
+      // otherwise return amount in AVAX
+      return `~ ${(sourceAssetUsdPrice / nativeUsdPrice).toFixed(2)} ${nativeSymbol}`;
+    },
   },
 
   methods: {
     submit() {
       this.transactionOngoing = true;
       let unstakedPart = this.unstakeValue / this.staked;
-      const unstakeValue = this.maxButtonUsed ? this.receiptTokenBalance * config.MAX_BUTTON_MULTIPLIER : unstakedPart * this.receiptTokenBalance;
-      const unstakedReceiptToken = Math.min(unstakeValue / this.staked * this.receiptTokenBalance, this.staked)
+      const unstakedReceiptToken = this.maxButtonUsed ? this.receiptTokenBalance * config.MAX_BUTTON_MULTIPLIER : unstakedPart * this.receiptTokenBalance;
 
       const unstakeEvent = {
-        receiptTokenUnstaked: unstakeValue,
-        underlyingTokenUnstaked: unstakedReceiptToken,
+        receiptTokenUnstaked: unstakedReceiptToken,
+        underlyingTokenUnstaked: this.unstakeValue,
         isMax: this.maxButtonUsed
       };
 

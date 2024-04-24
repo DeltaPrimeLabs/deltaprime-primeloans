@@ -31,7 +31,7 @@ import {
     SmartLoansFactoryRestrictedAccess,
 } from "../../../typechain";
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
-import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
+import TOKEN_ADDRESSES from '../../../common/addresses/avalanche/token_addresses.json';
 import {Contract} from "ethers";
 
 chai.use(solidity);

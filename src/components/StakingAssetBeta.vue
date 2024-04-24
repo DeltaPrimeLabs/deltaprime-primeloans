@@ -57,50 +57,89 @@
         </div>
 
         <div class="header__cell cell__action" v-bind:class="{'expanded': tableBodyExpanded}">
-          <img class="chevron"
-               src="src/assets/icons/chevron-down.svg">
-          <img class="chevron chevron--hover"
-               src="src/assets/icons/chevron-down_hover.svg">
+          <DeltaIcon class="chevron" :icon-src="'src/assets/icons/chevron-down.svg'" :size="21"></DeltaIcon>
         </div>
       </div>
 
       <div class="staking-protocols" v-bind:class="{'expanded': tableBodyExpanded}"
            :style="{height: calculateStakingProtocolsHeight}">
-        <div class="options__table">
+
+        <div v-if="autoCompoundingFarms.length > 0" class="compounding__divider">
+          <span class="divider__title">Auto-compounding</span>
+          <InfoIcon :tooltip="{content: 'These farms automatically swap your reward token for the deposited token and restakes it.', classes: 'info-tooltip long', placement: 'top'}"></InfoIcon>
+        </div>
+
+        <div v-if="autoCompoundingFarms.length > 0" class="protocols__table">
           <div class="table__header">
             <div class="table__header__cell asset">Asset & protocol</div>
             <div class="table__header__cell">Staked&nbsp;
               <div class="info__icon__wrapper">
-                <img class="info__icon"
-                     src="src/assets/icons/info.svg"
-                     v-tooltip="{content: 'How many tokens you are currently staking.', classes: 'info-tooltip long', placement: 'top'}">
+                <InfoIcon :tooltip="{content: 'How many tokens you are currently staking.', classes: 'info-tooltip long', placement: 'force-top'}"></InfoIcon>
               </div>
             </div>
-            <div class="table__header__cell">Rewards</div>
+            <div class="table__header__cell"></div>
             <div class="table__header__cell">Min. APY
               <div class="info__icon__wrapper">
-                <img class="info__icon"
-                     src="src/assets/icons/info.svg"
-                     v-tooltip="{content: minApyTooltip, classes: 'info-tooltip long', placement: 'top'}">
+                <InfoIcon :tooltip="{content: minApyTooltip, classes: 'info-tooltip long', placement: 'force-top'}"></InfoIcon>
               </div>
             </div>
             <div class="table__header__cell">Max. APY
               <div class="info__icon__wrapper">
-                <img class="info__icon"
-                     src="src/assets/icons/info.svg"
-                     v-tooltip="{content: maxApyTooltip, classes: 'info-tooltip long', placement: 'top'}">
+                <InfoIcon :tooltip="{content: maxApyTooltip, classes: 'info-tooltip long', placement: 'force-top'}"></InfoIcon>
               </div>
             </div>
             <div class="table__header__cell">Actions</div>
           </div>
+
           <div class="table__body">
-            <StakingProtocolTableRow v-for="(farm, index) in availableFarms"
+            <div></div>
+            <StakingProtocolTableRow v-for="(farm, index) in autoCompoundingFarms"
                                      v-bind:key="index"
                                      :farm="farm"
                                      :asset="asset"
                                      v-on:stakedChange="stakedChange">
             </StakingProtocolTableRow>
           </div>
+
+        </div>
+
+
+        <div v-if="normalFarms.length > 0" class="compounding__divider">
+          <span class="divider__title">No auto-compounding</span>
+          <InfoIcon :tooltip="{content: 'These farms require manual claiming of rewards by (un)staking part of the farmed assets.', classes: 'info-tooltip long', placement: 'force-top'}"></InfoIcon>
+        </div>
+
+        <div class="protocols__table protocol__table--no-header">
+<!--          <div class="table__header">
+            <div class="table__header__cell asset">Asset & protocol</div>
+            <div class="table__header__cell">Staked&nbsp;
+              <div class="info__icon__wrapper">
+                <InfoIcon :tooltip="{content: 'How many tokens you are currently staking.', classes: 'info-tooltip long', placement: 'top'}"></InfoIcon>
+              </div>
+            </div>
+            <div class="table__header__cell">Rewards</div>
+            <div class="table__header__cell">Min. APY
+              <div class="info__icon__wrapper">
+                <InfoIcon :tooltip="{content: minApyTooltip, classes: 'info-tooltip long', placement: 'top'}"></InfoIcon>
+              </div>
+            </div>
+            <div class="table__header__cell">Max. APY
+              <div class="info__icon__wrapper">
+                <InfoIcon :tooltip="{content: maxApyTooltip, classes: 'info-tooltip long', placement: 'top'}"></InfoIcon>
+              </div>
+            </div>
+            <div class="table__header__cell">Actions</div>
+          </div>-->
+
+          <div class="table__body">
+            <StakingProtocolTableRow v-for="(farm, index) in normalFarms"
+                                     v-bind:key="index"
+                                     :farm="farm"
+                                     :asset="asset"
+                                     v-on:stakedChange="stakedChange">
+            </StakingProtocolTableRow>
+          </div>
+
         </div>
       </div>
 
@@ -113,13 +152,14 @@ import StakingProtocolTableRow from './StakingProtocolTableRow';
 import config from '@/config';
 import {mapState} from 'vuex';
 import DoubleAssetIcon from './DoubleAssetIcon';
-import {calculateMaxApy} from "../utils/calculate";
-import {assetAppreciation} from "../utils/blockchain";
+import {calculateMaxApy} from '../utils/calculate';
+import DeltaIcon from "./DeltaIcon.vue";
+import InfoIcon from "./InfoIcon.vue";
 
 
 export default {
   name: 'StakingAssetBeta',
-  components: {DoubleAssetIcon, StakingProtocolTableRow},
+  components: {InfoIcon, DeltaIcon, DoubleAssetIcon, StakingProtocolTableRow},
   props: {
     assetSymbol: {
       required: true,
@@ -138,7 +178,9 @@ export default {
       isTotalStakedEstimated: false,
       isAvailableEstimated: false,
       assetBalances: {},
-      lpBalances: {}
+      lpBalances: {},
+      autoCompoundingFarms: [],
+      normalFarms: []
     };
   },
   mounted() {
@@ -156,11 +198,32 @@ export default {
       return config.ASSETS_CONFIG[this.assetSymbol] ? config.ASSETS_CONFIG[this.assetSymbol] : config.LP_ASSETS_CONFIG[this.assetSymbol];
     },
     calculateStakingProtocolsHeight() {
+      const simpleProtocolsWithBanner = ['YY_PNG_AVAX_USDC_LP', 'YY_PNG_AVAX_ETH_LP', 'YY_TJ_AVAX_sAVAX_LP'];
+      const tokensWithSplitCompoundingFarms = ['AVAX', 'sAVAX', 'USDC'];
       const headerHeight = 53;
       if (this.availableFarms) {
-        const numberOfProtocols = Object.keys(this.availableFarms).length;
+        let heightOfRows = 0;
+        Object.values(this.availableFarms).forEach(farm => {
+          if (farm.protocol === 'VECTOR_FINANCE' && this.asset.symbol === 'USDC') {
+            heightOfRows += 26;
+          }
 
-        return this.tableBodyExpanded ? `${numberOfProtocols * 60 + headerHeight}px` : 0;
+          if (farm.banner) {
+            heightOfRows += 10;
+          }
+
+          if (tokensWithSplitCompoundingFarms.includes(farm.token) && !farm.autoCompounding) {
+            heightOfRows -= 38;
+          }
+
+          if (farm.token === 'USDC') {
+            heightOfRows -= 10;
+          }
+
+          heightOfRows += 102;
+        });
+
+        return this.tableBodyExpanded ? `${heightOfRows + headerHeight}px` : 0;
       }
     },
 
@@ -198,9 +261,9 @@ export default {
           maxApy = apy;
         }
       }
-      let assetApr = this.asset.currentApr ? this.asset.currentApr : 0;
+      let assetApr = this.asset.apy && this.asset.symbol !== 'GLP' ? this.asset.apy / 100 : 0;
 
-      this.maxLeveragedApy = calculateMaxApy(this.pools, (1 + maxApy + assetApr) * assetAppreciation(this.asset.symbol) - 1);
+      this.maxLeveragedApy = calculateMaxApy(this.pools, (1 + maxApy + assetApr) - 1);
 
     },
 
@@ -216,6 +279,8 @@ export default {
 
     setupAvailableProtocols() {
       this.availableFarms = config.FARMED_TOKENS_CONFIG[this.assetSymbol];
+      this.autoCompoundingFarms = this.availableFarms.filter(farm => farm.autoCompounding);
+      this.normalFarms = this.availableFarms.filter(farm => !farm.autoCompounding);
     },
 
     protocolLogo(protocol) {
@@ -268,7 +333,8 @@ export default {
     watchFarmRefreshEvent() {
       this.farmService.observeRefreshFarm().subscribe(async () => {
         this.totalStaked = this.availableFarms.reduce((acc, farm) => acc + parseFloat(farm.totalStaked), 0);
-      })
+        await this.setupMaxStakingApy();
+      });
     },
   },
   watch: {
@@ -276,13 +342,6 @@ export default {
       handler(noSmartLoan) {
         if (noSmartLoan === false) {
           this.setupAvailable();
-        }
-      },
-    },
-    pools: {
-      async handler(pools) {
-        if (pools) {
-          await this.setupMaxStakingApy();
         }
       },
     }
@@ -303,8 +362,8 @@ export default {
     display: flex;
     flex-direction: column;
     width: 100%;
-    border-radius: 32px;
-    border: 2px solid $delta-light;
+    border-radius: 34px;
+    border: 2px solid var(--staking-asset-beta__border-color);
 
     .staking-asset__header {
       cursor: pointer;
@@ -312,10 +371,10 @@ export default {
       grid-template-columns: 22% 1fr 195px 210px 170px 180px 80px;
       height: 60px;
       padding: 0 24px;
-      background-color: $delta-off-white;
+      background-color: var(--staking-asset-beta__header-background);
       border-top-left-radius: 32px;
       border-top-right-radius: 32px;
-      border-bottom: 2px solid $delta-light;
+      border-bottom: 2px solid var(--staking-asset-beta__border-color);
       box-sizing: content-box;
 
       &.body-collapsed {
@@ -339,7 +398,7 @@ export default {
 
         .header__cell__label {
           display: flex;
-          color: $dark-gray;
+          color: var(--staking-asset-beta__header-cell-label-color);
           font-weight: 500;
           margin-right: 5px;
         }
@@ -366,6 +425,7 @@ export default {
           .asset__icon {
             width: 22px;
             height: 22px;
+            opacity: var(--asset-table-row__icon-opacity);
 
             &.asset__icon--double {
               margin-right: 20px;
@@ -382,7 +442,7 @@ export default {
 
             .asset__dex {
               font-size: $font-size-xxs;
-              color: $medium-gray;
+              color: var(--staking-asset-beta__asset-dex-color);
             }
           }
         }
@@ -392,6 +452,7 @@ export default {
           flex-direction: row;
 
           .protocol__icon {
+            opacity: var(--staking-asset-beta__protocol-icon-opacity);
             height: 19px;
             width: 19px;
             border-radius: 50%;
@@ -404,25 +465,16 @@ export default {
 
         &.cell__action {
           .chevron {
+            background: var(--staking-asset-beta__cell-action-chevron-color);
             transition: transform 200ms ease-in-out;
-          }
 
-          .chevron--hover {
-            display: none;
+            &:hover {
+              background: var(--staking-asset-beta__cell-action-chevron-color--hover);
+            }
           }
 
           &.expanded .chevron {
             transform: rotate(-180deg);
-          }
-
-          &:hover {
-            .chevron {
-              display: none;
-            }
-
-            .chevron--hover {
-              display: flex;
-            }
           }
         }
       }
@@ -431,26 +483,56 @@ export default {
     .staking-protocols {
       height: 0;
       overflow-y: hidden;
-      border-radius: 32px;
+      border-bottom-left-radius: 32px;
+      border-bottom-right-radius: 32px;
       transition: height 200ms ease-in-out;
 
       &.expanded {
         height: 233px;
       }
 
-      .options__table {
+      .compounding__divider {
+        background-color: var(--staking-asset-beta__compounding-divider-background);
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        height: 32px;
+        padding-left: 26px;
+        border-bottom: 2px solid var(--staking-asset-beta__border-color);
+
+        &:not(:first-child) {
+          border-top: 2px solid var(--staking-asset-beta__border-color);
+
+        }
+
+        .divider__title {
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+          font-size: $font-size-sm;
+          font-weight: 500;
+          color: var(--staking-asset-beta__divider-title-color);
+          margin-right: 6px;
+        }
+      }
+
+      .protocols__table {
         padding: 24px 20px 0 20px;
+
+        &.protocol__table--no-header {
+          padding-top: 0;
+        }
 
         .table__header {
           display: grid;
-          grid-template-columns: 23% 1fr 170px 170px 160px 156px 22px;
+          grid-template-columns: 23% 1fr 170px 170px 160px 190px 22px;
           padding: 0 6px 9px 6px;
 
           .table__header__cell {
             display: flex;
             flex-direction: row;
             font-size: $font-size-xsm;
-            color: $dark-gray;
+            color: var(--staking-asset-beta__table-header-cell-color);
             font-weight: 500;
             justify-content: flex-end;
 

@@ -1,29 +1,63 @@
 <template>
-  <button class="btn" :class="[disabled ? 'disabled': '', waiting ? 'disabled waiting': '', 'purple']" @click="clicked()">
+  <button class="btn" :class="[disabled ? 'disabled': '', waiting ? 'disabled waiting': '', 'purple']"
+          @click="clicked()"
+          :style="variant && variants[variant]">
     <div class="btn-label">
+      <img
+        v-if="leftIconSrc"
+        class="btn-label__icon-left"
+        :src="leftIconSrc"
+      >
       {{ label }}
+      <DeltaIcon
+        v-if="rightIconSrc"
+        class="btn-label__icon btn-label__icon-right"
+        :icon-src="rightIconSrc"
+        :size="16"
+      ></DeltaIcon>
     </div>
-    <vue-loaders-ball-beat color="#FFFFFF" scale="0.5"></vue-loaders-ball-beat>
+    <vue-loaders-ball-beat :style="variant ? { marginTop: '1px', marginBottom: '1px' } : ''" color="#FFFFFF" scale="0.5"></vue-loaders-ball-beat>
   </button>
 </template>
 
 
 <script>
-  export default {
-    name: 'Button',
-    props: {
-      disabled: false,
-      waiting: false,
-      label: ''
-    },
-    methods: {
-      clicked() {
-        if (!(this.disabled || this.waiting)) {
-          this.$emit('click', true);
+import DeltaIcon from './DeltaIcon.vue';
+export default {
+  name: 'Button',
+  components: {
+    DeltaIcon
+  },
+  props: {
+    variant: null,
+    disabled: false,
+    waiting: false,
+    label: '',
+    leftIconSrc: { type: String, default: null },
+    rightIconSrc: { type: String, default: null }
+  },
+  data() {
+    return {
+      variants: {
+        medium: {
+          fontSize: "14px",
+          padding: "9px 16px"
+        },
+        slim: {
+          fontSize: "15px",
+          padding: "7px 8px"
         }
       }
-    },
-  }
+    }
+  },
+  methods: {
+    clicked() {
+      if (!(this.disabled || this.waiting)) {
+        this.$emit('click', true);
+      }
+    }
+  },
+}
 </script>
 
 <style lang="scss" scoped>
@@ -55,7 +89,27 @@
   }
 
   .btn-label {
+    display: flex;
+    justify-content: center;
+    align-items: center;
     min-width: 57px;
+
+    .btn-label__icon {
+      background: var(--button__purple-color);
+    }
+
+    .btn-label__icon-left, .btn-label__icon-right {
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .btn-label__icon-left {
+      margin-right: 8px;
+    }
+
+    .btn-label__icon-right {
+      margin-left: 8px;
+    }
   }
 
   .ball-beat {
@@ -84,17 +138,25 @@
 }
 
 .purple {
-  color: #ffffff;
-  background-image: linear-gradient(104deg, #6267ea 6%, #8187fa 65%, #a695ff);
-  box-shadow: 5px 5px 8px 0 rgba(191, 188, 255, 0.5);
-}
+  color: var(--button__purple-color);
+  background-image: var(--button__purple-background);
+  box-shadow: var(--button__purple-box-shadow);
 
-.purple:hover {
-  background-image: linear-gradient(104deg, #94a3ff 6%, #ab95ff 65%, #bf9aff);
-}
+  &:hover {
+    background-image: var(--button__purple-background--hover);
+  }
 
-.purple.disabled {
-  background-image: linear-gradient(104deg, #d4d5ee 6%, #c0c2ec);
+  &.disabled {
+    color: var(--button__purple-color--disabled);
+    background-image: var(--button__purple-background--disabled);
+    box-shadow: none;
+
+    .btn-label {
+      .btn-label__icon {
+        background: var(--button__purple-color--disabled);        
+      }
+    }
+  }
 }
 </style>
 

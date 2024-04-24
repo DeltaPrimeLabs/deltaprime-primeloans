@@ -1,6 +1,8 @@
 pragma solidity ^0.8.17;
 
 interface IYieldYakFacet {
+    function stakeDAIYak(uint256 amount) external;
+
     function stakeUSDTYak(uint256 amount) external;
 
     function stakeUSDCeYak(uint256 amount) external;
@@ -20,6 +22,8 @@ interface IYieldYakFacet {
     function stakeTJAVAXETHYak(uint256 amount) external;
 
     function stakeTJAVAXSAVAXYak(uint256 amount) external;
+
+    function unstakeDAIYak(uint256 amount) external;
 
     function unstakeAVAXYak(uint256 amount) external;
 

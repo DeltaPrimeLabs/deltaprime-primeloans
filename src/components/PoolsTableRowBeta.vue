@@ -1,6 +1,6 @@
 <template>
   <div class="pools-table-row-component">
-    <div class="table__row" v-if="pool">
+    <div class="table__row" v-if="pool" :class="{'unlocking': poolsUnlocking, 'disabled': pool.disabled}">
       <div class="table__cell asset">
         <img class="asset__icon" :src="getAssetIcon(pool.asset.symbol)">
         <div class="asset__info">
@@ -11,7 +11,8 @@
       <div class="table__cell table__cell--double-value deposit">
         <template>
           <div class="double-value__pieces">
-            <LoadedValue :check="() => pool.deposit != null" :value="formatTokenBalance(pool.deposit)"></LoadedValue>
+            <LoadedValue :check="() => pool.deposit != null"
+                         :value="pool.deposit | smartRound(5, false) | formatWithSpaces"></LoadedValue>
           </div>
           <div class="double-value__usd">
             <span v-if="pool.deposit">{{ pool.deposit * pool.assetPrice | usd }}</span>
@@ -22,30 +23,52 @@
         </template>
       </div>
 
-      <div class="table__cell apy">
-        <LoadedValue :check="() => pool.apy != null" :value="formatPercent(pool.apy)">
-        </LoadedValue>
+      <div class="table__cell sprime">
+        <div>
+          <LoadedValue :check="() => pool.sPrime !== null" :value="pool.sPrime | usd"></LoadedValue>
+        </div>
+      </div>
+
+      <div class="table__cell table__cell--double-value apy">
+        <template>
+          <div class="double-value__pieces">
+            <LoadedValue :check="() => pool.apy != null" :value="formatPercent(pool.apy + miningApy)">
+            </LoadedValue>
+          </div>
+          <div class="double-value__usd">
+            <span v-if="pool.apy != null && miningApy">{{formatPercent(pool.apy)}}&nbsp;+&nbsp;{{formatPercent(miningApy)}}</span>
+          </div>
+        </template>
       </div>
 
       <div class="table__cell table__cell--double-value tvl">
         <div class="double-value__pieces">
-          <LoadedValue :check="() => pool.tvl != null" :value="formatTokenBalance(pool.tvl)"></LoadedValue>
+          <LoadedValue :check="() => pool.tvl != null"
+                       :value="pool.tvl | smartRound(5, false) | formatWithSpaces"></LoadedValue>
         </div>
         <div class="double-value__usd">
           <span v-if="pool.tvl">{{ pool.tvl * pool.assetPrice | usd }}</span>
         </div>
       </div>
 
+      <div class="table__cell unlocked" v-if="poolsUnlocking">
+        <bar-gauge-beta :min="0" :max="1" :width="80" :value="Math.min(pool.tvl * pool.assetPrice / 1000000, 1)"></bar-gauge-beta>
+      </div>
+
+      <div class="table__cell utilisation">
+        <LoadedValue :check="() => pool.utilisation != null" :value="pool.utilisation | percent"></LoadedValue>
+      </div>
+
       <div></div>
 
       <div class="table__cell actions">
         <IconButtonMenuBeta
-          class="actions__icon-button"
-          v-for="(actionConfig, index) of actionsConfig"
-          :disabled="!pool.contract"
-          v-bind:key="index"
-          :config="actionConfig"
-          v-on:iconButtonClick="actionClick">
+            class="actions__icon-button"
+            v-for="(actionConfig, index) of actionsConfig"
+            :disabled="!pool.contract || pool.disabled"
+            v-bind:key="index"
+            :config="actionConfig"
+            v-on:iconButtonClick="actionClick">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -59,71 +82,170 @@ import IconButtonMenuBeta from './IconButtonMenuBeta';
 import DepositModal from './DepositModal';
 import {mapActions, mapState} from 'vuex';
 import PoolWithdrawModal from './PoolWithdrawModal';
-const ethers = require('ethers');
-import addresses from "../../common/addresses/avax/token_addresses.json";
-import erc20ABI from '../../test/abis/ERC20.json';
+import BridgeDepositModal from './BridgeDepositModal';
 
+const ethers = require('ethers');
+import SimpleSwapModal from './SimpleSwapModal.vue';
+import config from '../config';
+import YAK_ROUTER_ABI from '../../test/abis/YakRouter.json';
+import BarGaugeBeta from "./BarGaugeBeta.vue";
+import InfoIcon from "./InfoIcon.vue";
+
+let TOKEN_ADDRESSES;
 
 export default {
   name: 'PoolsTableRowBeta',
-  components: {LoadedValue, IconButtonMenuBeta},
+  components: {InfoIcon, BarGaugeBeta, LoadedValue, IconButtonMenuBeta},
   props: {
-    pool: {}
+    pool: {},
   },
 
-  mounted() {
+  async mounted() {
+    await this.setupFiles();
     this.setupActionsConfiguration();
+    this.setupWalletAssetBalances();
+    this.setupPoolsAssetsData();
+    this.watchLifi();
   },
 
   data() {
     return {
       actionsConfig: null,
+      walletAssetBalances: {},
+      poolDepositBalances: {},
+      poolAssetsPrices: {},
+      poolContracts: {},
+      lifiData: {},
+      poolsUnlocking: config.poolsUnlocking
     };
   },
 
   computed: {
-    ...mapState('network', ['account', 'accountBalance', 'provider'])
+    ...mapState('network', ['account', 'accountBalance', 'provider']),
+    ...mapState('fundsStore', [
+      'assetBalances',
+      'fullLoanStatus',
+      'debtsPerAsset',
+      'assets',
+      'lpAssets',
+      'lpBalances',
+      'noSmartLoan'
+    ]),
+    ...mapState('serviceRegistry', ['poolService', 'walletAssetBalancesService', 'lifiService', 'progressBarService']),
+    miningApy() {
+      if (this.pool.tvl === 0) return 0;
+      return (config.chainId === 42161) ?  0 * 1000 * 365 / 4 / (this.pool.tvl * this.pool.assetPrice)
+      : 0 * Math.max((1 - this.pool.tvl * this.pool.assetPrice / 4000000) * 0.1, 0);
+    }
   },
 
   methods: {
-    ...mapActions('poolStore', ['deposit', 'withdraw']),
+    ...mapActions('poolStore', ['deposit', 'withdraw', 'swapDeposit']),
+
+    async setupFiles() {
+      TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
+    },
+
     setupActionsConfiguration() {
       this.actionsConfig = [
         {
           iconSrc: 'src/assets/icons/plus.svg',
-          hoverIconSrc: 'src/assets/icons/plus_hover.svg',
-          tooltip: 'Deposit',
-          iconButtonActionKey: 'DEPOSIT'
+          tooltip: 'Deposit / Bridge',
+          menuOptions: [
+            {
+              key: 'DEPOSIT',
+              name: 'Deposit'
+            },
+            ...(this.pool.asset.symbol === 'AVAX' ? [{
+              key: 'BRIDGE',
+              name: 'Bridge'
+            }] : []),
+            {
+              key: 'BRIDGE_DEPOSIT',
+              name: 'Bridge and deposit',
+              disabled: true,
+              disabledInfo: 'Available soon'
+            },
+          ]
         },
         {
           iconSrc: 'src/assets/icons/minus.svg',
-          hoverIconSrc: 'src/assets/icons/minus_hover.svg',
           tooltip: 'Withdraw',
           iconButtonActionKey: 'WITHDRAW'
+        },
+        {
+          iconSrc: 'src/assets/icons/swap.svg',
+          tooltip: 'Swap',
+          iconButtonActionKey: 'SWAP_DEPOSIT'
         },
       ];
     },
 
+    setupWalletAssetBalances() {
+      this.walletAssetBalancesService.observeWalletAssetBalances().subscribe(balances => {
+        this.walletAssetBalances = balances;
+      });
+    },
+
+    setupPoolsAssetsData() {
+      const poolDepositBalances = {};
+      const poolAssetsPrices = {};
+      const poolContracts = {};
+      this.poolService.observePools().subscribe(pools => {
+        pools.forEach(pool => {
+          poolDepositBalances[pool.asset.symbol] = pool.deposit;
+          poolAssetsPrices[pool.asset.symbol] = pool.assetPrice;
+          poolContracts[pool.asset.symbol] = pool.contract;
+        })
+        this.poolDepositBalances = poolDepositBalances;
+        this.poolAssetsPrices = poolAssetsPrices;
+        this.poolContracts = poolContracts;
+        this.$forceUpdate();
+      })
+    },
+
+    watchLifi() {
+      this.lifiService.observeLifi().subscribe(async lifiData => {
+        this.lifiData = lifiData;
+      });
+    },
+
     actionClick(key) {
+      const history = JSON.parse(localStorage.getItem('active-bridge-deposit'));
+      const activeTransfer = history ? history[this.account.toLowerCase()] : null;
+
       switch (key) {
         case 'DEPOSIT':
           this.openDepositModal();
           break;
+        case 'BRIDGE':
+          if (activeTransfer) {
+            this.$emit('openResumeBridge', activeTransfer);
+          } else {
+            this.openBridgeModal(true);
+          }
+          break;
+        case 'BRIDGE_DEPOSIT':
+          if (activeTransfer) {
+            this.$emit('openResumeBridge', activeTransfer);
+          } else {
+            this.openBridgeModal(false);
+          }
+          break;
         case 'WITHDRAW':
           this.openWithdrawModal();
+          break;
+        case 'SWAP_DEPOSIT':
+          this.openSwapDepositModal();
           break;
       }
     },
 
-    async getWalletAssetBalance() {
-      const tokenContract = new ethers.Contract(addresses[this.pool.asset.symbol], erc20ABI, this.provider.getSigner());
-      return await this.getWalletTokenBalance(this.account, this.pool.asset.symbol, tokenContract, false);
-    },
-
     async openDepositModal() {
       const modalInstance = this.openModal(DepositModal);
+      modalInstance.pool = this.pool;
       modalInstance.apy = this.pool.apy;
-      modalInstance.walletAssetBalance = await this.getWalletAssetBalance();
+      modalInstance.walletAssetBalance = this.walletAssetBalances[this.pool.asset.symbol];
       modalInstance.accountBalance = this.accountBalance;
       modalInstance.deposit = this.pool.deposit;
       modalInstance.assetSymbol = this.pool.asset.symbol;
@@ -137,8 +259,43 @@ export default {
         this.handleTransaction(this.deposit, {depositRequest: depositRequest}, () => {
           this.pool.deposit = Number(this.pool.deposit) + depositRequest.amount;
           this.$forceUpdate();
-        }, () => {
+        }, (error) => {
+          this.handleTransactionError(error, true);
+        }).finally(() => {
+          this.closeModal();
+        });
+      });
+    },
 
+    openBridgeModal(disableDeposit = false) {
+      const modalInstance = this.openModal(BridgeDepositModal);
+      modalInstance.account = this.account;
+      modalInstance.lifiData = this.lifiData;
+      modalInstance.lifiService = this.lifiService;
+      modalInstance.targetAsset = this.pool.asset.symbol;
+      modalInstance.targetAssetAddress = this.pool.asset.address;
+      modalInstance.targetBalance = this.poolDepositBalances[this.pool.asset.symbol];
+      modalInstance.disableDeposit = disableDeposit;
+      modalInstance.$on('BRIDGE_DEPOSIT', bridgeEvent => {
+        const bridgeRequest = {
+          lifi: this.lifiData.lifi,
+          ...bridgeEvent,
+          signer: this.provider.getSigner(),
+          depositFunc: this.deposit,
+          targetSymbol: this.pool.asset.symbol,
+          disableDeposit
+        };
+
+        this.handleTransaction(this.lifiService.bridgeAndDeposit, {
+          bridgeRequest: bridgeRequest,
+          progressBarService: this.progressBarService,
+          resume: false
+        }, (res) => {
+          if (!res) return;
+          this.pool.deposit = Number(this.pool.deposit) + Number(res.amount);
+          this.$forceUpdate();
+        }, (error) => {
+          this.handleTransactionError(error);
         }).then(() => {
           this.closeModal();
         });
@@ -146,7 +303,10 @@ export default {
     },
 
     openWithdrawModal() {
+      console.log(this.pool.apy);
       const modalInstance = this.openModal(PoolWithdrawModal);
+      modalInstance.pool = this.pool;
+      console.log(modalInstance.pool);
       modalInstance.apy = this.pool.apy;
       modalInstance.available = this.pool.asset.balance;
       modalInstance.deposit = this.pool.deposit;
@@ -160,14 +320,97 @@ export default {
         this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
           this.pool.deposit = Number(this.pool.deposit) - withdrawRequest.amount;
           this.$forceUpdate();
-        }, () => {
-
+        }, (error) => {
+          this.handleTransactionError(error);
         }).then(() => {
-          this.closeModal();
         });
       });
     },
 
+    openSwapDepositModal() {
+      const depositAssets = Object.entries(config.POOLS_CONFIG).filter(([symbol, data]) => !data.disabled).map(entry => entry[0]);
+      const modalInstance = this.openModal(SimpleSwapModal);
+      modalInstance.sourceAsset = this.pool.asset.symbol;
+      modalInstance.sourceAssetBalance = this.pool.deposit;
+      modalInstance.sourceAssets = depositAssets;
+      modalInstance.targetAssets = depositAssets;
+      modalInstance.assetBalances = this.poolDepositBalances;
+      modalInstance.assetPrices = this.poolAssetsPrices;
+      modalInstance.targetAsset = depositAssets.filter(asset => asset !== this.pool.asset.symbol)[0];
+      modalInstance.debt = this.fullLoanStatus.debt;
+      modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
+      modalInstance.health = this.fullLoanStatus.health;
+      modalInstance.queryMethod = this.swapDepositQueryMethod();
+
+
+      modalInstance.$on('SWAP', swapEvent => {
+        const sourceAssetDecimals = config.ASSETS_CONFIG[swapEvent.sourceAsset].decimals;
+        const targetAssetDecimals = config.ASSETS_CONFIG[swapEvent.targetAsset].decimals;
+        const swapDepositRequest = {
+          ...swapEvent,
+          sourceAmount: swapEvent.sourceAmount.toFixed(sourceAssetDecimals),
+          targetAmount: swapEvent.targetAmount.toFixed(targetAssetDecimals),
+          sourcePoolContract: this.poolContracts[swapEvent.sourceAsset],
+        };
+
+        this.handleTransaction(this.swapDeposit, {swapDepositRequest: swapDepositRequest}, () => {
+          this.$forceUpdate();
+        }, (error) => {
+          this.handleTransactionError(error);
+        }).then(() => {
+        })
+      })
+    },
+
+    swapDepositQueryMethod() {
+      return async (sourceAsset, targetAsset, amountIn) => {
+        const tknFrom = TOKEN_ADDRESSES[sourceAsset];
+        const tknTo = TOKEN_ADDRESSES[targetAsset];
+
+        const yakRouter = new ethers.Contract(config.yakRouterAddress, YAK_ROUTER_ABI, provider.getSigner());
+
+        const maxHops = 3;
+        const gasPrice = ethers.utils.parseUnits('0.2', 'gwei');
+
+        try {
+          return await yakRouter.findBestPathWithGas(
+            amountIn,
+            tknFrom,
+            tknTo,
+            maxHops,
+            gasPrice,
+            {gasLimit: 1e9}
+          );
+        } catch (e) {
+          this.handleTransactionError(e);
+        }
+      };
+    },
+
+    handleTransactionError(error, isBridge = false) {
+      if (error.code === 4001 || error.code === -32603) {
+        this.progressBarService.emitProgressBarCancelledState();
+
+        if (isBridge) {
+          const history = JSON.parse(localStorage.getItem('active-bridge-deposit'));
+          const userKey = this.account.toLowerCase();
+          const updatedHistory = {
+            ...history,
+            [userKey]: {
+              ...history[userKey],
+              cancelled: true
+            }
+          };
+
+          localStorage.setItem('active-bridge-deposit', JSON.stringify(updatedHistory));
+        }
+      } else {
+        this.progressBarService.emitProgressBarErrorState();
+      }
+      this.closeModal();
+      this.disableAllButtons = false;
+      this.isBalanceEstimated = false;
+    },
   }
 };
 </script>
@@ -181,13 +424,23 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: repeat(3, 1fr) 20% 1fr 76px 22px;
+    grid-template-columns: repeat(3, 1fr) 175px 150px 150px 90px 110px 22px;
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;
-    border-image-source: linear-gradient(to right, #dfe0ff 43%, #ffe1c2 62%, #ffd3e0 79%);
+    border-image-source: var(--asset-table-row__border);
     border-image-slice: 1;
     padding-left: 6px;
+
+    &.disabled {
+      .table__cell {
+        opacity: 30%;
+      }
+    }
+
+    &.unlocking {
+      grid-template-columns: repeat(3, 1fr) 140px 140px 140px 140px 90px 90px 22px;
+    }
 
     .table__cell {
       display: flex;
@@ -199,6 +452,7 @@ export default {
         .asset__icon {
           width: 20px;
           height: 20px;
+          opacity: var(--asset-table-row__icon-opacity);
         }
 
         .asset__info {
@@ -214,10 +468,18 @@ export default {
         align-items: flex-end;
       }
 
+      &.sprime {
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-end;
+        font-weight: 600;
+      }
+
       &.apy {
-        align-items: center;
+        align-items: flex-end;
         justify-content: flex-end;
-        font-weight: 500;
+        font-weight: 600;
+        color: var(--asset-table-row__apy-color);
       }
 
       &.interest {
@@ -228,6 +490,19 @@ export default {
       }
 
       &.tvl {
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-end;
+        font-weight: 500;
+      }
+
+      &.unlocked {
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-end;
+      }
+
+      &.utilisation {
         flex-direction: column;
         justify-content: center;
         align-items: flex-end;
@@ -256,7 +531,7 @@ export default {
 
         .double-value__usd {
           font-size: $font-size-xxs;
-          color: $medium-gray;
+          color: var(--asset-table-row__double-value-color);
           font-weight: 500;
         }
 
@@ -270,11 +545,21 @@ export default {
       .no-value-dash {
         height: 1px;
         width: 15px;
-        background-color: $medium-gray;
+        background-color: var(--asset-table-row__no-value-dash-color);
       }
     }
   }
 
 }
 
+</style>
+
+<style lang="scss">
+.pools-table-row-component {
+  .table__row {
+    .bar-gauge-beta-component .bar-gauge .bar {
+      width: 80px;
+    }
+  }
+}
 </style>

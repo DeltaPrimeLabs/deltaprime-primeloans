@@ -3,6 +3,10 @@
     <div class="table__row" v-if="lpToken">
       <div class="table__cell asset">
         <DoubleAssetIcon :primary="lpToken.primary" :secondary="lpToken.secondary"></DoubleAssetIcon>
+        <img style="margin-left: 5px"
+             v-if="lpToken.droppingSupport && lpBalances[lpToken.symbol] > 0"
+             src="src/assets/icons/warning.svg"
+             v-tooltip="{content: `We will drop support to this asset on 26.04.2024 12:00 CET. Please withdraw or swap to another token.`, classes: 'info-tooltip long'}">
         <div class="asset__info">
           <div class="asset__name">{{ lpToken.primary }} - {{ lpToken.secondary }}</div>
           <div class="asset__dex">
@@ -28,12 +32,30 @@
         </template>
       </div>
 
-      <div class="table__cell table__cell--double-value loan">
-        {{ lpToken.tvl | usd }}
+      <div class="table__cell table__cell--double-value farmed">
+        <template
+            v-if="totalStaked">
+          <div class="double-value__pieces">
+            {{ totalStaked | smartRound }}
+          </div>
+          <div class="double-value__usd">
+            <span v-if="totalStaked">{{ totalStaked * lpToken.price | usd }}</span>
+          </div>
+        </template>
+        <template v-else>
+          <div class="no-value-dash"></div>
+        </template>
       </div>
 
-      <div class="table__cell table__cell--double-value apr">
-        {{ apr | percent }}
+      <div class="table__cell table__cell--double-value loan">
+        {{ formatTvl(lpToken.tvl) }}
+      </div>
+
+      <div class="table__cell table__cell--double-value apr" v-bind:class="{'apr--with-warning': lpToken.aprWarning}">
+        {{ apr / 100 | percent }}
+        <div class="apr-warning" v-if="lpToken.aprWarning">
+          <img src="src/assets/icons/warning.svg" v-tooltip="{content: lpToken.aprWarning, classes: 'info-tooltip long'}">
+        </div>
       </div>
 
       <div class="table__cell table__cell--double-value max-apr">
@@ -44,12 +66,18 @@
 
       <div class="table__cell actions">
         <IconButtonMenuBeta
-          class="actions__icon-button"
-          v-for="(actionConfig, index) of actionsConfig"
-          v-bind:key="index"
-          :config="actionConfig"
-          v-on:iconButtonClick="actionClick"
-          :disabled="disableAllButtons">
+            class="actions__icon-button"
+            :config="addActionsConfig"
+            v-if="addActionsConfig"
+            v-on:iconButtonClick="actionClick"
+            :disabled="disableAllButtons || noSmartLoan">
+        </IconButtonMenuBeta>
+        <IconButtonMenuBeta
+            class="actions__icon-button last"
+            :config="removeActionsConfig"
+            v-if="removeActionsConfig"
+            v-on:iconButtonClick="actionClick"
+            :disabled="disableAllButtons || noSmartLoan">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -82,17 +110,18 @@ import RemoveLiquidityModal from './RemoveLiquidityModal';
 import WithdrawModal from './WithdrawModal';
 
 const ethers = require('ethers');
-import {assetAppreciation} from '../utils/blockchain';
 import erc20ABI from '../../test/abis/ERC20.json';
 import {calculateMaxApy, fromWei} from '../utils/calculate';
-import addresses from '../../common/addresses/avax/token_addresses.json';
+import addresses from '../../common/addresses/avalanche/token_addresses.json';
 import {formatUnits, parseUnits} from 'ethers/lib/utils';
+import DeltaIcon from "./DeltaIcon.vue";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 export default {
   name: 'LpTableRow',
   components: {
+    DeltaIcon,
     DoubleAssetIcon,
     LoadedValue,
     SmallBlock,
@@ -106,18 +135,24 @@ export default {
   },
 
   async mounted() {
-    this.setupActionsConfiguration();
+    this.setupAvailableFarms();
+    this.setupAddActionsConfiguration();
+    this.setupRemoveActionsConfiguration();
     this.watchAssetBalancesDataRefreshEvent();
     this.watchHardRefreshScheduledEvent();
+    this.watchHealth();
     this.watchProgressBarState();
-    this.watchLpRefresh();
+    this.watchAssetApysRefresh();
     this.watchExternalAssetBalanceUpdate();
+    this.watchExternalTotalStakedUpdate();
+    this.watchFarmRefreshEvent();
     await this.setupApr();
   },
 
   data() {
     return {
-      actionsConfig: null,
+      addActionsConfig: null,
+      removeActionsConfig: null,
       showChart: false,
       rowExpanded: false,
       poolBalance: 0,
@@ -126,22 +161,49 @@ export default {
       lpTokenBalances: [],
       isLpBalanceEstimated: false,
       disableAllButtons: false,
+      healthLoaded: false,
+      totalStaked: null,
+      availableFarms: [],
     };
   },
 
   computed: {
-    ...mapState('fundsStore', ['health', 'lpBalances', 'smartLoanContract', 'fullLoanStatus', 'assetBalances', 'assets', 'debtsPerAsset', 'lpAssets', 'lpBalances']),
+    ...mapState('fundsStore', [
+      'health',
+      'lpBalances',
+      'smartLoanContract',
+      'fullLoanStatus',
+      'assetBalances',
+      'assets',
+      'debtsPerAsset',
+      'lpAssets',
+      'concentratedLpAssets',
+      'traderJoeV2LpAssets',
+      'levelLpAssets',
+      'levelLpBalances',
+      'balancerLpAssets',
+      'balancerLpBalances',
+      'noSmartLoan'
+    ]),
     ...mapState('stakeStore', ['farms']),
     ...mapState('poolStore', ['pools']),
     ...mapState('network', ['provider', 'account']),
-    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'dataRefreshEventService', 'progressBarService', 'lpService']),
+    ...mapState('serviceRegistry', [
+      'assetBalancesExternalUpdateService',
+      'dataRefreshEventService',
+      'progressBarService',
+      'lpService',
+      'healthService',
+      'stakedExternalUpdateService',
+      'farmService'
+    ]),
 
     hasSmartLoanContract() {
       return this.smartLoanContract && this.smartLoanContract.address !== NULL_ADDRESS;
     },
 
     maxApr() {
-      return calculateMaxApy(this.pools, this.apr);
+      return calculateMaxApy(this.pools, this.apr / 100);
     }
   },
 
@@ -149,7 +211,8 @@ export default {
     smartLoanContract: {
       handler(smartLoanContract) {
         if (smartLoanContract) {
-          this.setupActionsConfiguration();
+          this.setupAddActionsConfiguration();
+          this.setupRemoveActionsConfiguration();
         }
       },
     },
@@ -180,48 +243,49 @@ export default {
 
   methods: {
     ...mapActions('fundsStore', ['fund', 'withdraw', 'provideLiquidity', 'removeLiquidity']),
-    setupActionsConfiguration() {
-      this.actionsConfig = [
-        {
-          iconSrc: 'src/assets/icons/plus.svg',
-          hoverIconSrc: 'src/assets/icons/plus_hover.svg',
-          tooltip: 'Deposit / Create',
-          disabled: !this.lpTokenBalances,
-          menuOptions: [
-            {
-              key: 'ADD_FROM_WALLET',
-              name: 'Deposit collateral'
-            },
-            {
-              key: 'PROVIDE_LIQUIDITY',
-              name: 'Create LP token',
-              disabled: !this.hasSmartLoanContract,
-              disabledInfo: 'To create LP token, you need to add some funds from you wallet first'
-            },
-          ]
-        },
-        {
-          iconSrc: 'src/assets/icons/minus.svg',
-          hoverIconSrc: 'src/assets/icons/minus_hover.svg',
-          tooltip: 'Withdraw / Unwind',
-          disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
-          menuOptions: [
-            {
-              key: 'WITHDRAW',
-              name: 'Withdraw collateral'
-            },
-            {
-              key: 'REMOVE_LIQUIDITY',
-              name: 'Unwind LP token'
-            }
-          ]
-        },
-      ];
+    setupAddActionsConfiguration() {
+      this.addActionsConfig =
+          {
+            iconSrc: 'src/assets/icons/plus.svg',
+            tooltip: 'Add',
+            menuOptions: [
+              {
+                key: 'ADD_FROM_WALLET',
+                name: 'Import existing LP position'
+              },
+              {
+                key: 'PROVIDE_LIQUIDITY',
+                name: 'Create LP position',
+                disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
+                disabledInfo: 'To create LP token, you need to add some funds from you wallet first'
+              }
+            ]
+          }
+    },
+
+    setupRemoveActionsConfiguration() {
+      this.removeActionsConfig =
+          {
+            iconSrc: 'src/assets/icons/minus.svg',
+            tooltip: 'Remove',
+            menuOptions: [
+              {
+                key: 'WITHDRAW',
+                name: 'Export LP position',
+                disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
+              },
+              {
+                key: 'REMOVE_LIQUIDITY',
+                name: 'Remove LP position',
+                disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
+              }
+            ]
+          }
     },
 
     async setupApr() {
-      if (!this.lpToken.currentApr) return;
-      this.apr = (assetAppreciation(this.lpToken.symbol) * (1 + this.lpToken.currentApr) - 1);
+      if (!this.lpToken.apy) return;
+      this.apr = this.lpToken.apy;
     },
 
     toggleChart() {
@@ -237,20 +301,21 @@ export default {
     },
 
     actionClick(key) {
-      console.log(key);
-      switch (key) {
-        case 'ADD_FROM_WALLET':
-          this.openAddFromWalletModal();
-          break;
-        case 'PROVIDE_LIQUIDITY':
-          this.openProvideLiquidityModal();
-          break;
-        case 'WITHDRAW':
-          this.openWithdrawModal();
-          break;
-        case 'REMOVE_LIQUIDITY':
-          this.openRemoveLiquidityModal();
-          break;
+      if (!this.disableAllButtons) {
+        switch (key) {
+          case 'ADD_FROM_WALLET':
+            this.openAddFromWalletModal();
+            break;
+          case 'PROVIDE_LIQUIDITY':
+            this.openProvideLiquidityModal();
+            break;
+          case 'WITHDRAW':
+            this.openWithdrawModal();
+            break;
+          case 'REMOVE_LIQUIDITY':
+            this.openRemoveLiquidityModal();
+            break;
+        }
       }
     },
 
@@ -263,6 +328,9 @@ export default {
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.lpAssets = this.lpAssets;
       modalInstance.lpBalances = this.lpBalances;
+      modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
+      modalInstance.balancerLpBalances = this.balancerLpBalances;
+      modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.loan = this.debt;
@@ -275,7 +343,7 @@ export default {
             value: addFromWalletEvent.value.toString(),
             asset: this.lpToken.symbol,
             assetDecimals: config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
-            isLP: true,
+            type: 'LP',
           };
           this.handleTransaction(this.fund, {fundRequest: fundRequest}, () => {
             this.$forceUpdate();
@@ -295,7 +363,14 @@ export default {
       modalInstance.assets = this.assets;
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.lpAssets = this.lpAssets;
+      modalInstance.concentratedLpAssets = this.concentratedLpAssets;
+      modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
+      modalInstance.levelLpAssets = this.levelLpAssets;
+      modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.lpBalances = this.lpBalances;
+      modalInstance.concentratedLpBalances = this.concentratedLpBalances;
+      modalInstance.balancerLpBalances = this.balancerLpBalances;
+      modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.farms = this.farms;
       modalInstance.health = this.health;
@@ -305,7 +380,7 @@ export default {
           value: withdrawEvent.value.toString(),
           asset: this.lpToken.symbol,
           assetDecimals: config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
-          isLP: true,
+          type: 'LP',
         };
         this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
           this.$forceUpdate();
@@ -322,7 +397,9 @@ export default {
       modalInstance.lpTokenBalance = Number(this.lpBalances[this.lpToken.symbol]);
       modalInstance.firstAssetBalance = this.assetBalances[this.lpToken.primary];
       modalInstance.secondAssetBalance = this.assetBalances[this.lpToken.secondary];
+      modalInstance.areAmountsLinked = true;
       modalInstance.$on('PROVIDE_LIQUIDITY', provideLiquidityEvent => {
+        console.log(provideLiquidityEvent);
         if (this.smartLoanContract) {
           const provideLiquidityRequest = {
             symbol: this.lpToken.symbol,
@@ -393,7 +470,7 @@ export default {
 
     async getWalletLpTokenBalance() {
       const tokenContract = new ethers.Contract(this.lpToken.address, erc20ABI, this.provider.getSigner());
-      return await this.getWalletTokenBalance(this.account, this.lpToken.symbol, tokenContract, true);
+      return await this.getWalletTokenBalance(this.account, this.lpToken.symbol, tokenContract, this.lpToken.decimals);
     },
 
     watchAssetBalancesDataRefreshEvent() {
@@ -411,8 +488,14 @@ export default {
       });
     },
 
-    watchLpRefresh() {
-      this.lpService.observeRefreshLp().subscribe(async () => {
+    watchHealth() {
+      this.healthService.observeHealth().subscribe(health => {
+        this.healthLoaded = true;
+      });
+    },
+
+    watchAssetApysRefresh() {
+      this.dataRefreshEventService.observeAssetApysDataRefresh().subscribe(async () => {
         await this.setupApr();
       })
     },
@@ -469,6 +552,31 @@ export default {
       this.disableAllButtons = false;
       this.isBalanceEstimated = false;
     },
+
+    watchExternalTotalStakedUpdate() {
+      this.stakedExternalUpdateService.observeExternalTotalStakedUpdate().subscribe((updateEvent) => {
+        if (updateEvent.assetSymbol === this.lpToken.symbol) {
+          if (updateEvent.action === 'STAKE') {
+            this.totalStaked = Number(this.totalStaked) + Number(updateEvent.stakedChange);
+          } else if (updateEvent.action === 'UNSTAKE') {
+            this.totalStaked = Number(this.totalStaked) - Number(updateEvent.stakedChange);
+          }
+          this.$forceUpdate();
+        }
+      });
+    },
+
+    watchFarmRefreshEvent() {
+      this.farmService.observeRefreshFarm().subscribe(async () => {
+        if (this.availableFarms) {
+          this.totalStaked = this.availableFarms.reduce((acc, farm) => acc + parseFloat(farm.totalStaked), 0);
+        }
+      });
+    },
+
+    setupAvailableFarms() {
+      this.availableFarms = config.FARMED_TOKENS_CONFIG[this.lpToken.symbol];
+    },
   },
 };
 </script>
@@ -486,11 +594,11 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: 20% repeat(2, 1fr) 15% 135px 60px 80px 22px;
+    grid-template-columns: repeat(4, 1fr) 12% 135px 60px 80px 22px;
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;
-    border-image-source: linear-gradient(to right, #dfe0ff 43%, #ffe1c2 62%, #ffd3e0 79%);
+    border-image-source: var(--asset-table-row__border);
     border-image-slice: 1;
     padding-left: 6px;
 
@@ -504,6 +612,7 @@ export default {
         .asset__icon {
           width: 20px;
           height: 20px;
+          opacity: var(--asset-table-row__icon-opacity);
         }
 
         .asset__info {
@@ -516,7 +625,7 @@ export default {
 
         .asset__dex {
           font-size: $font-size-xxs;
-          color: $medium-gray;
+          color: var(--asset-table-row__asset-loan-color);
         }
       }
 
@@ -524,8 +633,21 @@ export default {
         align-items: flex-end;
       }
 
+      &.farmed {
+        align-items: flex-end;
+      }
+
       &.loan, &.apr, &.max-apr {
         align-items: flex-end;
+      }
+
+      &.apr.apr--with-warning {
+        position: relative;
+
+        .apr-warning {
+          position: absolute;
+          right: -25px;
+        }
       }
 
       &.max-apr {
@@ -577,7 +699,7 @@ export default {
 
         .double-value__usd {
           font-size: $font-size-xxs;
-          color: $medium-gray;
+          color: var(--asset-table-row__double-value-color);
           font-weight: 500;
         }
 
@@ -591,7 +713,7 @@ export default {
       .no-value-dash {
         height: 1px;
         width: 15px;
-        background-color: $medium-gray;
+        background-color: var(--asset-table-row__no-value-dash-color);
       }
     }
   }
@@ -602,6 +724,25 @@ export default {
     .small-block-wrapper {
       height: unset;
     }
+  }
+}
+
+.action-button {
+  cursor: pointer;
+  background: var(--icon-button-menu-beta__icon-color--default);
+
+  &:not(:last-child) {
+    margin-right: 12px;
+  }
+
+  &:hover {
+    background: var(--icon-button-menu-beta__icon-color-hover--default);
+  }
+
+  &.action-button--disabled {
+    background: var(--icon-button-menu-beta__icon-color--disabled);
+    cursor: default;
+    pointer-events: none;
   }
 }
 

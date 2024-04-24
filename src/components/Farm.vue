@@ -1,5 +1,12 @@
 <template>
   <div class="stake-beta-component">
+
+    <div class="total-value-wrapper">
+      <NameValueBadgeBeta class="total-value" :name="'Total value'">
+        {{ (fullLoanStatus.totalValue ? fullLoanStatus.totalValue : 0) | usd }}
+      </NameValueBadgeBeta>
+    </div>
+
     <div class="filters">
       <div class="filter-container">
         <div class="filter__label">Filter by assets:</div>
@@ -18,12 +25,14 @@
 import StakingAssetBeta from './StakingAssetBeta';
 import config from '../config';
 import AssetFilter from './AssetFilter';
-import {mapActions} from "vuex";
+import {mapActions, mapState} from 'vuex';
+import NameValueBadgeBeta from './NameValueBadgeBeta';
 
 export default {
   name: 'Farm',
-  components: {StakingAssetBeta, AssetFilter},
+  components: {StakingAssetBeta, AssetFilter, NameValueBadgeBeta},
   computed: {
+    ...mapState('fundsStore', ['fullLoanStatus']),
     filteredStakedAssets() {
       return Object.entries(config.FARMED_TOKENS_CONFIG).filter(farm =>
           this.selectedAssets.includes(farm[0])
@@ -54,7 +63,7 @@ export default {
       this.assetFilterGroups = [
         {
           label: 'Filter by assets',
-          options: ['AVAX', 'USDC', 'ETH', 'sAVAX'],
+          options: Object.entries(config.FARMED_TOKENS_CONFIG).filter(([,value]) => !value[0].isTokenLp).map(el => el[0]),
           key: 'asset'
         },
       ];
@@ -67,17 +76,23 @@ export default {
       });
     },
   },
-
-
-
-  watch: {}
 };
 </script>
 
 <style lang="scss" scoped>
+@import "~@/styles/variables";
 
 .stake-beta-component {
   width: 100%;
+}
+
+.total-value-wrapper {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 57px;
+  margin-top: 23px;
 }
 
 .filters {

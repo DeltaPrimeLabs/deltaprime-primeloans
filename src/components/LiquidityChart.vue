@@ -1,0 +1,215 @@
+<script>
+import {generateChart} from 'vue-chartjs'
+import {mapState} from "vuex";
+import {getThemeVariable} from "../utils/style-themes";
+import Chart from "chart.js";
+
+Chart.defaults.LiquidityBarChart = Chart.defaults.bar;
+Chart.controllers.LiquidityBarChart = Chart.controllers.bar.extend({
+  draw: function (ease) {
+    Chart.controllers.bar.prototype.draw.call(this, ease);
+    if (this.chart.config.options.currentPriceIndex >= 0) {
+      const activeLineX = this.chart.scales['x-axis-0'].getPixelForValue(this.chart.config.data.datasets[0].data[this.chart.config.options.currentPriceIndex].x)
+
+      const ctx = this.chart.ctx;
+      const topY = this.chart.scales['y-axis-0'].top;
+      const bottomY = this.chart.scales['y-axis-0'].bottom;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(activeLineX, topY + 4);
+      ctx.lineTo(activeLineX, bottomY);
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = getThemeVariable('--chart__active-point-line-color');
+      ctx.stroke();
+
+      ctx.moveTo(activeLineX, topY)
+      ctx.font = '14px Montserrat'
+      ctx.textAlign = "center";
+      ctx.fillStyle = getThemeVariable('--chart__active-point-label-color');
+      ctx.fillText(`Active (${this.chart.config.options.currentPrice.toFixed(8)})`, activeLineX, topY - 4)
+    } else {
+      const ctx = this.chart.ctx;
+      ctx.save();
+    }
+  }
+})
+
+const LiquidityBarChart = generateChart('liquidity-bar', 'LiquidityBarChart')
+
+export default {
+  name: "LiquidityChart",
+  extends: LiquidityBarChart,
+  props: {
+    tokensData: null,
+    primary: null,
+    secondary: null,
+    index: null,
+    currentPriceIndex: null,
+    currentPrice: null,
+  },
+  mounted() {
+    this.rerender();
+    this.themeService.observeThemeChange().subscribe(_ => {
+      this.chartOptions.scales.xAxes[0].ticks.fontColor = getThemeVariable('--chart__scales-ticks-color')
+      this.chartOptions.scales.yAxes[0].ticks.fontColor = getThemeVariable('--chart__scales-ticks-color')
+      this.rerender();
+    });
+  },
+  methods: {
+    rerender() {
+      this.chartOptions.currentPriceIndex = this.currentPriceIndex
+      this.chartOptions.currentPrice = this.currentPrice
+      const newData = []
+      const newBackgroundColors = []
+      const newHoverColors = []
+      const newBorderWidths = []
+      const newBorderColors = []
+      const newLabels = []
+      this.tokensData.forEach((data, index) => {
+        const isPrimaryData = data.primaryTokenBalance > data.secondaryTokenBalance
+        newLabels.push(data.price)
+        newData.push({
+          x: data.price,
+          y: data.value,
+          token: data,
+        })
+
+        if (data.isEmpty) {
+          newBackgroundColors.push(getThemeVariable('--liquidity-chart__ghost-bar-color'))
+          newHoverColors.push(getThemeVariable('--liquidity-chart__ghost-bar-color'))
+          newBorderColors.push(getThemeVariable('--liquidity-chart__ghost-bar-border-color'))
+          newBorderWidths.push(1)
+        } else {
+          newBackgroundColors.push(index === this.currentPriceIndex ? getThemeVariable('--liquidity-chart__active-price-bar-color') : isPrimaryData ? getThemeVariable('--liquidity-chart__main-token-color') : getThemeVariable('--liquidity-chart__secondary-token-color'))
+          newHoverColors.push(index === this.currentPriceIndex ? getThemeVariable('--liquidity-chart__active-price-bar-color--hover') : isPrimaryData ? getThemeVariable('--liquidity-chart__main-token-color--hover') : getThemeVariable('--liquidity-chart__secondary-token-color--hover'))
+          newBorderColors.push(getThemeVariable('--liquidity-chart__active-price-bar-color--hover'))
+          newBorderWidths.push(0)
+        }
+      })
+      this.chartData.datasets = [{
+        data: newData,
+        backgroundColor: newBackgroundColors,
+        hoverBackgroundColor: newHoverColors,
+        borderWidth: newBorderWidths,
+        borderColor: newBorderColors,
+      }]
+      this.chartData.labels = newLabels
+      this.renderChart(this.chartData, this.chartOptions);
+    }
+  },
+  computed: {
+    ...mapState('serviceRegistry', ['themeService'])
+  },
+  data() {
+    return {
+      theme: 'LIGHT',
+      chartData: {
+        datasets: [{
+          data: [],
+          backgroundColor: [],
+          borderWidth: 0,
+          hoverBackgroundColor: [],
+        }],
+        labels: []
+      },
+      chartOptions: {
+        layout: {
+          padding: {
+            top: 18,
+          }
+        },
+        currentPriceIndex: this.currentPriceIndex,
+        currentPrice: this.currentPrice,
+        height: 256,
+        width: 960,
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            display: false,
+          },
+          xAxes: [{
+            categoryPercentage: 1.0,
+            barPercentage: 0.7,
+            ticks: {
+              maxTicksLimit: 1,
+              fontColor: getThemeVariable('--chart__scales-ticks-color'),
+              fontFamily: 'Montserrat',
+              maxRotation: 0,
+              minRotation: 0,
+              userCallback: function(label) {
+                return label.toFixed(5)
+              },
+            },
+            gridLines: {
+              color: "rgba(0, 0, 0, 0)",
+              drawBorder: false,
+              drawTicks: true,
+            }
+          }],
+          yAxes: [{
+            ticks: {
+              fontColor: getThemeVariable('--chart__scales-ticks-color'),
+              maxTicksLimit: 1,
+              display: false,
+              fontFamily: 'Montserrat',
+              beginAtZero: true,
+            },
+            gridLines: {
+              drawTicks: false,
+              color: "transparent",
+              display: true,
+              drawBorder: false,
+              zeroLineColor: "#ccc",
+              zeroLineWidth: 1
+            }
+          }]
+        },
+        tooltips: {
+          enabled: false,
+          custom: (tooltipModel) => {
+            const tooltipElement = document.getElementById(`chartjs-tooltip-${this.$props.index}`);
+            if (tooltipModel.opacity === 0) {
+              tooltipElement.style.opacity = '0';
+              return;
+            }
+            const binData = this.tokensData[tooltipModel.dataPoints[0].index]
+            const noLiquidityText = `<div style="margin-top: 8px">Currently there is <br> no liquidity in this bin</div>`
+            const priceText = `<div>Price (${this.primary} / ${this.secondary})</div><div class="value">${binData.price}</div>`
+            const primaryTokenText = binData.primaryTokenBalance === '0.0' ? '' : `<div>${this.primary}</div><div class="value">${binData.primaryTokenBalance}</div>`
+            const secondaryTokenText = binData.secondaryTokenBalance === '0.0' ? '' : `<div>${this.secondary}</div><div class="value">${binData.secondaryTokenBalance}</div>`
+            tooltipElement.innerHTML = priceText + (binData.isEmpty ? noLiquidityText : primaryTokenText + secondaryTokenText);
+            tooltipElement.classList.remove('above', 'below', 'no-transform');
+            if (tooltipModel.yAlign) {
+              tooltipElement.classList.add(tooltipModel.yAlign);
+            } else {
+              tooltipElement.classList.add('no-transform');
+            }
+
+            tooltipElement.style.opacity = '1';
+            tooltipElement.style.position = 'absolute';
+            tooltipElement.style.left = tooltipModel.caretX + 'px';
+            tooltipElement.style.top = tooltipModel.caretY + 'px';
+            tooltipElement.style.pointerEvents = 'none';
+          }
+        },
+        legend: {
+          display: false
+        },
+      }
+    }
+  },
+  watch: {
+    tokensData: function () {
+      this.rerender();
+    },
+    chartOptions: () => {
+      this.rerender()
+    }
+  },
+}
+</script>
+
+<style scoped lang="scss">
+</style>

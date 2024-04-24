@@ -1,23 +1,12 @@
 import {mapState} from 'vuex';
-import config from "@/config";
-import {formatUnits} from "../utils/calculate";
+import config from '@/config';
+import {formatUnits} from '../utils/calculate';
 import {handleCall, handleTransaction, isOracleError, isPausedError} from '../utils/blockchain';
 import Vue from 'vue';
+import {token} from '@redstone-finance/evm-connector/dist/typechain-types/@openzeppelin/contracts';
 
 export default {
   methods: {
-    avaxToUSD(avax) {
-      if (this.avaxPrice) {
-        return avax * this.avaxPrice;
-      }
-    },
-
-    usdToAVAX(price) {
-      if (this.avaxPrice) {
-        return price / this.avaxPrice;
-      }
-    },
-
     toHex(dec) {
       return '0x' + dec.toString(16);
     },
@@ -26,7 +15,7 @@ export default {
       return parseInt(hex, 16);
     },
 
-      formatTokenBalance(value, precision = 5, toFixed = false) {
+    formatTokenBalance(value, precision = 5, toFixed = false) {
       const balanceOrderOfMagnitudeExponent = String(value).split('.')[0].length - 1;
       const precisionMultiplierExponent = precision - balanceOrderOfMagnitudeExponent;
       const precisionMultiplier = Math.pow(10, precisionMultiplierExponent >= 0 ? precisionMultiplierExponent : 0);
@@ -34,35 +23,71 @@ export default {
         if (!toFixed) {
           return String(Math.round(value * precisionMultiplier) / precisionMultiplier);
         } else {
-          return (Math.round(value * precisionMultiplier) / precisionMultiplier).toFixed(precision).replace(/([0-9]+(\.[0-9]+[1-9])?)(\.?0+$)/,'$1')
+          return (Math.round(value * precisionMultiplier) / precisionMultiplier).toFixed(precision).replace(/([0-9]+(\.[0-9]+[1-9])?)(\.?0+$)/, '$1');
         }
       } else {
         return '';
       }
     },
 
+    formatTokenBalanceWithLessThan(value, precision = 5, toFixed = false) {
+      const formatted = this.formatTokenBalance(value, precision, toFixed)
+      if (formatted === '0' && value !== '0.0' && value !== 0 && value !== '0') {
+        return `<0.${'0'.repeat(precision - 1)}1`
+      } else {
+        return formatted
+      }
+    },
+
+    formatLongNum(value) {
+      if (!value) return 0;
+      if (value < 1000) {
+        return value;
+      } else if (value < 1000000) {
+        return `${(value / 1000).toFixed()}k`;
+      } else {
+        return `${(value / 1000000).toFixed()}M`;
+      }
+    },
+
+    formatTvl(value) {
+      if (!value) return 0;
+      if (value < 1000000) {
+        return `$${(value / 1000).toFixed()}k`
+      } else {
+        return `$${(value / 1000000).toFixed()}M`;
+      }
+    },
+
     formatPercent(value) {
-      return `${Math.round(value * 10000) / 100}%`
+      return `${Math.round(value * 10000) / 100}%`;
     },
 
     async handleTransaction(fun, args, onSuccess, onFail) {
       if (!onFail) onFail = async (e) => await this.handleError(e);
-      await handleTransaction(fun, args, onSuccess, onFail);
+      return await handleTransaction(fun, args, onSuccess, onFail);
     },
     async handleCall(fun, args, onSuccess, onFail) {
       if (!onFail) onFail = async (e) => await this.handleError(e);
       return await handleCall(fun, args, onSuccess, onFail);
     },
     async handleError(e) {
-      if (isPausedError(e)) this.$store.commit('fundsStore/setProtocolPaused', true)
-      if (isOracleError(e)) this.$store.commit('fundsStore/setOracleError', true)
+      if (isPausedError(e)) this.$store.commit('fundsStore/setProtocolPaused', true);
+      if (isOracleError(e)) this.$store.commit('fundsStore/setOracleError', true);
     },
     acceptableSlippage(slippage) {
       return acceptableSlippage(slippage);
     },
     logoSrc(asset) {
       asset = asset ? asset : 'avax';
-      const assetData = config.ASSETS_CONFIG[asset];
+      const assetData = config.ASSETS_CONFIG[asset]
+          ? config.ASSETS_CONFIG[asset]
+          : config.LP_ASSETS_CONFIG[asset]
+          ? config.LP_ASSETS_CONFIG[asset]
+          : config.GMX_V2_ASSETS_CONFIG[asset]
+          ? config.GMX_V2_ASSETS_CONFIG[asset]
+          : config.GMX_V2_ASSETS_CONFIG[asset];
+
       if (assetData) {
         return `src/assets/logo/${asset.toLowerCase()}.${assetData.logoExt ? assetData.logoExt : 'svg'}`;
       }
@@ -92,16 +117,11 @@ export default {
       return `src/assets/logo/${assetSymbol.toLowerCase()}.${asset.logoExt ? asset.logoExt : 'svg'}`;
     },
 
-    async getWalletTokenBalance(account, assetSymbol, tokenContract, isLP) {
-      const walletAssetBalanceResponse = await tokenContract.balanceOf(account);
-      let walletAssetBalance;
-      if (!isLP) {
-        walletAssetBalance = formatUnits(walletAssetBalanceResponse, config.ASSETS_CONFIG[assetSymbol].decimals);
-      } else {
-        walletAssetBalance = formatUnits(walletAssetBalanceResponse, config.LP_ASSETS_CONFIG[assetSymbol].decimals);
-      }
-      return walletAssetBalance;
-    },
+    async getWalletTokenBalance(account, assetSymbol, tokenContract, decimals) {
+      const walletAssetBalanceResponse = await tokenContract.balanceOf(account.toLowerCase());
+
+      return formatUnits(walletAssetBalanceResponse, decimals);
+      },
   },
   computed: {
     ...mapState('network', ['provider', 'avaxPrice']),
@@ -110,9 +130,12 @@ export default {
     },
     minAllowedHealth() {
       return config.MIN_ALLOWED_HEALTH;
+    },
+    nullAddress() {
+      return '0x0000000000000000000000000000000000000000';
     }
   },
   data() {
-    return {}
+    return {};
   }
 };

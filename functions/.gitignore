@@ -1,1 +1,6 @@
 node_modules/
+private-admin.json
+private-function
+config.json
+feeds.json
+firebase-debug.log

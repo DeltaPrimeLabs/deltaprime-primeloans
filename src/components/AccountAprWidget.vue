@@ -2,9 +2,7 @@
   <div class="account-apr-widget-component">
     <div class="apr-widget__title">
       Account APY
-      <img class="info__icon"
-           src="src/assets/icons/info.svg"
-           v-tooltip="{content: ' How much you annually yield on your collateral. This number includes 7.2% sAVAX price appreciation if you hold that asset.', placement: 'top', classes: 'info-tooltip'}">
+      <InfoIcon class="info__icon" :tooltip="{content: 'How much you annually yield on your collateral. This number includes any inherent asset price appreciation, and borrowing interest.', placement: 'top', classes: 'info-tooltip'}" :classes="'info-tooltip'" ></InfoIcon>
     </div>
     <div class="apr-widget__value">
       <ColoredValueBeta v-if="accountApr != null" :value="accountApr ? accountApr : 0" :formatting="'percent'"
@@ -25,10 +23,11 @@
 
 <script>
 import ColoredValueBeta from './ColoredValueBeta';
+import InfoIcon from "./InfoIcon.vue";
 
 export default {
   name: 'AccountAprWidget',
-  components: {ColoredValueBeta},
+  components: {InfoIcon, ColoredValueBeta},
   props: {
     accountApr: 0,
     noSmartLoan: {}
@@ -60,7 +59,7 @@ export default {
       // max is inclusive, min is not
       this.possibleComments = [
         {
-          text: 'One of these should moon, right?',
+          text: 'Steady lads…',
           min: -999999,
           max: -0.5
         },
@@ -82,14 +81,14 @@ export default {
         {
           text: 'Degen, activated!',
           min: 0.5,
-          max: 999999
-        },
+          max: 9999999999
+        }
       ];
     },
 
     pickComment() {
       let pickedComment;
-      if (this.accountApr) {
+      if (this.accountApr !== null) {
         pickedComment = this.possibleComments.find((comment) => this.accountApr > comment.min && this.accountApr <= comment.max);
       } else {
         if (this.noSmartLoan) {
@@ -114,15 +113,15 @@ export default {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  box-shadow: 7px 7px 30px 0 rgba(191, 188, 255, 0.5);
-  background-color: rgba(255, 255, 255, 0.3);
+  box-shadow: var(--account-apr-widget-component__box-shadow);
+  background-color: var(--account-apr-widget-component__background);
   border-bottom-left-radius: 35px;
   border-bottom-right-radius: 35px;
 
   .apr-widget__title {
     font-size: $font-size-sm;
     font-weight: 500;
-    color: $dark-gray;
+    color: var(--account-apr-widget-component__widget-title-color);
     margin-bottom: 4px;
   }
 
@@ -139,7 +138,7 @@ export default {
 
   .apr-widget__comment {
     font-size: $font-size-xsm;
-    color: $steel-gray;
+    color: var(--account-apr-widget-component__widget-comment-color);
   }
 
   .info__icon {

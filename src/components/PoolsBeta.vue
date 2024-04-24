@@ -3,21 +3,18 @@
     <div class="container">
       <div class="main-content">
         <Block :bordered="true">
-          <div class="title">Deposit</div>
+          <div class="title">Savings</div>
           <NameValueBadgeBeta :name="'Your deposits'">{{ totalDeposit | usd }}</NameValueBadgeBeta>
           <div class="pools">
             <div class="pools-table">
-              <div class="pools-table__header">
-                <div class="header__cell asset">Asset</div>
-                <div class="header__cell deposit">Deposit</div>
-                <div class="header__cell apy">APY</div>
-                <div class="header__cell tvl">Pool size</div>
-                <div></div>
-                <div class="header__cell actions">Actions</div>
-              </div>
+              <TableHeader :config="poolsTableHeaderConfig"></TableHeader>
               <div class="pools-table__body">
-                <PoolsTableRowBeta v-for="pool in poolsList" v-bind:key="pool.asset.symbol"
-                                   :pool="pool"></PoolsTableRowBeta>
+                <PoolsTableRowBeta v-for="pool in poolsList"
+                                   v-bind:key="pool.asset.symbol"
+                                   v-on:openResumeBridge="openResumeBridgeModal"
+                                   :pool="pool"
+                                   :depositAssetsWalletBalancesStream="depositAssetsWalletBalances$">
+                </PoolsTableRowBeta>
               </div>
             </div>
           </div>
@@ -33,23 +30,32 @@ import config from '../config';
 import Block from './Block';
 import NameValueBadgeBeta from './NameValueBadgeBeta';
 import PoolsTableRowBeta from './PoolsTableRowBeta';
-import redstone from 'redstone-api';
-import {fromWei} from '../utils/calculate';
+import TableHeader from './TableHeader';
 import {mapActions, mapState} from 'vuex';
-import {combineLatest} from 'rxjs';
+import {BehaviorSubject, combineLatest, forkJoin} from 'rxjs';
+import erc20ABI from '../../test/abis/ERC20.json';
+import ResumeBridgeModal from './ResumeBridgeModal';
+
+const ethers = require('ethers');
+
+let TOKEN_ADDRESSES;
 
 export default {
   name: 'PoolsBeta',
   components: {
     PoolsTableRowBeta,
     Block,
-    NameValueBadgeBeta
+    NameValueBadgeBeta,
+    TableHeader
   },
   async mounted() {
+    await this.setupFiles();
+    this.setupPoolsTableHeaderConfig();
     this.initPools();
     this.watchPools();
-
     this.initStoresWhenProviderAndAccountCreated();
+    this.lifiService.setupLifi();
+    this.watchActiveRoute();
   },
 
   data() {
@@ -57,14 +63,21 @@ export default {
       totalTVL: 0,
       totalDeposit: 0,
       poolsList: null,
+      poolsTableHeaderConfig: null,
+      depositAssetsWalletBalances$: new BehaviorSubject({}),
     };
   },
   computed: {
-    ...mapState('serviceRegistry', ['providerService', 'accountService', 'poolService']),
+    ...mapState('serviceRegistry', ['providerService', 'accountService', 'poolService', 'walletAssetBalancesService', 'lifiService', 'progressBarService']),
+    ...mapState('network', ['account', 'accountBalance', 'provider']),
   },
 
   methods: {
-    ...mapActions('poolStore', ['poolStoreSetup']),
+    ...mapActions('poolStore', ['poolStoreSetup', 'deposit']),
+
+    async setupFiles() {
+      TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
+    },
 
     initStoresWhenProviderAndAccountCreated() {
       combineLatest([this.providerService.observeProviderCreated(), this.accountService.observeAccountLoaded()])
@@ -108,7 +121,192 @@ export default {
         this.setupTotalTVL();
         this.setupTotalDeposit();
         this.$forceUpdate();
+        this.setupWalletDepositAssetBalances(pools);
       });
+    },
+
+    watchActiveRoute() {
+      combineLatest([this.lifiService.observeLifi(), this.poolService.observePools()])
+        .subscribe(async ([lifiData, pools]) => {
+          this.lifiData = lifiData;
+
+          const history = JSON.parse(localStorage.getItem('active-bridge-deposit'));
+          const activeTransfer = history && history[this.account.toLowerCase()];
+
+          if (activeTransfer) {
+            this.openResumeBridgeModal(activeTransfer);
+          }
+        });
+    },
+
+    openResumeBridgeModal(activeTransfer) {
+      const modalInstance = this.openModal(ResumeBridgeModal);
+      modalInstance.account = this.account;
+      modalInstance.activeTransfer = activeTransfer;
+      modalInstance.lifiData = this.lifiData;
+      modalInstance.lifiService = this.lifiService;
+      modalInstance.progressBarService = this.progressBarService;
+      modalInstance.depositFunc = this.deposit;
+      modalInstance.$on('BRIDGE_DEPOSIT_RESUME', (transferRes) => {
+        if (!transferRes) return;
+        const pools = this.poolsList.map(pool => {
+          return {
+            ...pool,
+            deposit: pool.asset.symbol === activeTransfer.targetSymbol
+              ? Number(pool.deposit) + Number(transferRes.amount)
+              : pool.deposit
+          };
+        });
+
+        this.poolsList = pools;
+      });
+    },
+
+    setupWalletDepositAssetBalances(pools) {
+      const depositAssetsWalletBalances = {};
+      combineLatest(
+        pools.map(pool => {
+            const contract = new ethers.Contract(TOKEN_ADDRESSES[pool.asset.symbol], erc20ABI, this.provider.getSigner());
+            return this.getWalletTokenBalance(
+              this.account,
+              pool.asset.symbol,
+              contract,
+              config.ASSETS_CONFIG[pool.asset.symbol].decimals
+            );
+          }
+        )
+      ).subscribe(walletAssetBalances => {
+        walletAssetBalances.forEach((balance, index) => {
+          depositAssetsWalletBalances[pools[index].asset.symbol] = balance;
+        });
+        this.walletAssetBalancesService.emitWalletAssetBalances(depositAssetsWalletBalances);
+      });
+    },
+
+    setupPoolsTableHeaderConfig() {
+      this.poolsTableHeaderConfig =
+        config.poolsUnlocking ?
+          {
+            gridTemplateColumns: 'repeat(3, 1fr) 140px 140px 140px 140px 90px 90px 22px',
+            cells: [
+              {
+                label: 'Asset',
+                sortable: false,
+                class: 'asset',
+                id: 'ASSET',
+                tooltip: `The asset name. These names are simplified for a smoother UI.
+                                         <a href='https://docs.deltaprime.io/integrations/tokens' target='_blank'>More information</a>.`
+              },
+              {
+                label: 'Deposit',
+                sortable: false,
+                class: 'deposit',
+                id: 'DEPOSIT',
+              },
+              {
+                label: '$sPRIME',
+                sortable: false,
+                class: 'sprime',
+                id: 'SPRIME',
+                tooltip: `Your collected sPRIME will be unlocked over a vesting period post TGE.
+                <a href='https://medium.com/@Delta_Prime/two-days-until-deltaprimes-first-liquidity-mining-program-b17f12fbb23b' target='_blank'>Read more</a>.
+                `
+              },
+              {
+                label: 'APR',
+                sortable: false,
+                class: 'apy',
+                id: 'APY',
+                tooltip: `Deposit interest coming from borrowers<br><a href='https://medium.com/@Delta_Prime/relaunching-deltaprime-on-arbitrum-ac43bdd91ed5' target='_blank'>More information</a>.`
+              },
+              {
+                label: 'Pool size',
+                sortable: false,
+                class: 'tvl',
+                id: 'TVL',
+              },
+              {
+                label: 'Unlocked',
+                sortable: false,
+                class: 'unlocked',
+                id: 'UNLOCKED',
+                tooltip: `When $1M is hit, a new pool will be unlocked.
+                <a href='https://medium.com/@Delta_Prime/relaunching-deltaprime-on-arbitrum-ac43bdd91ed5' target='_blank'>More information</a>.`
+              },
+              {
+                label: 'Utilisation',
+                sortable: false,
+                class: 'utilisation',
+                id: 'UTILISATION',
+              },
+              {
+                label: ''
+              },
+              {
+                label: 'Actions',
+                sortable: false,
+                class: 'actions',
+                id: 'ACTIONS'
+              },
+            ]
+          }
+          :
+          {
+            gridTemplateColumns: 'repeat(3, 1fr) 175px 150px 150px 90px 110px 22px',
+            cells: [
+              {
+                label: 'Asset',
+                sortable: false,
+                class: 'asset',
+                id: 'ASSET',
+                tooltip: `The asset name. These names are simplified for a smoother UI.
+                                   <a href='https://docs.deltaprime.io/integrations/tokens' target='_blank'>More information</a>.`
+              },
+              {
+                label: 'Deposit',
+                sortable: false,
+                class: 'deposit',
+                id: 'DEPOSIT',
+              },
+              {
+                label: '$sPRIME',
+                sortable: false,
+                class: 'sprime',
+                id: 'SPRIME',
+                tooltip: `Your collected sPRIME will be unlocked over a vesting period post TGE.
+                <a href='https://medium.com/@Delta_Prime/two-days-until-deltaprimes-first-liquidity-mining-program-b17f12fbb23b' target='_blank'>Read more</a>.
+                `
+              },
+              {
+                label: 'APR',
+                sortable: false,
+                class: 'apy',
+                id: 'APY',
+                tooltip: `Deposit interest coming from borrowers<br><a href='https://medium.com/@Delta_Prime/two-days-until-deltaprimes-first-liquidity-mining-program-b17f12fbb23b' target='_blank'>More information</a>.`
+              },
+              {
+                label: 'Pool size',
+                sortable: false,
+                class: 'tvl',
+                id: 'TVL',
+              },
+              {
+                label: 'Utilisation',
+                sortable: false,
+                class: 'utilisation',
+                id: 'UTILISATION',
+              },
+              {
+                label: ''
+              },
+              {
+                label: 'Actions',
+                sortable: false,
+                class: 'actions',
+                id: 'ACTIONS'
+              },
+            ]
+          };
     },
 
   },
@@ -124,14 +322,16 @@ export default {
     margin-top: 30px;
 
     .title {
+      margin-top: 55px;
       font-size: $font-size-xxl;
       font-weight: bold;
       margin-bottom: 31px;
     }
 
     .pools {
-      margin-top: 65px;
       width: 100%;
+      margin-top: 65px;
+      padding: 0 53px;
       display: flex;
       flex-direction: row;
       align-items: center;
@@ -139,49 +339,6 @@ export default {
 
       .pools-table {
         width: 100%;
-
-        .pools-table__header {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr) 20% 1fr 76px 22px;
-          border-style: solid;
-          border-width: 0 0 2px 0;
-          border-image-source: linear-gradient(to right, #dfe0ff 43%, #ffe1c2 62%, #ffd3e0 79%);
-          border-image-slice: 1;
-          padding: 0 0 9px 6px;
-
-          .header__cell {
-            display: flex;
-            flex-direction: row;
-            font-size: $font-size-xsm;
-            color: $dark-gray;
-            font-weight: 500;
-
-            &.asset {
-            }
-
-            &.deposit {
-              justify-content: flex-end;
-            }
-
-            &.apy {
-              justify-content: flex-end;
-            }
-
-            &.interest {
-              justify-content: center;
-              margin-left: 40px;
-            }
-
-            &.tvl {
-              justify-content: flex-end;
-            }
-
-            &.actions {
-              justify-content: flex-end;
-            }
-
-          }
-        }
 
         .loader-container {
           display: flex;

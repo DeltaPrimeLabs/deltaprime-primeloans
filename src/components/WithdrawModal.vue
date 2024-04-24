@@ -5,12 +5,15 @@
         Withdraw collateral
       </div>
       <div class="modal-top-desc">
-        You can withdraw only if you have enough debt tokens to repay all borrows. <a target="_blank" href="https://docs.deltaprime.io/protocol/safety#withdrawal-guard"><b>Read more</b></a>
+        Please make sure that every asset's 'balance' is higher than that asset's 'borrowed', in order to withdraw.
+        <a target="_blank" href="https://docs.deltaprime.io/protocol/safety#withdrawal-guard"><b>Read more</b></a>
       </div>
       <div class="modal-top-info">
-        <div class="top-info__label">Available:</div>
+        <div class="top-info__label">Available:&nbsp;
+          <InfoIcon v-if="isFarm" :tooltip="{content: 'Receipt token amount, can differ from `Staked` amount.', classes: 'info-tooltip long', placement: 'top'}"></InfoIcon>
+        </div>
         <div class="top-info__value">
-          {{ isLP ? formatTokenBalance(assetBalance, 10, true) : formatTokenBalance(assetBalance) }}
+          {{assetBalance | smartRound(asset.decimals, true)}}
           <span class="top-info__currency">
             {{ asset.name }}
           </span>
@@ -20,13 +23,18 @@
       <CurrencyInput v-if="isLP"
                      :symbol="asset.primary"
                      :symbol-secondary="asset.secondary"
+                     :asset="asset"
                      v-on:newValue="withdrawValueChange"
-                     :validators="validators">
+                     :validators="validators"
+                     :info="() => sourceAssetValue">
       </CurrencyInput>
       <CurrencyInput v-else
-                     :symbol="asset.symbol"
+                     :symbol="asset.short ? asset.short : asset.symbol"
+                     :asset="asset"
                      v-on:newValue="withdrawValueChange"
-                     :validators="validators">
+                     :logo="logo"
+                     :validators="validators"
+                     :info="() => sourceAssetValue">
       </CurrencyInput>
 
       <div class="transaction-summary-wrapper">
@@ -67,8 +75,8 @@
         </TransactionResultSummaryBeta>
       </div>
 
-      <div class="toggle-container" v-if="asset.name === 'AVAX'">
-        <Toggle v-on:change="assetToggleChange" :options="['AVAX', 'WAVAX']"></Toggle>
+      <div class="toggle-container" v-if="asset.name === toggleOptions[0]">
+        <Toggle v-on:change="assetToggleChange" :options="toggleOptions"></Toggle>
       </div>
 
       <div class="button-wrapper">
@@ -91,10 +99,12 @@ import Toggle from './Toggle';
 import BarGaugeBeta from './BarGaugeBeta';
 import config from '../config';
 import {calculateHealth} from '../utils/calculate';
+import InfoIcon from "./InfoIcon.vue";
 
 export default {
   name: 'WithdrawModal',
   components: {
+    InfoIcon,
     Button,
     CurrencyInput,
     TransactionResultSummaryBeta,
@@ -108,10 +118,20 @@ export default {
     health: {},
     assetBalances: {},
     assets: {},
+    logo: null,
     farms: {},
     debtsPerAsset: {},
     lpAssets: {},
     lpBalances: {},
+    concentratedLpAssets: {},
+    concentratedLpBalances: {},
+    levelLpAssets: {},
+    levelLpBalances: {},
+    traderJoeV2LpAssets: {},
+    balancerLpAssets: {},
+    balancerLpBalances: {},
+    gmxV2Assets: {},
+    gmxV2Balances: {},
   },
 
   data() {
@@ -121,12 +141,15 @@ export default {
       validators: [],
       currencyInputError: true,
       MIN_ALLOWED_HEALTH: config.MIN_ALLOWED_HEALTH,
-      selectedWithdrawAsset: 'AVAX',
+      selectedWithdrawAsset: config.NATIVE_ASSET_TOGGLE_OPTIONS[0],
+      toggleOptions: config.NATIVE_ASSET_TOGGLE_OPTIONS,
       isLP: false,
+      isFarm: false,
       transactionOngoing: false,
       debt: 0,
       thresholdWeightedValue: 0,
       maxWithdraw: 0,
+      valueAsset: "USDC",
     };
   },
 
@@ -140,7 +163,16 @@ export default {
 
   computed: {
     getModalHeight() {
-      return this.asset.symbol === 'AVAX' ? '561px' : null;
+      return this.asset.symbol === this.toggleOptions[0] ? '561px' : null;
+    },
+
+    sourceAssetValue() {
+      const sourceAssetUsdPrice = Number(this.withdrawValue) * this.asset.price;
+      const nativeAssetUsdPrice = config.ASSETS_CONFIG[this.toggleOptions[0]].price;
+
+      if (this.valueAsset === "USDC") return `~ $${sourceAssetUsdPrice.toFixed(2)}`;
+      // otherwise return amount in native symbol
+      return `~ ${(sourceAssetUsdPrice / nativeAssetUsdPrice).toFixed(2)} ${this.toggleOptions[0]}`;
     },
   },
 
@@ -148,7 +180,7 @@ export default {
     submit() {
       this.transactionOngoing = true;
       let withdrawEvent = {};
-      if (this.asset.symbol === 'AVAX') {
+      if (this.asset.symbol === this.toggleOptions[0]) {
         withdrawEvent = {
           withdrawAsset: this.selectedWithdrawAsset,
           value: this.withdrawValue,
@@ -165,6 +197,8 @@ export default {
 
 
     withdrawValueChange(event) {
+      console.log('withdrawValueChange')
+      console.log(event)
       this.withdrawValue = event.value;
       this.currencyInputError = event.error;
       this.calculateHealthAfterTransaction();
@@ -194,6 +228,43 @@ export default {
         tokens.push({ price: data.price, balance: balance, borrowed: 0, debtCoverage: data.debtCoverage});
       }
 
+      for (const [symbol, data] of Object.entries(this.concentratedLpAssets)) {
+        let balance = parseFloat(this.concentratedLpBalances[symbol]);
+
+        if (symbol === this.asset.symbol) {
+          balance -= withdrawn;
+        }
+
+        tokens.push({ price: data.price, balance: balance, borrowed: 0, debtCoverage: data.debtCoverage});
+      }
+
+      for (const [symbol, data] of Object.entries(this.levelLpAssets)) {
+        let balance = parseFloat(this.levelLpBalances[symbol]);
+
+        if (symbol === this.asset.symbol) {
+          balance -= withdrawn;
+        }
+
+        tokens.push({ price: data.price, balance: balance, borrowed: 0, debtCoverage: data.debtCoverage});
+      }
+
+      for (const [symbol, data] of Object.entries(this.balancerLpAssets)) {
+        if (this.balancerLpBalances) {
+          let balance = parseFloat(this.balancerLpBalances[symbol]);
+
+          tokens.push({price: data.price, balance: balance ? balance : 0, borrowed: 0, debtCoverage: data.debtCoverage});
+        }
+      }
+
+      for (const [symbol, data] of Object.entries(this.gmxV2Assets)) {
+        tokens.push({
+          price: data.price,
+          balance: parseFloat(this.gmxV2Balances[symbol]),
+          borrowed: 0,
+          debtCoverage: data.debtCoverage
+        });
+      }
+
       for (const [, farms] of Object.entries(this.farms)) {
         farms.forEach(farm => {
           tokens.push({
@@ -205,7 +276,9 @@ export default {
         });
       }
 
-      this.healthAfterTransaction = calculateHealth(tokens);
+      let lbTokens = Object.values(this.traderJoeV2LpAssets);
+
+      this.healthAfterTransaction = calculateHealth(tokens, lbTokens);
 
       this.$forceUpdate();
     },
@@ -216,16 +289,19 @@ export default {
 
     setupValidators() {
       this.validators = [
-        {
-          validate: (value) => {
-            if (this.healthAfterTransaction <= 0) {
-              return `Health should be higher than 0%`;
-            }
-          }
-        },
+        // {
+        //   validate: (value) => {
+        //     if (this.healthAfterTransaction <= 0) {
+        //       return `Health should be higher than 0%`;
+        //     }
+        //   }
+        // },
         {
           validate: (value) => {
             if (this.assetBalance - value < 0) {
+              console.log('validate')
+              console.log('this.assetBalance: ', this.assetBalance)
+              console.log('value: ', value)
               return `Withdraw amount exceeds balance`;
             }
           }
@@ -243,7 +319,7 @@ export default {
             );
 
             if (!canRepayAllDebts) {
-              return 'Missing AVAX/USDC in portfolio. Please make sure you can repay your debt before withdrawing.'
+              return 'Not all \'borrowed\' is covered by its \'balance\'. Update missing balance(s) to withdraw. <a target="_blank" style="color: var(--currency-input__error-color)" href="https://docs.deltaprime.io/protocol/security/withdrawal-guard">Read more</a>.'
             }
           }
         }

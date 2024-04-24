@@ -4,6 +4,7 @@ pragma solidity ^0.8.10;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+//originally IRewarder
 interface IRewarder {
     /**
      * @dev Structure to store the Merkle tree entry. It contains:
@@ -24,4 +25,6 @@ interface IRewarder {
     }
 
     function batchClaim(MerkleEntry[] calldata merkleEntries) external;
+
+    function pendingTokens(uint256 pid, address user, uint256 sushiAmount) external view returns (address[] memory, uint256[] memory);
 }

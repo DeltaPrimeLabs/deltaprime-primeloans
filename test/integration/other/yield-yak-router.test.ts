@@ -24,7 +24,7 @@ import {
 } from "../../_helpers";
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
 import {BigNumber, Contract} from "ethers";
-import TOKEN_ADDRESSES from "../../../common/addresses/avax/token_addresses.json";
+import TOKEN_ADDRESSES from "../../../common/addresses/avalanche/token_addresses.json";
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
 
 const {deployContract} = waffle;

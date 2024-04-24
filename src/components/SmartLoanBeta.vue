@@ -1,36 +1,66 @@
 <template>
   <div class="smart-loan-beta-component">
     <div class="account-apr-widget-wrapper">
-      <AccountAprWidget :accountApr="accountApr" :no-smart-loan="noSmartLoanInternal"></AccountAprWidget>
+      <AccountAprWidget :accountApr="apr" :no-smart-loan="noSmartLoanInternal"></AccountAprWidget>
     </div>
     <div class="container">
       <StatsBarBeta
-        :collateral="noSmartLoanInternal ? 0 : getCollateral"
-        :debt="noSmartLoanInternal ? 0 : debt"
-        :health="noSmartLoanInternal ? 1 : health"
-        :noSmartLoan="noSmartLoanInternal"
-        :healthLoading="healthLoading">
+          :collateral="noSmartLoanInternal ? 0 : collateral"
+          :debt="noSmartLoanInternal ? 0 : debt"
+          :health="noSmartLoanInternal ? 1 : health"
+          :noSmartLoan="noSmartLoanInternal"
+          :healthLoading="healthLoading">
       </StatsBarBeta>
-      <InfoBubble v-if="noSmartLoanInternal === false" cacheKey="ACCOUNT-READY" style="margin-top: 40px">
+      <InfoBubble v-if="noSmartLoanInternal === false" cacheKey="ACCOUNT-READY">
         Your Prime Account is ready! Now you can borrow,<br>
-         provide liquidity and farm on the <b v-on:click="tabChange(1); selectedTabIndex = 1" style="cursor: pointer;">Farms</b> page.
+        provide liquidity and farm on the <b v-on:click="tabChange(1); selectedTabIndex = 1" style="cursor: pointer;">Farms</b>
+        page.
       </InfoBubble>
-      <InfoBubble v-for="timestamp in liquidationTimestamps" v-bind:key="timestamp" :cacheKey="`LIQUIDATED-${timestamp}`" style="margin-top: 40px">
+      <InfoBubble v-for="timestamp in liquidationTimestamps" v-bind:key="timestamp"
+                  :cacheKey="`LIQUIDATED-${timestamp}`">
         Liquidation bots unwinded part of your positions<br>
-        to repay borrowed funds and restore your health. <a href="https://docs.deltaprime.io/protocol/liquidations" target="_blank">More</a>.
+        to repay borrowed funds and restore your health. <a href="https://docs.deltaprime.io/protocol/liquidations"
+                                                            target="_blank">More</a>.
       </InfoBubble>
       <div class="main-content">
         <Block :bordered="true">
           <Tabs v-on:tabChange="tabChange" :open-tab-index="selectedTabIndex" :arrow="true">
-            <Tab :title="'Assets'"
-                 :img-active="'src/assets/icons/assets_on.svg'"
-                 :img-not-active="'src/assets/icons/assets_off.svg'">
+            <Tab ref="tab-0" :title="'Zaps'"
+                 :tab-icon="'src/assets/icons/zaps-icon.svg'"
+                 :tab-icon-slim="'src/assets/icons/zaps-icon-slim.svg'"
+                 :disabled="primeAccountsBlocked"
+            >
+              <Zaps></Zaps>
+            </Tab>
+            <Tab ref="tab-1" :title="'Assets'"
+                 :tab-icon="'src/assets/icons/assets_on-icon.svg'"
+                 :tab-icon-slim="'src/assets/icons/assets-slim.svg'"
+                 :disabled="primeAccountsBlocked"
+            >
               <Assets></Assets>
             </Tab>
-            <Tab :title="'Farms'"
-                 :img-active="'src/assets/icons/plant_on.svg'"
-                 :img-not-active="'src/assets/icons/plant_off.svg'">
+            <Tab ref="tab-2" :title="'LP'"
+                 :tab-icon="'src/assets/icons/lp-icon.svg'"
+                 :tab-icon-slim="'src/assets/icons/lp-icon-slim.svg'"
+                 v-if="showLPTab"
+                 :disabled="primeAccountsBlocked"
+            >
+              <LPTab></LPTab>
+            </Tab>
+            <Tab ref="tab-3" :title="'Farms'"
+                 :tab-icon="'src/assets/icons/plant_on-icon.svg'"
+                 :tab-icon-slim="'src/assets/icons/plant-slim.svg'"
+                 v-if="showFarmsTab"
+                 :disabled="primeAccountsBlocked"
+            >
               <Farm></Farm>
+            </Tab>
+            <Tab ref="tab-4" :title="'Stats'"
+                 :tab-icon="'src/assets/icons/stats-icon.svg'"
+                 :tab-icon-slim="'src/assets/icons/stats-icon-slim.svg'"
+                 :disabled="primeAccountsBlocked"
+            >
+              <Stats></Stats>
             </Tab>
           </Tabs>
         </Block>
@@ -40,7 +70,11 @@
       <div class="tutorial-video__close" v-on:click="closeVideo">
         <img class="close__icon" src="src/assets/icons/cross.svg">
       </div>
-      <iframe width="560" height="315" src="https://www.youtube.com/embed/nyRbcSse60o" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>    </div>
+      <iframe width="560" height="315" src="https://www.youtube.com/embed/nyRbcSse60o" title="YouTube video player"
+              frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen></iframe>
+    </div>
   </div>
 </template>
 
@@ -51,33 +85,100 @@ import Block from './Block';
 import Tabs from './Tabs';
 import Tab from './Tab';
 import Assets from './Assets';
-import InfoBubble from "@/components/InfoBubble.vue";
-import {mapActions, mapGetters, mapState} from 'vuex';
+import {mapActions, mapState} from 'vuex';
 import Farm from './Farm';
 import AccountAprWidget from './AccountAprWidget';
 import config from '../config';
 import redstone from 'redstone-api';
 import {formatUnits} from 'ethers/lib/utils';
-import {combineLatest, delay} from 'rxjs';
-import {fetchLiquidatedEvents} from "../utils/graph";
+import {combineLatest, map} from 'rxjs';
+import {fetchLiquidatedEvents} from '../utils/graph';
+import InfoBubble from './InfoBubble.vue';
+import TransactionHistory from './TransactionHistory';
+import Stats from './stats/Stats.vue';
+import LPTab from "./LPTab.vue";
+import Zaps from "./Zaps.vue";
 
-const ASSETS_PATH = 'assets';
-const FARMS_PATH = 'farms';
+const TABS = [
+  {
+    path: 'zaps',
+    pathName: 'Prime Account Zaps'
+  },
+  {
+    path: 'assets',
+    pathName: 'Prime Account Assets'
+  },
+  {
+    path: 'lp',
+    pathName: 'Prime Account LP'
+  },
+  {
+    path: 'farms',
+    pathName: 'Prime Account Farms'
+  },
+  {
+    path: 'stats',
+    pathName: 'Prime Account Stats'
+  },
+];
 
-const ASSETS_PATH_NAME = 'Prime Account Assets';
-const FARMS_PATH_NAME = 'Prime Account Farms';
-
-const TUTORIAL_VIDEO_CLOSED_LOCALSTORAGE_KEY = 'TUTORIAL_VIDEO_CLOSED'
+const TUTORIAL_VIDEO_CLOSED_LOCALSTORAGE_KEY = 'TUTORIAL_VIDEO_CLOSED';
 
 export default {
   name: 'SmartLoanBeta',
-  components: {Farm, Assets, Block, StatsBarBeta, Tabs, Tab, InfoBubble, AccountAprWidget, Banner},
+  components: {
+    Zaps,
+    LPTab,
+    TransactionHistory,
+    Stats,
+    InfoBubble,
+    Farm,
+    Assets,
+    Block,
+    StatsBarBeta,
+    Tabs,
+    Tab,
+    AccountAprWidget,
+    Banner
+  },
   computed: {
-    ...mapState('fundsStore', ['assetBalances', 'debtsPerAsset', 'assets', 'lpAssets', 'lpBalances', 'fullLoanStatus', 'noSmartLoan', 'smartLoanContract']),
+    ...mapState('fundsStore', [
+      'assetBalances',
+      'debtsPerAsset',
+      'assets',
+      'lpAssets',
+      'lpBalances',
+      'concentratedLpAssets',
+      'concentratedLpBalances',
+      'levelLpAssets',
+      'levelLpBalances',
+      'gmxV2Assets',
+      'gmxV2Balances',
+      'balancerLpAssets',
+      'balancerLpBalances',
+      'traderJoeV2LpAssets',
+      'fullLoanStatus',
+      'noSmartLoan',
+      'smartLoanContract',
+      'accountApr'
+    ]),
     ...mapState('stakeStore', ['farms']),
-    ...mapState('serviceRegistry', ['healthService', 'aprService', 'progressBarService', 'providerService', 'accountService']),
+    ...mapState('serviceRegistry', [
+      'healthService',
+      'aprService',
+      'progressBarService',
+      'providerService',
+      'accountService',
+      'poolService',
+      'dataRefreshEventService',
+      'farmService',
+      'collateralService',
+      'debtService'
+    ]),
     ...mapState('network', ['account']),
-    ...mapGetters('fundsStore', ['getCollateral', 'getAccountApr']),
+    primeAccountsBlocked() {
+      return config.primeAccountsBlocked;
+    }
   },
   watch: {
     assetBalances: {
@@ -117,11 +218,15 @@ export default {
       totalValue: 0,
       health: 0,
       noSmartLoanInternal: null,
-      selectedTabIndex: 0,
+      selectedTabIndex: undefined,
       videoVisible: true,
-      accountApr: null,
+      apr: null,
       healthLoading: false,
-      liquidationTimestamps: []
+      liquidationTimestamps: [],
+      collateral: null,
+      showLPTab: Object.keys(config.TRADERJOEV2_LP_ASSETS_CONFIG).length || Object.keys(config.CONCENTRATED_LP_ASSETS_CONFIG).length || Object.keys(config.LP_ASSETS_CONFIG).length,
+      showFarmsTab: Object.keys(config.FARMED_TOKENS_CONFIG).length,
+      tabsRefs: [],
     };
   },
 
@@ -129,21 +234,38 @@ export default {
     this.setupSelectedTab();
     this.watchHealthRefresh();
     this.watchAprRefresh();
-    this.watchProgressBarState();
+    this.watchCollateral();
+    this.watchDebt();
     this.setupVideoVisibility();
-
+    this.initAccountApr();
     this.initStoresWhenProviderAndAccountCreated();
   },
   methods: {
-    ...mapActions('fundsStore', ['fundsStoreSetup']),
+    ...mapActions('fundsStore', ['fundsStoreSetup', 'getAccountApr']),
+    ...mapActions('stakeStore', ['stakeStoreSetup']),
     ...mapActions('poolStore', ['poolStoreSetup']),
 
     initStoresWhenProviderAndAccountCreated() {
       combineLatest([this.providerService.observeProviderCreated(), this.accountService.observeAccountLoaded()])
-        .subscribe(async ([provider, account]) => {
-          await this.poolStoreSetup();
-          await this.fundsStoreSetup();
-        });
+          .subscribe(async ([provider, account]) => {
+            await this.poolStoreSetup();
+            await this.fundsStoreSetup();
+            await this.stakeStoreSetup();
+          });
+    },
+
+    initAccountApr() {
+      combineLatest([
+        this.poolService.observePools(),
+        this.farmService.observeRefreshFarm(),
+        this.dataRefreshEventService.observeAssetBalancesDataRefresh(),
+        this.dataRefreshEventService.observeDebtsPerAssetDataRefresh(),
+        this.dataRefreshEventService.observeFullLoanStatusRefresh(),
+        this.dataRefreshEventService.observeAssetApysDataRefresh(),
+      ])
+          .subscribe(async ([provider, account]) => {
+            await this.getAccountApr();
+          });
     },
 
     async assetBalancesChange(balances) {
@@ -152,12 +274,15 @@ export default {
         let yesterdayValue = 0;
         const assets = config.ASSETS_CONFIG;
         const assetSymbols = Object.keys(assets);
-        const todayPrices = await redstone.getPrice(assetSymbols);
+
+        const redstonePriceDataRequest = await fetch(config.redstoneFeedUrl);
+        const redstonePriceData = await redstonePriceDataRequest.json();
+
         const yesterdayPrices = await redstone.getHistoricalPrice(assetSymbols, {date: Date.now() - 1000 * 3600 * 24});
         assetSymbols.forEach((symbol, index) => {
           if (balances[index]) {
             const balance = formatUnits(balances[index].balance, config.ASSETS_CONFIG[symbol].decimals);
-            todayValue += balance * todayPrices[symbol].value;
+            todayValue += balance * (redstonePriceData[symbol] ? redstonePriceData[symbol][0].dataPoints[0].value : 0);
             yesterdayValue += balance * yesterdayPrices[symbol].value;
           }
         });
@@ -170,7 +295,6 @@ export default {
     updateLoanStatus(fullLoanStatus) {
       if (fullLoanStatus) {
         this.totalValue = fullLoanStatus.totalValue;
-        this.debt = fullLoanStatus.debt;
       }
       this.$forceUpdate();
     },
@@ -178,14 +302,13 @@ export default {
     setupSelectedTab() {
       const url = document.location.href;
       const lastUrlPart = url.split('/').reverse()[0];
-      if (lastUrlPart !== ASSETS_PATH && lastUrlPart !== FARMS_PATH) {
-        this.$router.push({name: ASSETS_PATH_NAME, query: this.extractQueryParams(url)});
+      if (!TABS.some(tab => tab.path === lastUrlPart)) {
+        this.$router.push({name: TABS[0].pathName, query: this.extractQueryParams(url)});
       } else {
-        if (lastUrlPart === ASSETS_PATH) {
-          this.selectedTabIndex = 0;
-        } else if (lastUrlPart === FARMS_PATH) {
-          this.selectedTabIndex = 1;
-        }
+        const pathIndexFromRoute = TABS.findIndex(tab => tab.path === lastUrlPart)
+        let tabIndex = Object.keys(this.$refs).findIndex(key => key === `tab-${pathIndexFromRoute}`)
+        tabIndex = Math.max(0, tabIndex)
+        this.selectedTabIndex = tabIndex
       }
     },
 
@@ -201,70 +324,65 @@ export default {
     },
 
     getLiquidatedEvents() {
-      console.log('getLiquidatedEvents')
-      // console.log(await fetchLiquidatedEvents(this.smartLoanContract.address).map(event => event.timestamp))
       fetchLiquidatedEvents(this.smartLoanContract.address).then(
           events => {
             this.liquidationTimestamps = events.map(event => event.timestamp);
           }
-      )
+      );
     },
 
     tabChange(tabIndex) {
       const url = document.location.href;
-
-      if (tabIndex === 0) {
-        this.$router.push({name: ASSETS_PATH_NAME, query: this.extractQueryParams(url)});
-      } else if (tabIndex === 1) {
-        this.$router.push({name: FARMS_PATH_NAME, query: this.extractQueryParams(url)});
-      }
+      const pathIndex = Number(Object.entries(this.$refs)[tabIndex][0].replace('tab-', ''))
+      this.$router.push({name: TABS[pathIndex].pathName, query: this.extractQueryParams(url)});
     },
 
     watchHealthRefresh() {
       this.healthService.observeRefreshHealth().subscribe(async () => {
         this.healthLoading = true;
+
         const healthCalculatedDirectly = await this.healthService.calculateHealth(
-          this.noSmartLoanInternal,
-          this.debtsPerAsset,
-          this.assets,
-          this.assetBalances,
-          this.lpAssets,
-          this.lpBalances,
-          this.farms
+            this.noSmartLoanInternal,
+            this.debtsPerAsset,
+            this.assets,
+            this.assetBalances,
+            this.lpAssets,
+            this.lpBalances,
+            this.concentratedLpAssets,
+            this.concentratedLpBalances,
+            this.balancerLpAssets,
+            this.balancerLpBalances,
+            this.levelLpAssets,
+            this.levelLpBalances,
+            this.gmxV2Assets,
+            this.gmxV2Balances,
+            this.traderJoeV2LpAssets,
+            this.farms,
         );
         this.health = healthCalculatedDirectly;
         this.healthLoading = false;
-        console.log('healthCalculatedDirectly', healthCalculatedDirectly);
-      })
+      });
     },
 
     watchAprRefresh() {
-      this.aprService.observeRefreshApr().subscribe(async() => {
-        console.log('watchAprRefresh');
-        this.accountApr = null;
-        this.accountApr = await this.getAccountApr;
+      this.aprService.observeRefreshApr().subscribe(async () => {
+        setTimeout(() => {
+          this.apr = this.accountApr;
+        })
       });
     },
 
-    watchProgressBarState() {
-      this.progressBarService.progressBarState$.subscribe(async (state) => {
-        switch (state) {
-          case 'MINING' : {
-            this.accountApr = null;
-            break;
-          }
-          case 'ERROR' : {
-            this.accountApr = await this.getAccountApr;
-            break;
-          }
-          case 'CANCELLED' : {
-            this.accountApr = await this.getAccountApr;
-            break;
-          }
-        }
+    watchCollateral() {
+      this.collateralService.observeCollateral().subscribe(collateral => {
+        this.collateral = collateral;
       });
     },
 
+    watchDebt() {
+      this.debtService.observeDebt().subscribe(debt => {
+        this.debt = debt;
+      });
+    },
 
     closeVideo() {
       this.videoVisible = false;
@@ -301,6 +419,7 @@ export default {
   border-radius: 25px;
   bottom: 20px;
   right: 20px;
+  z-index: 2;
 
   .tutorial-video__close {
     position: absolute;

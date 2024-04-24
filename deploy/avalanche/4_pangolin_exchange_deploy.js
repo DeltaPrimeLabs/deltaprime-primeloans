@@ -1,4 +1,4 @@
-import {pangolinAssets} from "../../common/addresses/avax/pangolin_supported_assets";
+import {pangolinAssets} from "../../common/addresses/avalanche/pangolin_supported_assets";
 import PangolinIntermediaryArtifact
     from "../../artifacts/contracts/integrations/avalanche/PangolinIntermediary.sol/PangolinIntermediary.json";
 

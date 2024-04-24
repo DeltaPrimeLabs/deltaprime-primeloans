@@ -7,10 +7,10 @@
 
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>
-        <div class="top-info__value"> {{assetBalances[asset.symbol] | smartRound}}</div>
+        <div class="top-info__value"> {{assetBalances[asset.symbol] | smartRound(10, true)}}</div>
         <div class="top-info__divider"></div>
         <div class="top-info__label">Debt:</div>
-        <div class="top-info__value"> {{assetDebt | smartRound}}</div>
+        <div class="top-info__value"> {{assetDebt | smartRound(10, true)}}</div>
         <span class="top-info__currency">
           {{asset.symbol}}
         </span>
@@ -19,7 +19,8 @@
       <CurrencyInput :symbol="asset.symbol"
                      v-on:newValue="repayValueChange"
                      :validators="validators"
-                     :max="assetDebt"
+                     :max="calculateMaxRepay"
+                     :info="() => sourceAssetValue"
       >
       </CurrencyInput>
 
@@ -42,10 +43,10 @@
             <div class="summary__divider"></div>
             <div>
               <div class="summary__label">
-                Loan:
+                Borrowed:
               </div>
               <div class="summary__value">
-                {{ (assetDebt - repayValue) > 0 ? assetDebt - repayValue : 0 | smartRound }} {{ asset.symbol }}
+                {{ (assetDebt - repayValue) > 0 ? assetDebt - repayValue : 0 | smartRound(10, true) }} {{ asset.symbol }}
               </div>
             </div>
           </div>
@@ -72,8 +73,6 @@ import BarGaugeBeta from './BarGaugeBeta';
 import {calculateHealth} from "../utils/calculate";
 import config from '../config';
 
-const MAX_REPAYMENT_OF_DEBT = 1.000001;
-
 export default {
   name: 'WithdrawModal',
   components: {
@@ -95,6 +94,15 @@ export default {
     debtsPerAsset: {},
     lpAssets: {},
     lpBalances: {},
+    concentratedLpAssets: {},
+    concentratedLpBalances: {},
+    levelLpAssets: {},
+    levelLpBalances: {},
+    balancerLpAssets: {},
+    balancerLpBalances: {},
+    traderJoeV2LpAssets: {},
+    gmxV2Assets: {},
+    gmxV2Balances: {},
     farms: {}
   },
 
@@ -106,6 +114,7 @@ export default {
       validators: [],
       currencyInputError: true,
       maxButtonUsed: false,
+      valueAsset: "USDC",
     }
   },
 
@@ -118,18 +127,31 @@ export default {
   },
 
   computed: {
-    //because the debt is continously compounding, we have to allow repaying a little more to allow users to fully
-    //repay their debts
-    maxRepaymentOfDebt() {
-      return MAX_REPAYMENT_OF_DEBT;
+    calculateMaxRepay() {
+      const assetBalance = this.assetBalances[this.asset.symbol];
+      return this.isMaxFromDebt ? this.assetDebt : assetBalance;
+    },
+
+    isMaxFromDebt() {
+      return this.assetDebt < this.assetBalances[this.asset.symbol];
+    },
+
+    sourceAssetValue() {
+      const nativeSymbol = config.nativeToken;
+      const sourceAssetUsdPrice = Number(this.repayValue) * this.asset.price;
+      const nativeUsdPrice = config.ASSETS_CONFIG[nativeSymbol].price;
+
+      if (this.valueAsset === "USDC") return `~ $${sourceAssetUsdPrice.toFixed(2)}`;
+      // otherwise return amount in AVAX
+      return `~ ${(sourceAssetUsdPrice / nativeUsdPrice).toFixed(2)} ${nativeSymbol}`;
     },
   },
 
   methods: {
     submit() {
       this.transactionOngoing = true;
-      const repayValue = this.maxButtonUsed ? this.repayValue * config.MAX_BUTTON_MULTIPLIER : this.repayValue;
-      this.$emit('REPAY', { repayValue: repayValue, isMax: this.maxButtonUsed });
+      const repayValue = (this.maxButtonUsed && this.isMaxFromDebt) ? this.repayValue * config.MAX_BUTTON_MULTIPLIER : this.repayValue;
+      this.$emit('REPAY', { repayValue: repayValue, isMax: this.maxButtonUsed && this.isMaxFromDebt });
     },
 
     repayValueChange(event) {
@@ -159,6 +181,31 @@ export default {
         tokens.push({ price: data.price, balance: parseFloat(this.lpBalances[symbol]), borrowed: 0, debtCoverage: data.debtCoverage});
       }
 
+      for (const [symbol, data] of Object.entries(this.concentratedLpAssets)) {
+        tokens.push({ price: data.price, balance: parseFloat(this.concentratedLpBalances[symbol]), borrowed: 0, debtCoverage: data.debtCoverage});
+      }
+
+      for (const [symbol, data] of Object.entries(this.levelLpAssets)) {
+        tokens.push({ price: data.price, balance: parseFloat(this.levelLpBalances[symbol]), borrowed: 0, debtCoverage: data.debtCoverage});
+      }
+
+      for (const [symbol, data] of Object.entries(this.balancerLpAssets)) {
+        if (this.balancerLpBalances) {
+          let balance = parseFloat(this.balancerLpBalances[symbol]);
+
+          tokens.push({price: data.price, balance: balance ? balance : 0, borrowed: 0, debtCoverage: data.debtCoverage});
+        }
+      }
+
+      for (const [symbol, data] of Object.entries(this.gmxV2Assets)) {
+        tokens.push({
+          price: data.price,
+          balance: parseFloat(this.gmxV2Balances[symbol]),
+          borrowed: 0,
+          debtCoverage: data.debtCoverage
+        });
+      }
+
       for (const [, farms] of Object.entries(this.farms)) {
         farms.forEach(farm => {
           tokens.push({
@@ -170,18 +217,13 @@ export default {
         });
       }
 
-      this.healthAfterTransaction = calculateHealth(tokens);
+      let lbTokens = Object.values(this.traderJoeV2LpAssets);
+
+      this.healthAfterTransaction = calculateHealth(tokens, lbTokens);
     },
 
     setupValidators() {
       this.validators = [
-        // {
-        //   validate: (value) => {
-        //     if (value > this.assetDebt * this.maxRepaymentOfDebt) {
-        //       return `Repay value exceeds debt`;
-        //     }
-        //   }
-        // },
         {
           validate: (value) => {
             if (value > this.assetBalances[this.asset.symbol]) {

@@ -13,9 +13,9 @@
       </div>
       <div v-if="index !== assetFilterGroups.length - 1" class="filter__separator"></div>
     </div>
-    <div class="filter__clear" v-if="!allSelected">
+    <div class="filter__clear" v-if="!allSelected && showClearButton">
       <button class="clear__button" type="button" v-on:click="resetAll()">
-        <img class="clear__icon" src="src/assets/icons/cross.svg">
+        <DeltaIcon class="clear__icon" :size="14" :icon-src="'src/assets/icons/cross.svg'"></DeltaIcon>
         <span class="clear__text">Clear all filters</span>
       </button>
     </div>
@@ -24,12 +24,17 @@
 
 <script>
 import config from '../config';
+import DeltaIcon from './DeltaIcon.vue';
 
 export default {
   name: 'AssetFilter',
+  components: {DeltaIcon},
   props: {
     assetOptions: null,
     assetFilterGroups: null,
+    showClearButton: true,
+    singleSelectMode: false,
+    firstOneAsDefault: false
   },
 
   data() {
@@ -45,33 +50,43 @@ export default {
       this.filterValue = {};
       this.assetFilterGroups.forEach((group, index) => {
         this.filterValue[group.key] = {};
-        group.options.forEach(option => {
-          this.filterValue[group.key][option] = {asset: option, active: true};
+        group.options.forEach((option, i) => {
+          this.filterValue[group.key][option] = {asset: option, active: this.firstOneAsDefault ? i === 0 : true};
         });
       });
     },
 
     selectOption(group, option) {
-      const allSelected = Object.values(this.filterValue[group.key]).map(option => option.active).every(o => o);
-      if (allSelected) {
+      if (!this.singleSelectMode) {
+        const allSelected = Object.values(this.filterValue[group.key]).map(option => option.active).every(o => o);
+        if (allSelected) {
+          Object.keys(this.filterValue[group.key]).forEach(o => {
+            this.filterValue[group.key][o].active = false;
+            this.checkResetButton();
+            this.$forceUpdate();
+          });
+          this.filterValue[group.key][option].active = true;
+          this.checkResetButton();
+          this.$forceUpdate();
+        } else {
+          this.filterValue[group.key][option].active = !this.filterValue[group.key][option].active;
+          this.$forceUpdate();
+          this.checkResetButton();
+          const noneSelected = Object.values(this.filterValue[group.key]).map(option => option.active).every(o => !o);
+          if (noneSelected) {
+            this.resetGroup(group);
+          }
+        }
+        this.emitFilterValue();
+      } else {
         Object.keys(this.filterValue[group.key]).forEach(o => {
           this.filterValue[group.key][o].active = false;
           this.checkResetButton();
           this.$forceUpdate();
         });
         this.filterValue[group.key][option].active = true;
-        this.checkResetButton();
-        this.$forceUpdate();
-      } else {
-        this.filterValue[group.key][option].active = !this.filterValue[group.key][option].active;
-        this.$forceUpdate();
-        this.checkResetButton();
-        const noneSelected = Object.values(this.filterValue[group.key]).map(option => option.active).every(o => !o);
-        if (noneSelected) {
-          this.resetGroup(group);
-        }
+        this.emitFilterValue();
       }
-      this.emitFilterValue();
     },
 
     resetGroup(group) {
@@ -83,7 +98,6 @@ export default {
     },
 
     resetAll() {
-      console.log(this.filterValue);
       this.assetFilterGroups.forEach(group => {
         this.resetGroup(group);
       });
@@ -137,15 +151,17 @@ export default {
       justify-content: center;
 
       .filter__option {
+        display: flex;
+        align-items: center;
+        justify-content: center;
         width: 26px;
         height: 26px;
-        padding: 2px;
-        background-color: white;
         border-radius: 26px;
         filter: grayscale(1);
         margin-right: 8px;
         transition: all 200ms ease-in-out;
         cursor: pointer;
+        opacity: 0.5;
 
         &:last-child {
           margin-right: 0;
@@ -156,8 +172,10 @@ export default {
         }
 
         &.active {
-          box-shadow: 1px 2px 5px 0 rgba(191, 188, 255, 0.9);
+          box-shadow: var(--asset-filter__filter-option-box-shadow);
           filter: grayscale(0);
+          background-color: var(--dex-filter__filter-option-background-color);
+          opacity: 1;
         }
 
         .option__icon {
@@ -170,7 +188,7 @@ export default {
     .filter__separator {
       width: 1.5px;
       height: 17px;
-      background-color: $smoke-gray;
+      background-color: var(--asset-filter__filter-separator-color);
       margin: 0 15px;
     }
   }
@@ -197,14 +215,13 @@ export default {
 
 
       .clear__icon {
-        width: 14px;
-        height: 14px;
+        background: var(--asset-filter__clear-text-color);
         margin-right: 3px;
       }
 
       .clear__text {
         font-size: $font-size-xsm;
-        color: $delta-accent;
+        color: var(--asset-filter__clear-text-color);
         font-weight: 600;
         font-stretch: normal;
         font-style: normal;

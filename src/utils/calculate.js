@@ -1,26 +1,53 @@
 import config from "../config";
-
-const ethers = require('ethers');
 import IVectorFinanceStakingArtifact
   from '../../artifacts/contracts/interfaces/IVectorFinanceStaking.sol/IVectorFinanceStaking.json';
-import IVectorRewarder
-  from '../../artifacts/contracts/interfaces/IVectorRewarder.sol/IVectorRewarder.json';
+import IVectorRewarder from '../../artifacts/contracts/interfaces/IVectorRewarder.sol/IVectorRewarder.json';
+import IYieldYak from '../../artifacts/contracts/interfaces/facets/avalanche/IYieldYak.sol/IYieldYak.json';
+import IBeefyFinance from '../../artifacts/contracts/interfaces/facets/IBeefyFinance.sol/IBeefyFinance.json';
+import IVectorFinanceCompounder
+  from '../../artifacts/contracts/interfaces/IVectorFinanceCompounder.sol/IVectorFinanceCompounder.json';
 import {BigNumber} from "ethers";
 import ApolloClient from "apollo-boost";
 import gql from "graphql-tag";
-import TOKEN_ADDRESSES from '../../common/addresses/avax/token_addresses.json';
-import redstone from 'redstone-api';
+import TOKEN_ADDRESSES from '../../common/addresses/avalanche/token_addresses.json';
 import erc20ABI from '../../test/abis/ERC20.json';
+
+import MULTICALL from '../../artifacts/contracts/lib/Multicall3.sol/Multicall3.json'
+import {decodeOutput} from "./blockchain";
+
+const ethers = require('ethers');
 
 export function minAvaxToBeBought(amount, currentSlippage) {
   return amount / (1 + (currentSlippage ? currentSlippage : 0));
 }
 
-export function calculateHealth(tokens) {
+export function calculateHealth(tokens, lbTokens) {
+  let weightedCollateralFromLBs = 0;
 
-  let weightedCollateral = tokens.reduce((acc, t) => acc + t.price * (t.balance - t.borrowed) * t.debtCoverage, 0);
-  let weightedBorrowed = tokens.reduce((acc, t) => acc + t.price * t.borrowed * t.debtCoverage, 0);
-  let borrowed = tokens.reduce((acc, t) => acc + t.price * t.borrowed, 0);
+  if (lbTokens) {
+    lbTokens
+      .filter(lbToken => lbToken.binIds)
+      .forEach(lbToken => {
+        lbToken.binIds.forEach(
+          (binId, i) => {
+            let balancePrimary = parseFloat(lbToken.binBalancePrimary[i]);
+            let balanceSecondary = parseFloat(lbToken.binBalanceSecondary[i])
+            let liquidity = lbToken.binPrices[i] * balancePrimary + balanceSecondary
+            let debtCoveragePrimary = config.ASSETS_CONFIG[lbToken.primary].debtCoverage;
+            let debtCoverageSecondary = config.ASSETS_CONFIG[lbToken.secondary].debtCoverage;
+
+            weightedCollateralFromLBs += Math.min(
+              debtCoveragePrimary * liquidity * config.ASSETS_CONFIG[lbToken.primary].price / lbToken.binPrices[i],
+              debtCoverageSecondary * liquidity * config.ASSETS_CONFIG[lbToken.secondary].price
+            ) * lbToken.accountBalances[i] / lbToken.binTotalSupply[i];
+          }
+        );
+      })
+  }
+
+  let weightedCollateral = weightedCollateralFromLBs + tokens.reduce((acc, token) => acc + token.price * ((isNaN(token.balance) ? 0 : token.balance) - token.borrowed) * token.debtCoverage, 0);
+  let weightedBorrowed = tokens.reduce((acc, token) => acc + token.price * token.borrowed * token.debtCoverage, 0);
+  let borrowed = tokens.reduce((acc, token) => acc + token.price * token.borrowed, 0);
 
   if (borrowed === 0) return 1;
 
@@ -29,7 +56,7 @@ export function calculateHealth(tokens) {
 
 export function calculateMaxApy(pools, apy) {
   if (!pools) return;
-  return Math.max(apy * 5.5 - 4.5 * Math.min(...Object.values(pools).map(pool => pool.borrowingAPY)), apy);
+  return Math.max(apy * 5.5 - 4.5 * Math.min(...Object.values(pools.filter(pool => !pool.disabled)).map(pool => pool.borrowingAPY)), apy);
 }
 
 export function mergeArrays(arrays) {
@@ -70,6 +97,23 @@ export function round(num) {
   return roundWithPrecision(num, 18);
 }
 
+export function smartRound(value, precision = 8, toFixed = false) {
+  if (Number.isNaN(value) || isNaN(value)) {
+    return '0';
+  }
+  if (value < 0) {
+    value = Math.abs(value);
+  }
+  const valueOrderOfMagnitudeExponent = String(value).split('.')[0].length - 1;
+  const precisionMultiplierExponent = precision - valueOrderOfMagnitudeExponent;
+  const precisionMultiplier = Math.pow(10, precisionMultiplierExponent >= 0 ? precisionMultiplierExponent : 0);
+  if (!toFixed) {
+    return value !== null ? String(Math.round(value * precisionMultiplier) / precisionMultiplier) : '';
+  } else {
+    return value !== null ? removePaddedTrailingZeros((Math.round(value * precisionMultiplier) / precisionMultiplier).toFixed(precision)) : '';
+  }
+}
+
 export function aprToApy(apr) {
   const compoundingPeriods = 100000;
   return Math.pow(1 + (apr / compoundingPeriods), compoundingPeriods) - 1;
@@ -100,11 +144,18 @@ export async function yieldYakRewards(stakingContractAddress, address) {
   return stakedYrt * yrtToAvaxConversionRate - stakedYrt;
 }
 
-export async function yieldYakBalance(stakingContractAddress, address) {
-  const tokenContract = new ethers.Contract(stakingContractAddress, erc20ABI, provider.getSigner());
-  const stakedYrtWei = await tokenContract.balanceOf(address);
+export async function yieldYakBalance(stakingContractAddress, address, decimals = 18) {
+  try {
+    console.log('try yieldYakBalance')
+    const tokenContract = new ethers.Contract(stakingContractAddress, erc20ABI, provider.getSigner());
+    const stakedYrtWei = await tokenContract.balanceOf(address);
 
-  return formatUnits(stakedYrtWei, 18);
+    return formatUnits(stakedYrtWei, decimals);
+  } catch (e) {
+    console.log('yieldYakBalance error')
+    return 0;
+  }
+
 }
 
 export async function yieldYakStaked(address) {
@@ -113,6 +164,7 @@ export async function yieldYakStaked(address) {
       smartLoan(id: "${address}") {
         YY_AAVE_AVAX
         YY_PTP_sAVAX
+        YY_GLP
         YY_PNG_AVAX_USDC_LP
         YY_PNG_AVAX_ETH_LP
         YY_TJ_AVAX_USDC_LP
@@ -125,15 +177,22 @@ export async function yieldYakStaked(address) {
   const client = new ApolloClient({
     uri: config.subgraph
   });
-  console.log(await client.query({query: gql(query)}))
 
   return (await client.query({query: gql(query)})).data.smartLoan;
 }
 
 export async function vectorFinanceBalance(stakingContractAddress, address, decimals = 18) {
-  const tokenContract = new ethers.Contract(stakingContractAddress, IVectorFinanceStakingArtifact.abi, provider.getSigner());
+  let result = 0;
+  try {
+    const tokenContract = new ethers.Contract(stakingContractAddress, IVectorFinanceStakingArtifact.abi, provider.getSigner());
 
-  return formatUnits(await tokenContract.balance(address), BigNumber.from(decimals.toString()));
+    result = formatUnits(await tokenContract.balance(address), BigNumber.from(decimals.toString()));
+  } catch (e) {
+    console.log('vector balance error')
+  }
+
+  return result;
+
 }
 
 export async function vectorFinanceRewards(stakingContractAddress, loanAddress) {
@@ -146,6 +205,11 @@ export async function vectorFinanceRewards(stakingContractAddress, loanAddress) 
   let totalEarned = 0;
 
   let iterate = true;
+
+  //TODO: get prices from store
+  const redstonePriceDataRequest = await fetch(config.redstoneFeedUrl);
+  const redstonePriceData = await redstonePriceDataRequest.json();
+
   while (iterate) {
     try {
       let tokenAddress = await rewarderContract.rewardTokens(i);
@@ -154,9 +218,8 @@ export async function vectorFinanceRewards(stakingContractAddress, loanAddress) 
       let earned = formatUnits(await rewarderContract.earned(loanAddress, tokenAddress), await tokenContract.decimals());
 
       let token = Object.entries(TOKEN_ADDRESSES).find(([, address]) => address.toLowerCase() === tokenAddress.toLowerCase());
-
-      //TODO: get prices from store
-      let price = (await redstone.getPrice(token[0])).value;
+      
+      let price = redstonePriceData[token[0]] ? redstonePriceData[token[0]][0].dataPoints[0].value : 0;
 
       totalEarned += price * earned;
     } catch (e) {
@@ -169,6 +232,91 @@ export async function vectorFinanceRewards(stakingContractAddress, loanAddress) 
   return totalEarned;
 }
 
+export async function yieldYakMaxUnstaked(stakingContractAddress, loanAddress, decimals = 18, comment = '') {
+  const readProvider = new ethers.providers.JsonRpcProvider(config.readRpcUrl);
+  const multicallContract = new ethers.Contract(config.multicallAddress, MULTICALL.abi, readProvider);
+  const stakingContract = new ethers.Contract(stakingContractAddress, IYieldYak.abi, provider.getSigner());
+
+  try {
+    const response = await multicallContract.callStatic.aggregate([
+      {
+        target: stakingContract.address,
+        callData: stakingContract.interface.encodeFunctionData('balanceOf', [loanAddress])
+      },
+      {
+        target: stakingContract.address,
+        callData: stakingContract.interface.encodeFunctionData('totalDeposits')
+      },
+      {
+        target: stakingContract.address,
+        callData: stakingContract.interface.encodeFunctionData('totalSupply')
+      },
+    ])
+
+    const loanBalance = formatUnits(decodeOutput(IYieldYak.abi, 'balanceOf', response.returnData[0])[0], decimals);
+    const totalDeposits = decodeOutput(IYieldYak.abi, 'totalDeposits', response.returnData[1])[0];
+    const totalSupply = decodeOutput(IYieldYak.abi, 'totalSupply', response.returnData[2])[0];
+
+
+    return loanBalance / totalSupply * totalDeposits;
+  } catch (erorr) {
+    console.error(erorr);
+    console.log('yieldYakMaxUnstaked error');
+    return 0;
+  }
+
+
+}
+
+export async function beefyMaxUnstaked(stakingContractAddress, loanAddress, decimals = 18) {
+  try {
+    const readProvider = new ethers.providers.JsonRpcProvider(config.readRpcUrl);
+    const multicallContract = new ethers.Contract(config.multicallAddress, MULTICALL.abi, readProvider);
+    const stakingContract = new ethers.Contract(stakingContractAddress, IBeefyFinance.abi, provider.getSigner());
+
+    const response = await multicallContract.callStatic.aggregate([
+      {
+        target: stakingContract.address,
+        callData: stakingContract.interface.encodeFunctionData('balanceOf', [loanAddress])
+      },
+      {
+        target: stakingContract.address,
+        callData: stakingContract.interface.encodeFunctionData('balance')
+      },
+      {
+        target: stakingContract.address,
+        callData: stakingContract.interface.encodeFunctionData('totalSupply')
+      },
+    ]);
+
+    const loanBalance = formatUnits(decodeOutput(IBeefyFinance.abi, 'balanceOf', response.returnData[0])[0], decimals);
+    const balance = decodeOutput(IBeefyFinance.abi, 'balance', response.returnData[1])[0];
+    const totalSupply = decodeOutput(IBeefyFinance.abi, 'totalSupply', response.returnData[2])[0];
+
+
+    return loanBalance / totalSupply * balance;
+  } catch (e) {
+    console.log('beefyMaxUnstaked error');
+    return 0;
+  }
+
+
+}
+
+export async function vectorFinanceMaxUnstaked(assetSymbol, stakingContractAddress, loanAddress) {
+  window.requestCounter++;
+  const assetDecimals = config.ASSETS_CONFIG[assetSymbol].decimals;
+  const stakingContract = new ethers.Contract(stakingContractAddress, IVectorFinanceCompounder.abi, provider.getSigner());
+  let stakedBalance = 0;
+  try {
+    stakedBalance = formatUnits(await stakingContract.userDepositToken(loanAddress), BigNumber.from(assetDecimals));
+  } catch (e) {
+    console.log(e)
+
+  }
+
+  return stakedBalance;
+}
 
 export async function getPangolinLpApr(url) {
   let apr;
@@ -177,7 +325,7 @@ export async function getPangolinLpApr(url) {
     const resp = await fetch(url);
     const json = await resp.json();
 
-    apr = json.swapFeeApr / 100;
+    apr = json.swapFeeApr;
   } else {
     apr = 0;
   }
@@ -185,7 +333,7 @@ export async function getPangolinLpApr(url) {
   return apr;
 }
 
-export async function getTraderJoeLpApr(lpAddress) {
+export async function getTraderJoeLpApr(lpAddress, assetAppreciation = 0) {
   let tjSubgraphUrl = 'https://api.thegraph.com/subgraphs/name/traderjoe-xyz/exchange';
 
   const FEE_RATE = 0.0025;
@@ -254,7 +402,80 @@ export async function getTraderJoeLpApr(lpAddress) {
 
   const feesUSD = volumeUSD * FEE_RATE;
 
-  return feesUSD * 365 / reserveUSD;
+  return ((1 + feesUSD * 365 / reserveUSD) * (1 + assetAppreciation / 100) - 1) * 100;
+}
+
+export const paraSwapRouteToSimpleData = (txParams) => {
+  const data = "0x" + txParams.data.substr(10);
+  const [
+    decoded,
+  ] = ethers.utils.defaultAbiCoder.decode(
+    ["(address,address,uint256,uint256,uint256,address[],bytes,uint256[],uint256[],address,address,uint256,bytes,uint256,bytes16)"],
+    data
+  );
+  return {
+    fromToken: decoded[0],
+    toToken: decoded[1],
+    fromAmount: decoded[2],
+    toAmount: decoded[3],
+    expectedAmount: decoded[4],
+    callees: decoded[5],
+    exchangeData: decoded[6],
+    startIndexes: decoded[7],
+    values: decoded[8],
+    beneficiary: decoded[9],
+    partner: decoded[10],
+    feePercent: decoded[11],
+    permit: decoded[12],
+    deadline: decoded[13],
+    uuid: decoded[14],
+  };
+};
+
+export function getBinPrice(binId, binStep, firstDecimals, secondDecimals) {
+  const binPrice = (1 + binStep / 10000) ** (binId - 8388608) * 10 ** (firstDecimals - secondDecimals);
+  return formatTokenBalance(binPrice, 8, true);
+}
+
+export function getCountdownString(countDownDate) {
+  let now = new Date().getTime();
+
+  // Find the distance between now and the count down date
+  let distance = countDownDate - now;
+
+  // Time calculations for days, hours, minutes and seconds
+  let days = Math.floor(distance / (1000 * 60 * 60 * 24));
+  let hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  let minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+  let seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+  // Display the result in the element with id="demo"
+  return hours + "h "
+      + minutes + "min";
+}
+
+export function chartPoints(points) {
+  if (points == null || points.length === 0) {
+    return [];
+  }
+
+  let maxValue = 0;
+  let minValue = points[0].value;
+
+  let dataPoints = points.map(
+      item => {
+        if (item.value > maxValue) maxValue = item.value;
+
+        if (item.value < minValue) minValue = item.value;
+
+        return {
+          x: item.timestamp,
+          y: item.value
+        };
+      }
+  );
+
+  return [dataPoints, minValue, maxValue];
 }
 
 export const fromWei = val => parseFloat(ethers.utils.formatEther(val));
@@ -265,3 +486,21 @@ export const parseUnits = ethers.utils.parseUnits;
 
 // BigNumber -> String
 export const formatUnits = ethers.utils.formatUnits;
+
+// Bytes -> String
+export const fromBytes32 = ethers.utils.parseBytes32String;
+
+function formatTokenBalance(value, precision = 5, toFixed = false) {
+  const balanceOrderOfMagnitudeExponent = String(value).split('.')[0].length - 1;
+  const precisionMultiplierExponent = precision - balanceOrderOfMagnitudeExponent;
+  const precisionMultiplier = Math.pow(10, precisionMultiplierExponent >= 0 ? precisionMultiplierExponent : 0);
+  if (value !== null) {
+    if (!toFixed) {
+      return String(Math.round(value * precisionMultiplier) / precisionMultiplier);
+    } else {
+      return (Math.round(value * precisionMultiplier) / precisionMultiplier).toFixed(precision).replace(/([0-9]+(\.[0-9]+[1-9])?)(\.?0+$)/, '$1');
+    }
+  } else {
+    return '';
+  }
+}

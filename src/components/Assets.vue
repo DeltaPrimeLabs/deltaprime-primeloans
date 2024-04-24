@@ -12,26 +12,12 @@
         <TableHeader :config="fundsTableHeaderConfig"></TableHeader>
         <div class="funds-table__body">
           <!-- TODO: referring to index is pretty risky -->
-          <AssetsTableRow v-for="(asset) in funds" v-bind:key="asset.symbol" :asset="asset"></AssetsTableRow>
+          <AssetsTableRow v-for="(asset, index) in funds" v-bind:key="asset.symbol" :asset="asset" :index="index"></AssetsTableRow>
         </div>
       </div>
       <div class="loader-container" v-if="!funds">
         not funds
         <VueLoadersBallBeat color="#A6A3FF" scale="1.5"></VueLoadersBallBeat>
-      </div>
-    </div>
-    <div class="lp-tokens">
-      <div class="filters" v-if="assetFilterGroups">
-        <AssetFilter ref="assetFilter" :asset-filter-groups="assetFilterGroups"
-                     v-on:filterChange="setLpFilter"></AssetFilter>
-      </div>
-      <div class="lp-table" v-if="lpTokens && filteredLpTokens">
-        <TableHeader :config="lpTableHeaderConfig"></TableHeader>
-        <LpTableRow v-for="(lpToken, index) in filteredLpTokens" v-bind:key="index" :lp-token="lpToken">{{ lpToken }}
-        </LpTableRow>
-<!--        <div class="paginator-container">-->
-<!--          <Paginator :total-elements="50" :page-size="6"></Paginator>-->
-<!--        </div>-->
       </div>
     </div>
   </div>
@@ -45,14 +31,15 @@ import {mapActions, mapState} from 'vuex';
 import redstone from 'redstone-api';
 import Vue from 'vue';
 import Loader from './Loader';
-import {formatUnits} from '../utils/calculate';
+import {chartPoints, formatUnits} from '../utils/calculate';
 import TableHeader from './TableHeader';
 import AssetFilter from './AssetFilter';
 import DoubleAssetIcon from './DoubleAssetIcon';
-import LpTableRow from './LpTableRow';
 import Paginator from './Paginator';
 import Checkbox from './Checkbox';
 import DexFilter from './DexFilter';
+
+const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 export default {
   name: 'Assets',
@@ -60,40 +47,41 @@ export default {
     DexFilter,
     Checkbox,
     Paginator,
-    LpTableRow, DoubleAssetIcon, AssetFilter, TableHeader, Loader, AssetsTableRow, NameValueBadgeBeta
+    DoubleAssetIcon, AssetFilter, TableHeader, Loader, AssetsTableRow, NameValueBadgeBeta,
   },
   data() {
     return {
       funds: null,
-      lpTokens: config.LP_ASSETS_CONFIG,
-      selectedLpTokens: [] = [],
       selectedDexes: [] = [],
       fundsTableHeaderConfig: null,
-      lpTableHeaderConfig: null,
       lpAssetsFilterOptions: null,
       lpDexFilterOptions: null,
-      assetFilterGroups: null,
     };
   },
   computed: {
     ...mapState('fundsStore', ['assets', 'fullLoanStatus', 'lpAssets', 'assetBalances', 'smartLoanContract', 'noSmartLoan']),
-    filteredLpTokens() {
-      return Object.values(this.lpTokens).filter(token =>
-        (this.selectedLpTokens.includes(token.primary) || this.selectedLpTokens.includes(token.secondary))
-        && this.selectedDexes.includes(token.dex)
-      );
+
+    hasSmartLoanContract() {
+      return this.smartLoanContract && this.smartLoanContract.address !== NULL_ADDRESS;
     },
   },
   watch: {
     assets: {
       handler(updatedAssets) {
-        this.updateAssetsData(updatedAssets);
-      },
-      immediate: true
-    },
-    funds: {
-      handler() {
-        this.updateLpPriceData();
+        if (this.funds) {
+          Object.entries(this.funds)
+            .forEach(([key, asset]) => {
+              {
+                if (asset.inactive && (!this.hasSmartLoanContract || (this.assetBalances && this.assetBalances[key] === 0)))
+                  delete this.funds[key];
+              }
+              if (this.assetBalances) {
+                console.warn('-------___--___-___--___-____-ASSETS balances____---___-____-___---___--___--_____');
+                console.log(this.assetBalances);
+              }
+            });
+          this.updateAssetsData(updatedAssets);
+        }
       },
       immediate: true
     },
@@ -101,9 +89,6 @@ export default {
   mounted() {
     this.funds = config.ASSETS_CONFIG;
     this.setupFundsTableHeaderConfig();
-    this.setupLpTableHeaderConfig();
-    this.setupAssetFilterGroups();
-    this.updateLpPriceData();
   },
   methods: {
     ...mapActions('fundsStore',
@@ -111,7 +96,6 @@ export default {
         'fund',
         'borrow',
         'swapToWavax',
-        'createLoan',
         'createAndFundLoan',
         'setupSmartLoanContract',
         'getAllAssetsBalances',
@@ -124,30 +108,6 @@ export default {
       Vue.set(this.funds[symbol], key, value);
     },
 
-    chartPoints(points) {
-      if (points == null || points.length === 0) {
-        return [];
-      }
-
-      let maxValue = 0;
-      let minValue = points[0].value;
-
-      let dataPoints = points.map(
-        item => {
-          if (item.value > maxValue) maxValue = item.value;
-
-          if (item.value < minValue) minValue = item.value;
-
-          return {
-            x: item.timestamp,
-            y: item.value
-          };
-        }
-      );
-
-      return [dataPoints, minValue, maxValue];
-    },
-
     async updateAssetsData(funds) {
       this.funds = funds;
 
@@ -157,11 +117,11 @@ export default {
             startDate: Date.now() - 3600 * 1000 * 24,
             interval: 600 * 1000,
             endDate: Date.now(),
-            provider: 'redstone-avalanche'
+            provider: config.dataProviderHistoricalPrices
           }).then(
             (response) => {
 
-              const [prices, minPrice, maxPrice] = this.chartPoints(
+              const [prices, minPrice, maxPrice] = chartPoints(
                 response
               );
 
@@ -181,23 +141,9 @@ export default {
         });
       }
     },
-
-    async updateLpPriceData() {
-      //TODO: we have to make sure somehow that it's called in a right moment ->when funds have prices already
-      if (this.funds) {
-        Object.keys(this.lpTokens).forEach(
-          key => {
-            const lpToken = this.lpTokens[key];
-            lpToken.firstPrice = this.funds[lpToken.primary].price;
-            lpToken.secondPrice = this.funds[lpToken.secondary].price;
-          }
-        );
-      }
-    },
-
     setupFundsTableHeaderConfig() {
       this.fundsTableHeaderConfig = {
-        gridTemplateColumns: 'repeat(6, 1fr) 76px 102px',
+        gridTemplateColumns: 'repeat(6, 1fr) 90px 76px 102px',
         cells: [
           {
             label: 'Asset',
@@ -213,6 +159,13 @@ export default {
             class: 'balance',
             id: 'BALANCE',
             tooltip: `The number and value of unstaked assets in your Prime Account.`
+          },
+          {
+            label: 'Farmed',
+            sortable: false,
+            class: 'farmed',
+            id: 'FARMED',
+            tooltip: `The number and value of staked assets in your Prime Account.`
           },
           {
             label: 'Borrowed',
@@ -253,89 +206,6 @@ export default {
           },
         ]
       };
-    },
-
-    setupLpTableHeaderConfig() {
-      this.lpTableHeaderConfig = {
-        gridTemplateColumns: '20% repeat(2, 1fr) 15% 135px 60px 80px 22px',
-        cells: [
-          {
-            label: 'LP Token',
-            sortable: false,
-            class: 'token',
-            id: 'TOKEN',
-            tooltip: `The LP-asset name. These names are simplified for a smoother UI.
-                                       <a href='https://docs.deltaprime.io/integrations/tokens' target='_blank'>More information</a>.`
-          },
-          {
-            label: 'Balance',
-            sortable: false,
-            class: 'balance',
-            id: 'BALANCE',
-            tooltip: `The number and value of unstaked assets in your Prime Account.`
-          },
-          {
-            label: 'TVL',
-            sortable: false,
-            class: 'balance',
-            id: 'tvl',
-            tooltip: `The Total Value Locked (TVL) in the underlying pool.<br>
-                      <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/pools#tvl' target='_blank'>More information</a>.`
-          },
-          {
-            label: 'Min. APR',
-            sortable: false,
-            class: 'apr',
-            id: 'APR',
-            tooltip: `The APR of the pool. This number includes 7.2% sAVAX price appreciation if the pool includes that asset.`
-          },
-          {
-            label: 'Max. APR',
-            sortable: false,
-            class: 'apr',
-            id: 'MAX-APR',
-            tooltip: `The APR if you would borrow the lowest-interest asset from 100% to 10%, and put your total value into this pool.`
-          },
-          {
-            label: '',
-          },
-          {
-            label: 'Actions',
-            class: 'actions',
-            id: 'ACTIONS',
-            tooltip: `Click
-                      <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/exchange#actions' target='_blank'>here</a>
-                      for more information on the different actions you can perform in your Prime Account.`
-          },
-        ]
-      };
-    },
-
-    setupAssetFilterGroups() {
-      this.assetFilterGroups = [
-        {
-          label: 'Filter by assets',
-          options: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'sAVAX'],
-          key: 'asset'
-        },
-        {
-          label: 'Filter by DEX',
-          options: ['Pangolin', 'TraderJoe'],
-          key: 'dex',
-        }
-      ];
-
-      this.selectedLpTokens = this.assetFilterGroups[0].options;
-      this.selectedDexes = this.assetFilterGroups[1].options;
-      setTimeout(() => {
-        this.$refs.assetFilter.assetFilterGroups = this.assetFilterGroups;
-        this.$refs.assetFilter.setupFilterValue();
-      });
-    },
-
-    setLpFilter(filter) {
-      this.selectedLpTokens = filter.asset;
-      this.selectedDexes = filter.dex;
     },
   },
 };
@@ -378,22 +248,6 @@ export default {
 
     .loader-container {
       margin-top: 40px;
-    }
-  }
-
-  .lp-tokens {
-    display: flex;
-    flex-direction: column;
-    margin-top: 68px;
-
-    .lp-table {
-
-      .paginator-container {
-        display: flex;
-        flex-direction: row;
-        justify-content: flex-end;
-        margin-top: 12px;
-      }
     }
   }
 }

@@ -21,12 +21,24 @@ export default new Router({
       component: PrimeAccount,
       children: [
         {
+          name: 'Prime Account Zaps',
+          path: 'zaps'
+        },
+        {
           name: 'Prime Account Assets',
           path: 'assets'
         },
         {
           name: 'Prime Account Farms',
           path: 'farms'
+        },
+        {
+          name: 'Prime Account LP',
+          path: 'lp'
+        },
+        {
+          name: 'Prime Account Stats',
+          path: 'stats'
         },
       ]
     },

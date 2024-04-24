@@ -28,7 +28,7 @@ export default {
   methods: {
     checkboxClick() {
       this.value = !this.value;
-      this.$emit('CHANGE', this.value);
+      this.$emit('checkboxChange', this.value);
     },
   }
 };
@@ -66,7 +66,7 @@ export default {
 
 
     .checkbox__label {
-      color: $steel-gray;
+      color: var(--checkbox);
       font-weight: 500;
       margin-left: 8px;
 

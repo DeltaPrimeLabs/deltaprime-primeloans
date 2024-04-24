@@ -87,10 +87,12 @@ export default {
     justify-content: center;
 
     .filter__option {
+      display: flex;
+      align-items: center;
+      justify-content: center;
       width: 26px;
       height: 26px;
-      padding: 2px;
-      background-color: white;
+      background-color: var(--dex-filter__filter-option-background-color);
       border-radius: 26px;
       filter: grayscale(1);
       margin-right: 8px;
@@ -106,7 +108,7 @@ export default {
       }
 
       &.active {
-        box-shadow: 1px 2px 5px 0 rgba(191, 188, 255, 0.9);
+        box-shadow: var(--dex-filter__filter-option-box-shadow);
         filter: grayscale(0);
       }
 

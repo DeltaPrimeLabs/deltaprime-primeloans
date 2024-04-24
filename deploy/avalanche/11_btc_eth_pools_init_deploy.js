@@ -5,7 +5,7 @@ import hre from 'hardhat'
 const networkName = hre.network.name
 import createMigrationFile from "../../tools/scripts/create-migration-file"
 import {deployLinearIndex} from "./7_linear_indices";
-import TOKEN_ADDRESSES from "../../common/addresses/avax/token_addresses.json";
+import TOKEN_ADDRESSES from "../../common/addresses/avalanche/token_addresses.json";
 import {initPool} from "./8_pools_init";
 import {pool} from "../../test/_helpers";
 

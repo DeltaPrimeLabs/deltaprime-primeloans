@@ -1,5 +1,5 @@
 <template>
-  <div class="currency-combo-input-component" v-if="displayedOptions && displayedOptions.length > 0">
+  <div class="currency-combo-input-component" v-if="displayedOptions">
     <div class="combo-input">
       <CurrencyInput ref="currencyInput"
                      class="currency-input"
@@ -13,27 +13,84 @@
                      v-on:inputChange="currencyInputChange"
                      v-on:ongoingTyping="ongoingTyping"
                      :max="max"
+                     :info-icon-message="infoIconMessage"
                      :delay-error-check-after-value-propagation="true">
       </CurrencyInput>
       <div class="divider"></div>
       <div class="select" v-bind:class="{'expanded': expanded, 'has-background': hasBackground }">
         <div v-if="selectedAsset" class="selected-asset">
-          <img class="selected-asset__icon" :src="selectedAsset.logo">
-          <div class="selected-asset__symbol">{{ selectedAsset.symbol }}</div>
+          <img class="selected-asset__icon" :src="selectedAsset.logo ? selectedAsset.logo : selectedAsset.logoURI">
+          <div class="selected-asset__symbol">{{ selectedAsset.short ? selectedAsset.short : selectedAsset.symbol }}
+          </div>
         </div>
-        <img class="chevron" src="src/assets/icons/chevron-down.svg" v-on:click="toggleSelect()">
+        <div v-if="isBridge && !selectedAsset" class="placeholder">Select chain and token</div>
+        <DeltaIcon class="chevron"
+                   :icon-src="'src/assets/icons/chevron-down.svg'"
+                   :size="21"
+                   v-on:click.native="toggleSelect()"
+                   v-if="displayedOptions && displayedOptions.length > 0 && assetOptions.length > 1">
+        </DeltaIcon>
         <div class="dropdown-panel" v-if="expanded" v-on:click="dropdownPanelClick()"></div>
-        <div class="select-dropdown">
+        <div
+          class="select-dropdown"
+          :style="{'width': isBridge ? '430px' : '', 'height': isBridge && expanded ? '400px' : ''}"
+        >
+          <div v-if="isBridge" class="select-title">Select chain</div>
+          <div v-if="isBridge" class="available-chains">
+            <div
+              v-for="chain of availableChains"
+              v-bind:key="chain.id"
+              :class="['chain', { active: selectedChain == chain }]"
+              v-on:click="selectChain(chain)"
+              v-tooltip="{content: chain.name, classes: 'info-tooltip'}"
+            >
+              <img :src="chain.logoURI" class="chain-logo">
+            </div>
+          </div>
           <input class="dropdown__input" type="text" placeholder="search" v-model="searchPhrase"
                  v-on:change="searchPhraseChange()">
           <div class="dropdown__list">
             <div class="dropdown__option"
-                 v-for="assetOption in displayedOptions"
-                 v-bind:key="assetOption.symbol"
+                 v-for="(assetOption, key) in displayedOptions"
+                 v-bind:key="assetOption.symbol + key"
                  v-on:click="selectOption(assetOption)">
-              <img class="option__icon" :src="assetOption.logo">
-              <div class="option__symbol">{{ assetOption.symbol }}</div>
+              <img
+                v-if="assetOption.logo || assetOption.logoURI"
+                class="option__icon"
+                :src="assetOption.logo ? assetOption.logo : assetOption.logoURI"
+              >
+              <div
+                v-if="!assetOption.logo && !assetOption.logoURI"
+                class="option__icon option__alt-icon"
+              >{{ assetOption.name.charAt(0) }}
+              </div>
+              <div class="option__symbol">{{ assetOption.short ? assetOption.short : assetOption.symbol }}</div>
               <div class="option__name">{{ assetOption.name }}</div>
+              <ContentLoader
+                v-if="isBridge && (!assetsBalances[selectedChain.id] || assetsBalances[selectedChain.id].length !== displayedOptions.length)"
+                class="content-loader"
+                :width="40"
+                :height="8"
+                :primaryColor="'#9eacdf'"
+                :secondaryColor="'#9eacdf'"
+                :primaryOpacity="0.4"
+                :secondaryOpacity="0.2"
+              ></ContentLoader>
+              <div
+                v-if="isBridge && assetsBalances[selectedChain.id] && assetsBalances[selectedChain.id].length === displayedOptions.length"
+                class="option__balance"
+              >
+                <div
+                  v-if="Number(assetsBalances[selectedChain.id][key].amount) > 0"
+                  class="balance__amount"
+                >{{ assetsBalances[selectedChain.id][key].amount|smartRound(4) }}
+                </div>
+                <div
+                  v-if="Number(assetsBalances[selectedChain.id][key].amount) > 0"
+                  class="balance__usd"
+                >{{ assetsBalances[selectedChain.id][key].amount * assetsBalances[selectedChain.id][key].priceUSD|usd }}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -46,15 +103,33 @@
 <script>
 import CurrencyInput from './CurrencyInput';
 import config from '../config';
+import DeltaIcon from './DeltaIcon.vue';
+import {ContentLoader} from 'vue-content-loader';
+import {BigNumber} from 'ethers';
 
 export default {
   name: 'CurrencyComboInput',
   components: {
-    CurrencyInput
+    DeltaIcon,
+    CurrencyInput,
+    ContentLoader
   },
   props: {
+    name: {},
+    isBridge: {
+      type: Boolean, default: false
+    },
+    availableChains: {
+      type: Array, default: () => []
+    },
     assetOptions: {},
+    assetsBalances: {
+      type: Object, default: () => {
+      }
+    },
+    defaultAsset: null,
     max: {},
+    infoIconMessage: null,
     validators: {
       type: Array, default: () => []
     },
@@ -64,7 +139,7 @@ export default {
     //TODO: make an array like in validators
     info: {type: Function, default: null},
     disabled: false,
-    typingTimeout: {type: Number, default: 0},
+    typingTimeout: {type: Number, default: 0}
   },
   computed: {
     getDisplayedAssetOptions() {
@@ -76,21 +151,25 @@ export default {
       expanded: false,
       hasBackground: false,
       displayedOptions: [],
+      selectedChain: null,
       selectedAsset: null,
       searchPhrase: null,
       assetAmount: null,
-      maxButtonUsed: false,
+      maxButtonUsed: false
     };
   },
   mounted() {
   },
   methods: {
     toggleSelect() {
-      if (this.expanded) {
-        this.closeDropdown();
-      } else {
-        this.openDropdown();
-      }
+      setTimeout(() => {
+        console.log('toggle select');
+        if (this.expanded) {
+          this.closeDropdown();
+        } else {
+          this.openDropdown();
+        }
+      });
     },
 
     closeDropdown() {
@@ -106,16 +185,48 @@ export default {
     },
 
     setupDisplayedAssetOptions() {
-      this.displayedOptions = JSON.parse(JSON.stringify(this.assetOptions));
+      if (this.isBridge && this.availableChains && this.availableChains.length > 0) {
+        let assetOptions;
+
+        if (this.selectedChain && Object.hasOwn(this.assetOptions, this.selectedChain.id)) {
+          assetOptions = this.assetOptions[this.selectedChain.id];
+        } else {
+          assetOptions = this.assetOptions[Object.keys(this.assetOptions)[0]];
+        }
+
+        this.displayedOptions = JSON.parse(JSON.stringify(assetOptions));
+
+        if (this.selectedChain) {
+          this.$emit('chainChange', {
+            chainId: this.selectedChain.id,
+            tokens: assetOptions
+          });
+        }
+      } else {
+        console.log('setupDisplayedAssetOptions', this.name);
+        console.log(this.assetOptions);
+        this.displayedOptions = JSON.parse(JSON.stringify(this.assetOptions));
+        this.setSelectedAsset(this.defaultAsset, true);
+        if (!this.selectedAsset) {
+          this.selectOption(this.displayedOptions[0]);
+          this.emitValue();
+        }
+      }
     },
 
     searchOptions(searchPhrase) {
+      let assetOptions = this.assetOptions;
+
+      if (this.isBridge) {
+        assetOptions = this.assetOptions[this.selectedChain.id];
+      }
+
       if (searchPhrase) {
-        return this.assetOptions.filter(
+        return assetOptions.filter(
           assetOption => assetOption.symbol.toUpperCase().includes(searchPhrase.toUpperCase()) ||
             assetOption.name.toUpperCase().includes(searchPhrase.toUpperCase()));
       } else {
-        return this.assetOptions;
+        return assetOptions;
       }
     },
 
@@ -123,10 +234,17 @@ export default {
       this.displayedOptions = this.searchOptions(this.searchPhrase);
     },
 
+    selectChain(chain) {
+      this.selectedChain = chain;
+      this.setupDisplayedAssetOptions();
+    },
+
     selectOption(option) {
       this.selectedAsset = option;
       this.emitValue();
-      this.toggleSelect();
+      if (this.expanded) {
+        this.toggleSelect();
+      }
     },
 
     dropdownPanelClick() {
@@ -136,6 +254,8 @@ export default {
     },
 
     setSelectedAsset(asset, disableEmitValue) {
+      console.log(asset);
+      console.log(this.displayedOptions);
       this.selectedAsset = this.displayedOptions.find(option => option.symbol === asset);
       if (!disableEmitValue) {
         this.emitValue();
@@ -143,17 +263,14 @@ export default {
     },
 
     currencyInputChange(value, disableEmitValue) {
-      console.log('currencyComboInput.currencyInputChange');
-      console.log(disableEmitValue);
+      console.log('currencyInputChange', value);
       this.assetAmount = value;
       if (!disableEmitValue) {
-        console.log('emit value');
         this.emitValue();
       }
     },
 
     onCurrencyInputNewValue(event) {
-      console.log(event);
       this.maxButtonUsed = event.maxButtonUsed;
     },
 
@@ -162,15 +279,27 @@ export default {
     },
 
     async emitValue() {
-      const error = await this.$refs.currencyInput.forceValidationCheck();
-      this.$emit('valueChange',
-        {asset: this.selectedAsset.symbol, value: Number(this.assetAmount), error: error, maxButtonUsed: this.maxButtonUsed});
+      setTimeout(async () => {
+        const error = await this.$refs.currencyInput.forceValidationCheck();
+        console.log(this.assetAmount);
+        this.$emit('valueChange', {
+          chain: this.isBridge ? this.selectedChain : null,
+          asset: this.selectedAsset.symbol,
+          value: Number(this.assetAmount),
+          error: error,
+          maxButtonUsed: this.maxButtonUsed
+        });
+      })
     },
 
     setCurrencyInputValue(value) {
+      console.log('setCurrencyInputValue', value);
       return this.$refs.currencyInput.setValue(value);
     },
 
+    forceValidationCheck() {
+      this.$refs.currencyInput.forceValidationCheck();
+    },
   },
   watch: {
     searchPhrase: {
@@ -181,9 +310,19 @@ export default {
 
     assetOptions: {
       handler() {
+        if (this.assetOptions) {
+          this.setupDisplayedAssetOptions();
+        }
+      },
+      immediate: true
+    },
+
+    availableChains: {
+      handler(chains) {
+        this.selectedChain = chains.find(chain => chain.id === config.chainId);
         this.setupDisplayedAssetOptions();
       }
-    },
+    }
   }
 };
 </script>
@@ -196,8 +335,8 @@ export default {
     display: flex;
     flex-direction: row;
     align-items: center;
-    box-shadow: inset 3px 3px 8px rgba(191, 188, 255, 0.5);
-    background-image: linear-gradient(114deg, rgba(115, 117, 252, 0.08) 39%, rgba(255, 162, 67, 0.08) 62%, rgba(245, 33, 127, 0.08) 81%);
+    box-shadow: var(--currency-combo-input__box-shadow);
+    background-image: var(--currency-combo-input__background);
     height: 60px;
     border-radius: 15px;
 
@@ -205,10 +344,14 @@ export default {
       width: 386px;
     }
 
+    .info__icon.message {
+      width: 22px;
+    }
+
     .divider {
-      width: 2px;
+      min-width: 2px;
       height: 34px;
-      background-color: $light-violet;
+      background-color: var(--currency-combo-input__divider-color);
     }
 
     .select {
@@ -218,7 +361,7 @@ export default {
       align-items: center;
       justify-content: space-between;
       padding: 0 20px 0 16px;
-      flex-grow: 1;
+      flex: 1;
 
       .selected-asset {
         display: flex;
@@ -240,7 +383,15 @@ export default {
         }
       }
 
+      .placeholder {
+        flex: 1;
+        font-weight: 500;
+        color: var(--currency-combo-input__select-dropdown-placeholder-font-color);
+        font-family: 'Montserrat', sans-serif;
+      }
+
       .chevron {
+        background: var(--currency-combo-input__chevron-color);
         cursor: pointer;
         transition: transform 200ms ease-in-out;
       }
@@ -255,9 +406,8 @@ export default {
       }
 
       .select-dropdown {
-        position: absolute;
-        top: 52px;
-        left: 0;
+        position: fixed;
+        transform: translate(-16px, calc(50% + 36px));
         display: flex;
         flex-direction: column;
         width: 311px;
@@ -271,6 +421,44 @@ export default {
         transition: height 200ms ease-in-out;
         z-index: 2;
 
+        .select-title {
+          padding: 10px 16px;
+          font-size: $font-size-sm;
+          color: var(--currency-combo-input__select-dropdown-select-title-color);
+        }
+
+        .available-chains {
+          border-top: var(--currency-combo-input__select-dropdown-chains-border);
+          border-bottom: var(--currency-combo-input__select-dropdown-chains-border);
+          padding: 10px 16px;
+          display: grid;
+          gap: 10px;
+          grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+
+          .chain {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: var(--currency-combo-input__select-dropdown-chain-item-border);
+            border-radius: 999px;
+            padding: 3.5px;
+            cursor: pointer;
+
+            &:hover {
+              opacity: 0.9;
+            }
+
+            &.active {
+              border: var(--currency-combo-input__select-dropdown-chain-item-border-active);
+            }
+
+            .chain-logo {
+              border-radius: 999px;
+              width: 100%;
+            }
+          }
+        }
+
         .dropdown__input {
           border: none;
           outline: none;
@@ -280,7 +468,7 @@ export default {
           font-weight: 700;
           text-transform: uppercase;
           font-family: 'Montserrat', sans-serif;
-          border-bottom: 2px solid $smoke-gray;
+          border-bottom: var(--currency-combo-input__select-dropdown-input-border);
         }
 
         .dropdown__list {
@@ -300,19 +488,28 @@ export default {
             flex-direction: row;
             flex-shrink: 0;
             align-items: center;
-            padding-left: 14px;
+            padding: 0 14px;
             height: 48px;
             cursor: pointer;
             transition: background-color 50ms ease-in-out;
 
             &:hover {
-              background-color: $fog-gray;
+              background-color: var(--currency-combo-input__select-dropdown-option-background--hover);
             }
 
             .option__icon {
               width: 34px;
               height: 34px;
               margin-right: 10px;
+              opacity: var(--currency-combo-input__select-dropdown-option-icon-opacity);
+              border-radius: 999px;
+            }
+
+            .option__alt-icon {
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              background-color: $deep-gray;
             }
 
             .option__symbol {
@@ -323,8 +520,32 @@ export default {
             }
 
             .option__name {
+              flex: 1;
               font-size: $font-size-sm;
-              color: $medium-gray;
+              color: var(--currency-combo-input__select-dropdown-option-name-color);
+            }
+
+            .content-loader {
+              display: flex;
+              width: 40px;
+              height: 8px;
+              border-radius: 10px;
+            }
+
+            .option__balance {
+              display: flex;
+              flex-direction: column;
+              align-items: end;
+
+              .balance__amount {
+                font-size: $font-size-sm;
+                font-weight: 600;
+              }
+
+              .balance__usd {
+                font-size: $font-size-xs;
+                font-weight: 500;
+              }
             }
           }
         }
@@ -344,8 +565,8 @@ export default {
       &.has-background {
 
         .select-dropdown {
-          border-color: $delta-light;
-          background-color: white;
+          border-color: var(--currency-combo-input__select-dropdown-border-color);
+          background-color: var(--currency-combo-input__select-dropdown-background);
         }
       }
     }

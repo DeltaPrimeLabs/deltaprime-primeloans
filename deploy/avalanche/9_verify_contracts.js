@@ -3,12 +3,12 @@ import verifyContract from "../../tools/scripts/verify-contract";
 import web3Abi from "web3-eth-abi";
 import PangolinIntermediaryArtifact
     from "../../artifacts/contracts/integrations/avalanche/PangolinIntermediary.sol/PangolinIntermediary.json";
-import addresses from "../../common/addresses/avax/token_addresses.json";
+import addresses from "../../common/addresses/avalanche/token_addresses.json";
 import {pool, toBytes32} from "../../test/_helpers";
 import TraderJoeIntermediaryArtifact
     from "../../artifacts/contracts/integrations/avalanche/TraderJoeIntermediary.sol/TraderJoeIntermediary.json";
 import TokenManagerArtifact from "../../artifacts/contracts/TokenManager.sol/TokenManager.json";
-import {supportedAssetsAvax} from "../../common/addresses/avax/avalanche_supported_assets";
+import {supportedAssetsAvax} from "../../common/addresses/avalanche/avalanche_supported_assets";
 
 const hre = require("hardhat");
 

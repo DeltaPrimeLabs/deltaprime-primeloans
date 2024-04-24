@@ -16,6 +16,8 @@
                      :symbol="firstAsset.symbol"
                      v-on:inputChange="firstInputChange"
                      :defaultValue="firstAmount"
+                     :max="firstAssetBalance"
+                     :allow-zero-value="!areAmountsLinked"
                      :validators="firstInputValidators">
       </CurrencyInput>
       <div class="modal-top-info">
@@ -29,8 +31,14 @@
                      :symbol="secondAsset.symbol"
                      v-on:inputChange="secondInputChange"
                      :defaultValue="secondAmount"
+                     :max="secondAssetBalance"
+                     :allow-zero-value="!areAmountsLinked"
                      :validators="secondInputValidators">
       </CurrencyInput>
+
+      <div class="modal-top-info">
+        <div class="top-info__label">Max. slippage is 1%.</div>
+      </div>
 
       <div class="transaction-summary-wrapper">
         <TransactionResultSummaryBeta>
@@ -109,6 +117,7 @@ export default {
   },
 
   props: {
+    areAmountsLinked: true,
     lpToken: {},
     lpTokenBalance: Number,
     firstAssetBalance: Number,
@@ -157,21 +166,32 @@ export default {
     },
 
     async firstInputChange(change) {
+      console.log('firstInputChange', change);
       this.firstAmount = change;
-      this.secondAmount = this.firstAmount * this.lpToken.firstPrice / this.lpToken.secondPrice;
-      this.$refs.secondInput.setValue(this.secondAmount !== 0 ? this.secondAmount.toFixed(this.secondAsset.decimals) : 0);
+      if (this.areAmountsLinked) {
+        this.secondAmount = this.firstAmount * this.lpToken.firstPrice / this.lpToken.secondPrice;
+        this.$refs.secondInput.setValue(this.secondAmount !== 0 ? this.secondAmount.toFixed(this.secondAsset.decimals) : 0);
+      }
+      console.log(this.secondAmount);
+      console.log('firstInputChange')
       this.firstInputError = await this.$refs.firstInput.forceValidationCheck();
+      console.log('this.firstInputError: ', this.firstInputError)
       this.secondInputError = await this.$refs.secondInput.forceValidationCheck();
       await this.calculateLpBalance();
+
     },
 
     async secondInputChange(change) {
+      console.log('secondInputChange', change);
       this.secondAmount = change;
-      this.firstAmount = this.secondAmount * this.lpToken.secondPrice / this.lpToken.firstPrice;
-      this.$refs.firstInput.setValue(this.firstAmount !== 0 ? this.firstAmount.toFixed(this.firstAsset.decimals) : 0);
+      if (this.areAmountsLinked) {
+        this.firstAmount = this.secondAmount * this.lpToken.secondPrice / this.lpToken.firstPrice;
+        this.$refs.firstInput.setValue(this.firstAmount !== 0 ? this.firstAmount.toFixed(this.firstAsset.decimals) : 0);
+      }
       this.firstInputError = await this.$refs.firstInput.forceValidationCheck();
       this.secondInputError = await this.$refs.secondInput.forceValidationCheck();
       await this.calculateLpBalance();
+      console.log('secondInputChange')
     },
 
     async calculateLpBalance() {
@@ -183,8 +203,12 @@ export default {
       const firstTokenBalance = formatUnits(await firstToken.balanceOf(this.lpToken.address), BigNumber.from(this.firstAsset.decimals));
       const secondTokenBalance = formatUnits(await secondToken.balanceOf(this.lpToken.address), BigNumber.from(this.secondAsset.decimals));
 
-      this.addedLiquidity = (Math.min(this.firstAmount * totalSupply / firstTokenBalance,
-        this.secondAmount * totalSupply / secondTokenBalance)).toFixed(18);
+      this.addedLiquidity =
+          (this.firstAmount ? this.firstAmount * this.firstAsset.price / this.lpToken.price : 0)
+          +
+          (this.secondAmount ? this.secondAmount * this.secondAsset.price / this.lpToken.price : 0);
+
+      this.addedLiquidity = this.addedLiquidity.toFixed(18)
     },
 
     setupValidators() {

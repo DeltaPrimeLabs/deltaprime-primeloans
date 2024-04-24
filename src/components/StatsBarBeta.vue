@@ -8,21 +8,22 @@
       ">
       </stats-bar-element-beta>
       <div class="stats-bar__divider"></div>
-      <div class="health-loader-container" v-if="noSmartLoan === null || healthLoading">
-        <vue-loaders-ball-beat color="#A6A3FF" scale="1"></vue-loaders-ball-beat>
-      </div>
-      <stats-bar-element-beta
-          v-if="noSmartLoan !== null && health != null && !healthLoading"
-          :label="'Health'"
-          :value="health | percent"
-          :info-tooltip="`How far you are from liquidation, on a scale from 100% to 0%.`
+      <div class="health-element">
+        <stats-bar-element-beta
+            v-if="noSmartLoan !== null && health != null && !healthLoading"
+            :label="'Health'"
+            :value="health | percent"
+            :info-tooltip="`How far you are from liquidation, on a scale from 100% to 0%.`
           ">
-        <div class="bar-gauge-container">
-          <bar-gauge-beta :min="0" :max="1" :value="health"></bar-gauge-beta>
+          <div class="bar-gauge-container">
+            <bar-gauge-beta :min="0" :max="1" :value="health"></bar-gauge-beta>
+          </div>
+        </stats-bar-element-beta>
+        <div class="health-loader-container" v-if="noSmartLoan === null || healthLoading">
+          <vue-loaders-ball-beat color="#A6A3FF" scale="1"></vue-loaders-ball-beat>
         </div>
-      </stats-bar-element-beta>
+      </div>
 
-      <vue-loaders-ball-beat v-if="health == null" color="#A6A3FF" scale="1"></vue-loaders-ball-beat>
 
       <div class="stats-bar__divider"></div>
 
@@ -70,8 +71,8 @@ export default {
     width: 880px;
     height: 100px;
     border-radius: 50px;
-    box-shadow: 7px 7px 30px 0 rgba(191, 188, 255, 0.5);
-    background-color: rgba(255, 255, 255, 0.3);
+    box-shadow: var(--stats-bar-beta__box-shadow);
+    background-color: var(--stats-bar-beta__background);
     font-weight: 500;
     display: flex;
     flex-direction: row;
@@ -94,14 +95,15 @@ export default {
       margin-top: -10px;
     }
 
+    .health-element {
+      width: 292px;
+    }
+
     .stats-bar__divider {
-      box-sizing: border-box;
       height: 60px;
       width: 2px;
-      border-style: solid;
-      border-width: 0 0 0 2px;
-      border-image-source: linear-gradient(to bottom, #dfe0ff 41%, #ffe1c2 58%, #ffd3e0 77%);
-      border-image-slice: 1;
+      background: var(--stats-bar-beta__divider-background);
+      border-radius: 1px;
     }
 
     .bar-gauge-container {

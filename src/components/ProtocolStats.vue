@@ -52,7 +52,7 @@
             <div class="liquidators">
               <div class="desc">Liquidators:</div>
               <div class="liquidator-info" v-for="liquidator in liquidators">
-                <div class="account"><a :href="`https://snowtrace.io/address/${liquidator.account}`" target="_blank">{{liquidator.account | tx}}</a></div>
+                <div class="account"><a :href="`https://snowtrace.dev/address/${liquidator.account}`" target="_blank">{{liquidator.account | tx}}</a></div>
                 <div class="balance">{{liquidator.balance.toFixed(2)}}</div>
               </div>
             </div>
@@ -73,12 +73,12 @@
                     'insolvent': loan.health <= 1 || !loan.solvent,
                   }"
               >
-                <div><a :href="`https://snowtrace.io/address/${loan.address}`" target="_blank">{{loan.address | tx}}</a></div>
+                <div><a :href="`https://snowtrace.dev/address/${loan.address}`" target="_blank">{{loan.address | tx}}</a></div>
                 <div>{{parseFloat(loan.health).toFixed(3)}}</div>
-                <div>{{parseFloat(loan.totalValue).toFixed(2)}}</div>
-                <div>{{parseFloat(loan.debt).toFixed(2)}}</div>
-                <div>{{parseFloat(loan.collateral).toFixed(2)}}</div>
-                <div>{{loan.solvent}}</div>
+                <div>${{numberWithCommas(parseFloat(loan.totalValue).toFixed(2))}}</div>
+                <div>${{numberWithCommas(parseFloat(loan.debt).toFixed(2))}}</div>
+                <div>${{numberWithCommas(parseFloat(loan.collateral).toFixed(2))}}</div>
+                <div>{{loan.solvent ? "Yes" : "No"}}</div>
               </div>
             </div>
           </Block>
@@ -96,23 +96,15 @@ import {mapActions, mapState} from 'vuex';
 import {wrapContract} from "../utils/blockchain";
 const ethers = require('ethers');
 import SMART_LOAN from '@artifacts/contracts/interfaces/SmartLoanGigaChadInterface.sol/SmartLoanGigaChadInterface.json';
-import addresses from '../../common/addresses/avax/token_addresses.json';
+import addresses from '../../common/addresses/avalanche/token_addresses.json';
 import {fromWei} from "../utils/calculate";
 
 // This could be abstracted in separate store
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, query, getDocs, orderBy, where, limit } from 'firebase/firestore/lite';
 import {combineLatest} from 'rxjs';
-
 // Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyByOwbJLGxjKkAdHzD4cTaDVj7eGeACeec",
-  authDomain: "delta-prime-db.firebaseapp.com",
-  projectId: "delta-prime-db",
-  storageBucket: "delta-prime-db.appspot.com",
-  messagingSenderId: "499112502554",
-  appId: "1:499112502554:web:5d89f34de8f958bf5df8a3"
-};
+import firebaseConfig from '../../.secrets/firebaseConfig.json';
 
 // Initialize Firebase
 const fireStore = getFirestore(initializeApp(firebaseConfig));
@@ -136,6 +128,7 @@ export default {
       loanAddresses: [],
       loans: [],
       liquidators: [],
+      poolTvl: 0,
       tvl: 0
     };
   },
@@ -155,6 +148,9 @@ export default {
         }
       }
     },
+    protocolCollateral(collateral) {
+      this.tvl = this.poolTvl + collateral;
+    }
   },
 
   methods: {
@@ -175,7 +171,12 @@ export default {
           .subscribe(async () => {
             const avaxPool = this.pools.find(pool => pool.asset.symbol === 'AVAX');
             const usdcPool = this.pools.find(pool => pool.asset.symbol === 'USDC');
-            this.tvl = parseFloat(avaxPool.tvl) * parseFloat(avaxPool.asset.price) + parseFloat(usdcPool.tvl) * parseFloat(usdcPool.asset.price) + parseFloat(this.protocolCollateral);
+            const btcPool = this.pools.find(pool => pool.asset.symbol === 'BTC');
+            const ethPool = this.pools.find(pool => pool.asset.symbol === 'ETH');
+            this.poolTvl = parseFloat(avaxPool.tvl) * parseFloat(avaxPool.asset.price)
+                + parseFloat(usdcPool.tvl) * parseFloat(usdcPool.asset.price)
+                + parseFloat(btcPool.tvl) * parseFloat(btcPool.asset.price)
+                + parseFloat(ethPool.tvl) * parseFloat(ethPool.asset.price)
           });
     },
 
@@ -195,36 +196,33 @@ export default {
     },
 
     async fetchLoansFromFireBase() {
-      console.log("Getting loans stats");
       const loansCol = collection(fireStore, 'loans');
       
       //Get latest update time
-      let max = null;
-      const maxQ = query(loansCol, orderBy("time", "desc"), limit(1));
-      const querySnapshot = await getDocs(maxQ);
+      let maxTime = null;
+      const maxTimeQuery = query(loansCol, orderBy("time", "desc"), limit(1));
+      const querySnapshot = await getDocs(maxTimeQuery);
       querySnapshot.forEach((doc) => {
-        max = doc.data().time;
+        maxTime = doc.data().time;
       });
-      console.log("Max timestamp: " + max);
 
       //Get loans
-      const loansQ = query(loansCol, where("time", "==", max), orderBy("health", "asc"));
-      const loansQuerySnapshot = await getDocs(loansQ);
+      const loansQuery = query(loansCol, orderBy("health", "asc"));
+      const loansQuerySnapshot = await getDocs(loansQuery);
       this.protocolCollateral = 0;
       this.totalBorrowed = 0;
       loansQuerySnapshot.forEach((doc) => {
         this.loans.push({
           address: doc.data().address,
-          health: doc.data().health,
+          health: doc.data().health > 100000 ? Number('Infinity') : doc.data().health,
           debt: doc.data().debt,
           collateral: doc.data().collateral,
-          totalValue: doc.data().total         
+          totalValue: doc.data().total,
+          solvent: doc.data().solvent,
         });
         this.protocolCollateral += doc.data().collateral;
         this.totalBorrowed += doc.data().debt; 
       });
-      console.log("Loans fetched: " + this.loans.length);
-      console.log("Last updated: " + new Date(max).toTimeString());
     },
 
     async setupLoans() {
@@ -269,9 +267,11 @@ export default {
 .pools {
   display: flex;
   justify-content: space-between;
+  flex-wrap: wrap;
 
   .block-wrapper {
     width: 48%;
+    margin-bottom: 20px;
 
     .title {
       margin-bottom: 20px;

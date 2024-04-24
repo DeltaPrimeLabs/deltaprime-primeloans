@@ -1,15 +1,18 @@
 <template>
   <div class="small-block-wrapper">
     <div class="small-block">
-      <img class="cross clickable-icon" @click="onClose"/>
+      <DeltaIcon class="cross clickable-icon" :icon-src="'src/assets/icons/cross.svg'" :size="22" @click.native="onClose"></DeltaIcon>
       <slot />
     </div>
   </div>
 </template>
 
 <script>
+import DeltaIcon from "./DeltaIcon.vue";
+
 export default {
   name: "SmallBlock",
+  components: {DeltaIcon},
   methods: {
     onClose() {
       this.$emit('close',true);
@@ -20,26 +23,27 @@ export default {
 
 <style scoped lang="scss">
 .small-block-wrapper {
-  background-image: linear-gradient(117deg, #dfe0ff 39%, #ffe1c2 62%, #ffd3e0 82%);
+  background-image: var(--small-block__small-block-wrapper-background);
   border-radius: 25px;
   padding: 2px;
-  box-shadow: 4px 4px 14px 0 rgba(191, 188, 255, 0.25);
+  box-shadow: var(--small-block__small-block-wrapper-box-shadow);
   height: 100%;
 
   .small-block {
     display: flex;
     flex-direction: column;
-    background: white;
+    background: var(--small-block__small-block-background);
     padding: 16px 16px;
     border-radius: 23px;
     height: 100%;
 
     .cross {
       align-self: flex-end;
-      content: url(../assets/icons/cross.svg);
+      flex-shrink: 0;
+      background: var(--small-block__cross-color);
 
       &:hover {
-        content: url(../assets/icons/hover/cross.svg);
+        background: var(--small-block__cross-color--hover);
       }
     }
   }

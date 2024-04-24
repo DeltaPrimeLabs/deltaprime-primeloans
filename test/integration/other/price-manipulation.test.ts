@@ -15,7 +15,7 @@ import {
     toBytes32,
     toWei
 } from "../../_helpers";
-import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json';
+import TOKEN_ADDRESSES from '../../../common/addresses/avalanche/token_addresses.json';
 
 chai.use(solidity);
 

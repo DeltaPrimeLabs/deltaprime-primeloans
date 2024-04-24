@@ -1,0 +1,74 @@
+.notifi-modal__scroll {
+  overflow: auto;
+  position: relative;
+
+  &::-webkit-scrollbar {
+    width: 12px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    border: 4px solid transparent;
+    background-clip: padding-box;
+    background-color: var(--notifi-modal__scroll-bar-background);
+    border-radius: 999px;
+
+    &:hover {
+      background-color: var(--notifi-modal__scroll-bar-hover-background);
+    }
+  }
+}
+
+.notifi-modal__text {
+  font-family: 'Montserrat';
+  font-style: normal;
+  line-height: normal;
+  letter-spacing: normal;
+  color: var(--default-text-color);
+}
+
+.notifi-modal__text-title {
+  font-size: $font-size-md;
+  font-weight: bold;
+}
+
+.notifi-modal__text-label {
+  font-size: $font-size-xsm;
+  font-weight: 500;
+}
+
+.notifi-modal__text-info {
+  font-size: $font-size-xs;
+  font-weight: 500;
+  line-height: 1.24;
+  color: var(--notifi-modal__container-info-color);
+}
+
+.notifi-modal__text-small {
+  font-size: $font-size-xxs;
+  font-weight: 600;
+  line-height: 1.24;
+  color: var(--notifi-modal__container-text-small);
+}
+
+.notifi-modal__separator {
+  height: 1px;
+  background-image: var(--notifi-modal__container-separator);
+}
+
+.notifi-modal__info-icon {
+  margin-left: 8px;
+}
+
+.notifi-modal__notification-title {
+  font-size: $font-size-xsm;
+  font-weight: 600;
+  line-height: 1.24;
+}
+
+.loader {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

@@ -10,36 +10,44 @@
                v-on:input="typeWatch"
                placeholder="0" min="0" maxlength="20" lang="en-US">
       </span>
+      <div class="disabled-input-text" v-bind:class="{'visible': disabled}">
+        {{ disabledStringifiedValue }}
+      </div>
       <div class="input-extras-wrapper">
         <div v-if="max != null" class="max-wrapper" v-on:click="setMax()">
           <div class="max">MAX</div>
         </div>
+        <div v-if="infoIconMessage">
+          <InfoIcon
+              :size="22"
+              :tooltip="{content: infoIconMessage, classes: 'info-tooltip long', placement: 'right'}"></InfoIcon>
+        </div>
         <div v-if="!embedded" class="logo-wrapper">
-          <img class="logo" :src="logoSrc(symbol)"/>
+          <img class="logo" :src="logo ? `src/assets/logo/${logo}` : logoSrc(symbol)"/>
           <img class="logo secondary" v-if="symbolSecondary" :src="logoSrc(symbolSecondary)"/>
-          <span v-if="!isMobile" class="symbol">{{ symbol }}<br>{{ symbolSecondary ? symbolSecondary : '' }}</span>
+          <span v-if="!isMobile" class="symbol">{{ (asset && asset.short) ? asset.short : symbol }}<br>{{ symbolSecondary ? symbolSecondary : '' }}</span>
         </div>
       </div>
     </div>
     <div class="info"
-         v-if="!error"
+         v-if="!error && !warning"
          :style="{'order': flexDirection === 'row' ? 1 : ''}">
       <div
-        v-if="info && value && !isNaN(value) && !waiting && !ongoingErrorCheck"
-        v-html="info(value)"></div>
+          v-if="info && value && !isNaN(value) && !waiting && !ongoingErrorCheck"
+          v-html="info(value)"></div>
     </div>
     <div class="error"
          v-if="error"
          :style="{'order': flexDirection === 'row' ? 1 : ''}">
       <span>
         <img src="src/assets/icons/error.svg"/>
-        {{ error }}
+        <span v-html="error" class="error-message"></span>
       </span>
     </div>
     <div class="warning"
          v-if="warning && !error && !waiting && !ongoingErrorCheck">
       <span>
-        <img src="src/assets/icons/error.svg"/>
+        <img src="src/assets/icons/warning.svg"/>
         {{ warning }}
       </span>
     </div>
@@ -50,14 +58,19 @@
 <script>
 import config from '@/config';
 import {mapState} from 'vuex';
+import InfoIcon from "./InfoIcon.vue";
+import {smartRound} from "../utils/calculate";
 
 export default {
   name: 'CurrencyInput',
+  components: {InfoIcon},
   props: {
     price: {type: Number},
     max: {default: null},
+    infoIconMessage: {default: null},
     symbol: {type: String, default: 'AVAX'},
     symbolSecondary: {type: String, default: null},
+    logo: {default: null},
     flexDirection: {type: String, default: 'column'},
     validators: {
       type: Array, default: () => []
@@ -72,6 +85,7 @@ export default {
     waiting: false,
     disabled: false,
     denominationButtons: false,
+    allowZeroValue: false,
     slippage: {type: Number, default: 0},
     embedded: false,
     delayErrorCheckAfterValuePropagation: {type: Boolean, default: false},
@@ -81,6 +95,7 @@ export default {
     return {
       error: '',
       warning: '',
+      disabledStringifiedValue: null,
       timer: 0,
       value: this.defaultValue,
       defaultValidators: [],
@@ -110,7 +125,6 @@ export default {
   },
   methods: {
     async updateValue(value) {
-      console.log('updateValue');
       this.ongoingErrorCheck = true;
       this.$emit('ongoingErrorCheck', this.ongoingErrorCheck);
 
@@ -195,29 +209,50 @@ export default {
     },
 
     async setValue(value) {
+      console.log('CurrencyInput.setValue', value);
       this.value = value;
       this.internalValue = String(value);
+      this.disabledStringifiedValue = smartRound(value, 20, true)
       const checkErrorsResult = await this.checkErrors(this.value);
       const hasError = checkErrorsResult !== '';
       return {value: this.value, error: hasError};
     },
 
+    clearInput() {
+      this.setValue(0);
+    },
+
     setupDefaultValidators() {
       const positiveValidator = {
         validate: (value) => {
+          if (this.disabled) return;
           if (this.internalValue <= 0) {
             return `Value must be higher than 0`;
           }
         }
       };
+      const nonNegativeValidator = {
+        validate: (value) => {
+          if (this.disabled) return;
+          if (this.internalValue < 0) {
+            return `Value can't be negative`;
+          }
+        }
+      };
       const wrongFormatValidator = {
         validate: (value) => {
+          if (this.disabled) return;
           if (this.internalValue && !this.internalValue.toString().match(/^[0-9.,]+$/)) {
             return `Incorrect formatting.`;
           }
         }
       };
-      this.defaultValidators.push(positiveValidator, wrongFormatValidator);
+      if (!this.allowZeroValue) {
+        this.defaultValidators.push(positiveValidator);
+      } else {
+        this.defaultValidators.push(nonNegativeValidator);
+      }
+      this.defaultValidators.push(wrongFormatValidator);
     },
 
     setMax() {
@@ -254,11 +289,12 @@ export default {
 }
 
 .input-wrapper {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: inset 3px 3px 8px rgba(191, 188, 255, 0.5);
-  background-image: linear-gradient(114deg, rgba(115, 117, 252, 0.08) 39%, rgba(255, 162, 67, 0.08) 62%, rgba(245, 33, 127, 0.08) 81%);
+  box-shadow: var(--currency-input__box-shadow);
+  background-image: var(--currency-input__background);
   height: 60px;
   border-radius: 15px;
   padding-left: 15px;
@@ -282,6 +318,7 @@ export default {
 }
 
 input {
+  color: var(--currency-input__input-color);
   background: transparent;
   border: none;
   font-family: Montserrat;
@@ -293,6 +330,7 @@ input {
 
   &:disabled {
     opacity: 77%;
+    color: transparent;
   }
 
   @media screen and (min-width: $md) {
@@ -319,7 +357,7 @@ input[type=number] {
 }
 
 .converted {
-  color: #696969;
+  color: var(--currency-input__converted-color);
   margin-right: 15px;
   white-space: nowrap;
   text-align: right;
@@ -365,18 +403,20 @@ input[type=number] {
 
 
   .max {
-    border: solid 1px #8986fe;
+    border: var(--currency-input__max-border);
     border-radius: 10px;
     width: 45px;
     height: 26px;
     font-weight: bold;
     line-height: 24px;
-    color: #8986fe;
+    color: var(--currency-input__max-color);
     text-align: center;
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: var(--currency-input__max-background);
 
     &:hover {
-      background-color: rgba(255, 255, 255, 0.9);
+      color: var(--currency-input__max-color--hover);
+      background-color: var(--currency-input__max-background--hover);
+      border: var(--currency-input__max-border--hover);
     }
   }
 }
@@ -394,7 +434,7 @@ img {
 .error, .info, .warning {
   min-height: 30px;
   padding-top: 6px;
-  color: #7d7d7d;
+  color: var(--currency-input__error-info-warngin-color);
   font-size: 14px;
   width: 100%;
   text-align: start;
@@ -402,7 +442,7 @@ img {
 
 .warning {
   //color: #F5A200;
-  color: $red;
+  color: var(--currency-input__warning-color);
 }
 
 .error, .warning {
@@ -414,7 +454,7 @@ img {
 }
 
 .error {
-  color: $red;
+  color: var(--currency-input__error-color);
 }
 
 .denomination {
@@ -432,6 +472,22 @@ img {
   .slash {
     height: 24px;
     width: 12px;
+  }
+}
+
+.disabled-input-text {
+  position: absolute;
+  font-weight: 600;
+  font-size: 24px;
+  letter-spacing: normal;
+  color: var(--currency-input__input-color);
+  max-width: 290px;
+  opacity: 0;
+  padding-left: 2px;
+  overflow: hidden;
+
+  &.visible {
+    opacity: 77%;
   }
 }
 </style>

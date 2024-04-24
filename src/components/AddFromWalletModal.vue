@@ -11,23 +11,23 @@
           <br><br>
         </div>
         <div>
-          <b>It will require accepting Terms and <span v-if="isNativeAvax">3</span><span v-else>2</span> consecutive Metamask transactions.</b>
+          <b>It will require accepting Terms and <span v-if="isNativeAsset">3</span><span v-else>2</span> consecutive Metamask transactions.</b>
         </div>
       </div>
-      <div class="modal-top-desc" v-if="!noSmartLoan && (this.asset.symbol !== 'AVAX' || selectedDepositAsset !== 'AVAX')">
+      <div class="modal-top-desc" v-if="!noSmartLoan && (this.asset.symbol !== toggleOptions[0] || selectedDepositAsset !== toggleOptions[0])">
         <b>This action requires two separate transactions to be approved.</b>
       </div>
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>
         <div class="top-info__value" v-bind:class="{'available-balance--loading': !getAvailableAssetAmount && getAvailableAssetAmount !== 0}">
           <LoadedValue :check="() => getAvailableAssetAmount != null || Number.isNaN(getAvailableAssetAmount)"
-                       :value="isLP ? formatTokenBalance(getAvailableAssetAmount, 10, true) : formatTokenBalance(getAvailableAssetAmount)"></LoadedValue>
+                       :value="isLP ? formatTokenBalance(getAvailableAssetAmount, 12, true) : formatTokenBalance(getAvailableAssetAmount, 10, true)"></LoadedValue>
           <div v-if="getAvailableAssetAmount != null">
-            <span v-if="asset.name === 'AVAX'" class="top-info__currency">
+            <span v-if="asset.name === toggleOptions[0]" class="top-info__currency">
               {{ selectedDepositAsset }}
             </span>
-            <span v-if="asset.name !== 'AVAX'" class="top-info__currency">
-              {{ isLP ? asset.name : asset.symbol }}
+            <span v-if="asset.name !== toggleOptions[0]" class="top-info__currency">
+              {{ asset.short ? asset.short : (isLP || isFarm ? asset.name : asset.symbol) }}
             </span>
           </div>
         </div>
@@ -39,13 +39,18 @@
                      :symbol-secondary="asset.secondary"
                      v-on:newValue="inputChange"
                      :validators="validators"
+                     :max="getAvailableAssetAmount"
+                     :info="() => sourceAssetValue"
       >
       </CurrencyInput>
       <CurrencyInput ref="currencyInput"
                      v-if="!isLP"
-                     :symbol="asset.symbol"
+                     :symbol="asset.short ? asset.short : asset.symbol"
+                     :logo="logo"
                      v-on:newValue="inputChange"
                      :validators="validators"
+                     :max="asset.symbol === toggleOptions[0] && selectedDepositAsset === toggleOptions[0] ? null : getAvailableAssetAmount"
+                     :info="() => sourceAssetValue"
       >
       </CurrencyInput>
 
@@ -73,19 +78,19 @@
               </div>
               <div class="summary__value">
                 {{ (Number(assetBalance) + Number(value)) | smartRound(8, true) }}
-                {{ isLP ? asset.primary + '-' + asset.secondary : asset.symbol }}
+                {{ isLP ? asset.primary + '-' + asset.secondary : (asset.short ? asset.short : asset.symbol) }}
               </div>
             </div>
           </div>
         </TransactionResultSummaryBeta>
       </div>
 
-      <div class="toggle-container" v-if="asset.symbol === 'AVAX'">
-        <Toggle v-on:change="assetToggleChange" :options="['AVAX', 'WAVAX']"></Toggle>
+      <div class="toggle-container" v-if="asset.symbol === toggleOptions[0]">
+        <Toggle v-on:change="assetToggleChange" :options="toggleOptions"></Toggle>
       </div>
 
       <div class="button-wrapper">
-        <Button :label="'Add funds'"
+       <Button :label="'Add funds'"
                 v-on:click="submit()"
                 :disabled="validationError || (!getAvailableAssetAmount && getAvailableAssetAmount !== 0)"
                 :waiting="transactionOngoing">
@@ -96,6 +101,7 @@
 </template>
 
 <script>
+import config from '../config';
 import Modal from './Modal';
 import TransactionResultSummaryBeta from './TransactionResultSummaryBeta';
 import CurrencyInput from './CurrencyInput';
@@ -122,16 +128,27 @@ export default {
   props: {
     asset: {},
     assets: {},
+    logo: null,
     assetBalances: {},
     debtsPerAsset: {},
     lpAssets: {},
     lpBalances: {},
+    concentratedLpAssets: {},
+    concentratedLpBalances: {},
+    levelLpAssets: {},
+    levelLpBalances: {},
+    gmxV2Assets: {},
+    gmxV2Balances: {},
+    traderJoeV2LpAssets: {},
+    balancerLpAssets: {},
+    balancerLpBalances: {},
     farms: {},
     thresholdWeightedValue: Number,
     loan: Number,
     assetBalance: Number,
     isLP: false,
-    walletAssetBalance: {},
+    isFarm: false,
+    walletAssetBalance: {}, // this prop is string, we need to convert when it's being used in calculation
     walletNativeTokenBalance: {
       default: null,
     },
@@ -144,9 +161,11 @@ export default {
       value: 0,
       healthAfterTransaction: 1,
       validators: [],
-      selectedDepositAsset: 'AVAX',
+      selectedDepositAsset: config.NATIVE_ASSET_TOGGLE_OPTIONS[0], // native token e.g. AVAX in Avalanche
+      toggleOptions: config.NATIVE_ASSET_TOGGLE_OPTIONS,
       validationError: true,
       availableAssetAmount: 0,
+      valueAsset: "USDC",
     };
   },
 
@@ -163,31 +182,40 @@ export default {
   computed: {
     ...mapState('network', ['account', 'accountBalance']),
     getModalHeight() {
-      return this.asset.symbol === 'AVAX' ? '561px' : null;
+      return this.asset.symbol === this.toggleOptions[0] ? '561px' : null;
     },
 
     getAvailableAssetAmount() {
       this.$forceUpdate();
-      if (this.isNativeAvax) {
+      if (this.isNativeAsset) {
         return this.walletNativeTokenBalance;
       } else {
-        console.log((!this.walletAssetBalance && this.walletAssetBalance !== 0) ? null : this.walletAssetBalance);
-        return (!this.walletAssetBalance && this.walletAssetBalance !== 0) ? null : this.walletAssetBalance;
+        const walletAssetBalance = parseFloat(this.walletAssetBalance);
+        return (!walletAssetBalance && walletAssetBalance !== 0) ? null : walletAssetBalance;
       }
     },
 
-    isNativeAvax() {
-      return this.asset.symbol === 'AVAX' && this.selectedDepositAsset === 'AVAX';
-    }
+    isNativeAsset() {
+      return this.asset.symbol === this.toggleOptions[0] && this.selectedDepositAsset === this.toggleOptions[0];
+    },
+
+    sourceAssetValue() {
+      const sourceAssetUsdPrice = Number(this.value) * this.asset.price;
+
+      if (this.valueAsset === "USDC") {
+        return `~ $${sourceAssetUsdPrice.toFixed(2)}`;
+      }
+    },
+
   },
 
   methods: {
     submit() {
       this.transactionOngoing = true;
-      if (this.asset.symbol === 'AVAX') {
-        this.$emit('ADD_FROM_WALLET', {value: this.value.toFixed(this.asset.decimals), asset: this.selectedDepositAsset});
+      if (this.asset.symbol === this.toggleOptions[0]) {
+        this.$emit('ADD_FROM_WALLET', {value: parseFloat(this.value).toFixed(this.asset.decimals), asset: this.selectedDepositAsset});
       } else {
-        this.$emit('ADD_FROM_WALLET', {value: this.value.toFixed(this.asset.decimals), asset: this.asset});
+        this.$emit('ADD_FROM_WALLET', {value: parseFloat(this.value).toFixed(this.asset.decimals), asset: this.asset});
       }
     },
 
@@ -198,8 +226,6 @@ export default {
     },
 
     calculateHealthAfterTransaction() {
-      console.log('calculateHealthAfterTransaction')
-      console.log(this.noSmartLoan)
       if (this.noSmartLoan) this.healthAfterTransaction = 1;
 
       let added = this.value ? this.value : 0;
@@ -227,6 +253,47 @@ export default {
         }
       }
 
+      for (const [symbol, data] of Object.entries(this.concentratedLpAssets)) {
+        if (this.concentratedLpBalances) {
+          let balance = parseFloat(this.concentratedLpBalances[symbol]);
+
+          if (symbol === this.asset.symbol) {
+            balance += added;
+          }
+
+          tokens.push({price: data.price, balance: balance ? balance : 0, borrowed: 0, debtCoverage: data.debtCoverage});
+        }
+      }
+
+      for (const [symbol, data] of Object.entries(this.balancerLpAssets)) {
+        if (this.balancerLpBalances) {
+          let balance = parseFloat(this.balancerLpBalances[symbol]);
+
+          tokens.push({price: data.price, balance: balance ? balance : 0, borrowed: 0, debtCoverage: data.debtCoverage});
+        }
+      }
+
+      for (const [symbol, data] of Object.entries(this.levelLpAssets)) {
+        if (this.levelLpBalances) {
+          let balance = parseFloat(this.levelLpBalances[symbol]);
+
+          if (symbol === this.asset.symbol) {
+            balance += added;
+          }
+
+          tokens.push({price: data.price, balance: balance ? balance : 0, borrowed: 0, debtCoverage: data.debtCoverage});
+        }
+      }
+
+      for (const [symbol, data] of Object.entries(this.gmxV2Assets)) {
+        tokens.push({
+          price: data.price,
+          balance: parseFloat(this.gmxV2Balances[symbol]),
+          borrowed: 0,
+          debtCoverage: data.debtCoverage
+        });
+      }
+
       for (const [, farms] of Object.entries(this.farms)) {
         farms.forEach(farm => {
           tokens.push({
@@ -238,9 +305,9 @@ export default {
         });
       }
 
-      console.log(tokens)
+      let lbTokens = Object.values(this.traderJoeV2LpAssets);
 
-      this.healthAfterTransaction = calculateHealth(tokens);
+      this.healthAfterTransaction = calculateHealth(tokens, lbTokens);
     },
 
     setupValidators() {
@@ -249,6 +316,15 @@ export default {
           validate: (value) => {
             if (value > this.getAvailableAssetAmount) {
               return 'Exceeds account balance';
+            }
+          }
+        },
+        {
+          validate: async (value) => {
+            const allowed = this.asset.maxExposure - this.asset.currentExposure;
+        
+            if (value > allowed) {
+              return `Max. allowed amount is ${allowed.toFixed(2)}.`;
             }
           }
         }
@@ -262,8 +338,8 @@ export default {
     },
 
     setupAvailableAssetAmount() {
-      if (this.asset.symbol === 'AVAX') {
-        const balance = this.selectedDepositAsset === 'AVAX' ? this.walletNativeTokenBalance : this.walletAssetBalance;
+      if (this.asset.symbol === this.toggleOptions[0]) {
+        const balance = this.selectedDepositAsset === this.toggleOptions[0] ? this.walletNativeTokenBalance : this.walletAssetBalance;
         this.availableAssetAmount = balance;
       } else {
         this.availableAssetAmount = this.walletAssetBalance ? this.walletAssetBalance : null;

@@ -8,18 +8,19 @@ import redstone from 'redstone-api';
 const ethers = require('ethers');
 
 export default class PoolService {
-  refreshPools$ = new Subject();
+  pools$ = new Subject();
+  pools = [];
 
   emitPools(pools) {
-    console.log('emitting pools', pools);
-    this.refreshPools$.next(pools);
+    this.pools = pools;
+    this.pools$.next(pools);
   }
 
   observePools() {
-    return this.refreshPools$.asObservable();
+    return this.pools$.asObservable();
   }
 
-  setupPools(provider, account) {
+  setupPools(provider, account, redstonePriceData) {
     const poolsFromConfig = Object.keys(config.POOLS_CONFIG);
 
     return combineLatest(
@@ -31,22 +32,28 @@ export default class PoolService {
           poolContract.getDepositRate(),
           poolContract.getBorrowingRate(),
           poolContract.totalBorrowed(),
-          poolContract.getMaxPoolUtilisationForBorrowing(),
-          redstone.getPrice(poolAsset)
+          poolContract.getMaxPoolUtilisationForBorrowing()
         ]).pipe(map(poolDetails => {
           const deposit = formatUnits(String(poolDetails[1]), config.ASSETS_CONFIG[poolAsset].decimals);
           const apy = fromWei(poolDetails[2]);
+          const totalBorrowed = formatUnits(String(poolDetails[4]), config.ASSETS_CONFIG[poolAsset].decimals);
+          const tvl = formatUnits(String(poolDetails[0]), config.ASSETS_CONFIG[poolAsset].decimals);
+          const isPoolDisabled = config.POOLS_CONFIG[poolAsset].disabled;
+
           const pool = {
             asset: config.ASSETS_CONFIG[poolAsset],
-            assetPrice: poolDetails[6].value,
+            assetPrice: redstonePriceData[poolAsset][0].dataPoints[0].value,
             contract: poolContract,
-            tvl: formatUnits(String(poolDetails[0]), config.ASSETS_CONFIG[poolAsset].decimals),
+            tvl: isPoolDisabled ? 0 : tvl,
             deposit: deposit,
-            apy: apy,
-            borrowingAPY: fromWei(poolDetails[3]),
-            totalBorrowed: formatUnits(String(poolDetails[4]), config.ASSETS_CONFIG[poolAsset].decimals),
-            interest: deposit * apy / 365,
-            maxUtilisation: fromWei(poolDetails[5])
+            apy: isPoolDisabled ? 0 : apy,
+            borrowingAPY: isPoolDisabled ? 0 : fromWei(poolDetails[3]),
+            totalBorrowed: isPoolDisabled ? 0 : totalBorrowed,
+            interest: isPoolDisabled ? 0 : deposit * apy / 365,
+            maxUtilisation: isPoolDisabled ? '0' : fromWei(poolDetails[5]),
+            utilisation: isPoolDisabled ? 0 : totalBorrowed / tvl,
+            disabled: config.POOLS_CONFIG[poolAsset].disabled,
+            poolsUnlocking: config.poolsUnlocking,
           };
           return pool;
         }))
@@ -54,7 +61,13 @@ export default class PoolService {
     )
   }
 
-  fetchPoolData(poolAsset, callback) {
-
+  emitPoolDepositChange(amount, poolAssetSymbol, operation) {
+    const pool = this.pools.find(pool => pool.asset.symbol === poolAssetSymbol);
+    if (operation === 'DEPOSIT') {
+      pool.deposit = Number(pool.deposit) + Number(amount);
+    } else if (operation === 'WITHDRAW') {
+      pool.deposit = Math.max(pool.deposit - amount, 0);
+    }
+    this.emitPools(this.pools);
   }
 };

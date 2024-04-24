@@ -1,17 +1,15 @@
 <template>
-  <div id="icon-button-menu-component" class="icon-button-menu-component"
+  <div id="icon-button-menu-component" class="icon-button-menu-component" v-if="config"
        v-tooltip="!menuOpen && config.tooltip ? {content: config.tooltip, classes: 'button-tooltip'} : null">
-    <Bubble v-if="bubbleText">
-      <div v-html="bubbleText"></div>
+    <Bubble v-if="$slots.bubble">
+      <slot name="bubble"></slot>
     </Bubble>
-    <div id="icon-button-container" class="icon-button-container" v-on:click="iconButtonClick($event)">
-      <img id="icon-button" class="icon-button"
-           v-bind:class="{'icon-button--disabled': config.disabled || disabled}"
-           :src="config.iconSrc">
-      <img id="icon-button--hover" class="icon-button--hover"
-           v-bind:class="{'icon-button--disabled': config.disabled || disabled}"
-           :src="config.hoverIconSrc">
-    </div>
+    <DeltaIcon :icon-src="config.iconSrc" :size="26"
+               class="icon-button"
+               v-bind:class="{'icon-button--disabled': config.disabled || disabled}"
+               v-on:click.native="iconButtonClick($event)">
+
+    </DeltaIcon>
     <div class="menu" v-if="config.menuOptions && this.menuOpen">
       <div class="menu__option"
            v-for="option in config.menuOptions"
@@ -23,9 +21,12 @@
           {{ option.name }}
         </div>
         <div class="option__info__wrapper">
-          <img class="option__info-icon"
-               v-if="option.disabled" src="src/assets/icons/info.svg"
-               v-tooltip="{content: option.disabledInfo}">
+          <InfoIcon
+              v-if="option.disabled"
+              class="option__info-icon"
+              :tooltip="{content: option.disabledInfo}"
+              :classes="'info-tooltip'"
+          ></InfoIcon>
         </div>
       </div>
     </div>
@@ -34,10 +35,12 @@
 
 <script>
 import Bubble from './Bubble';
+import InfoIcon from "./InfoIcon.vue";
+import DeltaIcon from "./DeltaIcon.vue";
 
 export default {
   name: 'IconButtonMenuBeta',
-  components: {Bubble},
+  components: {DeltaIcon, InfoIcon, Bubble},
   props: {
     config: {
       type: Object,
@@ -72,7 +75,9 @@ export default {
             this.emitGlobalCloseOfAllMenus();
             this.stopObserveOutsideClick();
           }
-          this.observeOutsideClick();
+          setTimeout(() => {
+            this.observeOutsideClick();
+          })
           this.menuOpen = !this.menuOpen;
         } else {
           this.$emit('iconButtonClick', this.config.iconButtonActionKey);
@@ -95,7 +100,7 @@ export default {
     },
 
     closeMenuOnClickOutside(event) {
-      if (!document.getElementById('icon-button-menu-component').contains(event.target) && event.target.id !== 'icon-button--hover') {
+      if (!event.target.classList.contains('icon-button-menu-component')) {
         if (this.menuOpen) {
           this.menuOpen = false;
         }
@@ -117,62 +122,42 @@ export default {
 @import "~@/styles/variables";
 
 .icon-button-menu-component {
-  position: relative;
 
-  .icon-button-container {
+  .icon-button {
+    cursor: pointer;
+    background: var(--icon-button-menu-beta__icon-color--default);
 
     &:hover {
-      .icon-button:not(.icon-button--disabled) {
-        display: none;
-      }
-
-      .icon-button--hover:not(.icon-button--disabled) {
-        display: block;
-      }
+      background: var(--icon-button-menu-beta__icon-color-hover--default);
     }
 
-    .icon-button {
-      height: 26px;
-      width: 26px;
-      cursor: pointer;
-
-      &.icon-button--disabled {
-        opacity: 0.5;
-        filter: grayscale(1);
-        cursor: default;
-      }
-    }
-
-    .icon-button--hover {
-      display: none;
-      height: 26px;
-      width: 26px;
-      cursor: pointer;
+    &.icon-button--disabled {
+      background: var(--icon-button-menu-beta__icon-color--disabled);
+      cursor: default;
+      pointer-events: none;
     }
   }
 
   .menu {
     position: absolute;
-    top: -10px;
-    left: 36px;
+    transform: translate(calc(-100% + 34px), 14px);
     z-index: 1;
     display: flex;
     flex-direction: column;
-    box-shadow: 2px 2px 8px 0 rgba(175, 171, 255, 0.5);
-    border: solid 2px $delta-secondary;
-    background-color: white;
-    padding: 10px 18px;
+    box-shadow: var(--icon-button-menu-beta__menu-box-shadow);
+    border: solid 2px var(--icon-button-menu-beta__menu-border-color);
+    background-color: var(--icon-button-menu-beta__menu-background-color);
     border-radius: 10px;
 
     &:after {
       position: absolute;
-      left: -8px;
-      top: 14px;
-      width: 12px;
-      height: 12px;
-      border-left: solid 2px $delta-secondary;
-      border-bottom: solid 2px $delta-secondary;
-      background-color: white;
+      right: 15px;
+      top: -5px;
+      width: 7px;
+      height: 7px;
+      border-left: solid 2px var(--icon-button-menu-beta__menu-border-color);
+      border-top: solid 2px var(--icon-button-menu-beta__menu-border-color);
+      background-color: var(--icon-button-menu-beta__menu-background-color);
       transform: rotate(45deg);
       content: '';
     }
@@ -181,31 +166,25 @@ export default {
       display: flex;
       flex-direction: row;
       white-space: nowrap;
-      color: $dark-gray;
+      color: var(--icon-button-menu-beta__menu-color);
       font-weight: 600;
+      line-height: 17px;
       cursor: pointer;
+      padding: 10px 20px;
 
       &:not(:last-child) {
-        margin-bottom: 10px;
+        border-bottom: var(--icon-button-menu-beta__menu-option-border);
       }
 
       &:hover {
-        color: $dark-gray;
-      }
-
-      .option__text {
-        &:hover {
-          color: $black;
+        .option__text:not(.option__text--disabled) {
+          color: var(--icon-button-menu-beta__menu-color--hover);
         }
       }
 
       .option__text--disabled {
         opacity: 0.5;
         cursor: default;
-
-        &:hover {
-          color: $dark-gray;
-        }
       }
 
       .option__info__wrapper {
@@ -214,11 +193,6 @@ export default {
         align-items: center;
         justify-content: center;
         margin-left: 5px;
-
-        .option__info-icon {
-          width: 16px;
-          height: 16px;
-        }
       }
     }
   }
