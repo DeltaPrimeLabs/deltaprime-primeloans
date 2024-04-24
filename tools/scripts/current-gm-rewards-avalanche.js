@@ -71,7 +71,7 @@ async function fetchData(maxTimestamp, file) {
     const task = (loan) => fetch(`https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/gmx-incentives-new/${loan}`)
 
     console.log(`LONS: ${loans.length}`)
-    loans = loans.slice(3400, 3800);
+    loans = loans.slice(0, 1000);
 
     let resps = await promiseAllInBatches(task, loans, 200);
 
@@ -206,8 +206,8 @@ function checkNegativeAccounts() {
 
 
 }
-// fetchData(Date.now(), "GM_EPOCH_10")
+fetchData(Date.now(), "GM_EPOCH_11")
 // checkNegativeAccounts()
-createDiffJson( "GM_EPOCH_9", "GM_EPOCH_10")
+// createDiffJson( "GM_EPOCH_9", "GM_EPOCH_10")
 // createAddJson( "GM_EPOCH_8", "GM_EPOCH_9_diff", "GM_EPOCH_9")
 // analyzeJson("GM_EPOCH_9")
