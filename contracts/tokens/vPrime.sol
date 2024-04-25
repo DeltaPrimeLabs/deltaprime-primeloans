@@ -2,11 +2,10 @@
 // Last deployed from commit: ;
 pragma solidity 0.8.17;
 
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {vPrimeController} from "./vPrimeController.sol";
 
 /**
@@ -24,7 +23,7 @@ import {vPrimeController} from "./vPrimeController.sol";
  *
  * _Available since v4.2._
  */
-contract vPrime is ERC20Permit, Ownable {
+contract vPrime is OwnableUpgradeable {
     struct Checkpoint {
         uint32 blockTimestamp;
         uint256 balance;
@@ -32,14 +31,12 @@ contract vPrime is ERC20Permit, Ownable {
         uint256 maxVPrimeCap;
     }
 
-    mapping(address => Checkpoint[]) private _checkpoints;
-    Checkpoint[] private _totalSupplyCheckpoints;
+    mapping(address => Checkpoint[]) private _checkpoints; // _checkpoints[address(this)] serves as a total supply checkpoint
     address public vPrimeControllerAddress;
 
-    constructor()
-    ERC20("vPRIME Governance Token", "vPRIME")
-    ERC20Permit("vPRIME Governance Token")
-    {}
+    function initialize() external initializer {
+        __Ownable_init();
+    }
 
     /**
     * @notice Sets the address of the vPrimeController contract.
@@ -75,10 +72,10 @@ contract vPrime is ERC20Permit, Ownable {
         int256 votesDiff = int256(currentVotesBalance) - int256(lastRecordedVotes);
 
         if(votesDiff > 0) {
-            _mint(user, uint256(votesDiff));
+            increaseTotalSupply(uint256(votesDiff));
             _writeCheckpoint(_checkpoints[user], _add, uint256(votesDiff), rate, newMaxVPrimeCap);
         } else if(votesDiff < 0) {
-            _burn(user, uint256(-votesDiff));
+            decreaseTotalSupply(uint256(-votesDiff));
             _writeCheckpoint(_checkpoints[user], _subtract, uint256(-votesDiff), rate, newMaxVPrimeCap);
         } else {
             _writeCheckpoint(_checkpoints[user], _add, 0, rate, newMaxVPrimeCap);
@@ -92,42 +89,16 @@ contract vPrime is ERC20Permit, Ownable {
         int256 votesDiff = int256(balance) - int256(lastRecordedVotes);
 
         if(votesDiff > 0) {
-            _mint(user, uint256(votesDiff));
+            increaseTotalSupply(uint256(votesDiff));
             _writeCheckpointOverwriteBalance(_checkpoints[user], balance, rate, newMaxVPrimeCap);
         } else if(votesDiff < 0) {
-            _burn(user, uint256(-votesDiff));
+            decreaseTotalSupply(uint256(-votesDiff));
             _writeCheckpointOverwriteBalance(_checkpoints[user], balance, rate, newMaxVPrimeCap);
         } else {
             _writeCheckpointOverwriteBalance(_checkpoints[user], lastRecordedVotes, rate, newMaxVPrimeCap);
         }
     }
 
-    // Override transfer functions to make them non-operational
-    function transfer(address to, uint256 amount) public override returns (bool) {
-        require(false, "vPRIME: transfer not allowed");
-        return false;
-    }
-
-    function transferFrom(address from, address to, uint256 amount) public override returns (bool) {
-        require(false, "vPRIME: transfer not allowed");
-        return false;
-    }
-
-    // Override allowance-related functions to make them non-operational
-    function approve(address spender, uint256 amount) public override returns (bool) {
-        require(false, "vPRIME: approve not allowed");
-        return false;
-    }
-
-    function increaseAllowance(address spender, uint256 addedValue) public override returns (bool) {
-        require(false, "vPRIME: increaseAllowance not allowed");
-        return false;
-    }
-
-    function decreaseAllowance(address spender, uint256 subtractedValue) public override returns (bool) {
-        require(false, "vPRIME: decreaseAllowance not allowed");
-        return false;
-    }
 
     /**
      * @dev Clock used for flagging checkpoints. Can be overridden to implement timestamp based checkpoints (and voting).
@@ -176,7 +147,7 @@ contract vPrime is ERC20Permit, Ownable {
      * - `timestamp` must be in the past
      */
     function getPastVotes(address account, uint256 timestamp) public view virtual returns (uint256) {
-        require(timestamp < clock(), "ERC20Votes: future lookup");
+        require(timestamp < clock(), "Future lookup");
         return _checkpointsLookup(_checkpoints[account], timestamp);
     }
 
@@ -189,8 +160,15 @@ contract vPrime is ERC20Permit, Ownable {
      * - `timestamp` must be in the past
      */
     function getPastTotalSupply(uint256 timestamp) public view virtual returns (uint256) {
-        require(timestamp < clock(), "ERC20Votes: future lookup");
-        return _checkpointsLookup(_totalSupplyCheckpoints, timestamp);
+        require(timestamp < clock(), "Future lookup");
+        return _checkpointsLookup(_checkpoints[address(this)], timestamp);
+    }
+
+    function getLastRecordedTotalSupply() public view virtual returns (uint256) {
+        uint256 pos = _checkpoints[address(this)].length;
+        unchecked {
+            return pos == 0 ? 0 : _checkpoints[address(this)][pos - 1].balance;
+        }
     }
 
     /**
@@ -244,27 +222,17 @@ contract vPrime is ERC20Permit, Ownable {
         return type(uint224).max;
     }
 
-    /**
-     * @dev Snapshots the totalSupply after it has been increased.
-     */
-    function _mint(address account, uint256 amount) internal virtual override {
-        super._mint(account, amount);
-        require(totalSupply() <= _maxSupply(), "ERC20Votes: total supply risks overflowing votes");
-        _writeCheckpointWithoutRateAndCap(_totalSupplyCheckpoints, _add, amount);
+    function increaseTotalSupply(uint256 amount) internal {
+        require(getLastRecordedTotalSupply() + amount <= _maxSupply(), "Total supply risks overflowing votes");
+        _writeCheckpointWithoutRateAndCap(_checkpoints[address(this)], _add, amount);
     }
 
-    /**
-     * @dev Snapshots the totalSupply after it has been decreased.
-     */
-    function _burn(address account, uint256 amount) internal virtual override {
-        super._burn(account, amount);
-
-        _writeCheckpointWithoutRateAndCap(_totalSupplyCheckpoints, _subtract, amount);
+    function decreaseTotalSupply(uint256 amount) internal {
+        _writeCheckpointWithoutRateAndCap(_checkpoints[address(this)], _subtract, amount);
     }
-
 
     // Override balanceOf to compute balance dynamically
-    function balanceOf(address account) public view override returns (uint256) {
+    function balanceOf(address account) public view returns (uint256) {
         if(_checkpoints[account].length == 0) {
             return 0;
         }

@@ -114,7 +114,7 @@ contract vPrimeController is Ownable, RedstoneConsumerNumericBase, AuthorisedMoc
     function getBorrowerVPrimeRateAndMaxCap(address userAddress) public view returns (int256, uint256){
         uint256 vPrimePairsCount = getBorrowerVPrimePairsCount(userAddress);
         uint256 vPrimeMaxCap = vPrimePairsCount * BORROWER_YEARLY_V_PRIME_RATE * MAX_V_PRIME_VESTING_YEARS * 1e18;
-        uint256 currentVPrimeBalance = IERC20(vPrimeContract).balanceOf(userAddress);
+        uint256 currentVPrimeBalance = vPrimeContract.balanceOf(userAddress);
         int256 vPrimeRate = int256(vPrimeMaxCap) - int256(currentVPrimeBalance);
         if(vPrimeRate < 0){
             vPrimeRate = vPrimeRate / int256(V_PRIME_DETERIORATION_DAYS) / 1 days;
@@ -141,7 +141,7 @@ contract vPrimeController is Ownable, RedstoneConsumerNumericBase, AuthorisedMoc
 
         uint256 vPrimeMaxCap = (vPrimePairsCountVested + vPrimePairsCountNonVested) * DEPOSITOR_YEARLY_V_PRIME_RATE * MAX_V_PRIME_VESTING_YEARS * 1e18;
         uint256 alreadyVestedVPrimeBalance = vPrimePairsCountVested * DEPOSITOR_YEARLY_V_PRIME_RATE * MAX_V_PRIME_VESTING_YEARS * 1e18;
-        uint256 currentVPrimeBalance = IERC20(vPrimeContract).balanceOf(userAddress);
+        uint256 currentVPrimeBalance = vPrimeContract.balanceOf(userAddress);
         bool balanceShouldBeReplaced = false;
         if(currentVPrimeBalance < alreadyVestedVPrimeBalance){
             currentVPrimeBalance = alreadyVestedVPrimeBalance;
