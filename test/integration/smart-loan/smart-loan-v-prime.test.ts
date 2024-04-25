@@ -140,8 +140,9 @@ describe('Smart loan', () => {
             vPrimeControllerContract = await deployContract(
                 admin,
                 VPrimeControllerArtifact,
-                [[poolContracts.get('AVAX')!.address, poolContracts.get('MCKUSD')!.address], [sPrimeContract.address], tokenManager.address, vPrimeContract.address]
+                []
             ) as Contract;
+            await vPrimeControllerContract.initialize([poolContracts.get('AVAX')!.address, poolContracts.get('MCKUSD')!.address], [sPrimeContract.address], tokenManager.address, vPrimeContract.address);
             vPrimeControllerContract = WrapperBuilder.wrap(
                 vPrimeControllerContract
             ).usingSimpleNumericMock({
