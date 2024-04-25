@@ -125,8 +125,9 @@ describe('Pool with variable utilisation interest rates', () => {
         vPrimeControllerContract = await deployContract(
             owner,
             VPrimeControllerArtifact,
-            [[poolContract.address], [sPrimeContract.address], tokenManager.address, vPrimeContract.address]
+            []
         ) as Contract;
+        await vPrimeControllerContract.initialize([poolContract.address], [sPrimeContract.address], tokenManager.address, vPrimeContract.address);
         vPrimeControllerContract = WrapperBuilder.wrap(
             vPrimeControllerContract
         ).usingSimpleNumericMock({

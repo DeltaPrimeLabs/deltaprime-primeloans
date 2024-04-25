@@ -4,14 +4,14 @@ pragma solidity 0.8.17;
 
 import "@redstone-finance/evm-connector/contracts/mocks/AuthorisedMockSignersBase.sol";
 import "@redstone-finance/evm-connector/contracts/core/RedstoneConsumerNumericBase.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "../interfaces/ITokenManager.sol";
 import "../interfaces/IBorrowersRegistry.sol";
 import "../interfaces/IPool.sol";
 import "./mock/sPrimeMock.sol";
 import "./vPrime.sol";
 
-contract vPrimeController is Ownable, RedstoneConsumerNumericBase, AuthorisedMockSignersBase {
+contract vPrimeController is OwnableUpgradeable, RedstoneConsumerNumericBase, AuthorisedMockSignersBase {
     function getAuthorisedSignerIndex(address receivedSigner)
     public
     view
@@ -36,11 +36,12 @@ contract vPrimeController is Ownable, RedstoneConsumerNumericBase, AuthorisedMoc
     uint256 public constant MAX_V_PRIME_VESTING_YEARS = 3;
     uint256 public constant V_PRIME_DETERIORATION_DAYS = 14;
 
-    constructor(IPool[] memory _whitelistedPools, SPrimeMock[] memory _whitelistedSPrimeContracts, ITokenManager _tokenManager, vPrime _vPrime) {
+    function initialize(IPool[] memory _whitelistedPools, SPrimeMock[] memory _whitelistedSPrimeContracts, ITokenManager _tokenManager, vPrime _vPrime) external initializer {
         whitelistedPools = _whitelistedPools;
         whitelistedSPrimeContracts = _whitelistedSPrimeContracts;
         tokenManager = _tokenManager;
         vPrimeContract = _vPrime;
+        __Ownable_init();
     }
 
     function getUserDepositDollarValueAcrossWhiteListedPoolsVestedAndNonVested(address userAddress) public view returns (uint256 fullyVestedBalance, uint256 nonVestedBalance) {
