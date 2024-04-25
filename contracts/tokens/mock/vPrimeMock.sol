@@ -5,7 +5,8 @@ import "../vPrime.sol";
 
 
 contract vPrimeMock is vPrime {
-    function isWhitelisted(address account) public override view returns (bool) {
-        return true;
+    /* ========== MODIFIERS ========== */
+    modifier onlyVPrimeController() override {
+        _;
     }
 }

@@ -120,6 +120,7 @@ describe('Pool with variable utilisation interest rates', () => {
             VPrimeArtifact,
             []
         ) as Contract;
+        await vPrimeContract.initialize();
 
         vPrimeControllerContract = await deployContract(
             owner,

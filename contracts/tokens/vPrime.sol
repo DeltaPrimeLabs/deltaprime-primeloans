@@ -4,25 +4,10 @@ pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {vPrimeController} from "./vPrimeController.sol";
 
-/**
- * @dev Extension of ERC20 to support Compound-like voting and delegation. This version is more generic than Compound's,
- * and supports token supply up to 2^224^ - 1, while COMP is limited to 2^96^ - 1.
- *
- * NOTE: If exact COMP compatibility is required, use the {ERC20VotesComp} variant of this module.
- *
- * This extension keeps a history (checkpoints) of each account's vote power. Vote power can be delegated either
- * by calling the {delegate} function directly, or by providing a signature to be used with {delegateBySig}. Voting
- * power can be queried through the public accessors {getVotes} and {getPastVotes}.
- *
- * By default, token balance does not account for voting power. This makes transfers cheaper. The downside is that it
- * requires users to delegate to themselves in order to activate checkpoints and have their voting power tracked.
- *
- * _Available since v4.2._
- */
+
 contract vPrime is OwnableUpgradeable {
     struct Checkpoint {
         uint32 blockTimestamp;
@@ -31,12 +16,24 @@ contract vPrime is OwnableUpgradeable {
         uint256 maxVPrimeCap;
     }
 
-    mapping(address => Checkpoint[]) private _checkpoints; // _checkpoints[address(this)] serves as a total supply checkpoint
     address public vPrimeControllerAddress;
+    mapping(address => Checkpoint[]) private _checkpoints; // _checkpoints[address(this)] serves as a total supply checkpoint
+
+    /* ========== INITIALIZER ========== */
 
     function initialize() external initializer {
         __Ownable_init();
     }
+
+
+    /* ========== MODIFIERS ========== */
+    modifier onlyVPrimeController() virtual {
+        require(_msgSender() == vPrimeControllerAddress, "Only vPrimeController can call this function");
+        _;
+    }
+
+
+    /* ========== MUTATIVE EXTERNAL FUNCTIONS ========== */
 
     /**
     * @notice Sets the address of the vPrimeController contract.
@@ -47,55 +44,67 @@ contract vPrime is OwnableUpgradeable {
         vPrimeControllerAddress = _vPrimeControllerAddress;
     }
 
-    /**
-    * @notice Checks if an address is whitelisted.
-    * @param account The address to check.
-    * @return bool Returns true if the address is whitelisted, false otherwise.
-    */
-    function isWhitelisted(address account) public virtual view returns (bool) {
-        return account == vPrimeControllerAddress;
-    }
-
-
-    // Function to adjust balance for a whitelisted address
-    // It will be called either by PrimeAccount contract (upon deposit/withdrawal) or by any of the whitelisted pools (for despositors)
-    // Those calls will assume that the caller already did all the necessary calculations to calculate what should be the new "target balance" (newMaxVPrimeCap)
-    // and at which rate it should be adjusted (number of votes received/lost per second)
-    // PA will call this function in case of borrow/repay/mintSPrime/redeemSPrime
-    // Pools will call this function in case of deposit/withdraw
-    // sPrime can also call this function in case of mint/redeem (both for PAs and depositors, but checking different conditions for each)
-    function adjustRateAndCap(address user, int256 rate, uint256 newMaxVPrimeCap) external {
-        require(isWhitelisted(_msgSender()), "Caller is not whitelisted");
-
+    // Called by the vPrimeController to adjust the rate and maxVPrimeCap of a user
+    function adjustRateAndCap(address user, int256 rate, uint256 newMaxVPrimeCap) external onlyVPrimeController {
         uint256 lastRecordedVotes = getVotes(user);
         uint256 currentVotesBalance = balanceOf(user);
         int256 votesDiff = int256(currentVotesBalance) - int256(lastRecordedVotes);
 
-        if(votesDiff > 0) {
+        if (votesDiff > 0) {
             increaseTotalSupply(uint256(votesDiff));
             _writeCheckpoint(_checkpoints[user], _add, uint256(votesDiff), rate, newMaxVPrimeCap);
-        } else if(votesDiff < 0) {
-            decreaseTotalSupply(uint256(-votesDiff));
-            _writeCheckpoint(_checkpoints[user], _subtract, uint256(-votesDiff), rate, newMaxVPrimeCap);
+        } else if (votesDiff < 0) {
+            decreaseTotalSupply(uint256(- votesDiff));
+            _writeCheckpoint(_checkpoints[user], _subtract, uint256(- votesDiff), rate, newMaxVPrimeCap);
         } else {
             _writeCheckpoint(_checkpoints[user], _add, 0, rate, newMaxVPrimeCap);
         }
     }
 
-    function adjustRateCapAndBalance(address user, int256 rate, uint256 newMaxVPrimeCap, uint256 balance) external {
-        require(isWhitelisted(_msgSender()), "Caller is not whitelisted");
-
+    // Called by the vPrimeController to adjust the rate, maxVPrimeCap and overwrite the balance of a user
+    // Balance overwrite is used when the user's balance is changed by a different mechanism than the rate
+    // In our case that would be locking deposit/sPrime pairs (up to 3 years) for an instant vPrime unvesting
+    function adjustRateCapAndBalance(address user, int256 rate, uint256 newMaxVPrimeCap, uint256 balance) external onlyVPrimeController {
         uint256 lastRecordedVotes = getVotes(user);
         int256 votesDiff = int256(balance) - int256(lastRecordedVotes);
 
-        if(votesDiff > 0) {
+        if (votesDiff > 0) {
             increaseTotalSupply(uint256(votesDiff));
             _writeCheckpointOverwriteBalance(_checkpoints[user], balance, rate, newMaxVPrimeCap);
-        } else if(votesDiff < 0) {
-            decreaseTotalSupply(uint256(-votesDiff));
+        } else if (votesDiff < 0) {
+            decreaseTotalSupply(uint256(- votesDiff));
             _writeCheckpointOverwriteBalance(_checkpoints[user], balance, rate, newMaxVPrimeCap);
         } else {
             _writeCheckpointOverwriteBalance(_checkpoints[user], lastRecordedVotes, rate, newMaxVPrimeCap);
+        }
+    }
+
+    /* ========== VIEW EXTERNAL FUNCTIONS ========== */
+
+    // Override balanceOf to compute balance dynamically
+    function balanceOf(address account) public view returns (uint256) {
+        if (_checkpoints[account].length == 0) {
+            return 0;
+        }
+        Checkpoint memory cp = _checkpoints[account][_checkpoints[account].length - 1];
+
+        uint256 elapsedTime = block.timestamp - cp.blockTimestamp;
+        uint256 newBalance;
+
+        if (cp.rate >= 0) {
+            uint256 balanceIncrease = uint256(cp.rate) * elapsedTime;
+            newBalance = cp.balance + balanceIncrease;
+            return (newBalance > cp.maxVPrimeCap) ? cp.maxVPrimeCap : newBalance;
+        } else {
+            // If rate is negative, convert to positive for calculation, then subtract
+            uint256 balanceDecrease = uint256(- cp.rate) * elapsedTime;
+            if (balanceDecrease > cp.balance) {
+                // Prevent underflow, setting balance to min cap if decrease exceeds current balance
+                return cp.maxVPrimeCap;
+            } else {
+                newBalance = cp.balance - balanceDecrease;
+                return (newBalance < cp.maxVPrimeCap) ? cp.maxVPrimeCap : newBalance;
+            }
         }
     }
 
@@ -132,7 +141,7 @@ contract vPrime is OwnableUpgradeable {
     /**
      * @dev Gets the last recorded votes balance for `account`
      */
-    function getVotes(address account) public view virtual  returns (uint256) {
+    function getVotes(address account) public view virtual returns (uint256) {
         uint256 pos = _checkpoints[account].length;
         unchecked {
             return pos == 0 ? 0 : _checkpoints[account][pos - 1].balance;
@@ -170,6 +179,69 @@ contract vPrime is OwnableUpgradeable {
             return pos == 0 ? 0 : _checkpoints[address(this)][pos - 1].balance;
         }
     }
+
+    /* ========== INTERNAL MUTATIVE FUNCTIONS ========== */
+
+    function increaseTotalSupply(uint256 amount) internal {
+        require(getLastRecordedTotalSupply() + amount <= _maxSupply(), "Total supply risks overflowing votes");
+        _writeCheckpoint(_checkpoints[address(this)], _add, amount, 0, 0);
+    }
+
+    function decreaseTotalSupply(uint256 amount) internal {
+        _writeCheckpoint(_checkpoints[address(this)], _subtract, amount, 0, 0);
+    }
+
+    function _writeCheckpoint(
+        Checkpoint[] storage ckpts,
+        function(uint256, uint256) view returns (uint256) op,
+        uint256 delta,
+        int256 rate,
+        uint256 maxVPrimeCap
+    ) private returns (uint256 oldWeight, uint256 newWeight) {
+        uint256 pos = ckpts.length;
+        Checkpoint memory oldCkpt = pos == 0 ? Checkpoint(0, 0, 0, 0) : ckpts[pos - 1];
+
+        oldWeight = oldCkpt.balance;
+        newWeight = op(oldWeight, delta);
+
+        if (pos > 0 && oldCkpt.blockTimestamp == clock()) {
+            oldCkpt.balance = newWeight;
+            oldCkpt.rate = rate;
+            oldCkpt.maxVPrimeCap = maxVPrimeCap;
+        } else {
+            ckpts.push(Checkpoint({
+                blockTimestamp: SafeCast.toUint32(clock()),
+                balance: newWeight,
+                rate: rate,
+                maxVPrimeCap: maxVPrimeCap
+            }));
+        }
+    }
+
+    function _writeCheckpointOverwriteBalance(
+        Checkpoint[] storage ckpts,
+        uint256 balance,
+        int256 rate,
+        uint256 maxVPrimeCap
+    ) private returns (uint256 oldWeight, uint256 newWeight) {
+        uint256 pos = ckpts.length;
+        Checkpoint memory oldCkpt = pos == 0 ? Checkpoint(0, 0, 0, 0) : ckpts[pos - 1];
+
+        if (pos > 0 && oldCkpt.blockTimestamp == clock()) {
+            oldCkpt.balance = balance;
+            oldCkpt.rate = rate;
+            oldCkpt.maxVPrimeCap = maxVPrimeCap;
+        } else {
+            ckpts.push(Checkpoint({
+                blockTimestamp: SafeCast.toUint32(clock()),
+                balance: balance,
+                rate: rate,
+                maxVPrimeCap: maxVPrimeCap
+            }));
+        }
+    }
+
+    /* ========== INTERNAL VIEW FUNCTIONS ========== */
 
     /**
      * @dev Lookup a value in a list of (sorted) checkpoints.
@@ -222,107 +294,6 @@ contract vPrime is OwnableUpgradeable {
         return type(uint224).max;
     }
 
-    function increaseTotalSupply(uint256 amount) internal {
-        require(getLastRecordedTotalSupply() + amount <= _maxSupply(), "Total supply risks overflowing votes");
-        _writeCheckpointWithoutRateAndCap(_checkpoints[address(this)], _add, amount);
-    }
-
-    function decreaseTotalSupply(uint256 amount) internal {
-        _writeCheckpointWithoutRateAndCap(_checkpoints[address(this)], _subtract, amount);
-    }
-
-    // Override balanceOf to compute balance dynamically
-    function balanceOf(address account) public view returns (uint256) {
-        if(_checkpoints[account].length == 0) {
-            return 0;
-        }
-        Checkpoint memory cp = _checkpoints[account][_checkpoints[account].length - 1];
-
-        uint256 elapsedTime = block.timestamp - cp.blockTimestamp;
-        uint256 newBalance;
-
-        if (cp.rate >= 0) {
-            uint256 balanceIncrease = uint256(cp.rate) * elapsedTime;
-            newBalance = cp.balance + balanceIncrease;
-            if (newBalance > cp.maxVPrimeCap) {
-                return cp.maxVPrimeCap;
-            } else {
-                return newBalance;
-            }
-        } else {
-            // If rate is negative, convert to positive for calculation, then subtract
-            uint256 balanceDecrease = uint256(-cp.rate) * elapsedTime;
-            if (balanceDecrease > cp.balance) {
-                // Prevent underflow, setting balance to min cap if decrease exceeds current balance
-                return cp.maxVPrimeCap;
-            } else {
-                newBalance = cp.balance - balanceDecrease;
-                if (newBalance < cp.maxVPrimeCap) {
-                    return cp.maxVPrimeCap;
-                } else {
-                    return newBalance;
-                }
-            }
-        }
-    }
-
-    function _writeCheckpointWithoutRateAndCap(
-        Checkpoint[] storage ckpts,
-        function(uint256, uint256) view returns (uint256) op,
-        uint256 delta
-    ) private returns (uint256 oldWeight, uint256 newWeight) {
-        _writeCheckpoint(ckpts, op, delta, 0, 0);
-    }
-
-    function _writeCheckpoint(
-        Checkpoint[] storage ckpts,
-        function(uint256, uint256) view returns (uint256) op,
-        uint256 delta,
-        int256 rate,
-        uint256 maxVPrimeCap
-    ) private returns (uint256 oldWeight, uint256 newWeight) {
-        uint256 pos = ckpts.length;
-        Checkpoint memory oldCkpt = pos == 0 ? Checkpoint(0, 0, 0, 0) : ckpts[pos - 1];
-
-        oldWeight = oldCkpt.balance;
-        newWeight = op(oldWeight, delta);
-
-        if (pos > 0 && oldCkpt.blockTimestamp == clock()) {
-            oldCkpt.balance = newWeight;
-            oldCkpt.rate = rate;
-            oldCkpt.maxVPrimeCap = maxVPrimeCap;
-        } else {
-            ckpts.push(Checkpoint({
-                blockTimestamp: SafeCast.toUint32(clock()),
-                balance: newWeight,
-                rate: rate,
-                maxVPrimeCap: maxVPrimeCap
-            }));
-        }
-    }
-
-    function _writeCheckpointOverwriteBalance(
-        Checkpoint[] storage ckpts,
-        uint256 balance,
-        int256 rate,
-        uint256 maxVPrimeCap
-    ) private returns (uint256 oldWeight, uint256 newWeight) {
-        uint256 pos = ckpts.length;
-        Checkpoint memory oldCkpt = pos == 0 ? Checkpoint(0, 0, 0, 0) : ckpts[pos - 1];
-
-        if (pos > 0 && oldCkpt.blockTimestamp == clock()) {
-            oldCkpt.balance = balance;
-            oldCkpt.rate = rate;
-            oldCkpt.maxVPrimeCap = maxVPrimeCap;
-        } else {
-            ckpts.push(Checkpoint({
-                blockTimestamp: SafeCast.toUint32(clock()),
-                balance: balance,
-                rate: rate,
-                maxVPrimeCap: maxVPrimeCap
-            }));
-        }
-    }
 
     function _add(uint256 a, uint256 b) private pure returns (uint256) {
         return a + b;
