@@ -36,6 +36,8 @@ contract vPrimeController is OwnableUpgradeable, RedstoneConsumerNumericBase, Au
     uint256 public constant MAX_V_PRIME_VESTING_YEARS = 3;
     uint256 public constant V_PRIME_DETERIORATION_DAYS = 14;
 
+    /* ========== INITIALIZER ========== */
+
     function initialize(IPool[] memory _whitelistedPools, SPrimeMock[] memory _whitelistedSPrimeContracts, ITokenManager _tokenManager, vPrime _vPrime) external initializer {
         whitelistedPools = _whitelistedPools;
         whitelistedSPrimeContracts = _whitelistedSPrimeContracts;
@@ -43,6 +45,74 @@ contract vPrimeController is OwnableUpgradeable, RedstoneConsumerNumericBase, Au
         vPrimeContract = _vPrime;
         __Ownable_init();
     }
+
+
+    /* ========== MUTATIVE EXTERNAL FUNCTIONS ========== */
+
+    function updateVPrimeSnapshot(address userAddress) public {
+        int256 vPrimeRate;
+        uint256 vPrimeMaxCap;
+        if(borrowersRegistry.canBorrow(userAddress)){   // It's a PrimeAccount
+            (vPrimeRate, vPrimeMaxCap) = getBorrowerVPrimeRateAndMaxCap(userAddress);
+            vPrimeContract.adjustRateAndCap(userAddress, vPrimeRate, vPrimeMaxCap);
+        } else {
+            uint256 alreadyVestedPrimeBalance;
+            (vPrimeRate, vPrimeMaxCap, alreadyVestedPrimeBalance) = getDepositorVPrimeRateAndMaxCap(userAddress);
+            // alreadyVestedPrimeBalance > 0 mean that the already vested vPrime is higher than the current balance
+            if(alreadyVestedPrimeBalance > 0){
+                vPrimeContract.adjustRateCapAndBalance(userAddress, vPrimeRate, vPrimeMaxCap, alreadyVestedPrimeBalance);
+            } else {
+                vPrimeContract.adjustRateAndCap(userAddress, vPrimeRate, vPrimeMaxCap);
+            }
+        }
+    }
+
+
+    /* ========== SETTERS ========== */
+
+
+    /**
+    * @notice Updates the list of whitelisted pools.
+    * @dev Can only be called by the contract owner.
+    * @param newWhitelistedPools An array of addresses representing the new list of whitelisted pools.
+    */
+    function updateWhitelistedPools(IPool[] memory newWhitelistedPools) external onlyOwner {
+        whitelistedPools = newWhitelistedPools;
+        emit WhitelistedPoolsUpdated(newWhitelistedPools, msg.sender, block.timestamp);
+    }
+
+    /**
+    * @notice Updates the list of whitelisted sPrime contracts.
+    * @dev Can only be called by the contract owner.
+    * @param newWhitelistedSPrimeContracts An array of addresses representing the new list of whitelisted sPrime contracts.
+    */
+    function updateWhitelistedSPrimeContracts(SPrimeMock[] memory newWhitelistedSPrimeContracts) external onlyOwner {
+        whitelistedSPrimeContracts = newWhitelistedSPrimeContracts;
+        emit WhitelistedSPrimeContractsUpdated(newWhitelistedSPrimeContracts, msg.sender, block.timestamp);
+    }
+
+    /**
+    * @notice Updates the token manager contract.
+    * @dev Can only be called by the contract owner.
+    * @param newTokenManager The address of the new token manager contract.
+    */
+    function updateTokenManager(ITokenManager newTokenManager) external onlyOwner {
+        tokenManager = newTokenManager;
+        emit TokenManagerUpdated(newTokenManager, msg.sender, block.timestamp);
+    }
+
+    /**
+    * @notice Updates the borrowers registry contract.
+    * @dev Can only be called by the contract owner.
+    * @param newBorrowersRegistry The address of the new borrowers registry contract.
+    */
+    function updateBorrowersRegistry(IBorrowersRegistry newBorrowersRegistry) external onlyOwner {
+        borrowersRegistry = newBorrowersRegistry;
+    }
+
+
+
+    /* ========== VIEW EXTERNAL FUNCTIONS ========== */
 
     function getUserDepositDollarValueAcrossWhiteListedPoolsVestedAndNonVested(address userAddress) public view returns (uint256 fullyVestedBalance, uint256 nonVestedBalance) {
         uint256 fullyVestedDollarValue = 0;
@@ -56,7 +126,7 @@ contract vPrimeController is OwnableUpgradeable, RedstoneConsumerNumericBase, Au
         for (uint i = 0; i < whitelistedPools.length; i++) {
             uint256 poolBalance = IERC20(whitelistedPools[i]).balanceOf(userAddress);
             uint256 poolDollarValue = poolBalance * prices[i] * 1e10 / 10 ** whitelistedPools[i].decimals();
-            uint256 fullyVestedToTotalBalanceRatio = whitelistedPools[i].getFullyVestedLockedBalanceToNonVestedRatio(userAddress);
+            uint256 fullyVestedToTotalBalanceRatio = whitelistedPools[i].getFullyVestedLockedBalanceToNonVestedRatio(userAddress); // potentially Pool can already return fully vested an non vested dollar value or token amounts
             fullyVestedToTotalBalanceRatio = fullyVestedToTotalBalanceRatio >= 1e18 ? 1e18 : fullyVestedToTotalBalanceRatio;
             fullyVestedDollarValue += poolDollarValue * fullyVestedToTotalBalanceRatio / 1e18;
             nonVestedDollarValue += poolDollarValue * (1e18 - fullyVestedToTotalBalanceRatio) / 1e18;
@@ -85,7 +155,7 @@ contract vPrimeController is OwnableUpgradeable, RedstoneConsumerNumericBase, Au
         uint256 nonVestedDollarValue = 0;
         for (uint i = 0; i < whitelistedSPrimeContracts.length; i++) {
             uint256 sPrimeDollarValue = whitelistedSPrimeContracts[i].getUserDepositDollarValue(userAddress);
-            uint256 fullyVestedToTotalBalanceRatio = whitelistedSPrimeContracts[i].getFullyVestedLockedBalanceToNonVestedRatio(userAddress);
+            uint256 fullyVestedToTotalBalanceRatio = whitelistedSPrimeContracts[i].getFullyVestedLockedBalanceToNonVestedRatio(userAddress); // potentially sPrime can already return fully vested an non vested dollar value or token amounts
             fullyVestedToTotalBalanceRatio = fullyVestedToTotalBalanceRatio >= 1e18 ? 1e18 : fullyVestedToTotalBalanceRatio;
             fullyVestedDollarValue += sPrimeDollarValue * fullyVestedToTotalBalanceRatio / 1e18;
             nonVestedDollarValue += sPrimeDollarValue * (1e18 - fullyVestedToTotalBalanceRatio) / 1e18;
@@ -159,63 +229,6 @@ contract vPrimeController is OwnableUpgradeable, RedstoneConsumerNumericBase, Au
         } else {
             return (vPrimeRate, vPrimeMaxCap, 0);
         }
-    }
-
-    function updateVPrimeSnapshot(address userAddress) public {
-        int256 vPrimeRate;
-        uint256 vPrimeMaxCap;
-        uint256 alreadyVestedPrimeBalance;
-        if(borrowersRegistry.canBorrow(userAddress)){   // It's a PrimeAccount
-            (vPrimeRate, vPrimeMaxCap) = getBorrowerVPrimeRateAndMaxCap(userAddress);
-            vPrimeContract.adjustRateAndCap(userAddress, vPrimeRate, vPrimeMaxCap);
-        } else {
-            (vPrimeRate, vPrimeMaxCap, alreadyVestedPrimeBalance) = getDepositorVPrimeRateAndMaxCap(userAddress);
-            // alreadyVestedPrimeBalance > 0 mean that the already vested vPrime is higher than the current balance
-            if(alreadyVestedPrimeBalance > 0){
-                vPrimeContract.adjustRateCapAndBalance(userAddress, vPrimeRate, vPrimeMaxCap, alreadyVestedPrimeBalance);
-            } else {
-                vPrimeContract.adjustRateAndCap(userAddress, vPrimeRate, vPrimeMaxCap);
-            }
-        }
-    }
-
-    /**
-    * @notice Updates the list of whitelisted pools.
-    * @dev Can only be called by the contract owner.
-    * @param newWhitelistedPools An array of addresses representing the new list of whitelisted pools.
-    */
-    function updateWhitelistedPools(IPool[] memory newWhitelistedPools) external onlyOwner {
-        whitelistedPools = newWhitelistedPools;
-        emit WhitelistedPoolsUpdated(newWhitelistedPools, msg.sender, block.timestamp);
-    }
-
-    /**
-    * @notice Updates the list of whitelisted sPrime contracts.
-    * @dev Can only be called by the contract owner.
-    * @param newWhitelistedSPrimeContracts An array of addresses representing the new list of whitelisted sPrime contracts.
-    */
-    function updateWhitelistedSPrimeContracts(SPrimeMock[] memory newWhitelistedSPrimeContracts) external onlyOwner {
-        whitelistedSPrimeContracts = newWhitelistedSPrimeContracts;
-        emit WhitelistedSPrimeContractsUpdated(newWhitelistedSPrimeContracts, msg.sender, block.timestamp);
-    }
-
-    /**
-    * @notice Updates the token manager contract.
-    * @dev Can only be called by the contract owner.
-    * @param newTokenManager The address of the new token manager contract.
-    */
-    function updateTokenManager(ITokenManager newTokenManager) external onlyOwner {
-        tokenManager = newTokenManager;
-        emit TokenManagerUpdated(newTokenManager, msg.sender, block.timestamp);
-    }
-
-    /**
-    * @notice Updates the borrowers registry contract.
-    * @dev Can only be called by the contract owner.
-    * @param newBorrowersRegistry The address of the new borrowers registry contract.
-    */
-    function updateBorrowersRegistry(IBorrowersRegistry newBorrowersRegistry) external onlyOwner {
-        borrowersRegistry = newBorrowersRegistry;
     }
 
 
