@@ -7,7 +7,7 @@ import "@redstone-finance/evm-connector/contracts/core/RedstoneConsumerNumericBa
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../interfaces/ITokenManager.sol";
 import "../interfaces/IBorrowersRegistry.sol";
-import "../Pool.sol";
+import "../interfaces/IPool.sol";
 import "./mock/sPrimeMock.sol";
 import "./vPrime.sol";
 
@@ -26,7 +26,7 @@ contract vPrimeController is Ownable, RedstoneConsumerNumericBase, AuthorisedMoc
         // Always pass
     }
 
-    Pool[] public whitelistedPools; // TODO: create IPoolInterface
+    IPool[] public whitelistedPools;
     SPrimeMock[] public whitelistedSPrimeContracts;
     ITokenManager public tokenManager;
     vPrime public vPrimeContract;
@@ -36,7 +36,7 @@ contract vPrimeController is Ownable, RedstoneConsumerNumericBase, AuthorisedMoc
     uint256 public constant MAX_V_PRIME_VESTING_YEARS = 3;
     uint256 public constant V_PRIME_DETERIORATION_DAYS = 14;
 
-    constructor(Pool[] memory _whitelistedPools, SPrimeMock[] memory _whitelistedSPrimeContracts, ITokenManager _tokenManager, vPrime _vPrime) {
+    constructor(IPool[] memory _whitelistedPools, SPrimeMock[] memory _whitelistedSPrimeContracts, ITokenManager _tokenManager, vPrime _vPrime) {
         whitelistedPools = _whitelistedPools;
         whitelistedSPrimeContracts = _whitelistedSPrimeContracts;
         tokenManager = _tokenManager;
@@ -183,7 +183,7 @@ contract vPrimeController is Ownable, RedstoneConsumerNumericBase, AuthorisedMoc
     * @dev Can only be called by the contract owner.
     * @param newWhitelistedPools An array of addresses representing the new list of whitelisted pools.
     */
-    function updateWhitelistedPools(Pool[] memory newWhitelistedPools) external onlyOwner {
+    function updateWhitelistedPools(IPool[] memory newWhitelistedPools) external onlyOwner {
         whitelistedPools = newWhitelistedPools;
         emit WhitelistedPoolsUpdated(newWhitelistedPools, msg.sender, block.timestamp);
     }
@@ -219,7 +219,7 @@ contract vPrimeController is Ownable, RedstoneConsumerNumericBase, AuthorisedMoc
 
 
     // EVENTS
-    event WhitelistedPoolsUpdated(Pool[] newWhitelistedPools, address userAddress, uint256 timestamp);
+    event WhitelistedPoolsUpdated(IPool[] newWhitelistedPools, address userAddress, uint256 timestamp);
     event WhitelistedSPrimeContractsUpdated(SPrimeMock[] newWhitelistedSPrimeContracts, address userAddress, uint256 timestamp);
     event TokenManagerUpdated(ITokenManager newTokenManager, address userAddress, uint256 timestamp);
 }
