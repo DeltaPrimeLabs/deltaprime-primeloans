@@ -14,7 +14,6 @@ import "./interfaces/IIndex.sol";
 import "./interfaces/IRatesCalculator.sol";
 import "./interfaces/IBorrowersRegistry.sol";
 import "./interfaces/IPoolRewarder.sol";
-import "./VestingDistributor.sol";
 import "./tokens/vPrimeController.sol";
 
 
@@ -44,7 +43,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyCo
 
     address payable public tokenAddress;
 
-    VestingDistributor public vestingDistributor;
+    VestingDistributor public vestingDistributor; // Needs to stay here in order to preserve the storage layout
 
     uint8 internal _decimals;
 
@@ -177,18 +176,6 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyCo
         emit BorrowersRegistryChanged(address(borrowersRegistry_), block.timestamp);
     }
 
-    /**
-     * Sets the new Pool Rewarder.
-     * The IPoolRewarder that distributes additional token rewards to people having a stake in this pool proportionally to their stake and time of participance.
-     * Only the owner of the Contract can execute this function.
-     * @dev _poolRewarder the address of PoolRewarder
-    **/
-    function setVestingDistributor(address _distributor) external onlyOwner {
-        if(!AddressUpgradeable.isContract(_distributor) && _distributor != address(0)) revert NotAContract(_distributor);
-        vestingDistributor = VestingDistributor(_distributor);
-
-        emit VestingDistributorChanged(_distributor, block.timestamp);
-    }
 
     /* ========== MUTATIVE FUNCTIONS ========== */
     function transfer(address recipient, uint256 amount) external override nonReentrant returns (bool) {
@@ -199,11 +186,6 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyCo
 
         address account = msg.sender;
         _accumulateDepositInterest(account);
-
-        (uint256 lockedAmount, uint256 transferrableAmount) = _getAmounts(account);
-        if(amount > transferrableAmount) revert TransferAmountExceedsBalance(amount, transferrableAmount);
-
-        _updateWithdrawn(account, amount, lockedAmount);
 
         // (this is verified in "require" above)
         unchecked {
@@ -281,11 +263,6 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyCo
         if(recipient == address(this)) revert TransferToPoolAddress();
 
         _accumulateDepositInterest(sender);
-
-        (uint256 lockedAmount, uint256 transferrableAmount) = _getAmounts(sender);
-        if(amount > transferrableAmount) revert TransferAmountExceedsBalance(amount, transferrableAmount);
-
-        _updateWithdrawn(sender, amount, lockedAmount);
 
         _deposited[sender] -= amount;
         _allowed[sender][msg.sender] -= amount;
@@ -561,10 +538,6 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyCo
 
     function _burn(address account, uint256 amount) internal {
         if(amount > _deposited[account]) revert BurnAmountExceedsBalance();
-        (uint256 lockedAmount, uint256 transferrableAmount) = _getAmounts(account);
-        if(amount > transferrableAmount) revert BurnAmountExceedsAvailableForUser();
-
-        _updateWithdrawn(account, amount, lockedAmount);
 
         // verified in "require" above
         unchecked {
@@ -574,25 +547,6 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyCo
         emit Transfer(account, address(0), amount);
     }
 
-    function _getAmounts(address account) internal view returns (uint256 lockedAmount, uint256 transferrableAmount) {
-        if (address(vestingDistributor) != address(0)) {
-            lockedAmount = vestingDistributor.locked(account);
-            if (lockedAmount > 0) {
-                transferrableAmount = _deposited[account] - (lockedAmount - vestingDistributor.availableToWithdraw(account));
-            } else {
-                transferrableAmount = _deposited[account];
-            }
-        } else {
-            transferrableAmount = _deposited[account];
-        }
-    }
-
-    function _updateWithdrawn(address account, uint256 amount, uint256 lockedAmount) internal {
-        uint256 availableUnvested = _deposited[account] - lockedAmount;
-        if (amount > availableUnvested && address(vestingDistributor) != address(0)) {
-            vestingDistributor.updateWithdrawn(account, amount - availableUnvested);
-        }
-    }
 
     function _updateRates() internal {
         uint256 _totalBorrowed = totalBorrowed();
@@ -707,13 +661,6 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyCo
     * @param timestamp of the pool rewarder change
     **/
     event PoolRewarderChanged(address indexed poolRewarder, uint256 timestamp);
-
-    /**
-    * @dev emitted after changing vesting distributor
-    * @param distributor an address of the newly set distributor
-    * @param timestamp of the distributor change
-    **/
-    event VestingDistributorChanged(address indexed distributor, uint256 timestamp);
 
 
     /**
