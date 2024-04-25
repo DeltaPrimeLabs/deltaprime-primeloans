@@ -74,7 +74,9 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyCo
         require(balanceOf(msg.sender) - lockedBalance >= amount, "Insufficient balance to lock");
         require(lockTime <= MAX_LOCK_TIME, "Cannot lock for more than 3 years");
         locks[msg.sender].push(LockDetails(lockTime, amount, block.timestamp + lockTime));
-        // TODO: Add event
+
+        emit DepositLocked(msg.sender, amount, lockTime, block.timestamp + lockTime);
+
         proxyCalldata(
             address(vPrimeControllerContract),
             abi.encodeWithSignature("updateVPrimeSnapshot(address)", msg.sender),
@@ -712,6 +714,16 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyCo
     * @param timestamp of the distributor change
     **/
     event VestingDistributorChanged(address indexed distributor, uint256 timestamp);
+
+
+    /**
+     * @dev emitted after the user locks deposit
+     * @param user the address that locks the deposit
+     * @param amount the amount locked
+     * @param lockTime the time for which the deposit is locked
+     * @param unlockTime the time when the deposit will be unlocked
+     **/
+    event DepositLocked(address indexed user, uint256 amount, uint256 lockTime, uint256 unlockTime);
 
     /* ========== ERRORS ========== */
 
