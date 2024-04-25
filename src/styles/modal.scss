@@ -129,6 +129,12 @@
   padding-left: 15px;
   padding-right: 15px;
 
+  &--embedded {
+    border: none;
+    margin: 10px 0;
+    justify-content: flex-start !important;
+  }
+
   .slippage-label {
     font-size: $font-size-xsm;
     margin-right: 6px;
@@ -139,6 +145,7 @@
   }
 
   .percent {
+    margin-left: 4px;
     font-weight: 600;
   }
 

@@ -65,11 +65,12 @@ export default {
             slippageMargin: 0.1
         }
     },
-    SWAP_MODAL_PRICE_IMPACT_OPTIONS: [
-        {value: 0.5, label: 'Low', imageSrc: 'src/assets/icons/liquidity_shape_spot_on.svg'},
-        {value: 1, label: 'Medium', imageSrc: 'src/assets/icons/liquidity_shape_curve_on.svg'},
-        {value: 2, label: 'High', imageSrc: 'src/assets/icons/liquidity_shape_bid-ask_on.svg'}
-    ],
+    SWAP_MODAL_PRICE_IMPACT_OPTIONS: {
+        low: {value: 0.5, name: 'Low', imgSrc: 'src/assets/icons/check.png'},
+        medium: {value: 1, name: 'Medium', imgSrc: 'src/assets/icons/warning.svg'},
+        high: {value: 2, name: 'High', imgSrc: 'src/assets/icons/error.svg'},
+        extreme: {value: 5, name: 'Extreme', imgSrc: 'src/assets/icons/error.svg'}
+    },
     paraSwapDefaultSlippage: 0.02,
     showYakSwapWarning: true,
     ASSET_FILTER_TOKENS_OPTIONS: ['ETH', 'DPX',],

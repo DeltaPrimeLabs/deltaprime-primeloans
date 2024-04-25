@@ -63,9 +63,10 @@ export default {
     },
 
     SWAP_MODAL_PRICE_IMPACT_OPTIONS: {
-      low: {value: 0.005, name: 'Low', imgSrc: 'src/assets/icons/check.png'},
-      medium: {value: 0.01, name: 'Medium', imgSrc: 'src/assets/icons/warning.svg'},
-      high: {value: 0.02, name: 'High', imgSrc: 'src/assets/icons/error.svg'}
+      low: {value: 0.5, name: 'Low', imgSrc: 'src/assets/icons/check.png'},
+      medium: {value: 1, name: 'Medium', imgSrc: 'src/assets/icons/warning.svg'},
+      high: {value: 2, name: 'High', imgSrc: 'src/assets/icons/error.svg'},
+      extreme: {value: 5, name: 'Extreme', imgSrc: 'src/assets/icons/error.svg'}
     },
 
     CAI_MINT_SOURCE_ASSETS: ['JOE', 'sAVAX', 'AVAX', 'QI'],

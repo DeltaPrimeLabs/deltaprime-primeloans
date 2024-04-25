@@ -3,7 +3,7 @@
     <Modal>
       <div class="modal__title">
         <span></span>
-        {{ title }}
+        {{ title }} {{userSlippage}} {{marketDeviation}}
       </div>
 
       <div class="dex-toggle" v-if="!swapDebtMode && dexOptions && dexOptions.length > 1">
@@ -109,24 +109,48 @@
 
       <div class="price-impact-option price-impact">
         <div class="label-with-separator">
-          Acceptable Price Impact
+          Acceptable Slippage
           <InfoIcon
             class="label__info-icon"
             :tooltip="{ content: 'Choose price impact you are willing to take. Lower values might results in failed transaction', placement: 'top', classes: 'info-tooltip' }"
           ></InfoIcon>
         </div>
-        <div class="price-impact-option__content">
+        <div v-if="!advancedSlippageMode" class="price-impact-option__content">
           <div
             v-for="(option, key) in priceImpactOptions"
+            class="price-impact-option-tile"
             :key="key"
-            :class="['price-impact-option-tile', selectedPriceImpactOption === key ? 'active' : '', option.disabled ? 'disabled' : '']"
+            :class="[selectedPriceImpactOption === key ? 'active' : '', option.disabled ? 'disabled' : '']"
             v-on:click="() => handlePriceImpactClick(key)"
           >
             <img class="price-impact-icon" :src="option.imgSrc" />
             <div class="price-impact-label">
-              {{ option.name }} {{option.value | percent}}
+              {{ option.name }} {{option.value / 100 | percent}}
             </div>
           </div>
+        </div>
+
+        <div class="advanced-slippage slippage-bar slippage-bar--embedded" v-if="advancedSlippageMode">
+          <span class="slippage-label">Max. acceptable slippage:</span>
+          <SimpleInput :percent="true" :default-value="userSlippage" v-on:newValue="userSlippageChange"></SimpleInput>
+          <span class="percent">%</span>
+          <div class="slippage__divider"></div>
+          <div class="dex-slippage">
+            <span class="slippage-label">Price impact:</span>
+            <span class="deviation-value">{{ marketDeviation }}<span class="percent">%</span></span>
+            <div class="info__icon__wrapper">
+              <InfoIcon
+                class="info__icon"
+                :tooltip="{content: 'The difference between DEX and market prices.', placement: 'top', classes: 'info-tooltip'}"
+              ></InfoIcon>
+            </div>
+          </div>
+        </div>
+
+        <div class="label-with-separator">
+          Advanced Mode
+          <ToggleButton class="advanced-mode-toggle" v-on:toggleChange="advancedModeToggle()">
+          </ToggleButton>
         </div>
       </div>
 
@@ -234,12 +258,14 @@ import SimpleInput from './SimpleInput';
 import DeltaIcon from "./DeltaIcon.vue";
 import InfoIcon from "./InfoIcon.vue";
 import Toggle from './Toggle.vue';
+import ToggleButton from './notifi/settings/ToggleButton.vue';
 
 const ethers = require('ethers');
 
 export default {
   name: 'SwapModal',
   components: {
+    ToggleButton,
     Toggle,
     InfoIcon,
     DeltaIcon,
@@ -273,7 +299,7 @@ export default {
       targetAssetAmount: 0,
       fee: 0,
       info: null,
-      userSlippage: 0,
+      userSlippage: 0.5,
       slippageMargin: null,
       queryMethod: null,
       feeMethods: null,
@@ -330,7 +356,8 @@ export default {
       reverseSwapDisabled: false,
       calculatingSwapRoute: false,
       priceImpactOptions: config.SWAP_MODAL_PRICE_IMPACT_OPTIONS,
-      selectedPriceImpactOption: Object.keys(config.SWAP_MODAL_PRICE_IMPACT_OPTIONS)[0]
+      selectedPriceImpactOption: Object.keys(config.SWAP_MODAL_PRICE_IMPACT_OPTIONS)[0],
+      advancedSlippageMode: false
     };
   },
 
@@ -476,9 +503,9 @@ export default {
       this.targetAssetAmount =
           this.swapDebtMode
           ?
-          this.receivedAccordingToOracle * (1 + (this.userSlippage / 100 + (this.fee ? this.fee : 0)))
+          this.receivedAccordingToOracle * (1 + ((this.userSlippage + this.marketDeviation) / 100 + (this.fee ? this.fee : 0)))
           :
-          this.receivedAccordingToOracle * (1 - (this.userSlippage / 100 + (this.fee ? this.fee : 0)));
+          this.receivedAccordingToOracle * (1 - ((this.userSlippage + this.marketDeviation) / 100 + (this.fee ? this.fee : 0)));
 
 
       const targetInputChangeEvent = await this.$refs.targetInput.setCurrencyInputValue(this.targetAssetAmount);
@@ -502,7 +529,7 @@ export default {
 
       let updatedSlippage = slippageMargin + 100 * dexSlippage;
 
-      this.userSlippage = parseFloat(updatedSlippage.toFixed(3));
+      // this.userSlippage = parseFloat(updatedSlippage.toFixed(3));
 
       await this.updateAmountsWithSlippage();
     },
@@ -722,6 +749,16 @@ export default {
         this.userSlippage = this.priceImpactOptions[key].value;
 
         await this.updateAmountsWithSlippage();
+      }
+    },
+
+    async advancedModeToggle() {
+      this.advancedSlippageMode = !this.advancedSlippageMode;
+      if (this.advancedSlippageMode) {
+        this.userSlippage = 0;
+        await this.updateAmountsWithSlippage();
+      } else {
+        this.handlePriceImpactClick('low');
       }
     },
 
@@ -966,7 +1003,7 @@ export default {
     display: flex;
     justify-content: space-between;
     .price-impact-option-tile {
-      width: 170px;
+      width: 120px;
       height: 100px;
       display: flex;
       flex-direction: column;
@@ -991,7 +1028,7 @@ export default {
       .price-impact-label {
         margin-top: 6px;
         font-family: Montserrat;
-        font-size: $font-size-sm;
+        font-size: $font-size-xsm;
         font-weight: 500;
         font-stretch: normal;
         font-style: normal;
@@ -1016,6 +1053,17 @@ export default {
       }
     }
   }
+}
+
+.advanced-slippage {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+
+.advanced-mode-toggle {
+  margin-left: 8px;
 }
 
 
