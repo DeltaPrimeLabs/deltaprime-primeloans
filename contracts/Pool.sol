@@ -14,6 +14,7 @@ import "./interfaces/IIndex.sol";
 import "./interfaces/IRatesCalculator.sol";
 import "./interfaces/IBorrowersRegistry.sol";
 import "./interfaces/IPoolRewarder.sol";
+import "./VestingDistributor.sol";
 import "./tokens/vPrimeController.sol";
 
 
