@@ -135,6 +135,7 @@ describe('Smart loan', () => {
                 VPrimeArtifact,
                 []
             ) as Contract;
+            await vPrimeContract.initialize();
 
             vPrimeControllerContract = await deployContract(
                 admin,
