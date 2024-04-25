@@ -126,7 +126,7 @@
             class="price-impact-option-tile"
             :key="key"
             :class="[selectedPriceImpactOption === key ? 'active' : '', option.disabled ? 'disabled' : '']"
-            v-tooltip="{ content: 'Choose price impact you are willing to take. Lower values might results in failed transaction', placement: 'top', classes: 'info-tooltip' }"
+            v-tooltip="{ content: 'Choose price impact you are willing to take. Lower values might results in failed transaction', placement: 'bottom', classes: 'info-tooltip' }"
             v-on:click="() => handlePriceImpactClick(key)"
           >
             <div class="price-impact-label">
