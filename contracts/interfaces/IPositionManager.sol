@@ -5,8 +5,6 @@ pragma solidity 0.8.17;
 interface IPositionManager {
     // details about the position
     struct Position {
-        // the address that is approved for spending this token
-        address operator;
         // the sPrime contract address
         address sPrimeAddr;
         // the liquidity of the position
@@ -42,12 +40,13 @@ interface IPositionManager {
     )
         external;
 
+    function forceTransfer(address from, address to, uint256 tokenId) external;
+
     // Get position details
     function positions(uint256 tokenId)
         external
         view
         returns (
-            address operator,
             address token0,
             address token1,
             address pairAddr,

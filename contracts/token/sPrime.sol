@@ -128,7 +128,7 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20, SolvencyMethods {
         require(userInfo[user].amount > 0, "No position");
         uint256[] memory tokenIds = userInfo[user].tokenIds;
         for(uint256 i = 0 ; i < userInfo[user].amount ; i ++) {
-            (,,,,,,uint256 centerId,,,) = positionManager.positions(tokenIds[i]);
+            (,,,,,uint256 centerId,,,) = positionManager.positions(tokenIds[i]);
             uint256[] memory depositIds = pairList[centerId].depositIds;
             uint256 activeId = lbPair.getActiveId();
             if(depositIds[0] <= activeId && depositIds[depositIds.length - 1] >= activeId) {
@@ -148,7 +148,7 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20, SolvencyMethods {
         uint256 amountX = 0;
         uint256 amountY = 0;
         for(uint256 i = 0 ; i < userInfo[user].amount ; i ++) {
-            (,,,,,,,,uint256 amount0, uint256 amount1) = positionManager.positions(userInfo[user].tokenIds[i]);
+            (,,,,,,,uint256 amount0, uint256 amount1) = positionManager.positions(userInfo[user].tokenIds[i]);
             amountX += amount0;
             amountY += amount1;
         }
@@ -334,7 +334,7 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20, SolvencyMethods {
         uint256 totalShare = 0;
         for(uint256 i = 0 ; i < userInfo[user].amount ; i ++) {
             uint256 tokenId = userInfo[user].tokenIds[i];
-            (,,,,,uint256 share, uint256 centerId, uint256[] memory liquidityMinted,,) = positionManager.positions(tokenId);
+            (,,,,uint256 share, uint256 centerId, uint256[] memory liquidityMinted,,) = positionManager.positions(tokenId);
             PairInfo storage pair = pairList[centerId];
             (uint256 balanceX, uint256 balanceY) = _withdrawFromLB(pair.depositIds, liquidityMinted);
             
@@ -425,6 +425,9 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20, SolvencyMethods {
         uint256 activeId = lbPair.getActiveId();
         require(activeIdDesired + idSlippage >= activeId && activeId + idSlippage >= activeIdDesired, "Slippage High");
         
+        if (amountX > 0) tokenX.safeTransfer(address(lbPair), amountX);
+        if (amountY > 0) tokenY.safeTransfer(address(lbPair), amountY);
+
         _depositToLB(_msgSender(), activeId, amountX, amountY);
     }
 
@@ -450,13 +453,10 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20, SolvencyMethods {
 
         PairInfo storage pair = pairList[centerId];
 
-        if (amountX > 0) tokenX.safeTransfer(address(lbPair), amountX);
-        if (amountY > 0) tokenY.safeTransfer(address(lbPair), amountY);
-
         // Mint the liquidity tokens.
         (,,uint256[] memory liquidityMinted) = lbPair.mint(address(this), liquidityConfigs, user);
 
-        (uint256 afterBalanceX, uint256 afterBalanceY) = _getBalances(centerId);    
+        (uint256 afterBalanceX, uint256 afterBalanceY) = _getBalances(centerId);
         uint256 share = _getTotalWeight(afterBalanceX, afterBalanceY);
         if(pair.totalShare > 0) {
             share = pair.totalShare * (_getTotalWeight(afterBalanceX, afterBalanceY) - _getTotalWeight(beforeBalanceX, beforeBalanceY)) / _getTotalWeight(beforeBalanceX, beforeBalanceY);
@@ -484,7 +484,7 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20, SolvencyMethods {
         address nftOwner = IERC721(address(positionManager)).ownerOf(tokenId);
         require(nftOwner == _msgSender(), "Not the NFT owner");
 
-        (,,,,,uint256 shareWithdraw, uint256 centerId, uint256[] memory liquidityMinted,,) = positionManager.positions(tokenId);
+        (,,,,uint256 shareWithdraw, uint256 centerId, uint256[] memory liquidityMinted,,) = positionManager.positions(tokenId);
 
         uint256 lockedBalance = getLockedBalance(nftOwner);
         require(balanceOf(nftOwner) >= shareWithdraw + lockedBalance, "Balance is locked");
@@ -504,9 +504,36 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20, SolvencyMethods {
         }
         userInfo[nftOwner].tokenIds.pop();
         userInfo[nftOwner].amount -= 1;
+        positionManager.burn(tokenId);
         // Send the tokens to the user.
         tokenX.safeTransfer(nftOwner, amountX);
         tokenY.safeTransfer(nftOwner, amountY);
+    }
+
+    function transferPosition(address to, uint256 tokenId) external {
+        address nftOwner = IERC721(address(positionManager)).ownerOf(tokenId);
+        require(nftOwner == _msgSender(), "Not the NFT owner");
+
+        (,,,,uint256 shareWithdraw,,,,) = positionManager.positions(tokenId);
+
+        uint256 lockedBalance = getLockedBalance(nftOwner);
+        require(balanceOf(nftOwner) >= shareWithdraw + lockedBalance, "Balance is locked");
+
+        positionManager.forceTransfer(nftOwner, to, tokenId);
+        
+        uint256 length = userInfo[nftOwner].amount;
+        for(uint i = 0 ; i < length - 1; i ++) {
+            if(userInfo[nftOwner].tokenIds[i] == tokenId) {
+                userInfo[nftOwner].tokenIds[i] = userInfo[nftOwner].tokenIds[length - 1];
+            }
+        }
+        userInfo[nftOwner].tokenIds.pop();
+        userInfo[nftOwner].amount -= 1;
+        _burn(nftOwner, shareWithdraw);
+
+        userInfo[to].tokenIds.push(tokenId);
+        userInfo[to].amount += 1;
+        _mint(to, shareWithdraw);
     }
 
     /**
@@ -544,11 +571,17 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20, SolvencyMethods {
     * @param amount The amount to transfer.
     */
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override {
-        uint256 totalShare = 0;
-        for(uint256 i = 0 ; i < userInfo[from].amount ; i ++) {
-            (,,,,,uint256 share,,,,) = positionManager.positions(userInfo[from].tokenIds[i]);
-            totalShare += share;
+        if(from != address(0) && to != address(0)) {
+            uint256 totalShare = 0;
+            uint256 i = 0;
+            for(i = 0 ; i < userInfo[from].amount ; i ++) {
+                (,,,,uint256 share,,,,) = positionManager.positions(userInfo[from].tokenIds[i]);
+                totalShare += share;
+            }
+            require(totalShare == amount, "You can only transfer full position");
+            for(i = 0 ; i < userInfo[from].amount ; i ++) {
+                positionManager.forceTransfer(from, to, userInfo[from].tokenIds[i]);
+            }
         }
-        require(totalShare == amount, "You can only transfer full position");
     }
 }

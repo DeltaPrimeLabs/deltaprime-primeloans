@@ -43,7 +43,6 @@ contract PositionManager is
         view
         override
         returns (
-            address operator,
             address token0,
             address token1,
             address pairAddr,
@@ -63,7 +62,6 @@ contract PositionManager is
         address tokenY = ISPrime(position.sPrimeAddr).getTokenY();
 
         return (
-            position.operator,
             tokenX,
             tokenY,
             lbPair,
@@ -87,7 +85,6 @@ contract PositionManager is
         _mint(params.recipient, (tokenId = _nextId++));
 
         _positions[tokenId] = Position({
-            operator: address(0),
             sPrimeAddr: _msgSender(),
             totalShare: params.totalShare,
             centerId: params.centerId,
@@ -102,23 +99,18 @@ contract PositionManager is
         return "";
     }
 
+    function forceTransfer(address from, address to, uint256 tokenId) external override {
+        Position storage position = _positions[tokenId];
+        require(position.sPrimeAddr == _msgSender(), "Only allowed SPrime");
+
+        _transfer(from, to, tokenId);
+    }
+
     function burn(uint256 tokenId) external override {
         Position storage position = _positions[tokenId];
         
         require(position.sPrimeAddr == _msgSender(), "Only allowed SPrime");
         delete _positions[tokenId];
         _burn(tokenId);
-    }
-
-    function getApproved(uint256 tokenId) public view override returns (address) {
-        require(_exists(tokenId), 'ERC721: approved query for nonexistent token');
-
-        return _positions[tokenId].operator;
-    }
-
-    /// @dev Overrides _approve to use the operator in the position
-    function _approve(address to, uint256 tokenId) internal override(ERC721) {
-        _positions[tokenId].operator = to;
-        emit Approval(ownerOf(tokenId), to, tokenId);
     }
 }
