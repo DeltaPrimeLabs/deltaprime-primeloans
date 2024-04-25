@@ -14,7 +14,7 @@
   "main": "index.js",
   "dependencies": {
     "@redstone-finance/evm-connector": "^0.3.3-alpha.0",
-    "@sparticuz/chromium": "^116.0.0",
+    "@sparticuz/chromium": "^123.0.1",
     "apollo-cache-inmemory": "^1.6.6",
     "apollo-client": "^2.6.10",
     "apollo-link-http": "^1.5.17",
@@ -26,8 +26,8 @@
     "graphql-tag": "^2.12.6",
     "jsonwebtoken": "^9.0.2",
     "node-fetch": "^2.7.0",
-    "puppeteer": "^21.1.0",
-    "puppeteer-core": "^21.1.0",
+    "puppeteer": "^22.6.4",
+    "puppeteer-core": "^22.6.4",
     "redstone-api": "^0.4.11"
   },
   "private": true,

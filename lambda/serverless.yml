@@ -91,7 +91,7 @@ functions:
           method: get
           path: /sprime/{id}
   levelTvlAndApyAggregator:
-    handler: aggregators/apy.levelTvlAggregator
+    handler: aggregators/apy.levelTvlAndApyAggregator
     memorySize: 512
     timeout: 900
     description: Fetch TVL from Level Finance.
