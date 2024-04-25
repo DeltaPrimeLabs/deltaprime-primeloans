@@ -115,6 +115,11 @@
             :tooltip="{ content: 'Choose price impact you are willing to take. Lower values might results in failed transaction', placement: 'top', classes: 'info-tooltip' }"
           ></InfoIcon>
         </div>
+        <div class="advanced-mode">
+          Advanced Mode
+          <ToggleButton class="advanced-mode-toggle" v-on:toggleChange="advancedModeToggle()">
+          </ToggleButton>
+        </div>
         <div v-if="!advancedSlippageMode" class="price-impact-option__content">
           <div
             v-for="(option, key) in priceImpactOptions"
@@ -123,7 +128,6 @@
             :class="[selectedPriceImpactOption === key ? 'active' : '', option.disabled ? 'disabled' : '']"
             v-on:click="() => handlePriceImpactClick(key)"
           >
-            <img class="price-impact-icon" :src="option.imgSrc" />
             <div class="price-impact-label">
               {{ option.name }} {{option.value / 100 | percent}}
             </div>
@@ -145,12 +149,6 @@
               ></InfoIcon>
             </div>
           </div>
-        </div>
-
-        <div class="label-with-separator">
-          Advanced Mode
-          <ToggleButton class="advanced-mode-toggle" v-on:toggleChange="advancedModeToggle()">
-          </ToggleButton>
         </div>
       </div>
 
@@ -753,9 +751,10 @@ export default {
     },
 
     async advancedModeToggle() {
+      const dexSlippageMargin = config.SWAP_DEXS_CONFIG[this.swapDex].slippageMargin;
       this.advancedSlippageMode = !this.advancedSlippageMode;
       if (this.advancedSlippageMode) {
-        this.userSlippage = 0;
+        this.userSlippage = dexSlippageMargin;
         await this.updateAmountsWithSlippage();
       } else {
         this.handlePriceImpactClick('low');
@@ -970,6 +969,7 @@ export default {
 .price-impact-option {
   display: flex;
   flex-direction: column;
+  border-bottom: var(--swap-modal__slippage-bar-border);
   &.price-impact {
     margin-top: 10px;
   }
@@ -994,22 +994,22 @@ export default {
       margin-left: 10px;
     }
     .label__info-icon {
-      margin-left: 8px;;
+      margin-left: 8px;
     }
   }
   .price-impact-option__content {
     width: 100%;
-    margin: 30px 0;
+    margin-top: 20px;
+    margin-bottom: 26px;
     display: flex;
     justify-content: space-between;
     .price-impact-option-tile {
       width: 120px;
-      height: 100px;
+      height: 40px;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      padding: 18px 0 6px;
       border-radius: 15px;
       border: var(--swap-modal__liquidity-shape-border);
       cursor: pointer;
@@ -1026,7 +1026,6 @@ export default {
         height: 40px;
       }
       .price-impact-label {
-        margin-top: 6px;
         font-family: Montserrat;
         font-size: $font-size-xsm;
         font-weight: 500;
@@ -1064,6 +1063,16 @@ export default {
 
 .advanced-mode-toggle {
   margin-left: 8px;
+}
+
+.advanced-mode {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  color: var(--swap-modal__slippage-bar-color);
+  font-size: $font-size-xsm;
+  font-weight: 600;
 }
 
 

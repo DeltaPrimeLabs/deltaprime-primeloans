@@ -49,12 +49,12 @@ export default {
         ParaSwapV2: {
             displayName: 'ParaSwap',
             availableAssets: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH', 'GRAIL', 'WOO', 'MAGIC', 'JOE'],
-            slippageMargin: 0.05
+            slippageMargin: 0.5
         },
         YakSwap: {
             displayName: 'YakSwap',
             availableAssets: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'GLP', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH', 'GRAIL', 'WOO', 'MAGIC', 'JOE'],
-            slippageMargin: 0.02
+            slippageMargin: 0.2
         },
         Level: {
             availableAssets: [],
