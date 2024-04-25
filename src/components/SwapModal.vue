@@ -3,7 +3,7 @@
     <Modal>
       <div class="modal__title">
         <span></span>
-        {{ title }} {{userSlippage}} {{marketDeviation}}
+        {{ title }}
       </div>
 
       <div class="dex-toggle" v-if="!swapDebtMode && dexOptions && dexOptions.length > 1">
