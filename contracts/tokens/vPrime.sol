@@ -83,6 +83,7 @@ contract vPrime is OwnableUpgradeable {
 
     // Override balanceOf to compute balance dynamically
     function balanceOf(address account) public view returns (uint256) {
+        // TODO: If `account` is an owner of a PrimeAccount then let's return the balance from the PrimeAccount
         if (_checkpoints[account].length == 0) {
             return 0;
         }
