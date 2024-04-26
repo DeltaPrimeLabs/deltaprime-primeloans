@@ -14,15 +14,15 @@ import "../lib/joe-v2/math/Uint256x256Math.sol";
 import "../lib/joe-v2/math/LiquidityConfigurations.sol";
 import "../lib/SolvencyMethods.sol";
 import "../lib/local/DeploymentConstants.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 // SPrime contract declaration
-contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20, SolvencyMethods {
+contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC20Upgradeable, SolvencyMethods {
     using SafeERC20 for IERC20Metadata; // Using SafeERC20 for IERC20 for safe token transfers
     using LiquidityAmounts for address; // Using LiquidityAmounts for address for getting amounts of liquidity
     using SafeCast for uint256; // Using SafeCast for uint256 for safe type casting
@@ -32,6 +32,8 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20, SolvencyMethods {
     uint256 private constant _MAX_RANGE = 51;
     uint256 private constant _PACKED_DISTRIBS_SIZE = 16;
     uint256 private constant _MAX_SIPPIAGE = 5;
+    uint16 internal constant DEFAULT_BIN_STEP = 25;
+    uint256 public constant MAX_LOCK_TIME = 3 * 365 days;
 
     // Mapping for storing pair information and user shares
     mapping(uint256 => PairInfo) public pairList;
@@ -40,12 +42,9 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20, SolvencyMethods {
     mapping(uint256 => bool) public pairStatus;
 
     // Immutable variables for storing token and pair information
-    IERC20Metadata public immutable tokenX;
-    IERC20Metadata public immutable tokenY;
-    ILBPair public immutable lbPair;
-    
-    uint16 internal constant DEFAULT_BIN_STEP = 25;
-    uint256 public constant MAX_LOCK_TIME = 3 * 365 days;
+    IERC20Metadata public tokenX;
+    IERC20Metadata public tokenY;
+    ILBPair public lbPair;
     IPositionManager public positionManager;
 
     // Arrays for storing deltaIds and distributions
@@ -54,7 +53,7 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20, SolvencyMethods {
     uint256[] private distributionY;
 
     /**
-    * @dev Constructor of the contract.
+    * @dev initialize of the contract.
     * @param tokenX_ The address of the token X.
     * @param tokenY_ The address of the token Y.
     * @param name_ The name of the SPrime token. ex: PRIME-USDC LP
@@ -63,7 +62,11 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20, SolvencyMethods {
     * @param deltaIds_ Delta id for bins
     * @param positionManager_ Position Manager contract for sPrime
     */
-    constructor(address tokenX_, address tokenY_, string memory name_, uint256[] memory distributionX_, uint256[] memory distributionY_, int256[] memory deltaIds_, address positionManager_) ERC20(name_, "sPrime"){
+    function initialize(address tokenX_, address tokenY_, string memory name_, uint256[] memory distributionX_, uint256[] memory distributionY_, int256[] memory deltaIds_, address positionManager_) external initializer {
+        __Ownable_init();
+        __ReentrancyGuard_init();
+        __ERC20_init(name_, "sPrime");
+
         require(deltaIds_.length == distributionX_.length && deltaIds_.length == distributionY_.length, "Length Mismatch");
 
         tokenX = IERC20Metadata(tokenX_);
@@ -451,18 +454,12 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20, SolvencyMethods {
             _addBins(centerId, depositIds);
         }
 
-        PairInfo storage pair = pairList[centerId];
-
         // Mint the liquidity tokens.
         (,,uint256[] memory liquidityMinted) = lbPair.mint(address(this), liquidityConfigs, user);
 
-        (uint256 afterBalanceX, uint256 afterBalanceY) = _getBalances(centerId);
-        uint256 share = _getTotalWeight(afterBalanceX, afterBalanceY);
-        if(pair.totalShare > 0) {
-            share = pair.totalShare * (_getTotalWeight(afterBalanceX, afterBalanceY) - _getTotalWeight(beforeBalanceX, beforeBalanceY)) / _getTotalWeight(beforeBalanceX, beforeBalanceY);
-        }
+        uint256 share = _updatePairInfo(beforeBalanceX, beforeBalanceY, centerId);
+
         _mint(user, share);
-        pair.totalShare += share;
 
         uint256 tokenId = positionManager.mint(IPositionManager.MintParams({
             recipient: user,
@@ -474,6 +471,28 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20, SolvencyMethods {
         }));
         userInfo[user].tokenIds.push(tokenId);
         userInfo[user].amount += 1;
+    }
+
+    function _updatePairInfo(
+        uint256 beforeBalanceX,
+        uint256 beforeBalanceY,
+        uint256 centerId
+    ) internal returns (uint256) {
+        PairInfo storage pair = pairList[centerId];
+        uint256 share;
+        (uint256 afterBalanceX, uint256 afterBalanceY) = _getBalances(centerId);
+
+        uint256 totalWeightAfter = _getTotalWeight(afterBalanceX, afterBalanceY);
+        uint256 totalWeightBefore = _getTotalWeight(beforeBalanceX, beforeBalanceY);
+        
+        if (pair.totalShare > 0) {
+            share = pair.totalShare * (totalWeightAfter - totalWeightBefore) / totalWeightBefore;
+        } else {
+            share = totalWeightAfter;
+        }
+        pair.totalShare += share;
+
+        return share;
     }
 
     /**
@@ -489,13 +508,13 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20, SolvencyMethods {
         uint256 lockedBalance = getLockedBalance(nftOwner);
         require(balanceOf(nftOwner) >= shareWithdraw + lockedBalance, "Balance is locked");
 
-        PairInfo memory pair = pairList[centerId];
+        PairInfo storage pair = pairList[centerId];
 
         (uint256 amountX, uint256 amountY) = _withdrawFromLB(pair.depositIds, liquidityMinted);
 
         // Withdraw all the tokens from the LB pool and return the amounts and the queued withdrawals.
         _burn(nftOwner, shareWithdraw);
-        
+
         uint256 length = userInfo[nftOwner].amount;
         for(uint i = 0 ; i < length - 1; i ++) {
             if(userInfo[nftOwner].tokenIds[i] == tokenId) {
@@ -504,7 +523,9 @@ contract SPrime is ISPrime, ReentrancyGuard, Ownable, ERC20, SolvencyMethods {
         }
         userInfo[nftOwner].tokenIds.pop();
         userInfo[nftOwner].amount -= 1;
+        // Burn Position NFT and update total share for the pair
         positionManager.burn(tokenId);
+        pair.totalShare -= shareWithdraw;
         // Send the tokens to the user.
         tokenX.safeTransfer(nftOwner, amountX);
         tokenY.safeTransfer(nftOwner, amountY);
