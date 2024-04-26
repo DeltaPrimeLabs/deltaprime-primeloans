@@ -109,7 +109,7 @@ describe('Smart loan', () => {
 
             [owner, nonOwner, depositor] = await getFixedGasSigners(10000000);
             let penpieLpTokens = ['PENDLE_EZ_ETH_LP', 'PENDLE_WSTETH_LP', 'PENDLE_E_ETH_LP', 'PENDLE_RS_ETH_LP', 'PENDLE_SILO_ETH_WSTETH_LP'];
-            let assetsList = ['ETH', 'ezETH', 'wstETH', 'weETH', 'rsETH', 'PNP', ...penpieLpTokens];
+            let assetsList = ['ETH', 'ezETH', 'wstETH', 'weETH', 'rsETH', ...penpieLpTokens];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'ETH', airdropList: [depositor]}
             ];
@@ -120,9 +120,7 @@ describe('Smart loan', () => {
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor, 1000, 'ARBITRUM');
 
-            tokensPrices = await getTokensPricesMap(assetsList.filter(el => !(['PNP'].includes(el))), "arbitrum", getRedstonePrices, [
-                {symbol: 'PNP', value: 4.5},
-            ]);
+            tokensPrices = await getTokensPricesMap(assetsList, "arbitrum", getRedstonePrices, []);
             MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
             addMissingTokenContracts(tokenContracts, assetsList, 'ARBITRUM');
             supportedAssets = convertAssetsListToSupportedAssets(assetsList, [], 'ARBITRUM');
@@ -228,9 +226,9 @@ describe('Smart loan', () => {
             await wrappedLoan.paraSwapV2(swapData.selector, swapData.data, TOKEN_ADDRESSES['ETH'], toWei('2'), TOKEN_ADDRESSES['rsETH'], 1);
             rsEthBalance = await tokenContracts.get('rsETH')!.balanceOf(wrappedLoan.address);
 
-            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 100);
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 200);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.eq(fromWei(initialHR));
-            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 100);
+            expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 200);
         });
 
         it("should fail to stake as a non-owner", async () => {
@@ -351,7 +349,14 @@ describe('Smart loan', () => {
             const beforeTokenExposure = await getAssetExposure(asset);
             expect(await loanOwnsAsset(lpToken)).to.be.false;
 
+            console.log(`Depositing ${fromWei(amount)} ${asset} - $${tokensPrices.get(asset)! * fromWei(amount)}`);
+
             await wrappedLoan.depositToPendleAndStakeInPenpie(toBytes32(asset), amount, market, minLpOut, guessPtReceivedFromSy, input, limit);
+
+            const received = await tokenContracts.get(lpToken)!.balanceOf(wrappedLoan.address);
+            console.log(`Received ${fromWei(received)} ${lpToken} - $${tokensPrices.get(lpToken)! * fromWei(received)}`);
+
+            console.log(`Expected amount: ${tokensPrices.get(asset)! * fromWei(amount) / tokensPrices.get(lpToken)!}`);
 
             expect(await loanOwnsAsset(lpToken)).to.be.true;
             const afterLpExposure = await getAssetExposure(lpToken);

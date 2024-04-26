@@ -90,17 +90,15 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             amount = Math.min(IERC20(lpToken).balanceOf(address(this)), amount);
             require(amount > 0, "Cannot unstake 0 tokens");
 
-            uint256 pnpReceived;
-            {
-                uint256 beforePnpBalance = IERC20(PNP).balanceOf(address(this));
+            IPendleDepositHelper(DEPOSIT_HELPER).withdrawMarketWithClaim(
+                market,
+                amount,
+                true
+            );
 
-                IPendleDepositHelper(DEPOSIT_HELPER).withdrawMarketWithClaim(
-                    market,
-                    amount,
-                    true
-                );
-
-                pnpReceived = IERC20(PNP).balanceOf(address(this)) - beforePnpBalance;
+            uint256 pnpReceived = IERC20(PNP).balanceOf(address(this));
+            if (pnpReceived > 0) {
+                IERC20(PNP).transfer(msg.sender, pnpReceived);
             }
 
             market.safeApprove(PENDLE_ROUTER, 0);
@@ -121,9 +119,6 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
             _increaseExposure(tokenManager, token, netTokenOut);
             _decreaseExposure(tokenManager, lpToken, amount);
-            if (pnpReceived > 0) {
-                _increaseExposure(tokenManager, PNP, pnpReceived);
-            }
         }
 
         emit Unstaked(
