@@ -114,22 +114,25 @@ contract vPrimeController is OwnableUpgradeable, RedstoneConsumerNumericBase, Au
 
     /* ========== VIEW EXTERNAL FUNCTIONS ========== */
 
-    function getUserDepositDollarValueAcrossWhiteListedPoolsVestedAndNonVested(address userAddress) public view returns (uint256 fullyVestedBalance, uint256 nonVestedBalance) {
-        uint256 fullyVestedDollarValue = 0;
-        uint256 nonVestedDollarValue = 0;
+    function getPoolsPrices() internal view returns (uint256[] memory) {
         bytes32[] memory poolsTokenSymbols = new bytes32[](whitelistedPools.length);
         for (uint i = 0; i < whitelistedPools.length; i++) {
             poolsTokenSymbols[i] = tokenManager.tokenAddressToSymbol(whitelistedPools[i].tokenAddress());
         }
-        uint256[] memory prices = getOracleNumericValuesFromTxMsg(poolsTokenSymbols);
+        return getOracleNumericValuesFromTxMsg(poolsTokenSymbols);
+    }
+
+    function getUserDepositDollarValueAcrossWhiteListedPoolsVestedAndNonVested(address userAddress) public view returns (uint256 fullyVestedDollarValue, uint256 nonVestedDollarValue) {
+        fullyVestedDollarValue = 0;
+        nonVestedDollarValue = 0;
+        uint256[] memory prices = getPoolsPrices();
 
         for (uint i = 0; i < whitelistedPools.length; i++) {
-            uint256 poolBalance = IERC20(whitelistedPools[i]).balanceOf(userAddress);
-            uint256 poolDollarValue = poolBalance * prices[i] * 1e10 / 10 ** whitelistedPools[i].decimals();
-            uint256 fullyVestedToTotalBalanceRatio = whitelistedPools[i].getFullyVestedLockedBalanceToNonVestedRatio(userAddress); // potentially Pool can already return fully vested an non vested dollar value or token amounts
-            fullyVestedToTotalBalanceRatio = fullyVestedToTotalBalanceRatio >= 1e18 ? 1e18 : fullyVestedToTotalBalanceRatio;
-            fullyVestedDollarValue += poolDollarValue * fullyVestedToTotalBalanceRatio / 1e18;
-            nonVestedDollarValue += poolDollarValue * (1e18 - fullyVestedToTotalBalanceRatio) / 1e18;
+            uint256 fullyVestedBalance = whitelistedPools[i].getFullyVestedLockedBalance(userAddress);
+            uint256 nonVestedBalance = IERC20(whitelistedPools[i]).balanceOf(userAddress) - fullyVestedBalance;
+
+            fullyVestedDollarValue += fullyVestedBalance * prices[i] * 1e10 / 10 ** whitelistedPools[i].decimals();
+            nonVestedDollarValue += nonVestedBalance * prices[i] * 1e10 / 10 ** whitelistedPools[i].decimals();
         }
         return (fullyVestedDollarValue, nonVestedDollarValue);
     }

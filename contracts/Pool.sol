@@ -68,6 +68,10 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyCo
         return lockedBalance;
     }
 
+    function getNotLockedBalance(address account) public view returns (uint256) {
+        return balanceOf(account) - getLockedBalance(account);
+    }
+
 
     function lockDeposit(uint256 amount, uint256 lockTime) public {
         uint256 lockedBalance = getLockedBalance(msg.sender);
@@ -85,15 +89,13 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyCo
     }
 
 
-    function getFullyVestedLockedBalanceToNonVestedRatio(address account) public view returns (uint256) {
-        uint256 totalBalance = balanceOf(account);
-        uint256 fullyVestedBalance = 0;
+    function getFullyVestedLockedBalance(address account) public view returns (uint256 fullyVestedBalance) {
+        fullyVestedBalance = 0;
         for (uint i = 0; i < locks[account].length; i++) {
             if (locks[account][i].unlockTime > block.timestamp) { // Lock is still active
                 fullyVestedBalance += locks[account][i].amount * locks[account][i].lockTime / MAX_LOCK_TIME;
             }
         }
-        return totalBalance == 0 ? 0 : fullyVestedBalance * (1e18 + 10) / totalBalance; // Adding 10 wei to avoid rounding errors
     }
 
     function setVPrimeController(vPrimeController _vPrimeController) public onlyOwner {
