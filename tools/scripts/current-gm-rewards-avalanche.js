@@ -206,8 +206,8 @@ function checkNegativeAccounts() {
 
 
 }
-fetchData(Date.now(), "GM_EPOCH_11")
+// fetchData(Date.now(), "GM_EPOCH_11")
 // checkNegativeAccounts()
-// createDiffJson( "GM_EPOCH_9", "GM_EPOCH_10")
+createDiffJson( "GM_EPOCH_10", "GM_EPOCH_11")
 // createAddJson( "GM_EPOCH_8", "GM_EPOCH_9_diff", "GM_EPOCH_9")
 // analyzeJson("GM_EPOCH_9")
