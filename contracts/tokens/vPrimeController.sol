@@ -153,15 +153,16 @@ contract vPrimeController is OwnableUpgradeable, RedstoneConsumerNumericBase, Au
         return totalDollarValue;
     }
 
-    function getUserSPrimeDollarValueVestedAndNonVested(address userAddress) public view returns (uint256 fullyVestedBalance, uint256 nonVestedBalance) {
-        uint256 fullyVestedDollarValue = 0;
-        uint256 nonVestedDollarValue = 0;
+    function getUserSPrimeDollarValueVestedAndNonVested(address userAddress) public view returns (uint256 fullyVestedDollarValue, uint256 nonVestedDollarValue) {
+        fullyVestedDollarValue = 0;
+        nonVestedDollarValue = 0;
+        uint256 sPrimePrice = 2; // TODO: Actual sPrime implementation will return user position denominated in tokenY and based and we'll be sourcing the tokenY price from the oracle
         for (uint i = 0; i < whitelistedSPrimeContracts.length; i++) {
-            uint256 sPrimeDollarValue = whitelistedSPrimeContracts[i].getUserDepositDollarValue(userAddress);
-            uint256 fullyVestedToTotalBalanceRatio = whitelistedSPrimeContracts[i].getFullyVestedLockedBalanceToNonVestedRatio(userAddress); // potentially sPrime can already return fully vested an non vested dollar value or token amounts
-            fullyVestedToTotalBalanceRatio = fullyVestedToTotalBalanceRatio >= 1e18 ? 1e18 : fullyVestedToTotalBalanceRatio;
-            fullyVestedDollarValue += sPrimeDollarValue * fullyVestedToTotalBalanceRatio / 1e18;
-            nonVestedDollarValue += sPrimeDollarValue * (1e18 - fullyVestedToTotalBalanceRatio) / 1e18;
+            uint256 fullyVestedBalance = whitelistedSPrimeContracts[i].getFullyVestedLockedBalance(userAddress);
+            uint256 nonVestedBalance = whitelistedSPrimeContracts[i].balanceOf(userAddress) - fullyVestedBalance;
+
+            fullyVestedDollarValue += fullyVestedBalance * sPrimePrice;
+            nonVestedDollarValue += nonVestedBalance * sPrimePrice;
         }
         return (fullyVestedDollarValue, nonVestedDollarValue);
     }
