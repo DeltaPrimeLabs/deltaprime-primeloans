@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 interface IPool is IERC20 {
     function getLockedBalance(address account) external view returns (uint256);
     function lockDeposit(uint256 amount, uint256 lockTime) external;
-    function getFullyVestedLockedBalanceToNonVestedRatio(address account) external view returns (uint256);
+    function getFullyVestedLockedBalance(address account) external view returns (uint256);
     function setVPrimeController(address _vPrimeController) external;
     function deposit(uint256 _amount) external;
     function depositOnBehalf(uint256 _amount, address _of) external;
