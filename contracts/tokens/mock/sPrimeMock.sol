@@ -34,16 +34,13 @@ contract SPrimeMock is ERC20, Ownable, ProxyConnector {
         );
     }
 
-    function getFullyVestedLockedBalanceToNonVestedRatio(address account) public view returns (uint256) {
-        uint256 totalBalance = balanceOf(account);
-        uint256 fullyVestedBalance = 0;
+    function getFullyVestedLockedBalance(address account) public view returns (uint256 fullyVestedBalance) {
+        fullyVestedBalance = 0;
         for (uint i = 0; i < locks[account].length; i++) {
             if (locks[account][i].unlockTime > block.timestamp) {
                 fullyVestedBalance += locks[account][i].amount * locks[account][i].lockTime / MAX_LOCK_TIME;
             }
         }
-
-        return totalBalance == 0 ? 0 : fullyVestedBalance * (1e18 + 10) / totalBalance; // Adding 10 wei to avoid rounding errors
     }
 
     function setVPrimeControllerContract(address _vPrimeControllerContract) public onlyOwner {
