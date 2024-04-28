@@ -10,21 +10,23 @@
         <Toggle v-on:change="swapDexChange" :options="dexOptions"></Toggle>
       </div>
 
-      <div class="modal-top-desc" v-if="swapDex === 'YakSwap' && showYakSwapWarning">
-        <div>
-          <b>We recommend using Paraswap for swaps of $50K+.</b>
+      <div class="modal-top-info-bar-wrapper">
+        <div class="modal-top-info-bar" v-if="swapDex === 'YakSwap' && showYakSwapWarning">
+          <div>
+            We recommend using Paraswap for swaps of $50K+.
+          </div>
         </div>
-      </div>
 
-      <div class="modal-top-desc" v-if="['YakSwap', 'ParaSwapV2'].includes(swapDex) && !swapDebtMode">
-        <div>
-          <b>Token availability might change with different aggregators.</b>
+        <div class="modal-top-info-bar" v-if="['YakSwap', 'ParaSwapV2'].includes(swapDex) && !swapDebtMode">
+          <div>
+            Token availability might change with different aggregators.
+          </div>
         </div>
-      </div>
 
-      <div class="modal-top-desc" v-if="info">
-        <div>
-          <b v-html="info"></b>
+        <div class="modal-top-info-bar" v-if="info">
+          <div>
+            <div v-html="info"></div>
+          </div>
         </div>
       </div>
 
@@ -114,11 +116,12 @@
             class="label__info-icon"
             :tooltip="{ content: 'Choose price impact you are willing to take. Lower values might results in failed transaction', placement: 'top', classes: 'info-tooltip' }"
           ></InfoIcon>
-        </div>
-        <div class="advanced-mode">
-          Advanced Mode
-          <ToggleButton class="advanced-mode-toggle" v-on:toggleChange="advancedModeToggle()">
-          </ToggleButton>
+          <div class="vertical-separator"></div>
+          <div class="advanced-mode">
+            Advanced Mode
+            <ToggleButton class="advanced-mode-toggle" v-on:toggleChange="advancedModeToggle()">
+            </ToggleButton>
+          </div>
         </div>
         <div v-if="!advancedSlippageMode" class="price-impact-option__content">
           <div
@@ -161,7 +164,7 @@
         {{ slippageWarning }}
       </div>
 
-      <div class="transaction-summary-wrapper">
+      <div class="transaction-summary-wrapper transaction-summary-wrapper--swap-modal">
         <TransactionResultSummaryBeta>
           <div class="summary__title">
             Values after transaction
@@ -970,13 +973,12 @@ export default {
 .price-impact-option {
   display: flex;
   flex-direction: column;
-  border-bottom: var(--swap-modal__slippage-bar-border);
   &.price-impact {
     margin-top: 10px;
   }
   .label-with-separator {
     font-family: Montserrat;
-    font-size: $font-size-sm;
+    font-size: $font-size-md;
     font-weight: 600;
     font-stretch: normal;
     font-style: normal;
@@ -997,39 +999,39 @@ export default {
     .label__info-icon {
       margin-left: 8px;
     }
+
+    .vertical-separator {
+      width: 2px;
+      height: 17px;
+      background-color: var(--swap-modal__label-with-separator-background);
+      margin: 0 10px;
+    }
   }
   .price-impact-option__content {
     width: 100%;
-    margin-top: 20px;
-    margin-bottom: 26px;
+    margin-top: 24px;
+    margin-bottom: 30px;
     display: flex;
     justify-content: space-between;
     .price-impact-option-tile {
-      width: 120px;
-      height: 40px;
+      height: 32px;
+      padding: 0 13px;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      border-radius: 15px;
+      border-radius: 20px;
       border: var(--swap-modal__liquidity-shape-border);
       cursor: pointer;
+      color: var(--swap-modal__slippage-option-pill-color);
 
       &.disabled {
         cursor: initial;
       }
 
-      .price-impact-icon {
-        margin: 0 37px;
-        filter: grayscale(1);
-        opacity: 0.75;
-        width: 40px;
-        height: 40px;
-      }
       .price-impact-label {
         font-family: Montserrat;
-        font-size: $font-size-xsm;
-        font-weight: 500;
+        font-size: $font-size-sm;
         font-stretch: normal;
         font-style: normal;
         line-height: normal;
@@ -1037,13 +1039,11 @@ export default {
         text-align: left;
       }
       &.active {
+        padding: 0 10px;
         border: var(--swap-modal__liquidity-shape-border-active);
         box-shadow: var(--swap-modal__liquidity-shape-box-shadow);
         background-color: var(--swap-modal__liquidity-shape-background);
-        .price-impact-icon {
-          filter: grayscale(0);
-          opacity: 1;
-        }
+        color: var(--swap-modal__slippage-option-pill-color--active);
         .price-impact-label {
           font-weight: 600;
         }
@@ -1071,9 +1071,9 @@ export default {
   flex-direction: row;
   align-items: center;
   justify-content: flex-end;
-  color: var(--swap-modal__slippage-bar-color);
+  color: var(--swap-modal__slippage-advanced-color);
   font-size: $font-size-xsm;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 
