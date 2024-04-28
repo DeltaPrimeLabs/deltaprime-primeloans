@@ -427,6 +427,7 @@ export default {
           console.warn('RABBY');
           window.isRabby = true;
           window.isMetaMask = false;
+          this.showNoWalletBanner = false;
           return;
         }
 
@@ -434,6 +435,7 @@ export default {
           console.warn('METAMASK');
           window.isMetaMask = true;
           window.isRabby = false;
+          this.showNoWalletBanner = false;
           return;
         }
       }
