@@ -1,0 +1,186 @@
+<template>
+  <StatsSection>
+    <div class="ltip-leader-board-component">
+      <StatsSectionHeader>
+        LTIP leaderboard
+      </StatsSectionHeader>
+
+
+      <div class="leader-board" v-if="leaderBoardData">
+        <TableHeader :config="leaderBoardTableHeaderConfig"></TableHeader>
+        <div class="leader-board-table">
+          <div class="leader-board-row" v-for="(entry, index) of leaderBoardData">
+            <div class="leader-board-cell place">{{ index + 1 + (page * PAGE_SIZE) | ordinal }}</div>
+            <div class="leader-board-cell prime-account">
+              <span v-if="!entry.isMe">{{ entry.address | tx(false) }}</span>
+              <span v-if="entry.isMe" class="prime-account--you">You</span>
+            </div>
+            <div class="leader-board-cell eligible-tvl">{{ entry.eligibleTVL | usd }}</div>
+            <div class="leader-board-cell incentives-earned">
+              {{ entry.earnedIncentives | smartRound(8, true) }}
+              <img class="incentives-icon" src="src/assets/logo/arb.png">
+            </div>
+          </div>
+        </div>
+        <Paginator :page-size="PAGE_SIZE"
+                   :total-elements="totalLeaderBoardEntries"
+                   v-on:pageChange="pageChange">
+        </Paginator>
+      </div>
+
+      <div class="loader-container" v-if="!leaderBoardData">
+        <VueLoadersBallBeat color="#A6A3FF" scale="2"></VueLoadersBallBeat>
+      </div>
+    </div>
+  </StatsSection>
+</template>
+
+<script>
+
+
+import StatsSection from './StatsSection.vue';
+import StatsSectionHeader from './StatsSectionHeader.vue';
+import TableHeader from '../TableHeader.vue';
+import DATA from '../../data/ltip/mock-data.json';
+import Paginator from '../Paginator.vue';
+import {mapState} from 'vuex';
+
+const PAGE_SIZE = 10;
+
+export default {
+  name: 'LTIPLeaderBoard',
+  components: {Paginator, TableHeader, StatsSectionHeader, StatsSection},
+  async mounted() {
+    this.setupTableHeader();
+    this.accountService.observeSmartLoanContract$().subscribe(smartLoanContract => {
+      if (smartLoanContract) {
+        console.warn(smartLoanContract);
+        this.smartLoanContract = smartLoanContract;
+        this.setPagedData(this.page);
+      }
+    })
+
+  },
+  computed: {
+    ...mapState('serviceRegistry', ['accountService'])
+  },
+  data() {
+    return {
+      PAGE_SIZE: PAGE_SIZE,
+      leaderBoardTableHeaderConfig: null,
+      leaderBoardData: null,
+      pageNumber: 0,
+      totalLeaderBoardEntries: Object.keys(DATA).length,
+      page: 0,
+      smartLoanContract: null,
+    }
+  },
+  methods: {
+    setupTableHeader() {
+      this.leaderBoardTableHeaderConfig = {
+        gridTemplateColumns: '140px 350px 1fr 2fr',
+        cells: [
+          {
+            label: 'Place',
+            sortable: false,
+            class: 'place',
+            id: 'PLACE',
+          },
+          {
+            label: 'Prime Account',
+            sortable: false,
+            class: 'prime-account',
+            id: 'TRANSACTION_ID',
+          },
+          {
+            label: 'Elgible TVL',
+            sortable: false,
+            class: 'eligible-tvl',
+            id: 'ELIGIBLE_TVL',
+          },
+          {
+            label: 'Incentives earned',
+            sortable: false,
+            class: 'incentives-earned',
+            id: 'INCENTIVES_EARNED',
+          },
+        ]
+      };
+    },
+
+    setPagedData(page) {
+      setTimeout(() => {
+        this.$forceUpdate();
+        this.leaderBoardData = Object.entries(DATA)
+          .slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+          .map(entry => ({
+            address: entry[0],
+            earnedIncentives: entry[1].earnedIncentives,
+            eligibleTVL: entry[1].eligibleTVL,
+            isMe: entry[0] === this.smartLoanContract.address,
+          }));
+        this.$forceUpdate();
+        this.$forceUpdate();
+      })
+    },
+
+    pageChange(page) {
+      this.page = page;
+      this.setPagedData(page);
+    },
+  },
+  watch: {}
+}
+</script>
+
+<style scoped lang="scss">
+@import "~@/styles/variables";
+
+.ltip-leader-board-component {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 30px 42px 30px 42px;
+}
+
+.leader-board-table {
+  .leader-board-row {
+    display: grid;
+    grid-template-columns: 140px 350px 1fr 2fr;
+    height: 60px;
+    border-style: solid;
+    border-width: 0 0 2px 0;
+    border-image-source: var(--asset-table-row__border);
+    border-image-slice: 1;
+    margin: 0 22px;
+
+    .leader-board-cell {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+
+      &.incentives-earned {
+        justify-content: flex-end;
+
+        .incentives-icon {
+          width: 16px;
+          height: 16px;
+          margin-left: 10px;
+        }
+      }
+    }
+  }
+}
+
+.prime-account--you {
+  font-weight: 600;
+}
+
+.loader-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+
+</style>

@@ -158,6 +158,11 @@ export default {
       padding-right: 22px;
     }
 
+    &.incentives-earned {
+      justify-content: flex-end;
+      padding-right: 22px;
+    }
+
     .info__icon {
       margin-left: 5px;
     }
