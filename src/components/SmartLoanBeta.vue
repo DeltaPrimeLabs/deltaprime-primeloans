@@ -11,6 +11,17 @@
           :noSmartLoan="noSmartLoanInternal"
           :healthLoading="healthLoading">
       </StatsBarBeta>
+
+      <LTIPStatsBar
+        :totalEligibleTVL="5000000"
+        :milestone="10000000"
+        :yourEligibleTVL="5202.12412"
+        :aprBoost="0.12516336"
+        :maxAprBoost="0.69327123"
+        :arbCollected="4.1247198427"
+      >
+      </LTIPStatsBar>
+
       <InfoBubble v-if="noSmartLoanInternal === false" cacheKey="ACCOUNT-READY">
         Your Prime Account is ready! Now you can borrow,<br>
         provide liquidity and farm on the <b v-on:click="tabChange(1); selectedTabIndex = 1" style="cursor: pointer;">Farms</b>
@@ -98,6 +109,7 @@ import TransactionHistory from './TransactionHistory';
 import Stats from './stats/Stats.vue';
 import LPTab from "./LPTab.vue";
 import Zaps from "./Zaps.vue";
+import LTIPStatsBar from './LTIPStatsBar.vue';
 
 const TABS = [
   {
@@ -127,6 +139,7 @@ const TUTORIAL_VIDEO_CLOSED_LOCALSTORAGE_KEY = 'TUTORIAL_VIDEO_CLOSED';
 export default {
   name: 'SmartLoanBeta',
   components: {
+    LTIPStatsBar,
     Zaps,
     LPTab,
     TransactionHistory,
