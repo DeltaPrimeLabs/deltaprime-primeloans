@@ -34,6 +34,14 @@ interface ISPrime {
         uint256 amount;
         uint256 unlockTime;
     }
+    
+    /**
+    * @dev Enum representing the status of an action (either ADD or REMOVE).
+    */
+    enum Status {
+        ADD,
+        REMOVE
+    }
 
     /**
     * @dev Users can use deposit function for depositing tokens to the specific bin.
