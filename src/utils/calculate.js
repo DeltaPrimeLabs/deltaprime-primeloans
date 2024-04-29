@@ -308,7 +308,7 @@ export async function penpieMaxUnstaked(stakingContractAddress, loanAddress, dec
   try {
     const readProvider = new ethers.providers.JsonRpcProvider(config.readRpcUrl);
     const multicallContract = new ethers.Contract(config.multicallAddress, MULTICALL.abi, readProvider);
-    const stakingContract = new ethers.Contract(stakingContractAddress, IPenpieFacet.abi, provider.getSigner());
+    const stakingContract = new ethers.Contract(stakingContractAddress, erc20ABI, provider.getSigner());
 
     const response = await multicallContract.callStatic.aggregate([
       {

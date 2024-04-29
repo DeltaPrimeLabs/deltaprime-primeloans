@@ -220,6 +220,7 @@ export default {
     },
 
     async openAddFromWalletModal() {
+      console.log('asdasdasdax', this.farm);
       const modalInstance = this.openModal(AddFromWalletModal);
       modalInstance.asset = this.farm;
       modalInstance.assetBalance = this.balance ? this.balance : 0;
@@ -487,8 +488,6 @@ export default {
           {
             key: 'ADD_FROM_WALLET',
             name: 'Add from wallet',
-            disabled: !this.farm.feedSymbol,
-            disabledInfo: 'Coming soon'
           },
           {
             key: 'STAKE',

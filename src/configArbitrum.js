@@ -127,6 +127,41 @@ export default {
         'TJLB_ETH_USDC': { primary: 'ETH', secondary: 'USDC', name: 'ETH-USDC', dex: 'TraderJoe', symbol: 'TJLB_ETH_USDC', decimals: 18, baseFee: '0.0015', address: addresses['TJLB_ETH_USDC'], binStep: 15, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2', link: "https://traderjoexyz.com/arbitrum/pool/v21/ETH/0xaf88d065e77c8cc2239327c5edb3a432268e5831/15"},
     },
     BALANCER_LP_ASSETS_CONFIG: {},
+    PENPIE_LP_ASSETS_CONFIG: {
+        'PENDLE_EZ_ETH_LP': {
+            protocol: 'PENPIE',
+            short: 'PENPIE',
+            dex: 'Penpie',
+            asset: 'ezETH',
+            symbol: 'PENDLE_EZ_ETH_LP',
+            debtCoverage: 0.83333333333,
+            decimals: 18,
+            tvl: 5350000,
+            address: addresses['PENDLE_EZ_ETH_LP'],
+            rewardTokens: ['PNP'],
+            stakeMethod: 'depositToPendleAndStakeInPenpie',
+            unstakeMethod: 'unstakeFromPenpieAndWithdrawFromPendle',
+            stakingContractAddress: '0x60712e3C9136CF411C561b4E948d4d26637561e7',
+            feedSymbol: 'PENDLE_EZ_ETH_LP',
+        },
+        'PENDLE_WSTETH_LP': {
+            protocol: 'PENPIE',
+            short: 'PENPIE',
+            dex: 'Penpie',
+            asset: 'wstETH',
+            symbol: 'PENDLE_WSTETH_LP',
+            protocolIdentifier: 'PENDLE_WSTETH_LP',
+            debtCoverage: 0.83333333333,
+            decimals: 18,
+            tvl: 5350000,
+            address: addresses['PENDLE_WSTETH_LP'],
+            rewardTokens: ['PNP'],
+            stakeMethod: 'depositToPendleAndStakeInPenpie',
+            unstakeMethod: 'unstakeFromPenpieAndWithdrawFromPendle',
+            stakingContractAddress: '0x08a152834de126d2ef83D612ff36e4523FD0017F',
+            feedSymbol: 'PENDLE_WSTETH_LP',
+        }
+    },
     LEVEL_LP_ASSETS_CONFIG: {
         "arbJnrLLP": {name: "Junior", symbol: "arbJnrLLP", pid: 2, short: "Jnr", decimals: 18, address: addresses.arbJnrLLP, debtCoverage: 0.83333333333, balanceMethod: "levelJnrBalance", groupIdentifier: 'STKD_JNR_LLP_GROUP', underlyingAssets: ['BTC', 'ETH', 'ARB', 'USDT', 'USDC'], link: 'https://app.level.finance/liquidity/junior-tranche/buy', disableAddTokenButton: true},
         "arbMzeLLP": {name: "Mezzanine", symbol: "arbMzeLLP", pid: 1, short: "Mze", decimals: 18, address: addresses.arbMzeLLP, debtCoverage: 0.83333333333, balanceMethod: "levelMzeBalance", groupIdentifier: 'STKD_MZE_LLP_GROUP', underlyingAssets: ['BTC', 'ETH', 'USDT', 'USDC'], link: 'https://app.level.finance/liquidity/mezzanine-tranche/buy', disableAddTokenButton: true},
@@ -284,50 +319,6 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['GLP'],
                 strategy: 'GMX',
-                refreshDelay: 60000
-            }
-        ],
-        "ezETH": [
-            {
-                protocol: 'PENPIE',
-                autoCompounding: true,
-                protocolIdentifier: 'PENDLE_EZ_ETH_LP',
-                balance: async (address) => Promise.resolve(1),
-                stakingContractAddress: '0x60712e3C9136CF411C561b4E948d4d26637561e7',
-                decimals: 18, //decimals of staking contract
-                stakeMethod: 'depositToPendleAndStakeInPenpie',
-                unstakeMethod: 'unstakeFromPenpieAndWithdrawFromPendle',
-                feedSymbol: 'PENDLE_EZ_ETH_LP',
-                symbol: 'PENPIE',
-                token: 'GLP',
-                isTokenLp: false,
-                info: 'Continuously stakes ezETH in order to maximize ezETH rewards.',
-                rewardsInfo: 'These are the rewards that you accumulated. These are staked too.',
-                debtCoverage: 0.83333333333,
-                rewardTokens: ['GLP'],
-                strategy: 'Pendle',
-                refreshDelay: 60000
-            }
-        ],
-        "wstETH": [
-            {
-                protocol: 'PENPIE',
-                autoCompounding: true,
-                protocolIdentifier: 'PENDLE_WSTETH_LP',
-                balance: async (address) => Promise.resolve(1),
-                stakingContractAddress: '0x08a152834de126d2ef83D612ff36e4523FD0017F',
-                decimals: 18, //decimals of staking contract
-                stakeMethod: 'depositToPendleAndStakeInPenpie',
-                unstakeMethod: 'unstakeFromPenpieAndWithdrawFromPendle',
-                feedSymbol: 'PENDLE_WSTETH_LP',
-                symbol: 'PENPIE',
-                token: 'wstETH',
-                isTokenLp: false,
-                info: 'Continuously stakes wstETH in order to maximize wstETH rewards.',
-                rewardsInfo: 'These are the rewards that you accumulated. These are staked too.',
-                debtCoverage: 0.83333333333,
-                rewardTokens: ['wstETH'],
-                strategy: 'Pendle',
                 refreshDelay: 60000
             }
         ],

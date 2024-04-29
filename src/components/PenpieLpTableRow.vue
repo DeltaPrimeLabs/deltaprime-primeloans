@@ -1,0 +1,579 @@
+<template>
+  <div v-if="provider" class="lp-table-row-component">
+    <div class="table__row" v-if="lpToken">
+      <div class="table__cell asset">
+        <img class="asset__icon" :src="getAssetIcon(lpToken.asset)">
+        <div class="asset__info">
+          <div class="asset__name">{{lpToken.asset}}
+          </div>
+          <div class="asset__dex">
+            by {{ lpToken.dex }}
+          </div>
+        </div>
+      </div>
+
+      <div class="table__cell table__cell--double-value lp-balance">
+        <template
+            v-if="penpieLpBalances">
+          <div class="double-value__pieces">
+            {{ penpieLpBalances[lpToken.symbol] | smartRound }}
+          </div>
+          <div class="double-value__usd">
+            <span v-if="penpieLpBalances">{{ penpieLpBalances[lpToken.symbol] * lpToken.price | usd }}</span>
+          </div>
+        </template>
+        <template v-else>
+          <div class="no-value-dash"></div>
+        </template>
+      </div>
+
+      <div class="table__cell table__cell--double-value staked">
+        <template
+            v-if="penpieLpBalances">
+          <div class="double-value__pieces">
+            {{ penpieLpBalances[lpToken.symbol] | smartRound }}
+          </div>
+          <div class="double-value__usd">
+            <span v-if="penpieLpBalances">{{ penpieLpBalances[lpToken.symbol] * lpToken.price | usd }}</span>
+          </div>
+        </template>
+        <template v-else>
+          <div class="no-value-dash"></div>
+        </template>
+      </div>
+
+      <div class="table__cell table__cell--double-value">
+        <template>
+          <div class="table__cell rewards">
+            <span v-for="symbol in lpToken.rewardTokens">
+<!--              todo uncomment when fixing rewards-->
+<!--              <img class="asset__icon" :src="getAssetIcon(symbol)">-->
+              <span
+                  v-if="lpToken.rewardBalances && lpToken.rewardBalances[symbol] && parseFloat(lpToken.rewardBalances[symbol]) !== null">{{
+                  formatTokenBalance((lpToken.rewardBalances && lpToken.rewardBalances[symbol] && !rewardsReset) ? lpToken.rewardBalances[symbol] : 0, 6, true)
+                }}</span>
+              <vue-loaders-ball-beat v-else color="#A6A3FF" scale="0.5"></vue-loaders-ball-beat>
+            </span>
+          </div>
+        </template>
+      </div>
+
+      <div class="table__cell table__cell--double-value loan">
+        {{ formatTvl(lpToken.tvl) }}
+      </div>
+
+      <div class="table__cell table__cell--double-value apr" v-bind:class="{'apr--with-warning': lpToken.aprWarning}">
+        {{ lpToken.apy / 100 | percent }}
+        <div class="apr-warning" v-if="lpToken.aprWarning">
+          <img src="src/assets/icons/warning.svg"
+               v-tooltip="{content: lpToken.aprWarning, classes: 'info-tooltip long'}">
+        </div>
+      </div>
+
+      <div class="table__cell table__cell--double-value max-apr">
+        {{ maxApr | percent }}
+      </div>
+
+      <div class="table__cell"></div>
+
+      <div class="table__cell actions">
+        <IconButtonMenuBeta
+            class="actions__icon-button"
+            :config="addActionsConfig"
+            v-if="addActionsConfig"
+            v-on:iconButtonClick="actionClick"
+            :disabled="disableAllButtons || noSmartLoan">
+        </IconButtonMenuBeta>
+        <IconButtonMenuBeta
+            class="actions__icon-button last"
+            :config="removeActionsConfig"
+            v-if="removeActionsConfig"
+            v-on:iconButtonClick="actionClick"
+            :disabled="disableAllButtons || noSmartLoan">
+        </IconButtonMenuBeta>
+        <IconButtonMenuBeta
+            class="actions__icon-button"
+            v-if="moreActionsConfig"
+            :config="moreActionsConfig"
+            v-on:iconButtonClick="actionClick"
+            :disabled="disableAllButtons || !healthLoaded">
+        </IconButtonMenuBeta>
+      </div>
+
+      <div class="table__cell"></div>
+    </div>
+  </div>
+</template>
+
+<script>
+import AddFromWalletModal from "./AddFromWalletModal.vue";
+
+const ethers = require('ethers');
+import DoubleAssetIcon from "./DoubleAssetIcon.vue";
+import Chart from "./Chart.vue";
+import IconButtonMenuBeta from "./IconButtonMenuBeta.vue";
+import SmallBlock from "./SmallBlock.vue";
+import {mapActions, mapState} from "vuex";
+import {calculateMaxApy} from "../utils/calculate";
+import erc20ABI from "../../test/abis/ERC20.json";
+import config from "../config";
+
+export default {
+  name: 'PenpieLpTableRow',
+  components: {SmallBlock, IconButtonMenuBeta, Chart, DoubleAssetIcon},
+  props: {
+    lpToken: null
+  },
+  data() {
+    return {
+      addActionsConfig: null,
+      removeActionsConfig: null,
+      moreActionsConfig: null,
+      disableAllButtons: false,
+      isLpBalanceEstimated: false,
+      healthLoaded: false,
+      totalStaked: null,
+      apr: 0,
+      tvl: 0,
+    }
+  },
+  computed: {
+    ...mapState('fundsStore', [
+      'health',
+      'lpAssets',
+      'lpBalances',
+      'smartLoanContract',
+      'assetBalances',
+      'assets',
+      'debtsPerAsset',
+      'penpieLpBalances',
+      'penpieLpAssets',
+      'noSmartLoan',
+      'concentratedLpAssets',
+      'concentratedLpBalances',
+      'levelLpAssets',
+      'levelLpBalances',
+      'traderJoeV2LpAssets',
+      'balancerLpAssets',
+      'balancerLpBalances',
+      'gmxV2Assets',
+      'gmxV2Balances',
+    ]),
+    ...mapState('stakeStore', ['farms']),
+    ...mapState('poolStore', ['pools']),
+    ...mapState('network', ['provider', 'account']),
+    ...mapState('serviceRegistry', [
+      'assetBalancesExternalUpdateService',
+      'dataRefreshEventService',
+      'progressBarService',
+      'lpService',
+      'healthService',
+      'providerService',
+    ]),
+  },
+
+  async mounted() {
+    this.providerService.observeProviderCreated().subscribe(() => {
+      this.setupAddActionsConfiguration();
+      this.setupRemoveActionsConfiguration();
+      this.setupMoreActionsConfiguration();
+      this.watchAssetBalancesDataRefreshEvent();
+      this.watchHardRefreshScheduledEvent();
+      this.watchHealth();
+      this.watchProgressBarState();
+      this.watchAssetApysRefresh();
+      this.watchExternalAssetBalanceUpdate();
+      this.watchRefreshLP();
+      this.setupApr();
+    })
+  },
+
+  methods: {
+    ...mapActions('fundsStore', ['fund','withdraw']),
+    setupAddActionsConfiguration() {
+      this.addActionsConfig =   {
+        iconSrc: 'src/assets/icons/plus.svg',
+        tooltip: 'Add',
+        menuOptions: [
+          {
+            key: 'ADD_FROM_WALLET',
+            name: 'Import Penpie LP from wallet',
+          },
+          {
+            key: 'IMPORT_AND_STAKE',
+            name: 'Import & stake Pendle LP',
+          },
+          {
+            key: 'CREATE_LP',
+            name: 'Create LP from LRT',
+          },
+        ]
+      }
+    },
+
+    setupRemoveActionsConfiguration() {
+      this.removeActionsConfig =   {
+        iconSrc: 'src/assets/icons/minus.svg',
+        tooltip: 'Remove',
+        menuOptions: [
+          {
+            key: 'EXPORT_LP',
+            name: 'Export Penpie LP',
+          },
+          {
+            key: 'UNSTAKE_AND_EXPORT',
+            name: 'Unstake & export Pendle LP',
+          },
+          {
+            key: 'UNWIND',
+            name: 'Unwind LP to LRT',
+          },
+        ]
+      }
+    },
+
+    setupMoreActionsConfiguration() {
+      this.moreActionsConfig = {
+        iconSrc: 'src/assets/icons/icon_a_more.svg',
+        tooltip: 'More',
+        menuOptions: [
+          {
+            key: 'CLAIM_REWARDS',
+            name: 'Claim rewards'
+          }
+        ]
+      };
+    },
+
+    actionClick(key) {
+      if (!this.disableAllButtons) {
+        switch (key) {
+          case 'ADD_FROM_WALLET':
+            this.openAddFromWalletModal();
+            break;
+          case 'IMPORT_AND_STAKE':
+            this.openImportModal();
+            break;
+          case 'CREATE_LP':
+            this.openStakeModal();
+            break;
+          case 'EXPORT_LP':
+            this.openProvideLiquidityModal();
+            break;
+          case 'UNSTAKE_AND_EXPORT':
+            this.openUnstakeAndWithdrawModal();
+            break;
+          case 'UNWIND':
+            this.openUnstakeAndWithdrawModal();
+            break;
+          case 'CLAIM_REWARDS':
+            this.openRemoveLiquidityModal();
+            break;
+        }
+      }
+    },
+
+    async openAddFromWalletModal() {
+      const modalInstance = this.openModal(AddFromWalletModal);
+      console.log(this.lpToken);
+      console.log(this.penpieLpAssets);
+      modalInstance.asset = this.lpToken;
+      modalInstance.assetBalance = this.penpieLpBalances && this.penpieLpBalances[this.lpToken.protocolIdentifier] ? this.penpieLpBalances && this.penpieLpBalances[this.lpToken.protocolIdentifier] : 0;
+      modalInstance.assets = this.assets;
+      modalInstance.assetBalances = this.assetBalances;
+      modalInstance.lpAssets = this.lpAssets;
+      modalInstance.lpBalances = this.lpBalances;
+      modalInstance.concentratedLpAssets = this.concentratedLpAssets;
+      modalInstance.concentratedLpBalances = this.concentratedLpBalances;
+      modalInstance.levelLpAssets = this.levelLpAssets;
+      modalInstance.levelLpBalances = this.levelLpBalances;
+      modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
+      modalInstance.balancerLpBalances = this.balancerLpBalances;
+      modalInstance.balancerLpAssets = this.balancerLpAssets;
+      modalInstance.gmxV2Assets = this.gmxV2Assets;
+      modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.farms = this.farms;
+      modalInstance.debtsPerAsset = this.debtsPerAsset;
+      modalInstance.loan = this.debt;
+      modalInstance.thresholdWeightedValue = this.thresholdWeightedValue;
+      modalInstance.logo = config.PROTOCOLS_CONFIG['PENPIE'].logo;
+      modalInstance.walletAssetBalance = await this.getWalletAssetBalance();
+
+      modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
+        if (this.smartLoanContract) {
+          const fundRequest = {
+            value: addFromWalletEvent.value.toString(),
+            asset: this.lpToken.symbol,
+            assetDecimals: this.lpToken.decimals,
+            type: 'PENPIE_LP',
+          };
+          this.handleTransaction(this.fund, {fundRequest: fundRequest}, () => {
+            this.$forceUpdate();
+          }, (error) => {
+            this.handleTransactionError(error);
+          }).then(() => {
+          });
+        }
+      });
+    },
+    hasSmartLoanContract() {
+      return this.smartLoanContract && this.smartLoanContract.address !== NULL_ADDRESS;
+    },
+
+    async getWalletAssetBalance() {
+      const tokenContract = new ethers.Contract(this.lpToken.receiptTokenAddress ? this.lpToken.receiptTokenAddress : this.lpToken.address, erc20ABI, this.provider.getSigner());
+      return await this.getWalletTokenBalance(this.account, this.lpToken.symbol, tokenContract, this.lpToken.decimals);
+    },
+
+    maxApr() {
+      return calculateMaxApy(this.pools, this.apr / 100);
+    },
+
+    async setupApr() {
+      if (!this.lpToken.apy) return;
+      this.apr = this.lpToken.apy;
+    },
+
+    watchAssetBalancesDataRefreshEvent() {
+      this.dataRefreshEventService.assetBalancesDataRefreshEvent$.subscribe(() => {
+        this.isLpBalanceEstimated = false;
+        this.disableAllButtons = false;
+        this.$forceUpdate();
+      });
+    },
+
+    watchHardRefreshScheduledEvent() {
+      this.dataRefreshEventService.hardRefreshScheduledEvent$.subscribe(() => {
+        this.disableAllButtons = true;
+        this.$forceUpdate();
+      });
+    },
+
+    watchHealth() {
+      this.healthService.observeHealth().subscribe(health => {
+        this.healthLoaded = true;
+      });
+    },
+
+    watchAssetApysRefresh() {
+      this.dataRefreshEventService.observeAssetApysDataRefresh().subscribe(async () => {
+        await this.setupApr();
+      })
+    },
+
+    watchExternalAssetBalanceUpdate() {
+      this.assetBalancesExternalUpdateService.observeExternalAssetBalanceUpdate().subscribe(updateEvent => {
+        if (updateEvent.assetSymbol === this.lpToken.symbol) {
+          this.balancerLpBalances[this.lpToken.symbol] = updateEvent.balance;
+          this.isBalanceEstimated = !updateEvent.isTrueData;
+          this.$forceUpdate();
+        }
+      })
+    },
+
+    watchRefreshLP() {
+      this.lpService.observeRefreshLp().subscribe(async (lpType) => {
+        if (lpType === 'BALANCER_V2_REWARDS_CLAIMED') {
+          this.rewardsReset = true;
+        }
+      })
+    },
+
+    watchProgressBarState() {
+      this.progressBarService.progressBarState$.subscribe((state) => {
+        switch (state) {
+          case 'MINING' : {
+            this.disableAllButtons = true;
+            break;
+          }
+          case 'SUCCESS': {
+            this.disableAllButtons = false;
+            break;
+          }
+          case 'ERROR' : {
+            this.disableAllButtons = false;
+            this.isBalanceEstimated = false;
+            break;
+          }
+          case 'CANCELLED' : {
+            this.disableAllButtons = false;
+            this.isBalanceEstimated = false;
+            break;
+          }
+        }
+      })
+    },
+
+    async getWalletLpTokenBalance() {
+      const tokenContract = new ethers.Contract(this.lpToken.address, erc20ABI, this.provider.getSigner());
+      return await this.getWalletTokenBalance(this.account, this.lpToken.symbol, tokenContract, this.lpToken.decimals);
+    },
+
+    handleTransactionError(error) {
+      if (error.code === 4001 || error.code === -32603) {
+        this.progressBarService.emitProgressBarCancelledState();
+      } else {
+        this.progressBarService.emitProgressBarErrorState();
+      }
+      this.closeModal();
+      this.disableAllButtons = false;
+      this.isBalanceEstimated = false;
+    },
+  }
+}
+</script>
+
+<style scoped lang="scss">
+@import "~@/styles/variables";
+
+.lp-table-row-component {
+  height: 60px;
+  transition: all 200ms;
+
+  &.expanded {
+    height: 387px;
+  }
+
+  .table__row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr) 200px 130px 100px 120px 100px 60px 80px 22px;
+    height: 60px;
+    border-style: solid;
+    border-width: 0 0 2px 0;
+    border-image-source: var(--asset-table-row__border);
+    border-image-slice: 1;
+    padding-left: 6px;
+
+    .table__cell {
+      display: flex;
+      flex-direction: row;
+
+      &.asset {
+        align-items: center;
+
+        .asset__icon {
+          width: 20px;
+          height: 20px;
+          opacity: var(--asset-table-row__icon-opacity);
+        }
+
+        .asset__info {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          margin-left: 8px;
+          font-weight: 500;
+        }
+
+        .asset__dex {
+          font-size: $font-size-xxs;
+          color: var(--asset-table-row__asset-loan-color);
+        }
+      }
+
+      &.lp-balance, &.staked {
+        align-items: flex-end;
+      }
+
+      &.loan, &.apr, &.max-apr {
+        align-items: flex-end;
+      }
+
+      &.rewards {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+
+        .asset__icon {
+          margin-left: 5px;
+          height: 22px;
+          width: 22px;
+          border-radius: 50%;
+          margin-right: 9px;
+        }
+      }
+
+      &.apr.apr--with-warning {
+        position: relative;
+
+        .apr-warning {
+          position: absolute;
+          right: -25px;
+        }
+      }
+
+      &.max-apr {
+        font-weight: 600;
+      }
+
+      &.trend {
+        justify-content: center;
+        align-items: center;
+        margin-left: 49px;
+
+        .trend__chart-change {
+          display: flex;
+          flex-direction: column;
+          font-size: $font-size-xxs;
+          align-items: center;
+          cursor: pointer;
+        }
+
+        .chart__icon-button {
+          margin-left: 7px;
+        }
+      }
+
+      .stars-icon {
+        width: 20px;
+        margin-right: 10px;
+        transform: translateY(-2px);
+      }
+
+      &.price {
+        justify-content: flex-end;
+        align-items: center;
+        font-weight: 500;
+      }
+
+      &.actions {
+        align-items: center;
+
+        .actions__icon-button {
+          &:not(:last-child) {
+            margin-right: 12px;
+          }
+        }
+      }
+
+      &.table__cell--double-value {
+        flex-direction: column;
+        justify-content: center;
+
+        .double-value__pieces {
+          font-size: $font-size-xsm;
+          font-weight: 600;
+        }
+
+        .double-value__usd {
+          font-size: $font-size-xxs;
+          color: var(--asset-table-row__double-value-color);
+          font-weight: 500;
+        }
+
+        &.loan {
+          .double-value__pieces {
+            font-weight: 500;
+          }
+        }
+      }
+
+      .no-value-dash {
+        height: 1px;
+        width: 15px;
+        background-color: var(--asset-table-row__no-value-dash-color);
+      }
+    }
+  }
+}
+</style>

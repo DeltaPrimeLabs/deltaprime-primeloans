@@ -69,6 +69,8 @@ export default {
     concentratedLpBalances: null,
     levelLpBalances: null,
     gmxV2Balances: null,
+    penpieLpBalances: null,
+    penpieLpAssets: null,
     accountApr: null,
     debt: null,
     totalValue: null,
@@ -108,6 +110,10 @@ export default {
 
     setConcentratedLpAssets(state, assets) {
       state.concentratedLpAssets = assets;
+    },
+
+    setPenpieLpAssets(state, assets) {
+      state.penpieLpAssets = assets;
     },
 
     setTraderJoeV2LpAssets(state, assets) {
@@ -174,6 +180,10 @@ export default {
       state.gmxV2Balances = balances;
     },
 
+    setPenpieLpBalances(state, balances) {
+      state.penpieLpBalances = balances;
+    },
+
     setFullLoanStatus(state, status) {
       state.fullLoanStatus = status;
     },
@@ -222,9 +232,11 @@ export default {
       await dispatch('setupLpAssets');
       await dispatch('setupConcentratedLpAssets');
       await dispatch('setupTraderJoeV2LpAssets');
+      await dispatch('setupPenpieLpAssets');
       if (config.BALANCER_LP_ASSETS_CONFIG) await dispatch('setupBalancerLpAssets');
       if (config.LEVEL_LP_ASSETS_CONFIG) await dispatch('setupLevelLpAssets');
       if (config.GMX_V2_ASSETS_CONFIG) await dispatch('setupGmxV2Assets');
+      if (config.PENPIE_LP_ASSETS_CONFIG) await dispatch('setupPenpieLpAssets');
       await dispatch('getAllAssetsApys');
       await dispatch('stakeStore/updateStakedPrices', null, {root: true});
       state.assetBalances = [];
@@ -279,6 +291,7 @@ export default {
         if (config.BALANCER_LP_ASSETS_CONFIG) await dispatch('setupBalancerLpAssets');
         if (config.LEVEL_LP_ASSETS_CONFIG) await dispatch('setupLevelLpAssets');
         if (config.GMX_V2_ASSETS_CONFIG) await dispatch('setupGmxV2Assets');
+        if (config.PENPIE_LP_ASSETS_CONFIG) await dispatch('setupPenpieLpAssets');
         await dispatch('getAllAssetsBalances');
         await dispatch('getAllAssetsApys');
         await dispatch('getDebtsPerAsset');
@@ -305,7 +318,7 @@ export default {
     async setupSupportedAssets({commit}) {
       const tokenManager = new ethers.Contract(TOKEN_MANAGER_TUP.address, TOKEN_MANAGER.abi, provider.getSigner());
       const whiteListedTokenAddresses = await tokenManager.getSupportedTokensAddresses();
-
+      console.log('state.supportedAssets', whiteListedTokenAddresses);
       const supported = whiteListedTokenAddresses
         .map(address => Object.keys(TOKEN_ADDRESSES).find(symbol => symbol !== 'default' && TOKEN_ADDRESSES[symbol].toLowerCase() === address.toLowerCase()));
 
@@ -452,6 +465,31 @@ export default {
       });
 
       commit('setConcentratedLpAssets', lpTokens);
+    },
+
+    async setupPenpieLpAssets({state, rootState, commit}) {
+      const lpService = rootState.serviceRegistry.lpService;
+      let lpTokens = {};
+      console.log('state.supportedAssets',state.supportedAssets);
+      Object.values(config.PENPIE_LP_ASSETS_CONFIG).forEach(
+        asset => {
+          // todo when PENDLE added to supported assets
+          // if (state.supportedAssets.includes(asset.symbol)) {
+            lpTokens[asset.symbol] = asset;
+          // }
+        }
+      );
+
+      const redstonePriceDataRequest = await fetch(config.redstoneFeedUrl);
+      const redstonePriceData = await redstonePriceDataRequest.json();
+
+      Object.keys(lpTokens).forEach(async assetSymbol => {
+        lpTokens[assetSymbol].price = redstonePriceData[assetSymbol] ? redstonePriceData[assetSymbol][0].dataPoints[0].value : 0;
+        lpService.emitRefreshLp();
+      });
+
+      console.log('PENPIE SETUP', lpTokens);
+      commit('setPenpieLpAssets', lpTokens);
     },
 
     async setupTraderJoeV2LpAssets({state, rootState, commit}) {
@@ -746,6 +784,7 @@ export default {
       const concentratedLpBalances = {};
       const gmxV2Balances = {};
       const balancerLpBalances = {};
+      const penpieLpBalances = {};
       const balancerLpAssets = state.balancerLpAssets;
       const levelLpBalances = {};
       const assetBalances = await state.readSmartLoanContract.getAllAssetsBalances();
@@ -778,6 +817,9 @@ export default {
           }
           if (config.GMX_V2_ASSETS_CONFIG[symbol]) {
             gmxV2Balances[symbol] = formatUnits(asset.balance.toString(), config.GMX_V2_ASSETS_CONFIG[symbol].decimals);
+          }
+          if (config.PENPIE_LP_ASSETS_CONFIG[symbol]) {
+            penpieLpBalances[symbol] = formatUnits(asset.balance.toString(), config.PENPIE_LP_ASSETS_CONFIG[symbol].decimals);
           }
         }
       );
@@ -870,6 +912,7 @@ export default {
       await commit('setBalancerLpAssets', balancerLpAssets);
       await commit('setLevelLpBalances', levelLpBalances);
       await commit('setGmxV2Balances', gmxV2Balances);
+      await commit('setPenpieLpBalances', penpieLpBalances);
       await dispatch('setupConcentratedLpUnderlyingBalances');
       await dispatch('setupTraderJoeV2LpUnderlyingBalancesAndLiquidity');
       const refreshEvent = {assetBalances: balances, lpBalances: lpBalances};
@@ -1465,6 +1508,9 @@ export default {
           break;
         case 'LEVEL_LLP':
           price = state.levelLpAssets[fundRequest.asset].price;
+          break;
+        case 'PENPIE_LP':
+          price = state.penpieLpAssets[fundRequest.asset].price;
       }
 
       const depositAmountUSD = Number(depositAmount) * price;
@@ -1482,6 +1528,9 @@ export default {
           break;
         case 'LEVEL_LLP':
           assetBalanceBeforeDeposit = state.levelLpBalances[fundRequest.asset];
+          break;
+        case 'PENPIE_LP':
+          assetBalanceBeforeDeposit = state.penpieLpBalances[fundRequest.asset];
       }
       const assetBalanceAfterDeposit = Number(assetBalanceBeforeDeposit) + Number(depositAmount);
 
