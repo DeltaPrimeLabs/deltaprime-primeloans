@@ -4,6 +4,7 @@ pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import "../interfaces/IBorrowersRegistry.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {vPrimeController} from "./vPrimeController.sol";
 
@@ -16,12 +17,14 @@ contract vPrime is OwnableUpgradeable {
         uint256 maxVPrimeCap;
     }
 
+    IBorrowersRegistry public borrowersRegistry;
     address public vPrimeControllerAddress;
     mapping(address => Checkpoint[]) private _checkpoints; // _checkpoints[address(this)] serves as a total supply checkpoint
 
     /* ========== INITIALIZER ========== */
 
-    function initialize() external initializer {
+    function initialize(IBorrowersRegistry _borrowersRegistry) external initializer {
+        borrowersRegistry = _borrowersRegistry;
         __Ownable_init();
     }
 
@@ -83,7 +86,10 @@ contract vPrime is OwnableUpgradeable {
 
     // Override balanceOf to compute balance dynamically
     function balanceOf(address account) public view returns (uint256) {
-        // TODO: If `account` is an owner of a PrimeAccount then let's return the balance from the PrimeAccount
+        // If `account` is an owner of a PrimeAccount then let's return the balance for the PrimeAccount
+        address ownerToLoan = borrowersRegistry.getLoanForOwner(account);
+        account = ownerToLoan != address(0) ? ownerToLoan : account;
+
         if (_checkpoints[account].length == 0) {
             return 0;
         }

@@ -129,13 +129,12 @@ describe('Smart loan', () => {
                 mockSignersCount: 3,
                 dataPoints: MOCK_PRICES,
             });
-
             vPrimeContract = await deployContract(
                 admin,
                 VPrimeArtifact,
                 []
             ) as Contract;
-            await vPrimeContract.initialize();
+            await vPrimeContract.initialize(smartLoansFactory.address);
 
             vPrimeControllerContract = await deployContract(
                 admin,
@@ -227,7 +226,6 @@ describe('Smart loan', () => {
             expect(await vPrimeContract.balanceOf(wrappedLoan.address)).to.equal(0);
             expect(fromWei(await sPrimeContract.balanceOf(wrappedLoan.address))).to.equal(10);
             expect(await vPrimeControllerContract.getBorrowerVPrimePairsCount(wrappedLoan.address)).to.equal(20);
-            // expect(fromWei(await vPrimeControllerContract.getUserDepositDollarValueAcrossWhiteListedPools(depositor.address))).to.be.closeTo(10, 1e-6);
             expect(fromWei(await vPrimeControllerContract.getUserSPrimeDollarValue(wrappedLoan.address))).to.equal(20);
             const [rate, maxCap] = await vPrimeControllerContract.getBorrowerVPrimeRateAndMaxCap(wrappedLoan.address);
             const newRate = (60-0) * 1e18 / 365 / 24 / 60 / 60 / 3;
@@ -241,7 +239,9 @@ describe('Smart loan', () => {
             await ethers.provider.send("evm_mine", []);
 
             expect(fromWei(await vPrimeContract.balanceOf(wrappedLoan.address))).to.be.closeTo(20, 1e-6);
+            expect(fromWei(await vPrimeContract.balanceOf(borrower.address))).to.be.closeTo(20, 1e-6);
             expect(fromWei(await sPrimeContract.balanceOf(wrappedLoan.address))).to.be.closeTo(10, 1e-6);
+            expect(fromWei(await sPrimeContract.balanceOf(borrower.address))).to.be.closeTo(0, 1e-6);
         });
 
         // should check vPrime balance after 1 year
@@ -250,7 +250,9 @@ describe('Smart loan', () => {
             await ethers.provider.send("evm_mine", []);
 
             expect(fromWei(await vPrimeContract.balanceOf(wrappedLoan.address))).to.be.closeTo(40, 1e-6);
+            expect(fromWei(await vPrimeContract.balanceOf(borrower.address))).to.be.closeTo(40, 1e-6);
             expect(fromWei(await sPrimeContract.balanceOf(wrappedLoan.address))).to.be.closeTo(10, 1e-6);
+            expect(fromWei(await sPrimeContract.balanceOf(borrower.address))).to.be.closeTo(0, 1e-6);
         });
 
         // should decrease sPrime balance by 5 and the vPrimeBalance after 14 days should be equal to 30
@@ -265,7 +267,9 @@ describe('Smart loan', () => {
             await ethers.provider.send("evm_increaseTime", [14 * 24 * 60 * 60]);
             await ethers.provider.send("evm_mine", []);
             expect(fromWei(await vPrimeContract.balanceOf(wrappedLoan.address))).to.be.closeTo(30, 1e-6);
+            expect(fromWei(await vPrimeContract.balanceOf(borrower.address))).to.be.closeTo(30, 1e-6);
             expect(fromWei(await sPrimeContract.balanceOf(wrappedLoan.address))).to.be.closeTo(5, 1e-6);
+            expect(fromWei(await sPrimeContract.balanceOf(borrower.address))).to.be.closeTo(0, 1e-6);
         });
 
         it("should repay funds", async () => {
@@ -278,6 +282,7 @@ describe('Smart loan', () => {
 
             expect(await vPrimeControllerContract.getBorrowerVPrimePairsCount(wrappedLoan.address)).to.equal(0);
             expect(fromWei(await vPrimeContract.balanceOf(wrappedLoan.address))).to.be.closeTo(30, 1e-6);
+            expect(fromWei(await vPrimeContract.balanceOf(borrower.address))).to.be.closeTo(30, 1e-6);
 
             const [rate, maxCap] = await vPrimeControllerContract.getBorrowerVPrimeRateAndMaxCap(wrappedLoan.address);
             const newRate = (0-30) * 1e18 / 14 / 24 / 60 / 60;
@@ -290,7 +295,9 @@ describe('Smart loan', () => {
             await ethers.provider.send("evm_mine", []);
 
             expect(fromWei(await vPrimeContract.balanceOf(wrappedLoan.address))).to.be.closeTo(0, 1e-6);
+            expect(fromWei(await vPrimeContract.balanceOf(borrower.address))).to.be.closeTo(0, 1e-6);
             expect(fromWei(await sPrimeContract.balanceOf(wrappedLoan.address))).to.be.closeTo(5, 1e-6);
+            expect(fromWei(await sPrimeContract.balanceOf(borrower.address))).to.be.closeTo(0, 1e-6);
         });
 
     });
