@@ -14,6 +14,7 @@ import erc20ABI from '../../test/abis/ERC20.json';
 
 import MULTICALL from '../../artifacts/contracts/lib/Multicall3.sol/Multicall3.json'
 import {decodeOutput} from "./blockchain";
+import IPenpieFacet from "../../artifacts/contracts/interfaces/facets/arbitrum/IPenpieFacet.sol/IPenpieFacet.json";
 
 const ethers = require('ethers');
 
@@ -292,6 +293,43 @@ export async function beefyMaxUnstaked(stakingContractAddress, loanAddress, deci
     const loanBalance = formatUnits(decodeOutput(IBeefyFinance.abi, 'balanceOf', response.returnData[0])[0], decimals);
     const balance = decodeOutput(IBeefyFinance.abi, 'balance', response.returnData[1])[0];
     const totalSupply = decodeOutput(IBeefyFinance.abi, 'totalSupply', response.returnData[2])[0];
+
+
+    return loanBalance / totalSupply * balance;
+  } catch (e) {
+    console.log('beefyMaxUnstaked error');
+    return 0;
+  }
+
+
+}
+
+export async function penpieMaxUnstaked(stakingContractAddress, loanAddress, decimals = 18) {
+  try {
+    const readProvider = new ethers.providers.JsonRpcProvider(config.readRpcUrl);
+    const multicallContract = new ethers.Contract(config.multicallAddress, MULTICALL.abi, readProvider);
+    const stakingContract = new ethers.Contract(stakingContractAddress, IPenpieFacet.abi, provider.getSigner());
+
+    const response = await multicallContract.callStatic.aggregate([
+      {
+        target: stakingContract.address,
+        callData: stakingContract.interface.encodeFunctionData('balanceOf', [loanAddress])
+      },
+      {
+        target: stakingContract.address,
+        callData: stakingContract.interface.encodeFunctionData('balance')
+      },
+      {
+        target: stakingContract.address,
+        callData: stakingContract.interface.encodeFunctionData('totalSupply')
+      },
+    ]);
+
+    console.log('asdjhabsjdbajsdakjsnd', response);
+
+    const loanBalance = formatUnits(decodeOutput(IPenpieFacet.abi, 'balanceOf', response.returnData[0])[0], decimals);
+    const balance = decodeOutput(IPenpieFacet.abi, 'balance', response.returnData[1])[0];
+    const totalSupply = decodeOutput(IPenpieFacet.abi, 'totalSupply', response.returnData[2])[0];
 
 
     return loanBalance / totalSupply * balance;

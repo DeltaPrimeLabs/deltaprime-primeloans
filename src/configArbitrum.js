@@ -39,6 +39,9 @@ export default {
       "wstETH": {name: "wstETH", symbol: "wstETH", logoExt: "png", decimals: 18, address: addresses.wstETH, debtCoverage: 0.83333333333, tradingViewSymbol: "UNISWAP3ETH:WSTETHUSDC"},
       "JOE": {name: "JOE", symbol: "JOE", logoExt: "png", decimals: 18, address: addresses.JOE, groupIdentifier: "JOE_GROUP", debtCoverage: 0.8, tradingViewSymbol: "BINANCE:JOEUSDT"},
       "GRAIL": {name: "GRAIL", symbol: "GRAIL", logoExt: "png", decimals: 18, address: addresses.GRAIL, groupIdentifier: "GRAIL_GROUP", debtCoverage: 0.8, tradingViewSymbol: "BITGET:GRAILUSDT"},
+      "ezETH": {name: "ezETH", symbol: "ezETH", logoExt: "png", decimals: 18, address: addresses.ezETH, debtCoverage: 0.83333333333, tradingViewSymbol: "PYTH:EZETHUSD"},
+      "weETH": {name: "weETH", symbol: "weETH", logoExt: "png", decimals: 18, address: addresses.weETH, debtCoverage: 0.83333333333, tradingViewSymbol: "CRYPTO:WEETHUSD"},
+      "rsETH": {name: "rsETH", symbol: "rsETH", logoExt: "png", decimals: 18, address: addresses.rsETH, debtCoverage: 0.83333333333},
     },
     AVAILABLE_ASSETS_PER_DEX: {
         YakSwap: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'GLP', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH', 'WOO', 'GRAIL', 'JOE'],
@@ -53,7 +56,7 @@ export default {
         },
         ParaSwapV2: {
             displayName: 'ParaSwap',
-            availableAssets: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH', 'GRAIL', 'WOO', 'MAGIC', 'JOE'],
+            availableAssets: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH', 'GRAIL', 'WOO', 'MAGIC', 'JOE', 'ezETH', 'weETH'],
             slippageMargin: 0.05
         },
         Level: {
@@ -168,6 +171,10 @@ export default {
             logo: 'beefy.png',
             name: 'Beefy Finance'
         },
+        PENPIE: {
+            logo: 'penpie.png',
+            name: 'Penpie'
+        },
     },
     FARMED_TOKENS_CONFIG: {
         "USDC.e": [
@@ -277,6 +284,50 @@ export default {
                 debtCoverage: 0.83333333333,
                 rewardTokens: ['GLP'],
                 strategy: 'GMX',
+                refreshDelay: 60000
+            }
+        ],
+        "ezETH": [
+            {
+                protocol: 'PENPIE',
+                autoCompounding: true,
+                protocolIdentifier: 'PENDLE_EZ_ETH_LP',
+                balance: async (address) => Promise.resolve(1),
+                stakingContractAddress: '0x60712e3C9136CF411C561b4E948d4d26637561e7',
+                decimals: 18, //decimals of staking contract
+                stakeMethod: 'depositToPendleAndStakeInPenpie',
+                unstakeMethod: 'unstakeFromPenpieAndWithdrawFromPendle',
+                feedSymbol: 'PENDLE_EZ_ETH_LP',
+                symbol: 'PENPIE',
+                token: 'GLP',
+                isTokenLp: false,
+                info: 'Continuously stakes ezETH in order to maximize ezETH rewards.',
+                rewardsInfo: 'These are the rewards that you accumulated. These are staked too.',
+                debtCoverage: 0.83333333333,
+                rewardTokens: ['GLP'],
+                strategy: 'Pendle',
+                refreshDelay: 60000
+            }
+        ],
+        "wstETH": [
+            {
+                protocol: 'PENPIE',
+                autoCompounding: true,
+                protocolIdentifier: 'PENDLE_WSTETH_LP',
+                balance: async (address) => Promise.resolve(1),
+                stakingContractAddress: '0x08a152834de126d2ef83D612ff36e4523FD0017F',
+                decimals: 18, //decimals of staking contract
+                stakeMethod: 'depositToPendleAndStakeInPenpie',
+                unstakeMethod: 'unstakeFromPenpieAndWithdrawFromPendle',
+                feedSymbol: 'PENDLE_WSTETH_LP',
+                symbol: 'PENPIE',
+                token: 'wstETH',
+                isTokenLp: false,
+                info: 'Continuously stakes wstETH in order to maximize wstETH rewards.',
+                rewardsInfo: 'These are the rewards that you accumulated. These are staked too.',
+                debtCoverage: 0.83333333333,
+                rewardTokens: ['wstETH'],
+                strategy: 'Pendle',
                 refreshDelay: 60000
             }
         ],
