@@ -9,7 +9,7 @@
             {{ asset.symbol }}
             <img v-if="asset.droppingSupport && assetBalances[asset.symbol] > 0"
                  src="src/assets/icons/warning.svg"
-                 v-tooltip="{content: `We will drop support to this asset on ${ asset.debtCoverage > 0.1 ? '26.04.2024 12:00 CET' : '19.04.2024 12:00 CET'}. Please withdraw or swap to another token.`, classes: 'info-tooltip long'}">
+                 v-tooltip="{content: `We will drop support to this asset on ${ asset.debtCoverage > 0.1 ? '26.04.2024 12:00 CET' : 'Monday 22.04.2024 16:00 CET'}. Please withdraw or swap to another token.`, classes: 'info-tooltip long'}">
           </div>
           <div class="asset__loan" v-if="borrowApyPerPool && borrowApyPerPool[asset.symbol] !== undefined">
             Borrow&nbsp;APY:&nbsp;{{ borrowApyPerPool[asset.symbol] | percent }}
@@ -88,7 +88,7 @@
 
       <div class="table__cell actions">
         <IconButton class="action-button"
-                    :disabled="((disableAllButtons) && (!(asset.debtCoverage > 0 && noSmartLoan)) || asset.inactive || asset.unsupported)"
+                    :disabled="((disableAllButtons) && (!(asset.debtCoverage > 0 && noSmartLoan)) || asset.inactive || asset.unsupported || asset.droppingSupport)"
                     :icon-src="'src/assets/icons/plus.svg'" :size="26"
                     v-tooltip="{content: 'Deposit collateral', classes: 'button-tooltip'}"
                     v-on:click="actionClick('ADD_FROM_WALLET')">

@@ -14,7 +14,7 @@
               <img style="margin-left: 5px"
                    v-if="farm.droppingSupport && underlyingTokenStaked > 0"
                    src="src/assets/icons/warning.svg"
-                   v-tooltip="{content: `We will drop support to this asset on ${ farm.debtCoverage > 0.1 ? '26.04.2024 12:00 CET' : '19.04.2024 12:00 CET'}. Please withdraw or swap to another token.`, classes: 'info-tooltip long'}">
+                   v-tooltip="{content: `We will drop support to this asset on ${ farm.debtCoverage > 0.1 ? '26.04.2024 12:00 CET' : 'Monday 22.04.2024 16:00 CET'}. Please withdraw or swap to another token.`, classes: 'info-tooltip long'}">
               <InfoIcon
                 class="info__icon"
                 v-if="farm.info"

@@ -341,6 +341,8 @@ export default {
 
     async setupAssets({state, commit, rootState}) {
       const nativeToken = Object.entries(config.ASSETS_CONFIG).find(asset => asset[0] === config.nativeToken);
+      console.warn('SETUP ASSETS');
+      console.warn(state.assetBalances);
 
       let assets = {};
       assets[nativeToken[0]] = nativeToken[1];
@@ -846,6 +848,20 @@ export default {
           )
         }
       }
+
+      // TODO remove after removing deprecated assets
+      console.warn('TODO remove after removing deprecated assets')
+      console.log(state.assets);
+      Object.values(state.assets).forEach(asset => {
+        if (asset.droppingSupport) {
+          console.log('droppingSupport', asset.symbol, balances[asset.symbol]);
+          if (balances[asset.symbol] === undefined || Number(balances[asset.symbol]) === 0) {
+            console.warn('deleting', asset.symbol);
+            delete state.assets[asset.symbol];
+          }
+        }
+      })
+      await commit('setAssets', state.assets);
 
       await commit('setAssetBalances', balances);
       await commit('setLpBalances', lpBalances);
