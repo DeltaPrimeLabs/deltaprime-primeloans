@@ -49,7 +49,7 @@ contract SolvencyFacetProdArbitrum is SolvencyFacetProd {
     }
 
     function getLTIPEligibleTVL() public view returns (uint256) {
-        bytes32[] memory notEligibleTokens = new bytes32[](15);
+        bytes32[] memory notEligibleTokens = new bytes32[](19);
         notEligibleTokens[0] = bytes32("ETH");
         notEligibleTokens[1] = bytes32("USDC");
         notEligibleTokens[2] = bytes32("ARB");
