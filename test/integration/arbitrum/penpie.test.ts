@@ -1,4 +1,4 @@
-import {ethers, waffle} from 'hardhat'
+import {ethers, network, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 import {constructSimpleSDK, ContractMethod, SimpleFetchSDK, SwapSide} from '@paraswap/sdk';
@@ -8,6 +8,7 @@ import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockToke
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import AddressProviderArtifact from '../../../artifacts/contracts/AddressProvider.sol/AddressProvider.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
+import {JsonRpcSigner} from "@ethersproject/providers";
 import {
     addMissingTokenContracts,
     Asset,
@@ -15,6 +16,7 @@ import {
     convertTokenPricesMapToMockPrices,
     deployAllFacets,
     deployPools,
+    erc20ABI,
     fromBytes32,
     fromWei,
     getFixedGasSigners,
@@ -46,6 +48,7 @@ const eETHMarket = "0x952083cde7aaa11ab8449057f7de23a970aa8472";
 const rsETHMarket = "0x6ae79089b2cf4be441480801bb741a531d94312b";
 const wstETHSiloMarket = "0xaccd9a7cb5518326bed715f90bd32cdf2fec2d14";
 // const eETHSiloMarket = "0x99e9028e274FEAFA2E1D8787E1eE6DE39C6F7724";
+const whaleAddr = "0x6db96bbeb081d2a85e0954c252f2c1dc108b3f81";
 
 describe('Smart loan', () => {
     before("Synchronize blockchain time", async () => {
@@ -69,6 +72,7 @@ describe('Smart loan', () => {
             owner: SignerWithAddress,
             nonOwner: SignerWithAddress,
             depositor: SignerWithAddress,
+            whale: JsonRpcSigner,
             paraSwapMin: SimpleFetchSDK,
             liquidityRouter: Contract,
             MOCK_PRICES: any,
@@ -108,11 +112,21 @@ describe('Smart loan', () => {
             paraSwapMin = constructSimpleSDK({ chainId: 42161, axios });
 
             [owner, nonOwner, depositor] = await getFixedGasSigners(10000000);
-            let penpieLpTokens = ['PENDLE_EZ_ETH_LP', 'PENDLE_WSTETH_LP', 'PENDLE_E_ETH_LP', 'PENDLE_RS_ETH_LP', 'PENDLE_SILO_ETH_WSTETH_LP'];
-            let assetsList = ['ETH', 'ezETH', 'wstETH', 'weETH', 'rsETH', ...penpieLpTokens];
+            let pendleLpTokens = ['PENDLE_EZ_ETH_LP', 'PENDLE_WSTETH_LP', 'PENDLE_E_ETH_LP', 'PENDLE_RS_ETH_LP', 'PENDLE_SILO_ETH_WSTETH_LP'];
+            let assetsList = ['ETH', 'ezETH', 'wstETH', 'weETH', 'rsETH', ...pendleLpTokens];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'ETH', airdropList: [depositor]}
             ];
+
+            await provider.send('hardhat_setBalance', [
+                whaleAddr,
+                toWei("1000").toHexString(),
+            ]);
+            await network.provider.request({
+                method: "hardhat_impersonateAccount",
+                params: [whaleAddr],
+            });
+            whale = await ethers.provider.getSigner(whaleAddr);
 
             diamondAddress = await deployDiamond();
 
@@ -226,6 +240,18 @@ describe('Smart loan', () => {
             await wrappedLoan.paraSwapV2(swapData.selector, swapData.data, TOKEN_ADDRESSES['ETH'], toWei('2'), TOKEN_ADDRESSES['rsETH'], 1);
             rsEthBalance = await tokenContracts.get('rsETH')!.balanceOf(wrappedLoan.address);
 
+            for (const pendleLp of [
+                ezETHMarket,
+                wstETHMarket,
+                eETHMarket,
+                rsETHMarket,
+                wstETHSiloMarket
+            ]) {
+                const lpToken = new ethers.Contract(pendleLp, erc20ABI, provider);
+                await lpToken.connect(whale).transfer(owner.address, toWei('1'));
+                await lpToken.connect(owner).approve(wrappedLoan.address, toWei('1'));
+            }
+
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 200);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.eq(fromWei(initialHR));
             expect(fromWei(await wrappedLoan.getThresholdWeightedValue())).to.be.closeTo(fromWei(initialTWV), 200);
@@ -296,14 +322,13 @@ describe('Smart loan', () => {
             await expect(nonOwnerWrappedLoan.unstakeFromPenpieAndWithdrawFromPendle(...mockArgs)).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
         });
 
-        it("should stake", async () => {
+        it("should stake underlying", async () => {
             const stakeTests = [
                 { asset: "ETH", market: ezETHMarket, amount: toWei('2'), minLpOut: 1, lpToken: "PENDLE_EZ_ETH_LP" },
                 { asset: "wstETH", market: wstETHMarket, amount: wstEthBalance, minLpOut: 1, lpToken: "PENDLE_WSTETH_LP" },
                 { asset: "weETH", market: eETHMarket, amount: weEthBalance, minLpOut: 1, lpToken: "PENDLE_E_ETH_LP" },
                 { asset: "rsETH", market: rsETHMarket, amount: rsEthBalance, minLpOut: 1, lpToken: "PENDLE_RS_ETH_LP" },
                 { asset: "ETH", market: wstETHSiloMarket, amount: toWei('2'), minLpOut: 1, lpToken: "PENDLE_SILO_ETH_WSTETH_LP" },
-                // { asset: "ETH", market: eETHSiloMarket, amount: toWei('2'), minLpOut: 1, lpToken: "PENPIE_EETHSILO_LP" }
             ];
 
             for (const test of stakeTests) {
@@ -312,7 +337,7 @@ describe('Smart loan', () => {
             }
         });
 
-        it("should unstake", async () => {
+        it("should unstake underlying", async () => {
             const unstakeTests = [
                 { asset: "ezETH", market: ezETHMarket, amount: await tokenContracts.get('PENDLE_EZ_ETH_LP')!.balanceOf(wrappedLoan.address), minOut: 1, lpToken: "PENDLE_EZ_ETH_LP" },
                 { asset: "wstETH", market: wstETHMarket, amount: await tokenContracts.get('PENDLE_WSTETH_LP')!.balanceOf(wrappedLoan.address), minOut: 1, lpToken: "PENDLE_WSTETH_LP" },
@@ -325,6 +350,36 @@ describe('Smart loan', () => {
             for (const test of unstakeTests) {
                 console.log(`Testing unstaking ${test.asset}...`)
                 await testUnstake(test.asset, test.market, test.amount, test.minOut, test.lpToken);
+            }
+        });
+
+        it("should stake pendle lp", async () => {
+            const stakeTests = [
+                { market: ezETHMarket, amount: toWei('1'), lpToken: "PENDLE_EZ_ETH_LP" },
+                { market: wstETHMarket, amount: toWei('1'), lpToken: "PENDLE_WSTETH_LP" },
+                { market: eETHMarket, amount: toWei('1'), lpToken: "PENDLE_E_ETH_LP" },
+                { market: rsETHMarket, amount: toWei('1'), lpToken: "PENDLE_RS_ETH_LP" },
+                { market: wstETHSiloMarket, amount: toWei('1'), lpToken: "PENDLE_SILO_ETH_WSTETH_LP" },
+            ];
+
+            for (const test of stakeTests) {
+                console.log(`Testing staking ${test.lpToken}...`)
+                await testStakeLp(test.market, test.amount, test.lpToken);
+            }
+        });
+
+        it("should unstake pendle lp", async () => {
+            const unstakeTests = [
+                { market: ezETHMarket, amount: toWei('1'), lpToken: "PENDLE_EZ_ETH_LP" },
+                { market: wstETHMarket, amount: toWei('1'), lpToken: "PENDLE_WSTETH_LP" },
+                { market: eETHMarket, amount: toWei('1'), lpToken: "PENDLE_E_ETH_LP" },
+                { market: rsETHMarket, amount: toWei('1'), lpToken: "PENDLE_RS_ETH_LP" },
+                { market: wstETHSiloMarket, amount: toWei('1'), lpToken: "PENDLE_SILO_ETH_WSTETH_LP" },
+            ];
+
+            for (const test of unstakeTests) {
+                console.log(`Testing unstaking ${test.lpToken}...`)
+                await testUnstakeLp(test.market, test.amount, test.lpToken);
             }
         });
 
@@ -397,6 +452,30 @@ describe('Smart loan', () => {
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 100);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.01);
+        }
+
+        async function testStakeLp(market: string, amount: BigNumber, lpToken: string) {
+            const beforeLpExposure = await getAssetExposure(lpToken);
+            expect(await loanOwnsAsset(lpToken)).to.be.false;
+
+            await wrappedLoan.depositPendleLPAndStakeInPenpie(market, amount);
+
+            expect(await loanOwnsAsset(lpToken)).to.be.true;
+            const afterLpExposure = await getAssetExposure(lpToken);
+
+            expect(afterLpExposure.current.sub(beforeLpExposure.current)).to.be.eq(amount);
+        }
+
+        async function testUnstakeLp(market: string, amount: BigNumber, lpToken: string) {
+            const beforeLpExposure = await getAssetExposure(lpToken);
+            expect(await loanOwnsAsset(lpToken)).to.be.true;
+
+            await wrappedLoan.unstakeFromPenpieAndWithdrawPendleLP(market, amount);
+
+            expect(await loanOwnsAsset(lpToken)).to.be.false;
+            const afterLpExposure = await getAssetExposure(lpToken);
+
+            expect(beforeLpExposure.current.sub(afterLpExposure.current)).to.be.eq(amount);
         }
 
         async function loanOwnsAsset(asset: string) {

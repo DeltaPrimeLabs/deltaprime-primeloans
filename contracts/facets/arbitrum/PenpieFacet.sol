@@ -136,59 +136,60 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     /**
      * @dev This function uses the redstone-evm-connector
      **/
-    function stakeInPenpie(
-        bytes32 asset,
+    function depositPendleLPAndStakeInPenpie(
+        address market,
         uint256 amount
     ) external onlyOwner nonReentrant remainsSolvent {
+        address lpToken = _getPendleLpToken(market);
+
+        market.safeTransferFrom(msg.sender, address(this), amount);
+
+        market.safeApprove(PENDLE_STAKING, 0);
+        market.safeApprove(PENDLE_STAKING, amount);
+
+        IPendleDepositHelper(DEPOSIT_HELPER).depositMarket(market, amount);
+
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        address token = tokenManager.getAssetAddress(asset, false);
-        address lpToken = _getPendleLpToken(token);
-
-        amount = Math.min(IERC20(token).balanceOf(address(this)), amount);
-        require(amount > 0, "Cannot stake 0 tokens");
-
-        token.safeApprove(PENDLE_STAKING, 0);
-        token.safeApprove(PENDLE_STAKING, amount);
-
-        IPendleDepositHelper(DEPOSIT_HELPER).depositMarket(token, amount);
-
         _increaseExposure(tokenManager, lpToken, amount);
-        _decreaseExposure(tokenManager, address(token), amount);
 
-        emit Staked(msg.sender, asset, lpToken, amount, amount, block.timestamp);
+        emit PendleLpStaked(msg.sender, lpToken, amount, block.timestamp);
     }
 
     /**
      * @dev This function uses the redstone-evm-connector
      **/
-    function unstakeFromPenpie(
-        bytes32 asset,
+    function unstakeFromPenpieAndWithdrawPendleLP(
+        address market,
         uint256 amount
-    ) external onlyOwnerOrInsolvent nonReentrant returns (uint256) {
+    )
+        external
+        onlyOwnerOrInsolvent
+        canRepayDebtFully
+        nonReentrant
+        returns (uint256)
+    {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        address token = tokenManager.getAssetAddress(asset, false);
-        address lpToken = _getPendleLpToken(token);
+        address lpToken = _getPendleLpToken(market);
 
-        {
-            amount = Math.min(IERC20(lpToken).balanceOf(address(this)), amount);
-            require(amount > 0, "Cannot unstake 0 tokens");
+        amount = Math.min(IERC20(lpToken).balanceOf(address(this)), amount);
+        require(amount > 0, "Cannot unstake 0 tokens");
 
-            IPendleDepositHelper(DEPOSIT_HELPER).withdrawMarketWithClaim(
-                token,
-                amount,
-                true
-            );
+        IPendleDepositHelper(DEPOSIT_HELPER).withdrawMarketWithClaim(
+            market,
+            amount,
+            true
+        );
 
-            uint256 pnpReceived = IERC20(PNP).balanceOf(address(this));
-            if (pnpReceived > 0) {
-                PNP.safeTransfer(msg.sender, pnpReceived);
-            }
+        market.safeTransfer(msg.sender, amount);
 
-            _increaseExposure(tokenManager, token, amount);
-            _decreaseExposure(tokenManager, lpToken, amount);
+        uint256 pnpReceived = IERC20(PNP).balanceOf(address(this));
+        if (pnpReceived > 0) {
+            PNP.safeTransfer(msg.sender, pnpReceived);
         }
 
-        emit Unstaked(msg.sender, asset, lpToken, amount, amount, block.timestamp);
+        _decreaseExposure(tokenManager, lpToken, amount);
+
+        emit PendleLpUnstaked(msg.sender, lpToken, amount, block.timestamp);
 
         return amount;
     }
@@ -214,10 +215,6 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         // wstETHSilo
         if (market == 0xACcd9A7cb5518326BeD715f90bD32CDf2fEc2D14) {
             return 0xCcCC7c80c9Be9fDf22e322A5fdbfD2ef6ac5D574;
-        }
-        // PT-eETHSilo
-        if (market == 0x99e9028e274FEAFA2E1D8787E1eE6DE39C6F7724) {
-            return 0x0B28a5c88cd5F0cdE1956A1D878A9E371Ad9775f;
         }
 
         revert("Invalid market address");
@@ -265,6 +262,34 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         address indexed vault,
         uint256 depositTokenAmount,
         uint256 receiptTokenAmount,
+        uint256 timestamp
+    );
+
+    /**
+     * @dev emitted when user stakes an asset
+     * @param user the address executing staking
+     * @param vault address of receipt token
+     * @param amount how much of deposit token was staked
+     * @param timestamp of staking
+     **/
+    event PendleLpStaked(
+        address indexed user,
+        address indexed vault,
+        uint256 amount,
+        uint256 timestamp
+    );
+
+    /**
+     * @dev emitted when user unstakes an asset
+     * @param user the address executing unstaking
+     * @param vault address of receipt token
+     * @param amount how much deposit token was received
+     * @param timestamp of unstaking
+     **/
+    event PendleLpUnstaked(
+        address indexed user,
+        address indexed vault,
+        uint256 amount,
         uint256 timestamp
     );
 }
