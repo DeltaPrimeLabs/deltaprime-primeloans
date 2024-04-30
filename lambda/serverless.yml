@@ -36,6 +36,7 @@ provider:
     GMX_INCENTIVES_AVA_RETROACTIVE_TABLE: gmx-incentives-ava-retroactive-${opt:stage, "dev"}
     GMX_INCENTIVES_RETROACTIVE_AVA_NEW_TABLE: gmx-incentives-retroactive-ava-new
     GMX_INCENTIVES_ARB_TABLE: gmx-incentives-arb-${opt:stage, "dev"}
+    ARBITRUM_INCENTIVES_ARB_TABLE: arbitrum-incentives-arb-${opt:stage, "dev"}
     GM_OPEN_INTEREST_TABLE: gm-open-interest-${opt:stage, "dev"}
     REFERRAL_TABLE: referral-${opt:stage, "dev"}
     TERMS_VERSION_TABLE: terms-version-${opt:stage, "dev"}
@@ -231,6 +232,13 @@ functions:
     memorySize: 1024
     timeout: 900
     description: Calculate incentives for loans on Arbitrum.
+    events:
+      - schedule: rate(10 minutes)
+  arbitrumIncentives:
+    handler: arbitrumIncentives/arbitrumIncentives.handler
+    memorySize: 1024
+    timeout: 900
+    description: Calculate incentives for loans on Avalanche From a week ago.
     events:
       - schedule: rate(10 minutes)
   getGmxIncentivesApi:
@@ -524,6 +532,22 @@ resources:
         StreamSpecification:
           StreamViewType: "NEW_AND_OLD_IMAGES"
         TableName: ${self:provider.environment.TERMS_VERSION_TABLE}
+    arbitrumIncentivesArbTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: "id"
+            AttributeType: "S"
+        KeySchema:
+          -
+            AttributeName: "id"
+            KeyType: "HASH"
+        BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: "NEW_AND_OLD_IMAGES"
+        TableName: ${self:provider.environment.ARBITRUM_INCENTIVES_ARB_TABLE}
     # loansAvaTable:
     #   Type: AWS::DynamoDB::Table
     #   DeletionPolicy: Retain
