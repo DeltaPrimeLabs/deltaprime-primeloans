@@ -181,7 +181,7 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
             uint256 pnpReceived = IERC20(PNP).balanceOf(address(this));
             if (pnpReceived > 0) {
-                IERC20(PNP).transfer(msg.sender, pnpReceived);
+                PNP.safeTransfer(msg.sender, pnpReceived);
             }
 
             _increaseExposure(tokenManager, token, amount);
