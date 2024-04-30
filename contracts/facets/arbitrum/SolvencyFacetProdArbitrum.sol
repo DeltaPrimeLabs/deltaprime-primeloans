@@ -47,4 +47,41 @@ contract SolvencyFacetProdArbitrum is SolvencyFacetProd {
             revert SignerNotAuthorised(signerAddress);
         }
     }
+
+    function getLTIPEligibleTVL() public view returns (uint256) {
+        bytes32[] memory notEligibleTokens = new bytes32[](15);
+        notEligibleTokens[0] = bytes32("ETH");
+        notEligibleTokens[1] = bytes32("USDC");
+        notEligibleTokens[2] = bytes32("ARB");
+        notEligibleTokens[3] = bytes32("BTC");
+        notEligibleTokens[4] = bytes32("DAI");
+        notEligibleTokens[5] = bytes32("USDT");
+        notEligibleTokens[6] = bytes32("FRAX");
+        notEligibleTokens[7] = bytes32("USDC.e");
+        notEligibleTokens[8] = bytes32("UNI");
+        notEligibleTokens[9] = bytes32("LINK");
+        notEligibleTokens[10] = bytes32("GMX");
+        notEligibleTokens[11] = bytes32("MAGIC");
+        notEligibleTokens[12] = bytes32("WOO");
+        notEligibleTokens[13] = bytes32("wstETH");
+        notEligibleTokens[14] = bytes32("JOE");
+        notEligibleTokens[15] = bytes32("GRAIL");
+        notEligibleTokens[16] = bytes32("ezETH");
+        notEligibleTokens[17] = bytes32("weETH");
+        notEligibleTokens[18] = bytes32("rsETH");
+
+        uint256[] memory prices = getOracleNumericValuesFromTxMsg(notEligibleTokens);
+        AssetPrice[] memory assetsPrices = new AssetPrice[](notEligibleTokens.length);
+        for(uint i; i<notEligibleTokens.length; i++){
+            assetsPrices[i] = AssetPrice({
+                asset: notEligibleTokens[i],
+                price: prices[i]
+            });
+        }
+
+        uint256 notEligibleAssetsValue = _getTotalAssetsValueBase(assetsPrices);
+        uint256 debt = getDebt();
+
+        return debt > notEligibleAssetsValue ? debt - notEligibleAssetsValue : 0;
+    }
 }
