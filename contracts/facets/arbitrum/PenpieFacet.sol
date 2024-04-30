@@ -163,7 +163,7 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         uint256 amount
     )
         external
-        onlyOwnerOrInsolvent
+        onlyOwner
         canRepayDebtFully
         nonReentrant
         returns (uint256)
