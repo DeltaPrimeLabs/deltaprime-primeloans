@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: ;
+// Last deployed from commit: 8e479ff0e05e726a216f402bf1a67824d1eff592;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -98,7 +98,7 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
             uint256 pnpReceived = IERC20(PNP).balanceOf(address(this));
             if (pnpReceived > 0) {
-                IERC20(PNP).transfer(msg.sender, pnpReceived);
+                PNP.safeTransfer(msg.sender, pnpReceived);
             }
 
             market.safeApprove(PENDLE_ROUTER, 0);
