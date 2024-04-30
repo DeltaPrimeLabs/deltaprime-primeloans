@@ -2,80 +2,35 @@
   <div class="lp-table-row-component gmxV2" :class="{'expanded': rowExpanded}">
     <div class="table__row" v-if="lpToken">
       <div class="table__cell asset">
-        <img class="asset__icon" :src="getAssetIcon(lpToken.longToken)">
+        <img class="asset__icon" :style="{ borderRadius: '10px' }"  :src="`src/assets/logo/${lpToken.symbol.toLowerCase()}.png`">
         <div class="asset__info">
           <a class="asset__name" :href="lpToken.link" target=”_blank”>{{ lpToken.name }}</a>
-          <div class="asset__dex">
-            by <a v-on:click="openProfileModal"><b>GMX V2</b></a>
-          </div>
         </div>
       </div>
 
       <div class="table__cell table__cell--double-value balance">
         <template v-if="gmxV2Balances && parseFloat(gmxV2Balances[lpToken.symbol])">
-          <div class="double-value__pieces">
-            <span v-if="isLpBalanceEstimated">~</span>
-            {{ formatTokenBalance(gmxV2Balances[lpToken.symbol], 10, true) }}
-          </div>
-          <div class="double-value__usd">
-            <span v-if="gmxV2Balances[lpToken.symbol]">
-              {{ gmxV2Balances[lpToken.symbol] * lpToken.price | usd }}
-            </span>
-          </div>
+          <b>{{ formatTokenBalance(balance, 10, true) }}</b>
         </template>
         <template v-else>
           <div class="no-value-dash"></div>
         </template>
       </div>
 
-      <!--      composition-->
-      <div class="table__cell table__cell--double-value balance">
-        <template>
-          <div class="table__cell composition">
-            <img class="asset__icon" :src="getAssetIcon(lpToken.longToken)">{{
-              formatTokenBalance(longTokenAmount ? longTokenAmount : 0, 6, true)
-            }}
-            <img class="asset__icon" :src="getAssetIcon(lpToken.shortToken)">{{
-              formatTokenBalance(shortTokenAmount ? shortTokenAmount : 0, 6, true)
-            }}
-          </div>
-          <div class="double-value__usd">
-            <span>
-              {{((gmxV2Balances && gmxV2Balances[lpToken.symbol]) ? gmxV2Balances[lpToken.symbol] : 0) * lpToken.price | usd}}
-            </span>
-          </div>
-        </template>
-      </div>
-
-      <div class="table__cell trend-gmxV2">
-        <div class="trend__chart-change" v-on:click="toggleChart()">
-          <SmallChartBeta :data-points="weeklyPrices"
-                          :is-stable-coin="false"
-                          :line-width="2"
-                          :width="60"
-                          :height="25"
-                          :positive-change="weeklyPriceChange > 0">
-          </SmallChartBeta>
-        </div>
+      <div class="table__cell table__cell--double-value tvl">
+        {{ timeToMaturity }}
       </div>
 
       <div class="table__cell table__cell--double-value tvl">
-        {{ formatTvl(tvl) }}
+        {{ leverage }}x
       </div>
 
-<!--      <div class="table__cell capacity">-->
-<!--        <bar-gauge-beta v-if="lpToken.maxExposure" :min="0" :max="lpToken.maxExposure" :value="Math.max(lpToken.currentExposure, 0.001)" v-tooltip="{content: `${lpToken.currentExposure ? lpToken.currentExposure.toFixed(2) : 0} ($${lpToken.currentExposure ? (lpToken.currentExposure * this.lpToken.price).toFixed(2) : 0}) out of ${lpToken.maxExposure} ($${lpToken.maxExposure ? (lpToken.maxExposure * this.lpToken.price).toFixed(2) : 0}) is currently used.`, classes: 'info-tooltip'}" :width="80"></bar-gauge-beta>-->
-<!--      </div>-->
-
-      <div class="table__cell table__cell--double-value apr" v-bind:class="{'apr--with-warning': lpToken.aprWarning}">
-        {{ apr / 100 | percent }}
-        <div class="apr-warning" v-if="lpToken.aprWarning">
-          <img src="src/assets/icons/warning.svg" v-tooltip="{content: lpToken.aprWarning, classes: 'info-tooltip long'}">
-        </div>
+      <div class="table__cell table__cell--double-value tvl">
+        <b>{{ maxLeverage }}x</b>
       </div>
 
-      <div class="table__cell table__cell--double-value max-apr">
-        <span>{{ (maxApr + gmBoost) | percent }}<img v-if="hasGmIncentives" v-tooltip="{content: `This pool is incentivized!<br>⁃ up to ${maxApr ? (maxApr * 100).toFixed(2) : 0}% Pool APR<br>⁃ up to ${gmBoost ? (gmBoost * 100).toFixed(2) : 0}% ${chain === 'arbitrum' ? 'ARB' : 'AVAX'} incentives`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span>
+      <div class="table__cell table__cell--double-value tvl">
+        <b>{{ points }}</b>
       </div>
 
       <div class="table__cell"></div>
@@ -85,22 +40,18 @@
             class="actions__icon-button"
             :config="addActionsConfig"
             v-if="addActionsConfig"
-            v-on:iconButtonClick="actionClick"
-            :disabled="disableAllButtons || !healthLoaded || !assets">
+            v-on:iconButtonClick="actionClick">
         </IconButtonMenuBeta>
         <IconButtonMenuBeta
             class="actions__icon-button last"
             :config="removeActionsConfig"
             v-if="removeActionsConfig"
-            v-on:iconButtonClick="actionClick"
-            :disabled="disableAllButtons || !healthLoaded || !assets">
+            v-on:iconButtonClick="actionClick">
         </IconButtonMenuBeta>
         <IconButtonMenuBeta
             class="actions__icon-button"
-            v-if="moreActionsConfig"
             :config="moreActionsConfig"
-            v-on:iconButtonClick="actionClick"
-            :disabled="disableAllButtons || !healthLoaded || !assets">
+            v-on:iconButtonClick="actionClick">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -182,7 +133,7 @@ import {calculateGmxV2ExecutionFee, capitalize, hashData} from "../utils/blockch
 import Dropdown from "./notifi/settings/Dropdown.vue";
 
 export default {
-  name: 'GmxV2LpTableRow',
+  name: 'LrtTableRow',
   components: {
     Dropdown,
     BarGaugeBeta,
@@ -242,10 +193,13 @@ export default {
       disableAllButtons: false,
       healthLoaded: false,
       showChart: false,
-      longTokenAmount: 0,
-      shortTokenAmount: 0,
       selectedChart: 'PRICE',
       chain: null,
+      balance: 0,
+      leverage: 0,
+      maxLeverage: 0,
+      timeToMaturity: '',
+      points: 0
     };
   },
 
@@ -417,53 +371,6 @@ export default {
     async setupApr() {
       if (!this.lpToken.apy) return;
       this.apr = this.lpToken.apy;
-    },
-
-    async setupGmUnderlyingBalances() {
-      const depositReader = new ethers.Contract(config.gmxV2ReaderAddress, IREADER_DEPOSIT_UTILS.abi, this.provider.getSigner());
-
-      const longToken = config.ASSETS_CONFIG[this.lpToken.longToken];
-      const shortToken = config.ASSETS_CONFIG[this.lpToken.shortToken];
-
-      const marketProps = {
-        marketToken: this.lpToken.address,
-        indexToken: this.lpToken.indexTokenAddress,
-        longToken: longToken.address,
-        shortToken: shortToken.address
-      }
-
-      let gmxData;
-      if (window.chain === 'arbitrum') {
-        gmxData = await (await fetch(`https://arbitrum-api.gmxinfra.io/prices/tickers`)).json();
-      } else {
-        gmxData = await (await fetch(`https://avalanche-api.gmxinfra2.io/prices/tickers`)).json()
-      }
-
-      let shortTokenGmxData = gmxData.find(el => el.tokenSymbol === shortToken.symbol);
-      let longTokenGmxData = gmxData.find(el => el.tokenSymbol === longToken.symbol);
-      let indexTokenGmxData = gmxData.find(el => el.tokenAddress.toLowerCase() === this.lpToken.indexTokenAddress.toLowerCase());
-
-      const prices = {
-        indexTokenPrice: {
-          min: BigNumber.from(indexTokenGmxData.minPrice),
-          max: BigNumber.from(indexTokenGmxData.maxPrice)
-        },
-        longTokenPrice: {
-          min: BigNumber.from(longTokenGmxData.minPrice),
-          max: BigNumber.from(longTokenGmxData.maxPrice)
-        },
-        shortTokenPrice: {
-          min: BigNumber.from(shortTokenGmxData.minPrice),
-          max: BigNumber.from(shortTokenGmxData.maxPrice)
-        }
-      }
-
-      let [longTokenOut, shortTokenOut] = await depositReader.getWithdrawalAmountOut(
-          config.gmxV2DataStoreAddress, marketProps, prices, toWei((this.gmxV2Balances[this.lpToken.symbol]).toString()), this.nullAddress
-      );
-
-      this.longTokenAmount = formatUnits(longTokenOut, longToken.decimals);
-      this.shortTokenAmount = formatUnits(shortTokenOut, shortToken.decimals);
     },
 
     toggleChart() {
@@ -948,7 +855,7 @@ export default {
 
     watchAssetPricesUpdate() {
       this.priceService.observeRefreshPrices().subscribe((updateEvent) => {
-        this.setupTvl();
+        this.setupHardcodedValues();
       });
     },
 
@@ -1017,16 +924,12 @@ export default {
       this.isLpBalanceEstimated = false;
     },
 
-    async setupTvl() {
-      const longConfig = config.ASSETS_CONFIG[this.lpToken.longToken];
-      const shortConfig = config.ASSETS_CONFIG[this.lpToken.shortToken];
-      const longERC20 = new ethers.Contract(longConfig.address, erc20ABI, this.provider.getSigner());
-      const shortERC20 = new ethers.Contract(shortConfig.address, erc20ABI, this.provider.getSigner());
-
-      const longTotalWorth = longConfig.price * formatUnits(await longERC20.balanceOf(this.lpToken.address), longConfig.decimals);
-      const shortTotalWorth = shortConfig.price * formatUnits(await shortERC20.balanceOf(this.lpToken.address), shortConfig.decimals);
-
-      this.tvl = longTotalWorth + shortTotalWorth;
+    async setupHardcodedValues() {
+       this.leverage = this.lpToken.leverage;
+       this.maxLeverage = this.lpToken.maxLeverage;
+       this.timeToMaturity = this.lpToken.timeToMaturity;
+       this.points = this.lpToken.points;
+       this.balance = this.lpToken.balance;
     },
 
     depositGasLimitKey(singleToken) {
@@ -1049,7 +952,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: repeat(2, 1fr) 240px 130px 100px 120px 100px 60px 80px 22px;
+    grid-template-columns: repeat(6, 1fr) 60px 80px 22px;
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;

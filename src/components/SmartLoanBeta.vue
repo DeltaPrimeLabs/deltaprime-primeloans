@@ -47,7 +47,15 @@
             >
               <LPTab></LPTab>
             </Tab>
-            <Tab ref="tab-3" :title="'Farms'"
+            <Tab ref="tab-3" :title="'LRT'"
+                 :tab-icon="'src/assets/icons/transfer.svg'"
+                 :tab-icon-slim="'src/assets/icons/transfer.svg'"
+                 v-if="showLPTab"
+                 :disabled="primeAccountsBlocked"
+            >
+              <LRTTab></LRTTab>
+            </Tab>
+            <Tab ref="tab-4" :title="'Farms'"
                  :tab-icon="'src/assets/icons/plant_on-icon.svg'"
                  :tab-icon-slim="'src/assets/icons/plant-slim.svg'"
                  v-if="showFarmsTab"
@@ -55,7 +63,7 @@
             >
               <Farm></Farm>
             </Tab>
-            <Tab ref="tab-4" :title="'Stats'"
+            <Tab ref="tab-5" :title="'Stats'"
                  :tab-icon="'src/assets/icons/stats-icon.svg'"
                  :tab-icon-slim="'src/assets/icons/stats-icon-slim.svg'"
                  :disabled="primeAccountsBlocked"
@@ -98,6 +106,7 @@ import TransactionHistory from './TransactionHistory';
 import Stats from './stats/Stats.vue';
 import LPTab from "./LPTab.vue";
 import Zaps from "./Zaps.vue";
+import LRTTab from "./LRTTab.vue";
 
 const TABS = [
   {
@@ -127,6 +136,7 @@ const TUTORIAL_VIDEO_CLOSED_LOCALSTORAGE_KEY = 'TUTORIAL_VIDEO_CLOSED';
 export default {
   name: 'SmartLoanBeta',
   components: {
+    LRTTab,
     Zaps,
     LPTab,
     TransactionHistory,

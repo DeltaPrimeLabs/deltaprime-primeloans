@@ -108,7 +108,58 @@ export default {
             disabled: true
         }
     },
-    poolsUnlocking: true,
+    LRT_POOLS_CONFIG: {
+        rsETH: {
+            symbol: "rsETH",
+            deposit: 1,
+            tvl: 1,
+            tvlUsd: 1000,
+            apy: 0.12,
+            utilisation: 0.7,
+            address: USDC_POOL_TUP.address,
+            tokenAddress: addresses.USDC
+        },
+        ezETH: {
+            symbol: "ezETH",
+            deposit: 1,
+            tvl: 1,
+            tvlUsd: 1000,
+            apy: 0.12,
+            utilisation: 0.7,
+            address: WETH_POOL_TUP.address,
+            tokenAddress: addresses.ETH
+        },
+        pufETH: {
+            symbol: "pufETH",
+            deposit: 1,
+            tvl: 1,
+            tvlUsd: 1000,
+            apy: 0.12,
+            utilisation: 0.7,
+            address: ARB_POOL_TUP.address,
+            tokenAddress: addresses.ARB
+        },
+        TENET: {
+            symbol: "TENET",
+            deposit: 1,
+            tvl: 1,
+            tvlUsd: 1000,
+            apy: 0.12,
+            utilisation: 0.7,
+            address: BTC_POOL_TUP.address,
+            tokenAddress: addresses.BTC
+        },
+        RSTK: {
+            symbol: "RSTK",
+            deposit: 1,
+            tvl: 1,
+            tvlUsd: 1000,
+            apy: 0.12,
+            utilisation: 0.7,
+            address: DAI_POOL_TUP.address,
+            tokenAddress: addresses.DAI,
+        }
+    },
     TRADERJOEV2_LP_ASSETS_CONFIG: {
         'TJLB_MAGIC_ETH': { primary: 'MAGIC', secondary: 'ETH', name: 'MAGIC-ETH', dex: 'TraderJoe', symbol: 'TJLB_MAGIC_ETH', decimals: 18, baseFee: '0.0025', address: addresses['TJLB_MAGIC_ETH'], binStep: 25, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2', link: "https://traderjoexyz.com/arbitrum/pool/v21/0x539bdE0d7Dbd336b79148AA742883198BBF60342/ETH/25"},
         'TJLB_GMX_ETH': { primary: 'GMX', secondary: 'ETH', name: 'GMX-ETH', dex: 'TraderJoe', symbol: 'TJLB_GMX_ETH', decimals: 18, baseFee: '0.002', address: addresses['TJLB_GMX_ETH'], binStep: 20, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2', link: "https://traderjoexyz.com/arbitrum/pool/v21/0xfc5a1a6eb076a2c7ad06ed22c90d7e710e35ad0a/ETH/20"},
@@ -135,6 +186,13 @@ export default {
         "GM_ARB_ARB_USDC": {name: "ARB-USDC", symbol: "GM_ARB_ARB_USDC", short: "GM", logoExt: "png", decimals: 18, address: addresses.GM_ARB_ARB_USDC, debtCoverage: 0.83333333333, longToken: 'ARB', shortToken: 'USDC', indexTokenAddress: addresses.ARB, link: 'https://app.gmx.io/#/stats'},
         "GM_UNI_UNI_USDC": {name: "UNI-USDC", symbol: "GM_UNI_UNI_USDC", short: "GM", logoExt: "png", price: 1, decimals: 18, address: addresses.GM_UNI_UNI_USDC, debtCoverage: 0.83333333333, longToken: 'UNI', shortToken: 'USDC', indexTokenAddress: addresses.UNI, link: 'https://app.gmx.io/#/stats'},
         "GM_LINK_LINK_USDC": {name: "LINK-USDC", symbol: "GM_LINK_LINK_USDC", short: "GM", price: 1, decimals: 18, address: addresses.GM_LINK_LINK_USDC, debtCoverage: 0.83333333333, longToken: 'LINK', shortToken: 'USDC', indexTokenAddress: addresses.LINK, link: 'https://app.gmx.io/#/stats'},
+    },
+    LRT_ASSETS_CONFIG: {
+        "rsETH": {name: "rsETH", symbol: "rsETH", balance: 10, leverage: 29, maxLeverage: 100, points: 100, timeToMaturity: "2d 7h", decimals: 18, address: '', debtCoverage: 0.83333333333,  indexTokenAddress: addresses.ETH, link: 'https://app.gmx.io/#/stats'},
+        "ezETH": {name: "ezETH", symbol: "ezETH", balance: 3, leverage: 29, maxLeverage: 100, points: 100, timeToMaturity: "15d 11h", logoExt: "png", price: 1, decimals: 18, address: '', debtCoverage: 0.83333333333, indexTokenAddress: addresses.BTC, link: 'https://app.gmx.io/#/stats'},
+        "pufETH": {name: "pufETH", symbol: "pufETH", short: "GM", balance: 3, leverage: 29, maxLeverage: 100, points: 100, timeToMaturity: "3d 0h", logoExt: "png", decimals: 18, address: '', debtCoverage: 0.83333333333, indexTokenAddress: addresses.ARB, link: 'https://app.gmx.io/#/stats'},
+        "TENET": {name: "TENET", symbol: "TENET", short: "GM", balance: 3, leverage: 29, maxLeverage: 100, points: 100, timeToMaturity: "25d 12h", logoExt: "png", price: 1, decimals: 18, address: '', debtCoverage: 0.83333333333, indexTokenAddress: addresses.UNI, link: 'https://app.gmx.io/#/stats'},
+        "RSTK": {name: "RSTK", symbol: "RSTK", short: "GM", balance: 3, leverage: 29, maxLeverage: 100, points: 100, timeToMaturity: "25d 12h", logoExt: "png", price: 1, decimals: 18, address: '', debtCoverage: 0.83333333333, indexTokenAddress: addresses.LINK, link: 'https://app.gmx.io/#/stats'},
     },
     LP_ASSETS_CONFIG: {
         // "SUSHI_DPX_ETH_LP": {
