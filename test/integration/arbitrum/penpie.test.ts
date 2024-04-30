@@ -313,21 +313,19 @@ describe('Smart loan', () => {
         });
 
         it("should unstake", async () => {
-            it("should unstake", async () => {
-                const unstakeTests = [
-                    { asset: "ezETH", market: ezETHMarket, amount: await tokenContracts.get('PENDLE_EZ_ETH_LP')!.balanceOf(wrappedLoan.address), minOut: 1, lpToken: "PENDLE_EZ_ETH_LP" },
-                    { asset: "wstETH", market: wstETHMarket, amount: await tokenContracts.get('PENDLE_WSTETH_LP')!.balanceOf(wrappedLoan.address), minOut: 1, lpToken: "PENDLE_WSTETH_LP" },
-                    { asset: "weETH", market: eETHMarket, amount: await tokenContracts.get('PENDLE_E_ETH_LP')!.balanceOf(wrappedLoan.address), minOut: 1, lpToken: "PENDLE_E_ETH_LP" },
-                    { asset: "rsETH", market: rsETHMarket, amount: await tokenContracts.get('PENDLE_RS_ETH_LP')!.balanceOf(wrappedLoan.address), minOut: 1, lpToken: "PENDLE_RS_ETH_LP" },
-                    { asset: "ETH", market: wstETHSiloMarket, amount: await tokenContracts.get('PENDLE_SILO_ETH_WSTETH_LP')!.balanceOf(wrappedLoan.address), minOut: 1, lpToken: "PENDLE_SILO_ETH_WSTETH_LP" },
-                    // { asset: "ETH", market: eETHSiloMarket, amount: await tokenContracts.get('PENPIE_EETHSILO_LP')!.balanceOf(wrappedLoan.address), minOut: 1, lpToken: "PENPIE_EETHSILO_LP" }
-                ];
+            const unstakeTests = [
+                { asset: "ezETH", market: ezETHMarket, amount: await tokenContracts.get('PENDLE_EZ_ETH_LP')!.balanceOf(wrappedLoan.address), minOut: 1, lpToken: "PENDLE_EZ_ETH_LP" },
+                { asset: "wstETH", market: wstETHMarket, amount: await tokenContracts.get('PENDLE_WSTETH_LP')!.balanceOf(wrappedLoan.address), minOut: 1, lpToken: "PENDLE_WSTETH_LP" },
+                { asset: "weETH", market: eETHMarket, amount: await tokenContracts.get('PENDLE_E_ETH_LP')!.balanceOf(wrappedLoan.address), minOut: 1, lpToken: "PENDLE_E_ETH_LP" },
+                { asset: "rsETH", market: rsETHMarket, amount: await tokenContracts.get('PENDLE_RS_ETH_LP')!.balanceOf(wrappedLoan.address), minOut: 1, lpToken: "PENDLE_RS_ETH_LP" },
+                { asset: "ETH", market: wstETHSiloMarket, amount: await tokenContracts.get('PENDLE_SILO_ETH_WSTETH_LP')!.balanceOf(wrappedLoan.address), minOut: 1, lpToken: "PENDLE_SILO_ETH_WSTETH_LP" },
+                // { asset: "ETH", market: eETHSiloMarket, amount: await tokenContracts.get('PENPIE_EETHSILO_LP')!.balanceOf(wrappedLoan.address), minOut: 1, lpToken: "PENPIE_EETHSILO_LP" }
+            ];
 
-                for (const test of unstakeTests) {
-                    console.log(`Testing unstaking ${test.asset}...`)
-                    await testUnstake(test.asset, test.market, test.amount, test.minOut, test.lpToken);
-                }
-            });
+            for (const test of unstakeTests) {
+                console.log(`Testing unstaking ${test.asset}...`)
+                await testUnstake(test.asset, test.market, test.amount, test.minOut, test.lpToken);
+            }
         });
 
         async function testStake(asset: string, market: string, amount: BigNumber, minLpOut: BigNumberish, lpToken: string) {

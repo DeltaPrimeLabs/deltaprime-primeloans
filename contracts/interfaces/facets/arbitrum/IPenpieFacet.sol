@@ -21,4 +21,14 @@ interface IPenpieFacet {
         IPendleRouter.TokenOutput memory output,
         IPendleRouter.LimitOrderData memory limit
     ) external returns (uint256);
+
+    function stakeInPenpie(
+        bytes32 asset,
+        uint256 amount
+    ) external;
+
+    function unstakeFromPenpie(
+        bytes32 asset,
+        uint256 amount
+    ) external;
 }

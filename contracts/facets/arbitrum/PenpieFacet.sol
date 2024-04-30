@@ -133,6 +133,66 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         return netTokenOut;
     }
 
+    /**
+     * @dev This function uses the redstone-evm-connector
+     **/
+    function stakeInPenpie(
+        bytes32 asset,
+        uint256 amount
+    ) external onlyOwner nonReentrant remainsSolvent {
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        address token = tokenManager.getAssetAddress(asset, false);
+        address lpToken = _getPendleLpToken(token);
+
+        amount = Math.min(IERC20(token).balanceOf(address(this)), amount);
+        require(amount > 0, "Cannot stake 0 tokens");
+
+        token.safeApprove(PENDLE_STAKING, 0);
+        token.safeApprove(PENDLE_STAKING, amount);
+
+        IPendleDepositHelper(DEPOSIT_HELPER).depositMarket(token, amount);
+
+        _increaseExposure(tokenManager, lpToken, amount);
+        _decreaseExposure(tokenManager, address(token), amount);
+
+        emit Staked(msg.sender, asset, lpToken, amount, amount, block.timestamp);
+    }
+
+    /**
+     * @dev This function uses the redstone-evm-connector
+     **/
+    function unstakeFromPenpie(
+        bytes32 asset,
+        uint256 amount
+    ) external onlyOwnerOrInsolvent nonReentrant returns (uint256) {
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        address token = tokenManager.getAssetAddress(asset, false);
+        address lpToken = _getPendleLpToken(token);
+
+        {
+            amount = Math.min(IERC20(lpToken).balanceOf(address(this)), amount);
+            require(amount > 0, "Cannot unstake 0 tokens");
+
+            IPendleDepositHelper(DEPOSIT_HELPER).withdrawMarketWithClaim(
+                token,
+                amount,
+                true
+            );
+
+            uint256 pnpReceived = IERC20(PNP).balanceOf(address(this));
+            if (pnpReceived > 0) {
+                IERC20(PNP).transfer(msg.sender, pnpReceived);
+            }
+
+            _increaseExposure(tokenManager, token, amount);
+            _decreaseExposure(tokenManager, lpToken, amount);
+        }
+
+        emit Unstaked(msg.sender, asset, lpToken, amount, amount, block.timestamp);
+
+        return amount;
+    }
+
     // INTERNAL FUNCTIONS
     function _getPendleLpToken(address market) internal pure returns (address) {
         // ezETH
