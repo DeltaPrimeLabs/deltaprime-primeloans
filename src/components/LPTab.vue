@@ -42,7 +42,8 @@
     <div class="lp-tokens" v-if="Object.keys(concentratedLpTokens).length">
       <div class="lp-table">
         <TableHeader :config="concentratedLpTableHeaderConfig"></TableHeader>
-        <ConcentratedLpTableRow v-for="(lpToken, index) in concentratedLpTokens" v-bind:key="index" :lp-token="lpToken">
+        <ConcentratedLpTableRow v-for="(lpToken, index) in concentratedLpTokens"
+                                v-if="!lpToken.inactive || concentratedLpBalances[lpToken.symbol] > 0" v-bind:key="index" :lp-token="lpToken">
           {{ lpToken }}
         </ConcentratedLpTableRow>
       </div>
@@ -55,7 +56,7 @@
       <div class="lp-table" v-if="Object.keys(lpTokens).length && filteredLpTokens">
         <TableHeader :config="lpTableHeaderConfig"></TableHeader>
         <LpTableRow v-for="(lpToken, index) in filteredLpTokens" v-bind:key="index" :lp-token="lpToken"
-                    showFarmed="false">{{ lpToken }}
+                    v-if="!lpToken.inactive || lpBalances[lpToken.symbol] > 0" showFarmed="false">{{ lpToken }}
         </LpTableRow>
         <!--          <div class="paginator-container">-->
         <!--            <Paginator :total-elements="50" :page-size="6"></Paginator>-->
@@ -128,6 +129,7 @@ export default {
     ]),
     ...mapState('fundsStore', [
       'concentratedLpBalances',
+      'lpBalances',
     ]),
     filteredLpTokens() {
       return Object.values(this.lpTokens).filter(token =>

@@ -482,6 +482,7 @@ export default {
       this.addActionsConfig =   {
         iconSrc: 'src/assets/icons/plus.svg',
         tooltip: 'Add',
+        disabled: this.farm.inactive,
         menuOptions: [
           {
             key: 'ADD_FROM_WALLET',
@@ -510,6 +511,7 @@ export default {
           {
             key: 'UNSTAKE',
             name: 'Withdraw to assets',
+            disabled: this.farm.inactive
           },
         ]
       }

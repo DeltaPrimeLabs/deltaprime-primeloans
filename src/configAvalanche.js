@@ -92,20 +92,20 @@ export default {
         }
     },
     LP_ASSETS_CONFIG: {
-        "PNG_AVAX_USDC_LP": { droppingSupport: true, primary: 'USDC', secondary: 'AVAX', name: "AVAX-USDC", dex: 'Pangolin',  symbol: 'PNG_AVAX_USDC_LP', decimals: 18, address: addresses.PNG_AVAX_USDC_LP, debtCoverage: 0.83333333333},
-        "PNG_AVAX_USDT_LP": { droppingSupport: true, primary: 'USDT', secondary: 'AVAX', name: "AVAX-USDT", dex: 'Pangolin',  symbol: 'PNG_AVAX_USDT_LP', decimals: 18, address: addresses.PNG_AVAX_USDT_LP, debtCoverage: 0.83333333333},
-        "PNG_AVAX_ETH_LP": { droppingSupport: true, primary: 'ETH', secondary: 'AVAX', name: "AVAX-ETH", dex: 'Pangolin',  symbol: 'PNG_AVAX_ETH_LP', decimals: 18, address: addresses.PNG_AVAX_ETH_LP, debtCoverage: 0.83333333333},
-        "TJ_AVAX_USDC_LP": { droppingSupport: true, primary: 'USDC', secondary: 'AVAX', name: "AVAX-USDC", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_USDC_LP', decimals: 18, address: addresses.TJ_AVAX_USDC_LP, debtCoverage: 0.83333333333},
-        "TJ_AVAX_USDT_LP": { droppingSupport: true, primary: 'USDT', secondary: 'AVAX', name: "AVAX-USDT", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_USDT_LP', decimals: 18, address: addresses.TJ_AVAX_USDT_LP, debtCoverage: 0.83333333333},
-        "TJ_AVAX_ETH_LP": { droppingSupport: true, primary: 'ETH', secondary: 'AVAX', name: "AVAX-ETH", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_ETH_LP', decimals: 18, address: addresses.TJ_AVAX_ETH_LP, debtCoverage: 0.83333333333},
-        "TJ_AVAX_BTC_LP": { droppingSupport: true, primary: 'BTC', secondary: 'AVAX', name: "AVAX-BTC", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_BTC_LP', decimals: 18, address: addresses.TJ_AVAX_BTC_LP, debtCoverage: 0.83333333333},
-        "TJ_AVAX_sAVAX_LP": { droppingSupport: true, primary: 'sAVAX', secondary: 'AVAX', name: "AVAX-sAVAX", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_sAVAX_LP', decimals: 18, address: addresses.TJ_AVAX_sAVAX_LP, debtCoverage: 0.83333333333},
+        "PNG_AVAX_USDC_LP": { primary: 'USDC', secondary: 'AVAX', name: "AVAX-USDC", dex: 'Pangolin',  symbol: 'PNG_AVAX_USDC_LP', decimals: 18, address: addresses.PNG_AVAX_USDC_LP, debtCoverage: 0.83333333333},
+        "PNG_AVAX_USDT_LP": { inactive: true, primary: 'USDT', secondary: 'AVAX', name: "AVAX-USDT", dex: 'Pangolin',  symbol: 'PNG_AVAX_USDT_LP', decimals: 18, address: addresses.PNG_AVAX_USDT_LP, debtCoverage: 0.83333333333},
+        "PNG_AVAX_ETH_LP": { primary: 'ETH', secondary: 'AVAX', name: "AVAX-ETH", dex: 'Pangolin',  symbol: 'PNG_AVAX_ETH_LP', decimals: 18, address: addresses.PNG_AVAX_ETH_LP, debtCoverage: 0.83333333333},
+        "TJ_AVAX_USDC_LP": { inactive: true, primary: 'USDC', secondary: 'AVAX', name: "AVAX-USDC", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_USDC_LP', decimals: 18, address: addresses.TJ_AVAX_USDC_LP, debtCoverage: 0.83333333333},
+        "TJ_AVAX_USDT_LP": { inactive: true, primary: 'USDT', secondary: 'AVAX', name: "AVAX-USDT", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_USDT_LP', decimals: 18, address: addresses.TJ_AVAX_USDT_LP, debtCoverage: 0.83333333333},
+        "TJ_AVAX_ETH_LP": { inactive: true, primary: 'ETH', secondary: 'AVAX', name: "AVAX-ETH", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_ETH_LP', decimals: 18, address: addresses.TJ_AVAX_ETH_LP, debtCoverage: 0.83333333333},
+        "TJ_AVAX_BTC_LP": { inactive: true, primary: 'BTC', secondary: 'AVAX', name: "AVAX-BTC", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_BTC_LP', decimals: 18, address: addresses.TJ_AVAX_BTC_LP, debtCoverage: 0.83333333333},
+        "TJ_AVAX_sAVAX_LP": { inactive: true, primary: 'sAVAX', secondary: 'AVAX', name: "AVAX-sAVAX", dex: 'TraderJoe', addMethod: 'addLiquidityTraderJoe', removeMethod: 'removeLiquidityTraderJoe',symbol: 'TJ_AVAX_sAVAX_LP', decimals: 18, address: addresses.TJ_AVAX_sAVAX_LP, debtCoverage: 0.83333333333},
     },
     CONCENTRATED_LP_ASSETS_CONFIG: {
-        "SHLB_AVAX-USDC_B": {droppingSupport: true, primary: 'AVAX', secondary: 'USDC', name: "AVAX-USDC", dex: 'SteakHut',  symbol: 'SHLB_AVAX-USDC_B', addMethod: 'stakeSteakHutAVAXUSDC', removeMethod: 'unstakeSteakHutAVAXUSDC', decimals: 18, address: addresses["SHLB_AVAX-USDC_B"], tvl: 180000, debtCoverage: 0.83333333333},
-        "SHLB_BTC.b-AVAX_B": { droppingSupport: true, primary: 'BTC', secondary: 'AVAX', name: "BTC.b-AVAX", dex: 'SteakHut',  symbol: 'SHLB_BTC.b-AVAX_B', addMethod: 'stakeSteakHutBTCAVAX', removeMethod: 'unstakeSteakHutBTCAVAX', decimals: 18, address: addresses["SHLB_BTC.b-AVAX_B"], tvl: 44000, debtCoverage: 0.83333333333},
-        "SHLB_USDT.e-USDt_C": { droppingSupport: true, inactive: true, primary: 'USDT.e', secondary: 'USDT', name: "USDT.e-USDT", dex: 'SteakHut',  symbol: 'SHLB_USDT.e-USDt_C', addMethod: 'stakeSteakHutUSDTeUSDT', removeMethod: 'unstakeSteakHutUSDTeUSDT', decimals: 18, address: addresses["SHLB_USDT.e-USDt_C"], tvl: 513000, debtCoverage: 0},
-        "SHLB_EUROC-USDC_V2_1_B": { droppingSupport: true, primary: 'EUROC', secondary: 'USDC', name: "EUROC-USDC", dex: 'SteakHut',  symbol: 'SHLB_EUROC-USDC_V2_1_B', addMethod: 'stakeSteakHutEUROCUSDC', removeMethod: 'unstakeSteakHutEUROCUSDC', decimals: 18, address: addresses["SHLB_EUROC-USDC_V2_1_B"], tvl: 1985000, debtCoverage: 0.83333333333},
+        "SHLB_AVAX-USDC_B": {inactive: true, primary: 'AVAX', secondary: 'USDC', name: "AVAX-USDC", dex: 'SteakHut',  symbol: 'SHLB_AVAX-USDC_B', addMethod: 'stakeSteakHutAVAXUSDC', removeMethod: 'unstakeSteakHutAVAXUSDC', decimals: 18, address: addresses["SHLB_AVAX-USDC_B"], tvl: 180000, debtCoverage: 0.83333333333},
+        "SHLB_BTC.b-AVAX_B": { inactive: true, primary: 'BTC', secondary: 'AVAX', name: "BTC.b-AVAX", dex: 'SteakHut',  symbol: 'SHLB_BTC.b-AVAX_B', addMethod: 'stakeSteakHutBTCAVAX', removeMethod: 'unstakeSteakHutBTCAVAX', decimals: 18, address: addresses["SHLB_BTC.b-AVAX_B"], tvl: 44000, debtCoverage: 0.83333333333},
+        "SHLB_USDT.e-USDt_C": { inactive: true, primary: 'USDT.e', secondary: 'USDT', name: "USDT.e-USDT", dex: 'SteakHut',  symbol: 'SHLB_USDT.e-USDt_C', addMethod: 'stakeSteakHutUSDTeUSDT', removeMethod: 'unstakeSteakHutUSDTeUSDT', decimals: 18, address: addresses["SHLB_USDT.e-USDt_C"], tvl: 513000, debtCoverage: 0},
+        "SHLB_EUROC-USDC_V2_1_B": { inactive: true, primary: 'EUROC', secondary: 'USDC', name: "EUROC-USDC", dex: 'SteakHut',  symbol: 'SHLB_EUROC-USDC_V2_1_B', addMethod: 'stakeSteakHutEUROCUSDC', removeMethod: 'unstakeSteakHutEUROCUSDC', decimals: 18, address: addresses["SHLB_EUROC-USDC_V2_1_B"], tvl: 1985000, debtCoverage: 0.83333333333},
     },
     BALANCER_LP_ASSETS_CONFIG: {
         'BAL_sAVAX_AVAX': { primary: 'sAVAX', secondary: 'AVAX', name: 'sAVAX-AVAX', dex: 'Balancer', symbol: 'BAL_sAVAX_AVAX', debtCoverage: 0.83333333333, decimals: 18, tvl: 5350000, address: addresses['BAL_sAVAX_AVAX'], gaugeAddress: addresses['BAL_S_AVAX_MAIN'], rewardTokens: ['QI'], addMethod: 'joinPoolAndStakeBalancerV2', removeMethod: 'unstakeAndExitPoolBalancerV2', gaugeBalanceMethod: 'balancerSAvaxBalance', poolId: '0xfd2620c9cfcec7d152467633b3b0ca338d3d78cc00000000000000000000001c'},
@@ -365,7 +365,6 @@ export default {
         ],
         PNG_AVAX_USDC_LP: [
             {
-                droppingSupport: true,
                 protocol: 'YIELD_YAK',
                 protocolIdentifier: 'YY_PNG_AVAX_USDC_LP',
                 autoCompounding: true,
@@ -386,7 +385,6 @@ export default {
         ],
         PNG_AVAX_ETH_LP: [
             {
-                droppingSupport: true,
                 protocol: 'YIELD_YAK',
                 protocolIdentifier: 'YY_PNG_AVAX_ETH_LP',
                 autoCompounding: true,
@@ -407,7 +405,7 @@ export default {
         ],
         TJ_AVAX_USDC_LP: [
             {
-                droppingSupport: true,
+                inactive: true,
                 protocol: 'YIELD_YAK',
                 protocolIdentifier: 'YY_TJ_AVAX_USDC_LP',
                 autoCompounding: true,
@@ -428,7 +426,7 @@ export default {
         ],
         TJ_AVAX_ETH_LP: [
             {
-                droppingSupport: true,
+                inactive: true,
                 protocol: 'YIELD_YAK',
                 protocolIdentifier: 'YY_TJ_AVAX_ETH_LP',
                 autoCompounding: true,
@@ -449,7 +447,7 @@ export default {
         ],
         TJ_AVAX_sAVAX_LP: [
             {
-                droppingSupport: true,
+                inactive: true,
                 protocol: 'YIELD_YAK',
                 protocolIdentifier: 'YY_TJ_AVAX_sAVAX_LP',
                 autoCompounding: true,
