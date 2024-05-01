@@ -1259,6 +1259,7 @@ export default {
           for (let entry of Object.entries(state.lpAssets)) {
             let symbol = entry[0];
             let lpAsset = entry[1];
+            if (lpAsset.inactive) break;
 
             let assetAppreciation = 0;
             //TODO: take from API
@@ -1276,6 +1277,7 @@ export default {
           for (let entry of Object.entries(state.concentratedLpAssets)) {
             let symbol = entry[0];
             let lpAsset = entry[1];
+            if (lpAsset.inactive) break;
 
             const apy = lpAsset.apy ? lpAsset.apy / 100 : 0;
 
@@ -1287,6 +1289,7 @@ export default {
           for (let entry of Object.entries(state.balancerLpAssets)) {
             let symbol = entry[0];
             let lpAsset = entry[1];
+            if (lpAsset.inactive) break;
 
             const apy = lpAsset.apy ? lpAsset.apy / 100 : 0;
 
@@ -1300,6 +1303,7 @@ export default {
           for (let entry of Object.entries(state.levelLpAssets)) {
             let symbol = entry[0];
             let lpAsset = entry[1];
+            if (lpAsset.inactive) break;
 
             const apy = lpAsset.apy ? lpAsset.apy / 100 : 0;
 
@@ -1311,6 +1315,7 @@ export default {
           for (let entry of Object.entries(state.gmxV2Assets)) {
             let symbol = entry[0];
             let lpAsset = entry[1];
+            if (lpAsset.inactive) break;
 
             const apy = lpAsset.apy ? lpAsset.apy / 100 : 0;
 
@@ -1340,6 +1345,7 @@ export default {
           for (let entry of Object.entries(state.traderJoeV2LpAssets)) {
             let symbol = entry[0];
             let lpAsset = entry[1];
+            if (lpAsset.inactive) break;
 
             const apy = lpAsset.apy ? lpAsset.apy / 100 : 0;
             const userValueInPool =
@@ -1358,6 +1364,7 @@ export default {
             let farms = entry[1];
 
             for (let farm of farms) {
+              if (farm.inactive) break;
               let assetAppretiation = 1;
 
               if (symbol.includes('sAVAX')) assetAppretiation = 1.036;
