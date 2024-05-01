@@ -15,6 +15,7 @@ import {PriceHelper} from "../../lib/joe-v2/PriceHelper.sol";
 import {Uint256x256Math} from "../../lib/joe-v2/math/Uint256x256Math.sol";
 import {TickMath} from "../../lib/uniswap-v3/TickMath.sol";
 import {FullMath} from "../../lib/uniswap-v3/FullMath.sol";
+import "../../interfaces/facets/avalanche/IYieldYak.sol";
 
 
 //This path is updated during deployment
@@ -48,40 +49,48 @@ contract SolvencyFacetProdArbitrum is SolvencyFacetProd {
         }
     }
 
-    function getLTIPEligibleTVL() public view returns (uint256) {
-        bytes32[] memory notEligibleTokens = new bytes32[](19);
-        notEligibleTokens[0] = bytes32("ETH");
-        notEligibleTokens[1] = bytes32("USDC");
-        notEligibleTokens[2] = bytes32("ARB");
-        notEligibleTokens[3] = bytes32("BTC");
-        notEligibleTokens[4] = bytes32("DAI");
-        notEligibleTokens[5] = bytes32("USDT");
-        notEligibleTokens[6] = bytes32("FRAX");
-        notEligibleTokens[7] = bytes32("USDC.e");
-        notEligibleTokens[8] = bytes32("UNI");
-        notEligibleTokens[9] = bytes32("LINK");
-        notEligibleTokens[10] = bytes32("GMX");
-        notEligibleTokens[11] = bytes32("MAGIC");
-        notEligibleTokens[12] = bytes32("WOO");
-        notEligibleTokens[13] = bytes32("wstETH");
-        notEligibleTokens[14] = bytes32("JOE");
-        notEligibleTokens[15] = bytes32("GRAIL");
-        notEligibleTokens[16] = bytes32("ezETH");
-        notEligibleTokens[17] = bytes32("weETH");
-        notEligibleTokens[18] = bytes32("rsETH");
-
-        uint256[] memory prices = getOracleNumericValuesFromTxMsg(notEligibleTokens);
-        AssetPrice[] memory assetsPrices = new AssetPrice[](notEligibleTokens.length);
-        for(uint i; i<notEligibleTokens.length; i++){
-            assetsPrices[i] = AssetPrice({
-                asset: notEligibleTokens[i],
-                price: prices[i]
-            });
+    function fixVaultDecimals(address vault) internal view returns (uint256 multiplier){
+        if(vault == 0x8Bc6968b7A9Eed1DD0A259eFa85dc2325B923dd2 || vault == 0x4649c7c3316B27C4A3DB5f3B47f87C687776Eb8C){
+            IYieldYak vault = IYieldYak(vault);
+            IERC20Metadata vaultDepositToken = IERC20Metadata(vault.depositToken());
+            multiplier = 10 ** (vault.decimals() - vaultDepositToken.decimals());
+        } else {
+            multiplier = 1;
         }
 
-        uint256 notEligibleAssetsValue = _getTotalAssetsValueBase(assetsPrices);
-        uint256 debt = getDebt();
+    }
 
-        return debt > notEligibleAssetsValue ? debt - notEligibleAssetsValue : 0;
+    function _getTWVOwnedAssets(AssetPrice[] memory ownedAssetsPrices) internal virtual override view returns (uint256) {
+        bytes32 nativeTokenSymbol = DeploymentConstants.getNativeTokenSymbol();
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+
+        uint256 weightedValueOfTokens = ownedAssetsPrices[0].price * (address(this).balance - msg.value) * tokenManager.debtCoverage(tokenManager.getAssetAddress(nativeTokenSymbol, true)) / (10 ** 26);
+
+        if (ownedAssetsPrices.length > 0) {
+
+            for (uint256 i = 0; i < ownedAssetsPrices.length; i++) {
+                IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(ownedAssetsPrices[i].asset, true));
+                weightedValueOfTokens = weightedValueOfTokens + (ownedAssetsPrices[i].price * token.balanceOf(address(this)) * tokenManager.debtCoverage(address(token)) * fixVaultDecimals(address(token)) / (10 ** token.decimals() * 1e8));
+            }
+        }
+        return weightedValueOfTokens;
+    }
+
+    function _getTotalAssetsValueBase(AssetPrice[] memory ownedAssetsPrices) public virtual override view returns (uint256) {
+        if (ownedAssetsPrices.length > 0) {
+            ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+
+            uint256 total = address(this).balance * ownedAssetsPrices[0].price / 10 ** 8;
+
+            for (uint256 i = 0; i < ownedAssetsPrices.length; i++) {
+                IERC20Metadata token = IERC20Metadata(tokenManager.getAssetAddress(ownedAssetsPrices[i].asset, true));
+                uint256 assetBalance = token.balanceOf(address(this)) * fixVaultDecimals(address(token));
+
+                total = total + (ownedAssetsPrices[i].price * 10 ** 10 * assetBalance / (10 ** token.decimals()));
+            }
+            return total;
+        } else {
+            return 0;
+        }
     }
 }
