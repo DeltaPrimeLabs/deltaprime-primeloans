@@ -193,13 +193,15 @@ describe('Smart loan', () => {
             console.log(`EligibleTVL: ${fromWei(await wrappedLoan.getLTIPEligibleTVL())}`);
 
             console.log('STAKE 6000 USDT')
+            let totalValueBefore = fromWei(await wrappedLoan.getTotalValue());
             await wrappedLoan.stakeUSDTYak(parseUnits("6000", 6));
-            console.log(`TotalValue of the loan: $${fromWei(await wrappedLoan.getTotalValue())}`);
+            let totalValueAfter = fromWei(await wrappedLoan.getTotalValue());
+            console.log(`TotalValue of the loan: $${totalValueAfter}`);
             console.log(`Debt of the loan: $${fromWei(await wrappedLoan.getDebt())}`);
             let eligibleTVL = fromWei(await wrappedLoan.getLTIPEligibleTVL());
             console.log(`EligibleTVL: ${eligibleTVL}`);
             expect(eligibleTVL).to.be.gt(2000)
-
+            expect(totalValueAfter).to.be.closeTo(totalValueBefore, 100)
         });
     });
 });
