@@ -39,7 +39,7 @@
                          :lp-token="lpToken"></LevelLpTableRow>
       </div>
     </div>
-    <div class="lp-tokens" v-if="Object.keys(concentratedLpTokens).length">
+    <div class="lp-tokens" v-if="Object.keys(concentratedLpTokens).length && concentratedLpBalances && Object.values(concentratedLpBalances).some(val => val > 0)">
       <div class="lp-table">
         <TableHeader :config="concentratedLpTableHeaderConfig"></TableHeader>
         <ConcentratedLpTableRow v-for="(lpToken, index) in concentratedLpTokens"
@@ -56,7 +56,7 @@
       <div class="lp-table" v-if="Object.keys(lpTokens).length && filteredLpTokens">
         <TableHeader :config="lpTableHeaderConfig"></TableHeader>
         <LpTableRow v-for="(lpToken, index) in filteredLpTokens" v-bind:key="index" :lp-token="lpToken"
-                    v-if="!lpToken.inactive || lpBalances[lpToken.symbol] > 0" showFarmed="false">{{ lpToken }}
+                  showFarmed="false">{{ lpToken }}
         </LpTableRow>
         <!--          <div class="paginator-container">-->
         <!--            <Paginator :total-elements="50" :page-size="6"></Paginator>-->
