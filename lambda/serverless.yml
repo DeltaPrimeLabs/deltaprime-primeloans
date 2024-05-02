@@ -281,6 +281,14 @@ functions:
       - httpApi:
           method: get
           path: /gmx-incentives-remake/{id}
+  getArbitrumIncentivesApi:
+    handler: apis/arbitrumIncentives.getArbitrumIncentivesApi
+    memorySize: 512
+    description: Fetch Arbitrum Grant values for a loan on Arbitrum
+    events:
+      - httpApi:
+          method: get
+          path: /arbitrum-grant/{id}
   getGmBoostApyApi:
     handler: apis/gmxIncentives.getGmBoostApyApi
     memorySize: 512

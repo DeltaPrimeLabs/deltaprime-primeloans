@@ -21,11 +21,11 @@ const arbitrumIncentives = async (event) => {
   const totalLoans = loanAddresses.length;
 
   const incentivesPerInterval = 225 / (60 * 60 * 24 * 7) * (60 * 10);
-  const batchSize = 150;
+  const batchSize = 40;
 
   const loanQualifications = {};
   let totalLeveragedGM = 0;
-  let gmTvl = 0;
+  let totalTvl = 0;
   const now = Math.floor(Date.now() / 1000);
 
   // calculate gm leveraged by the loan
@@ -36,7 +36,7 @@ const arbitrumIncentives = async (event) => {
     const wrappedContracts = getWrappedContracts(batchLoanAddresses, 'arbitrum');
 
     const loanStats = await Promise.all(
-      wrappedContracts.map(contract => Promise.all([contract.getFullLoanStatus(), contract.getAllAssetsBalances()]))
+      wrappedContracts.map(contract => Promise.all([contract.getFullLoanStatus(), contract.getAllAssetsBalances(), contract.getTotalTraderJoeV2()]))
     );
 
     const redstonePriceDataRequest = await fetch(redstoneFeedUrl);
@@ -48,8 +48,7 @@ const arbitrumIncentives = async (event) => {
           const loanId = batchLoanAddresses[batchId].toLowerCase();
           const status = loan[0];
           const assetBalances = loan[1];
-          // const tjv2Prices = loan[2];
-          // console.log(tjv2Prices);
+          const tjv2Prices = loan[2];
           const collateral = fromWei(status[0]) - fromWei(status[1]);
 
           loanQualifications[loanId] = {
@@ -72,10 +71,12 @@ const arbitrumIncentives = async (event) => {
             })
           );
 
-          const loanLeveragedGM = loanTotalGMValue - collateral > 0 ? loanTotalGMValue - collateral : 0;
+          const loanTotalValue = loanTotalGMValue + formatUnits(tjv2Prices);
+
+          const loanLeveragedGM = loanTotalValue - collateral > 0 ? loanTotalValue - collateral : 0;
           loanQualifications[loanId].loanLeveragedGM = loanLeveragedGM;
           totalLeveragedGM += loanLeveragedGM;
-          gmTvl += loanTotalGMValue;
+          totalTvl += loanTotalGMValue;
         })
       );
     }
@@ -95,23 +96,23 @@ const arbitrumIncentives = async (event) => {
   })
 
   // save/update incentives values to DB
-  // await Promise.all(
-  //   Object.entries(loanIncentives).map(async ([loanId, value]) => {
-  //     const data = {
-  //       id: loanId,
-  //       timestamp: now,
-  //       arbCollected: value
-  //     };
+  await Promise.all(
+    Object.entries(loanIncentives).map(async ([loanId, value]) => {
+      const data = {
+        id: loanId,
+        timestamp: now,
+        arbCollected: value
+      };
 
-  //     const params = {
-  //       TableName: process.env.ARBITRUM_INCENTIVES_ARB_TABLE,
-  //       Item: data
-  //     };
-  //     await dynamoDb.put(params).promise();
-  //   })
-  // );
+      const params = {
+        TableName: process.env.ARBITRUM_INCENTIVES_ARB_TABLE,
+        Item: data
+      };
+      await dynamoDb.put(params).promise();
+    })
+  );
 
-  // console.log("GMX incentives successfully updated.")
+  console.log("Arbitrum incentives successfully updated.")
 
   // save boost APY to DB
   // const boostApy = incentivesPerInterval / totalLeveragedGM * 6 * 24 * 365;
@@ -126,7 +127,7 @@ const arbitrumIncentives = async (event) => {
   //       Action: "PUT"
   //     },
   //     arbTvl: {
-  //       Value: Number(gmTvl) ? gmTvl : null,
+  //       Value: Number(totalTvl) ? totalTvl : null,
   //       Action: "PUT"
   //     }
   //   }
