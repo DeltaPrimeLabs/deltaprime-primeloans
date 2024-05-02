@@ -284,7 +284,7 @@ abstract contract SolvencyFacetProd is RedstoneConsumerNumericBase, DiamondHelpe
     /**
       * Returns TotalWeightedValue of OwnedAssets in USD based on the supplied array of Asset/Price struct, tokenBalance and debtCoverage
     **/
-    function _getTWVOwnedAssets(AssetPrice[] memory ownedAssetsPrices) internal view returns (uint256) {
+    function _getTWVOwnedAssets(AssetPrice[] memory ownedAssetsPrices) internal virtual view returns (uint256) {
         bytes32 nativeTokenSymbol = DeploymentConstants.getNativeTokenSymbol();
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
@@ -402,7 +402,7 @@ abstract contract SolvencyFacetProd is RedstoneConsumerNumericBase, DiamondHelpe
      * Returns the current value of Prime Account in USD including all tokens as well as staking and LP positions
      * Uses provided AssetPrice struct array instead of extracting the pricing data from the calldata again.
     **/
-    function _getTotalAssetsValueBase(AssetPrice[] memory ownedAssetsPrices) public view returns (uint256) {
+    function _getTotalAssetsValueBase(AssetPrice[] memory ownedAssetsPrices) public virtual view returns (uint256) {
         if (ownedAssetsPrices.length > 0) {
             ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
