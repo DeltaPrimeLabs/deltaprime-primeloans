@@ -29,9 +29,6 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
     using PackedUint128Math for bytes32;
 
     // Constants declaration
-    uint256 private constant _PRECISION = 1e18;
-    uint256 private constant _MAX_RANGE = 51;
-    uint256 private constant _PACKED_DISTRIBS_SIZE = 16;
     uint256 private constant _MAX_SIPPIAGE = 5;
     uint16 internal constant DEFAULT_BIN_STEP = 25;
     uint256 public constant MAX_LOCK_TIME = 3 * 365 days;
@@ -104,16 +101,29 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
 
     /**
      * @dev Returns the estimated token Y amount from token X.
-     * @param amountX Token X Amount.
+     * @param tokenId Position Manager token id to rebalance
      * @return status Rebalance status
      */
-    function rebalanceStatus(uint256 amountX) public view returns(bool) {
+    function rebalanceStatus(uint256 tokenId) public view returns(bool) {
         (uint128 reserveA, ) = lbPair.getReserves();
         if (reserveA == 0) return false;
 
-        ILBRouter traderJoeV2Router = ILBRouter(getJoeV2RouterAddress());
-        (uint128 amountInLeft, , ) = traderJoeV2Router.getSwapOut(lbPair, uint128(amountX), true);
-        return amountInLeft == 0;
+        (,,,address sPrimeAddr,,,,uint256 amountX, uint256 amountY) = positionManager.positions(tokenId);
+
+        require(sPrimeAddr == address(this) && (amountX > 0 || amountY > 0), "Wrong Position");
+
+        uint256 amountXToY = _getTokenYFromTokenX(amountX);
+        uint256 diff = amountY > amountXToY ? amountY - amountXToY : amountXToY - amountY;
+
+        if(amountY * _MAX_SIPPIAGE / 100 < diff) {
+            bool swapTokenX = amountY < amountXToY;
+            uint256 amountIn = swapTokenX ? amountX * diff / amountXToY / 2 : diff / 2;
+            ILBRouter traderJoeV2Router = ILBRouter(getJoeV2RouterAddress());
+            (uint128 amountInLeft, , ) = traderJoeV2Router.getSwapOut(lbPair, uint128(amountIn), swapTokenX);
+            return amountInLeft == 0;
+        }
+
+        return true;
     }
 
     /**
