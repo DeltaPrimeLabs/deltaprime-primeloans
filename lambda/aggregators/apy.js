@@ -17,6 +17,7 @@ const beefyConfig = require("../config/beefyApy.json");
 const levelConfig = require("../config/levelApy.json");
 const gmxApyConfig = require("../config/gmxApy.json");
 const balancerApyConfig = require("../config/balancerApy.json");
+const pendleApyConfig = require("../config/pendleApy.json");
 
 const formatUnits = (val, decimals) => parseFloat(ethers.utils.formatUnits(val, decimals));
 
@@ -849,6 +850,99 @@ const assetStakingApyAggregator = async (event) => {
   return event;
 }
 
+const pendleTvlAndApyAggregator = async (event) => {
+  const { page } = await newChrome();
+
+  // navigate pools page and wait till javascript fully load.
+  const BASE_URL = "https://www.pendle.magpiexyz.io/stake";
+
+  await page.setViewport({
+    width: 1920,
+    height: 1080
+  });
+
+  await page.goto(BASE_URL, {
+    waitUntil: "networkidle0",
+    timeout: 60000
+  });
+
+  // accept tersm and close modal
+  let dialog = await page.$(".MuiDialog-paper");
+
+  let checkbox = await dialog.$(".MuiCheckbox-root");
+  await checkbox.click();
+
+  let acceptBtn = await dialog.$("button");
+  await acceptBtn.click();
+
+  // change network to Arbitrum
+  const tabs = await page.$$(".MuiSelect-select");
+
+  await tabs[2].click();
+
+  await page.mainFrame().waitForFunction(
+    selector => !!document.querySelector(selector).innerText,
+    {},
+    "ul.MuiMenu-list"
+  )
+
+  const dropdownBtns = await page.$$("ul.MuiMenu-list > li");
+
+  await dropdownBtns[2].click();
+
+  // wait for load
+  await page.goto(BASE_URL, {
+    waitUntil: "networkidle0",
+    timeout: 60000
+  });
+
+  // accept tersm and close modal
+  dialog = await page.$(".MuiDialog-paper");
+
+  checkbox = await dialog.$(".MuiCheckbox-root");
+  await checkbox.click();
+
+  acceptBtn = await dialog.$("button");
+  await acceptBtn.click();
+
+  for (const [identifier, poolData] of Object.entries(pendleApyConfig)) {
+    try {
+      const poolRow = await page.$(poolData.rowId);
+      const poolColumns = await poolRow.$$("div.MuiAccordionSummary-root > div.MuiAccordionSummary-content > div > div >div");
+
+      const poolApy = parseFloat((await (await poolColumns[1].getProperty("textContent")).jsonValue()).split('%')[0].trim());
+
+      const tvlRaw = (await (await poolColumns[3].getProperty("textContent")).jsonValue()).split('$')[1].trim();
+      const tvlUnit = tvlRaw.charAt(tvlRaw.length - 1) === "K" ? 1000 : 1000000;
+      const poolTvl = tvlUnit * parseFloat(tvlRaw.slice(0, -1));
+
+      console.log(identifier, poolApy, poolTvl);
+      const params = {
+        TableName: process.env.APY_TABLE,
+        Key: {
+          id: identifier
+        },
+        AttributeUpdates: {
+          lp_apy: {
+            Value: Number(poolApy) ? poolApy / 100 : null,
+            Action: "PUT"
+          },
+          tvl: {
+            Value: Number(poolTvl) ? poolTvl : null
+          }
+        }
+      };
+      await dynamoDb.update(params).promise();
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  console.log('fetching done.');
+
+  return event;
+}
+
 module.exports = {
   levelTvlAndApyAggregator,
   glpAprAggregator,
@@ -860,5 +954,6 @@ module.exports = {
   beefyApyAggregator,
   gmxApyAggregator,
   balancerTvlAndApyAggregator,
-  assetStakingApyAggregator
+  assetStakingApyAggregator,
+  pendleTvlAndApyAggregator
 }

@@ -183,6 +183,13 @@ functions:
     description: fetch Open Interests of GM pool.
     events:
       - schedule: rate(3 hours)
+  pendleTvlAndApyAggregator:
+    handler: aggregators/apy.pendleTvlAndApyAggregator
+    memorySize: 2048
+    timeout: 300
+    description: fetch TVLs and APYs of Pendle pools.
+    events:
+      - schedule: rate(5 minutes)
   # loanAggregatorAva:
   #   handler: aggregators/loan.loanAggregatorAva
   #   memorySize: 1024
