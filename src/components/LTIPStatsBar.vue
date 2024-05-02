@@ -70,7 +70,7 @@
         </InfoIcon>
       </div>
       <div class="stat-value">
-        {{ arbCollected | smartRound(6, true) }}
+        {{ collectedBonus | smartRound(6, true) }}
         <img class="incentives-icon" src="src/assets/logo/arb.png">
       </div>
     </div>
@@ -83,6 +83,8 @@
 
 import BarGaugeBeta from './BarGaugeBeta.vue';
 import InfoIcon from './InfoIcon.vue';
+import LTIP_DISTRIBUTED_ARBITRUM from "../data/arbitrum/GM_EPOCH_9.json";
+import {fromWei} from "../utils/calculate";
 
 export default {
   name: 'LTIPStatsBar',
@@ -93,9 +95,30 @@ export default {
     yourEligibleTVL: null,
     aprBoost: null,
     maxAprBoost: null,
-    arbCollected: null,
+    collectedBonus: null,
   },
   computed: {
+  },
+  watch: {
+    smartLoanContract: {
+      async handler(smartLoanContract) {
+        if (smartLoanContract) {
+          let collectedResponse;
+          let collectedToken;
+          let harvested;
+          if (window.arbitrumChain) {
+
+            collectedResponse = await (await fetch(`https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/arbitrum-grant/${smartLoanContract.address}`)).json();
+            harvested = LTIP_DISTRIBUTED_ARBITRUM[this.smartLoanContract.address.toLowerCase()] ? LTIP_DISTRIBUTED_ARBITRUM[this.smartLoanContract.address.toLowerCase()] : 0;
+            collectedToken = collectedResponse.arbCollected;
+          }
+          this.collectedBonus = collectedToken - harvested;
+
+          //TODO: to LeChiffre- is it a right place for such a call?
+          this.yourEligibleTVL = fromWei(await smartLoanContract.getLTIPEligibleTvl());
+        }
+      },
+    }
   }
 };
 </script>

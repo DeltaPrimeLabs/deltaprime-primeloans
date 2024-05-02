@@ -13,6 +13,7 @@
       </StatsBarBeta>
 
       <LTIPStatsBar
+        v-if="isArbitrum"
         :totalEligibleTVL="5000000"
         :milestone="10000000"
         :yourEligibleTVL="5202.12412"
@@ -240,10 +241,12 @@ export default {
       showLPTab: Object.keys(config.TRADERJOEV2_LP_ASSETS_CONFIG).length || Object.keys(config.CONCENTRATED_LP_ASSETS_CONFIG).length || Object.keys(config.LP_ASSETS_CONFIG).length,
       showFarmsTab: Object.keys(config.FARMED_TOKENS_CONFIG).length,
       tabsRefs: [],
+      isArbitrum: false
     };
   },
 
   async mounted() {
+    this.isArbitrum = window.chain === 'arbitrum';
     this.setupSelectedTab();
     this.watchHealthRefresh();
     this.watchAprRefresh();

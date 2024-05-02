@@ -136,7 +136,7 @@ export default {
       );
     },
     hasGmIncentives() {
-      return true;
+      return window.chain === 'avalanche';
     }
   },
   methods: {
