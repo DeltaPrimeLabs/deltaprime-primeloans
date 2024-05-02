@@ -36,6 +36,7 @@ import "./facets/avalanche/IGmxV2AvalancheFacet.sol";
 import "./facets/arbitrum/ISushiSwapFacet.sol";
 import "./facets/arbitrum/ILevelFinanceFacet.sol";
 import "./facets/arbitrum/IPenpieFacet.sol";
+import "./facets/arbitrum/ILTIPFacet.sol";
 
 interface SmartLoanGigaChadInterface is
     IGMDFacet,
@@ -50,6 +51,7 @@ interface SmartLoanGigaChadInterface is
     ISushiSwapFacet,
     ILevelFinanceFacet,
     IPenpieFacet,
+    ILTIPFacet,
     ISmartLoanWrappedNativeTokenFacet,
     IPangolinDEXFacet,
     IUniswapV2DEXFacet,

@@ -17,6 +17,8 @@ interface IYieldYak {
 
     function deposit() external payable;
 
+    function depositToken() external view returns (address);
+
     function deposit(uint256 amount) external;
 
     function decimals() external view returns (uint256);

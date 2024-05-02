@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: ;
+// Last deployed from commit: ce32e0e3153e64981f79c714072c3bec521bbc02;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -90,17 +90,15 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             amount = Math.min(IERC20(lpToken).balanceOf(address(this)), amount);
             require(amount > 0, "Cannot unstake 0 tokens");
 
-            uint256 pnpReceived;
-            {
-                uint256 beforePnpBalance = IERC20(PNP).balanceOf(address(this));
+            IPendleDepositHelper(DEPOSIT_HELPER).withdrawMarketWithClaim(
+                market,
+                amount,
+                true
+            );
 
-                IPendleDepositHelper(DEPOSIT_HELPER).withdrawMarketWithClaim(
-                    market,
-                    amount,
-                    true
-                );
-
-                pnpReceived = IERC20(PNP).balanceOf(address(this)) - beforePnpBalance;
+            uint256 pnpReceived = IERC20(PNP).balanceOf(address(this));
+            if (pnpReceived > 0) {
+                PNP.safeTransfer(msg.sender, pnpReceived);
             }
 
             market.safeApprove(PENDLE_ROUTER, 0);
@@ -121,9 +119,6 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
             _increaseExposure(tokenManager, token, netTokenOut);
             _decreaseExposure(tokenManager, lpToken, amount);
-            if (pnpReceived > 0) {
-                _increaseExposure(tokenManager, PNP, pnpReceived);
-            }
         }
 
         emit Unstaked(
@@ -138,31 +133,88 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         return netTokenOut;
     }
 
+    /**
+     * @dev This function uses the redstone-evm-connector
+     **/
+    function depositPendleLPAndStakeInPenpie(
+        address market,
+        uint256 amount
+    ) external onlyOwner nonReentrant remainsSolvent {
+        address lpToken = _getPendleLpToken(market);
+
+        market.safeTransferFrom(msg.sender, address(this), amount);
+
+        market.safeApprove(PENDLE_STAKING, 0);
+        market.safeApprove(PENDLE_STAKING, amount);
+
+        IPendleDepositHelper(DEPOSIT_HELPER).depositMarket(market, amount);
+
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        _increaseExposure(tokenManager, lpToken, amount);
+
+        emit PendleLpStaked(msg.sender, lpToken, amount, block.timestamp);
+    }
+
+    /**
+     * @dev This function uses the redstone-evm-connector
+     **/
+    function unstakeFromPenpieAndWithdrawPendleLP(
+        address market,
+        uint256 amount
+    )
+        external
+        onlyOwner
+        canRepayDebtFully
+        nonReentrant
+        returns (uint256)
+    {
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        address lpToken = _getPendleLpToken(market);
+
+        amount = Math.min(IERC20(lpToken).balanceOf(address(this)), amount);
+        require(amount > 0, "Cannot unstake 0 tokens");
+
+        IPendleDepositHelper(DEPOSIT_HELPER).withdrawMarketWithClaim(
+            market,
+            amount,
+            true
+        );
+
+        market.safeTransfer(msg.sender, amount);
+
+        uint256 pnpReceived = IERC20(PNP).balanceOf(address(this));
+        if (pnpReceived > 0) {
+            PNP.safeTransfer(msg.sender, pnpReceived);
+        }
+
+        _decreaseExposure(tokenManager, lpToken, amount);
+
+        emit PendleLpUnstaked(msg.sender, lpToken, amount, block.timestamp);
+
+        return amount;
+    }
+
     // INTERNAL FUNCTIONS
     function _getPendleLpToken(address market) internal pure returns (address) {
         // ezETH
-        if (market == 0x60712e3C9136CF411C561b4E948d4d26637561e7) {
-            return 0xF5250766B344568F8b4d783b7cBBC6415E93dD4d;
+        if (market == 0x5E03C94Fc5Fb2E21882000A96Df0b63d2c4312e2) {
+            return 0xecCDC2C2191d5148905229c5226375124934b63b;
         }
         // wstETH
-        if (market == 0x08a152834de126d2ef83D612ff36e4523FD0017F) {
-            return 0x4d2Faa48Ef93Cc3c8A7Ec27F3Cb91cEB1a36F89B;
+        if (market == 0xFd8AeE8FCC10aac1897F8D5271d112810C79e022) {
+            return 0xdb0e1D1872202A81Eb0cb655137f4a937873E02f;
         }
         // eETH
-        if (market == 0xE11f9786B06438456b044B3E21712228ADcAA0D1) {
-            return 0x11625278c86f87F1d6bE5D911411AD22F00A77ef;
+        if (market == 0x952083cde7aaa11AB8449057F7de23A970AA8472) {
+            return 0x264f4138161aaE16b76dEc7D4eEb756f25Fa67Cd;
         }
         // rsETH
-        if (market == 0x6F02C88650837C8dfe89F66723c4743E9cF833cd) {
-            return 0xeC9224319c5d7A36A3DF68485a1F37F1BdC10635;
+        if (market == 0x6Ae79089b2CF4be441480801bb741A531d94312b) {
+            return 0xe3B327c43b5002eb7280Eef52823698b6cDA06cF;
         }
         // wstETHSilo
         if (market == 0xACcd9A7cb5518326BeD715f90bD32CDf2fEc2D14) {
             return 0xCcCC7c80c9Be9fDf22e322A5fdbfD2ef6ac5D574;
-        }
-        // PT-eETHSilo
-        if (market == 0x99e9028e274FEAFA2E1D8787E1eE6DE39C6F7724) {
-            return 0x0B28a5c88cd5F0cdE1956A1D878A9E371Ad9775f;
         }
 
         revert("Invalid market address");
@@ -210,6 +262,34 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         address indexed vault,
         uint256 depositTokenAmount,
         uint256 receiptTokenAmount,
+        uint256 timestamp
+    );
+
+    /**
+     * @dev emitted when user stakes an asset
+     * @param user the address executing staking
+     * @param vault address of receipt token
+     * @param amount how much of deposit token was staked
+     * @param timestamp of staking
+     **/
+    event PendleLpStaked(
+        address indexed user,
+        address indexed vault,
+        uint256 amount,
+        uint256 timestamp
+    );
+
+    /**
+     * @dev emitted when user unstakes an asset
+     * @param user the address executing unstaking
+     * @param vault address of receipt token
+     * @param amount how much deposit token was received
+     * @param timestamp of unstaking
+     **/
+    event PendleLpUnstaked(
+        address indexed user,
+        address indexed vault,
+        uint256 amount,
         uint256 timestamp
     );
 }

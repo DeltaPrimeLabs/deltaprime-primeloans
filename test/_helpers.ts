@@ -925,6 +925,14 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
     }
     if (chain == 'ARBITRUM') {
         if (mock) {
+            await deployFacet(
+                "LTIPFacetMock",
+                diamondAddress,
+                [
+                    'getLTIPEligibleTVL',
+                ],
+                hardhatConfig
+            )
             await deployFacet("SolvencyFacetMockArbitrum", diamondAddress, [
                     'canRepayDebtFully',
                     'isSolvent',
@@ -975,6 +983,15 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                     'getHealthRatio'
                 ],
                 hardhatConfig)
+
+            await deployFacet(
+                "LTIPFacet",
+                diamondAddress,
+                [
+                    'getLTIPEligibleTVL',
+                ],
+                hardhatConfig
+            )
         }
         await deployFacet("SmartLoanWrappedNativeTokenFacet", diamondAddress, ['depositNativeToken', 'wrapNativeToken', 'unwrapAndWithdraw'], hardhatConfig)
         // await deployFacet("TraderJoeV2ArbitrumFacet", diamondAddress, ['addLiquidityTraderJoeV2', 'removeLiquidityTraderJoeV2', 'getOwnedTraderJoeV2Bins'], hardhatConfig)
@@ -998,6 +1015,14 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             diamondAddress,
             [
                 'yakSwap',
+            ],
+            hardhatConfig
+        )
+        await deployFacet(
+            "YieldYakFacetArbi",
+            diamondAddress,
+            [
+                'stakeUSDTYak',
             ],
             hardhatConfig
         )
@@ -1038,6 +1063,8 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             [
                 'depositToPendleAndStakeInPenpie',
                 'unstakeFromPenpieAndWithdrawFromPendle',
+                'depositPendleLPAndStakeInPenpie',
+                'unstakeFromPenpieAndWithdrawPendleLP',
             ],
             hardhatConfig
         )
@@ -1288,7 +1315,11 @@ export async function deployAndInitializeLendingPool(owner: any, tokenName: stri
                 break;
             case 'USDC':
                 pool = (await deployContract(owner, UsdcPoolArtifact)) as Pool;
-                tokenContract = new ethers.Contract(AVAX_TOKEN_ADDRESSES['USDC'], erc20ABI, provider);
+                tokenContract = new ethers.Contract(ARBITRUM_TOKEN_ADDRESSES['USDC'], erc20ABI, provider);
+                break;
+            case 'USDT':
+                pool = (await deployContract(owner, UsdcPoolArtifact)) as Pool;
+                tokenContract = new ethers.Contract(ARBITRUM_TOKEN_ADDRESSES['USDT'], erc20ABI, provider);
                 break;
         }
     } else if (chain === "ETHEREUM") {
