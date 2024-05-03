@@ -62,7 +62,7 @@
       >
       </CurrencyComboInput>
 
-      <div class="reverse-swap-button" v-on:click="reverseSwap">
+      <div class="reverse-swap-button" v-on:click="reverseSwap" v-bind:style="blockReversing ? 'pointer-events: none' : ''">
         <DeltaIcon class="reverse-swap-icon" :size="22" :icon-src="'src/assets/icons/swap-arrow.svg'"></DeltaIcon>
       </div>
 
@@ -79,7 +79,7 @@
           Price:&nbsp;<span
           class="price-info__value">1 {{
             (targetAssetData && targetAssetData.short) ? targetAssetData.short : targetAsset
-          }} = {{ estimatedNeededTokens / estimatedReceivedTokens | smartRound }} {{ sourceAsset }}</span>
+          }} = {{ estimatedNeededTokens / estimatedReceivedTokens | smartRound }} {{ sourceAssetNameToDisplay ? sourceAssetNameToDisplay : sourceAsset }}</span>
         </div>
       </div>
 
@@ -235,6 +235,7 @@ export default {
   data() {
     return {
       swapDebtMode: null,
+      sourceAssetNameToDisplay: null,
       sourceAssets: null,
       targetAssets: null,
       sourceAssetOptions: null,
@@ -307,6 +308,7 @@ export default {
       swapDexsConfig: config.SWAP_DEXS_CONFIG,
       reverseSwapDisabled: false,
       calculatingSwapRoute: false,
+      blockReversing: false,
     };
   },
 
@@ -390,7 +392,6 @@ export default {
 
       this.lastChangedSource = true;
       let sourceDecimals = this.sourceAssetData.decimals;
-      console.log(sourceDecimals);
       let sourceAmountInWei = parseUnits(this.sourceAssetAmount.toFixed(sourceDecimals), BigNumber.from(sourceDecimals));
       let targetDecimals = this.targetAssetData.decimals;
       let oracleReceivedAmountInWei = parseUnits(this.receivedAccordingToOracle.toFixed(targetDecimals), BigNumber.from(targetDecimals));
@@ -606,7 +607,7 @@ export default {
         this.sourceInputError = sourceInputChangeEvent.error;
       }
       // TODO remove after we will drop support for deprecated assets
-      if (config.ASSETS_CONFIG[this.targetAsset].droppingSupport) {
+      if (config.ASSETS_CONFIG[this.targetAsset] && config.ASSETS_CONFIG[this.targetAsset].droppingSupport) {
         this.targetInputError = true;
       }
 
@@ -687,7 +688,7 @@ export default {
         },
         {
           validate: async (value) => {
-            if (config.ASSETS_CONFIG[this.targetAsset].droppingSupport) {
+            if (config.ASSETS_CONFIG[this.targetAsset] && config.ASSETS_CONFIG[this.targetAsset].droppingSupport) {
               return 'Unable to swap to deprecated asset.';
             }
           }

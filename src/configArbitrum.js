@@ -19,6 +19,7 @@ export default {
     chainId: 42161,
     chainSlug: 'arbitrum',
     primeAccountsBlocked: true,
+    pendleApiBaseUrl: 'https://api-v2.pendle.finance/sdk/api',
     //update leverage after every change in contracts
     ASSETS_CONFIG: {
       "ETH": {name: "ETH", symbol: "ETH", decimals: 18, address: addresses.ETH, debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:ETHUSDT"},
@@ -66,6 +67,10 @@ export default {
         GmxV2: {
             availableAssets: [],
             slippageMargin: 0.1
+        },
+        Penpie: {
+            availableAssets: [],
+            slippageMargin: 0.02
         }
     },
     paraSwapDefaultSlippage: 0.02,
@@ -143,6 +148,9 @@ export default {
             unstakeMethod: 'unstakeFromPenpieAndWithdrawFromPendle',
             stakingContractAddress: '0x60712e3C9136CF411C561b4E948d4d26637561e7',
             feedSymbol: 'PENDLE_EZ_ETH_LP',
+            logoExt: 'png',
+            groupIdentifier: 'PENDLE_EZ_ETH_LP_GROUP',
+            name: 'PENPIE',
         },
         'PENDLE_WSTETH_LP': {
             protocol: 'PENPIE',
@@ -158,8 +166,11 @@ export default {
             rewardTokens: ['PNP'],
             stakeMethod: 'depositToPendleAndStakeInPenpie',
             unstakeMethod: 'unstakeFromPenpieAndWithdrawFromPendle',
-            stakingContractAddress: '0x08a152834de126d2ef83D612ff36e4523FD0017F',
+            stakingContractAddress: '0xFd8AeE8FCC10aac1897F8D5271d112810C79e022',
             feedSymbol: 'PENDLE_WSTETH_LP',
+            logoExt: 'png',
+            groupIdentifier: 'PENDLE_WSTETH_LP_GROUP',
+            name: 'PENPIE',
         }
     },
     LEVEL_LP_ASSETS_CONFIG: {
@@ -365,6 +376,7 @@ export default {
     EMAIL_REGEX: /(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])/,
     refreshDelay: 2000,
     gmxV2RefreshDelay: 4000,
+    penpieRefreshDelay: 4000,
     gmxV2IncentivesMilestone: 9000000,
     gmxV2IncentivesDeadline: 'February 5th',
     historicalRpcUrl: "https://nd-767-190-280.p2pify.com/8d546b2f3519965f0f1cb4332abe96b3",

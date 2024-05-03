@@ -4,7 +4,7 @@
       <div class="table__cell asset">
         <img class="asset__icon" :src="getAssetIcon(lpToken.asset)">
         <div class="asset__info">
-          <div class="asset__name">{{lpToken.asset}}
+          <div class="asset__name">{{ lpToken.asset }}
           </div>
           <div class="asset__dex">
             by {{ lpToken.dex }}
@@ -31,7 +31,7 @@
         <template
             v-if="penpieLpBalances">
           <div class="double-value__pieces">
-            {{ penpieLpBalances[lpToken.symbol] | smartRound }}
+            {{ penpieLpBalances[lpToken.symbol] * lpToken.price / assets[lpToken.asset].price | smartRound }}
           </div>
           <div class="double-value__usd">
             <span v-if="penpieLpBalances">{{ penpieLpBalances[lpToken.symbol] * lpToken.price | usd }}</span>
@@ -47,7 +47,7 @@
           <div class="table__cell rewards">
             <span v-for="symbol in lpToken.rewardTokens">
 <!--              todo uncomment when fixing rewards-->
-<!--              <img class="asset__icon" :src="getAssetIcon(symbol)">-->
+              <!--              <img class="asset__icon" :src="getAssetIcon(symbol)">-->
               <span
                   v-if="lpToken.rewardBalances && lpToken.rewardBalances[symbol] && parseFloat(lpToken.rewardBalances[symbol]) !== null">{{
                   formatTokenBalance((lpToken.rewardBalances && lpToken.rewardBalances[symbol] && !rewardsReset) ? lpToken.rewardBalances[symbol] : 0, 6, true)
@@ -114,9 +114,15 @@ import Chart from "./Chart.vue";
 import IconButtonMenuBeta from "./IconButtonMenuBeta.vue";
 import SmallBlock from "./SmallBlock.vue";
 import {mapActions, mapState} from "vuex";
-import {calculateMaxApy} from "../utils/calculate";
+import {calculateMaxApy, fromWei, toWei} from "../utils/calculate";
 import erc20ABI from "../../test/abis/ERC20.json";
 import config from "../config";
+import TOKEN_ADDRESSES from "../../common/addresses/arbitrum/token_addresses.json";
+import {parseFixed} from "@ethersproject/bignumber";
+import WithdrawModal from "./WithdrawModal.vue";
+import SwapModal from "./SwapModal.vue";
+import {calculateGmxV2ExecutionFee, capitalize} from "../utils/blockchain";
+import {BigNumber} from "ethers";
 
 export default {
   name: 'PenpieLpTableRow',
@@ -158,6 +164,7 @@ export default {
       'balancerLpBalances',
       'gmxV2Assets',
       'gmxV2Balances',
+      'fullLoanStatus',
     ]),
     ...mapState('stakeStore', ['farms']),
     ...mapState('poolStore', ['pools']),
@@ -186,12 +193,27 @@ export default {
       this.watchRefreshLP();
       this.setupApr();
     })
+
+    setTimeout(async () => {
+      if (this.lpToken.asset === 'wstETH') {
+        // const data = await (await fetch(`${config.pendleApiBaseUrl}/v1/addLiquiditySingleToken?${queryParams}`)).json();
+        // console.log('asdasdx', guessPtReceivedFromSy);
+        // console.log('asdasdx', input);
+        // console.log('asdasdx', data);
+      }
+    }, 4000)
   },
 
   methods: {
-    ...mapActions('fundsStore', ['fund','withdraw']),
+    ...mapActions('fundsStore', [
+      'fund',
+      'withdraw',
+      'createPendleLpFromLrt',
+      'unwindPendleLpToLrt',
+      'depositPendleLPAndStake'
+    ]),
     setupAddActionsConfiguration() {
-      this.addActionsConfig =   {
+      this.addActionsConfig = {
         iconSrc: 'src/assets/icons/plus.svg',
         tooltip: 'Add',
         menuOptions: [
@@ -212,7 +234,7 @@ export default {
     },
 
     setupRemoveActionsConfiguration() {
-      this.removeActionsConfig =   {
+      this.removeActionsConfig = {
         iconSrc: 'src/assets/icons/minus.svg',
         tooltip: 'Remove',
         menuOptions: [
@@ -252,19 +274,19 @@ export default {
             this.openAddFromWalletModal();
             break;
           case 'IMPORT_AND_STAKE':
-            this.openImportModal();
+            this.openImportAndStakeModal();
             break;
           case 'CREATE_LP':
             this.openStakeModal();
             break;
           case 'EXPORT_LP':
-            this.openProvideLiquidityModal();
+            this.openWithdrawModal();
             break;
           case 'UNSTAKE_AND_EXPORT':
             this.openUnstakeAndWithdrawModal();
             break;
           case 'UNWIND':
-            this.openUnstakeAndWithdrawModal();
+            this.openUnwindModal();
             break;
           case 'CLAIM_REWARDS':
             this.openRemoveLiquidityModal();
@@ -275,8 +297,6 @@ export default {
 
     async openAddFromWalletModal() {
       const modalInstance = this.openModal(AddFromWalletModal);
-      console.log(this.lpToken);
-      console.log(this.penpieLpAssets);
       modalInstance.asset = this.lpToken;
       modalInstance.assetBalance = this.penpieLpBalances && this.penpieLpBalances[this.lpToken.protocolIdentifier] ? this.penpieLpBalances && this.penpieLpBalances[this.lpToken.protocolIdentifier] : 0;
       modalInstance.assets = this.assets;
@@ -316,12 +336,296 @@ export default {
         }
       });
     },
+
+    async openImportAndStakeModal() {
+      const modalInstance = this.openModal(AddFromWalletModal);
+      modalInstance.asset = this.lpToken;
+      modalInstance.title = 'Import and Stake LP';
+      // modalInstance.assetBalance = this.penpieLpBalances && this.penpieLpBalances[this.lpToken.protocolIdentifier] ? this.penpieLpBalances && this.penpieLpBalances[this.lpToken.protocolIdentifier] : 0;
+      modalInstance.assets = this.assets;
+      modalInstance.assetBalances = this.assetBalances;
+      modalInstance.lpAssets = this.lpAssets;
+      modalInstance.lpBalances = this.lpBalances;
+      modalInstance.concentratedLpAssets = this.concentratedLpAssets;
+      modalInstance.concentratedLpBalances = this.concentratedLpBalances;
+      modalInstance.levelLpAssets = this.levelLpAssets;
+      modalInstance.levelLpBalances = this.levelLpBalances;
+      modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
+      modalInstance.balancerLpBalances = this.balancerLpBalances;
+      modalInstance.balancerLpAssets = this.balancerLpAssets;
+      modalInstance.gmxV2Assets = this.gmxV2Assets;
+      modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.farms = this.farms;
+      modalInstance.debtsPerAsset = this.debtsPerAsset;
+      modalInstance.loan = this.debt;
+      modalInstance.thresholdWeightedValue = this.thresholdWeightedValue;
+      modalInstance.logo = config.PROTOCOLS_CONFIG['PENPIE'].logo;
+      modalInstance.walletAssetBalance = await this.getWalletPendleLpBalance();
+
+      modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
+        if (this.smartLoanContract) {
+          const depositAndStakeRequest = {
+            market: this.lpToken.stakingContractAddress,
+            amount: addFromWalletEvent.value,
+            targetAsset: this.lpToken.symbol,
+          };
+          this.handleTransaction(this.depositPendleLPAndStake, {depositAndStakeRequest: depositAndStakeRequest}, () => {
+            this.$forceUpdate();
+          }, (error) => {
+            this.handleTransactionError(error);
+          }).then(() => {
+          });
+        }
+      });
+    },
+
+    async openStakeModal() {
+      const modalInstance = this.openModal(SwapModal);
+      let initSourceAsset = this.lpToken.asset;
+
+      modalInstance.title = 'Create LP from LRT';
+      modalInstance.swapDex = 'Penpie';
+      modalInstance.swapDebtMode = false;
+      modalInstance.slippageMargin = 0;
+      modalInstance.sourceAsset = initSourceAsset;
+      modalInstance.sourceAssetBalance = this.assetBalances[initSourceAsset];
+      modalInstance.assets = {...this.assets};
+      modalInstance.sourceAssets = [initSourceAsset];
+      modalInstance.targetAssetsConfig = {
+        [this.lpToken.symbol]: this.penpieLpAssets[this.lpToken.symbol],
+        'Penpie': this.penpieLpAssets[this.lpToken.symbol]
+      };
+      modalInstance.targetAssets = [this.lpToken.symbol];
+      modalInstance.assetBalances = {...this.assetBalances, ...this.penpieLpBalances};
+      modalInstance.debtsPerAsset = this.debtsPerAsset;
+      modalInstance.lpAssets = this.lpAssets;
+      modalInstance.concentratedLpAssets = this.concentratedLpAssets;
+      modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
+      modalInstance.gmxV2Assets = this.gmxV2Assets;
+      modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.lpBalances = this.lpBalances;
+      modalInstance.concentratedLpBalances = this.concentratedLpBalances;
+      modalInstance.levelLpAssets = this.levelLpAssets;
+      modalInstance.levelLpBalances = this.levelLpBalances;
+      modalInstance.balancerLpBalances = this.balancerLpBalances;
+      modalInstance.balancerLpAssets = this.balancerLpAssets;
+      modalInstance.farms = this.farms;
+      modalInstance.targetAsset = this.lpToken.symbol;
+      modalInstance.debt = this.fullLoanStatus.debt;
+      modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
+      modalInstance.health = this.fullLoanStatus.health;
+      modalInstance.checkMarketDeviation = true;
+      modalInstance.blockReversing = true;
+      let responseGuessPtReceivedFromSy = undefined
+      let responseInput = undefined
+      let responseLimit = undefined
+
+      modalInstance.queryMethods = {
+        Penpie: async (sourceAsset, targetAsset, amountIn) => {
+          console.log('amountIn', amountIn.toString());
+          const queryParams = new URLSearchParams({
+            chainId: "42161",
+            receiverAddr: this.smartLoanContract.address,
+            marketAddr: this.lpToken.stakingContractAddress,
+            tokenInAddr: TOKEN_ADDRESSES[this.lpToken.asset],
+            amountTokenIn: amountIn,
+            slippage: "0.05"
+          });
+
+          const {
+            contractCallParams: {
+              2: minLpOut,
+              3: guessPtReceivedFromSy,
+              4: input,
+              5: limit
+            }
+          } = await (await fetch(`${config.pendleApiBaseUrl}/v1/addLiquiditySingleToken?${queryParams}`)).json();
+          responseGuessPtReceivedFromSy = guessPtReceivedFromSy;
+          responseInput = input;
+          responseLimit = limit;
+          return BigNumber.from(minLpOut);
+        },
+      };
+
+      modalInstance.customTargetValidators = [
+        {
+          validate: async (value) => {
+            if (!responseGuessPtReceivedFromSy || !responseInput || !responseLimit) {
+              return '';
+            }
+          }
+        }
+      ]
+      modalInstance.initiate();
+      modalInstance.$on('SWAP', swapEvent => {
+        const stakeRequest = {
+          sourceAsset: swapEvent.sourceAsset,
+          targetAsset: swapEvent.targetAsset,
+          amount: swapEvent.sourceAmount,
+          market: this.lpToken.stakingContractAddress,
+          minLpOut: swapEvent.targetAmount,
+          guessPtReceivedFromSy: responseGuessPtReceivedFromSy,
+          input: responseInput,
+          limit: responseLimit,
+        };
+
+        this.handleTransaction(this.createPendleLpFromLrt, {stakeRequest: stakeRequest}, () => {
+          this.$forceUpdate();
+        }, (error) => {
+          this.handleTransactionError(error);
+        }).then(() => {
+        });
+      });
+    },
+
+    async openUnwindModal() {
+      const modalInstance = this.openModal(SwapModal);
+      let initSourceAsset = this.lpToken.symbol;
+
+      modalInstance.title = 'Unwind LP to LRT';
+      modalInstance.swapDex = 'Penpie';
+      modalInstance.sourceAssetNameToDisplay = 'Penpie';
+      modalInstance.swapDebtMode = false;
+      modalInstance.slippageMargin = 0;
+      modalInstance.sourceAsset = initSourceAsset;
+      modalInstance.sourceAssetBalance = this.penpieLpBalances[initSourceAsset];
+      modalInstance.sourceAssets = [initSourceAsset];
+      modalInstance.sourceAssetsConfig = config.PENPIE_LP_ASSETS_CONFIG;
+      modalInstance.assets = {...this.assets};
+      modalInstance.targetAssetsConfig = {
+        [this.lpToken.asset]: config.ASSETS_CONFIG[this.lpToken.asset]
+      };
+      modalInstance.targetAssets = [this.lpToken.asset];
+      modalInstance.assetBalances = this.assetBalances;
+      modalInstance.debtsPerAsset = this.debtsPerAsset;
+      modalInstance.lpAssets = this.lpAssets;
+      modalInstance.concentratedLpAssets = this.concentratedLpAssets;
+      modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
+      modalInstance.gmxV2Assets = this.gmxV2Assets;
+      modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.lpBalances = this.lpBalances;
+      modalInstance.concentratedLpBalances = this.concentratedLpBalances;
+      modalInstance.levelLpAssets = this.levelLpAssets;
+      modalInstance.levelLpBalances = this.levelLpBalances;
+      modalInstance.balancerLpBalances = this.balancerLpBalances;
+      modalInstance.balancerLpAssets = this.balancerLpAssets;
+      modalInstance.farms = this.farms;
+      modalInstance.targetAsset = this.lpToken.asset;
+      modalInstance.debt = this.fullLoanStatus.debt;
+      modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
+      modalInstance.health = this.fullLoanStatus.health;
+      modalInstance.checkMarketDeviation = true;
+      modalInstance.blockReversing = true;
+      let responseOutput = undefined
+      let responseLimit = undefined
+
+      modalInstance.queryMethods = {
+        Penpie: async (sourceAsset, targetAsset, amountIn) => {
+          console.log('amountIn', amountIn.toString());
+          const queryParams = new URLSearchParams({
+            chainId: "42161",
+            receiverAddr: this.smartLoanContract.address,
+            marketAddr: this.lpToken.stakingContractAddress,
+            tokenOutAddr: TOKEN_ADDRESSES[this.lpToken.asset],
+            amountLpToRemove: amountIn,
+            slippage: "0.05"
+          });
+
+          const {
+            contractCallParams: {
+              3: output,
+              4: limit,
+            }
+          } = await (await fetch(`${config.pendleApiBaseUrl}/v1/removeLiquiditySingleToken?${queryParams}`)).json();
+          responseOutput = output;
+          responseLimit = limit;
+          return BigNumber.from(output.minTokenOut);
+        },
+      };
+
+      modalInstance.customTargetValidators = [
+        {
+          validate: async () => {
+            if (!responseOutput || !responseLimit) {
+              return '';
+            }
+          }
+        }
+      ]
+      modalInstance.initiate();
+      modalInstance.$on('SWAP', swapEvent => {
+        const unwindRequest = {
+          sourceAsset: swapEvent.sourceAsset,
+          targetAsset: swapEvent.targetAsset,
+          amount: swapEvent.sourceAmount,
+          market: this.lpToken.stakingContractAddress,
+          minOut: swapEvent.targetAmount,
+          output: responseOutput,
+          limit: responseLimit,
+        };
+
+        this.handleTransaction(this.unwindPendleLpToLrt, {unwindRequest: unwindRequest}, () => {
+          this.$forceUpdate();
+        }, (error) => {
+          this.handleTransactionError(error);
+        }).then(() => {
+        });
+      });
+    },
+
+    openWithdrawModal() {
+      const modalInstance = this.openModal(WithdrawModal);
+      modalInstance.asset = this.lpToken;
+      modalInstance.assetBalance = this.penpieLpBalances && this.penpieLpBalances[this.lpToken.protocolIdentifier] ? this.penpieLpBalances && this.penpieLpBalances[this.lpToken.protocolIdentifier] : 0;
+      modalInstance.assets = this.assets;
+      modalInstance.assetBalances = this.assetBalances;
+      modalInstance.debtsPerAsset = this.debtsPerAsset;
+      modalInstance.lpAssets = this.lpAssets;
+      modalInstance.concentratedLpAssets = this.concentratedLpAssets;
+      modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
+      modalInstance.levelLpAssets = this.levelLpAssets;
+      modalInstance.levelLpBalances = this.levelLpBalances;
+      modalInstance.lpBalances = this.lpBalances;
+      modalInstance.concentratedLpBalances = this.concentratedLpBalances;
+      modalInstance.gmxV2Assets = this.gmxV2Assets;
+      modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.balancerLpBalances = this.balancerLpBalances;
+      modalInstance.balancerLpAssets = this.balancerLpAssets;
+      modalInstance.farms = this.farms;
+      modalInstance.health = this.fullLoanStatus.health;
+      modalInstance.debt = this.fullLoanStatus.debt;
+      modalInstance.logo = `${this.lpToken.short.toLowerCase()}.png`;
+      modalInstance.showTopDescription = false;
+
+      modalInstance.$on('WITHDRAW', withdrawEvent => {
+        const value = Number(withdrawEvent.value).toFixed(config.DECIMALS_PRECISION);
+        const withdrawRequest = {
+          asset: this.lpToken.symbol,
+          value: value,
+          assetDecimals: this.lpToken.decimals,
+          type: 'PENPIE_LP',
+        };
+        this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
+          this.$forceUpdate();
+        }, (error) => {
+          this.handleTransactionError(error);
+        })
+            .then(() => {
+            });
+      });
+    },
+
     hasSmartLoanContract() {
       return this.smartLoanContract && this.smartLoanContract.address !== NULL_ADDRESS;
     },
 
     async getWalletAssetBalance() {
       const tokenContract = new ethers.Contract(this.lpToken.receiptTokenAddress ? this.lpToken.receiptTokenAddress : this.lpToken.address, erc20ABI, this.provider.getSigner());
+      return await this.getWalletTokenBalance(this.account, this.lpToken.symbol, tokenContract, this.lpToken.decimals);
+    },
+
+    async getWalletPendleLpBalance() {
+      const tokenContract = new ethers.Contract(this.lpToken.stakingContractAddress ? this.lpToken.stakingContractAddress : this.lpToken.address, erc20ABI, this.provider.getSigner());
       return await this.getWalletTokenBalance(this.account, this.lpToken.symbol, tokenContract, this.lpToken.decimals);
     },
 

@@ -4,7 +4,7 @@
       <div class="modal__title">
         Withdraw collateral
       </div>
-      <div class="modal-top-desc">
+      <div class="modal-top-desc" v-if="showTopDescription">
         Please make sure that every asset's 'balance' is higher than that asset's 'borrowed', in order to withdraw.
         <a target="_blank" href="https://docs.deltaprime.io/protocol/safety#withdrawal-guard"><b>Read more</b></a>
       </div>
@@ -132,6 +132,7 @@ export default {
     balancerLpBalances: {},
     gmxV2Assets: {},
     gmxV2Balances: {},
+    showTopDescription: true,
   },
 
   data() {
