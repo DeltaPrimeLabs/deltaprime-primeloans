@@ -46,6 +46,7 @@
     "@uniswap/v3-core": "^1.0.1",
     "@uniswap/v3-periphery": "^1.4.3",
     "apollo-boost": "^0.4.9",
+    "axios": "^1.6.8",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "browserify-zlib": "^0.2.0",
     "chart.js": "^2.9.4",
@@ -59,6 +60,7 @@
     "firebase": "^9.16.0",
     "ganache-cli": "^6.12.2",
     "graphql": "^16.3.0",
+    "graphql-request": "^6.1.0",
     "hardhat-deploy": "^0.10.5",
     "hardhat-deploy-ethers": "^0.4.1",
     "hardhat-gas-reporter": "^1.0.9",
@@ -157,7 +159,7 @@
     "webpack-merge": "^5.8.0"
   },
   "engines": {
-    "node": ">= 4.0.0 <= 16.20.2",
+    "node": ">= 4.0.0 <= 20.20.2",
     "npm": ">= 3.0.0"
   },
   "browserslist": [
