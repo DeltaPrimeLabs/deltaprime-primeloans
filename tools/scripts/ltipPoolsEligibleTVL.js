@@ -236,13 +236,16 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
 
     for (let pool in arbitrumPoolsTVL) {
         let poolEligibleTVLMultiplier = getPoolEligibleTVLMultiplier(chain, pool);
-        let poolTVL = arbitrumPoolsTVL[pool];
-        let poolTokensToBeDistributed = (poolTVL / Object.values(arbitrumPoolsTVL).reduce((a, b) => a + b)) * numberOfTokensToBeDistributed;
-        tokensToBeDistributedPerPool[pool] = poolTokensToBeDistributed * poolEligibleTVLMultiplier;
+        let poolTVL = arbitrumPoolsTVL[pool] * poolEligibleTVLMultiplier;
+        let totalTVL = Object.values(arbitrumPoolsTVL).reduce((a, b) => a + (b * getPoolEligibleTVLMultiplier(chain, pool)), 0);
+        let poolTokensToBeDistributed = (poolTVL / totalTVL) * numberOfTokensToBeDistributed;
+        tokensToBeDistributedPerPool[pool] = poolTokensToBeDistributed;
         console.log(`${pool} eligible airdrop: ${tokensToBeDistributedPerPool[pool]}`);
         poolsDepositors[pool] = await getDepositorsAddressesFromSubgraph(pool, chain);
         poolsDepositorsBalances[pool] = await getDepositorsBalances(poolsDepositors[pool], arbitrumPools[pool], pool, chain);
     }
+
+
     for (let pool in poolsDepositorsBalances) {
         depositorsEligibleAirdrop[pool] = {};
         for (let depositor in poolsDepositorsBalances[pool]) {
@@ -266,4 +269,4 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
 
 }
 
-calculateEligibleAirdropPerPool(1000, "arbitrum")
+calculateEligibleAirdropPerPool(372, "arbitrum")
