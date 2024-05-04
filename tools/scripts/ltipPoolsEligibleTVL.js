@@ -162,7 +162,7 @@ function getPoolEligibleTVLMultiplier(chain, pool){
                 case "BTC":
                     return 1;
                 case "DAI":
-                    return 1.5;
+                    return 1.0;
                 default:
                     return 1;
             }
@@ -179,7 +179,7 @@ function getSubgraphEndpoint(chain){
     }
 }
 
-async function getDepositorsAddressesFromSubgraph(pool, chain){
+async function getDepositorsAddressesFromSubgraph(chain){
     let skip = 0;
     let depositors = [];
     let hasMoreDepositors = true;
@@ -187,7 +187,7 @@ async function getDepositorsAddressesFromSubgraph(pool, chain){
     while (hasMoreDepositors) {
         let query = gql`
         {
-          depositors(first: 1000, skip: ${skip}, where: {transfers_: {tokenSymbol: "${pool}"}}) {
+          depositors(first: 1000, skip: ${skip}) {
             id
           }
         }
@@ -203,7 +203,7 @@ async function getDepositorsAddressesFromSubgraph(pool, chain){
     // remove duplicates from depositors array
     depositors = [...new Set(depositors)];
 
-    console.log(`Found ${depositors.length} ${pool} depositors.`);
+    console.log(`Found ${depositors.length} depositors.`);
     return depositors;
 }
 
@@ -217,9 +217,15 @@ async function getDepositorsBalances(depositors, poolContract, poolName, chain){
         let balancePromises = batch.map(depositor => poolContract.balanceOf(depositor));
         let balances = await Promise.all(balancePromises);
         for (let j = 0; j < balances.length; j++) {
-            depositorsBalances[batch[j]] = ethers.utils.formatUnits(balances[j], getPoolDecimals(chain, poolName));
+            let balance = ethers.utils.formatUnits(balances[j], getPoolDecimals(chain, poolName));
+            if (balance > 0) { // Only add depositors with a balance greater than 0
+                depositorsBalances[batch[j]] = Number(balance);
+            }
         }
     }
+    // console log sum of balances of all depositors
+    let sum = Object.values(depositorsBalances).reduce((a, b) => a + b);
+    console.log(`Sum of ${poolName} depositors balances: ${sum}`);
     return depositorsBalances;
 }
 
@@ -229,11 +235,12 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
     let arbitrumPoolsDeposits = await getPoolDeposits(arbitrumPools, chain);
     let arbitrumPoolsTVL = await getPoolsTVL(arbitrumPoolsDeposits, chain);
     let tokensToBeDistributedPerPool = {};
-    let poolsDepositors = {}
+    let poolsDepositors = []
     let poolsDepositorsBalances = {}
     let depositorsEligibleAirdrop = {};
 
 
+    poolsDepositors = await getDepositorsAddressesFromSubgraph(chain);
     for (let pool in arbitrumPoolsTVL) {
         let poolEligibleTVLMultiplier = getPoolEligibleTVLMultiplier(chain, pool);
         console.log(`${pool} eligible TVL multiplier: ${poolEligibleTVLMultiplier}`)
@@ -244,13 +251,13 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
         let poolTokensToBeDistributed = (poolTVL / totalTVL) * numberOfTokensToBeDistributed;
         tokensToBeDistributedPerPool[pool] = poolTokensToBeDistributed;
         console.log(`${pool} eligible airdrop: ${tokensToBeDistributedPerPool[pool]}`);
-        poolsDepositors[pool] = await getDepositorsAddressesFromSubgraph(pool, chain);
-        poolsDepositorsBalances[pool] = await getDepositorsBalances(poolsDepositors[pool], arbitrumPools[pool], pool, chain);
+        poolsDepositorsBalances[pool] = await getDepositorsBalances(poolsDepositors, arbitrumPools[pool], pool, chain);
     }
 
 
     for (let pool in poolsDepositorsBalances) {
         depositorsEligibleAirdrop[pool] = {};
+        console.log(`arbitrumPoolsDeposits[pool]: ${arbitrumPoolsDeposits[pool]}`)
         for (let depositor in poolsDepositorsBalances[pool]) {
             let depositorBalance = poolsDepositorsBalances[pool][depositor];
             let poolEligibleAirdrop = tokensToBeDistributedPerPool[pool];
