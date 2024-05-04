@@ -31,25 +31,17 @@ const gmxIncentivesCalculatorAvaFrom = async (event) => {
   // calculate gm leveraged by the loan
   for (let i = 0; i < Math.ceil(totalLoans/batchSize); i++) {
     console.log(`processing ${i * batchSize} - ${(i + 1) * batchSize > totalLoans ? totalLoans : (i + 1) * batchSize} loans`);
-    const start = Math.floor(Date.now() / 1000);
 
-    const secondStart = Math.floor(Date.now() / 1000);
     const batchLoanAddresses = loanAddresses.slice(i * batchSize, (i + 1) * batchSize);
     const wrappedContracts = getWrappedContracts(batchLoanAddresses, 'avalanche');
-    const secondEnd = Math.floor(Date.now() / 1000);
 
-    const thirdStart = Math.floor(Date.now() / 1000);
     const loanStats = await Promise.all(
       wrappedContracts.map(contract => Promise.all([contract.getFullLoanStatus(), contract.getAllAssetsBalances()]))
     );
-    const thirdEnd = Math.floor(Date.now() / 1000);
 
-    const fourthStart = Math.floor(Date.now() / 1000);
     const redstonePriceDataRequest = await fetch(redstoneFeedUrl);
     const redstonePriceData = await redstonePriceDataRequest.json();
-    const fourthEnd = Math.floor(Date.now() / 1000);
 
-    const fifthStart = Math.floor(Date.now() / 1000);
     if (loanStats.length > 0) {
       await Promise.all(
         loanStats.map(async (loan, batchId) => {
@@ -85,8 +77,6 @@ const gmxIncentivesCalculatorAvaFrom = async (event) => {
         })
       );
     }
-    const fifthEnd = Math.floor(Date.now() / 1000);
-    const end = Math.floor(Date.now() / 1000);
   }
 
   console.log(`${Object.entries(loanQualifications).length} loans analyzed.`);
