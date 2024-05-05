@@ -16,6 +16,7 @@ const factoryAddress = constants.avalanche.factory;
 const redstoneFeedUrl = constants.avalanche.redstoneFeedUrl;
 
 const gmxIncentivesCalculatorAvaFrom = async (event) => {
+  const now = Math.floor(Date.now() / 1000);
   const factoryContract = new ethers.Contract(factoryAddress, FACTORY.abi, avalancheHistoricalProvider);
   let loanAddresses = await factoryContract.getAllLoans();
   const totalLoans = loanAddresses.length;
@@ -26,7 +27,6 @@ const gmxIncentivesCalculatorAvaFrom = async (event) => {
   const loanQualifications = {};
   let totalLeveragedGM = 0;
   let gmTvl = 0;
-  const now = Math.floor(Date.now() / 1000);
 
   // calculate gm leveraged by the loan
   for (let i = 0; i < Math.ceil(totalLoans/batchSize); i++) {
