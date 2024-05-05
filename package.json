@@ -25,6 +25,7 @@
     "size": "yarn run hardhat size-contracts"
   },
   "dependencies": {
+    "@layerzerolabs/solidity-examples": "^1.1.0",
     "@apollo/client": "^3.7.2",
     "@babel/plugin-proposal-optional-chaining": "^7.16.7",
     "@chainlink/contracts": "0.8.0",
@@ -158,7 +159,7 @@
     "webpack-merge": "^5.8.0"
   },
   "engines": {
-    "node": ">= 4.0.0 <= 16.20.2",
+    "node": ">= 4.0.0 <= 18.20.2",
     "npm": ">= 3.0.0"
   },
   "browserslist": [
