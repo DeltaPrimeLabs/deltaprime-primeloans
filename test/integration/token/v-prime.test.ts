@@ -1,9 +1,10 @@
 import chai, {expect} from 'chai'
 import {ethers, waffle} from 'hardhat'
 import {solidity} from "ethereum-waffle";
-import {VPrimeMock} from "../../../typechain";
+import {SmartLoansFactory, VPrimeMock} from "../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import MockVPrimeArtifact from '../../../artifacts/contracts/tokens/mock/vPrimeMock.sol/vPrimeMock.json';
+import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import {fromBytes32, getFixedGasSigners, PoolAsset, Asset, toBytes32, toWei, fromWei, time} from "../../_helpers";
 import {BigNumber, Contract} from "ethers";
 
@@ -14,16 +15,21 @@ describe('vPrime tests', () => {
     let
         user1: SignerWithAddress,
         user2: SignerWithAddress,
+        owner: SignerWithAddress,
+        smartLoansFactory: SmartLoansFactory,
         vPrime: Contract;
 
     before(async () => {
-        [user1, user2] = await getFixedGasSigners(10000000);
+        [user1, user2, owner] = await getFixedGasSigners(10000000);
+
+        smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact) as SmartLoansFactory;
 
         vPrime = await deployContract(
             user1,
             MockVPrimeArtifact,
             []
         ) as VPrimeMock;
+        await vPrime.initialize(smartLoansFactory.address);
     })
 
     it("should check the initial balance of users", async () => {
