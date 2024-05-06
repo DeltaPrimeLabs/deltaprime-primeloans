@@ -4,18 +4,18 @@ const ARWEAVE_GRAPHQL_API_ENDPOINT = "https://arweave.net/graphql";
 
 const buildGraphQlQuery = (timestamp, nodeAddress, after) => {
     return gql`
-        query {
+query {
             transactions(
                 first: 10,
-                ${after ? 'after: "' + after + '",' : ''}
+                after: "WyIyMDI0LTA1LTA1VDEyOjQ3OjM5LjczNFoiLDI3MF0=",
                 tags: [
                     {
                         name: "timestamp",
-                        values: ["${timestamp}"]
+                        values: ["1714497350"]
                     },
                     {
                         name: "signerAddress",
-                        values: ${JSON.stringify(nodeAddress)}
+                        values: ["0x83cbA8c619fb629b81A65C2e67fE15cf3E3C9747","0x2c59617248994D12816EE1Fa77CE0a64eEB456BF","0x12470f7aBA85c8b81D63137DD5925D6EE114952b"]
                     }])
             {
                 edges {
@@ -41,6 +41,7 @@ const buildGraphQlQuery = (timestamp, nodeAddress, after) => {
 };
 
 async function queryArweave(timestamp, nodeAddress) {
+    console.log('queryArweave')
     let after;
     let response = [];
 
@@ -49,6 +50,7 @@ async function queryArweave(timestamp, nodeAddress) {
         const arweaveResponse = await request(ARWEAVE_GRAPHQL_API_ENDPOINT, query);
 
         const edges = arweaveResponse.transactions.edges;
+        console.log(edges)
 
         if (edges.length === 0) return response;
 
@@ -57,6 +59,7 @@ async function queryArweave(timestamp, nodeAddress) {
         after = lastEdge.cursor;
     }
 
+    console.log(response)
     return response;
 }
 
@@ -67,3 +70,15 @@ export const queryHistoricalFeeds = async (timestamp, nodeAddress) => {
         console.log(error);
     }
 };
+
+// module.exports = {
+//     queryHistoricalFeeds
+// }
+
+const n1 = '0x83cbA8c619fb629b81A65C2e67fE15cf3E3C9747';
+const n2 = '0x2c59617248994D12816EE1Fa77CE0a64eEB456BF';
+const n3 = '0x12470f7aBA85c8b81D63137DD5925D6EE114952b';
+
+console.log('aw')
+
+queryHistoricalFeeds(1714497350, [n1, n2, n3]).then()
