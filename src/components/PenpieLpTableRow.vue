@@ -2,9 +2,9 @@
   <div v-if="provider" class="lp-table-row-component">
     <div class="table__row" v-if="lpToken">
       <div class="table__cell asset">
-        <img class="asset__icon" :src="getAssetIcon(lpToken.asset)">
+        <img class="asset__icon" :src="`src/assets/logo/${lpToken.assetLogoName.toLowerCase()}.png`">
         <div class="asset__info">
-          <div class="asset__name">{{ lpToken.asset }}
+          <div class="asset__name">{{ lpToken.assetNameToDisplay }}
           </div>
           <div class="asset__dex">
             by {{ lpToken.dex }}
@@ -342,7 +342,7 @@ export default {
 
     async openImportAndStakeModal() {
       const modalInstance = this.openModal(AddFromWalletModal);
-      modalInstance.asset = this.lpToken;
+      modalInstance.asset = {...this.lpToken, short: 'PENDLE LP'};
       modalInstance.title = 'Import and Stake LP';
       modalInstance.assetBalance = this.penpieLpBalances && this.penpieLpBalances[this.lpToken.protocolIdentifier] ? this.penpieLpBalances && this.penpieLpBalances[this.lpToken.protocolIdentifier] : 0;
       modalInstance.assets = this.assets;
@@ -364,7 +364,7 @@ export default {
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.loan = this.debt;
       modalInstance.thresholdWeightedValue = this.thresholdWeightedValue;
-      modalInstance.logo = config.PROTOCOLS_CONFIG['PENPIE'].logo;
+      modalInstance.logo = config.PROTOCOLS_CONFIG['PENDLE'].logo;
       modalInstance.walletAssetBalance = await this.getWalletPendleLpBalance();
 
       modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
@@ -586,7 +586,7 @@ export default {
 
     openUnstakeAndExportModal() {
       const modalInstance = this.openModal(WithdrawModal);
-      modalInstance.asset = this.lpToken;
+      modalInstance.asset = {...this.lpToken, short: 'PENDLE LP', name: 'Pendle LP'};
       modalInstance.assetBalance = this.penpieLpBalances && this.penpieLpBalances[this.lpToken.protocolIdentifier] ? this.penpieLpBalances && this.penpieLpBalances[this.lpToken.protocolIdentifier] : 0;
       modalInstance.assets = this.assets;
       modalInstance.assetBalances = this.assetBalances;
@@ -607,7 +607,7 @@ export default {
       modalInstance.farms = this.farms;
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.debt = this.fullLoanStatus.debt;
-      modalInstance.logo = `${this.lpToken.short.toLowerCase()}.png`;
+      modalInstance.logo = config.PROTOCOLS_CONFIG['PENDLE'].logo;
       modalInstance.showTopDescription = false;
 
       modalInstance.$on('WITHDRAW', withdrawEvent => {
@@ -651,7 +651,7 @@ export default {
       modalInstance.farms = this.farms;
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.debt = this.fullLoanStatus.debt;
-      modalInstance.logo = `${this.lpToken.short.toLowerCase()}.png`;
+      modalInstance.logo = config.PROTOCOLS_CONFIG['PENPIE'].logo;
       modalInstance.showTopDescription = false;
 
       modalInstance.$on('WITHDRAW', withdrawEvent => {

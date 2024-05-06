@@ -476,7 +476,6 @@ export default {
     async setupPenpieLpAssets({state, rootState, commit}) {
       const lpService = rootState.serviceRegistry.lpService;
       let lpTokens = {};
-      console.log('state.supportedAssets',state.supportedAssets);
       Object.values(config.PENPIE_LP_ASSETS_CONFIG).forEach(
         asset => {
           // todo when PENDLE added to supported assets
@@ -494,7 +493,6 @@ export default {
         lpService.emitRefreshLp();
       });
 
-      console.log('PENPIE SETUP', lpTokens);
       commit('setPenpieLpAssets', lpTokens);
     },
 

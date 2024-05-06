@@ -135,9 +135,11 @@ export default {
     PENPIE_LP_ASSETS_CONFIG: {
         'PENDLE_EZ_ETH_LP': {
             protocol: 'PENPIE',
-            short: 'PENPIE',
+            short: 'PENPIE LP',
             dex: 'Penpie',
             asset: 'ezETH',
+            assetNameToDisplay: 'ezETH',
+            assetLogoName: 'ezETH',
             symbol: 'PENDLE_EZ_ETH_LP',
             debtCoverage: 0.83333333333,
             decimals: 18,
@@ -153,9 +155,11 @@ export default {
         },
         'PENDLE_WSTETH_LP': {
             protocol: 'PENPIE',
-            short: 'PENPIE',
+            short: 'PENPIE LP',
             dex: 'Penpie',
             asset: 'wstETH',
+            assetNameToDisplay: 'wstETH',
+            assetLogoName: 'wstETH',
             symbol: 'PENDLE_WSTETH_LP',
             protocolIdentifier: 'PENDLE_WSTETH_LP',
             debtCoverage: 0.83333333333,
@@ -172,9 +176,11 @@ export default {
         },
         'PENDLE_E_ETH_LP': {
             protocol: 'PENPIE',
-            short: 'PENPIE',
+            short: 'PENPIE LP',
             dex: 'Penpie',
             asset: 'weETH',
+            assetNameToDisplay: 'weETH',
+            assetLogoName: 'weETH',
             symbol: 'PENDLE_E_ETH_LP',
             protocolIdentifier: 'PENDLE_E_ETH_LP',
             debtCoverage: 0.83333333333,
@@ -191,9 +197,11 @@ export default {
         },
         'PENDLE_RS_ETH_LP': {
             protocol: 'PENPIE',
-            short: 'PENPIE',
+            short: 'PENPIE LP',
             dex: 'Penpie',
             asset: 'rsETH',
+            assetNameToDisplay: 'rsETH',
+            assetLogoName: 'rsETH',
             symbol: 'PENDLE_RS_ETH_LP',
             protocolIdentifier: 'PENDLE_RS_ETH_LP',
             debtCoverage: 0.83333333333,
@@ -210,9 +218,11 @@ export default {
         },
         'PENDLE_SILO_ETH_WSTETH_LP': {
             protocol: 'PENPIE',
-            short: 'PENPIE',
+            short: 'PENPIE LP',
             dex: 'Penpie',
             asset: 'ETH',
+            assetNameToDisplay: 'Silo ETH',
+            assetLogoName: 'Silo_ETH',
             symbol: 'PENDLE_SILO_ETH_WSTETH_LP',
             protocolIdentifier: 'PENDLE_SILO_ETH_WSTETH_LP',
             debtCoverage: 0.83333333333,
@@ -275,6 +285,10 @@ export default {
         PENPIE: {
             logo: 'penpie.png',
             name: 'Penpie'
+        },
+        PENDLE: {
+            logo: 'pendle.png',
+            name: 'Pendle'
         },
     },
     FARMED_TOKENS_CONFIG: {
