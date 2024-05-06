@@ -79,6 +79,8 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
         deltaIds = deltaIds_;
         distributionX = distributionX_;
         distributionY = distributionY_;
+
+        positionManager = IPositionManager(positionManager_);
     }
 
     /** Public View Functions */
@@ -477,9 +479,9 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
     function _updatePairInfo(bytes32 amountsReceived, uint256 centerId) internal returns (uint256 share, uint256 amountXReceived, uint256 amountYReceived) {
         PairInfo storage pair = pairList[centerId];
         (uint256 balanceX, uint256 balanceY) = _getBalances(centerId);
-
-        uint256 amountXReceived = amountsReceived.decodeX();
-        uint256 amountYReceived = amountsReceived.decodeY();
+        
+        amountXReceived = amountsReceived.decodeX();
+        amountYReceived = amountsReceived.decodeY();
 
         uint256 weight = _getTotalWeight(amountXReceived, amountYReceived);
         uint256 totalWeight = _getTotalWeight(balanceX, balanceY);
