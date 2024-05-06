@@ -131,8 +131,16 @@ const arbitrumIncentives = async () => {
     };
 
     await dynamoDb.update(params).promise();
+    console.log("LTIP boost APY on Arbitrum saved.");
+
+    // ping healthcheck end point
+    const res = await fetch("https://hc-ping.com/79b504c5-e7c3-4167-82a9-0ed42a6a0d1a");
+    console.log(res);
   } catch (error) {
-    console.log(error);
+    console.log('Error', error);
+
+    const res = await fetch("https://hc-ping.com/79b504c5-e7c3-4167-82a9-0ed42a6a0d1a/fail");
+    console.log(res);
   }
 }
 
