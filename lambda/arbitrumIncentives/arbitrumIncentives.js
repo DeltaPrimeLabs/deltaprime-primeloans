@@ -45,11 +45,10 @@ const arbitrumIncentives = async () => {
   const totalLoans = loanAddresses.length;
 
   const incentivesPerInterval = 225 / (60 * 60 * 24 * 7) * (60 * 10);
-  const batchSize = 100;
+  const batchSize = 150;
 
   const loanQualifications = {};
-  let totalLeveraged = 0;
-  let totalTvl = 0;
+  let totalEligibleTvl = 0;
 
   // calculate eligible tvl leveraged by the loan
   for (let i = 0; i < Math.ceil(totalLoans/batchSize); i++) {
@@ -75,15 +74,10 @@ const arbitrumIncentives = async () => {
           };
 
           loanQualifications[loanId].loanEligibleTvl = Number(loanEligibleTvl);
-          totalLeveraged += Number(loanEligibleTvl);
-          totalTvl += Number(loanEligibleTvl) + Number(collateral);
+          totalEligibleTvl += Number(loanEligibleTvl);
         })
       );
     }
-
-    console.log(loanQualifications);
-    console.log(totalLeveraged);
-    console.log(totalTvl);
   }
 
   console.log(`${Object.entries(loanQualifications).length} loans analyzed.`);
@@ -95,49 +89,49 @@ const arbitrumIncentives = async () => {
     loanIncentives[loanId] = 0;
 
     if (loanData.loanEligibleTvl > 0) {
-      loanIncentives[loanId] = incentivesPerInterval * loanData.loanEligibleTvl / totalLeveraged;
+      loanIncentives[loanId] = incentivesPerInterval * loanData.loanEligibleTvl / totalEligibleTvl;
     }
   })
 
   // save/update incentives values to DB
-  // await Promise.all(
-  //   Object.entries(loanIncentives).map(async ([loanId, value]) => {
-  //     const data = {
-  //       id: loanId,
-  //       timestamp: now,
-  //       arbCollected: value
-  //     };
+  await Promise.all(
+    Object.entries(loanIncentives).map(async ([loanId, value]) => {
+      const data = {
+        id: loanId,
+        timestamp: now,
+        arbCollected: value
+      };
 
-  //     const params = {
-  //       TableName: "arbitrum-incentives-arb-prod",
-  //       Item: data
-  //     };
-  //     await dynamoDb.put(params).promise();
-  //   })
-  // );
+      const params = {
+        TableName: "arbitrum-incentives-arb-prod",
+        Item: data
+      };
+      await dynamoDb.put(params).promise();
+    })
+  );
 
-  // console.log("Arbitrum incentives successfully updated.")
+  console.log("Arbitrum incentives successfully updated.")
 
   // save boost APY to DB
-  // const boostApy = incentivesPerInterval / totalLeveraged * 6 * 24 * 365;
-  // const params = {
-  //   TableName: process.env.APY_TABLE,
-  //   Key: {
-  //     id: "GM_BOOST"
-  //   },
-  //   AttributeUpdates: {
-  //     arbApy: {
-  //       Value: Number(boostApy) ? boostApy : null,
-  //       Action: "PUT"
-  //     },
-  //     arbTvl: {
-  //       Value: Number(totalTvl) ? totalTvl : null,
-  //       Action: "PUT"
-  //     }
-  //   }
-  // };
+  const boostApy = incentivesPerInterval / totalEligibleTvl * 6 * 24 * 365;
+  const params = {
+    TableName: "apys-prod",
+    Key: {
+      id: "LTIP_BOOST"
+    },
+    AttributeUpdates: {
+      arbApy: {
+        Value: Number(boostApy) ? boostApy : null,
+        Action: "PUT"
+      },
+      totalEligibleTvl: {
+        Value: Number(totalEligibleTvl) ? totalEligibleTvl : null,
+        Action: "PUT"
+      }
+    }
+  };
 
-  // await dynamoDb.update(params).promise();
+  await dynamoDb.update(params).promise();
 }
 
 arbitrumIncentives();
