@@ -525,10 +525,11 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
         _transferTokens(_msgSender(), address(this), amountX, amountY);
 
         if(userInfo[_msgSender()].amount > 0) {
-            (amountX, amountY) = _withdrawAndUpdateShare(_msgSender());
+            (uint256 amountXBefore, uint256 amountYBefore) = _withdrawAndUpdateShare(_msgSender());
+            (amountX, amountY) = (amountX + amountXBefore, amountY + amountYBefore);
         }
         (amountX, amountY) = _getUpdatedAmounts(amountX, amountY);
-        
+
         uint256 activeId = lbPair.getActiveId();
         require(activeIdDesired + idSlippage >= activeId && activeId + idSlippage >= activeIdDesired, "Slippage High");
         
@@ -642,7 +643,11 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
             require(totalShare == amount, "You can only transfer full position");
             for(uint256 i = 0 ; i < userAmount ; i ++) {
                 positionManager.forceTransfer(from, to, userInfo[from].tokenIds[i]);
+                uint256 tokenId = userInfo[from].tokenIds[i];
+                userInfo[to].tokenIds.push(tokenId);
             }
+            userInfo[to].amount += userInfo[from].amount;
+            delete userInfo[from];
         }
     }
 }

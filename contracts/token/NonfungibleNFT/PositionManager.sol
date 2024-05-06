@@ -3,7 +3,7 @@
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
+import '@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol';
 
 import "../../interfaces/ISPrime.sol";
 import "../../interfaces/IPositionManager.sol";
@@ -11,7 +11,7 @@ import "../../lib/joe-v2/LiquidityAmounts.sol";
 
 /// @title NFT positions
 contract PositionManager is
-    ERC721,
+    ERC721Enumerable,
     IPositionManager,
     Ownable
 {

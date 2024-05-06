@@ -29,18 +29,20 @@ const LBFactoryAbi = [
 
 describe("SPrime", function () {
     // Contract Factory
-    let SPrimeFactory, PrimeFactory, LBRouter;
+    let SPrimeFactory, PrimeFactory, LBRouter, PositionManagerFactory;
     // Wallets
     let owner, addr1, addr2;
     // Contracts
-    let weth, prime, sPrime;
+    let weth, prime, sPrime, positionManager;
 
     beforeEach(async function () {
 
         SPrimeFactory = await ethers.getContractFactory("SPrime");
+        PositionManagerFactory = await ethers.getContractFactory("PositionManager");
         [owner, addr1, addr2, ] = await ethers.getSigners();
         PrimeFactory = await ethers.getContractFactory("Prime");
         prime = await PrimeFactory.deploy(parseEther("1000000"));
+        positionManager = await PositionManagerFactory.deploy();
         weth = await ethers.getContractAt("WETH9", '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1');
 
         let user1 = await addr1.getAddress();
@@ -57,8 +59,10 @@ describe("SPrime", function () {
         
         await LBFactory.connect(owner).createLBPair(prime.address, weth.address, 8385840, 25);
 
-        sPrime = await SPrimeFactory.deploy(prime.address, weth.address, "PRIME-WETH", spotUniform.distributionX, spotUniform.distributionY, spotUniform.deltaIds);
+        sPrime = await SPrimeFactory.deploy();
+        await sPrime.initialize(prime.address, weth.address, "PRIME-WETH", spotUniform.distributionX, spotUniform.distributionY, spotUniform.deltaIds, positionManager.address);
 
+        await positionManager.addSPrime(sPrime.address);
     });
 
     describe("Deposit", function () {
@@ -68,8 +72,8 @@ describe("SPrime", function () {
             
             await sPrime.connect(addr1).deposit(8385840, 1000, parseEther("1000"), parseEther("1"));
 
-            const userShare = await sPrime.userInfo(addr1.address);
-            expect(userShare.share).to.gt(0);
+            const userShare = await positionManager.balanceOf(addr1.address);
+            expect(userShare).to.equal(1);
         });
 
         it("Should deposit two times without rebalance", async function () {
@@ -78,13 +82,13 @@ describe("SPrime", function () {
             
             await sPrime.connect(addr1).deposit(8385840, 1000, parseEther("1000"), parseEther("1"));
 
-            let userShare = await sPrime.userInfo(addr1.address);
-            expect(userShare.share).to.gt(0);
+            let userShare = await positionManager.balanceOf(addr1.address);
+            expect(userShare).to.equal(1);
 
             await sPrime.connect(addr1).deposit(8385840, 1000, parseEther("1000"), parseEther("1"));
 
-            userShare = await sPrime.userInfo(addr1.address);
-            expect(userShare.share).to.gt(0);
+            userShare = await positionManager.balanceOf(addr1.address);
+            expect(userShare).to.equal(1);
         });
 
         it("Should deposit with token swap to use equal amount", async function () {
@@ -98,12 +102,18 @@ describe("SPrime", function () {
             await weth.connect(addr1).approve(sPrime.address, parseEther("2"));
             
             await sPrime.connect(addr1).deposit(8385840, 1000, parseEther("100"), parseEther("0.1"));
-            let userShare = await sPrime.userInfo(addr1.address);
-            expect(userShare.share).to.gt(0);
-            const oldShare = userShare.share;
+            let userBalance = await positionManager.balanceOf(addr1.address);
+            let tokenId = await positionManager.tokenOfOwnerByIndex(addr1.address, userBalance - 1);
+            let userShare = await positionManager.positions(tokenId);
+            expect(userShare.totalShare).to.gt(0);
+
+            const oldShare = userShare.totalShare;
             await sPrime.connect(addr1).deposit(8385840, 1000, parseEther("1"), parseEther("0.05"));
-            userShare = await sPrime.userInfo(addr1.address);
-            expect(userShare.share).to.gt(oldShare);
+            userBalance = await positionManager.balanceOf(addr1.address);
+            tokenId = await positionManager.tokenOfOwnerByIndex(addr1.address, userBalance - 1);
+            userShare = await positionManager.positions(tokenId);
+
+            expect(userShare.totalShare).to.gt(oldShare);
         });
 
         it("Should fail if not enough tokens", async function () {
@@ -126,9 +136,11 @@ describe("SPrime", function () {
             await weth.connect(addr1).approve(sPrime.address, parseEther("2"));
             
             await sPrime.connect(addr1).deposit(8385840, 1000, parseEther("1000"), parseEther("1"));
+            let userBalance = await positionManager.balanceOf(addr1.address);
+            let tokenId = await positionManager.tokenOfOwnerByIndex(addr1.address, userBalance - 1);
 
-            let userShare = await sPrime.userInfo(addr1.address);
-            expect(userShare.share).to.gt(0);
+            let userShare = await positionManager.positions(tokenId);
+            expect(userShare.totalShare).to.gt(0);
             
             const oldCenterId = userShare.centerId;
             
@@ -142,13 +154,14 @@ describe("SPrime", function () {
             await LBRouter.connect(addr2).swapExactTokensForTokens(parseEther("100"), 0, path, addr2.address, 1880333856);
 
             await sPrime.connect(addr1).deposit(8385840, 100, 0, 0);
-
-            userShare = await sPrime.userInfo(addr1.address);
+            userBalance = await positionManager.balanceOf(addr1.address);
+            tokenId = await positionManager.tokenOfOwnerByIndex(addr1.address, userBalance - 1);
+            userShare = await positionManager.positions(tokenId);
             expect(userShare.centerId).to.not.equal(oldCenterId);
 
         });
 
-        it("Should receive rebalanced position", async function () {
+        it("Should receive the position using the balance", async function () {
             await prime.connect(addr1).approve(sPrime.address, parseEther("1000"));
             await weth.connect(addr1).approve(sPrime.address, parseEther("1"));
             
@@ -160,12 +173,18 @@ describe("SPrime", function () {
             await sPrime.connect(addr2).deposit(8385840, 1000, parseEther("1000"), parseEther("1"));
 
             // Fetching User 1 Status
-            let userShare = await sPrime.userInfo(addr1.address);
-            expect(userShare.share).to.gt(0);
-            const oldCenterId = userShare.centerId;
+            
+            let userBalance = await positionManager.balanceOf(addr1.address);
+            let tokenId = await positionManager.tokenOfOwnerByIndex(addr1.address, userBalance - 1);
+            let userShare = await positionManager.positions(tokenId);
+            expect(userShare.totalShare).to.gt(0);
 
-            userShare = await sPrime.userInfo(addr2.address);
-            expect(userShare.share).to.gt(0);
+            const oldCenterId = userShare.centerId;
+            userBalance = await positionManager.balanceOf(addr2.address);
+            tokenId = await positionManager.tokenOfOwnerByIndex(addr2.address, userBalance - 1);
+
+            userShare = await positionManager.positions(tokenId);
+            expect(userShare.totalShare).to.gt(0);
             
             await prime.connect(addr2).approve(LBRouter.address, parseEther("100"));
             const path = {
@@ -178,31 +197,137 @@ describe("SPrime", function () {
 
             // Rebalancing User 1's position
             await sPrime.connect(addr1).deposit(8385840, 100, 0, 0);
-            userShare = await sPrime.userInfo(addr1.address);
+            userBalance = await positionManager.balanceOf(addr1.address);
+            tokenId = await positionManager.tokenOfOwnerByIndex(addr1.address, userBalance - 1);
+            userShare = await positionManager.positions(tokenId);
             expect(userShare.centerId).to.not.equal(oldCenterId);
-            const user1InitialShare = userShare.share;
+            const user1InitialBalance = userBalance;
 
             // Transfer share from User 2 to User 1
             const user2Balance = await sPrime.balanceOf(addr2.address);
-            await sPrime.connect(addr2).transfer(addr1.address, (user2Balance / 2).toString());
-            
-            userShare = await sPrime.userInfo(addr1.address);
-            expect(userShare.share).to.gt(user1InitialShare);
+            await sPrime.connect(addr2).transfer(addr1.address, user2Balance);
+            userBalance = await positionManager.balanceOf(addr1.address);
+            expect(userBalance).to.gt(user1InitialBalance);
         });
-    });
 
-    describe("Withdraw", function () {
-        it("Should withdraw correctly", async function () {
+        it("Should receive the position using the token id", async function () {
             await prime.connect(addr1).approve(sPrime.address, parseEther("1000"));
             await weth.connect(addr1).approve(sPrime.address, parseEther("1"));
             
             await sPrime.connect(addr1).deposit(8385840, 1000, parseEther("1000"), parseEther("1"));
 
-            let userShare = await sPrime.userInfo(addr1.address);
-            await sPrime.connect(addr1).withdraw(userShare.share);
+            await prime.connect(addr2).approve(sPrime.address, parseEther("1000"));
+            await weth.connect(addr2).approve(sPrime.address, parseEther("1"));
+            
+            await sPrime.connect(addr2).deposit(8385840, 1000, parseEther("1000"), parseEther("1"));
 
-            userShare = await sPrime.userInfo(addr1.address);
-            expect(userShare.share).to.equal(0);
+            // Fetching User 1 Status
+            
+            let userBalance = await positionManager.balanceOf(addr1.address);
+            let tokenId = await positionManager.tokenOfOwnerByIndex(addr1.address, userBalance - 1);
+            let userShare = await positionManager.positions(tokenId);
+            expect(userShare.totalShare).to.gt(0);
+
+            const oldCenterId = userShare.centerId;
+            userBalance = await positionManager.balanceOf(addr2.address);
+            tokenId = await positionManager.tokenOfOwnerByIndex(addr2.address, userBalance - 1);
+
+            userShare = await positionManager.positions(tokenId);
+            expect(userShare.totalShare).to.gt(0);
+            
+            await prime.connect(addr2).approve(LBRouter.address, parseEther("100"));
+            const path = {
+                pairBinSteps: [25],
+                versions: [2],
+                tokenPath: [prime.address, weth.address]
+            }
+            
+            await LBRouter.connect(addr2).swapExactTokensForTokens(parseEther("100"), 0, path, addr2.address, 1880333856);
+
+            // Rebalancing User 1's position
+            await sPrime.connect(addr1).deposit(8385840, 100, 0, 0);
+            userBalance = await positionManager.balanceOf(addr1.address);
+            tokenId = await positionManager.tokenOfOwnerByIndex(addr1.address, userBalance - 1);
+            userShare = await positionManager.positions(tokenId);
+            expect(userShare.centerId).to.not.equal(oldCenterId);
+            const user1InitialBalance = userBalance;
+
+            // Transfer share from User 2 to User 1
+            userBalance = await positionManager.balanceOf(addr2.address);
+            tokenId = await positionManager.tokenOfOwnerByIndex(addr2.address, userBalance - 1);
+            await sPrime.connect(addr2).transferPosition(addr1.address, tokenId);
+            userBalance = await positionManager.balanceOf(addr1.address);
+            expect(userBalance).to.gt(user1InitialBalance);
+        });
+
+        it("Process rebalance after receiving the nft position", async function () {
+            await prime.connect(addr1).approve(sPrime.address, parseEther("1000"));
+            await weth.connect(addr1).approve(sPrime.address, parseEther("1"));
+            
+            await sPrime.connect(addr1).deposit(8385840, 1000, parseEther("1000"), parseEther("1"));
+
+            await prime.connect(addr2).approve(sPrime.address, parseEther("1000"));
+            await weth.connect(addr2).approve(sPrime.address, parseEther("1"));
+            
+            await sPrime.connect(addr2).deposit(8385840, 1000, parseEther("1000"), parseEther("1"));
+
+            // Fetching User 1 Status
+            
+            let userBalance = await positionManager.balanceOf(addr1.address);
+            let tokenId = await positionManager.tokenOfOwnerByIndex(addr1.address, userBalance - 1);
+            let userShare = await positionManager.positions(tokenId);
+            expect(userShare.totalShare).to.gt(0);
+
+            const oldCenterId = userShare.centerId;
+            userBalance = await positionManager.balanceOf(addr2.address);
+            tokenId = await positionManager.tokenOfOwnerByIndex(addr2.address, userBalance - 1);
+
+            userShare = await positionManager.positions(tokenId);
+            expect(userShare.totalShare).to.gt(0);
+            
+            await prime.connect(addr2).approve(LBRouter.address, parseEther("100"));
+            const path = {
+                pairBinSteps: [25],
+                versions: [2],
+                tokenPath: [prime.address, weth.address]
+            }
+            
+            await LBRouter.connect(addr2).swapExactTokensForTokens(parseEther("100"), 0, path, addr2.address, 1880333856);
+
+            // Rebalancing User 1's position
+            await sPrime.connect(addr1).deposit(8385840, 100, 0, 0);
+            userBalance = await positionManager.balanceOf(addr1.address);
+            tokenId = await positionManager.tokenOfOwnerByIndex(addr1.address, userBalance - 1);
+            userShare = await positionManager.positions(tokenId);
+            expect(userShare.centerId).to.not.equal(oldCenterId);
+            const user1InitialShare = userShare.totalShare;
+
+            // Transfer share from User 2 to User 1
+            const user2Balance = await sPrime.balanceOf(addr2.address);
+            await sPrime.connect(addr2).transfer(addr1.address, user2Balance);
+
+            // After receiving the position process the Rebalance
+            await sPrime.connect(addr1).deposit(8385840, 100, 0, 0);
+            userBalance = await positionManager.balanceOf(addr1.address);
+            tokenId = await positionManager.tokenOfOwnerByIndex(addr1.address, userBalance - 1);
+            userShare = await positionManager.positions(tokenId);
+            expect(userShare.totalShare).to.gt(user1InitialShare);
+        });
+    });
+
+    describe("Withdraw", function () {
+        it("Should withdraw correctly using token ID", async function () {
+            await prime.connect(addr1).approve(sPrime.address, parseEther("1000"));
+            await weth.connect(addr1).approve(sPrime.address, parseEther("1"));
+            
+            await sPrime.connect(addr1).deposit(8385840, 1000, parseEther("1000"), parseEther("1"));
+            
+            let userBalance = await positionManager.balanceOf(addr1.address);
+            let tokenId = await positionManager.tokenOfOwnerByIndex(addr1.address, userBalance - 1);
+
+            await sPrime.connect(addr1).withdraw(tokenId);
+            userBalance = await positionManager.balanceOf(addr1.address);
+            expect(userBalance).to.equal(0);
         });
 
         it("Should receive different amount because of token swap", async function () {
@@ -216,17 +341,19 @@ describe("SPrime", function () {
             await weth.connect(addr1).approve(sPrime.address, parseEther("2"));
             
             await sPrime.connect(addr1).deposit(8385840, 1000, parseEther("100"), parseEther("0.1"));
+            let userBalance = await positionManager.balanceOf(addr1.address);
+            let tokenId = await positionManager.tokenOfOwnerByIndex(addr1.address, userBalance - 1);
 
-            let userShare = await sPrime.userInfo(addr1.address);
-            expect(userShare.share).to.gt(0);
-            const oldShare = userShare.share;
+            let userShare = await positionManager.positions(tokenId);
+            expect(userShare.totalShare).to.gt(0);
             await sPrime.connect(addr1).deposit(8385840, 1000, parseEther("1"), parseEther("0.05"));
-
-            userShare = await sPrime.userInfo(addr1.address);
-            expect(userShare.share).to.gt(0);
+            userBalance = await positionManager.balanceOf(addr1.address);
+            tokenId = await positionManager.tokenOfOwnerByIndex(addr1.address, userBalance - 1);
+            userShare = await positionManager.positions(tokenId);
+            expect(userShare.totalShare).to.gt(0);
             const initialPrimeBalance = await prime.balanceOf(addr1.address);
             const initialWEthBalance = await weth.balanceOf(addr1.address);
-            await sPrime.connect(addr1).withdraw(userShare.share);
+            await sPrime.connect(addr1).withdraw(tokenId);
             const afterPrimeBalance = await prime.balanceOf(addr1.address);
             const afterWEthBalance = await weth.balanceOf(addr1.address);
 
@@ -236,14 +363,14 @@ describe("SPrime", function () {
             console.log("Received WETH After Withdraw: ", afterWEthBalance - initialWEthBalance);
         });
         
-        it("Should fail if trys to withdraw more shares than the balance", async function () {
-            await prime.connect(addr1).approve(sPrime.address, parseEther("1000"));
-            await weth.connect(addr1).approve(sPrime.address, parseEther("1"));
+        // it("Should fail if trys to withdraw more shares than the balance", async function () {
+        //     await prime.connect(addr1).approve(sPrime.address, parseEther("1000"));
+        //     await weth.connect(addr1).approve(sPrime.address, parseEther("1"));
             
-            await sPrime.connect(addr1).deposit(8385840, 1000, parseEther("1000"), parseEther("1"));
+        //     await sPrime.connect(addr1).deposit(8385840, 1000, parseEther("1000"), parseEther("1"));
 
-            await expect(sPrime.connect(addr1).withdraw(parseEther("1000"))).to.be.revertedWith("Insufficient Balance");
-        });
+        //     await expect(sPrime.connect(addr1).withdraw(parseEther("1000"))).to.be.revertedWith("Insufficient Balance");
+        // });
     });
 
     describe("getJoeV2RouterAddress", function () {
