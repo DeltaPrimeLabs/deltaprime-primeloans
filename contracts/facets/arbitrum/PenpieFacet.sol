@@ -9,6 +9,7 @@ import "../../ReentrancyGuardKeccak.sol";
 import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
 import "../../interfaces/arbitrum/IPendleRouter.sol";
 import "../../interfaces/arbitrum/IPendleDepositHelper.sol";
+import "../../interfaces/arbitrum/IMasterPenpie.sol";
 import "../../OnlyOwnerOrInsolvent.sol";
 //This path is updated during deployment
 import "../../lib/local/DeploymentConstants.sol";
@@ -24,7 +25,20 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         0xc06a5d3014b9124Bf215287980305Af2f793eB30;
     address public constant PENDLE_STAKING =
         0x6DB96BBEB081d2a85E0954C252f2c1dC108b3f81;
+    address public constant MASTER_PENPIE =
+        0x0776C06907CE6Ff3d9Dbf84bA9B3422d7225942D;
     address public constant PNP = 0x2Ac2B254Bc18cD4999f64773a966E4f4869c34Ee;
+
+    address public constant PENDLE_EZ_ETH_MARKET =
+        0x5E03C94Fc5Fb2E21882000A96Df0b63d2c4312e2;
+    address public constant PENDLE_WST_ETH_MARKET =
+        0xFd8AeE8FCC10aac1897F8D5271d112810C79e022;
+    address public constant PENDLE_E_ETH_MARKET =
+        0x952083cde7aaa11AB8449057F7de23A970AA8472;
+    address public constant PENDLE_RS_ETH_MARKET =
+        0x6Ae79089b2CF4be441480801bb741A531d94312b;
+    address public constant PENDLE_WST_ETH_SILO_MARKET =
+        0xACcd9A7cb5518326BeD715f90bD32CDf2fEc2D14;
 
     // PUBLIC FUNCTIONS
 
@@ -161,13 +175,7 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     function unstakeFromPenpieAndWithdrawPendleLP(
         address market,
         uint256 amount
-    )
-        external
-        onlyOwner
-        canRepayDebtFully
-        nonReentrant
-        returns (uint256)
-    {
+    ) external onlyOwner canRepayDebtFully nonReentrant returns (uint256) {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         address lpToken = _getPendleLpToken(market);
 
@@ -194,26 +202,59 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         return amount;
     }
 
+    function pendingRewards(
+        address market
+    ) public view returns (uint256, address[] memory, uint256[] memory) {
+        (
+            uint256 pendingPenpie,
+            address[] memory bonusTokenAddresses,
+            ,
+            uint256[] memory pendingBonusRewards
+        ) = IMasterPenpie(MASTER_PENPIE).allPendingTokens(market, address(this));
+        return (pendingPenpie, bonusTokenAddresses, pendingBonusRewards);
+    }
+
+    function claimRewards(address market) external onlyOwner {
+        (
+            uint256 pendingPenpie,
+            address[] memory bonusTokenAddresses,
+            uint256[] memory pendingBonusRewards
+        ) = pendingRewards(market);
+        address[] memory stakingTokens = new address[](1);
+        stakingTokens[0] = market;
+        IMasterPenpie(MASTER_PENPIE).multiclaim(stakingTokens);
+
+        if (pendingPenpie > 0) {
+            PNP.safeTransfer(msg.sender, pendingPenpie);
+        }
+        uint256 length = pendingBonusRewards.length;
+        for (uint256 i; i != length; ++i) {
+            if (pendingBonusRewards[i] > 0) {
+                bonusTokenAddresses[i].safeTransfer(msg.sender, pendingBonusRewards[i]);
+            }
+        }
+    }
+
     // INTERNAL FUNCTIONS
     function _getPendleLpToken(address market) internal pure returns (address) {
         // ezETH
-        if (market == 0x5E03C94Fc5Fb2E21882000A96Df0b63d2c4312e2) {
+        if (market == PENDLE_EZ_ETH_MARKET) {
             return 0xecCDC2C2191d5148905229c5226375124934b63b;
         }
         // wstETH
-        if (market == 0xFd8AeE8FCC10aac1897F8D5271d112810C79e022) {
+        if (market == PENDLE_WST_ETH_MARKET) {
             return 0xdb0e1D1872202A81Eb0cb655137f4a937873E02f;
         }
         // eETH
-        if (market == 0x952083cde7aaa11AB8449057F7de23A970AA8472) {
+        if (market == PENDLE_E_ETH_MARKET) {
             return 0x264f4138161aaE16b76dEc7D4eEb756f25Fa67Cd;
         }
         // rsETH
-        if (market == 0x6Ae79089b2CF4be441480801bb741A531d94312b) {
+        if (market == PENDLE_RS_ETH_MARKET) {
             return 0xe3B327c43b5002eb7280Eef52823698b6cDA06cF;
         }
         // wstETHSilo
-        if (market == 0xACcd9A7cb5518326BeD715f90bD32CDf2fEc2D14) {
+        if (market == PENDLE_WST_ETH_SILO_MARKET) {
             return 0xCcCC7c80c9Be9fDf22e322A5fdbfD2ef6ac5D574;
         }
 

@@ -1046,6 +1046,8 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                 'unstakeFromPenpieAndWithdrawFromPendle',
                 'depositPendleLPAndStakeInPenpie',
                 'unstakeFromPenpieAndWithdrawPendleLP',
+                'pendingRewards',
+                'claimRewards',
             ],
             hardhatConfig
         )

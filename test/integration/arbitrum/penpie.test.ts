@@ -28,6 +28,7 @@ import {
     recompileConstantsFile,
     toBytes32,
     toWei,
+    time,
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
@@ -337,6 +338,23 @@ describe('Smart loan', () => {
             }
         });
 
+        it("should claim rewards", async () => {
+            await time.increase(time.duration.days(5));
+
+            const tests = [
+                { market: ezETHMarket },
+                { market: wstETHMarket },
+                { market: eETHMarket },
+                { market: rsETHMarket },
+                { market: wstETHSiloMarket },
+            ];
+
+            for (const test of tests) {
+                console.log(`Testing claims rewards...`)
+                await testClaimReward(test.market);
+            }
+        });
+
         it("should unstake underlying", async () => {
             const unstakeTests = [
                 { asset: "ezETH", market: ezETHMarket, amount: await tokenContracts.get('PENDLE_EZ_ETH_LP')!.balanceOf(wrappedLoan.address), minOut: 1, lpToken: "PENDLE_EZ_ETH_LP" },
@@ -365,6 +383,23 @@ describe('Smart loan', () => {
             for (const test of stakeTests) {
                 console.log(`Testing staking ${test.lpToken}...`)
                 await testStakeLp(test.market, test.amount, test.lpToken);
+            }
+        });
+
+        it("should claim rewards", async () => {
+            await time.increase(time.duration.days(5));
+
+            const tests = [
+                { market: ezETHMarket },
+                { market: wstETHMarket },
+                { market: eETHMarket },
+                { market: rsETHMarket },
+                { market: wstETHSiloMarket },
+            ];
+
+            for (const test of tests) {
+                console.log(`Testing claims rewards...`)
+                await testClaimReward(test.market);
             }
         });
 
@@ -476,6 +511,10 @@ describe('Smart loan', () => {
             const afterLpExposure = await getAssetExposure(lpToken);
 
             expect(beforeLpExposure.current.sub(afterLpExposure.current)).to.be.eq(amount);
+        }
+
+        async function testClaimReward(market: string) {
+            await wrappedLoan.claimRewards(market);
         }
 
         async function loanOwnsAsset(asset: string) {
