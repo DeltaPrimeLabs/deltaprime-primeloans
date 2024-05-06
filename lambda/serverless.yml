@@ -274,7 +274,15 @@ functions:
     events:
       - httpApi:
           method: get
-          path: /arbitrum-grant/{id}
+          path: /arbitrum-grant
+  getLtipBoostApyApi:
+    handler: apis/gmxIncentives.getLtipBoostApyApi
+    memorySize: 512
+    description: Fetch LTIP Boost APY and Total Eligible TVL on Arbitrum
+    events:
+      - httpApi:
+          method: get
+          path: /ltip-boost-apy
   getGmBoostApyApi:
     handler: apis/gmxIncentives.getGmBoostApyApi
     memorySize: 512
