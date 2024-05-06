@@ -12,16 +12,7 @@
           :healthLoading="healthLoading">
       </StatsBarBeta>
 
-      <LTIPStatsBar
-        v-if="isArbitrum"
-        :totalEligibleTVL="5000000"
-        :milestone="10000000"
-        :yourEligibleTVL="5202.12412"
-        :aprBoost="0.12516336"
-        :maxAprBoost="0.69327123"
-        :arbCollected="4.1247198427"
-      >
-      </LTIPStatsBar>
+      <LTIPStatsBar v-if="isArbitrum"></LTIPStatsBar>
 
       <InfoBubble v-if="noSmartLoanInternal === false" cacheKey="ACCOUNT-READY">
         Your Prime Account is ready! Now you can borrow,<br>
