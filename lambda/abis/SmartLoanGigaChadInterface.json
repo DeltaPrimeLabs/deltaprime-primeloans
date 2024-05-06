@@ -259,43 +259,6 @@
           "type": "bytes32"
         },
         {
-          "indexed": true,
-          "internalType": "address",
-          "name": "vault",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "depositAmount",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "timestamp",
-          "type": "uint256"
-        }
-      ],
-      "name": "DepositedLLP",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "user",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "bytes32",
-          "name": "asset",
-          "type": "bytes32"
-        },
-        {
           "indexed": false,
           "internalType": "uint256",
           "name": "amount",
@@ -309,105 +272,6 @@
         }
       ],
       "name": "Funded",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "user",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "wavaxAmountClaimed",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "timestamp",
-          "type": "uint256"
-        }
-      ],
-      "name": "GLPFeesClaim",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "user",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "bytes32",
-          "name": "tokenToMintWith",
-          "type": "bytes32"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "tokenToMintWithAmount",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "glpOutputAmount",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "timestamp",
-          "type": "uint256"
-        }
-      ],
-      "name": "GLPMint",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "user",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "bytes32",
-          "name": "redeemedToken",
-          "type": "bytes32"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "glpRedeemedAmount",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "redeemedTokenAmount",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "timestamp",
-          "type": "uint256"
-        }
-      ],
-      "name": "GLPRedemption",
       "type": "event"
     },
     {
@@ -753,61 +617,6 @@
           "type": "address"
         },
         {
-          "indexed": false,
-          "internalType": "bytes32",
-          "name": "asset0",
-          "type": "bytes32"
-        },
-        {
-          "indexed": false,
-          "internalType": "bytes32",
-          "name": "asset1",
-          "type": "bytes32"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "vault",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "depositTokenAmount0",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "depositTokenAmount1",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "receiptTokenAmount",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "timestamp",
-          "type": "uint256"
-        }
-      ],
-      "name": "Staked",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "user",
-          "type": "address"
-        },
-        {
           "indexed": true,
           "internalType": "bytes32",
           "name": "asset",
@@ -937,61 +746,6 @@
           "type": "address"
         },
         {
-          "indexed": false,
-          "internalType": "bytes32",
-          "name": "asset0",
-          "type": "bytes32"
-        },
-        {
-          "indexed": false,
-          "internalType": "bytes32",
-          "name": "asset1",
-          "type": "bytes32"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "vault",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "depositTokenAmount0",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "depositTokenAmount1",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "receiptTokenAmount",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "timestamp",
-          "type": "uint256"
-        }
-      ],
-      "name": "Unstaked",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "user",
-          "type": "address"
-        },
-        {
           "indexed": true,
           "internalType": "bytes32",
           "name": "asset",
@@ -1079,43 +833,6 @@
         }
       ],
       "name": "Withdrawn",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "user",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "bytes32",
-          "name": "asset",
-          "type": "bytes32"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "vault",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "depositAmount",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "timestamp",
-          "type": "uint256"
-        }
-      ],
-      "name": "WithdrewLLP",
       "type": "event"
     },
     {
@@ -3008,45 +2725,6 @@
       "type": "function"
     },
     {
-      "inputs": [],
-      "name": "balancerGgAvaxBalance",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "balancerSAvaxBalance",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "balancerYyAvaxBalance",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
       "inputs": [
         {
           "internalType": "bytes32",
@@ -3067,39 +2745,6 @@
     {
       "inputs": [
         {
-          "internalType": "bytes4",
-          "name": "selector",
-          "type": "bytes4"
-        },
-        {
-          "internalType": "bytes",
-          "name": "data",
-          "type": "bytes"
-        },
-        {
-          "internalType": "uint256",
-          "name": "shares",
-          "type": "uint256"
-        },
-        {
-          "internalType": "address",
-          "name": "toToken",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "minOut",
-          "type": "uint256"
-        }
-      ],
-      "name": "burnCai",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
           "internalType": "uint256",
           "name": "tokenId",
           "type": "uint256"
@@ -3113,51 +2758,6 @@
     {
       "inputs": [],
       "name": "claimGLpFees",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "components": [
-            {
-              "internalType": "address",
-              "name": "market",
-              "type": "address"
-            },
-            {
-              "internalType": "uint256",
-              "name": "epoch",
-              "type": "uint256"
-            },
-            {
-              "internalType": "contract IERC20",
-              "name": "token",
-              "type": "address"
-            },
-            {
-              "internalType": "address",
-              "name": "user",
-              "type": "address"
-            },
-            {
-              "internalType": "uint256",
-              "name": "amount",
-              "type": "uint256"
-            },
-            {
-              "internalType": "bytes32[]",
-              "name": "merkleProof",
-              "type": "bytes32[]"
-            }
-          ],
-          "internalType": "struct IRewarder.MerkleEntry[]",
-          "name": "merkleEntries",
-          "type": "tuple[]"
-        }
-      ],
-      "name": "claimReward",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -3251,63 +2851,7 @@
           "type": "uint256"
         }
       ],
-      "name": "depositArbUsdcGmxV2",
-      "outputs": [],
-      "stateMutability": "payable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "bool",
-          "name": "isLongToken",
-          "type": "bool"
-        },
-        {
-          "internalType": "uint256",
-          "name": "tokenAmount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "minGmAmount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "executionFee",
-          "type": "uint256"
-        }
-      ],
       "name": "depositAvaxUsdcGmxV2",
-      "outputs": [],
-      "stateMutability": "payable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "bool",
-          "name": "isLongToken",
-          "type": "bool"
-        },
-        {
-          "internalType": "uint256",
-          "name": "tokenAmount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "minGmAmount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "executionFee",
-          "type": "uint256"
-        }
-      ],
-      "name": "depositBtcUsdcGmxV2",
       "outputs": [],
       "stateMutability": "payable",
       "type": "function"
@@ -3359,34 +2903,6 @@
       "type": "function"
     },
     {
-      "inputs": [
-        {
-          "internalType": "bool",
-          "name": "isLongToken",
-          "type": "bool"
-        },
-        {
-          "internalType": "uint256",
-          "name": "tokenAmount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "minGmAmount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "executionFee",
-          "type": "uint256"
-        }
-      ],
-      "name": "depositLinkUsdcGmxV2",
-      "outputs": [],
-      "stateMutability": "payable",
-      "type": "function"
-    },
-    {
       "inputs": [],
       "name": "depositNativeToken",
       "outputs": [],
@@ -3396,29 +2912,323 @@
     {
       "inputs": [
         {
-          "internalType": "bool",
-          "name": "isLongToken",
-          "type": "bool"
+          "internalType": "address",
+          "name": "market",
+          "type": "address"
         },
         {
           "internalType": "uint256",
-          "name": "tokenAmount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "minGmAmount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "executionFee",
+          "name": "amount",
           "type": "uint256"
         }
       ],
-      "name": "depositUniUsdcGmxV2",
+      "name": "depositPendleLPAndStakeInPenpie",
       "outputs": [],
-      "stateMutability": "payable",
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "asset",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "market",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "minLpOut",
+          "type": "uint256"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "guessMin",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "guessMax",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "guessOffchain",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "maxIteration",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "eps",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct IPendleRouter.ApproxParams",
+          "name": "guessPtReceivedFromSy",
+          "type": "tuple"
+        },
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "tokenIn",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "netTokenIn",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "tokenMintSy",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "pendleSwap",
+              "type": "address"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "enum IPendleRouter.SwapType",
+                  "name": "swapType",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "address",
+                  "name": "extRouter",
+                  "type": "address"
+                },
+                {
+                  "internalType": "bytes",
+                  "name": "extCalldata",
+                  "type": "bytes"
+                },
+                {
+                  "internalType": "bool",
+                  "name": "needScale",
+                  "type": "bool"
+                }
+              ],
+              "internalType": "struct IPendleRouter.SwapData",
+              "name": "swapData",
+              "type": "tuple"
+            }
+          ],
+          "internalType": "struct IPendleRouter.TokenInput",
+          "name": "input",
+          "type": "tuple"
+        },
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "limitRouter",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "epsSkipMarket",
+              "type": "uint256"
+            },
+            {
+              "components": [
+                {
+                  "components": [
+                    {
+                      "internalType": "uint256",
+                      "name": "salt",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "expiry",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "nonce",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "enum IPendleRouter.OrderType",
+                      "name": "orderType",
+                      "type": "uint8"
+                    },
+                    {
+                      "internalType": "address",
+                      "name": "token",
+                      "type": "address"
+                    },
+                    {
+                      "internalType": "address",
+                      "name": "YT",
+                      "type": "address"
+                    },
+                    {
+                      "internalType": "address",
+                      "name": "maker",
+                      "type": "address"
+                    },
+                    {
+                      "internalType": "address",
+                      "name": "receiver",
+                      "type": "address"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "makingAmount",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "lnImpliedRate",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "failSafeRate",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "bytes",
+                      "name": "permit",
+                      "type": "bytes"
+                    }
+                  ],
+                  "internalType": "struct IPendleRouter.Order",
+                  "name": "order",
+                  "type": "tuple"
+                },
+                {
+                  "internalType": "bytes",
+                  "name": "signature",
+                  "type": "bytes"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "makingAmount",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct IPendleRouter.FillOrderParams[]",
+              "name": "normalFills",
+              "type": "tuple[]"
+            },
+            {
+              "components": [
+                {
+                  "components": [
+                    {
+                      "internalType": "uint256",
+                      "name": "salt",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "expiry",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "nonce",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "enum IPendleRouter.OrderType",
+                      "name": "orderType",
+                      "type": "uint8"
+                    },
+                    {
+                      "internalType": "address",
+                      "name": "token",
+                      "type": "address"
+                    },
+                    {
+                      "internalType": "address",
+                      "name": "YT",
+                      "type": "address"
+                    },
+                    {
+                      "internalType": "address",
+                      "name": "maker",
+                      "type": "address"
+                    },
+                    {
+                      "internalType": "address",
+                      "name": "receiver",
+                      "type": "address"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "makingAmount",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "lnImpliedRate",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "failSafeRate",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "bytes",
+                      "name": "permit",
+                      "type": "bytes"
+                    }
+                  ],
+                  "internalType": "struct IPendleRouter.Order",
+                  "name": "order",
+                  "type": "tuple"
+                },
+                {
+                  "internalType": "bytes",
+                  "name": "signature",
+                  "type": "bytes"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "makingAmount",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct IPendleRouter.FillOrderParams[]",
+              "name": "flashFills",
+              "type": "tuple[]"
+            },
+            {
+              "internalType": "bytes",
+              "name": "optData",
+              "type": "bytes"
+            }
+          ],
+          "internalType": "struct IPendleRouter.LimitOrderData",
+          "name": "limit",
+          "type": "tuple"
+        }
+      ],
+      "name": "depositToPendleAndStakeInPenpie",
+      "outputs": [],
+      "stateMutability": "nonpayable",
       "type": "function"
     },
     {
@@ -3743,6 +3553,19 @@
     {
       "inputs": [],
       "name": "getHealthRatio",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getLTIPEligibleTVL",
       "outputs": [
         {
           "internalType": "uint256",
@@ -4165,19 +3988,6 @@
         }
       ],
       "name": "gmdUnstakeWETHe",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "pid",
-          "type": "uint256"
-        }
-      ],
-      "name": "harvestRewards",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -4876,39 +4686,6 @@
     {
       "inputs": [
         {
-          "internalType": "bytes4",
-          "name": "selector",
-          "type": "bytes4"
-        },
-        {
-          "internalType": "bytes",
-          "name": "data",
-          "type": "bytes"
-        },
-        {
-          "internalType": "address",
-          "name": "fromToken",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "fromAmount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "minOut",
-          "type": "uint256"
-        }
-      ],
-      "name": "mintCai",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
           "components": [
             {
               "internalType": "address",
@@ -5329,19 +5106,6 @@
         }
       ],
       "name": "stakeCurve",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        }
-      ],
-      "name": "stakeDAIYak",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -6122,12 +5886,295 @@
     {
       "inputs": [
         {
+          "internalType": "bytes32",
+          "name": "asset",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "market",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "minOut",
+          "type": "uint256"
+        },
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "tokenOut",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "minTokenOut",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "tokenRedeemSy",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "pendleSwap",
+              "type": "address"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "enum IPendleRouter.SwapType",
+                  "name": "swapType",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "address",
+                  "name": "extRouter",
+                  "type": "address"
+                },
+                {
+                  "internalType": "bytes",
+                  "name": "extCalldata",
+                  "type": "bytes"
+                },
+                {
+                  "internalType": "bool",
+                  "name": "needScale",
+                  "type": "bool"
+                }
+              ],
+              "internalType": "struct IPendleRouter.SwapData",
+              "name": "swapData",
+              "type": "tuple"
+            }
+          ],
+          "internalType": "struct IPendleRouter.TokenOutput",
+          "name": "output",
+          "type": "tuple"
+        },
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "limitRouter",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "epsSkipMarket",
+              "type": "uint256"
+            },
+            {
+              "components": [
+                {
+                  "components": [
+                    {
+                      "internalType": "uint256",
+                      "name": "salt",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "expiry",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "nonce",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "enum IPendleRouter.OrderType",
+                      "name": "orderType",
+                      "type": "uint8"
+                    },
+                    {
+                      "internalType": "address",
+                      "name": "token",
+                      "type": "address"
+                    },
+                    {
+                      "internalType": "address",
+                      "name": "YT",
+                      "type": "address"
+                    },
+                    {
+                      "internalType": "address",
+                      "name": "maker",
+                      "type": "address"
+                    },
+                    {
+                      "internalType": "address",
+                      "name": "receiver",
+                      "type": "address"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "makingAmount",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "lnImpliedRate",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "failSafeRate",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "bytes",
+                      "name": "permit",
+                      "type": "bytes"
+                    }
+                  ],
+                  "internalType": "struct IPendleRouter.Order",
+                  "name": "order",
+                  "type": "tuple"
+                },
+                {
+                  "internalType": "bytes",
+                  "name": "signature",
+                  "type": "bytes"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "makingAmount",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct IPendleRouter.FillOrderParams[]",
+              "name": "normalFills",
+              "type": "tuple[]"
+            },
+            {
+              "components": [
+                {
+                  "components": [
+                    {
+                      "internalType": "uint256",
+                      "name": "salt",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "expiry",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "nonce",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "enum IPendleRouter.OrderType",
+                      "name": "orderType",
+                      "type": "uint8"
+                    },
+                    {
+                      "internalType": "address",
+                      "name": "token",
+                      "type": "address"
+                    },
+                    {
+                      "internalType": "address",
+                      "name": "YT",
+                      "type": "address"
+                    },
+                    {
+                      "internalType": "address",
+                      "name": "maker",
+                      "type": "address"
+                    },
+                    {
+                      "internalType": "address",
+                      "name": "receiver",
+                      "type": "address"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "makingAmount",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "lnImpliedRate",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "uint256",
+                      "name": "failSafeRate",
+                      "type": "uint256"
+                    },
+                    {
+                      "internalType": "bytes",
+                      "name": "permit",
+                      "type": "bytes"
+                    }
+                  ],
+                  "internalType": "struct IPendleRouter.Order",
+                  "name": "order",
+                  "type": "tuple"
+                },
+                {
+                  "internalType": "bytes",
+                  "name": "signature",
+                  "type": "bytes"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "makingAmount",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct IPendleRouter.FillOrderParams[]",
+              "name": "flashFills",
+              "type": "tuple[]"
+            },
+            {
+              "internalType": "bytes",
+              "name": "optData",
+              "type": "bytes"
+            }
+          ],
+          "internalType": "struct IPendleRouter.LimitOrderData",
+          "name": "limit",
+          "type": "tuple"
+        }
+      ],
+      "name": "unstakeFromPenpieAndWithdrawFromPendle",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "market",
+          "type": "address"
+        },
+        {
           "internalType": "uint256",
           "name": "amount",
           "type": "uint256"
         }
       ],
-      "name": "unstakeDAIYak",
+      "name": "unstakeFromPenpieAndWithdrawPendleLP",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -6859,63 +6906,7 @@
           "type": "uint256"
         }
       ],
-      "name": "withdrawArbUsdcGmxV2",
-      "outputs": [],
-      "stateMutability": "payable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "gmAmount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "minLongTokenAmount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "minShortTokenAmount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "executionFee",
-          "type": "uint256"
-        }
-      ],
       "name": "withdrawAvaxUsdcGmxV2",
-      "outputs": [],
-      "stateMutability": "payable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "gmAmount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "minLongTokenAmount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "minShortTokenAmount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "executionFee",
-          "type": "uint256"
-        }
-      ],
-      "name": "withdrawBtcUsdcGmxV2",
       "outputs": [],
       "stateMutability": "payable",
       "type": "function"
@@ -6964,34 +6955,6 @@
     {
       "inputs": [
         {
-          "internalType": "uint256",
-          "name": "gmAmount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "minLongTokenAmount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "minShortTokenAmount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "executionFee",
-          "type": "uint256"
-        }
-      ],
-      "name": "withdrawLinkUsdcGmxV2",
-      "outputs": [],
-      "stateMutability": "payable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
           "internalType": "contract ILBPair",
           "name": "pair",
           "type": "address"
@@ -7010,34 +6973,6 @@
       "name": "withdrawLiquidityTraderJoeV2",
       "outputs": [],
       "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "gmAmount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "minLongTokenAmount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "minShortTokenAmount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "executionFee",
-          "type": "uint256"
-        }
-      ],
-      "name": "withdrawUniUsdcGmxV2",
-      "outputs": [],
-      "stateMutability": "payable",
       "type": "function"
     },
     {

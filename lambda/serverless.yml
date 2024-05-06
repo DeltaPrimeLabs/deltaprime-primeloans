@@ -220,32 +220,11 @@ functions:
       - httpApi:
           method: get
           path: /traderjoe/rewards/claimable
-  # gmxIncentivesCalculatorAva:
-  #   handler: gmxIncentives/gmxIncentivesCalculatorAva.handler
-  #   memorySize: 1024
-  #   timeout: 900
-  #   description: Calculate incentives for loans on Avalanche.
-  #   events:
-  #     - schedule: rate(10 minutes)
-  # gmxIncentivesCalculatorAvaFrom:
-  #   handler: gmxIncentives/gmxIncentivesCalculatorAvaFrom.handler
-  #   memorySize: 1024
-  #   timeout: 900
-  #   description: Calculate incentives for loans on Avalanche From a week ago.
-  #   events:
-  #     - schedule: rate(10 minutes)
   gmxIncentivesCalculatorArb:
     handler: gmxIncentives/gmxIncentivesCalculatorArb.handler
     memorySize: 1024
     timeout: 900
     description: Calculate incentives for loans on Arbitrum.
-    events:
-      - schedule: rate(10 minutes)
-  arbitrumIncentives:
-    handler: arbitrumIncentives/arbitrumIncentives.handler
-    memorySize: 1024
-    timeout: 900
-    description: Calculate incentives for loans on Avalanche From a week ago.
     events:
       - schedule: rate(10 minutes)
   getGmxIncentivesApi:
