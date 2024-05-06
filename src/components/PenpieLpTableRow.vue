@@ -372,6 +372,8 @@ export default {
             market: this.lpToken.stakingContractAddress,
             amount: addFromWalletEvent.value,
             targetAsset: this.lpToken.symbol,
+            sourceAsset: this.lpToken.pendleLpSymbol,
+            decimals: this.lpToken.decimals,
           };
           this.handleTransaction(this.depositPendleLPAndStake, {depositAndStakeRequest: depositAndStakeRequest}, () => {
             this.$forceUpdate();

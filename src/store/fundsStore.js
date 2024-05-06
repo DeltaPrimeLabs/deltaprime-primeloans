@@ -2766,13 +2766,22 @@ export default {
     },
 
     async depositPendleLPAndStake({state, rootState, commit, dispatch}, {depositAndStakeRequest}) {
-      console.log('depositPendleLPAndStake', depositAndStakeRequest);
       const provider = rootState.network.provider;
+
+      const tokenForApprove = TOKEN_ADDRESSES[depositAndStakeRequest.sourceAsset];
+      const fundToken = new ethers.Contract(tokenForApprove, erc20ABI, provider.getSigner());
+      const allowance = formatUnits(await fundToken.allowance(rootState.network.account, state.smartLoanContract.address), depositAndStakeRequest.decimals);
+
+      if (parseFloat(allowance) < parseFloat(depositAndStakeRequest.amount)) {
+        const approveTransaction = await fundToken.connect(provider.getSigner()).approve(state.smartLoanContract.address, toWei(depositAndStakeRequest.amount));
+        await awaitConfirmation(approveTransaction, provider, 'approve');
+      }
+
       const loanAssets = mergeArrays([(
         await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
         (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
         Object.keys(config.POOLS_CONFIG),
-        [depositAndStakeRequest.targetAsset]
+        [depositAndStakeRequest.targetAsset, depositAndStakeRequest.sourceAsset]
       ]);
 
       const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
