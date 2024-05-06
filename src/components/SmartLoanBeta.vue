@@ -156,6 +156,8 @@ export default {
       'gmxV2Balances',
       'balancerLpAssets',
       'balancerLpBalances',
+      'penpieLpAssets',
+      'penpieLpBalances',
       'traderJoeV2LpAssets',
       'fullLoanStatus',
       'noSmartLoan',
@@ -356,6 +358,8 @@ export default {
             this.levelLpBalances,
             this.gmxV2Assets,
             this.gmxV2Balances,
+            this.penpieLpAssets,
+            this.penpieLpBalances,
             this.traderJoeV2LpAssets,
             this.farms,
         );

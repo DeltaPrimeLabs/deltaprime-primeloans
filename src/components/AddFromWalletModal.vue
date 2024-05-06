@@ -139,6 +139,8 @@ export default {
     levelLpBalances: {},
     gmxV2Assets: {},
     gmxV2Balances: {},
+    penpieLpAssets: {},
+    penpieLpBalances: {},
     traderJoeV2LpAssets: {},
     balancerLpAssets: {},
     balancerLpBalances: {},
@@ -283,6 +285,25 @@ export default {
           }
 
           tokens.push({price: data.price, balance: balance ? balance : 0, borrowed: 0, debtCoverage: data.debtCoverage});
+        }
+      }
+
+      if (this.penpieLpAssets) {
+        for (const [symbol, data] of Object.entries(this.penpieLpAssets)) {
+          if (this.penpieLpBalances) {
+            let balance = parseFloat(this.penpieLpBalances[symbol]);
+
+            if (symbol === this.asset.symbol) {
+              balance += added;
+            }
+
+            tokens.push({
+              price: data.price,
+              balance: balance ? balance : 0,
+              borrowed: 0,
+              debtCoverage: data.debtCoverage
+            });
+          }
         }
       }
 

@@ -1356,6 +1356,17 @@ export default {
           }
         }
 
+        if (state.penpieLpAssets && state.penpieLpBalances) {
+          for (let entry of Object.entries(state.penpieLpAssets)) {
+            let symbol = entry[0];
+            let lpAsset = entry[1];
+
+            const apy = lpAsset.apy ? lpAsset.apy / 100 : 0;
+
+            yearlyLpInterest += parseFloat(state.penpieLpBalances[symbol]) * apy * lpAsset.price;
+          }
+        }
+
         if (state.gmxV2Assets && state.gmxV2Balances) {
           for (let entry of Object.entries(state.gmxV2Assets)) {
             let symbol = entry[0];

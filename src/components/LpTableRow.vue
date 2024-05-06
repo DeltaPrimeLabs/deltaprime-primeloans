@@ -183,6 +183,8 @@ export default {
       'levelLpBalances',
       'balancerLpAssets',
       'balancerLpBalances',
+      'penpieLpBalances',
+      'penpieLpAssets',
       'noSmartLoan'
     ]),
     ...mapState('stakeStore', ['farms']),
@@ -331,6 +333,8 @@ export default {
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.balancerLpBalances = this.balancerLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.loan = this.debt;
@@ -371,6 +375,8 @@ export default {
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.balancerLpBalances = this.balancerLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.farms = this.farms;
       modalInstance.health = this.health;

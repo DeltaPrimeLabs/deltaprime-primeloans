@@ -268,6 +268,8 @@ export default {
       'traderJoeV2LpAssets',
       'balancerLpAssets',
       'balancerLpBalances',
+      'penpieLpBalances',
+      'penpieLpAssets',
       'apys',
     ]),
     ...mapState('poolStore', ['pools']),
@@ -593,6 +595,8 @@ export default {
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.gmxV2Assets = this.gmxV2Assets;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
@@ -643,6 +647,8 @@ export default {
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.balancerLpBalances = this.balancerLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.farms = this.farms;
       modalInstance.health = this.health;
@@ -687,6 +693,8 @@ export default {
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.gmxV2Assets = this.gmxV2Assets;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
@@ -780,6 +788,8 @@ export default {
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.balancerLpBalances = this.balancerLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.targetAsset = this.lpToken.longToken;
       modalInstance.debt = this.fullLoanStatus.debt;

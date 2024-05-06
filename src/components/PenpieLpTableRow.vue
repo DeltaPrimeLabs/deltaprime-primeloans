@@ -312,6 +312,8 @@ export default {
       modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.gmxV2Assets = this.gmxV2Assets;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.loan = this.debt;
@@ -355,6 +357,8 @@ export default {
       modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.gmxV2Assets = this.gmxV2Assets;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.loan = this.debt;
@@ -403,6 +407,8 @@ export default {
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.gmxV2Assets = this.gmxV2Assets;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
@@ -496,13 +502,15 @@ export default {
         [this.lpToken.asset]: config.ASSETS_CONFIG[this.lpToken.asset]
       };
       modalInstance.targetAssets = [this.lpToken.asset];
-      modalInstance.assetBalances = this.assetBalances;
+      modalInstance.assetBalances = {...this.assetBalances, ...this.penpieLpBalances};
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.gmxV2Assets = this.gmxV2Assets;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
@@ -591,6 +599,8 @@ export default {
       modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.balancerLpBalances = this.balancerLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.debt = this.fullLoanStatus.debt;
