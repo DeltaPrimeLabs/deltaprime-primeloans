@@ -39,97 +39,101 @@ const getWrappedContracts = (addresses, network) => {
 }
 
 const arbitrumIncentives = async () => {
-  const now = Math.floor(Date.now() / 1000);
-  const factoryContract = new ethers.Contract(factoryAddress, FACTORY.abi, arbitrumHistoricalProvider);
-  let loanAddresses = await factoryContract.getAllLoans();
-  const totalLoans = loanAddresses.length;
+  try {
+    const now = Math.floor(Date.now() / 1000);
+    const factoryContract = new ethers.Contract(factoryAddress, FACTORY.abi, arbitrumHistoricalProvider);
+    let loanAddresses = await factoryContract.getAllLoans();
+    const totalLoans = loanAddresses.length;
 
-  const incentivesPerInterval = 225 / (60 * 60 * 24 * 7) * (60 * 10);
-  const batchSize = 150;
+    const incentivesPerInterval = 225 / (60 * 60 * 24 * 7) * (60 * 10);
+    const batchSize = 150;
 
-  const loanQualifications = {};
-  let totalEligibleTvl = 0;
+    const loanQualifications = {};
+    let totalEligibleTvl = 0;
 
-  // calculate eligible tvl leveraged by the loan
-  for (let i = 0; i < Math.ceil(totalLoans/batchSize); i++) {
-    console.log(`processing ${i * batchSize} - ${(i + 1) * batchSize > totalLoans ? totalLoans : (i + 1) * batchSize} loans`);
+    // calculate eligible tvl leveraged by the loan
+    for (let i = 0; i < Math.ceil(totalLoans/batchSize); i++) {
+      console.log(`processing ${i * batchSize} - ${(i + 1) * batchSize > totalLoans ? totalLoans : (i + 1) * batchSize} loans`);
 
-    const batchLoanAddresses = loanAddresses.slice(i * batchSize, (i + 1) * batchSize);
-    const wrappedContracts = getWrappedContracts(batchLoanAddresses, 'arbitrum');
+      const batchLoanAddresses = loanAddresses.slice(i * batchSize, (i + 1) * batchSize);
+      const wrappedContracts = getWrappedContracts(batchLoanAddresses, 'arbitrum');
 
-    const loanStats = await Promise.all(
-      wrappedContracts.map(contract => contract.getLTIPEligibleTVL())
-    );
-
-    if (loanStats.length > 0) {
-      await Promise.all(
-        loanStats.map(async (eligibleTvl, batchId) => {
-          const loanId = batchLoanAddresses[batchId].toLowerCase();
-          const loanEligibleTvl = formatUnits(eligibleTvl);
-
-          loanQualifications[loanId] = {
-            loanEligibleTvl: 0
-          };
-
-          loanQualifications[loanId].loanEligibleTvl = Number(loanEligibleTvl);
-          totalEligibleTvl += Number(loanEligibleTvl);
-        })
+      const loanStats = await Promise.all(
+        wrappedContracts.map(contract => contract.getLTIPEligibleTVL())
       );
-    }
-  }
 
-  console.log(`${Object.entries(loanQualifications).length} loans analyzed.`);
+      if (loanStats.length > 0) {
+        await Promise.all(
+          loanStats.map(async (eligibleTvl, batchId) => {
+            const loanId = batchLoanAddresses[batchId].toLowerCase();
+            const loanEligibleTvl = formatUnits(eligibleTvl);
 
-  // incentives of all loans
-  const loanIncentives = {};
+            loanQualifications[loanId] = {
+              loanEligibleTvl: 0
+            };
 
-  Object.entries(loanQualifications).map(([loanId, loanData]) => {
-    loanIncentives[loanId] = 0;
-
-    if (loanData.loanEligibleTvl > 0) {
-      loanIncentives[loanId] = incentivesPerInterval * loanData.loanEligibleTvl / totalEligibleTvl;
-    }
-  })
-
-  // save/update incentives values to DB
-  await Promise.all(
-    Object.entries(loanIncentives).map(async ([loanId, value]) => {
-      const data = {
-        id: loanId,
-        timestamp: now,
-        arbCollected: value
-      };
-
-      const params = {
-        TableName: "arbitrum-incentives-arb-prod",
-        Item: data
-      };
-      await dynamoDb.put(params).promise();
-    })
-  );
-
-  console.log("Arbitrum incentives successfully updated.")
-
-  // save boost APY to DB
-  const boostApy = incentivesPerInterval / totalEligibleTvl * 6 * 24 * 365;
-  const params = {
-    TableName: "apys-prod",
-    Key: {
-      id: "LTIP_BOOST"
-    },
-    AttributeUpdates: {
-      arbApy: {
-        Value: Number(boostApy) ? boostApy : null,
-        Action: "PUT"
-      },
-      totalEligibleTvl: {
-        Value: Number(totalEligibleTvl) ? totalEligibleTvl : null,
-        Action: "PUT"
+            loanQualifications[loanId].loanEligibleTvl = Number(loanEligibleTvl);
+            totalEligibleTvl += Number(loanEligibleTvl);
+          })
+        );
       }
     }
-  };
 
-  await dynamoDb.update(params).promise();
+    console.log(`${Object.entries(loanQualifications).length} loans analyzed.`);
+
+    // incentives of all loans
+    const loanIncentives = {};
+
+    Object.entries(loanQualifications).map(([loanId, loanData]) => {
+      loanIncentives[loanId] = 0;
+
+      if (loanData.loanEligibleTvl > 0) {
+        loanIncentives[loanId] = incentivesPerInterval * loanData.loanEligibleTvl / totalEligibleTvl;
+      }
+    })
+
+    // save/update incentives values to DB
+    await Promise.all(
+      Object.entries(loanIncentives).map(async ([loanId, value]) => {
+        const data = {
+          id: loanId,
+          timestamp: now,
+          arbCollected: value
+        };
+
+        const params = {
+          TableName: "arbitrum-incentives-arb-prod",
+          Item: data
+        };
+        await dynamoDb.put(params).promise();
+      })
+    );
+
+    console.log("Arbitrum incentives successfully updated.")
+
+    // save boost APY to DB
+    const boostApy = incentivesPerInterval / totalEligibleTvl * 6 * 24 * 365;
+    const params = {
+      TableName: "apys-prod",
+      Key: {
+        id: "LTIP_BOOST"
+      },
+      AttributeUpdates: {
+        arbApy: {
+          Value: Number(boostApy) ? boostApy : null,
+          Action: "PUT"
+        },
+        totalEligibleTvl: {
+          Value: Number(totalEligibleTvl) ? totalEligibleTvl : null,
+          Action: "PUT"
+        }
+      }
+    };
+
+    await dynamoDb.update(params).promise();
+  } catch (error) {
+    console.log(error);
+  }
 }
 
 arbitrumIncentives();
