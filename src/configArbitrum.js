@@ -221,7 +221,7 @@ export default {
             address: addresses['PENDLE_SILO_ETH_WSTETH_LP'],
             rewardTokens: ['PNP'],
             pendleLpSymbol: 'PENDLE_SILO_ETH_WSTETH_26_12_24',
-            stakingContractAddress: '0x6ae79089b2cf4be441480801bb741a531d94312b',
+            stakingContractAddress: '0xaccd9a7cb5518326bed715f90bd32cdf2fec2d14',
             feedSymbol: 'PENDLE_SILO_ETH_WSTETH_LP',
             logoExt: 'png',
             groupIdentifier: 'PENDLE_SILO_ETH_WSTETH_LP_GROUP',
