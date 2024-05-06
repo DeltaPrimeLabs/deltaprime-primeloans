@@ -58,16 +58,14 @@ const arbitrumIncentives = async () => {
     const wrappedContracts = getWrappedContracts(batchLoanAddresses, 'arbitrum');
 
     const loanStats = await Promise.all(
-      wrappedContracts.map(contract => Promise.all([contract.getFullLoanStatus(), contract.getLTIPEligibleTVL()]))
+      wrappedContracts.map(contract => contract.getLTIPEligibleTVL())
     );
 
     if (loanStats.length > 0) {
       await Promise.all(
-        loanStats.map(async (loan, batchId) => {
+        loanStats.map(async (eligibleTvl, batchId) => {
           const loanId = batchLoanAddresses[batchId].toLowerCase();
-          const status = loan[0];
-          const loanEligibleTvl = formatUnits(loan[1]);
-          const collateral = fromWei(status[0]) - fromWei(status[1]);
+          const loanEligibleTvl = formatUnits(eligibleTvl);
 
           loanQualifications[loanId] = {
             loanEligibleTvl: 0
