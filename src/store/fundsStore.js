@@ -1696,7 +1696,7 @@ export default {
           assetBalanceBeforeWithdraw = state.levelLpBalances[withdrawRequest.asset];
           break;
         case 'PENPIE_LP':
-          price = state.penpieLpBalances[withdrawRequest.asset].price;
+          assetBalanceBeforeWithdraw = state.penpieLpBalances[withdrawRequest.asset].price;
       }
       const assetBalanceAfterWithdraw = Number(assetBalanceBeforeWithdraw) - Number(withdrawAmount);
       const totalCollateralAfterTransaction = state.fullLoanStatus.totalValue - state.fullLoanStatus.debt - withdrawAmountUSD;
@@ -1712,6 +1712,47 @@ export default {
 
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate(withdrawRequest.asset, assetBalanceAfterWithdraw, withdrawRequest.isLP, true);
+      rootState.serviceRegistry.collateralService.emitCollateral(totalCollateralAfterTransaction);
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, config.refreshDelay);
+    },
+
+    async unstakeAndExportPendleLp({state, rootState, commit, dispatch}, {unstakeRequest}) {
+      const provider = rootState.network.provider;
+      const amountInWei = parseUnits(parseFloat(unstakeRequest.value).toFixed(unstakeRequest.assetDecimals), unstakeRequest.assetDecimals);
+
+      const loanAssets = mergeArrays([
+        (await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+        [unstakeRequest.targetAsset, unstakeRequest.sourceAsset],
+      ]);
+
+      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).unstakeFromPenpieAndWithdrawPendleLP(
+        unstakeRequest.market,
+            amountInWei);
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      let tx = await awaitConfirmation(transaction, provider, 'withdraw');
+
+      const price = state.penpieLpAssets[unstakeRequest.asset].price;
+      const withdrawAmountUSD = Number(amountInWei) * price;
+      const assetBalanceBeforeWithdraw = state.penpieLpBalances[unstakeRequest.asset].price;
+
+      const assetBalanceAfterWithdraw = Number(assetBalanceBeforeWithdraw) - Number(unstakeRequest.value);
+      const totalCollateralAfterTransaction = state.fullLoanStatus.totalValue - state.fullLoanStatus.debt - withdrawAmountUSD;
+
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate(unstakeRequest.asset, assetBalanceAfterWithdraw, false, true);
       rootState.serviceRegistry.collateralService.emitCollateral(totalCollateralAfterTransaction);
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();

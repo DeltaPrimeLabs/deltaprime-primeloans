@@ -210,6 +210,7 @@ export default {
       'withdraw',
       'createPendleLpFromLrt',
       'unwindPendleLpToLrt',
+      'unstakeAndExportPendleLp',
       'depositPendleLPAndStake'
     ]),
     setupAddActionsConfiguration() {
@@ -283,7 +284,7 @@ export default {
             this.openWithdrawModal();
             break;
           case 'UNSTAKE_AND_EXPORT':
-            this.openUnstakeAndWithdrawModal();
+            this.openUnstakeAndExportModal();
             break;
           case 'UNWIND':
             this.openUnwindModal();
@@ -343,7 +344,7 @@ export default {
       const modalInstance = this.openModal(AddFromWalletModal);
       modalInstance.asset = this.lpToken;
       modalInstance.title = 'Import and Stake LP';
-      // modalInstance.assetBalance = this.penpieLpBalances && this.penpieLpBalances[this.lpToken.protocolIdentifier] ? this.penpieLpBalances && this.penpieLpBalances[this.lpToken.protocolIdentifier] : 0;
+      modalInstance.assetBalance = this.penpieLpBalances && this.penpieLpBalances[this.lpToken.protocolIdentifier] ? this.penpieLpBalances && this.penpieLpBalances[this.lpToken.protocolIdentifier] : 0;
       modalInstance.assets = this.assets;
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.lpAssets = this.lpAssets;
@@ -580,6 +581,50 @@ export default {
           this.handleTransactionError(error);
         }).then(() => {
         });
+      });
+    },
+
+    openUnstakeAndExportModal() {
+      const modalInstance = this.openModal(WithdrawModal);
+      modalInstance.asset = this.lpToken;
+      modalInstance.assetBalance = this.penpieLpBalances && this.penpieLpBalances[this.lpToken.protocolIdentifier] ? this.penpieLpBalances && this.penpieLpBalances[this.lpToken.protocolIdentifier] : 0;
+      modalInstance.assets = this.assets;
+      modalInstance.assetBalances = this.assetBalances;
+      modalInstance.debtsPerAsset = this.debtsPerAsset;
+      modalInstance.lpAssets = this.lpAssets;
+      modalInstance.concentratedLpAssets = this.concentratedLpAssets;
+      modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
+      modalInstance.levelLpAssets = this.levelLpAssets;
+      modalInstance.levelLpBalances = this.levelLpBalances;
+      modalInstance.lpBalances = this.lpBalances;
+      modalInstance.concentratedLpBalances = this.concentratedLpBalances;
+      modalInstance.gmxV2Assets = this.gmxV2Assets;
+      modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.balancerLpBalances = this.balancerLpBalances;
+      modalInstance.balancerLpAssets = this.balancerLpAssets;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.farms = this.farms;
+      modalInstance.health = this.fullLoanStatus.health;
+      modalInstance.debt = this.fullLoanStatus.debt;
+      modalInstance.logo = `${this.lpToken.short.toLowerCase()}.png`;
+      modalInstance.showTopDescription = false;
+
+      modalInstance.$on('WITHDRAW', withdrawEvent => {
+        const value = Number(withdrawEvent.value).toFixed(config.DECIMALS_PRECISION);
+        const unstakeRequest = {
+          market: this.lpToken.stakingContractAddress,
+          asset: this.lpToken.symbol,
+          value: value,
+          assetDecimals: this.lpToken.decimals,
+        };
+        this.handleTransaction(this.unstakeAndExportPendleLp, {unstakeRequest: unstakeRequest}, () => {
+          this.$forceUpdate();
+        }, (error) => {
+          this.handleTransactionError(error);
+        })
+            .then(() => {
+            });
       });
     },
 
