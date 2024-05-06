@@ -45,7 +45,7 @@ const arbitrumIncentives = async () => {
     let loanAddresses = await factoryContract.getAllLoans();
     const totalLoans = loanAddresses.length;
 
-    const incentivesPerInterval = 100 / (60 * 60 * 24 * 7) * (60 * 10);
+    const incentivesPerInterval = 100 / (60 * 60 * 24 * 7) * (60 * 60);
     const batchSize = 150;
 
     const loanQualifications = {};

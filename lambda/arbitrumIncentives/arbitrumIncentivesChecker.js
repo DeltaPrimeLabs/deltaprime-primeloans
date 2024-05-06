@@ -26,7 +26,7 @@ const arbitrumIncentivesChecker = () => {
       });
       console.log(totalIncentivesPerHour);
 
-      if (Math.abs(totalIncentivesPerHour - 0.0992063492063492) < 0.0000000000001) { // change the value accordingly based on incentives of interval
+      if (Math.abs(totalIncentivesPerHour - 0.5952380952380952) < 0.0000000000001) { // change the value accordingly based on incentives of interval
         const res = await fetch("https://hc-ping.com/7541473d-ae8a-4b07-a632-7ea0c2be3ad7");
         console.log(res);
       } else {
