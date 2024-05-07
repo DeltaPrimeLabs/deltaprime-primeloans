@@ -18,6 +18,7 @@ interface ITokenManager {
     function debtCoverageStaked ( bytes32 ) external view returns ( uint256 );
     function getAllPoolAssets (  ) external view returns ( bytes32[] memory result );
     function getAllTokenAssets (  ) external view returns ( bytes32[] memory result );
+    function identifierToExposureGroup ( bytes32 _asset) external view returns ( bytes32 );
     function getAssetAddress ( bytes32 _asset, bool allowInactive ) external view returns ( address );
     function getPoolAddress ( bytes32 _asset ) external view returns ( address );
     function getSupportedTokensAddresses (  ) external view returns ( address[] memory);

@@ -27,6 +27,31 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     /* ========== PUBLIC AND EXTERNAL MUTATIVE FUNCTIONS ========== */
 
     /**
+    * Removes an asset from the ownedAssets array
+    * @param _asset asset to be removed
+    * @param _address address of the asset
+    **/
+    function removeUnsupportedOwnedAsset(bytes32 _asset, address _address) external onlyWhitelistedLiquidators nonReentrant {
+    ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+
+    // Check if the asset exists in the TokenManager
+    require(tokenManager.tokenToStatus(_address) == 0, "Asset is still supported");
+    require(tokenManager.tokenAddressToSymbol(_address) == bytes32(0), "Asset address to symbol not empty");
+    require(tokenManager.debtCoverage(_address) == 0, "Asset still has debt coverage");
+    require(tokenManager.identifierToExposureGroup(_asset) == bytes32(0), "Asset still has exposure group");
+
+    bytes32[] memory allAssets = tokenManager.getAllTokenAssets();
+    // Loop through all assets and check if the asset exists
+    for (uint i = 0; i < allAssets.length; i++) {
+        require(allAssets[i] != _asset, "Asset exists in TokenManager");
+    }
+
+
+    // Remove the asset from the ownedAssets array
+    DiamondStorageLib.removeOwnedAsset(_asset);
+}
+
+    /**
     * Funds the loan with a specified amount of a defined token
     * @dev Requires approval for ERC20 token on frontend side
     * @param _fundedAsset asset to be funded
