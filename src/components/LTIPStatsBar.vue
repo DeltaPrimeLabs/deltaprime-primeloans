@@ -70,8 +70,7 @@
         </InfoIcon>
       </div>
       <div class="stat-value">
-        {{collectedBonus}}
-        {{ collectedBonus | smartRound(6, true) }}
+        {{ collectedBonus | smartRound(8, true) }}
         <img class="incentives-icon" src="src/assets/logo/arb.png">
       </div>
     </div>
@@ -88,6 +87,7 @@ import LTIP_DISTRIBUTED_ARBITRUM from "../data/arbitrum/ltip/LTIP_EPOCH_0.json";
 import {fromWei} from "../utils/calculate";
 import {mapState} from "vuex";
 import {wrapContract} from "../utils/blockchain";
+import config from "../config";
 
 export default {
   name: 'LTIPStatsBar',
@@ -96,10 +96,13 @@ export default {
     return {
       wrappedContract: null,
       totalEligibleTVL: null,
-      milestone: null,
+      milestone: config.ltipMilestone,
       yourEligibleTVL: null,
       collectedBonus: null,
     }
+  },
+  mounted() {
+    this.watchLtipDataUpdate();
   },
   computed: {
     ...mapState('fundsStore', [
@@ -107,6 +110,7 @@ export default {
       'apys',
       'assets',
     ]),
+    ...mapState('serviceRegistry', ['ltipService']),
     aprBoost() {
         return (this.apys && this.assets && this.assets['ARB'] && this.assets['ARB'].price) ? this.apys['LTIP_BOOST'].arbApy * this.assets['ARB'].price : 0;
     },
@@ -114,6 +118,20 @@ export default {
       if (!this.aprBoost) return 0;
       return 4.5 * this.aprBoost;
     },
+  },
+  methods: {
+    watchLtipDataUpdate() {
+      this.ltipService.observeLtipAccountsData().subscribe((list) => {
+        let ltipAccountData = list.find(el => el.id.toLowerCase() === this.smartLoanContract.address.toLowerCase());
+        if (ltipAccountData) this.collectedBonus = ltipAccountData.arbCollected;
+      });
+      this.ltipService.observeLtipTotalEligibleTvlData().subscribe((tvl) => {
+        this.totalEligibleTVL = tvl;
+      });
+      this.ltipService.observeLtipPrimeAccountEligibleTvl().subscribe((tvl) => {
+        this.yourEligibleTVL = tvl;
+      });
+    }
   },
   watch: {
     smartLoanContract: {

@@ -23,6 +23,7 @@
           </div>
         </div>
         <Paginator :page-size="PAGE_SIZE"
+                   v-if="totalLeaderBoardEntries"
                    :total-elements="totalLeaderBoardEntries"
                    v-on:pageChange="pageChange">
         </Paginator>
@@ -41,7 +42,6 @@
 import StatsSection from './StatsSection.vue';
 import StatsSectionHeader from './StatsSectionHeader.vue';
 import TableHeader from '../TableHeader.vue';
-import DATA from '../../data/ltip/mock-data.json';
 import Paginator from '../Paginator.vue';
 import {mapState} from 'vuex';
 
@@ -56,13 +56,12 @@ export default {
       if (smartLoanContract) {
         console.warn(smartLoanContract);
         this.smartLoanContract = smartLoanContract;
-        this.setPagedData(this.page);
       }
     })
-
+    this.watchLtipDataUpdate();
   },
   computed: {
-    ...mapState('serviceRegistry', ['accountService'])
+    ...mapState('serviceRegistry', ['accountService', 'ltipService'])
   },
   data() {
     return {
@@ -70,9 +69,10 @@ export default {
       leaderBoardTableHeaderConfig: null,
       leaderBoardData: null,
       pageNumber: 0,
-      totalLeaderBoardEntries: Object.keys(DATA).length,
+      totalLeaderBoardEntries: null,
       page: 0,
       smartLoanContract: null,
+      primeAccountsList: null
     }
   },
   methods: {
@@ -111,13 +111,13 @@ export default {
     setPagedData(page) {
       setTimeout(() => {
         this.$forceUpdate();
-        this.leaderBoardData = Object.entries(DATA)
+        this.leaderBoardData = this.primeAccountsList
           .slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
           .map(entry => ({
-            address: entry[0],
-            earnedIncentives: entry[1].earnedIncentives,
-            eligibleTVL: entry[1].eligibleTVL,
-            isMe: entry[0] === this.smartLoanContract.address,
+            address: entry.id,
+            earnedIncentives: entry.arbCollected,
+            eligibleTVL: entry.eligibleTVL,
+            isMe: entry.id.toLowerCase() === this.smartLoanContract.address.toLowerCase(),
           }));
         this.$forceUpdate();
         this.$forceUpdate();
@@ -128,6 +128,14 @@ export default {
       this.page = page;
       this.setPagedData(page);
     },
+
+    watchLtipDataUpdate() {
+      this.ltipService.observeLtipAccountsData().subscribe((list) => {
+        this.primeAccountsList = list.sort((a,b) => b.arbCollected - a.arbCollected);
+        this.totalLeaderBoardEntries = this.primeAccountsList.length;
+        this.setPagedData(this.page);
+      });
+    }
   },
   watch: {}
 }

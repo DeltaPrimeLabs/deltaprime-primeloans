@@ -253,6 +253,13 @@ export default {
       } else {
         commit('setNoSmartLoan', true);
       }
+
+      // Arbitrum-specific methods
+      if (window.chain === 'arbitrum') {
+        rootState.serviceRegistry.ltipService.emitRefreshPrimeAccountsLtipData();
+        rootState.serviceRegistry.ltipService.emitRefreshPrimeAccountEligibleTvl(wrapContract(state.smartLoanContract));
+      }
+
     },
 
     async loadDeployments() {

@@ -326,4 +326,7 @@ export default {
     gmxV2IncentivesMilestone: 9000000,
     gmxV2IncentivesDeadline: 'February 5th',
     historicalRpcUrl: "https://nd-767-190-280.p2pify.com/8d546b2f3519965f0f1cb4332abe96b3",
+    ltipAccountsDataEndpoint: "https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/arbitrum-grant",
+    ltipApyEndpoint: "https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/ltip-boost-apy",
+    ltipMilestone: 5000000
 }
