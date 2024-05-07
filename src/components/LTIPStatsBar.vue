@@ -98,15 +98,22 @@ export default {
       totalEligibleTVL: null,
       milestone: null,
       yourEligibleTVL: null,
-      aprBoost: null,
-      maxAprBoost: null,
       collectedBonus: null,
     }
   },
   computed: {
     ...mapState('fundsStore', [
-      'smartLoanContract'
+      'smartLoanContract',
+      'apys',
+      'assets',
     ]),
+    aprBoost() {
+        return (this.apys && this.assets && this.assets['ARB'] && this.assets['ARB'].price) ? this.apys['LTIP_BOOST'].arbApy * this.assets['ARB'].price : 0;
+    },
+    maxAprBoost() {
+      if (!this.aprBoost) return 0;
+      return 4.5 * this.aprBoost;
+    },
   },
   watch: {
     smartLoanContract: {

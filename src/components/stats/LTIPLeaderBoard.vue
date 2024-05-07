@@ -93,7 +93,7 @@ export default {
             id: 'TRANSACTION_ID',
           },
           {
-            label: 'Elgible TVL',
+            label: 'Eligible TVL',
             sortable: false,
             class: 'eligible-tvl',
             id: 'ELIGIBLE_TVL',
