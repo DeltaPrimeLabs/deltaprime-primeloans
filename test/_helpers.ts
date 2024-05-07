@@ -109,6 +109,12 @@ export const time = {
     }
 }
 
+export const increaseBlocks = async (blocks: number) => {
+    for (let i = 0; i < blocks; i++) {
+        await network.provider.send("evm_mine");
+    }
+}
+
 export const toRepay = function (
     action: string,
     debt: number,
