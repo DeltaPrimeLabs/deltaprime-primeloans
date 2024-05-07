@@ -76,7 +76,7 @@
       </a>
     </Banner>
      <Banner v-if="showAvalanchePrimeAccountBanner" :closable="true">
-       We have ended support for announced deprecated tokens. If your Prime Account holds any, they will be available for claim next week.
+       Missing GM incentives from the last week are currently being recalculated and will be included in Wednesday's distribution.
     </Banner>
     <div class="content">
       <div class="top-bar">
