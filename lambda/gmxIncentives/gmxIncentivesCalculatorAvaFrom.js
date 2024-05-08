@@ -116,7 +116,6 @@ const gmxIncentivesCalculatorAvaFrom = async (event) => {
       loanIncentives[loanId] = incentivesPerInterval * loanData.loanLeveragedGM / totalLeveragedGM;
     }
   })
-  console.log(loanIncentives);
 
   // save/update incentives values to DB
   await Promise.all(
