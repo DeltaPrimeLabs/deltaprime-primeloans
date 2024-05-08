@@ -71,9 +71,9 @@ async function fetchData(maxTimestamp, file) {
     const task = (loan) => fetch(`https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/gmx-incentives-new/${loan}`)
 
     console.log(`LONS: ${loans.length}`)
-    loans = loans.slice(0, 1000);
+    loans = loans.slice(3600, 4000);
 
-    let resps = await promiseAllInBatches(task, loans, 200);
+    let resps = await promiseAllInBatches(task, loans, 100);
 
 
     let jsons = await Promise.all(resps.map(json => json.json()))
@@ -214,9 +214,9 @@ async function checkCollectedInTimestamp(timestamp) {
     console.log(`Number of loans: ${res.length}. Total ARB collected in ${timestamp}: ${sum}`)
 }
 
-// fetchData(Date.now(), "GM_EPOCH_11")
+// fetchData(Date.now(), "GM_EPOCH_13")
 // checkNegativeAccounts()
-checkCollectedInTimestamp(1715152203)
-// createDiffJson( "GM_EPOCH_10", "GM_EPOCH_11")
+// checkCollectedInTimestamp(1715152203)
+createDiffJson( "GM_EPOCH_11", "GM_EPOCH_12")
 // createAddJson( "GM_EPOCH_8", "GM_EPOCH_9_diff", "GM_EPOCH_9")
 // analyzeJson("GM_EPOCH_9")
