@@ -486,7 +486,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
         uint256 weight = _getTotalWeight(amountXReceived, amountYReceived);
         uint256 totalWeight = _getTotalWeight(balanceX, balanceY);
         
-        if (pair.totalShare > 0) {
+        if (pair.totalShare > 0 && totalWeight > weight) {
             share = pair.totalShare * weight / (totalWeight - weight);
         } else {
             share = weight;
@@ -562,6 +562,19 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
         pair.totalShare -= shareWithdraw;
         // Send the tokens to the user.
         _transferTokens(address(this), nftOwner, amountX, amountY);
+    }
+
+    /**
+    * @dev Users can use exit function for withdrawing full share.
+    */
+    function exit() external {
+        require(userInfo[_msgSender()].amount > 0, "No position to withdraw");
+        require(getLockedBalance(_msgSender()) == 0, "Locked");
+        
+        (uint256 amountX, uint256 amountY) = _withdrawAndUpdateShare(_msgSender());
+
+        // Send the tokens to the user.
+        _transferTokens(address(this), _msgSender(), amountX, amountY);
     }
 
     /**

@@ -40,6 +40,9 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, OwnableUpg
     uint24 public feeTier;
     uint256 public constant MAX_LOCK_TIME = 3 * 365 days;
 
+    uint256 public totalXSupply;
+    uint256 public totalYSupply;
+
     /**
     * @dev Constructor of the contract.
     * @param tokenX_ The address of the token X.
@@ -122,6 +125,16 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, OwnableUpg
         weight = amountY + amountXToY;
     }
 
+    function _getLiquidityIndexFromTokenId(address user, uint256 tokenId) internal view returns(uint256) {
+        uint256 length = userInfo[user].amount;
+        for(uint256 i = 0 ; i < length - 1; i ++) {
+            if(userInfo[user].liquidityInfo[i].tokenId == tokenId) {
+                return i + 1;
+            }
+        }
+        return 0;
+    }
+
 
     /**
      * @dev Returns the estimated token Y amount from token X.
@@ -175,7 +188,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, OwnableUpg
 
         (amountX, amountY) = _getUpdatedAmounts(amountX, amountY);
 
-        (uint256 tokenId, uint128 lpAmount,,) = INonfungiblePositionManager(positionManager).mint(
+        (uint256 tokenId, uint128 lpAmount, uint256 receivedX, uint256 receivedY) = INonfungiblePositionManager(positionManager).mint(
             INonfungiblePositionManager.MintParams({
                 token0: address(tokenX),
                 token1: address(tokenY),
@@ -191,7 +204,16 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, OwnableUpg
             })
         );
 
-        _updateUserInfo(_msgSender(), lpAmount, tokenId, Status.ADD);
+        uint256 weight = _getTotalWeight(receivedX, receivedY);
+        uint256 totalWeight = _getTotalWeight(totalXSupply, totalYSupply);
+        if (totalSupply() > 0 && totalWeight > 0) {
+            weight = totalSupply() * weight / totalWeight;
+        } 
+
+        totalXSupply += receivedX;
+        totalYSupply += receivedY;
+
+        _updateUserInfo(_msgSender(), lpAmount, weight, tokenId, Status.ADD);
     }
 
     /**
@@ -211,23 +233,21 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, OwnableUpg
         }
     }
 
-    function _updateUserInfo(address user, uint128 lpAmount, uint256 tokenId, Status status) internal {
+    function _updateUserInfo(address user, uint128 lpAmount, uint256 share, uint256 tokenId, Status status) internal {
         if(status == Status.ADD) {
-            _mint(user, lpAmount);
-            LiquidityInfo memory newInfo = LiquidityInfo(tokenId, lpAmount, lpAmount);
+            _mint(user, share);
+
+            LiquidityInfo memory newInfo = LiquidityInfo(tokenId, lpAmount, share);
             userInfo[user].liquidityInfo.push(newInfo);
             userInfo[user].amount++;
             nftOwnership[tokenId] = user;
         } else {
             // Withdraw all the tokens from the LB pool and return the amounts and the queued withdrawals.
-            _burn(user, lpAmount);
+            _burn(user, share);
 
-            uint256 length = userInfo[user].amount;
-            for(uint256 i = 0 ; i < length - 1; i ++) {
-                if(userInfo[user].liquidityInfo[i].tokenId == tokenId) {
-                    userInfo[user].liquidityInfo[i] = userInfo[user].liquidityInfo[length - 1];
-                }
-            }
+            uint256 index = _getLiquidityIndexFromTokenId(user, tokenId);
+
+            userInfo[user].liquidityInfo[index - 1] = userInfo[user].liquidityInfo[userInfo[user].amount - 1];
             userInfo[user].liquidityInfo.pop();
             userInfo[user].amount--;
             delete nftOwnership[tokenId];
@@ -267,7 +287,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, OwnableUpg
                     tokenOut: tokenOut,
                     fee: feeTier,
                     recipient: address(this),
-                    deadline: block.timestamp + 100,
+                    deadline: block.timestamp,
                     amountIn: amountIn,
                     amountOutMinimum: 0,
                     sqrtPriceLimitX96: 0
@@ -298,7 +318,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, OwnableUpg
                     liquidity: info.lpAmount,
                     amount0Min:0, 
                     amount1Min:0, 
-                    deadline:block.timestamp
+                    deadline: block.timestamp
                 })
             );
 
@@ -309,12 +329,62 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, OwnableUpg
         }
         
         delete userInfo[user];
+        totalXSupply -= totalBalanceX;
+        totalYSupply -= totalBalanceY;
 
         _burn(_msgSender(), totalShare);
     }
 
-    function withdraw() external {
+
+    function transferPosition(address to, uint256 tokenId) external {
+        require(nftOwnership[tokenId] == _msgSender(), "Not the NFT owner");
+        
+        uint256 index = _getLiquidityIndexFromTokenId(_msgSender(), tokenId);
+        LiquidityInfo memory info = userInfo[_msgSender()].liquidityInfo[index - 1];
+
+        uint256 lockedBalance = getLockedBalance(_msgSender());
+        require(balanceOf(_msgSender()) >= info.share + lockedBalance, "Balance is locked");
+        
+        _updateUserInfo(_msgSender(), info.lpAmount, info.share, tokenId, Status.REMOVE);
+        _updateUserInfo(to, info.lpAmount, info.share, tokenId, Status.ADD);
+    }
+
+    /**
+    * @dev Users can use withdraw function for withdrawing their share.
+    * @param tokenId Token Id to withdraw
+    */
+    function withdraw(uint256 tokenId) external {
+        require(nftOwnership[tokenId] == _msgSender(), "Not the NFT owner");
+
+        uint256 index = _getLiquidityIndexFromTokenId(_msgSender(), tokenId);
+        LiquidityInfo memory info = userInfo[_msgSender()].liquidityInfo[index - 1];
+
+        uint256 lockedBalance = getLockedBalance(_msgSender());
+        require(balanceOf(_msgSender()) >= info.share + lockedBalance, "Balance is locked");
+
+        address positionManager = getNonfungiblePositionManagerAddress();
+        (uint256 amountX, uint256 amountY) = INonfungiblePositionManager(positionManager).decreaseLiquidity(
+            INonfungiblePositionManager.DecreaseLiquidityParams({
+                tokenId: tokenId, 
+                liquidity: info.lpAmount,
+                amount0Min:0, 
+                amount1Min:0, 
+                deadline: block.timestamp
+            })
+        );
+
+        _updateUserInfo(_msgSender(), info.lpAmount, info.share, tokenId, Status.REMOVE);
+
+        // Send the tokens to the user.
+        _transferTokens(address(this), _msgSender(), amountX, amountY);
+    }
+
+    /**
+    * @dev Users can use exit function for withdrawing full share.
+    */
+    function exit() external {
         require(userInfo[_msgSender()].amount > 0, "No position to withdraw");
+        require(getLockedBalance(_msgSender()) == 0, "Locked");
 
         (uint256 amountX, uint256 amountY) = _withdrawAndUpdateShare(_msgSender());
 
