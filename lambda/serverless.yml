@@ -591,24 +591,24 @@ resources:
     #     StreamSpecification:
     #       StreamViewType: "NEW_AND_OLD_IMAGES"
     #     TableName: ${self:provider.environment.LOAN_AVA_TABLE}
-    # loansArbTable:
-    #   Type: AWS::DynamoDB::Table
-    #   DeletionPolicy: Retain
-    #   Properties:
-    #     AttributeDefinitions:
-    #       -
-    #         AttributeName: "id"
-    #         AttributeType: "S"
-    #     KeySchema:
-    #       -
-    #         AttributeName: "id"
-    #         KeyType: "HASH"
-    #     ProvisionedThroughput:
-    #       ReadCapacityUnits: 5
-    #       WriteCapacityUnits: 5
-    #     StreamSpecification:
-    #       StreamViewType: "NEW_AND_OLD_IMAGES"
-    #     TableName: ${self:provider.environment.LOAN_ARB_TABLE}
+    loansArbTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: "id"
+            AttributeType: "S"
+        KeySchema:
+          -
+            AttributeName: "id"
+            KeyType: "HASH"
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+        StreamSpecification:
+          StreamViewType: "NEW_AND_OLD_IMAGES"
+        TableName: ${self:provider.environment.LOAN_ARB_TABLE}
 
 plugins:
   - serverless-prune-plugin
