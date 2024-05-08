@@ -1026,9 +1026,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             "BeefyFinanceArbitrumFacet",
             diamondAddress,
             [
-                'stakeSushiDpxEthLpBeefy',
                 'stakeGmxBeefy',
-                'unstakeSushiDpxEthLpBeefy',
                 'unstakeGmxBeefy'
             ],
             hardhatConfig
