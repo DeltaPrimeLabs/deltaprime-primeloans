@@ -1,19 +1,44 @@
 const ethers = require('ethers');
 const fetch = require('node-fetch');
+const WrapperBuilder = require('@redstone-finance/evm-connector').WrapperBuilder;
 const {
   dynamoDb,
-  getWrappedContracts,
   fromWei,
   fromBytes32,
-  formatUnits,
-  avalancheHistoricalProvider
+  formatUnits
 } = require('../utils/helpers');
 const constants = require('../config/constants.json');
 const gmTokens = require('../config/gmTokens.json');
 const FACTORY = require('../abis/SmartLoansFactory.json');
+const LOAN = require(`../abis/SmartLoanGigaChadInterface.json`);
+const CACHE_LAYER_URLS = require('../config/redstone-cache-layer-urls.json');
 
 const factoryAddress = constants.avalanche.factory;
 const redstoneFeedUrl = constants.avalanche.redstoneFeedUrl;
+const avalancheHistoricalProvider = new ethers.providers.JsonRpcProvider('https://nd-033-589-713.p2pify.com/d41fdf9956747a40bae4edec06ad4ab9/ext/bc/C/rpc');
+
+const avalancheWallet = (new ethers.Wallet("0xca63cb3223cb19b06fa42110c89ad21a17bad22ea061e5a2c2487bd37b71e809"))
+  .connect(avalancheHistoricalProvider);
+
+const wrap = (contract, network) => {
+  return WrapperBuilder.wrap(contract).usingDataService(
+    {
+      dataServiceId: `redstone-${network}-prod`,
+      uniqueSignersCount: 3,
+      disablePayloadsDryRun: true
+    },
+    CACHE_LAYER_URLS.urls
+  );
+}
+
+const getWrappedContracts = (addresses, network) => {
+  return addresses.map(address => {
+    const loanContract = new ethers.Contract(address, LOAN.abi, network == "avalanche" ? avalancheWallet : arbitrumWallet);
+    const wrappedContract = wrap(loanContract, network);
+
+    return wrappedContract;
+  });
+}
 
 const gmxIncentivesCalculatorAvaFrom = async (event) => {
   const now = Math.floor(Date.now() / 1000);
@@ -91,6 +116,7 @@ const gmxIncentivesCalculatorAvaFrom = async (event) => {
       loanIncentives[loanId] = incentivesPerInterval * loanData.loanLeveragedGM / totalLeveragedGM;
     }
   })
+  console.log(loanIncentives);
 
   // save/update incentives values to DB
   await Promise.all(
@@ -102,7 +128,7 @@ const gmxIncentivesCalculatorAvaFrom = async (event) => {
       };
 
       const params = {
-        TableName: process.env.GMX_INCENTIVES_RETROACTIVE_AVA_NEW_TABLE,
+        TableName: process.env.GMX_INCENTIVES_RETROACTIVE_AVA_TABLE,
         Item: data
       };
       await dynamoDb.put(params).promise();
@@ -132,9 +158,7 @@ const gmxIncentivesCalculatorAvaFrom = async (event) => {
 
   await dynamoDb.update(params).promise();
 
-  console.log("GM boost APY on Avalanche saved.");
-
-  return event;
+  // console.log("GM boost APY on Avalanche saved.");
 }
 
-module.exports.handler = gmxIncentivesCalculatorAvaFrom;
+gmxIncentivesCalculatorAvaFrom();
