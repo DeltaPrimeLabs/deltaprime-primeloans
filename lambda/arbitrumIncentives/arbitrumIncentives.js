@@ -111,6 +111,24 @@ const arbitrumIncentives = async () => {
 
     console.log("Arbitrum incentives successfully updated.")
 
+    // save loan Eligible Tvl to DB
+    await Promise.all(
+      Object.entries(loanQualifications).map(async ([loanId, loanData]) => {
+        const data = {
+          id: loanId,
+          eligibleTvl: loanData.loanEligibleTvl
+        };
+
+        const params = {
+          TableName: "loans-arb-prod",
+          Item: data
+        };
+        await dynamoDb.put(params).promise();
+      })
+    );
+
+    console.log("Loan eligible TVLs successfully updated.");
+
     // save boost APY to DB
     const boostApy = incentivesPerInterval / totalEligibleTvl * 24 * 365;
     const params = {

@@ -4,7 +4,7 @@ const dynamoDb = new AWS.DynamoDB.DocumentClient();
 
 const getGmxIncentivesApi = (event, context, callback) => {
   const params = {
-    TableName: event.queryStringParameters.network === 'arbitrum' ? process.env.GMX_INCENTIVES_ARB_TABLE : process.env.GMX_INCENTIVES_RETROACTIVE_AVA_NEW_TABLE,
+    TableName: event.queryStringParameters.network === 'arbitrum' ? process.env.GMX_INCENTIVES_ARB_TABLE : process.env.GMX_INCENTIVES_RETROACTIVE_AVA_TABLE,
     Key: {
       id: event.pathParameters.id.toLowerCase()
     }
@@ -27,7 +27,7 @@ const getGmxIncentivesApi = (event, context, callback) => {
 
 const getGmxIncentivesFromApi = (event, context, callback) => {
   const params = {
-    TableName: process.env.GMX_INCENTIVES_RETROACTIVE_AVA_NEW_TABLE,
+    TableName: process.env.GMX_INCENTIVES_RETROACTIVE_AVA_TABLE,
     KeyConditionExpression: 'id = :id',
     ExpressionAttributeValues: {
       ':id': event.pathParameters.id.toLowerCase()
@@ -161,7 +161,7 @@ const getGmBoostApyApi = (event, context, callback) => {
 
 const getGmxIncentivesNewApi = (event, context, callback) => {
   const params = {
-    TableName: process.env.GMX_INCENTIVES_RETROACTIVE_AVA_NEW_TABLE,
+    TableName: process.env.GMX_INCENTIVES_RETROACTIVE_AVA_TABLE,
     KeyConditionExpression: 'id = :id',
     ExpressionAttributeValues: {
       ':id': event.pathParameters.id.toLowerCase()
