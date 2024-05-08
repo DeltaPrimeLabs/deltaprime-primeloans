@@ -128,7 +128,7 @@ const gmxIncentivesCalculatorAvaFrom = async (event) => {
       };
 
       const params = {
-        TableName: process.env.GMX_INCENTIVES_RETROACTIVE_AVA_TABLE,
+        TableName: "gmx-incentives-retroactive-ava",
         Item: data
       };
       await dynamoDb.put(params).promise();
@@ -140,7 +140,7 @@ const gmxIncentivesCalculatorAvaFrom = async (event) => {
   // save boost APY to DB
   const boostApy = incentivesPerInterval / totalLeveragedGM * 6 * 24 * 365;
   const params = {
-    TableName: process.env.APY_TABLE,
+    TableName: "apys-prod",
     Key: {
       id: "GM_BOOST"
     },
