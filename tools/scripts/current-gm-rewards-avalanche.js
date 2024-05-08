@@ -206,8 +206,17 @@ function checkNegativeAccounts() {
 
 
 }
+
+async function checkCollectedInTimestamp(timestamp) {
+    let res = (await (await fetch('https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/arbitrum-grant')).json()).list;
+    res = res.filter(el => el.timestamp === timestamp);
+    let sum = res.map(el => el.arbCollected).reduce((a,b) => a + b, 0);
+    console.log(`Number of loans: ${res.length}. Total ARB collected in ${timestamp}: ${sum}`)
+}
+
 // fetchData(Date.now(), "GM_EPOCH_11")
 // checkNegativeAccounts()
-createDiffJson( "GM_EPOCH_10", "GM_EPOCH_11")
+checkCollectedInTimestamp(1715152203)
+// createDiffJson( "GM_EPOCH_10", "GM_EPOCH_11")
 // createAddJson( "GM_EPOCH_8", "GM_EPOCH_9_diff", "GM_EPOCH_9")
 // analyzeJson("GM_EPOCH_9")
