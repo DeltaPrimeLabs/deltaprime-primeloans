@@ -212,7 +212,7 @@ export default {
         // this.showAvalancheDepositorBanner = true;
       }
       if (window.location.href.includes('prime-account')) {
-        this.showAvalanchePrimeAccountBanner = true;
+        // this.showAvalanchePrimeAccountBanner = true;
       }
     }
   },
