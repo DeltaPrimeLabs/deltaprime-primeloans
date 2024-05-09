@@ -69,7 +69,6 @@ const getLoanArbitrumIncentivesApi = (event, context, callback) => {
           });
 
           const sortedIncentives = incentivesOfLoans.sort((a, b) => b.arbCollected - a.arbCollected);
-          console.log(sortedIncentives)
 
           const response = {
             statusCode: 200,
