@@ -75,10 +75,18 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, OwnableUpg
         return 0x1F98431c8aD98523631AE4a59f267346ea31F984;
     }
 
+    /**
+     * @dev Returns the address of the Uniswap V3 NonfungiblePositionManager.
+     * @return The address of the Uniswap V3 NonfungiblePositionManager.
+     */
     function getNonfungiblePositionManagerAddress() public view virtual returns (address){
         return 0xC36442b4a4522E871399CD717aBDD847Ab11FE88;
     }
 
+    /**
+     * @dev Returns the address of the Uniswap V3 SwapRouter.
+     * @return The address of the Uniswap V3 SwapRouter.
+     */
     function getSwapRouter() public view virtual returns (address){
         return 0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45;
     }
@@ -125,6 +133,11 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, OwnableUpg
         weight = amountY + amountXToY;
     }
 
+    /**
+     * @dev Returns the index of the liquidity information for the specific user.
+     * @param user User address
+     * @param tokenId Token ID of the nft position
+     */
     function _getLiquidityIndexFromTokenId(address user, uint256 tokenId) internal view returns(uint256) {
         uint256 length = userInfo[user].amount;
         for(uint256 i = 0 ; i < length - 1; i ++) {
@@ -174,6 +187,13 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, OwnableUpg
         locks[_msgSender()].pop();
     }
 
+    /**
+    * @dev Users can use deposit function for depositing tokens to the specific bin.
+    * @param amountX The amount of token X to deposit.
+    * @param amountY The amount of token Y to deposit.
+    * @param tickLower Tick Lower for the postion.
+    * @param tickUpper Tick Uppoer for the position.
+    */
     function deposit(uint256 amountX, uint256 amountY, int24 tickLower, int24 tickUpper) public {
         _transferTokens(_msgSender(), address(this), amountX, amountY);
 
@@ -233,6 +253,14 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, OwnableUpg
         }
     }
 
+    /**
+    * @dev Updates user information based on the action status (ADD or REMOVE).
+    * @param user The address of the user.
+    * @param lpAmount The lp token amount added for the postion.
+    * @param share The share amount to update.
+    * @param tokenId The ID of the token representing the position.
+    * @param status The status of the action (ADD or REMOVE).
+    */
     function _updateUserInfo(address user, uint128 lpAmount, uint256 share, uint256 tokenId, Status status) internal {
         if(status == Status.ADD) {
             _mint(user, share);
@@ -367,8 +395,8 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, OwnableUpg
             INonfungiblePositionManager.DecreaseLiquidityParams({
                 tokenId: tokenId, 
                 liquidity: info.lpAmount,
-                amount0Min:0, 
-                amount1Min:0, 
+                amount0Min:0,
+                amount1Min:0,
                 deadline: block.timestamp
             })
         );

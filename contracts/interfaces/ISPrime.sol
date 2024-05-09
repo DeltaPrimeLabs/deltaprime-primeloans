@@ -15,8 +15,8 @@ interface ISPrime {
 
     /**
      * @dev Struct representing a user's share in a pair.
-     * @param share The amount of share the user has in the pair.
-     * @param centerId The active id of the pair the user has a share in.
+     * @param amount Total amount of token id for the user
+     * @param tokenIds Token ID list for the user.
      */
     struct UserInfo {
         uint256 amount;
