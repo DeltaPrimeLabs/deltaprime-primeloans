@@ -905,10 +905,16 @@ const pendleTvlAndApyAggregator = async (event) => {
   acceptBtn = await dialog.$("button");
   await acceptBtn.click();
 
+  const poolRows = await page.$$('.MuiAccordion-root');
+  const poolInnerTexts = await Promise.all(Array.from(poolRows).map(async pool => {
+    return (await (await pool.getProperty("textContent")).jsonValue()).toLowerCase();
+  }));
+
   for (const [identifier, poolData] of Object.entries(pendleApyConfig)) {
     try {
-      const poolRow = await page.$(poolData.rowId);
-      const poolColumns = await poolRow.$$("div.MuiAccordionSummary-root > div.MuiAccordionSummary-content > div > div >div");
+      const rowId = poolInnerTexts.findIndex(innerText => innerText.includes(poolData.key));
+      const pool = poolRows[rowId];
+      const poolColumns = await pool.$$("div.MuiAccordionSummary-root > div.MuiAccordionSummary-content > div > div >div");
 
       const poolApy = parseFloat((await (await poolColumns[1].getProperty("textContent")).jsonValue()).split('%')[0].trim());
 

@@ -276,6 +276,14 @@ functions:
       - httpApi:
           method: get
           path: /arbitrum-grant
+  getLoanArbitrumIncentivesApi:
+    handler: apis/arbitrumIncentives.getLoanArbitrumIncentivesApi
+    memorySize: 512
+    description: Fetch Arbitrum Grant values accumulated for every loan on Arbitrum
+    events:
+      - httpApi:
+          method: get
+          path: /arbitrum-grant-list
   getLtipBoostApyApi:
     handler: apis/arbitrumIncentives.getLtipBoostApyApi
     memorySize: 512

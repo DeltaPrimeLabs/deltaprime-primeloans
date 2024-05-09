@@ -1,22 +1,17 @@
 {
   "PENDLE_EZ_ETH_LP": {
-    "rowId": "#accordion-0-0-3",
-    "key": "renzo ezeth"
+    "key": "renzo ezethon"
   },
   "PENDLE_WSTETH_LP": {
-    "rowId": "#accordion-0-0-13",
-    "key": "lido wsteth"
+    "key": "lido wstethon"
   },
   "PENDLE_E_ETH_LP": {
-    "rowId": "#accordion-0-0-2",
-    "key": "ether.fi eeth"
+    "key": "ether.fi eethon"
   },
   "PENDLE_RS_ETH_LP": {
-    "rowId": "#accordion-0-0-1",
-    "key": "kelp rseth"
+    "key": "kelp rsethon"
   },
   "PENDLE_SILO_ETH_WSTETH_LP": {
-    "rowId": "#accordion-0-0-9",
-    "key": "silo (wstethsilo) seth"
+    "key": "silo sethon"
   }
 }

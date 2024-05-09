@@ -1,6 +1,6 @@
-const AWS = require('aws-sdk');
-AWS.config.setPromisesDependency(require('bluebird'));
-const dynamoDb = new AWS.DynamoDB.DocumentClient();
+const {
+  dynamoDb,
+} = require('../utils/helpers');
 
 const getArbitrumIncentivesApi = (event, context, callback) => {
   const params = {
@@ -28,9 +28,68 @@ const getArbitrumIncentivesApi = (event, context, callback) => {
     })
     .catch(error => {
       console.error(error);
-      callback(new Error('Couldn\'t fetch GMX Incentives values.'));
+      callback(new Error('Couldn\'t fetch Arbitrum Incentives values.'));
       return;
     });
+};
+
+const getLoanArbitrumIncentivesApi = (event, context, callback) => {
+  let params = {
+    TableName: process.env.LOAN_ARB_TABLE
+  };
+
+  dynamoDb.scan(params).promise()
+    .then(result => {
+      const arbLoans = result.Items;
+
+      const params = {
+        TableName: process.env.ARBITRUM_INCENTIVES_ARB_TABLE
+      };
+
+      dynamoDb.scan(params).promise()
+        .then(result => {
+          const incentivesOfLoans = [];
+
+          arbLoans.map(loan => {
+            const loanIncentives = result.Items.filter((item) => item.id == loan.id)
+
+            if (loanIncentives.length > 0) {
+              let loanAccumulatedIncentives = 0;
+
+              loanIncentives.map((item) => {
+                loanAccumulatedIncentives += item.arbCollected ? Number(item.arbCollected) : 0;
+              });
+
+              incentivesOfLoans.push({
+                'id': loan.id,
+                'arbCollected': loanAccumulatedIncentives,
+                'eligibleTvl': loan.eligibleTvl
+              })
+            }
+          });
+
+          const sortedIncentives = incentivesOfLoans.sort((a, b) => b.arbCollected - a.arbCollected);
+          console.log(sortedIncentives)
+
+          const response = {
+            statusCode: 200,
+            body: JSON.stringify({
+              list: sortedIncentives
+            }),
+          };
+          callback(null, response);
+        })
+        .catch(error => {
+          console.error(error);
+          callback(new Error('Couldn\'t fetch Arbitrum Incentives values.'));
+          return;
+        });
+    })
+    .catch(error => {
+      console.error(error);
+      callback(new Error('Couldn\'t fetch Arbitrum Incentives values.'));
+      return;
+    });;
 };
 
 const getLtipBoostApyApi = (event, context, callback) => {
@@ -58,5 +117,6 @@ const getLtipBoostApyApi = (event, context, callback) => {
 
 module.exports = {
   getArbitrumIncentivesApi,
+  getLoanArbitrumIncentivesApi,
   getLtipBoostApyApi
 }
