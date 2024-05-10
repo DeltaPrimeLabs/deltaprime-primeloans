@@ -1399,7 +1399,7 @@ export default {
             let symbol = entry[0];
             let lpAsset = entry[1];
 
-            const apy = lpAsset.apy ? lpAsset.apy / 100 : 0;
+            const apy = state.apys[symbol] ? state.apys[symbol].lp_apy : 0;
 
             yearlyLpInterest += parseFloat(state.penpieLpBalances[symbol]) * apy * lpAsset.price;
           }
@@ -2811,9 +2811,8 @@ export default {
       rootState.serviceRegistry.modalService.closeModal();
 
       let tx = await awaitConfirmation(transaction, provider, 'create Pendle LP');
-
-      const firstAssetBalanceAfterTransaction = Number(state.assetBalances[stakeRequest.sourceAsset]) - Number(stakeRequest.tokenAmount);
-      const secondAssetBalanceAfterTransaction = Number(state.gmxV2Balances[stakeRequest.targetAsset]) + Number(stakeRequest.minGmAmount);
+      const firstAssetBalanceAfterTransaction = Number(state.assetBalances[stakeRequest.sourceAsset]) - Number(stakeRequest.amount);
+      const secondAssetBalanceAfterTransaction = Number(state.penpieLpBalances[stakeRequest.targetAsset]) + Number(stakeRequest.minLpOut);
 
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate(stakeRequest.sourceAsset, firstAssetBalanceAfterTransaction, false, false);
@@ -2857,8 +2856,8 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'unwind Pendle LP');
 
-      const firstAssetBalanceAfterTransaction = Number(state.assetBalances[unwindRequest.sourceAsset]) - Number(unwindRequest.tokenAmount);
-      const secondAssetBalanceAfterTransaction = Number(state.gmxV2Balances[unwindRequest.targetAsset]) + Number(unwindRequest.minGmAmount);
+      const firstAssetBalanceAfterTransaction = Number(state.assetBalances[unwindRequest.sourceAsset]) - Number(unwindRequest.amount);
+      const secondAssetBalanceAfterTransaction = Number(state.penpieLpBalances[unwindRequest.targetAsset]) + Number(unwindRequest.minOut);
 
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate(unwindRequest.sourceAsset, firstAssetBalanceAfterTransaction, false, false);
@@ -2907,7 +2906,7 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'deposit and stake Pendle LP');
 
-      const secondAssetBalanceAfterTransaction = Number(state.gmxV2Balances[depositAndStakeRequest.targetAsset]) + Number(depositAndStakeRequest.minGmAmount);
+      const secondAssetBalanceAfterTransaction = Number(state.gmxV2Balances[depositAndStakeRequest.targetAsset]) + Number(depositAndStakeRequest.amount);
 
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate(depositAndStakeRequest.targetAsset, secondAssetBalanceAfterTransaction, true, false);
