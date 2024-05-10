@@ -178,6 +178,8 @@ export default {
       'traderJoeV2LpAssets',
       'levelLpAssets',
       'levelLpBalances',
+      'penpieLpBalances',
+      'penpieLpAssets',
       'noSmartLoan'
     ]),
     ...mapState('serviceRegistry', [
@@ -220,6 +222,7 @@ export default {
     },
 
     async openAddFromWalletModal() {
+      console.log('asdasdasdax', this.farm);
       const modalInstance = this.openModal(AddFromWalletModal);
       modalInstance.asset = this.farm;
       modalInstance.assetBalance = this.balance ? this.balance : 0;
@@ -229,6 +232,8 @@ export default {
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
@@ -275,6 +280,8 @@ export default {
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
       modalInstance.levelLpBalances = this.levelLpBalances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.loan = this.debt;
@@ -401,6 +408,7 @@ export default {
     watchFarmRefreshEvent() {
       this.farmService.observeRefreshFarm().subscribe(async () => {
         // receipt token staked
+        console.log('// receipt token staked', this.farm);
         this.balance = this.farm.totalBalance;
         // normal token staked
         this.underlyingTokenStaked = this.farm.totalStaked;
@@ -487,8 +495,6 @@ export default {
           {
             key: 'ADD_FROM_WALLET',
             name: 'Add from wallet',
-            disabled: !this.farm.feedSymbol,
-            disabledInfo: 'Coming soon'
           },
           {
             key: 'STAKE',

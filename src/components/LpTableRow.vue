@@ -190,6 +190,8 @@ export default {
       'balancerLpBalances',
       'gmxV2Assets',
       'gmxV2Balances',
+      'penpieLpBalances',
+      'penpieLpAssets',
       'noSmartLoan'
     ]),
     ...mapState('stakeStore', ['farms']),
@@ -342,6 +344,8 @@ export default {
       modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.gmxV2Assets = this.gmxV2Assets;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.loan = this.debt;
@@ -384,6 +388,8 @@ export default {
       modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.gmxV2Assets = this.gmxV2Assets;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.farms = this.farms;
       modalInstance.health = this.health;
