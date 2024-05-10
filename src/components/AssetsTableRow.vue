@@ -1191,6 +1191,7 @@ export default {
         return;
       }
 
+      let userCancelledTransaction = false;
       if (String(error) === '[object Object]' || typeof error === 'object') {
         switch (error.code) {
           case -32000:
@@ -1205,6 +1206,7 @@ export default {
             break;
           case 4001:
             this.progressBarService.emitProgressBarCancelledState()
+            userCancelledTransaction = true;
             break;
           case -32603:
             console.log('error code -32603');
@@ -1221,7 +1223,7 @@ export default {
           this.progressBarService.emitProgressBarErrorState('Insufficient slippage.');
         }
       }
-      this.cleanupAfterError(error.code !== -32000 && !caiMintOrBurnSlippageError);
+      this.cleanupAfterError(userCancelledTransaction);
     },
 
     cleanupAfterError(closeModal = true) {
