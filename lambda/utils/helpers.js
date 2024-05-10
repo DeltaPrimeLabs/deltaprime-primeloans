@@ -137,6 +137,30 @@ const getBlockForTimestamp = async (network, timestamp) => {
   );
 }
 
+const fetchAllDataFromDB = async (params, scan = true) => {
+  const items = [];
+  let lastEvaluatedKey = null;
+  let result;
+
+  while (1) {
+    if (lastEvaluatedKey == null) {
+      result = scan ? await dynamoDb.scan(params).promise() : await dynamoDb.query(params).promise();
+    } else {
+      result = scan ? await dynamoDb.scan({...params, ExclusiveStartKey: lastEvaluatedKey}).promise() : await dynamoDb.query({...params, ExclusiveStartKey: lastEvaluatedKey}).promise();
+    }
+
+    items.push(...result.Items);
+
+    if (result.LastEvaluatedKey) {
+      lastEvaluatedKey = result.LastEvaluatedKey;
+    } else {
+      break;
+    }
+  }
+
+  return items;
+}
+
 module.exports = {
   parseUnits,
   formatUnits,
@@ -157,5 +181,6 @@ module.exports = {
   getWrappedContracts,
   getWrappedContractsHistorical,
   getBlockForTimestamp,
-  // getArweavePackages
+  // getArweavePackages,
+  fetchAllDataFromDB
 }

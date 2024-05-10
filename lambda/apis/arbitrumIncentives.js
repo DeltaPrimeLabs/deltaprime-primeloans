@@ -1,94 +1,86 @@
 const {
   dynamoDb,
+  fetchAllDataFromDB
 } = require('../utils/helpers');
 
-const getArbitrumIncentivesApi = (event, context, callback) => {
-  const params = {
-    TableName: process.env.ARBITRUM_INCENTIVES_ARB_TABLE
-  };
+const getArbitrumIncentivesApi = async (event, context, callback) => {
+  try {
+    const params = {
+      TableName: process.env.ARBITRUM_INCENTIVES_ARB_TABLE
+    };
 
-  dynamoDb.scan(params).promise()
-    .then(result => {
-      let accumulatedIncentives = 0;
+    const incentives = await fetchAllDataFromDB(params, true);
 
-      const incentives = result.Items.sort((a, b) => b.arbCollected - a.arbCollected);
+    let accumulatedIncentives = 0;
 
-      incentives.map((item) => {
-        accumulatedIncentives += item.arbCollected ? Number(item.arbCollected) : 0;
-      });
-
-      const response = {
-        statusCode: 200,
-        body: JSON.stringify({
-          total: accumulatedIncentives,
-          list: result.Items
-        }),
-      };
-      callback(null, response);
-    })
-    .catch(error => {
-      console.error(error);
-      callback(new Error('Couldn\'t fetch Arbitrum Incentives values.'));
-      return;
+    incentives.map((item) => {
+      accumulatedIncentives += item.arbCollected ? Number(item.arbCollected) : 0;
     });
+
+    const response = {
+      statusCode: 200,
+      body: JSON.stringify({
+        total: accumulatedIncentives,
+        list: incentives
+      }),
+    };
+    callback(null, response);
+  } catch (error) {
+    console.error(error);
+    callback(new Error('Couldn\'t fetch Arbitrum Incentives values.'));
+    return;
+  };
 };
 
-const getLoanArbitrumIncentivesApi = (event, context, callback) => {
-  let params = {
-    TableName: process.env.LOAN_ARB_TABLE
-  };
+const getLoanArbitrumIncentivesApi = async (event, context, callback) => {
+  try {
+    let params = {
+      TableName: process.env.LOAN_ARB_TABLE
+    };
 
-  dynamoDb.scan(params).promise()
-    .then(result => {
-      const arbLoans = result.Items;
+    const arbLoans = await fetchAllDataFromDB(params, true);
 
-      const params = {
-        TableName: process.env.ARBITRUM_INCENTIVES_ARB_TABLE
-      };
+    params = {
+      TableName: process.env.ARBITRUM_INCENTIVES_ARB_TABLE
+    };
 
-      dynamoDb.scan(params).promise()
-        .then(result => {
-          const incentivesOfLoans = [];
+    const incentives = await fetchAllDataFromDB(params, true);
 
-          arbLoans.map(loan => {
-            const loanIncentives = result.Items.filter((item) => item.id == loan.id)
+    const incentivesOfLoans = [];
 
-            if (loanIncentives.length > 0) {
-              let loanAccumulatedIncentives = 0;
+    arbLoans.map(loan => {
+      const loanIncentives = incentives.filter((item) => item.id == loan.id)
 
-              loanIncentives.map((item) => {
-                loanAccumulatedIncentives += item.arbCollected ? Number(item.arbCollected) : 0;
-              });
+      if (loanIncentives.length > 0) {
+        let loanAccumulatedIncentives = 0;
 
-              incentivesOfLoans.push({
-                'id': loan.id,
-                'arbCollected': loanAccumulatedIncentives,
-                'eligibleTvl': loan.eligibleTvl
-              })
-            }
-          });
-
-          const sortedIncentives = incentivesOfLoans.sort((a, b) => b.arbCollected - a.arbCollected);
-
-          const response = {
-            statusCode: 200,
-            body: JSON.stringify({
-              list: sortedIncentives
-            }),
-          };
-          callback(null, response);
-        })
-        .catch(error => {
-          console.error(error);
-          callback(new Error('Couldn\'t fetch Arbitrum Incentives values.'));
-          return;
+        loanIncentives.map((item) => {
+          loanAccumulatedIncentives += item.arbCollected ? Number(item.arbCollected) : 0;
         });
+
+        incentivesOfLoans.push({
+          'id': loan.id,
+          'arbCollected': loanAccumulatedIncentives,
+          'eligibleTvl': loan.eligibleTvl
+        })
+      }
     })
-    .catch(error => {
-      console.error(error);
-      callback(new Error('Couldn\'t fetch Arbitrum Incentives values.'));
-      return;
-    });;
+
+    const sortedIncentives = incentivesOfLoans.sort((a, b) => b.arbCollected - a.arbCollected);
+    console.log(sortedIncentives);
+
+    const response = {
+      statusCode: 200,
+      body: JSON.stringify({
+        list: sortedIncentives
+      }),
+    };
+    callback(null, response);
+  } catch(error) {
+    console.error(error);
+    callback(new Error('Couldn\'t fetch Arbitrum Incentives values.'));
+    return;
+  };
 };
 
 const getLtipBoostApyApi = (event, context, callback) => {

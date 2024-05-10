@@ -6,7 +6,8 @@ const {
   getWrappedContracts,
   fromWei,
   fromBytes32,
-  formatUnits
+  formatUnits,
+  fetchAllDataFromDB
 } = require('../utils/helpers');
 const constants = require('../config/constants.json');
 const gmTokens = require('../config/gmTokens.json');
@@ -20,9 +21,9 @@ const getLatestIncentives = async () => {
     TableName: process.env.GMX_INCENTIVES_ARB_TABLE,
   };
 
-  const res = await dynamoDb.scan(params).promise();
+  const res = await fetchAllDataFromDB(params, true);
 
-  return res.Items;
+  return res;
 };
 
 const gmxIncentivesCalculatorArb = async (event) => {
