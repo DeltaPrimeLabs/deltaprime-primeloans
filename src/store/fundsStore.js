@@ -27,6 +27,7 @@ import {expect} from 'chai';
 import YAK_ROUTER_ABI from '../../test/abis/YakRouter.json';
 import {getSwapData} from '../utils/paraSwapUtils';
 import {getBurnData} from '../utils/caiUtils';
+import {combineLatest, from, map, tap} from "rxjs";
 
 const toBytes32 = require('ethers').utils.formatBytes32String;
 const fromBytes32 = require('ethers').utils.parseBytes32String;
@@ -368,7 +369,6 @@ export default {
 
       const redstonePriceDataRequest = await fetch(config.redstoneFeedUrl);
       const redstonePriceData = await redstonePriceDataRequest.json();
-
       Object.keys(assets).forEach(assetSymbol => {
         assets[assetSymbol].price = redstonePriceData[assetSymbol] ? redstonePriceData[assetSymbol][0].dataPoints[0].value : 0;
       });
@@ -480,7 +480,7 @@ export default {
         asset => {
           // todo when PENDLE added to supported assets
           // if (state.supportedAssets.includes(asset.symbol)) {
-            lpTokens[asset.symbol] = asset;
+          lpTokens[asset.symbol] = asset;
           // }
         }
       );
@@ -493,7 +493,43 @@ export default {
         lpService.emitRefreshLp();
       });
 
-      commit('setPenpieLpAssets', lpTokens);
+      const loanAssets = mergeArrays([
+        (await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG)
+      ]);
+
+      const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets)
+
+      const getAssetFromAddress = (address) => {
+        return Object.entries(TOKEN_ADDRESSES).find(([_, tokenAddress]) => tokenAddress === address)[0]
+      }
+
+
+      combineLatest(
+        Object.keys(lpTokens).map(key =>
+          from(wrappedContract.pendingRewards(lpTokens[key].stakingContractAddress))
+            .pipe(
+              map((rewards) => ([
+                {asset: 'PENPIE', amount: rewards[0]},
+                ...rewards[1].map((rewardAddress, index) => ({
+                  asset: getAssetFromAddress(rewardAddress),
+                  amount: rewards[2][index],
+                  amountFormatted: fromWei(rewards[2][index]),
+                }))
+              ].filter(({amount}) => !amount.isZero()))),
+              map(rewards => ({
+                token: key,
+                rewards
+              })))
+        )
+      ).subscribe(rewardsArray => {
+        rewardsArray.forEach(({token, rewards}) => {
+          lpTokens[token]['rewards'] = rewards
+        })
+        commit('setPenpieLpAssets', lpTokens);
+        lpService.emitRefreshLp('PENPIE_LP');
+      })
     },
 
     async setupTraderJoeV2LpAssets({state, rootState, commit}) {
@@ -1735,7 +1771,7 @@ export default {
 
       const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).unstakeFromPenpieAndWithdrawPendleLP(
         unstakeRequest.market,
-            amountInWei);
+        amountInWei);
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
@@ -1752,6 +1788,33 @@ export default {
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate(unstakeRequest.asset, assetBalanceAfterWithdraw, false, true);
       rootState.serviceRegistry.collateralService.emitCollateral(totalCollateralAfterTransaction);
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, config.refreshDelay);
+    },
+
+    async claimPenpieRewards({state, rootState, commit, dispatch}, {market}) {
+      const loanAssets = mergeArrays([
+        (await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+      ]);
+
+      await (await wrapContract(state.smartLoanContract, loanAssets))
+        .claimRewards(
+          market
+        )
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      // let tx = await awaitConfirmation(transaction, provider, 'claimRewards');
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {

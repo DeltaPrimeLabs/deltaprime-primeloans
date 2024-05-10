@@ -628,7 +628,7 @@ export default {
     },
     setupPenpieLpTableHeaderConfig() {
       this.penpieLpTableHeaderConfig = {
-        gridTemplateColumns: 'repeat(2, 1fr) 200px 130px 100px 120px 100px 60px 80px 22px',
+        gridTemplateColumns: '100px 150px 150px 1fr 100px 120px 100px 60px 80px 22px',
         cells: [
           {
             label: 'Penpie Token',

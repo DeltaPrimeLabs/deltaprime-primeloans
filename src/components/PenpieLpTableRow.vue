@@ -45,25 +45,24 @@
       <div class="table__cell table__cell--double-value">
         <template>
           <div class="table__cell rewards">
-            <span v-for="symbol in lpToken.rewardTokens">
-<!--              todo uncomment when fixing rewards-->
-              <!--              <img class="asset__icon" :src="getAssetIcon(symbol)">-->
-              <span
-                  v-if="lpToken.rewardBalances && lpToken.rewardBalances[symbol] && parseFloat(lpToken.rewardBalances[symbol]) !== null">{{
-                  formatTokenBalance((lpToken.rewardBalances && lpToken.rewardBalances[symbol] && !rewardsReset) ? lpToken.rewardBalances[symbol] : 0, 6, true)
-                }}</span>
-              <vue-loaders-ball-beat v-else color="#A6A3FF" scale="0.5"></vue-loaders-ball-beat>
-            </span>
+            <template v-if="lpToken.rewards && lpToken.rewards.length > 0">
+              <span v-for="reward in lpToken.rewards">
+                <img class="asset__icon" :src="getIcon(reward.asset, rewardsTokens[reward.asset].logoExt)">
+                <span>{{ formatTokenBalanceWithLessThan(reward.amountFormatted, 4, true) }}</span>
+              </span>
+            </template>
+            <div v-else class="no-value-dash"></div>
+            <vue-loaders-ball-beat v-else color="#A6A3FF" scale="0.5"></vue-loaders-ball-beat>
           </div>
         </template>
       </div>
 
-      <div class="table__cell table__cell--double-value loan">
-        {{ formatTvl(lpToken.tvl) }}
+      <div class="table__cell table__cell--double-value loan" v-if="apys">
+        {{ formatTvl(apys[lpToken.symbol].tvl) }}
       </div>
 
       <div class="table__cell table__cell--double-value apr" v-bind:class="{'apr--with-warning': lpToken.aprWarning}">
-        {{ lpToken.apy / 100 | percent }}
+        {{ apr / 100 | percent }}
         <div class="apr-warning" v-if="lpToken.aprWarning">
           <img src="src/assets/icons/warning.svg"
                v-tooltip="{content: lpToken.aprWarning, classes: 'info-tooltip long'}">
@@ -71,7 +70,7 @@
       </div>
 
       <div class="table__cell table__cell--double-value max-apr">
-        {{ maxApr | percent }}
+        {{ maxApr() | percent }}
       </div>
 
       <div class="table__cell"></div>
@@ -82,21 +81,21 @@
             :config="addActionsConfig"
             v-if="addActionsConfig"
             v-on:iconButtonClick="actionClick"
-            :disabled="disableAllButtons || noSmartLoan">
+            :disabled="disableAllButtons || noSmartLoan || !healthLoaded">
         </IconButtonMenuBeta>
         <IconButtonMenuBeta
             class="actions__icon-button last"
             :config="removeActionsConfig"
             v-if="removeActionsConfig"
             v-on:iconButtonClick="actionClick"
-            :disabled="disableAllButtons || noSmartLoan">
+            :disabled="disableAllButtons || noSmartLoan || !healthLoaded">
         </IconButtonMenuBeta>
         <IconButtonMenuBeta
             class="actions__icon-button"
             v-if="moreActionsConfig"
             :config="moreActionsConfig"
             v-on:iconButtonClick="actionClick"
-            :disabled="disableAllButtons || !healthLoaded">
+            :disabled="disableAllButtons || noSmartLoan || !healthLoaded">
         </IconButtonMenuBeta>
       </div>
 
@@ -114,15 +113,15 @@ import Chart from "./Chart.vue";
 import IconButtonMenuBeta from "./IconButtonMenuBeta.vue";
 import SmallBlock from "./SmallBlock.vue";
 import {mapActions, mapState} from "vuex";
-import {calculateMaxApy, fromWei, toWei} from "../utils/calculate";
+import {calculateMaxApy} from "../utils/calculate";
 import erc20ABI from "../../test/abis/ERC20.json";
 import config from "../config";
 import TOKEN_ADDRESSES from "../../common/addresses/arbitrum/token_addresses.json";
-import {parseFixed} from "@ethersproject/bignumber";
 import WithdrawModal from "./WithdrawModal.vue";
 import SwapModal from "./SwapModal.vue";
-import {calculateGmxV2ExecutionFee, capitalize} from "../utils/blockchain";
 import {BigNumber} from "ethers";
+import {wrapContract} from "../utils/blockchain";
+import ClaimRewardsModal from "./ClaimRewardsModal.vue";
 
 export default {
   name: 'PenpieLpTableRow',
@@ -135,12 +134,14 @@ export default {
       addActionsConfig: null,
       removeActionsConfig: null,
       moreActionsConfig: null,
-      disableAllButtons: false,
+      disableAllButtons: true,
       isLpBalanceEstimated: false,
       healthLoaded: false,
       totalStaked: null,
       apr: 0,
       tvl: 0,
+      rewards: null,
+      rewardsTokens: {...config.ASSETS_CONFIG, ...config.PENPIE_REWARDS_TOKENS}
     }
   },
   computed: {
@@ -165,6 +166,7 @@ export default {
       'gmxV2Assets',
       'gmxV2Balances',
       'fullLoanStatus',
+      'apys',
     ]),
     ...mapState('stakeStore', ['farms']),
     ...mapState('poolStore', ['pools']),
@@ -191,17 +193,8 @@ export default {
       this.watchAssetApysRefresh();
       this.watchExternalAssetBalanceUpdate();
       this.watchRefreshLP();
-      this.setupApr();
+      this.watchAssetBalancesDataRefresh();
     })
-
-    setTimeout(async () => {
-      if (this.lpToken.asset === 'wstETH') {
-        // const data = await (await fetch(`${config.pendleApiBaseUrl}/v1/addLiquiditySingleToken?${queryParams}`)).json();
-        // console.log('asdasdx', guessPtReceivedFromSy);
-        // console.log('asdasdx', input);
-        // console.log('asdasdx', data);
-      }
-    }, 4000)
   },
 
   methods: {
@@ -211,8 +204,11 @@ export default {
       'createPendleLpFromLrt',
       'unwindPendleLpToLrt',
       'unstakeAndExportPendleLp',
-      'depositPendleLPAndStake'
+      'depositPendleLPAndStake',
+      'getPenpiePendingRewards',
+      'claimPenpieRewards',
     ]),
+
     setupAddActionsConfiguration() {
       this.addActionsConfig = {
         iconSrc: 'src/assets/icons/plus.svg',
@@ -221,14 +217,17 @@ export default {
           {
             key: 'ADD_FROM_WALLET',
             name: 'Import Penpie LP from wallet',
+            disabled: this.disableAllButtons,
           },
           {
             key: 'IMPORT_AND_STAKE',
             name: 'Import & stake Pendle LP',
+            disabled: this.disableAllButtons,
           },
           {
             key: 'CREATE_LP',
             name: 'Create LP from LRT',
+            disabled: this.disableAllButtons,
           },
         ]
       }
@@ -242,14 +241,17 @@ export default {
           {
             key: 'EXPORT_LP',
             name: 'Export Penpie LP',
+            disabled: this.disableAllButtons,
           },
           {
             key: 'UNSTAKE_AND_EXPORT',
             name: 'Unstake & export Pendle LP',
+            disabled: this.disableAllButtons,
           },
           {
             key: 'UNWIND',
             name: 'Unwind LP to LRT',
+            disabled: this.disableAllButtons,
           },
         ]
       }
@@ -262,14 +264,16 @@ export default {
         menuOptions: [
           {
             key: 'CLAIM_REWARDS',
-            name: 'Claim rewards'
+            name: 'Claim rewards',
+            disabled: !this.lpToken.rewards || this.lpToken.rewards.length === 0,
+            disabledInfo: 'You don\'t have any claimable rewards yet.',
           }
         ]
       };
     },
 
     actionClick(key) {
-      if (!this.disableAllButtons) {
+      if (!this.disableAllButtons || this.noSmartLoan || !this.healthLoaded) {
         switch (key) {
           case 'ADD_FROM_WALLET':
             this.openAddFromWalletModal();
@@ -290,7 +294,7 @@ export default {
             this.openUnwindModal();
             break;
           case 'CLAIM_REWARDS':
-            this.openRemoveLiquidityModal();
+            this.openClaimRewardsModal();
             break;
         }
       }
@@ -431,7 +435,6 @@ export default {
 
       modalInstance.queryMethods = {
         Penpie: async (sourceAsset, targetAsset, amountIn) => {
-          console.log('amountIn', amountIn.toString());
           const queryParams = new URLSearchParams({
             chainId: "42161",
             receiverAddr: this.smartLoanContract.address,
@@ -532,7 +535,6 @@ export default {
 
       modalInstance.queryMethods = {
         Penpie: async (sourceAsset, targetAsset, amountIn) => {
-          console.log('amountIn', amountIn.toString());
           const queryParams = new URLSearchParams({
             chainId: "42161",
             receiverAddr: this.smartLoanContract.address,
@@ -672,6 +674,27 @@ export default {
       });
     },
 
+    openClaimRewardsModal() {
+      const modalInstance = this.openModal(ClaimRewardsModal);
+      modalInstance.totalRewards = this.lpToken.rewards.map(reward => ({
+        symbol: reward.asset,
+        amount: reward.amountFormatted,
+      }))
+      modalInstance.header = 'Claim Penpie rewards'
+      modalInstance.tokensConfig = {...config.PENPIE_REWARDS_TOKENS, ...config.ASSETS_CONFIG}
+
+      modalInstance.$on('CLAIM', () => {
+        if (this.smartLoanContract) {
+          this.handleTransaction(this.claimPenpieRewards, {market: this.lpToken.stakingContractAddress}, () => {
+            this.$forceUpdate();
+          }, (error) => {
+            this.handleTransactionError(error);
+          }).then(() => {
+          });
+        }
+      });
+    },
+
     hasSmartLoanContract() {
       return this.smartLoanContract && this.smartLoanContract.address !== NULL_ADDRESS;
     },
@@ -691,8 +714,7 @@ export default {
     },
 
     async setupApr() {
-      if (!this.lpToken.apy) return;
-      this.apr = this.lpToken.apy;
+      this.apr = this.apys[this.lpToken.symbol] ? this.apys[this.lpToken.symbol].lp_apy * 100 : 0;
     },
 
     watchAssetBalancesDataRefreshEvent() {
@@ -734,9 +756,17 @@ export default {
 
     watchRefreshLP() {
       this.lpService.observeRefreshLp().subscribe(async (lpType) => {
-        if (lpType === 'BALANCER_V2_REWARDS_CLAIMED') {
-          this.rewardsReset = true;
+        if (lpType === 'PENPIE_LP') {
+          this.setupMoreActionsConfiguration();
         }
+      })
+    },
+
+    watchAssetBalancesDataRefresh() {
+      this.dataRefreshEventService.observeAssetBalancesDataRefresh().subscribe(() => {
+        this.disableAllButtons = !this.penpieLpBalances || !this.penpieLpBalances[this.lpToken.protocolIdentifier];
+        this.setupAddActionsConfiguration();
+        this.setupRemoveActionsConfiguration();
       })
     },
 
@@ -763,11 +793,6 @@ export default {
           }
         }
       })
-    },
-
-    async getWalletLpTokenBalance() {
-      const tokenContract = new ethers.Contract(this.lpToken.address, erc20ABI, this.provider.getSigner());
-      return await this.getWalletTokenBalance(this.account, this.lpToken.symbol, tokenContract, this.lpToken.decimals);
     },
 
     handleTransactionError(error) {
@@ -797,7 +822,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: repeat(2, 1fr) 200px 130px 100px 120px 100px 60px 80px 22px;
+    grid-template-columns: 100px 150px 150px 1fr 100px 120px 100px 60px 80px 22px;
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;

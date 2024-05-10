@@ -44,6 +44,11 @@ export default {
       "weETH": {name: "weETH", symbol: "weETH", logoExt: "png", decimals: 18, address: addresses.weETH, debtCoverage: 0.83333333333, tradingViewSymbol: "CRYPTO:WEETHUSD"},
       "rsETH": {name: "rsETH", symbol: "rsETH", logoExt: "png", decimals: 18, address: addresses.rsETH, debtCoverage: 0.83333333333},
     },
+    PENPIE_REWARDS_TOKENS: {
+        "PENDLE": {name: "PENDLE", symbol: "PENDLE", logoExt: "png", decimals: 18, address: addresses.PENDLE},
+        "PNP": {name: "PNP", symbol: "PNP", logoExt: "png", decimals: 18, address: addresses.PNP},
+        "SILO": {name: "SILO", symbol: "SILO", logoExt: "png", decimals: 18, address: addresses.SILO},
+    },
     AVAILABLE_ASSETS_PER_DEX: {
         YakSwap: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'GLP', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH', 'WOO', 'GRAIL', 'JOE'],
         ParaSwap: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH', 'WOO', 'GRAIL', 'JOE']
@@ -141,6 +146,7 @@ export default {
             assetNameToDisplay: 'ezETH',
             assetLogoName: 'ezETH',
             symbol: 'PENDLE_EZ_ETH_LP',
+            protocolIdentifier: 'PENDLE_EZ_ETH_LP',
             debtCoverage: 0.83333333333,
             decimals: 18,
             tvl: 5350000,
