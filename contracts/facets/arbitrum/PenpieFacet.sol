@@ -28,6 +28,7 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     address public constant MASTER_PENPIE =
         0x0776C06907CE6Ff3d9Dbf84bA9B3422d7225942D;
     address public constant PNP = 0x2Ac2B254Bc18cD4999f64773a966E4f4869c34Ee;
+    address public constant PENDLE = 0x0c880f6761F1af8d9Aa9C466984b80DAb9a8c9e8;
 
     address public constant PENDLE_EZ_ETH_MARKET =
         0x5E03C94Fc5Fb2E21882000A96Df0b63d2c4312e2;
@@ -104,15 +105,27 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             amount = Math.min(IERC20(lpToken).balanceOf(address(this)), amount);
             require(amount > 0, "Cannot unstake 0 tokens");
 
-            IPendleDepositHelper(DEPOSIT_HELPER).withdrawMarketWithClaim(
-                market,
-                amount,
-                true
-            );
+            {
+                address owner = DiamondStorageLib.contractOwner();
+                {
+                    uint256 beforePendleBalance = IERC20(PENDLE).balanceOf(address(this));
 
-            uint256 pnpReceived = IERC20(PNP).balanceOf(address(this));
-            if (pnpReceived > 0) {
-                PNP.safeTransfer(msg.sender, pnpReceived);
+                    IPendleDepositHelper(DEPOSIT_HELPER).withdrawMarketWithClaim(
+                        market,
+                        amount,
+                        true
+                    );
+
+                    uint256 pendleClaimed = IERC20(PENDLE).balanceOf(address(this)) - beforePendleBalance;
+                    if (pendleClaimed > 0) {
+                        PENDLE.safeTransfer(owner, pendleClaimed);
+                    }
+                }
+
+                uint256 pnpReceived = IERC20(PNP).balanceOf(address(this));
+                if (pnpReceived > 0) {
+                    PNP.safeTransfer(owner, pnpReceived);
+                }
             }
 
             market.safeApprove(PENDLE_ROUTER, 0);
@@ -182,11 +195,18 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         amount = Math.min(IERC20(lpToken).balanceOf(address(this)), amount);
         require(amount > 0, "Cannot unstake 0 tokens");
 
+        uint256 beforePendleBalance = IERC20(PENDLE).balanceOf(address(this));
+
         IPendleDepositHelper(DEPOSIT_HELPER).withdrawMarketWithClaim(
             market,
             amount,
             true
         );
+
+        uint256 pendleClaimed = IERC20(PENDLE).balanceOf(address(this)) - beforePendleBalance;
+        if (pendleClaimed > 0) {
+            PENDLE.safeTransfer(msg.sender, pendleClaimed);
+        }
 
         market.safeTransfer(msg.sender, amount);
 
