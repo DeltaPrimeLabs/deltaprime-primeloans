@@ -406,11 +406,11 @@ export default {
       }
 
       .select-dropdown {
-        position: fixed;
+        position: absolute;
         transform: translate(-16px, calc(50% + 36px));
         display: flex;
         flex-direction: column;
-        width: 311px;
+        width: 250px;
         height: 0;
         border-radius: 15px;
         border-style: solid;

@@ -46,15 +46,15 @@ export default {
     },
 
     SWAP_DEXS_CONFIG: {
-        YakSwap: {
-            displayName: 'YakSwap',
-            availableAssets: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'EUROC', 'GLP', 'sAVAX', 'GMX', 'CAI', 'JOE', 'QI', 'PNG', 'yyAVAX'],
-            slippageMargin: 0.02
-        },
         ParaSwapV2: {
             displayName: 'ParaSwap',
             availableAssets: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'sAVAX', 'CAI', 'QI', 'PNG', 'yyAVAX', 'ggAVAX'],
             slippageMargin: 0.05
+        },
+        YakSwap: {
+            displayName: 'YakSwap',
+            availableAssets: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'EUROC', 'GLP', 'sAVAX', 'GMX', 'CAI', 'JOE', 'QI', 'PNG', 'yyAVAX'],
+            slippageMargin: 0.02
         },
         GmxV2: {
             availableAssets: [],

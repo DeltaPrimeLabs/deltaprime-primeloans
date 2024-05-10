@@ -1,5 +1,6 @@
 node_modules
 node_modules.zip
+/node_modules 2.zip
 build
 .vscode
 

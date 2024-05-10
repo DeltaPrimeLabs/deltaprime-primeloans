@@ -743,6 +743,8 @@ export default {
 
       modalInstance.$on('SWAP', swapEvent => {
 
+        console.log(JSON.stringify(swapEvent));
+
         const addLiquidityRequest = {
           sourceAsset: swapEvent.sourceAsset,
           targetAsset: swapEvent.targetAsset,

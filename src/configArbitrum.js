@@ -55,15 +55,15 @@ export default {
     },
 
     SWAP_DEXS_CONFIG: {
-        YakSwap: {
-            displayName: 'YakSwap',
-            availableAssets: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'GLP', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH', 'GRAIL', 'WOO', 'MAGIC', 'JOE', 'rsETH'],
-            slippageMargin: 0.02
-        },
         ParaSwapV2: {
             displayName: 'ParaSwap',
             availableAssets: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH', 'GRAIL', 'WOO', 'MAGIC', 'JOE', 'ezETH', 'weETH'],
             slippageMargin: 0.05
+        },
+        YakSwap: {
+            displayName: 'YakSwap',
+            availableAssets: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'GLP', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH', 'GRAIL', 'WOO', 'MAGIC', 'JOE', 'rsETH'],
+            slippageMargin: 0.02
         },
         Level: {
             availableAssets: [],

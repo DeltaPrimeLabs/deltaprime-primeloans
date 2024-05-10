@@ -79,36 +79,6 @@
         </div>
       </div>
 
-      <div class="slippage-bar" v-if="feeMethods && feeMethods[swapDex]">
-        <div class="slippage-info">
-          <span class="slippage-label">Max. acceptable slippage:</span>
-          <SimpleInput :percent="true" :default-value="userSlippage" v-on:newValue="userSlippageChange"></SimpleInput>
-          <span class="percent">%</span>
-        </div>
-        <div class="slippage__divider"></div>
-        <div class="fee" v-if="feeMethods && feeMethods[swapDex]">
-          <span class="slippage-label">Max. fee:</span>
-          <span class="deviation-value">{{ fee | percent }}</span>
-          <div class="info__icon__wrapper">
-            <InfoIcon
-              class="info__icon"
-              :tooltip="{content: 'The fee of underlying protocol.', placement: 'top', classes: 'info-tooltip'}"
-            ></InfoIcon>
-          </div>
-        </div>
-        <div class="dex-slippage" v-else>
-          <span class="slippage-label">DEX slippage:</span>
-          <span class="deviation-value">{{ marketDeviation }}<span class="percent">%</span></span>
-          <div class="info__icon__wrapper">
-            <InfoIcon
-              class="info__icon"
-              :tooltip="{content: 'The difference between DEX and market prices.', placement: 'top', classes: 'info-tooltip'}"
-            ></InfoIcon>
-          </div>
-        </div>
-      </div>
-
-
       <div class="price-impact-option price-impact">
         <div class="label-with-separator">
           Acceptable Slippage
@@ -125,10 +95,10 @@
         </div>
         <div v-if="!advancedSlippageMode" class="price-impact-option__content">
           <div
-            v-for="(option, key) in priceImpactOptions"
+            v-for="(option, key) in slippageOptions"
             class="price-impact-option-tile"
             :key="key"
-            :class="[selectedPriceImpactOption === key ? 'active' : '', option.disabled ? 'disabled' : '']"
+            :class="[selectedSlippageOption === key ? 'active' : '', option.disabled ? 'disabled' : '']"
             v-tooltip="{ content: 'Choose price impact you are willing to take. Lower values might results in failed transaction', placement: 'bottom', classes: 'info-tooltip' }"
             v-on:click="() => handlePriceImpactClick(key)"
           >
@@ -144,8 +114,9 @@
           <span class="percent">%</span>
           <div class="slippage__divider"></div>
           <div class="dex-slippage">
-            <span class="slippage-label">Price impact:</span>
-            <span class="deviation-value">{{ marketDeviation }}<span class="percent">%</span></span>
+            <span v-if="!feeMethods" class="slippage-label">Price impact:</span>
+            <span v-if="feeMethods" class="slippage-label">Max. fee:</span>
+            <span class="deviation-value">{{ feeMethods ? fee * 100 : marketDeviation }}<span class="percent">%</span></span>
             <div class="info__icon__wrapper">
               <InfoIcon
                 class="info__icon"
@@ -360,9 +331,9 @@ export default {
       swapDexsConfig: config.SWAP_DEXS_CONFIG,
       reverseSwapDisabled: false,
       calculatingSwapRoute: false,
-      priceImpactOptions: config.SWAP_MODAL_PRICE_IMPACT_OPTIONS,
-      selectedPriceImpactOption: Object.keys(config.SWAP_MODAL_PRICE_IMPACT_OPTIONS)[0],
-      advancedSlippageMode: false
+      slippageOptions: config.SWAP_MODAL_PRICE_IMPACT_OPTIONS,
+      selectedSlippageOption: Object.keys(config.SWAP_MODAL_PRICE_IMPACT_OPTIONS)[0],
+      advancedSlippageMode: false,
       blockReversing: false,
     };
   },
@@ -761,9 +732,9 @@ export default {
 
     async handlePriceImpactClick(key) {
       console.log(key);
-      if (!this.priceImpactOptions[key].disabled) {
-        this.selectedPriceImpactOption = key;
-        this.userSlippage = this.priceImpactOptions[key].value;
+      if (!this.slippageOptions[key].disabled) {
+        this.selectedSlippageOption = key;
+        this.userSlippage = this.slippageOptions[key].value;
 
         await this.updateAmountsWithSlippage();
       }
