@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 0121136d8f948e046eba25bde335b6b0b4f33442;
+// Last deployed from commit: 91a0d1df9dc864cf9cf556481bb6fdcef88da64d;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -20,7 +20,7 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     // CONSTANTS
 
     address private constant PENDLE_ROUTER =
-        0x00000000005BBB0EF59571E58418F9a4357b68A0;
+        0x888888888889758F76e7103c6CbF23ABbF58F946;
     address public constant DEPOSIT_HELPER =
         0xc06a5d3014b9124Bf215287980305Af2f793eB30;
     address public constant PENDLE_STAKING =
