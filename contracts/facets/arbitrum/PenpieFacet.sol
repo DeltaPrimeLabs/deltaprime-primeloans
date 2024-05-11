@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 91a0d1df9dc864cf9cf556481bb6fdcef88da64d;
+// Last deployed from commit: 958e70c299d61cefea075d83eef6fbbdd04cd8a4;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -188,7 +188,7 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     function unstakeFromPenpieAndWithdrawPendleLP(
         address market,
         uint256 amount
-    ) external onlyOwner canRepayDebtFully nonReentrant returns (uint256) {
+    ) external onlyOwner canRepayDebtFully nonReentrant remainsSolvent returns (uint256) {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         address lpToken = _getPendleLpToken(market);
 
