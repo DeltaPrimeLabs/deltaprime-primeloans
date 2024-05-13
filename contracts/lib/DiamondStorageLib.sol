@@ -279,7 +279,7 @@ library DiamondStorageLib {
         SmartLoanStorage storage sls = smartLoanStorage();
         EnumerableMap.remove(sls.ownedAssets, _symbol);
 
-        emit OwnedAssetAdded(_symbol, block.timestamp);
+        emit OwnedAssetRemoved(_symbol, block.timestamp);
     }
 
     function enforceIsContractOwner() internal view {

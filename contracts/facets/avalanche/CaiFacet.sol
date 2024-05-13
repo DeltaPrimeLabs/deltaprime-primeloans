@@ -54,9 +54,6 @@ contract CaiFacet is
         uint256 afterCaiBalance = IERC20(CAI).balanceOf(address(this));
         uint256 afterFromTokenBalance = IERC20(fromToken).balanceOf(address(this));
 
-        address(CAI).safeApprove(INDEX_ROUTER, 0);
-        address(CAI).safeApprove(INDEX_ROUTER, type(uint256).max);
-
         uint256 fromTokenUsed = beforeFromTokenBalance - afterFromTokenBalance;
         uint256 caiBoughtAmount = afterCaiBalance - beforeCaiBalance;
 

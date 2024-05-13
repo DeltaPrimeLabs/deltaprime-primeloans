@@ -180,7 +180,6 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
         _amount = Math.min(_amount, token.balanceOf(address(this)));
         _amount = Math.min(_amount, pool.getBorrowed(address(this)));
-        require(token.balanceOf(address(this)) >= _amount, "There is not enough funds to repay");
 
         address(token).safeApprove(address(pool), 0);
         address(token).safeApprove(address(pool), _amount);

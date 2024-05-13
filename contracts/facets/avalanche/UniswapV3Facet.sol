@@ -98,7 +98,7 @@ contract UniswapV3Facet is IUniswapV3Facet, AvalancheDataServiceConsumerBase, Re
 
         {
             uint256[] storage tokenIds = DiamondStorageLib.getUV3OwnedTokenIds();
-            if (tokenIds.length > MAX_OWNED_UNISWAP_V3_POSITIONS) revert TooManyUniswapV3Positions();
+            if (tokenIds.length >= MAX_OWNED_UNISWAP_V3_POSITIONS) revert TooManyUniswapV3Positions();
             tokenIds.push(tokenId);
         }
 

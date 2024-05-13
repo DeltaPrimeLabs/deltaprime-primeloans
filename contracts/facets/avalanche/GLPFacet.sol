@@ -51,8 +51,6 @@ contract GLPFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         require(tokenManager.isTokenAssetActive(GLP_TOKEN_ADDRESS), "GLP not supported.");
         require(tokenManager.isTokenAssetActive(_token), "Asset not supported.");
 
-        require(_amount > 0, "Amount of GLP to mint  has to be greater than 0");
-
         IERC20Metadata tokenToMintWith = IERC20Metadata(_token);
         bytes32 tokenToMintWithSymbol = tokenManager.tokenAddressToSymbol(_token);
         IGLPRewarder glpRewarder = IGLPRewarder(GLP_REWARD_ROUTER_ADDRESS);
@@ -61,6 +59,8 @@ contract GLPFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         uint256 glpInitialBalance = glpToken.balanceOf(address(this));
 
         _amount = Math.min(tokenToMintWith.balanceOf(address(this)), _amount);
+
+        require(_amount > 0, "Amount of GLP to mint  has to be greater than 0");
 
         _token.safeApprove(GLP_MANAGER_ADDRESS, 0);
         _token.safeApprove(GLP_MANAGER_ADDRESS, _amount);
@@ -87,8 +87,6 @@ contract GLPFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         require(tokenManager.isTokenAssetActive(_tokenOut), "Asset not supported.");
 
-        require(_glpAmount > 0, "Amount of GLP to redeem has to be greater than 0");
-
         IERC20Metadata redeemedToken = IERC20Metadata(_tokenOut);
         bytes32 redeemedTokenSymbol = tokenManager.tokenAddressToSymbol(_tokenOut);
         IGLPRewarder glpRewarder = IGLPRewarder(GLP_REWARD_ROUTER_ADDRESS);
@@ -96,6 +94,8 @@ contract GLPFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
         uint256 redeemedTokenInitialBalance = redeemedToken.balanceOf(address(this));
         _glpAmount = Math.min(glpToken.balanceOf(address(this)), _glpAmount);
+
+        require(_glpAmount > 0, "Amount of GLP to redeem has to be greater than 0");
 
         uint256 redeemedAmount = glpRewarder.unstakeAndRedeemGlp(_tokenOut, _glpAmount, _minOut, address(this));
 
