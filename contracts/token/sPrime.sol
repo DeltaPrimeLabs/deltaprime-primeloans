@@ -29,7 +29,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
     using PackedUint128Math for bytes32;
 
     // Constants declaration
-    uint256 private constant _MAX_SIPPIAGE = 5;
+    uint256 private constant _MAX_SLIPPAGE = 5;
     uint16 internal constant DEFAULT_BIN_STEP = 25;
     uint256 public constant MAX_LOCK_TIME = 3 * 365 days;
 
@@ -117,7 +117,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
         uint256 amountXToY = _getTokenYFromTokenX(amountX);
         uint256 diff = amountY > amountXToY ? amountY - amountXToY : amountXToY - amountY;
 
-        if(amountY * _MAX_SIPPIAGE / 100 < diff) {
+        if(amountY * _MAX_SLIPPAGE / 100 < diff) {
             bool swapTokenX = amountY < amountXToY;
             uint256 amountIn = swapTokenX ? amountX * diff / amountXToY / 2 : diff / 2;
             ILBRouter traderJoeV2Router = ILBRouter(getJoeV2RouterAddress());
@@ -216,7 +216,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
     }
 
     /**
-    * @dev Returns the balances of the contract, including those deposited in the LB pool.
+    * @dev Returns the token balances for the specific bin.
     * @param centerId The active id of the pair.
     * @return amountX The balance of token X.
     * @return amountY The balance of token Y.
@@ -273,7 +273,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
             bool swapTokenX = amountY < amountXToY;
             uint256 diff = swapTokenX ? amountXToY - amountY : amountY - amountXToY;
 
-            if(amountY * _MAX_SIPPIAGE / 100 < diff) {
+            if(amountY * _MAX_SLIPPAGE / 100 < diff) {
                 uint256 amountIn = swapTokenX ? amountX * diff / amountXToY / 2 : diff / 2;
 
                 IERC20[] memory tokenPathDynamic = new IERC20[](2);
@@ -437,7 +437,8 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
         _updateUserInfo(user, share, tokenId, Status.ADD);
 
         (amountX, amountY) = (amountsLeft.decodeX(), amountsLeft.decodeY());
-
+        
+        _transferTokens(address(this), user, amountX, amountY);
     }
 
     /**

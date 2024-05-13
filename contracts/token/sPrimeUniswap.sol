@@ -26,7 +26,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, OwnableUpg
 
     // Constants declaration
     uint256 private constant _TICK_RANGE = 10;
-    uint256 private constant _MAX_SIPPIAGE = 5;
+    uint256 private constant _MAX_SLIPPAGE = 5;
 
     // Mapping for storing pair information and user shares
     mapping(address => UserInfo) public userInfo;
@@ -293,7 +293,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, OwnableUpg
             bool swapTokenX = amountY < amountXToY;
             uint256 diff = swapTokenX ? amountXToY - amountY : amountY - amountXToY;
 
-            if(amountY * _MAX_SIPPIAGE / 100 < diff) {
+            if(amountY * _MAX_SLIPPAGE / 100 < diff) {
                 uint256 amountIn = swapTokenX ? amountX * diff / amountXToY / 2 : diff / 2;
                 address swapRouter = getSwapRouter();
                 address tokenIn;
