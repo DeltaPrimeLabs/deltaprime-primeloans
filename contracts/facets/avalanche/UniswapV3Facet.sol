@@ -6,7 +6,7 @@ import "../../OnlyOwnerOrInsolvent.sol";
 import "../../interfaces/joe-v2/ILBRouter.sol";
 import "../../interfaces/joe-v2/ILBFactory.sol";
 import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
-import "../../lib/uniswap-v3/UniswapV3IntegrationHelper.sol";
+import "../../lib/uniswap-v3/OracleLibrary.sol";
 import "@redstone-finance/evm-connector/contracts/data-services/AvalancheDataServiceConsumerBase.sol";
 
 //This path is updated during deployment
@@ -63,18 +63,16 @@ contract UniswapV3Facet is IUniswapV3Facet, AvalancheDataServiceConsumerBase, Re
         {
             //TODO: write tests for that
 
-            (uint160 poolSqrtPrice,,,,,,) = IUniswapV3Pool(poolAddress).slot0();
-            uint256 sqrtPoolPrice = UniswapV3IntegrationHelper.sqrtPriceX96ToSqrtUint(poolSqrtPrice, IERC20Metadata(params.token0).decimals());
-
             bytes32[] memory symbols = new bytes32[](2);
 
             symbols[0] = token0;
             symbols[1] = token1;
 
             uint256[] memory prices = getOracleNumericValuesFromTxMsg(symbols);
+            (,int24 tick,,,,,) = IUniswapV3Pool(poolAddress).slot0();
 
-            uint256 oraclePrice = prices[0] * 1e18 / prices[1];
-            uint256 poolPrice = sqrtPoolPrice * sqrtPoolPrice / 10 ** IERC20Metadata(params.token1).decimals();
+            uint256 poolPrice = OracleLibrary.getQuoteAtTick(tick, uint128(10 ** IERC20Metadata(params.token0).decimals()), params.token0, params.token1);
+            uint256 oraclePrice = prices[0] * (10 ** IERC20Metadata(params.token1).decimals()) / prices[1];
 
             if (oraclePrice > poolPrice) {
                 if ((oraclePrice - poolPrice) * 1e18 / oraclePrice > ACCEPTED_UNISWAP_SLIPPAGE) revert SlippageTooHigh();
@@ -132,18 +130,17 @@ contract UniswapV3Facet is IUniswapV3Facet, AvalancheDataServiceConsumerBase, Re
         if (!isPoolWhitelisted(poolAddress)) revert UniswapV3PoolNotWhitelisted();
 
         {
-            (uint160 poolSqrtPrice,,,,,,) = IUniswapV3Pool(poolAddress).slot0();
-            uint256 sqrtPoolPrice = UniswapV3IntegrationHelper.sqrtPriceX96ToSqrtUint(poolSqrtPrice, IERC20Metadata(token0Address).decimals());
-
             bytes32[] memory symbols = new bytes32[](2);
 
             symbols[0] = token0;
             symbols[1] = token1;
 
             uint256[] memory prices = getOracleNumericValuesFromTxMsg(symbols);
+            (,int24 tick,,,,,) = IUniswapV3Pool(poolAddress).slot0();
 
-            uint256 oraclePrice = prices[0] * 1e18 / prices[1];
-            uint256 poolPrice = sqrtPoolPrice * sqrtPoolPrice / 10 ** IERC20Metadata(token1Address).decimals();
+            uint256 poolPrice = OracleLibrary.getQuoteAtTick(tick, uint128(10 ** IERC20Metadata(token0Address).decimals()), token0Address, token1Address);
+            uint256 oraclePrice = prices[0] * (10 ** IERC20Metadata(token1Address).decimals()) / prices[1];
+
 
             if (oraclePrice > poolPrice) {
                 if ((oraclePrice - poolPrice) * 1e18 / oraclePrice > ACCEPTED_UNISWAP_SLIPPAGE) revert SlippageTooHigh();
@@ -191,18 +188,17 @@ contract UniswapV3Facet is IUniswapV3Facet, AvalancheDataServiceConsumerBase, Re
         bytes32 token1 = tokenManager.tokenAddressToSymbol(token1Address);
 
         {
-            (uint160 poolSqrtPrice,,,,,,) = IUniswapV3Pool(poolAddress).slot0();
-            uint256 sqrtPoolPrice = UniswapV3IntegrationHelper.sqrtPriceX96ToSqrtUint(poolSqrtPrice, IERC20Metadata(token0Address).decimals());
-
             bytes32[] memory symbols = new bytes32[](2);
 
             symbols[0] = token0;
             symbols[1] = token1;
 
             uint256[] memory prices = getOracleNumericValuesFromTxMsg(symbols);
+            (,int24 tick,,,,,) = IUniswapV3Pool(poolAddress).slot0();
 
-            uint256 oraclePrice = prices[0] * 1e18 / prices[1];
-            uint256 poolPrice = sqrtPoolPrice * sqrtPoolPrice / 10 ** IERC20Metadata(token1Address).decimals();
+            uint256 poolPrice = OracleLibrary.getQuoteAtTick(tick, uint128(10 ** IERC20Metadata(token0Address).decimals()), token0Address, token1Address);
+            uint256 oraclePrice = prices[0] * (10 ** IERC20Metadata(token1Address).decimals()) / prices[1];
+
 
             if (oraclePrice > poolPrice) {
                 if ((oraclePrice - poolPrice) * 1e18 / oraclePrice > ACCEPTED_UNISWAP_SLIPPAGE) revert SlippageTooHigh();
