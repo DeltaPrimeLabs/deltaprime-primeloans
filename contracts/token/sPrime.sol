@@ -421,7 +421,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
         }
 
         // Mint the liquidity tokens.
-        (bytes32 amountsReceived, bytes32 amountsLeft, uint256[] memory liquidityMinted) = lbPair.mint(address(this), liquidityConfigs, user);
+        (bytes32 amountsReceived,, uint256[] memory liquidityMinted) = lbPair.mint(address(this), liquidityConfigs, user);
         uint256 share;
         (share, amountX, amountY) = _updatePairInfo(amountsReceived, centerId);
 
@@ -435,10 +435,6 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
         }));
 
         _updateUserInfo(user, share, tokenId, Status.ADD);
-
-        (amountX, amountY) = (amountsLeft.decodeX(), amountsLeft.decodeY());
-        
-        _transferTokens(address(this), user, amountX, amountY);
     }
 
     /**
