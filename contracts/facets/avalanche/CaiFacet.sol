@@ -57,6 +57,9 @@ contract CaiFacet is
         uint256 fromTokenUsed = beforeFromTokenBalance - afterFromTokenBalance;
         uint256 caiBoughtAmount = afterCaiBalance - beforeCaiBalance;
 
+        CAI.safeApprove(INDEX_ROUTER, 0);
+        CAI.safeApprove(INDEX_ROUTER, type(uint256).max);
+
         checkSlippage(fromTokenSymbol, fromTokenUsed, "CAI", caiBoughtAmount, maxSlippage);
 
         _increaseExposure(tokenManager, CAI, caiBoughtAmount);
@@ -83,9 +86,6 @@ contract CaiFacet is
         require(shares > 0, "Amount of tokens to sell has to be greater than 0");
 
         bytes32 toTokenSymbol = tokenManager.tokenAddressToSymbol(toToken);
-
-        address(CAI).safeApprove(INDEX_ROUTER, 0);
-        address(CAI).safeApprove(INDEX_ROUTER, shares);
 
         uint256 caiBurnt;
         uint256 boughtAmount;
@@ -124,7 +124,7 @@ contract CaiFacet is
         bytes32 outputAsset,
         uint256 outputAmount,
         uint256 maxSlippage
-    ) internal {
+    ) internal view {
         bytes32[] memory assets = new bytes32[](2);
         assets[0] = inputAsset;
         assets[1] = outputAsset;
