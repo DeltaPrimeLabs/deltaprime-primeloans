@@ -205,6 +205,13 @@ functions:
   #   description: upload loan addresses on Arbitrum
   #   events:
   #     - schedule: rate(5 minutes)
+  gmxIncentivesCalculatorArb:
+    handler: gmxIncentives/gmxIncentivesCalculatorArb.handler
+    memorySize: 1024
+    timeout: 900
+    description: Calculate incentives for loans on Arbitrum.
+    events:
+      - schedule: rate(10 minutes)
   assetApyApi:
     handler: apis/apy.assetApyApi
     memorySize: 512
@@ -221,16 +228,10 @@ functions:
       - httpApi:
           method: get
           path: /traderjoe/rewards/claimable
-  gmxIncentivesCalculatorArb:
-    handler: gmxIncentives/gmxIncentivesCalculatorArb.handler
-    memorySize: 1024
-    timeout: 900
-    description: Calculate incentives for loans on Arbitrum.
-    events:
-      - schedule: rate(10 minutes)
   getGmxIncentivesApi:
     handler: apis/gmxIncentives.getGmxIncentivesApi
-    memorySize: 512
+    memorySize: 2048
+    timeout: 30
     description: Fetch GMX incentives values for a loan on Avalanche and Arbitrum
     events:
       - httpApi:
@@ -238,7 +239,8 @@ functions:
           path: /gmx-incentives/{id}
   getGmxIncentivesNewApi:
     handler: apis/gmxIncentives.getGmxIncentivesNewApi
-    memorySize: 512
+    memorySize: 2048
+    timeout: 30
     description: Fetch new retroactive GMX incentives values from a week ago to certain timestamp for a loan on Avalanche
     events:
       - httpApi:
@@ -246,7 +248,8 @@ functions:
           path: /gmx-incentives-new/{id}
   getArbitrumIncentivesApi:
     handler: apis/arbitrumIncentives.getArbitrumIncentivesApi
-    memorySize: 512
+    memorySize: 2048
+    timeout: 30
     description: Fetch Arbitrum Grant values for a loan on Arbitrum
     events:
       - httpApi:
@@ -254,7 +257,8 @@ functions:
           path: /arbitrum-grant
   getLoanArbitrumIncentivesApi:
     handler: apis/arbitrumIncentives.getLoanArbitrumIncentivesApi
-    memorySize: 512
+    memorySize: 2048
+    timeout: 30
     description: Fetch Arbitrum Grant values accumulated for every loan on Arbitrum
     events:
       - httpApi:
@@ -278,7 +282,8 @@ functions:
           path: /gm-boost-apy
   getGmOpenInterestsApi:
     handler: apis/gmOpenInterests.getGmOpenInterestsApi
-    memorySize: 512
+    memorySize: 2048
+    timeout: 30
     description: Fetch Open Interest of GM pools
     events:
       - httpApi:

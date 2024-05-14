@@ -55,7 +55,7 @@ const getGmxIncentivesNewApi = async (event, context, callback) => {
       TableName: process.env.GMX_INCENTIVES_RETROACTIVE_AVA_TABLE,
       KeyConditionExpression: 'id = :id',
       ExpressionAttributeValues: {
-        ':id': '0xabd71848ae6f6842e9794eab79f8f0f6e60aebcd'
+        ':id': event.pathParameters.id.toLowerCase()
       }
     };
 
