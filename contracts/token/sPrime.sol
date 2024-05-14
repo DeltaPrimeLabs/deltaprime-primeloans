@@ -35,7 +35,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
 
     // Mapping for storing pair information and user shares
     mapping(uint256 => PairInfo) public pairList;
-    mapping(address => UserInfo) public userInfo;
+    mapping(address => uint256) public userInfo;
     mapping(address => LockDetails[]) public locks;
     mapping(uint256 => bool) public pairStatus;
 
@@ -103,12 +103,14 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
 
     /**
      * @dev Returns the estimated token Y amount from token X.
-     * @param tokenId Position Manager token id to rebalance
+     * @param user User to rebalance
      * @return status Rebalance status
      */
-    function rebalanceStatus(uint256 tokenId) public view returns(bool) {
+    function rebalanceStatus(address user) public view returns(bool) {
         (uint128 reserveA, ) = lbPair.getReserves();
         if (reserveA == 0) return false;
+        uint256 tokenId = userInfo[user];
+        require(tokenId != 0, "No Position");
 
         (,,,address sPrimeAddr,,,,uint256 amountX, uint256 amountY) = positionManager.positions(tokenId);
 
@@ -134,15 +136,12 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
      * @return status bin status
      */
     function binInRange(address user) public view returns(bool) {
-        require(userInfo[user].amount > 0, "No position");
-        uint256[] memory tokenIds = userInfo[user].tokenIds;
-        for (uint256 i = 0; i < userInfo[user].amount; i++) {
-            (,,,,, uint256 centerId,,,) = positionManager.positions(tokenIds[i]);
-            uint256[] memory depositIds = pairList[centerId].depositIds;
-            uint256 activeId = lbPair.getActiveId();
-            if (depositIds[0] <= activeId && depositIds[depositIds.length - 1] >= activeId) {
-                return true;
-            }
+        require(userInfo[user] > 0, "No position");
+        (,,,,, uint256 centerId,,,) = positionManager.positions(userInfo[user]);
+        uint256[] memory depositIds = pairList[centerId].depositIds;
+        uint256 activeId = lbPair.getActiveId();
+        if (depositIds[0] <= activeId && depositIds[depositIds.length - 1] >= activeId) {
+            return true;
         }
         return false;
     }
@@ -154,13 +153,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
      */
     function getUserPosition(address user) public view returns (uint256 totalValue) {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        uint256 amountX;
-        uint256 amountY;
-        for(uint256 i = 0 ; i < userInfo[user].amount ; i ++) {
-            (,,,,,,,uint256 amount0, uint256 amount1) = positionManager.positions(userInfo[user].tokenIds[i]);
-            amountX += amount0;
-            amountY += amount1;
-        }
+        (,,,,,,,uint256 amountX, uint256 amountY) = positionManager.positions(userInfo[user]);
 
         amountY += _getTokenYFromTokenX(amountX);
         totalValue = getPrice(tokenManager.tokenAddressToSymbol(address(tokenY))) * amountY / tokenY.decimals();
@@ -238,11 +231,14 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
      * @dev Returns the total weight of tokens in a liquidity pair.
      * @param amountX Token X Amount.
      * @param amountY Token Y Amount.
-     * @return weight The total weight of tokens in the liquidity pair.
+     * @return weight The total weight of tokens in the USD.
      */
     function _getTotalWeight(uint256 amountX, uint256 amountY) internal view returns(uint256 weight) {
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+
         uint256 amountXToY = _getTokenYFromTokenX(amountX);
         weight = amountY + amountXToY;
+        // totalValue = getPrice(tokenManager.tokenAddressToSymbol(address(tokenY))) * amountY / tokenY.decimals();
     }
 
 
@@ -325,56 +321,30 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
     }
 
     /**
-    * @dev Withdraws tokens from the lbPair and applies the AUM annual fee. This function will also reset the range.
-    * @param user The postion owner
-    * @return totalBalanceX The amount of token X withdrawn.
-    * @return totalBalanceY The amount of token Y withdrawn.
-    */
-    function _withdrawAndUpdateShare(address user) internal returns(uint256 totalBalanceX, uint256 totalBalanceY) {
-        uint256 totalShare;
-        uint256 userAmount = userInfo[user].amount;
-
-        for(uint256 i = 0 ; i < userAmount ; i ++) {
-            uint256 tokenId = userInfo[user].tokenIds[i];
-            (,,,,uint256 share, uint256 centerId, uint256[] memory liquidityMinted,,) = positionManager.positions(tokenId);
-            PairInfo storage pair = pairList[centerId];
-            (uint256 balanceX, uint256 balanceY) = _withdrawFromLB(pair.depositIds, liquidityMinted);
-            
-            positionManager.burn(tokenId);
-            pair.totalShare -= share;
-
-            totalBalanceX += balanceX;
-            totalBalanceY += balanceY;
-            totalShare += share;
-        }
-        
-        delete userInfo[user];
-
-        _burn(_msgSender(), totalShare);
-    }
-
-    /**
     * @dev Withdraws tokens from the Liquidity Book Pair.
     * @param depositIds Deposit ID list.
     * @param liquidityMinted The amount of ids to withdraw.
+    * @param share sPrime amount to withdraw.
     * @return balanceX The amount of token X received.
     * @return balanceY The amount of token Y received.
     */
-    function _withdrawFromLB(uint256[] memory depositIds, uint256[] memory liquidityMinted) internal returns (uint256 balanceX, uint256 balanceY) {
+    function _withdrawFromLB(uint256[] memory depositIds, uint256[] memory liquidityMinted, uint256 share) internal returns (uint256 balanceX, uint256 balanceY, uint256[] memory liquidityAmounts) {
         uint256 length;
+        uint256 totalShare = balanceOf(_msgSender());
         // Get the lbPair address and the delta between the upper and lower range.
         uint256 delta = depositIds.length;
 
         uint256[] memory ids = new uint256[](delta);
         uint256[] memory amounts = new uint256[](delta);
+        liquidityAmounts  = new uint256[](delta);
 
         // Get the ids and amounts of the tokens to withdraw.
         for (uint256 i; i < delta;) {
             uint256 id = depositIds[i];
-
-            if (liquidityMinted[i] != 0) {
+            liquidityAmounts[i] = liquidityMinted[i] * totalShare / share;
+            if (liquidityAmounts[i] != 0) {
                 ids[length] = id;
-                amounts[length] = liquidityMinted[i];
+                amounts[length] = liquidityAmounts[i];
 
                 unchecked {
                     ++length;
@@ -424,17 +394,27 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
         (bytes32 amountsReceived,, uint256[] memory liquidityMinted) = lbPair.mint(address(this), liquidityConfigs, user);
         uint256 share;
         (share, amountX, amountY) = _updatePairInfo(amountsReceived, centerId);
-
-        uint256 tokenId = positionManager.mint(IPositionManager.MintParams({
-            recipient: user,
-            totalShare: share,
-            centerId: centerId,
-            liquidityMinted: liquidityMinted,
-            amount0: amountX,
-            amount1: amountY
-        }));
-
-        _updateUserInfo(user, share, tokenId, Status.ADD);
+        uint256 tokenId = userInfo[user];
+        if(tokenId == 0) {
+            tokenId = positionManager.mint(IPositionManager.MintParams({
+                recipient: user,
+                totalShare: share,
+                centerId: centerId,
+                liquidityMinted: liquidityMinted,
+                amount0: amountX,
+                amount1: amountY
+            }));
+        } else  {
+            positionManager.update(IPositionManager.UpdateParams({
+                tokenId: tokenId,
+                share: share,
+                liquidityAmounts: liquidityMinted,
+                tokensOwed0: amountX,
+                tokensOwed1: amountY,
+                isAdd: true
+            }));
+        }
+        _updateUserInfo(user, share, tokenId);
     }
 
     /**
@@ -442,26 +422,15 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
     * @param user The address of the user.
     * @param share The share amount to update.
     * @param tokenId The ID of the token representing the position.
-    * @param status The status of the action (ADD or REMOVE).
     */
-    function _updateUserInfo(address user, uint256 share, uint256 tokenId, Status status) internal {
-        if(status == Status.ADD) {
+    function _updateUserInfo(address user, uint256 share, uint256 tokenId) internal {
+        if(tokenId > 0) {
             _mint(user, share);
-
-            userInfo[user].tokenIds.push(tokenId);
-            userInfo[user].amount++;
+            userInfo[user] = tokenId;
         } else {
             // Withdraw all the tokens from the LB pool and return the amounts and the queued withdrawals.
             _burn(user, share);
-
-            uint256 length = userInfo[user].amount;
-            for(uint256 i = 0 ; i < length - 1; i ++) {
-                if(userInfo[user].tokenIds[i] == tokenId) {
-                    userInfo[user].tokenIds[i] = userInfo[user].tokenIds[length - 1];
-                }
-            }
-            userInfo[user].tokenIds.pop();
-            userInfo[user].amount--;
+            delete userInfo[user];
         }
     }
 
@@ -517,92 +486,73 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
     * @param idSlippage The number of id that are allowed to slip
     * @param amountX The amount of token X to deposit.
     * @param amountY The amount of token Y to deposit.
+    * @param isRebalance Rebalance the existing position with deposit.
     */
-    function deposit(uint256 activeIdDesired, uint256 idSlippage, uint256 amountX, uint256 amountY) public {
+    function deposit(uint256 activeIdDesired, uint256 idSlippage, uint256 amountX, uint256 amountY, bool isRebalance) public {
         _transferTokens(_msgSender(), address(this), amountX, amountY);
+        uint256 activeId;
 
-        if(userInfo[_msgSender()].amount > 0) {
-            (uint256 amountXBefore, uint256 amountYBefore) = _withdrawAndUpdateShare(_msgSender());
-            (amountX, amountY) = (amountX + amountXBefore, amountY + amountYBefore);
+        if(userInfo[_msgSender()] > 0) {
+            uint256 tokenId = userInfo[_msgSender()];
+            uint256 share;
+            uint256[] memory liquidityMinted;
+            (,,,, share, activeId, liquidityMinted,,) = positionManager.positions(tokenId);
+            if(isRebalance) { // Withdraw Position For Rebalance
+                (uint256 amountXBefore, uint256 amountYBefore, ) = _withdrawFromLB(pairList[activeId].depositIds, liquidityMinted, share);
+                
+                positionManager.burn(tokenId);
+                pairList[activeId].totalShare -= share;
+                
+                _updateUserInfo(_msgSender(), share, 0);
+                (amountX, amountY) = (amountX + amountXBefore, amountY + amountYBefore);
+            }
         }
         (amountX, amountY) = _getUpdatedAmounts(amountX, amountY);
 
-        uint256 activeId = lbPair.getActiveId();
-        require(activeIdDesired + idSlippage >= activeId && activeId + idSlippage >= activeIdDesired, "Slippage High");
-        
+        if(userInfo[_msgSender()] == 0) {
+            activeId = lbPair.getActiveId();
+            require(activeIdDesired + idSlippage >= activeId && activeId + idSlippage >= activeIdDesired, "Slippage High");
+        }
         _transferTokens(address(this), address(lbPair), amountX, amountY);
-
         _depositToLB(_msgSender(), activeId, amountX, amountY);
     }
 
     /**
     * @dev Users can use withdraw function for withdrawing their share.
-    * @param tokenId Token Id to withdraw
+    * @param share Amount to withdraw
     */
-    function withdraw(uint256 tokenId) external {
-        address nftOwner = IERC721(address(positionManager)).ownerOf(tokenId);
-        require(nftOwner == _msgSender(), "Not the NFT owner");
+    function withdraw(uint256 share) external {
+        uint256 tokenId = userInfo[_msgSender()];
+        require(tokenId > 0, "No Position to withdraw");
 
-        (,,,,uint256 shareWithdraw, uint256 centerId, uint256[] memory liquidityMinted,,) = positionManager.positions(tokenId);
+        (,,,,, uint256 centerId, uint256[] memory liquidityMinted,,) = positionManager.positions(tokenId);
 
-        uint256 lockedBalance = getLockedBalance(nftOwner);
-        require(balanceOf(nftOwner) >= shareWithdraw + lockedBalance, "Balance is locked");
+        uint256 lockedBalance = getLockedBalance(_msgSender());
+        require(balanceOf(_msgSender()) >= share + lockedBalance, "Balance is locked");
 
         PairInfo storage pair = pairList[centerId];
 
-        (uint256 amountX, uint256 amountY) = _withdrawFromLB(pair.depositIds, liquidityMinted);
+        (uint256 amountX, uint256 amountY, uint256[] memory liquidityAmounts) = _withdrawFromLB(pair.depositIds, liquidityMinted, share);
 
-        _updateUserInfo(nftOwner, shareWithdraw, tokenId, Status.REMOVE);
+        positionManager.update(IPositionManager.UpdateParams({
+            tokenId: tokenId,
+            share: share,
+            liquidityAmounts: liquidityAmounts,
+            tokensOwed0: amountX,
+            tokensOwed1: amountY,
+            isAdd: false
+        }));
+
+        _updateUserInfo(_msgSender(), share, 0);
 
         // Burn Position NFT and update total share for the pair
-        positionManager.burn(tokenId);
-        pair.totalShare -= shareWithdraw;
-        // Send the tokens to the user.
-        _transferTokens(address(this), nftOwner, amountX, amountY);
-    }
-
-    /**
-    * @dev Users can use exit function for withdrawing full share.
-    */
-    function exit() external {
-        require(userInfo[_msgSender()].amount > 0, "No position to withdraw");
-        require(getLockedBalance(_msgSender()) == 0, "Locked");
-        
-        (uint256 amountX, uint256 amountY) = _withdrawAndUpdateShare(_msgSender());
-
+        if(balanceOf(_msgSender()) == share) {
+            positionManager.burn(tokenId);
+            delete userInfo[_msgSender()];
+        }
+        pair.totalShare -= share;
         // Send the tokens to the user.
         _transferTokens(address(this), _msgSender(), amountX, amountY);
-    }
-
-    /**
-    * @dev Transfers ownership of a position NFT to another address.
-    * @param to The address to transfer the position NFT to.
-    * @param tokenId The ID of the token representing the position to transfer.
-    */
-    function transferPosition(address to, uint256 tokenId) external {
-        address nftOwner = IERC721(address(positionManager)).ownerOf(tokenId);
-        require(nftOwner == _msgSender(), "Not the NFT owner");
-
-        (,,,,uint256 shareWithdraw,,,,) = positionManager.positions(tokenId);
-
-        uint256 lockedBalance = getLockedBalance(nftOwner);
-        require(balanceOf(nftOwner) >= shareWithdraw + lockedBalance, "Balance is locked");
-
-        positionManager.forceTransfer(nftOwner, to, tokenId);
-        
-        uint256 length = userInfo[nftOwner].amount;
-        for(uint i = 0 ; i < length - 1; i ++) {
-            if(userInfo[nftOwner].tokenIds[i] == tokenId) {
-                userInfo[nftOwner].tokenIds[i] = userInfo[nftOwner].tokenIds[length - 1];
-            }
-        }
-        userInfo[nftOwner].tokenIds.pop();
-        userInfo[nftOwner].amount -= 1;
-        _burn(nftOwner, shareWithdraw);
-
-        userInfo[to].tokenIds.push(tokenId);
-        userInfo[to].amount += 1;
-        _mint(to, shareWithdraw);
     }
 
     /**
@@ -644,19 +594,13 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
     */
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override {
         if(from != address(0) && to != address(0)) {
-            uint256 totalShare = 0;
-            uint256 userAmount = userInfo[from].amount;
-            for(uint256 i = 0 ; i < userAmount ; i ++) {
-                (,,,,uint256 share,,,,) = positionManager.positions(userInfo[from].tokenIds[i]);
-                totalShare += share;
-            }
-            require(totalShare == amount, "You can only transfer full position");
-            for(uint256 i = 0 ; i < userAmount ; i ++) {
-                positionManager.forceTransfer(from, to, userInfo[from].tokenIds[i]);
-                uint256 tokenId = userInfo[from].tokenIds[i];
-                userInfo[to].tokenIds.push(tokenId);
-            }
-            userInfo[to].amount += userInfo[from].amount;
+            uint256 tokenId = userInfo[from];
+
+            uint256 lockedBalance = getLockedBalance(from);
+            require(balanceOf(from) >= amount + lockedBalance, "Insufficient Balance");
+            require(userInfo[to] != 0, "Receiver already has a postion");
+            userInfo[to] = userInfo[from];
+
             delete userInfo[from];
         }
     }
