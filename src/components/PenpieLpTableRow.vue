@@ -1,5 +1,5 @@
 <template>
-  <div v-if="provider" class="lp-table-row-component">
+  <div v-if="provider" class="penpie-lp-table-row-component">
     <div class="table__row" v-if="lpToken">
       <div class="table__cell asset">
         <img class="asset__icon" :src="`src/assets/logo/${lpToken.assetLogoName.toLowerCase()}.png`">
@@ -59,6 +59,10 @@
 
       <div class="table__cell table__cell--double-value loan" v-if="apys">
         {{ formatTvl(apys[lpToken.symbol].tvl) }}
+      </div>
+
+      <div class="table__cell capacity">
+        <bar-gauge-beta v-if="lpToken.maxExposure" :min="0" :max="lpToken.maxExposure" :value="Math.max(lpToken.currentExposure, 0.001)" v-tooltip="{content: `${lpToken.currentExposure ? lpToken.currentExposure.toFixed(2) : 0} ($${lpToken.currentExposure ? (lpToken.currentExposure * this.lpToken.price).toFixed(2) : 0}) out of ${lpToken.maxExposure} ($${lpToken.maxExposure ? (lpToken.maxExposure * this.lpToken.price).toFixed(2) : 0}) is currently used.`, classes: 'info-tooltip'}" :width="80"></bar-gauge-beta>
       </div>
 
       <div class="table__cell table__cell--double-value apr" v-bind:class="{'apr--with-warning': lpToken.aprWarning}">
@@ -122,10 +126,11 @@ import SwapModal from "./SwapModal.vue";
 import {BigNumber} from "ethers";
 import {wrapContract} from "../utils/blockchain";
 import ClaimRewardsModal from "./ClaimRewardsModal.vue";
+import BarGaugeBeta from './BarGaugeBeta.vue';
 
 export default {
   name: 'PenpieLpTableRow',
-  components: {SmallBlock, IconButtonMenuBeta, Chart, DoubleAssetIcon},
+  components: {BarGaugeBeta, SmallBlock, IconButtonMenuBeta, Chart, DoubleAssetIcon},
   props: {
     lpToken: null
   },
@@ -812,7 +817,7 @@ export default {
 <style scoped lang="scss">
 @import "~@/styles/variables";
 
-.lp-table-row-component {
+.penpie-lp-table-row-component {
   height: 60px;
   transition: all 200ms;
 
@@ -822,7 +827,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: 100px 150px 150px 1fr 100px 120px 100px 60px 80px 22px;
+    grid-template-columns: 100px 150px 150px 1fr 100px 120px 110px 100px 40px 80px 22px;
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;
@@ -910,6 +915,12 @@ export default {
         }
       }
 
+      &.capacity {
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-end;
+      }
+
       .stars-icon {
         width: 20px;
         margin-right: 10px;
@@ -959,6 +970,16 @@ export default {
         width: 15px;
         background-color: var(--asset-table-row__no-value-dash-color);
       }
+    }
+  }
+}
+</style>
+
+<style lang="scss">
+.penpie-lp-table-row-component {
+  .table__row {
+    .bar-gauge-beta-component .bar-gauge .bar {
+      width: 80px;
     }
   }
 }

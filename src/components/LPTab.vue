@@ -630,7 +630,7 @@ export default {
     },
     setupPenpieLpTableHeaderConfig() {
       this.penpieLpTableHeaderConfig = {
-        gridTemplateColumns: '100px 150px 150px 1fr 100px 120px 100px 60px 80px 22px',
+        gridTemplateColumns: '100px 150px 150px 1fr 100px 120px 110px 100px 40px 80px 22px',
         cells: [
           {
             label: 'Penpie Token',
@@ -667,6 +667,15 @@ export default {
             id: 'tvl',
             tooltip: `The Total Value Locked (TVL) in the underlying pool.<br>
                       <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/pools#tvl' target='_blank'>More information</a>.`
+          },
+          {
+            label: 'Capacity',
+            sortable: false,
+            class: 'capacity',
+            id: 'CAPACITY',
+            tooltip: `The global maximum capacity of this LP. When the capacity is at 100%, this asset can not be created or deposited.
+            <a href='https://docs.deltaprime.io/protocol/security/token-exposure-protection' target='_blank'>More information</a>.
+            `
           },
           {
             label: 'Min. APR',
