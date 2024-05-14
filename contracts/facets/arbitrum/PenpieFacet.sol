@@ -29,6 +29,7 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         0x0776C06907CE6Ff3d9Dbf84bA9B3422d7225942D;
     address public constant PNP = 0x2Ac2B254Bc18cD4999f64773a966E4f4869c34Ee;
     address public constant PENDLE = 0x0c880f6761F1af8d9Aa9C466984b80DAb9a8c9e8;
+    address public constant SILO = 0x0341C0C0ec423328621788d4854119B97f44E391;
 
     address public constant PENDLE_EZ_ETH_MARKET =
         0x5E03C94Fc5Fb2E21882000A96Df0b63d2c4312e2;
@@ -107,24 +108,24 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
             {
                 address owner = DiamondStorageLib.contractOwner();
-                {
-                    uint256 beforePendleBalance = IERC20(PENDLE).balanceOf(address(this));
+                IPendleDepositHelper(DEPOSIT_HELPER).withdrawMarketWithClaim(
+                    market,
+                    amount,
+                    true
+                );
 
-                    IPendleDepositHelper(DEPOSIT_HELPER).withdrawMarketWithClaim(
-                        market,
-                        amount,
-                        true
-                    );
+                uint256 pnpBalance = IERC20(PNP).balanceOf(address(this));
+                uint256 pendleBalance = IERC20(PENDLE).balanceOf(address(this));
+                uint256 siloBalance = IERC20(SILO).balanceOf(address(this));
 
-                    uint256 pendleClaimed = IERC20(PENDLE).balanceOf(address(this)) - beforePendleBalance;
-                    if (pendleClaimed > 0) {
-                        PENDLE.safeTransfer(owner, pendleClaimed);
-                    }
+                if (pnpBalance > 0) {
+                    PNP.safeTransfer(owner, pnpBalance);
                 }
-
-                uint256 pnpReceived = IERC20(PNP).balanceOf(address(this));
-                if (pnpReceived > 0) {
-                    PNP.safeTransfer(owner, pnpReceived);
+                if (pendleBalance > 0) {
+                    PENDLE.safeTransfer(owner, pendleBalance);
+                }
+                if (siloBalance > 0) {
+                    SILO.safeTransfer(owner, siloBalance);
                 }
             }
 
