@@ -121,8 +121,8 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
             bool swapTokenX = amountY < amountXToY;
             uint256 amountIn = swapTokenX ? amountX * diff / amountXToY / 2 : diff / 2;
             ILBRouter traderJoeV2Router = ILBRouter(getJoeV2RouterAddress());
-            (uint128 amountInLeft, , ) = traderJoeV2Router.getSwapOut(lbPair, uint128(amountIn), swapTokenX);
-            return amountInLeft == 0;
+            (uint128 amountInLeft, uint128 amountOut, ) = traderJoeV2Router.getSwapOut(lbPair, uint128(amountIn), swapTokenX);
+            return amountInLeft == 0 && amountOut != 0;
         }
 
         return true;
@@ -147,7 +147,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
     /**
      * @dev Returns the estimated USD value of the user position
      * @param user User Address
-     * @return Total Value in USD for the user's position.
+     * @return Total Value in tokenY amount for the user's position.
      */
     function getUserValueInTokenY(address user) public view returns (uint256) {
         (uint256 amountX, uint256 amountY) = _getUserTokenAmounts(user);
