@@ -120,7 +120,7 @@
             <div class="info__icon__wrapper">
               <InfoIcon
                 class="info__icon"
-                :tooltip="{content: 'The difference between DEX and market prices.', placement: 'top', classes: 'info-tooltip'}"
+                :tooltip="{content: 'Compares trade price on an aggregator or DEX to oracle market prices. A lower or negative number indicates prices closer to or better than market, enhancing trade quality', placement: 'top', classes: 'info-tooltip'}"
               ></InfoIcon>
             </div>
           </div>
