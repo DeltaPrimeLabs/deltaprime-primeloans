@@ -151,7 +151,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
      */
     function getUserValueInTokenY(address user) public view returns (uint256) {
         (uint256 amountX, uint256 amountY) = _getUserTokenAmounts(user);
-        return _getTotalWeight(amountX, amountY);
+        return _getTotalInTokenY(amountX, amountY);
     }
 
     /**
@@ -246,7 +246,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
      * @param amountY Token Y Amount.
      * @return weight The total weight of the tokens.
      */
-    function _getTotalWeight(uint256 amountX, uint256 amountY) internal view returns(uint256 weight) {
+    function _getTotalInTokenY(uint256 amountX, uint256 amountY) internal view returns(uint256 weight) {
         uint256 amountXToY = _getTokenYFromTokenX(amountX);
         weight = amountY + amountXToY;
     }
@@ -448,8 +448,8 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
         PairInfo storage pair = pairList[centerId];
         (uint256 balanceX, uint256 balanceY) = _getBalances(centerId);
 
-        uint256 weight = _getTotalWeight(amountsReceived.decodeX(), amountsReceived.decodeY());
-        uint256 totalWeight = _getTotalWeight(balanceX, balanceY);
+        uint256 weight = _getTotalInTokenY(amountsReceived.decodeX(), amountsReceived.decodeY());
+        uint256 totalWeight = _getTotalInTokenY(balanceX, balanceY);
         
         if (pair.totalShare > 0 && totalWeight > weight) {
             share = pair.totalShare * weight / (totalWeight - weight);
