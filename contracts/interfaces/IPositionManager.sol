@@ -16,6 +16,16 @@ interface IPositionManager {
         uint256 tokensOwed1;
     }
 
+    struct UpdateParams {
+        uint256 tokenId;
+        uint256 share;
+        uint256[] liquidityAmounts;
+        // how many uncollected tokens are owed to the position, as of the last computation
+        uint256 tokensOwed0;
+        uint256 tokensOwed1;
+        bool isAdd;
+    }
+
     struct MintParams {
         address recipient;
         uint256 totalShare;
@@ -37,6 +47,11 @@ interface IPositionManager {
     // Burn position NFT
     function burn(
         uint256 tokenId
+    )
+        external;
+
+    function update(
+        UpdateParams calldata params
     )
         external;
 

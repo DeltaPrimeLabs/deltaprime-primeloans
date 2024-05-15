@@ -14,16 +14,6 @@ interface ISPrime {
     }
 
     /**
-     * @dev Struct representing a user's share in a pair.
-     * @param amount Total amount of token id for the user
-     * @param tokenIds Token ID list for the user.
-     */
-    struct UserInfo {
-        uint256 amount;
-        uint256[] tokenIds;
-    }
-
-    /**
     * @dev Struct representing details of a locked amount.
     * @param lockPeriod The duration for which the amount is locked.
     * @param amount The amount that is locked.
@@ -34,14 +24,6 @@ interface ISPrime {
         uint256 amount;
         uint256 unlockTime;
     }
-    
-    /**
-    * @dev Enum representing the status of an action (either ADD or REMOVE).
-    */
-    enum Status {
-        ADD,
-        REMOVE
-    }
 
     /**
     * @dev Users can use deposit function for depositing tokens to the specific bin.
@@ -49,12 +31,14 @@ interface ISPrime {
     * @param idSlippage The number of id that are allowed to slip
     * @param amountX The amount of token X to deposit.
     * @param amountY The amount of token Y to deposit.
+    * @param isRebalance Rebalance the existing position with deposit.
     */
     function deposit(
         uint256 activeIdDesired,
         uint256 idSlippage,
         uint256 amountX,
-        uint256 amountY
+        uint256 amountY,
+        bool isRebalance
     ) external;
 
     /**

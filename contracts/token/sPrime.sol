@@ -35,7 +35,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
 
     // Mapping for storing pair information and user shares
     mapping(uint256 => PairInfo) public pairList;
-    mapping(address => uint256) public userInfo;
+    mapping(address => uint256) public userTokenId;
     mapping(address => LockDetails[]) public locks;
     mapping(uint256 => bool) public pairStatus;
 
@@ -109,7 +109,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
     function rebalanceStatus(address user) public view returns(bool) {
         (uint128 reserveA, ) = lbPair.getReserves();
         if (reserveA == 0) return false;
-        uint256 tokenId = userInfo[user];
+        uint256 tokenId = userTokenId[user];
         require(tokenId != 0, "No Position");
 
         (,,,address sPrimeAddr,,,,uint256 amountX, uint256 amountY) = positionManager.positions(tokenId);
@@ -136,8 +136,8 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
      * @return status bin status
      */
     function binInRange(address user) public view returns(bool) {
-        require(userInfo[user] > 0, "No position");
-        (,,,,, uint256 centerId,,,) = positionManager.positions(userInfo[user]);
+        require(userTokenId[user] > 0, "No position");
+        (,,,,, uint256 centerId,,,) = positionManager.positions(userTokenId[user]);
         uint256[] memory depositIds = pairList[centerId].depositIds;
         uint256 activeId = lbPair.getActiveId();
         if (depositIds[0] <= activeId && depositIds[depositIds.length - 1] >= activeId) {
@@ -153,7 +153,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
      */
     function getUserPosition(address user) public view returns (uint256 totalValue) {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        (,,,,,,,uint256 amountX, uint256 amountY) = positionManager.positions(userInfo[user]);
+        (,,,,,,,uint256 amountX, uint256 amountY) = positionManager.positions(userTokenId[user]);
 
         amountY += _getTokenYFromTokenX(amountX);
         totalValue = getPrice(tokenManager.tokenAddressToSymbol(address(tokenY))) * amountY / tokenY.decimals();
@@ -231,14 +231,13 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
      * @dev Returns the total weight of tokens in a liquidity pair.
      * @param amountX Token X Amount.
      * @param amountY Token Y Amount.
-     * @return weight The total weight of tokens in the USD.
+     * @return weight The total weight of the tokens.
      */
     function _getTotalWeight(uint256 amountX, uint256 amountY) internal view returns(uint256 weight) {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         uint256 amountXToY = _getTokenYFromTokenX(amountX);
         weight = amountY + amountXToY;
-        // totalValue = getPrice(tokenManager.tokenAddressToSymbol(address(tokenY))) * amountY / tokenY.decimals();
     }
 
 
@@ -394,7 +393,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
         (bytes32 amountsReceived,, uint256[] memory liquidityMinted) = lbPair.mint(address(this), liquidityConfigs, user);
         uint256 share;
         (share, amountX, amountY) = _updatePairInfo(amountsReceived, centerId);
-        uint256 tokenId = userInfo[user];
+        uint256 tokenId = userTokenId[user];
         if(tokenId == 0) {
             tokenId = positionManager.mint(IPositionManager.MintParams({
                 recipient: user,
@@ -426,11 +425,11 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
     function _updateUserInfo(address user, uint256 share, uint256 tokenId) internal {
         if(tokenId > 0) {
             _mint(user, share);
-            userInfo[user] = tokenId;
+            userTokenId[user] = tokenId;
         } else {
             // Withdraw all the tokens from the LB pool and return the amounts and the queued withdrawals.
             _burn(user, share);
-            delete userInfo[user];
+            delete userTokenId[user];
         }
     }
 
@@ -492,8 +491,8 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
         _transferTokens(_msgSender(), address(this), amountX, amountY);
         uint256 activeId;
 
-        if(userInfo[_msgSender()] > 0) {
-            uint256 tokenId = userInfo[_msgSender()];
+        if(userTokenId[_msgSender()] > 0) {
+            uint256 tokenId = userTokenId[_msgSender()];
             uint256 share;
             uint256[] memory liquidityMinted;
             (,,,, share, activeId, liquidityMinted,,) = positionManager.positions(tokenId);
@@ -509,7 +508,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
         }
         (amountX, amountY) = _getUpdatedAmounts(amountX, amountY);
 
-        if(userInfo[_msgSender()] == 0) {
+        if(userTokenId[_msgSender()] == 0) {
             activeId = lbPair.getActiveId();
             require(activeIdDesired + idSlippage >= activeId && activeId + idSlippage >= activeIdDesired, "Slippage High");
         }
@@ -522,7 +521,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
     * @param share Amount to withdraw
     */
     function withdraw(uint256 share) external {
-        uint256 tokenId = userInfo[_msgSender()];
+        uint256 tokenId = userTokenId[_msgSender()];
         require(tokenId > 0, "No Position to withdraw");
 
         (,,,,, uint256 centerId, uint256[] memory liquidityMinted,,) = positionManager.positions(tokenId);
@@ -548,7 +547,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
         // Burn Position NFT and update total share for the pair
         if(balanceOf(_msgSender()) == share) {
             positionManager.burn(tokenId);
-            delete userInfo[_msgSender()];
+            delete userTokenId[_msgSender()];
         }
         pair.totalShare -= share;
         // Send the tokens to the user.
@@ -594,14 +593,14 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
     */
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override {
         if(from != address(0) && to != address(0)) {
-            uint256 tokenId = userInfo[from];
+            uint256 tokenId = userTokenId[from];
 
             uint256 lockedBalance = getLockedBalance(from);
             require(balanceOf(from) >= amount + lockedBalance, "Insufficient Balance");
-            require(userInfo[to] != 0, "Receiver already has a postion");
-            userInfo[to] = userInfo[from];
+            require(userTokenId[to] != 0, "Receiver already has a postion");
+            userTokenId[to] = userTokenId[from];
 
-            delete userInfo[from];
+            delete userTokenId[from];
         }
     }
 }

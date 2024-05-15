@@ -94,6 +94,29 @@ contract PositionManager is
         });
     }
 
+    function update(UpdateParams calldata params)
+        external
+        override
+        onlySPrime
+    {
+        Position storage position = _positions[params.tokenId];
+        if(params.isAdd) {
+            position.totalShare += params.share;
+            position.tokensOwed0 += params.tokensOwed0;
+            position.tokensOwed1 += params.tokensOwed1;
+            for(uint i = 0 ; i < params.liquidityAmounts.length ; i ++) {
+                position.liquidityMinted[i] += params.liquidityAmounts[i];
+            }
+        } else {
+            position.totalShare -= params.share;
+            position.tokensOwed0 -= params.tokensOwed0;
+            position.tokensOwed1 -= params.tokensOwed1;
+            for(uint i = 0 ; i < params.liquidityAmounts.length ; i ++) {
+                position.liquidityMinted[i] -= params.liquidityAmounts[i];
+            }
+        }
+    }
+
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         require(_exists(tokenId));
         return "";
