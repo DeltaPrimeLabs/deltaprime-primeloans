@@ -53,7 +53,7 @@ export default {
         },
         YakSwap: {
             displayName: 'YakSwap',
-            availableAssets: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'EUROC', 'GLP', 'sAVAX', 'GMX', 'CAI', 'JOE', 'QI', 'PNG', 'yyAVAX'],
+            availableAssets: ['AVAX', 'USDC', 'BTC', 'ETH', 'USDT', 'EUROC', 'GLP', 'sAVAX', 'GMX', 'CAI', 'JOE', 'QI', 'PNG', 'yyAVAX', 'ggAVAX'],
             slippageMargin: 0.02
         },
         GmxV2: {
