@@ -827,7 +827,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: 100px 150px 150px 1fr 100px 120px 110px 100px 40px 80px 22px;
+    grid-template-columns: 100px 130px 130px 1fr 80px 120px 110px 100px 40px 80px 22px;
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;
@@ -876,11 +876,10 @@ export default {
         justify-content: flex-end;
 
         .asset__icon {
-          margin-left: 5px;
+          margin-left: 8px;
           height: 22px;
           width: 22px;
           border-radius: 50%;
-          margin-right: 9px;
         }
       }
 

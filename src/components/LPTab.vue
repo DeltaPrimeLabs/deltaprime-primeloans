@@ -1,5 +1,12 @@
 <template>
   <div class="lp-tab">
+    <div class="lp-tokens" v-if="Object.keys(penpieLpTokens).length">
+      <div class="lp-table">
+        <TableHeader :config="penpieLpTableHeaderConfig"></TableHeader>
+        <PenpieLpTableRow v-for="(lpToken, index) in penpieLpTokens" v-bind:key="index" :index="index"
+                          :lp-token="lpToken" :lp-tokens="penpieLpTokens"></PenpieLpTableRow>
+      </div>
+    </div>
     <div class="lp-tokens" v-if="Object.keys(gmxV2LpTokens).length">
       <div class="lp-table" v-if="gmxV2LpTokens && hasGmIncentives">
         <div class="incentives-program-title">GM Incentives Program</div>
@@ -26,13 +33,6 @@
         <TableHeader :config="balancerLpTableHeaderConfig"></TableHeader>
         <BalancerLpTableRow v-for="(lpToken, index) in balancerLpTokens" v-bind:key="index" :index="index"
                             :lp-token="lpToken" :lp-tokens="balancerLpTokens"></BalancerLpTableRow>
-      </div>
-    </div>
-    <div class="lp-tokens" v-if="Object.keys(penpieLpTokens).length">
-      <div class="lp-table">
-        <TableHeader :config="penpieLpTableHeaderConfig"></TableHeader>
-        <PenpieLpTableRow v-for="(lpToken, index) in penpieLpTokens" v-bind:key="index" :index="index"
-                            :lp-token="lpToken" :lp-tokens="penpieLpTokens"></PenpieLpTableRow>
       </div>
     </div>
     <div class="lp-tokens" v-if="Object.keys(levelLpTokens).length">
@@ -630,7 +630,7 @@ export default {
     },
     setupPenpieLpTableHeaderConfig() {
       this.penpieLpTableHeaderConfig = {
-        gridTemplateColumns: '100px 150px 150px 1fr 100px 120px 110px 100px 40px 80px 22px',
+        gridTemplateColumns: '100px 130px 130px 1fr 80px 120px 110px 100px 40px 80px 22px',
         cells: [
           {
             label: 'Penpie Token',
