@@ -261,7 +261,7 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
 
     for (let pool in poolsDepositorsBalances) {
       depositorsEligibleAirdrop[pool] = {};
-      console.log(`arbitrumPoolsDeposits[pool]: ${arbitrumPoolsDeposits[pool]}`)
+      // console.log(`arbitrumPoolsDeposits[pool]: ${arbitrumPoolsDeposits[pool]}`)
       for (let depositor in poolsDepositorsBalances[pool]) {
         let depositorBalance = poolsDepositorsBalances[pool][depositor];
         let poolEligibleAirdrop = tokensToBeDistributedPerPool[pool];
@@ -283,7 +283,7 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
               },
               AttributeUpdates: {
                 [pool]: {
-                  Value: airdrop[depositor],
+                  Value: airdrop,
                   Action: "PUT"
                 }
               }
@@ -297,6 +297,7 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
     const res = await axios.get(pingUrl.ltipPool.success);
     console.log(res);
   } catch (error) {
+    console.log(error);
     const res = await axios.post(pingUrl.ltipPool.fail, {
       data: error
     });

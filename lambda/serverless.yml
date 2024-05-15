@@ -555,30 +555,42 @@ resources:
           -
             AttributeName: "id"
             AttributeType: "S"
+          # -
+          #   AttributeName: "timestamp"
+          #   AttributeType: "N"
         KeySchema:
           -
             AttributeName: "id"
             KeyType: "HASH"
+          # -
+          #   AttributeName: "timestamp"
+          #   KeyType: "RANGE"
         BillingMode: PAY_PER_REQUEST
         StreamSpecification:
           StreamViewType: "NEW_AND_OLD_IMAGES"
         TableName: ${self:provider.environment.ARBITRUM_INCENTIVES_ARB_TABLE}
-    poolArbitrumIncentivesArbTable:
-      Type: AWS::DynamoDB::Table
-      DeletionPolicy: Retain
-      Properties:
-        AttributeDefinitions:
-          -
-            AttributeName: "id"
-            AttributeType: "S"
-        KeySchema:
-          -
-            AttributeName: "id"
-            KeyType: "HASH"
-        BillingMode: PAY_PER_REQUEST
-        StreamSpecification:
-          StreamViewType: "NEW_AND_OLD_IMAGES"
-        TableName: ${self:provider.environment.POOL_ARBITRUM_INCENTIVES_ARB_TABLE}
+    # poolArbitrumIncentivesArbTable:
+    #   Type: AWS::DynamoDB::Table
+    #   DeletionPolicy: Retain
+    #   Properties:
+    #     AttributeDefinitions:
+    #       -
+    #         AttributeName: "id"
+    #         AttributeType: "S"
+    #       -
+    #         AttributeName: "timestamp"
+    #         AttributeType: "N"
+    #     KeySchema:
+    #       -
+    #         AttributeName: "id"
+    #         KeyType: "HASH"
+    #       -
+    #         AttributeName: "timestamp"
+    #         KeyType: "RANGE"
+    #     BillingMode: PAY_PER_REQUEST
+    #     StreamSpecification:
+    #       StreamViewType: "NEW_AND_OLD_IMAGES"
+    #     TableName: ${self:provider.environment.POOL_ARBITRUM_INCENTIVES_ARB_TABLE}
     # loansAvaTable:
     #   Type: AWS::DynamoDB::Table
     #   DeletionPolicy: Retain

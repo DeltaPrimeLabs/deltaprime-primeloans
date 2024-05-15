@@ -29,9 +29,7 @@
     "node-fetch": "^2.7.0",
     "puppeteer": "^22.6.4",
     "puppeteer-core": "^22.6.4",
-    "redstone-api": "^0.4.11",
-    "redstone-protocol": "^1.0.5",
-    "web3": "^4.8.0"
+    "redstone-api": "^0.4.11"
   },
   "private": true,
   "devDependencies": {
