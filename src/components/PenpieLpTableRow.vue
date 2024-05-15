@@ -446,7 +446,7 @@ export default {
             marketAddr: this.lpToken.stakingContractAddress,
             tokenInAddr: TOKEN_ADDRESSES[this.lpToken.asset],
             amountTokenIn: amountIn,
-            slippage: "0.05"
+            slippage: '0',
           });
 
           const {
@@ -546,7 +546,7 @@ export default {
             marketAddr: this.lpToken.stakingContractAddress,
             tokenOutAddr: TOKEN_ADDRESSES[this.lpToken.asset],
             amountLpToRemove: amountIn,
-            slippage: "0.05"
+            slippage: '0'
           });
 
           const {
