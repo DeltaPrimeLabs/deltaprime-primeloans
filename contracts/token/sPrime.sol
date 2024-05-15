@@ -228,6 +228,12 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
         }
     }
 
+    /**
+    * @dev Returns the token balances for the specific bin.
+    * @param user User address.
+    * @return amountX Provided amount of token X.
+    * @return amountY Provided amount of token Y.
+    */
     function _getUserTokenAmounts(address user) internal view returns(uint256 amountX, uint256 amountY) {
         (,,,,,uint256 centerId, uint256[] memory liquidityMinted) = positionManager.positions(userTokenId[user]);
 
