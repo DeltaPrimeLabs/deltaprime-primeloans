@@ -4,6 +4,7 @@ const axios = require('axios');
 const { request, gql } = require('graphql-request');
 const extRpcUrl = require('../.secrets/extRpc.json');
 const pingUrl = require('../.secrets/ping.json');
+const { dynamoDb } = require('../utils/helpers');
 
 function getRpcUrl(chain) {
   // switch(chain){
