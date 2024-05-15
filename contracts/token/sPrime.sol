@@ -7,13 +7,10 @@ pragma solidity 0.8.17;
 import "../lib/joe-v2/math/SafeCast.sol";
 import "../interfaces/ISPrime.sol";
 import "../interfaces/joe-v2/ILBRouter.sol";
-import "../interfaces/ITokenManager.sol";
 import "../interfaces/IPositionManager.sol";
 import "../lib/joe-v2/LiquidityAmounts.sol";
 import "../lib/joe-v2/math/Uint256x256Math.sol";
 import "../lib/joe-v2/math/LiquidityConfigurations.sol";
-import "../lib/SolvencyMethods.sol";
-import "../lib/local/DeploymentConstants.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -22,7 +19,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 // SPrime contract declaration
-contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC20Upgradeable, SolvencyMethods {
+contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC20Upgradeable {
     using SafeERC20 for IERC20Metadata; // Using SafeERC20 for IERC20 for safe token transfers
     using LiquidityAmounts for address; // Using LiquidityAmounts for address for getting amounts of liquidity
     using SafeCast for uint256; // Using SafeCast for uint256 for safe type casting
@@ -150,30 +147,24 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
     /**
      * @dev Returns the estimated USD value of the user position
      * @param user User Address
-     * @return totalValue Total Value in USD for the user's position.
+     * @return Total Value in USD for the user's position.
      */
-    function getUserPosition(address user) public view returns (uint256 totalValue) {
-        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+    function getUserValueInTokenY(address user) public view returns (uint256) {
         (uint256 amountX, uint256 amountY) = _getUserTokenAmounts(user);
-
-        amountY += _getTokenYFromTokenX(amountX);
-        totalValue = getPrice(tokenManager.tokenAddressToSymbol(address(tokenY))) * amountY / tokenY.decimals();
+        return _getTotalWeight(amountX, amountY);
     }
 
     /**
     * @dev Returns the ratio of fully vested locked balance to non-vested balance for an account.
     * @param account The address of the account.
-    * @return The ratio of fully vested locked balance to total balance
+    * @return fullyVestedBalance Fully vested locked balance
     */
-    function getFullyVestedLockedBalanceToNonVestedRatio(address account) public view returns (uint256) {
-        uint256 totalBalance = balanceOf(account);
-        uint256 fullyVestedBalance;
+    function getFullyVestedLockedBalanceToNonVestedRatio(address account) public view returns (uint256 fullyVestedBalance) {
         for (uint256 i = 0; i < locks[account].length; i++) {
             if (locks[account][i].unlockTime <= block.timestamp) {
                 fullyVestedBalance += locks[account][i].amount * locks[account][i].lockPeriod / MAX_LOCK_TIME;
             }
         }
-        return totalBalance == 0 ? 0 : fullyVestedBalance * 1e18 / totalBalance;
     }
 
     /**
@@ -256,8 +247,6 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
      * @return weight The total weight of the tokens.
      */
     function _getTotalWeight(uint256 amountX, uint256 amountY) internal view returns(uint256 weight) {
-        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-
         uint256 amountXToY = _getTokenYFromTokenX(amountX);
         weight = amountY + amountXToY;
     }
@@ -401,10 +390,8 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
      * @dev Deposits tokens into the lbPair.
      * @param user The user address to receive sPrime.
      * @param centerId The active Id.
-     * @param amountX The amount of token X to deposit.
-     * @param amountY The amount of token Y to deposit.
      */
-    function _depositToLB(address user, uint256 centerId, uint256 amountX, uint256 amountY) internal {
+    function _depositToLB(address user, uint256 centerId) internal {
         (bytes32[] memory liquidityConfigs, uint256[] memory depositIds) = _getLiquidityConfigs(centerId);
 
         if(!pairStatus[centerId]) {
@@ -526,7 +513,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
             require(activeIdDesired + idSlippage >= activeId && activeId + idSlippage >= activeIdDesired, "Slippage High");
         }
         _transferTokens(address(this), address(lbPair), amountX, amountY);
-        _depositToLB(_msgSender(), activeId, amountX, amountY);
+        _depositToLB(_msgSender(), activeId);
     }
 
     /**
