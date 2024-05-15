@@ -49,9 +49,7 @@ contract PositionManager is
             address sPrimeAddr,
             uint256 totalShare,
             uint256 centerId,
-            uint256[] memory liquidityMinted,
-            uint256 tokensOwed0,
-            uint256 tokensOwed1
+            uint256[] memory liquidityMinted
         )
     {
         Position memory position = _positions[tokenId];
@@ -68,9 +66,7 @@ contract PositionManager is
             position.sPrimeAddr,
             position.totalShare,
             position.centerId,
-            position.liquidityMinted,
-            position.tokensOwed0,
-            position.tokensOwed1
+            position.liquidityMinted
         );
     }
 
@@ -88,9 +84,7 @@ contract PositionManager is
             sPrimeAddr: _msgSender(),
             totalShare: params.totalShare,
             centerId: params.centerId,
-            liquidityMinted: params.liquidityMinted,
-            tokensOwed0: params.amount0,
-            tokensOwed1: params.amount1
+            liquidityMinted: params.liquidityMinted
         });
     }
 
@@ -102,15 +96,11 @@ contract PositionManager is
         Position storage position = _positions[params.tokenId];
         if(params.isAdd) {
             position.totalShare += params.share;
-            position.tokensOwed0 += params.tokensOwed0;
-            position.tokensOwed1 += params.tokensOwed1;
             for(uint i = 0 ; i < params.liquidityAmounts.length ; i ++) {
                 position.liquidityMinted[i] += params.liquidityAmounts[i];
             }
         } else {
             position.totalShare -= params.share;
-            position.tokensOwed0 -= params.tokensOwed0;
-            position.tokensOwed1 -= params.tokensOwed1;
             for(uint i = 0 ; i < params.liquidityAmounts.length ; i ++) {
                 position.liquidityMinted[i] -= params.liquidityAmounts[i];
             }

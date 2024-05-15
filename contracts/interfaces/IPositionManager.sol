@@ -11,18 +11,12 @@ interface IPositionManager {
         uint256 totalShare;
         uint256 centerId;
         uint256[] liquidityMinted;
-        // how many uncollected tokens are owed to the position, as of the last computation
-        uint256 tokensOwed0;
-        uint256 tokensOwed1;
     }
 
     struct UpdateParams {
         uint256 tokenId;
         uint256 share;
         uint256[] liquidityAmounts;
-        // how many uncollected tokens are owed to the position, as of the last computation
-        uint256 tokensOwed0;
-        uint256 tokensOwed1;
         bool isAdd;
     }
 
@@ -31,8 +25,6 @@ interface IPositionManager {
         uint256 totalShare;
         uint256 centerId;
         uint256[] liquidityMinted;
-        uint256 amount0;
-        uint256 amount1;
     }
 
     // Mint new position NFT
@@ -68,8 +60,6 @@ interface IPositionManager {
             address sPrimeAddr,
             uint256 totalShare,
             uint256 centerId,
-            uint256[] memory liquidityMinted,
-            uint256 tokensOwed0,
-            uint256 tokensOwed1
+            uint256[] memory liquidityMinted
         );
 }
