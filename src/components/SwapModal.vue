@@ -84,7 +84,7 @@
           Acceptable Slippage
           <InfoIcon
             class="label__info-icon"
-            :tooltip="{ content: 'Choose price impact you are willing to take. Lower values might results in failed transaction', placement: 'top', classes: 'info-tooltip' }"
+            :tooltip="{ content: 'Choose the maximum slippage you are willing to accept', placement: 'top', classes: 'info-tooltip' }"
           ></InfoIcon>
           <div class="vertical-separator"></div>
           <div class="advanced-mode">
@@ -99,7 +99,7 @@
             class="price-impact-option-tile"
             :key="key"
             :class="[selectedSlippageOption === key ? 'active' : '', option.disabled ? 'disabled' : '']"
-            v-tooltip="{ content: 'Choose price impact you are willing to take. Lower values might results in failed transaction', placement: 'bottom', classes: 'info-tooltip' }"
+            v-tooltip="{ content: option.tooltip, placement: 'bottom', classes: 'info-tooltip' }"
             v-on:click="() => handlePriceImpactClick(key)"
           >
             <div class="price-impact-label">
@@ -331,8 +331,8 @@ export default {
       swapDexsConfig: config.SWAP_DEXS_CONFIG,
       reverseSwapDisabled: false,
       calculatingSwapRoute: false,
-      slippageOptions: config.SWAP_MODAL_PRICE_IMPACT_OPTIONS,
-      selectedSlippageOption: Object.keys(config.SWAP_MODAL_PRICE_IMPACT_OPTIONS)[0],
+      slippageOptions: config.SWAP_MODAL_SLIPPAGE_OPTIONS,
+      selectedSlippageOption: Object.keys(config.SWAP_MODAL_SLIPPAGE_OPTIONS)[1],
       advancedSlippageMode: false,
       blockReversing: false,
     };
@@ -747,7 +747,7 @@ export default {
         this.userSlippage = dexSlippageMargin;
         await this.updateAmountsWithSlippage();
       } else {
-        this.handlePriceImpactClick('low');
+        this.handlePriceImpactClick('medium');
       }
     },
 

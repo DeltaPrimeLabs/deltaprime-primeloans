@@ -78,11 +78,11 @@ export default {
             slippageMargin: 0.02
         }
     },
-    SWAP_MODAL_PRICE_IMPACT_OPTIONS: {
-        low: {value: 0.5, name: 'Low', imgSrc: 'src/assets/icons/check.png'},
-        medium: {value: 1, name: 'Medium', imgSrc: 'src/assets/icons/warning.svg'},
-        high: {value: 2, name: 'High', imgSrc: 'src/assets/icons/error.svg'},
-        extreme: {value: 5, name: 'Extreme', imgSrc: 'src/assets/icons/error.svg'}
+    SWAP_MODAL_SLIPPAGE_OPTIONS: {
+        low: {value: 0.5, name: 'Low', imgSrc: 'src/assets/icons/check.png', tooltip: 'Ideal for stable market conditions and highly liquid tokens. High chance of transaction failing.'},
+        medium: {value: 1, name: 'Medium', imgSrc: 'src/assets/icons/warning.svg', tooltip: 'Moderate price adjustment likely. Suitable for relatively steady markets. Moderate chance of transaction failing.'},
+        high: {value: 2, name: 'High', imgSrc: 'src/assets/icons/error.svg', tooltip: 'Moderate price adjustment likely. Ideal for relatively steady markets.'},
+        extreme: {value: 5, name: 'Extreme', imgSrc: 'src/assets/icons/error.svg', tooltip: 'Significant price variation expected. Recommended for use during more volatile market conditions.'},
     },
     paraSwapDefaultSlippage: 0.02,
     showYakSwapWarning: true,
