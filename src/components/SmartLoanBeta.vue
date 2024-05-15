@@ -421,7 +421,7 @@ export default {
 .tutorial-video {
   position: fixed;
   border-radius: 25px;
-  bottom: 20px;
+  bottom: 60px;
   right: 20px;
   z-index: 2;
 
