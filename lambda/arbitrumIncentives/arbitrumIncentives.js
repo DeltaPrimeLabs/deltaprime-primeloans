@@ -11,9 +11,10 @@ const constants = require('../config/constants.json');
 const FACTORY = require('../abis/SmartLoansFactory.json');
 const LOAN = require(`../abis/SmartLoanGigaChadInterface.json`);
 const CACHE_LAYER_URLS = require('../config/redstone-cache-layer-urls.json');
+const extRpcUrl = require('../.secrets/extRpc.json');
 
 const factoryAddress = constants.arbitrum.factory;
-const arbitrumHistoricalProvider = new ethers.providers.JsonRpcProvider("https://arbitrum-mainnet.core.chainstack.com/79a835e86be634e1e02f7bfd107763b9");
+const arbitrumHistoricalProvider = new ethers.providers.JsonRpcProvider(extRpcUrl.arbitrum);
 
 const arbitrumWallet = (new ethers.Wallet("0xca63cb3223cb19b06fa42110c89ad21a17bad22ea061e5a2c2487bd37b71e809"))
   .connect(arbitrumHistoricalProvider);
