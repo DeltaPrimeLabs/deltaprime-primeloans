@@ -7,7 +7,7 @@
                           :lp-token="lpToken" :lp-tokens="penpieLpTokens"></PenpieLpTableRow>
       </div>
     </div>
-    <div class="lp-tokens" v-if="Object.keys(gmxV2LpTokens).length">
+    <div class="lp-tokens" v-if="isAvalanche && Object.keys(gmxV2LpTokens).length">
       <div class="lp-table" v-if="gmxV2LpTokens && hasGmIncentives">
         <div class="incentives-program-title">GM Incentives Program</div>
         <TableHeader :config="gmIncentivesTableHeaderConfig"></TableHeader>
@@ -119,6 +119,7 @@ export default {
       selectedLpTokens: [] = [],
       assets: null,
       openInterestData: {},
+      isAvalanche: null,
     };
   },
   mounted() {
@@ -134,6 +135,7 @@ export default {
     this.setupBalancerLpTableHeaderConfig();
     this.setupPenpieLpTableHeaderConfig();
     this.fetchOpenInterestData();
+    this.isAvalanche = window.chain === 'avalanche';
   },
   computed: {
     ...mapState('serviceRegistry', [
