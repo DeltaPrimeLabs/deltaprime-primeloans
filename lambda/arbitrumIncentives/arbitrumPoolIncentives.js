@@ -279,7 +279,7 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
               TableName: 'pool-arbitrum-incentives-arb-prod',
               Key: {
                 id: depositor,
-                timestamp: startTime
+                timestamp: Math.floor(startTime / 1000)
               },
               AttributeUpdates: {
                 [pool]: {
