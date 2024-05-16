@@ -653,14 +653,14 @@ export default {
             sortable: false,
             class: 'staked',
             id: 'STAKED',
-            tooltip: `Composition ot the GM token.`
+            // tooltip: `Composition ot the GM token.`
           },
           {
             label: 'Rewards',
             sortable: false,
             class: 'rewards',
             id: 'REWARDS',
-            tooltip: `7D price change of this GM token.`
+            // tooltip: `7D price change of this GM token.`
           },
           {
             label: 'TVL',
