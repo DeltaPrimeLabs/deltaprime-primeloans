@@ -536,13 +536,14 @@ export const deployPools = async function(
     depositor: SignerWithAddress | Wallet,
     depositAmount: number = 1000,
     chain: string = 'AVAX',
-    mockPrices: any = []
+    mockPrices: any = [],
+    tokenManager: string = ''
 ) {
     for (const token of tokens) {
         let {
             poolContract,
             tokenContract
-        } = await deployAndInitializeLendingPool(owner, token.name, smartLoansFactory.address, token.airdropList, chain);
+        } = await deployAndInitializeLendingPool(owner, token.name, smartLoansFactory.address, token.airdropList, chain, '', tokenManager);
         for (const user of token.airdropList) {
             if (token.name == 'AVAX' || token.name == 'MCKUSD') {
                 await tokenContract!.connect(user).approve(poolContract.address, toWei(depositAmount.toString()));
@@ -1205,7 +1206,7 @@ export async function syncTime() {
     }
 }
 
-export async function deployAndInitializeLendingPool(owner: any, tokenName: string, smartLoansFactoryAddress: string, tokenAirdropList: any, chain = 'AVAX', rewarder: string = '') {
+export async function deployAndInitializeLendingPool(owner: any, tokenName: string, smartLoansFactoryAddress: string, tokenAirdropList: any, chain = 'AVAX', rewarder: string = '', tokenManagerAddress: string = '') {
 
     const mockVariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as MockVariableUtilisationRatesCalculator;
     let pool = (await deployContract(owner, PoolArtifact)) as Pool;
@@ -1292,6 +1293,7 @@ export async function deployAndInitializeLendingPool(owner: any, tokenName: stri
         rewarder,
         0
     );
+    await pool.setTokenManager(tokenManagerAddress);
     return {'poolContract': pool, 'tokenContract': tokenContract}
 }
 

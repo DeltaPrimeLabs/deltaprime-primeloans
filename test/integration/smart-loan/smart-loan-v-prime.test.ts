@@ -78,7 +78,14 @@ describe('Smart loan', () => {
 
             let diamondAddress = await deployDiamond();
             smartLoansFactory = await deployContract(admin, SmartLoansFactoryArtifact) as SmartLoansFactory;
-            await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, admin, depositor);
+
+            let tokenManager = await deployContract(
+                admin,
+                MockTokenManagerArtifact,
+                []
+            ) as MockTokenManager;
+
+            await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, admin, depositor, 1000, 'AVAX', [], tokenManager.address);
 
             tokensPrices = await getTokensPricesMap(
                 assetsList.filter(el => el !== 'MCKUSD'),
@@ -90,11 +97,6 @@ describe('Smart loan', () => {
             supportedAssets = convertAssetsListToSupportedAssets(assetsList, {MCKUSD: tokenContracts.get('MCKUSD')!.address});
             addMissingTokenContracts(tokenContracts, assetsList);
 
-            let tokenManager = await deployContract(
-                admin,
-                MockTokenManagerArtifact,
-                []
-            ) as MockTokenManager;
 
             await tokenManager.connect(admin).initialize(supportedAssets, lendingPools);
             await tokenManager.connect(admin).setFactoryAddress(smartLoansFactory.address);
@@ -135,7 +137,6 @@ describe('Smart loan', () => {
                 []
             ) as Contract;
             await vPrimeContract.initialize(smartLoansFactory.address);
-
             vPrimeControllerContract = await deployContract(
                 admin,
                 VPrimeControllerArtifact,
@@ -150,9 +151,8 @@ describe('Smart loan', () => {
             });
 
             await tokenManager.setVPrimeControllerAddress(vPrimeControllerContract.address);
-
-            await poolContracts.get('AVAX')!.setVPrimeController(vPrimeControllerContract.address);
-            await poolContracts.get('MCKUSD')!.setVPrimeController(vPrimeControllerContract.address);
+            await poolContracts.get('AVAX')!.setTokenManager(tokenManager.address);
+            await poolContracts.get('MCKUSD')!.setTokenManager(tokenManager.address);
             await vPrimeContract.setVPrimeControllerAddress(vPrimeControllerContract.address);
             await sPrimeContract.setVPrimeControllerContract(vPrimeControllerContract.address);
             await vPrimeControllerContract.updateBorrowersRegistry(smartLoansFactory.address);

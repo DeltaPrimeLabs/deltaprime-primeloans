@@ -135,10 +135,11 @@ describe('Pool with variable utilisation interest rates', () => {
             dataPoints: MOCK_PRICES,
         });
 
-        await poolContract.setVPrimeController(vPrimeControllerContract.address);
+        await tokenManager.setVPrimeControllerAddress(vPrimeControllerContract.address);
         await vPrimeContract.setVPrimeControllerAddress(vPrimeControllerContract.address);
         await sPrimeContract.setVPrimeControllerContract(vPrimeControllerContract.address);
         await vPrimeControllerContract.updateBorrowersRegistry(smartLoansFactory.address);
+        await poolContract.setTokenManager(tokenManager.address);
     });
 
     it("should check initial pool, vPrime, sPrime balances and vPrimePairsCount", async () => {
