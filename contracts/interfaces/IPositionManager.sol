@@ -14,8 +14,6 @@ interface IPositionManager is IERC721Enumerable {
     }
 
     struct BinInfo {
-        uint256 binShare;
-        uint256[] liquidityMinted;
         uint256[] depositIds;
         bytes32[] liquidityConfigs;
     }

@@ -168,20 +168,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
     }
 
     /** Internal Functions */
-
-    /**
-    * @dev Returns the token balances for the specific bin.
-    * @param centerId The active id of the pair.
-    * @return amountX The balance of token X.
-    * @return amountY The balance of token Y.
-    */
-    function _getBalances(uint256 centerId) internal view returns (uint256 amountX, uint256 amountY) {
-        IPositionManager.BinInfo memory binInfo = positionManager.getBinInfo(centerId);
-        if(binInfo.binShare > 0) {
-            (amountX, amountY) = _getLiquidityTokenAmounts(binInfo.depositIds, binInfo.liquidityMinted);
-        }
-    }
-
+    
     /**
     * @dev Returns the token balances for the specific bin.
     * @param depositIds Deposited bin id list.
@@ -358,7 +345,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
         // Mint the liquidity tokens.
         (bytes32 amountsReceived,, uint256[] memory liquidityMinted) = lbPair.mint(address(this), binInfo.liquidityConfigs, user);
         
-        uint256 share = _calculateShare(amountsReceived, centerId);
+        uint256 share = _getTotalInTokenY(amountsReceived.decodeX(), amountsReceived.decodeY());
         uint256 tokenId = getUserTokenId(user);
         if(tokenId == 0) {
             tokenId = positionManager.mint(IPositionManager.MintParams({
@@ -378,26 +365,6 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
             }));
         }
         _mint(user, share);
-    }
-
-    /**
-    * @dev Updates pair information after receiving amounts from a TraderJoe.
-    * @param amountsReceived The amounts received encoded in bytes32.
-    * @param centerId The bin ID of the pair.
-    * @return share The share amount updated.
-    */
-    function _calculateShare(bytes32 amountsReceived, uint256 centerId) internal view returns (uint256 share) {
-        (uint256 balanceX, uint256 balanceY) = _getBalances(centerId);
-        IPositionManager.BinInfo memory binInfo = positionManager.getBinInfo(centerId);
-
-        uint256 weight = _getTotalInTokenY(amountsReceived.decodeX(), amountsReceived.decodeY());
-        uint256 totalWeight = _getTotalInTokenY(balanceX, balanceY);
-        
-        if (binInfo.binShare > 0 && totalWeight > weight) {
-            share = binInfo.binShare * weight / (totalWeight - weight);
-        } else {
-            share = weight;
-        }
     }
 
     /**

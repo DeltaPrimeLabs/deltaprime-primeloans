@@ -88,16 +88,10 @@ contract PositionManager is
         });
         
         BinInfo storage binInfo = _binInfo[params.centerId];
-        if(binInfo.liquidityMinted.length == 0) {
+        if(binInfo.depositIds.length == 0) {
             binInfo.depositIds = params.depositIds;
             binInfo.liquidityConfigs = params.liquidityConfigs;
-            binInfo.liquidityMinted = params.liquidityMinted;
-        } else {
-            for(uint i = 0 ; i < params.liquidityMinted.length ; i ++) {
-                binInfo.liquidityMinted[i] += params.liquidityMinted[i];
-            }
         }
-        binInfo.binShare += params.totalShare;
     }
 
     function update(UpdateParams calldata params)
@@ -106,20 +100,15 @@ contract PositionManager is
         onlySPrime
     {
         Position storage position = _positions[params.tokenId];
-        BinInfo storage binInfo = _binInfo[position.centerId];
         if(params.isAdd) {
             position.totalShare += params.share;
-            binInfo.binShare += params.share;
             for(uint i = 0 ; i < params.liquidityAmounts.length ; i ++) {
                 position.liquidityMinted[i] += params.liquidityAmounts[i];
-                binInfo.liquidityMinted[i] += params.liquidityAmounts[i];
             }
         } else {
             position.totalShare -= params.share;
-            binInfo.binShare -= params.share;
             for(uint i = 0 ; i < params.liquidityAmounts.length ; i ++) {
                 position.liquidityMinted[i] -= params.liquidityAmounts[i];
-                binInfo.liquidityMinted[i] -= params.liquidityAmounts[i];
             }
         }
     }
@@ -138,13 +127,6 @@ contract PositionManager is
     function burn(uint256 tokenId) external override {        
         require(sPrime == _msgSender(), "Only allowed SPrime");
 
-        Position memory position = _positions[tokenId];
-        BinInfo storage binInfo = _binInfo[position.centerId];
-        
-        binInfo.binShare -= position.totalShare;
-        for(uint i = 0 ; i < position.liquidityMinted.length ; i ++) {
-            binInfo.liquidityMinted[i] -= position.liquidityMinted[i];
-        }
         delete _positions[tokenId];
         _burn(tokenId);
     }
