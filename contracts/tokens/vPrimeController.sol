@@ -68,6 +68,13 @@ contract vPrimeController is OwnableUpgradeable, RedstoneConsumerNumericBase, Au
     }
 
 
+    function updateVPrimeSnapshotsForAccounts(address[] memory accounts) public {
+        for (uint i = 0; i < accounts.length; i++) {
+            updateVPrimeSnapshot(accounts[i]);
+        }
+    }
+
+
     /* ========== SETTERS ========== */
 
 
