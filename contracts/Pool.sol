@@ -352,8 +352,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyCo
     }
 
     function isWithdrawalAmountAvailable(address account, uint256 amount) public view returns (bool) {
-        uint256 lockedBalance = getLockedBalance(account);
-        return amount <= balanceOf(account) - lockedBalance;
+        return amount <= getNotLockedBalance(account);
     }
 
     /**
