@@ -77,8 +77,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyCo
 
 
     function lockDeposit(uint256 amount, uint256 lockTime) public {
-        uint256 lockedBalance = getLockedBalance(msg.sender);
-        require(balanceOf(msg.sender) - lockedBalance >= amount, "Insufficient balance to lock");
+        require(getNotLockedBalance(msg.sender) >= amount, "Insufficient balance to lock");
         require(lockTime <= MAX_LOCK_TIME, "Cannot lock for more than 3 years");
         locks[msg.sender].push(LockDetails(lockTime, amount, block.timestamp + lockTime));
 
