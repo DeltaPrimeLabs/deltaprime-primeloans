@@ -11,11 +11,11 @@ import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "@redstone-finance/evm-connector/contracts/core/ProxyConnector.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./interfaces/IIndex.sol";
+import "./interfaces/ITokenManager.sol";
 import "./interfaces/IRatesCalculator.sol";
 import "./interfaces/IBorrowersRegistry.sol";
 import "./interfaces/IPoolRewarder.sol";
 import "./VestingDistributor.sol";
-import "./tokens/vPrimeController.sol";
 
 
 /**
@@ -56,7 +56,10 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyCo
     mapping(address => LockDetails[]) public locks;
     uint256 public constant MAX_LOCK_TIME = 3 * 365 days;
 
-    vPrimeController public vPrimeControllerContract;
+    ITokenManager public tokenManager;
+
+
+    /* ========== METHODS ========== */
 
     function getLockedBalance(address account) public view returns (uint256) {
         uint256 lockedBalance = 0;
@@ -82,7 +85,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyCo
         emit DepositLocked(msg.sender, amount, lockTime, block.timestamp + lockTime);
 
         proxyCalldata(
-            address(vPrimeControllerContract),
+            getVPrimeControllerAddress(),
             abi.encodeWithSignature("updateVPrimeSnapshot(address)", msg.sender),
             false
         );
@@ -98,8 +101,12 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyCo
         }
     }
 
-    function setVPrimeController(vPrimeController _vPrimeController) public onlyOwner {
-        vPrimeControllerContract = _vPrimeController;
+    function setTokenManager(ITokenManager _tokenManager) public onlyOwner {
+        tokenManager = _tokenManager;
+    }
+
+    function getVPrimeControllerAddress() public view returns (address) {
+        return tokenManager.getVPrimeControllerAddress();
     }
 
 
@@ -209,13 +216,13 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyCo
         emit Transfer(account, recipient, amount);
 
         proxyCalldata(
-            address(vPrimeControllerContract),
+            getVPrimeControllerAddress(),
             abi.encodeWithSignature("updateVPrimeSnapshot(address)", msg.sender),
             false
         );
 
         proxyCalldata(
-            address(vPrimeControllerContract),
+            getVPrimeControllerAddress(),
             abi.encodeWithSignature("updateVPrimeSnapshot(address)", recipient),
             false
         );
@@ -284,13 +291,13 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyCo
         emit Transfer(sender, recipient, amount);
 
         proxyCalldata(
-            address(vPrimeControllerContract),
+            getVPrimeControllerAddress(),
             abi.encodeWithSignature("updateVPrimeSnapshot(address)", sender),
             false
         );
 
         proxyCalldata(
-            address(vPrimeControllerContract),
+            getVPrimeControllerAddress(),
             abi.encodeWithSignature("updateVPrimeSnapshot(address)", recipient),
             false
         );
@@ -337,7 +344,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyCo
         emit DepositOnBehalfOf(msg.sender, _of, _amount, block.timestamp);
 
         proxyCalldata(
-            address(vPrimeControllerContract),
+            getVPrimeControllerAddress(),
             abi.encodeWithSignature("updateVPrimeSnapshot(address)", _of),
             false
         );
@@ -385,7 +392,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyCo
         emit Withdrawal(msg.sender, _amount, block.timestamp);
 
         proxyCalldata(
-            address(vPrimeControllerContract),
+            getVPrimeControllerAddress(),
             abi.encodeWithSignature("updateVPrimeSnapshot(address)", msg.sender),
             false
         );
