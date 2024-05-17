@@ -2,16 +2,24 @@
 
 pragma solidity 0.8.17;
 
-interface IPositionManager {
+import '@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol';
+
+interface IPositionManager is IERC721Enumerable {
     // details about the position
     struct Position {
-        // the sPrime contract address
-        address sPrimeAddr;
         // the liquidity of the position
         uint256 totalShare;
         uint256 centerId;
         uint256[] liquidityMinted;
     }
+
+    struct BinInfo {
+        uint256 binShare;
+        uint256[] liquidityMinted;
+        uint256[] depositIds;
+        bytes32[] liquidityConfigs;
+    }
+
 
     struct UpdateParams {
         uint256 tokenId;
@@ -25,6 +33,8 @@ interface IPositionManager {
         uint256 totalShare;
         uint256 centerId;
         uint256[] liquidityMinted;
+        bytes32[] liquidityConfigs;
+        uint256[] depositIds;
     }
 
     // Mint new position NFT
@@ -48,7 +58,9 @@ interface IPositionManager {
         external;
 
     function forceTransfer(address from, address to, uint256 tokenId) external;
-
+    function getBinInfo(uint256 centerId) external view returns(BinInfo memory);
+    function getBinInfoFromTokenId(uint256 tokenId) external view returns(BinInfo memory);
+    
     // Get position details
     function positions(uint256 tokenId)
         external
@@ -57,7 +69,6 @@ interface IPositionManager {
             address token0,
             address token1,
             address pairAddr,
-            address sPrimeAddr,
             uint256 totalShare,
             uint256 centerId,
             uint256[] memory liquidityMinted

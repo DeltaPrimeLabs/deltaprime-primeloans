@@ -4,16 +4,6 @@ pragma solidity ^0.8.17;
 
 interface ISPrime {
     /**
-     * @dev Struct representing information about a pair.
-     * @param depositIds Deposit ID list.
-     * @param totalShare The total share of the pair.
-     */
-    struct PairInfo {
-        uint256[] depositIds;
-        uint256 totalShare;
-    }
-
-    /**
     * @dev Struct representing details of a locked amount.
     * @param lockPeriod The duration for which the amount is locked.
     * @param amount The amount that is locked.
@@ -32,13 +22,15 @@ interface ISPrime {
     * @param amountX The amount of token X to deposit.
     * @param amountY The amount of token Y to deposit.
     * @param isRebalance Rebalance the existing position with deposit.
+    * @param swapSlippage Slippage for the rebalance.
     */
     function deposit(
         uint256 activeIdDesired,
         uint256 idSlippage,
         uint256 amountX,
         uint256 amountY,
-        bool isRebalance
+        bool isRebalance,
+        uint256 swapSlippage
     ) external;
 
     /**

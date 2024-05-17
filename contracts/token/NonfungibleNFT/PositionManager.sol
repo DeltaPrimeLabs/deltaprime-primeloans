@@ -14,28 +14,32 @@ contract PositionManager is
     ERC721Enumerable,
     IPositionManager,
     Ownable
-{
+{   
+    // token id => Position Information
     mapping(uint256 => Position) private _positions;
-    mapping(address => bool) private _sPrimeStatus;
+    // bin id => Bin Information
+    mapping(uint256 => BinInfo) private _binInfo;
     uint176 private _nextId = 1;
+    address public sPrime;
 
-    constructor (
-    ) ERC721('SPrime Position NFT', 'SPRIME-POS') {
-    }
+    constructor() ERC721('SPrime Position NFT', 'SPRIME-POS') {}
 
     modifier onlySPrime() {
-        require(_sPrimeStatus[_msgSender()], "Not Added");
+        require(sPrime == _msgSender(), "Not sPrime");
         _;
     }
 
-    function addSPrime(address sPrimeAddress) external onlyOwner {
-        require(!_sPrimeStatus[sPrimeAddress], "Address already added");
-        _sPrimeStatus[sPrimeAddress] = true;
+    function setSPrime(address sPrime_) external onlyOwner {
+        sPrime = sPrime_;
     }
 
-    function removeSPrime(address sPrimeAddress) external onlyOwner {
-        require(_sPrimeStatus[sPrimeAddress], "Address not added");
-        _sPrimeStatus[sPrimeAddress] = false;
+    function getBinInfo(uint256 centerId) external view returns(BinInfo memory) {
+        return _binInfo[centerId];
+    }
+
+    function getBinInfoFromTokenId(uint256 tokenId) external view returns(BinInfo memory) {
+        uint256 centerId = _positions[tokenId].centerId;
+        return _binInfo[centerId];
     }
 
     function positions(uint256 tokenId)
@@ -46,24 +50,21 @@ contract PositionManager is
             address token0,
             address token1,
             address pairAddr,
-            address sPrimeAddr,
             uint256 totalShare,
             uint256 centerId,
             uint256[] memory liquidityMinted
         )
     {
         Position memory position = _positions[tokenId];
-        require(position.sPrimeAddr != address(0), 'Invalid token ID');
 
-        address lbPair = ISPrime(position.sPrimeAddr).getLBPair();
-        address tokenX = ISPrime(position.sPrimeAddr).getTokenX();
-        address tokenY = ISPrime(position.sPrimeAddr).getTokenY();
+        address lbPair = ISPrime(sPrime).getLBPair();
+        address tokenX = ISPrime(sPrime).getTokenX();
+        address tokenY = ISPrime(sPrime).getTokenY();
 
         return (
             tokenX,
             tokenY,
             lbPair,
-            position.sPrimeAddr,
             position.totalShare,
             position.centerId,
             position.liquidityMinted
@@ -81,11 +82,20 @@ contract PositionManager is
         _mint(params.recipient, (tokenId = _nextId++));
 
         _positions[tokenId] = Position({
-            sPrimeAddr: _msgSender(),
             totalShare: params.totalShare,
             centerId: params.centerId,
             liquidityMinted: params.liquidityMinted
         });
+        
+        BinInfo storage binInfo = _binInfo[params.centerId];
+        if(binInfo.depositIds.length == 0) {
+            binInfo.depositIds = params.depositIds;
+            binInfo.liquidityConfigs = params.liquidityConfigs;
+        }
+        binInfo.binShare += params.totalShare;
+        for(uint i = 0 ; i < params.liquidityMinted.length ; i ++) {
+            binInfo.liquidityMinted[i] += params.liquidityMinted[i];
+        }
     }
 
     function update(UpdateParams calldata params)
@@ -94,15 +104,20 @@ contract PositionManager is
         onlySPrime
     {
         Position storage position = _positions[params.tokenId];
+        BinInfo storage binInfo = _binInfo[position.centerId];
         if(params.isAdd) {
             position.totalShare += params.share;
+            binInfo.binShare += params.share;
             for(uint i = 0 ; i < params.liquidityAmounts.length ; i ++) {
                 position.liquidityMinted[i] += params.liquidityAmounts[i];
+                binInfo.liquidityMinted[i] += params.liquidityAmounts[i];
             }
         } else {
             position.totalShare -= params.share;
+            binInfo.binShare -= params.share;
             for(uint i = 0 ; i < params.liquidityAmounts.length ; i ++) {
                 position.liquidityMinted[i] -= params.liquidityAmounts[i];
+                binInfo.liquidityMinted[i] -= params.liquidityAmounts[i];
             }
         }
     }
@@ -113,16 +128,21 @@ contract PositionManager is
     }
 
     function forceTransfer(address from, address to, uint256 tokenId) external override {
-        Position storage position = _positions[tokenId];
-        require(position.sPrimeAddr == _msgSender(), "Only allowed SPrime");
+        require(sPrime == _msgSender(), "Only allowed SPrime");
 
         _transfer(from, to, tokenId);
     }
 
-    function burn(uint256 tokenId) external override {
-        Position storage position = _positions[tokenId];
+    function burn(uint256 tokenId) external override {        
+        require(sPrime == _msgSender(), "Only allowed SPrime");
+
+        Position memory position = _positions[tokenId];
+        BinInfo storage binInfo = _binInfo[position.centerId];
         
-        require(position.sPrimeAddr == _msgSender(), "Only allowed SPrime");
+        binInfo.binShare -= position.totalShare;
+        for(uint i = 0 ; i < position.liquidityMinted.length ; i ++) {
+            binInfo.liquidityMinted[i] -= position.liquidityMinted[i];
+        }
         delete _positions[tokenId];
         _burn(tokenId);
     }
