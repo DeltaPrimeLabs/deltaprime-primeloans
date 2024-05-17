@@ -343,9 +343,9 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
         }
 
         // Mint the liquidity tokens.
-        (bytes32 amountsReceived,, uint256[] memory liquidityMinted) = lbPair.mint(address(this), binInfo.liquidityConfigs, user);
+        (bytes32 amountsReceived, bytes32 amountsLeft, uint256[] memory liquidityMinted) = lbPair.mint(address(this), binInfo.liquidityConfigs, user);
         
-        uint256 share = _getTotalInTokenY(amountsReceived.decodeX(), amountsReceived.decodeY());
+        uint256 share = _getTotalInTokenY(amountsReceived.decodeX() - amountsLeft.decodeX(), amountsReceived.decodeY() - amountsLeft.decodeY());
         uint256 tokenId = getUserTokenId(user);
         if(tokenId == 0) {
             tokenId = positionManager.mint(IPositionManager.MintParams({
