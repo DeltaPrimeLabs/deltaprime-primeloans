@@ -88,14 +88,16 @@ contract PositionManager is
         });
         
         BinInfo storage binInfo = _binInfo[params.centerId];
-        if(binInfo.depositIds.length == 0) {
+        if(binInfo.liquidityMinted.length == 0) {
             binInfo.depositIds = params.depositIds;
             binInfo.liquidityConfigs = params.liquidityConfigs;
+            binInfo.liquidityMinted = params.liquidityMinted;
+        } else {
+            for(uint i = 0 ; i < params.liquidityMinted.length ; i ++) {
+                binInfo.liquidityMinted[i] += params.liquidityMinted[i];
+            }
         }
         binInfo.binShare += params.totalShare;
-        for(uint i = 0 ; i < params.liquidityMinted.length ; i ++) {
-            binInfo.liquidityMinted[i] += params.liquidityMinted[i];
-        }
     }
 
     function update(UpdateParams calldata params)

@@ -103,7 +103,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
      * @return status bin status
      */
     function binInRange(address user) public view returns(bool) {
-        uint256 tokenId = _getUserTokenId(user);
+        uint256 tokenId = getUserTokenId(user);
         require(tokenId > 0, "No position");
 
         IPositionManager.BinInfo memory binInfo = positionManager.getBinInfoFromTokenId(tokenId);
@@ -122,7 +122,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
      * @return Total Value in tokenY amount for the user's position.
      */
     function getUserValueInTokenY(address user) public view returns (uint256) {
-        (,,,,uint256 centerId, uint256[] memory liquidityMinted) = positionManager.positions(_getUserTokenId(user));
+        (,,,,uint256 centerId, uint256[] memory liquidityMinted) = positionManager.positions(getUserTokenId(user));
         IPositionManager.BinInfo memory binInfo = positionManager.getBinInfo(centerId);
         (uint256 amountX, uint256 amountY) = _getLiquidityTokenAmounts(binInfo.depositIds, liquidityMinted);
         return _getTotalInTokenY(amountX, amountY);
@@ -156,13 +156,18 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
         return lockedBalance;
     }
 
-    /** Internal Functions */
-
-    function _getUserTokenId(address user) internal view returns(uint256 tokenId){
+    /**
+    * @dev Returns the token id for the user
+    * @param user The user address
+    * @return tokenId token id owned by the user
+    */
+    function getUserTokenId(address user) public view returns(uint256 tokenId){
         if(positionManager.balanceOf(user) > 0) {
             tokenId = positionManager.tokenOfOwnerByIndex(user, 0);
         }
     }
+
+    /** Internal Functions */
 
     /**
     * @dev Returns the token balances for the specific bin.
@@ -213,8 +218,8 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
      * @return amountY Token Y Amount to return.
      */
     function _getTokenYFromTokenX(uint256 amountX) internal view returns(uint256 amountY) {
-        (uint128 reserverA, ) = lbPair.getReserves();
-        if(reserverA > 0) {
+        (uint128 reserveA, ) = lbPair.getReserves();
+        if(reserveA > 0) {
             uint256 price = PriceHelper.convert128x128PriceToDecimal(lbPair.getPriceFromId(lbPair.getActiveId())); 
             amountY = amountX * price / 1e18;
         } else {
@@ -231,8 +236,8 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
         uint256 amountXToY = _getTokenYFromTokenX(amountX);
         bool swapTokenX = amountY < amountXToY;
         uint256 diff = swapTokenX ? amountXToY - amountY : amountY - amountXToY;
-
-        if(amountY * _REBALANCE_MARGIN / 100 < diff) {
+        // (amountXToY != 0 || amountX == 0) for excluding the initial LP deposit
+        if(amountY * _REBALANCE_MARGIN / 100 < diff && (amountXToY > 0 || amountX == 0)) {
             uint256 amountIn = amountXToY > 0 ? amountX * diff / amountXToY / 2 : amountX * diff / amountY / 2;
             amountXToY = diff / 2; 
 
@@ -354,7 +359,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
         (bytes32 amountsReceived,, uint256[] memory liquidityMinted) = lbPair.mint(address(this), binInfo.liquidityConfigs, user);
         
         uint256 share = _calculateShare(amountsReceived, centerId);
-        uint256 tokenId = _getUserTokenId(user);
+        uint256 tokenId = getUserTokenId(user);
         if(tokenId == 0) {
             tokenId = positionManager.mint(IPositionManager.MintParams({
                 recipient: user,
@@ -429,7 +434,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
 
         _transferTokens(_msgSender(), address(this), amountX, amountY);
         uint256 activeId;
-        uint256 tokenId = _getUserTokenId(_msgSender());
+        uint256 tokenId = getUserTokenId(_msgSender());
         if(tokenId > 0) {
             (,,, uint256 share, uint256 centerId, uint256[] memory liquidityMinted) = positionManager.positions(tokenId);
             activeId = centerId;
@@ -445,7 +450,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
         }
         (amountX, amountY) = _swapForEqualValues(amountX, amountY, swapSlippage);
 
-        if(isRebalance) {
+        if(getUserTokenId(_msgSender()) == 0) {
             activeId = lbPair.getActiveId();
             require(activeIdDesired + idSlippage >= activeId && activeId + idSlippage >= activeIdDesired, "Slippage High");
         }
@@ -458,7 +463,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
     * @param share Amount to withdraw
     */
     function withdraw(uint256 share) external {
-        uint256 tokenId = _getUserTokenId(_msgSender());
+        uint256 tokenId = getUserTokenId(_msgSender());
         require(tokenId > 0, "No Position to withdraw");
 
         (,,,, uint256 centerId, uint256[] memory liquidityMinted) = positionManager.positions(tokenId);
@@ -528,9 +533,9 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
         if(from != address(0) && to != address(0)) {
             uint256 lockedBalance = getLockedBalance(from);
             require(balanceOf(from) >= amount + lockedBalance, "Insufficient Balance");
-            require(_getUserTokenId(to) == 0, "Receiver already has a postion");
+            require(getUserTokenId(to) == 0, "Receiver already has a postion");
             
-            uint256 tokenId = _getUserTokenId(from);
+            uint256 tokenId = getUserTokenId(from);
 
             if(balanceOf(from) == amount) {
                 positionManager.forceTransfer(from, to, tokenId);
