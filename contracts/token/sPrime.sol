@@ -28,7 +28,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
 
     // Constants declaration
     uint256 private constant _REBALANCE_MARGIN = 5;
-    uint256 private constant _MAX_SLIPPAGE = 5;
+    uint256 private constant _MAX_SLIPPAGE = 10;
     uint16 internal constant DEFAULT_BIN_STEP = 25;
     uint256 public constant MAX_LOCK_TIME = 3 * 365 days;
 
@@ -159,7 +159,9 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
     /** Internal Functions */
 
     function _getUserTokenId(address user) internal view returns(uint256 tokenId){
-        tokenId = positionManager.tokenOfOwnerByIndex(user, 0);
+        if(positionManager.balanceOf(user) > 0) {
+            tokenId = positionManager.tokenOfOwnerByIndex(user, 0);
+        }
     }
 
     /**
@@ -231,10 +233,9 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
         uint256 diff = swapTokenX ? amountXToY - amountY : amountY - amountXToY;
 
         if(amountY * _REBALANCE_MARGIN / 100 < diff) {
-
-            uint256 amountIn = amountX * diff / amountXToY / 2;
-            // store expected amount out from amountXToY to avoid stack too deep error
+            uint256 amountIn = amountXToY > 0 ? amountX * diff / amountXToY / 2 : amountX * diff / amountY / 2;
             amountXToY = diff / 2; 
+
             (amountIn, amountXToY) = swapTokenX ? (amountIn, amountXToY) : (amountXToY, amountIn);
             IERC20[] memory tokenPathDynamic = new IERC20[](2);
             if (swapTokenX) {
@@ -380,7 +381,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
     * @param centerId The bin ID of the pair.
     * @return share The share amount updated.
     */
-    function _calculateShare(bytes32 amountsReceived, uint256 centerId) internal returns (uint256 share) {
+    function _calculateShare(bytes32 amountsReceived, uint256 centerId) internal view returns (uint256 share) {
         (uint256 balanceX, uint256 balanceY) = _getBalances(centerId);
         IPositionManager.BinInfo memory binInfo = positionManager.getBinInfo(centerId);
 
