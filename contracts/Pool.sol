@@ -71,8 +71,14 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyCo
         return lockedBalance;
     }
 
-    function getNotLockedBalance(address account) public view returns (uint256) {
-        return balanceOf(account) - getLockedBalance(account);
+    function getNotLockedBalance(address account) public view returns (uint256 notLockedBalance) {
+        uint256 lockedBalance = getLockedBalance(account);
+        uint256 balance = balanceOf(account);
+        if(balance < lockedBalance) {
+            notLockedBalance = 0;
+        } else {
+            return balance - lockedBalance;
+        }
     }
 
 
