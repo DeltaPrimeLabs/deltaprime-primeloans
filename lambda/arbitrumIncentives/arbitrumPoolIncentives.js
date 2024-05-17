@@ -2,22 +2,22 @@ const ethers = require('ethers');
 const POOL_ARTIFACT = require('../abis/Pool.json');
 const axios = require('axios');
 const { request, gql } = require('graphql-request');
-const extRpcUrl = require('../.secrets/extRpc.json');
+const incentivesRpcUrl = require('../.secrets/incentivesRpc.json');
 const pingUrl = require('../.secrets/ping.json');
 const { dynamoDb } = require('../utils/helpers');
 
-function getRpcUrl(chain) {
+function getRpcUrl(chain, rpc) {
   // switch(chain){
   //     case "avalanche":
   //         return "https://api.avax.network/ext/bc/C/rpc";
   //     case "arbitrum":
   //         return "https://arb.nirvanalabs.xyz/arbitrum_aws?apikey=???";
   // }
-  return extRpcUrl[chain];
+  return incentivesRpcUrl[chain][rpc];
 }
 
-function getProvider(chain) {
-  return new ethers.providers.JsonRpcProvider(getRpcUrl(chain));
+function getProvider(chain, rpc) {
+  return new ethers.providers.JsonRpcProvider(getRpcUrl(chain, rpc));
 }
 
 let redstonePrices = {};
@@ -90,9 +90,7 @@ function getPoolDecimals(chain, pool) {
 
 }
 
-let provider = getProvider("arbitrum");
-
-async function getPoolContracts(chain) {
+async function getPoolContracts(chain, provider) {
   switch (chain) {
     case "avalanche":
       return {
@@ -233,9 +231,10 @@ async function getDepositorsBalances(depositors, poolContract, poolName, chain) 
   return depositorsBalances;
 }
 
-async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, chain) {
+async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, chain, rpc = "first") {
   let startTime = Date.now();
-  let arbitrumPools = await getPoolContracts(chain);
+  let provider = getProvider("arbitrum", rpc);
+  let arbitrumPools = await getPoolContracts(chain, provider);
   let arbitrumPoolsDeposits = await getPoolDeposits(arbitrumPools, chain);
   let arbitrumPoolsTVL = await getPoolsTVL(arbitrumPoolsDeposits, chain);
   let tokensToBeDistributedPerPool = {};
@@ -294,14 +293,15 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
       })
     )
 
-    const res = await axios.get(pingUrl.ltipPool.success);
-    console.log(res);
+    await axios.get(pingUrl.ltipPool.success);
+    console.log('==============calculating success=============');
   } catch (error) {
-    console.log(error);
-    const res = await axios.post(pingUrl.ltipPool.fail, {
-      data: error
-    });
-    console.log(res)
+    calculateEligibleAirdropPerPool(372, "arbitrum", "second")
+    // console.log(error);
+    // await axios.post(pingUrl.ltipPool.fail, {
+    //   data: error
+    // });
+    // console.log('-----------calculating failed------------');
   }
 
     // for each pool sum up depositors eligible airdrops and verify if they sum up to each pool's eligible airdrop
@@ -314,13 +314,13 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
     console.log(`% diff: `, diff);
 
     if (diff < 0.01) {
-      const res = await axios.get(pingUrl.ltipPoolChcker.success);
-      console.log(res);
+      await axios.get(pingUrl.ltipPoolChcker.success);
+      console.log(`============difference check for ${pool} success==============`);
     } else {
-      const res = await axios.post(pingUrl.ltipPoolChcker.fail, {
+      await axios.post(pingUrl.ltipPoolChcker.fail, {
         data: `difference calculated: ${diff}`
       });
-      console.log(res)
+      console.log(`------------difference check for ${pool} failed-------------`)
     }
   }
 
