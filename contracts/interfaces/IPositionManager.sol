@@ -13,7 +13,7 @@ interface IPositionManager is IERC721Enumerable {
         uint256[] liquidityMinted;
     }
 
-    struct BinInfo {
+    struct DepositConfig {
         uint256[] depositIds;
         bytes32[] liquidityConfigs;
     }
@@ -56,8 +56,8 @@ interface IPositionManager is IERC721Enumerable {
         external;
 
     function forceTransfer(address from, address to, uint256 tokenId) external;
-    function getBinInfo(uint256 centerId) external view returns(BinInfo memory);
-    function getBinInfoFromTokenId(uint256 tokenId) external view returns(BinInfo memory);
+    function getDepositConfig(uint256 centerId) external view returns(DepositConfig memory);
+    function getDepositConfigFromTokenId(uint256 tokenId) external view returns(DepositConfig memory);
     
     // Get position details
     function positions(uint256 tokenId)

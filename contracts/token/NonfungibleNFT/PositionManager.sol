@@ -18,7 +18,7 @@ contract PositionManager is
     // token id => Position Information
     mapping(uint256 => Position) private _positions;
     // bin id => Bin Information
-    mapping(uint256 => BinInfo) private _binInfo;
+    mapping(uint256 => DepositConfig) private _binInfo;
     uint176 private _nextId = 1;
     address public sPrime;
 
@@ -33,11 +33,11 @@ contract PositionManager is
         sPrime = sPrime_;
     }
 
-    function getBinInfo(uint256 centerId) external view returns(BinInfo memory) {
+    function getDepositConfig(uint256 centerId) external view returns(DepositConfig memory) {
         return _binInfo[centerId];
     }
 
-    function getBinInfoFromTokenId(uint256 tokenId) external view returns(BinInfo memory) {
+    function getDepositConfigFromTokenId(uint256 tokenId) external view returns(DepositConfig memory) {
         uint256 centerId = _positions[tokenId].centerId;
         return _binInfo[centerId];
     }
@@ -87,7 +87,7 @@ contract PositionManager is
             liquidityMinted: params.liquidityMinted
         });
         
-        BinInfo storage binInfo = _binInfo[params.centerId];
+        DepositConfig storage binInfo = _binInfo[params.centerId];
         if(binInfo.depositIds.length == 0) {
             binInfo.depositIds = params.depositIds;
             binInfo.liquidityConfigs = params.liquidityConfigs;

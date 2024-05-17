@@ -106,9 +106,9 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
         uint256 tokenId = getUserTokenId(user);
         require(tokenId > 0, "No position");
 
-        IPositionManager.BinInfo memory binInfo = positionManager.getBinInfoFromTokenId(tokenId);
+        IPositionManager.DepositConfig memory depositConfig = positionManager.getDepositConfigFromTokenId(tokenId);
 
-        uint256[] memory depositIds = binInfo.depositIds;
+        uint256[] memory depositIds = depositConfig.depositIds;
         uint256 activeId = lbPair.getActiveId();
         if (depositIds[0] <= activeId && depositIds[depositIds.length - 1] >= activeId) {
             return true;
@@ -123,8 +123,8 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
      */
     function getUserValueInTokenY(address user) public view returns (uint256) {
         (,,,,uint256 centerId, uint256[] memory liquidityMinted) = positionManager.positions(getUserTokenId(user));
-        IPositionManager.BinInfo memory binInfo = positionManager.getBinInfo(centerId);
-        (uint256 amountX, uint256 amountY) = _getLiquidityTokenAmounts(binInfo.depositIds, liquidityMinted);
+        IPositionManager.DepositConfig memory depositConfig = positionManager.getDepositConfig(centerId);
+        (uint256 amountX, uint256 amountY) = _getLiquidityTokenAmounts(depositConfig.depositIds, liquidityMinted);
         return _getTotalInTokenY(amountX, amountY);
     }
 
@@ -263,7 +263,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
     * @return liquidityConfigs The liquidity configurations for the given range.
     * @return depositIds Deposit ID list.
     */
-    function _getLiquidityConfigs(uint256 centerId) internal view returns (bytes32[] memory liquidityConfigs, uint256[] memory depositIds) {
+    function _encodeDepositConfigs(uint256 centerId) internal view returns (bytes32[] memory liquidityConfigs, uint256[] memory depositIds) {
         uint256 length = deltaIds.length;
         liquidityConfigs = new bytes32[](length);
         depositIds = new uint256[](length);
@@ -337,13 +337,13 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
      * @param centerId The active Id.
      */
     function _depositToLB(address user, uint256 centerId) internal {
-        IPositionManager.BinInfo memory binInfo = positionManager.getBinInfo(centerId);
-        if(binInfo.depositIds.length == 0) {
-            (binInfo.liquidityConfigs, binInfo.depositIds) = _getLiquidityConfigs(centerId);
+        IPositionManager.DepositConfig memory depositConfig = positionManager.getDepositConfig(centerId);
+        if(depositConfig.depositIds.length == 0) {
+            (depositConfig.liquidityConfigs, depositConfig.depositIds) = _encodeDepositConfigs(centerId);
         }
 
         // Mint the liquidity tokens.
-        (bytes32 amountsReceived, bytes32 amountsLeft, uint256[] memory liquidityMinted) = lbPair.mint(address(this), binInfo.liquidityConfigs, user);
+        (bytes32 amountsReceived, bytes32 amountsLeft, uint256[] memory liquidityMinted) = lbPair.mint(address(this), depositConfig.liquidityConfigs, user);
         
         uint256 share = _getTotalInTokenY(amountsReceived.decodeX() - amountsLeft.decodeX(), amountsReceived.decodeY() - amountsLeft.decodeY());
         uint256 tokenId = getUserTokenId(user);
@@ -353,8 +353,8 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
                 totalShare: share,
                 centerId: centerId,
                 liquidityMinted: liquidityMinted,
-                liquidityConfigs: binInfo.liquidityConfigs,
-                depositIds: binInfo.depositIds
+                liquidityConfigs: depositConfig.liquidityConfigs,
+                depositIds: depositConfig.depositIds
             }));
         } else  {
             positionManager.update(IPositionManager.UpdateParams({
@@ -406,8 +406,8 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
             (,,, uint256 share, uint256 centerId, uint256[] memory liquidityMinted) = positionManager.positions(tokenId);
             activeId = centerId;
             if(isRebalance) { // Withdraw Position For Rebalance
-                IPositionManager.BinInfo memory binInfo = positionManager.getBinInfo(centerId);
-                (uint256 amountXBefore, uint256 amountYBefore, ) = _withdrawFromLB(binInfo.depositIds, liquidityMinted, share);
+                IPositionManager.DepositConfig memory depositConfig = positionManager.getDepositConfig(centerId);
+                (uint256 amountXBefore, uint256 amountYBefore, ) = _withdrawFromLB(depositConfig.depositIds, liquidityMinted, share);
                 
                 positionManager.burn(tokenId);   
                 _burn(_msgSender(), share);
@@ -434,12 +434,12 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
         require(tokenId > 0, "No Position to withdraw");
 
         (,,,, uint256 centerId, uint256[] memory liquidityMinted) = positionManager.positions(tokenId);
-        IPositionManager.BinInfo memory binInfo = positionManager.getBinInfo(centerId);
+        IPositionManager.DepositConfig memory depositConfig = positionManager.getDepositConfig(centerId);
 
         uint256 lockedBalance = getLockedBalance(_msgSender());
         require(balanceOf(_msgSender()) >= share + lockedBalance, "Balance is locked");
 
-        (uint256 amountX, uint256 amountY, uint256[] memory liquidityAmounts) = _withdrawFromLB(binInfo.depositIds, liquidityMinted, share);
+        (uint256 amountX, uint256 amountY, uint256[] memory liquidityAmounts) = _withdrawFromLB(depositConfig.depositIds, liquidityMinted, share);
 
         positionManager.update(IPositionManager.UpdateParams({
             tokenId: tokenId,
@@ -508,7 +508,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
                 positionManager.forceTransfer(from, to, tokenId);
             } else {
                 (,,,,uint256 centerId, uint256[] memory liquidityMinted) = positionManager.positions(tokenId);
-                IPositionManager.BinInfo memory binInfo = positionManager.getBinInfo(centerId);
+                IPositionManager.DepositConfig memory depositConfig = positionManager.getDepositConfig(centerId);
                 for(uint256 i = 0 ; i < liquidityMinted.length ; i ++) {
                     liquidityMinted[i] = liquidityMinted[i] * amount / balanceOf(from);
                 }
@@ -525,8 +525,8 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
                     totalShare: amount,
                     centerId: centerId,
                     liquidityMinted: liquidityMinted,
-                    liquidityConfigs: binInfo.liquidityConfigs,
-                    depositIds: binInfo.depositIds
+                    liquidityConfigs: depositConfig.liquidityConfigs,
+                    depositIds: depositConfig.depositIds
                 }));
             }
         }
