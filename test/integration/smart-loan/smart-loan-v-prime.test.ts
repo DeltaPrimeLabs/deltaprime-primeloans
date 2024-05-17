@@ -97,7 +97,6 @@ describe('Smart loan', () => {
             supportedAssets = convertAssetsListToSupportedAssets(assetsList, {MCKUSD: tokenContracts.get('MCKUSD')!.address});
             addMissingTokenContracts(tokenContracts, assetsList);
 
-
             await tokenManager.connect(admin).initialize(supportedAssets, lendingPools);
             await tokenManager.connect(admin).setFactoryAddress(smartLoansFactory.address);
 
@@ -142,7 +141,7 @@ describe('Smart loan', () => {
                 VPrimeControllerArtifact,
                 []
             ) as Contract;
-            await vPrimeControllerContract.initialize([poolContracts.get('AVAX')!.address, poolContracts.get('MCKUSD')!.address], [sPrimeContract.address], tokenManager.address, vPrimeContract.address);
+            await vPrimeControllerContract.initialize([sPrimeContract.address], tokenManager.address, vPrimeContract.address);
             vPrimeControllerContract = WrapperBuilder.wrap(
                 vPrimeControllerContract
             ).usingSimpleNumericMock({

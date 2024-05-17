@@ -26,7 +26,6 @@ contract vPrimeController is OwnableUpgradeable, RedstoneConsumerNumericBase, Au
         // Always pass
     }
 
-    IPool[] public whitelistedPools;
     SPrimeMock[] public whitelistedSPrimeContracts;
     ITokenManager public tokenManager;
     vPrime public vPrimeContract;
@@ -38,8 +37,7 @@ contract vPrimeController is OwnableUpgradeable, RedstoneConsumerNumericBase, Au
 
     /* ========== INITIALIZER ========== */
 
-    function initialize(IPool[] memory _whitelistedPools, SPrimeMock[] memory _whitelistedSPrimeContracts, ITokenManager _tokenManager, vPrime _vPrime) external initializer {
-        whitelistedPools = _whitelistedPools;
+    function initialize(SPrimeMock[] memory _whitelistedSPrimeContracts, ITokenManager _tokenManager, vPrime _vPrime) external initializer {
         whitelistedSPrimeContracts = _whitelistedSPrimeContracts;
         tokenManager = _tokenManager;
         vPrimeContract = _vPrime;
@@ -77,15 +75,13 @@ contract vPrimeController is OwnableUpgradeable, RedstoneConsumerNumericBase, Au
 
     /* ========== SETTERS ========== */
 
-
-    /**
-    * @notice Updates the list of whitelisted pools.
-    * @dev Can only be called by the contract owner.
-    * @param newWhitelistedPools An array of addresses representing the new list of whitelisted pools.
-    */
-    function updateWhitelistedPools(IPool[] memory newWhitelistedPools) external onlyOwner {
-        whitelistedPools = newWhitelistedPools;
-        emit WhitelistedPoolsUpdated(newWhitelistedPools, msg.sender, block.timestamp);
+    function getWhitelistedPools() public view returns (IPool[] memory) {
+        bytes32[] memory poolsTokenSymbols = tokenManager.getAllPoolAssets();
+        IPool[] memory whitelistedPools = new IPool[](poolsTokenSymbols.length);
+        for (uint i = 0; i < poolsTokenSymbols.length; i++) {
+            whitelistedPools[i] = IPool(tokenManager.getPoolAddress(poolsTokenSymbols[i]));
+        }
+        return whitelistedPools;
     }
 
     /**
@@ -122,6 +118,7 @@ contract vPrimeController is OwnableUpgradeable, RedstoneConsumerNumericBase, Au
     /* ========== VIEW EXTERNAL FUNCTIONS ========== */
 
     function getPoolsPrices() internal view returns (uint256[] memory) {
+        IPool[] memory whitelistedPools = getWhitelistedPools();
         bytes32[] memory poolsTokenSymbols = new bytes32[](whitelistedPools.length);
         for (uint i = 0; i < whitelistedPools.length; i++) {
             poolsTokenSymbols[i] = tokenManager.tokenAddressToSymbol(whitelistedPools[i].tokenAddress());
@@ -133,6 +130,7 @@ contract vPrimeController is OwnableUpgradeable, RedstoneConsumerNumericBase, Au
         fullyVestedDollarValue = 0;
         nonVestedDollarValue = 0;
         uint256[] memory prices = getPoolsPrices();
+        IPool[] memory whitelistedPools = getWhitelistedPools();
 
         for (uint i = 0; i < whitelistedPools.length; i++) {
             uint256 fullyVestedBalance = whitelistedPools[i].getFullyVestedLockedBalance(userAddress);
@@ -146,6 +144,7 @@ contract vPrimeController is OwnableUpgradeable, RedstoneConsumerNumericBase, Au
 
     function getUserBorrowedDollarValueAcrossWhitelistedPools(address userAddress) public view returns (uint256) {
         uint256 totalDollarValue = 0;
+        IPool[] memory whitelistedPools = getWhitelistedPools();
         bytes32[] memory poolsTokenSymbols = new bytes32[](whitelistedPools.length);
         for (uint i = 0; i < whitelistedPools.length; i++) {
             poolsTokenSymbols[i] = tokenManager.tokenAddressToSymbol(whitelistedPools[i].tokenAddress());
@@ -244,7 +243,6 @@ contract vPrimeController is OwnableUpgradeable, RedstoneConsumerNumericBase, Au
 
 
     // EVENTS
-    event WhitelistedPoolsUpdated(IPool[] newWhitelistedPools, address userAddress, uint256 timestamp);
     event WhitelistedSPrimeContractsUpdated(SPrimeMock[] newWhitelistedSPrimeContracts, address userAddress, uint256 timestamp);
     event TokenManagerUpdated(ITokenManager newTokenManager, address userAddress, uint256 timestamp);
 }
