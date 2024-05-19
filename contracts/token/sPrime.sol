@@ -17,9 +17,10 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@redstone-finance/evm-connector/contracts/core/ProxyConnector.sol";
 
 // SPrime contract declaration
-contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC20Upgradeable {
+contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC20Upgradeable, ProxyConnector {
     using SafeERC20 for IERC20Metadata; // Using SafeERC20 for IERC20 for safe token transfers
     using LiquidityAmounts for address; // Using LiquidityAmounts for address for getting amounts of liquidity
     using SafeCast for uint256; // Using SafeCast for uint256 for safe type casting
@@ -40,6 +41,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
     IERC20Metadata public tokenY;
     ILBPair public lbPair;
     IPositionManager public positionManager;
+    address public vPrimeController;
 
     // Arrays for storing deltaIds and distributions
     int256[] private deltaIds;
@@ -56,7 +58,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
     * @param deltaIds_ Delta id for bins
     * @param positionManager_ Position Manager contract for sPrime
     */
-    function initialize(address tokenX_, address tokenY_, string memory name_, uint256[] memory distributionX_, uint256[] memory distributionY_, int256[] memory deltaIds_, address positionManager_) external initializer {
+    function initialize(address tokenX_, address tokenY_, string memory name_, uint256[] memory distributionX_, uint256[] memory distributionY_, int256[] memory deltaIds_, address positionManager_, address _vPrimeController) external initializer {
         __Ownable_init();
         __ReentrancyGuard_init();
         __ERC20_init(name_, "sPrime");
@@ -77,6 +79,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
         distributionY = distributionY_;
 
         positionManager = IPositionManager(positionManager_);
+        vPrimeController = _vPrimeController;
     }
 
     /** Public View Functions */
@@ -424,6 +427,11 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
         }
         _transferTokens(address(this), address(lbPair), amountX, amountY);
         _depositToLB(_msgSender(), activeId);
+        proxyCalldata(
+            vPrimeController,
+            abi.encodeWithSignature("updateVPrimeSnapshot(address)", _msgSender()),
+            false
+        );
     }
 
     /**
@@ -458,6 +466,11 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
 
         // Send the tokens to the user.
         _transferTokens(address(this), _msgSender(), amountX, amountY);
+        proxyCalldata(
+            vPrimeController,
+            abi.encodeWithSignature("updateVPrimeSnapshot(address)", _msgSender()),
+            false
+        );
     }
 
     /**
@@ -474,6 +487,11 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
             amount: amount,
             unlockTime: block.timestamp + lockPeriod
         }));
+        proxyCalldata(
+            vPrimeController,
+            abi.encodeWithSignature("updateVPrimeSnapshot(address)", _msgSender()),
+            false
+        );
     }
 
     /**
@@ -486,6 +504,11 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
         locks[_msgSender()][index] = locks[_msgSender()][length - 1];
 
         locks[_msgSender()].pop();
+        proxyCalldata(
+            vPrimeController,
+            abi.encodeWithSignature("updateVPrimeSnapshot(address)", _msgSender()),
+            false
+        );
     }
 
 
