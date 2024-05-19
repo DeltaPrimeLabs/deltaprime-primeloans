@@ -7,7 +7,7 @@ import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockToke
 import DoubleMethodTxArtifact
     from '../../../artifacts/contracts/mock/DoubleBorrowExecInSingleTx.sol/DoubleBorrowExecInSingleTx.json';
 import VPrimeArtifact from '../../../artifacts/contracts/tokens/vPrime.sol/vPrime.json';
-import VPrimeControllerArtifact from '../../../artifacts/contracts/tokens/vPrimeController.sol/vPrimeController.json';
+import VPrimeControllerArtifact from '../../../artifacts/contracts/tokens/mock/vPrimeControllerMock.sol/vPrimeControllerMock.json';
 import sPrimeMockArtifact from '../../../artifacts/contracts/tokens/mock/sPrimeMock.sol/SPrimeMock.json';
 import AddressProviderArtifact from '../../../artifacts/contracts/AddressProvider.sol/AddressProvider.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";

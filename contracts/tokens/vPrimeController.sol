@@ -2,7 +2,6 @@
 // Last deployed from commit: ;
 pragma solidity 0.8.17;
 
-import "@redstone-finance/evm-connector/contracts/mocks/AuthorisedMockSignersBase.sol";
 import "@redstone-finance/evm-connector/contracts/core/RedstoneConsumerNumericBase.sol";
 import "../abstract/PendingOwnableUpgradeable.sol";
 import "../interfaces/ITokenManager.sol";
@@ -11,21 +10,7 @@ import "../interfaces/IPool.sol";
 import "./mock/sPrimeMock.sol";
 import "./vPrime.sol";
 
-contract vPrimeController is PendingOwnableUpgradeable, RedstoneConsumerNumericBase, AuthorisedMockSignersBase {
-    function getAuthorisedSignerIndex(address receivedSigner)
-    public
-    view
-    virtual
-    override
-    returns (uint8)
-    {
-        return getAuthorisedMockSignerIndex(receivedSigner);
-    }
-
-    function validateTimestamp(uint256 receivedTimestampMilliseconds) public view virtual override {
-        // Always pass
-    }
-
+abstract contract vPrimeController is PendingOwnableUpgradeable, RedstoneConsumerNumericBase {
     SPrimeMock[] public whitelistedSPrimeContracts;
     ITokenManager public tokenManager;
     vPrime public vPrimeContract;
