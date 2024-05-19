@@ -5,11 +5,11 @@ pragma solidity 0.8.17;
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "../interfaces/IBorrowersRegistry.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "../abstract/PendingOwnableUpgradeable.sol";
 import {vPrimeController} from "./vPrimeController.sol";
 
 
-contract vPrime is OwnableUpgradeable {
+contract vPrime is PendingOwnableUpgradeable {
     struct Checkpoint {
         uint32 blockTimestamp;
         uint256 balance;
@@ -25,7 +25,7 @@ contract vPrime is OwnableUpgradeable {
 
     function initialize(IBorrowersRegistry _borrowersRegistry) external initializer {
         borrowersRegistry = _borrowersRegistry;
-        __Ownable_init();
+        __PendingOwnable_init();
     }
 
 

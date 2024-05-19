@@ -4,14 +4,14 @@ pragma solidity 0.8.17;
 
 import "@redstone-finance/evm-connector/contracts/mocks/AuthorisedMockSignersBase.sol";
 import "@redstone-finance/evm-connector/contracts/core/RedstoneConsumerNumericBase.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "../abstract/PendingOwnableUpgradeable.sol";
 import "../interfaces/ITokenManager.sol";
 import "../interfaces/IBorrowersRegistry.sol";
 import "../interfaces/IPool.sol";
 import "./mock/sPrimeMock.sol";
 import "./vPrime.sol";
 
-contract vPrimeController is OwnableUpgradeable, RedstoneConsumerNumericBase, AuthorisedMockSignersBase {
+contract vPrimeController is PendingOwnableUpgradeable, RedstoneConsumerNumericBase, AuthorisedMockSignersBase {
     function getAuthorisedSignerIndex(address receivedSigner)
     public
     view
@@ -41,7 +41,7 @@ contract vPrimeController is OwnableUpgradeable, RedstoneConsumerNumericBase, Au
         whitelistedSPrimeContracts = _whitelistedSPrimeContracts;
         tokenManager = _tokenManager;
         vPrimeContract = _vPrime;
-        __Ownable_init();
+        __PendingOwnable_init();
     }
 
 

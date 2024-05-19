@@ -4,7 +4,7 @@ pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "./abstract/PendingOwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
@@ -24,7 +24,7 @@ import "./VestingDistributor.sol";
  * Depositors are rewarded with the interest rates collected from borrowers.
  * The interest rates calculation is delegated to an external calculator contract.
  */
-contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyConnector {
+contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyConnector {
     using TransferHelper for address payable;
     using Math for uint256;
 
