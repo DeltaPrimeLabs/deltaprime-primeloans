@@ -44,4 +44,5 @@ interface ISPrime {
     function getLBPair() external view returns(address);
     function getTokenX() external view returns(address);
     function getTokenY() external view returns(address);
+    function getFullyVestedLockedBalance(address account) external view returns(uint256);
 }

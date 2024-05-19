@@ -129,11 +129,12 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
     }
 
     /**
-    * @dev Returns the ratio of fully vested locked balance to non-vested balance for an account.
+    * @dev Returns the fully vested locked balance for an account.
+    * @dev Full business logic description can be found in Pool::getFullyVestedLockedBalance() docstring
     * @param account The address of the account.
     * @return fullyVestedBalance Fully vested locked balance
     */
-    function getFullyVestedLockedBalanceToNonVestedRatio(address account) public view returns (uint256 fullyVestedBalance) {
+    function getFullyVestedLockedBalance(address account) public view returns (uint256 fullyVestedBalance) {
         for (uint256 i = 0; i < locks[account].length; i++) {
             if (locks[account][i].unlockTime <= block.timestamp) {
                 fullyVestedBalance += locks[account][i].amount * locks[account][i].lockPeriod / MAX_LOCK_TIME;
