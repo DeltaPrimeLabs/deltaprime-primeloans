@@ -97,4 +97,12 @@ contract SPrimeMock is ERC20, Ownable, ProxyConnector {
             require(amount <= balanceOf(from) - lockedBalance, "Balance is locked");
         }
     }
+
+    function getTokenY() public view returns (address) {
+        return 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7; // WAVAX 18 decimals
+    }
+
+    function getUserValueInTokenY(address userAddress) public view returns (uint256) {
+        return balanceOf(userAddress) * DOLLAR_VALUE_MULTIPLIER;
+    }
 }

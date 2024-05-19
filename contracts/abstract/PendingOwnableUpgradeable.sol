@@ -15,7 +15,7 @@ abstract contract PendingOwnableUpgradeable is OwnableUpgradeable, IPendingOwnab
         __Ownable_init();
     }
 
-    function transferOwnership(address newOwner) public virtual override onlyOwner {
+    function transferOwnership(address newOwner) public virtual override(OwnableUpgradeable, IPendingOwnableUpgradeable) onlyOwner {
         require(newOwner != address(0), "PendingOwnable: new owner is the zero address");
         _setPendingOwner(newOwner);
         emit OwnershipTransferRequested(owner(), newOwner);

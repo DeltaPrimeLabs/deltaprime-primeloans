@@ -3,6 +3,7 @@
 pragma solidity 0.8.17;
 
 import "@redstone-finance/evm-connector/contracts/core/RedstoneConsumerNumericBase.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "../abstract/PendingOwnableUpgradeable.sol";
 import "../interfaces/ITokenManager.sol";
 import "../interfaces/IBorrowersRegistry.sol";
@@ -102,7 +103,7 @@ abstract contract vPrimeController is PendingOwnableUpgradeable, RedstoneConsume
 
     /* ========== VIEW EXTERNAL FUNCTIONS ========== */
 
-    function getPoolsPrices(IPool whitelistedPools) internal view returns (uint256[] memory) {
+    function getPoolsPrices(IPool[] memory whitelistedPools) internal view returns (uint256[] memory) {
         bytes32[] memory poolsTokenSymbols = new bytes32[](whitelistedPools.length);
         for (uint i = 0; i < whitelistedPools.length; i++) {
             poolsTokenSymbols[i] = tokenManager.tokenAddressToSymbol(whitelistedPools[i].tokenAddress());
@@ -147,16 +148,16 @@ abstract contract vPrimeController is PendingOwnableUpgradeable, RedstoneConsume
         fullyVestedDollarValue = 0;
         nonVestedDollarValue = 0;
         for (uint i = 0; i < whitelistedSPrimeContracts.length; i++) {
-            bytes32 sPrimeTokenYSymbol = tokenManager.tokenAddressToSymbol(sPrimeContracts[i].getTokenY());
-            uint256 sPrimeTokenYDecimals = IERC20Metadata(sPrimeContracts[i].getTokenY()).decimals();
+            bytes32 sPrimeTokenYSymbol = tokenManager.tokenAddressToSymbol(whitelistedSPrimeContracts[i].getTokenY());
+            uint256 sPrimeTokenYDecimals = IERC20Metadata(whitelistedSPrimeContracts[i].getTokenY()).decimals();
             uint256 sPrimeTokenYPrice = getOracleNumericValueFromTxMsg(sPrimeTokenYSymbol);
             uint256 sPrimeBalance = whitelistedSPrimeContracts[i].balanceOf(userAddress);
             uint256 fullyVestedBalance = whitelistedSPrimeContracts[i].getFullyVestedLockedBalance(userAddress);
             uint256 nonVestedBalance = sPrimeBalance - fullyVestedBalance;
             uint256 userSPrimeValueInTokenY = whitelistedSPrimeContracts[i].getUserValueInTokenY(userAddress);
 
-            fullyVestedDollarValue += userSPrimeValueInTokenY * sPrimeTokenYPrice * 1e10 * fullyVestedDollarValue / sPrimeBalance / 10 ** sPrimeTokenYDecimals.decimals();
-            nonVestedBalance += userSPrimeValueInTokenY * sPrimeTokenYPrice * 1e10 * nonVestedDollarValue / sPrimeBalance / 10 ** sPrimeTokenYDecimals.decimals();
+            fullyVestedDollarValue += userSPrimeValueInTokenY * sPrimeTokenYPrice * 1e10 * fullyVestedDollarValue / sPrimeBalance / 10 ** sPrimeTokenYDecimals;
+            nonVestedBalance += userSPrimeValueInTokenY * sPrimeTokenYPrice * 1e10 * nonVestedDollarValue / sPrimeBalance / 10 ** sPrimeTokenYDecimals;
         }
         return (fullyVestedDollarValue, nonVestedDollarValue);
     }

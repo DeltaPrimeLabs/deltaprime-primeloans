@@ -9,7 +9,7 @@ import OpenBorrowersRegistryArtifact
 import MockTokenManagerArtifact from '../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json';
 import LinearIndexArtifact from '../../artifacts/contracts/LinearIndex.sol/LinearIndex.json';
 import VPrimeArtifact from '../../artifacts/contracts/tokens/vPrime.sol/vPrime.json';
-import VPrimeControllerArtifact from '../../artifacts/contracts/tokens/mock/vPrimeControllerMock.sol/vPrimeControllerMock.json';
+import VPrimeControllerArtifact from '../../artifacts/contracts/tokens/mock/vPrimeControllerAvalancheMock.sol/vPrimeControllerAvalancheMock.json';
 import sPrimeMockArtifact from '../../artifacts/contracts/tokens/mock/sPrimeMock.sol/SPrimeMock.json';
 import SmartLoansFactoryArtifact from '../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import MockTokenArtifact from "../../artifacts/contracts/mock/MockToken.sol/MockToken.json";
