@@ -161,13 +161,17 @@ contract vPrimeController is OwnableUpgradeable, RedstoneConsumerNumericBase, Au
     function getUserSPrimeDollarValueVestedAndNonVested(address userAddress) public view returns (uint256 fullyVestedDollarValue, uint256 nonVestedDollarValue) {
         fullyVestedDollarValue = 0;
         nonVestedDollarValue = 0;
-        uint256 sPrimePrice = 2; // TODO: Actual sPrime implementation will return user position denominated in tokenY and based and we'll be sourcing the tokenY price from the oracle
         for (uint i = 0; i < whitelistedSPrimeContracts.length; i++) {
+            bytes32 sPrimeTokenYSymbol = tokenManager.tokenAddressToSymbol(sPrimeContracts[i].getTokenY());
+            uint256 sPrimeTokenYDecimals = IERC20Metadata(sPrimeContracts[i].getTokenY()).decimals();
+            uint256 sPrimeTokenYPrice = getOracleNumericValueFromTxMsg(sPrimeTokenYSymbol);
+            uint256 sPrimeBalance = whitelistedSPrimeContracts[i].balanceOf(userAddress);
             uint256 fullyVestedBalance = whitelistedSPrimeContracts[i].getFullyVestedLockedBalance(userAddress);
-            uint256 nonVestedBalance = whitelistedSPrimeContracts[i].balanceOf(userAddress) - fullyVestedBalance;
+            uint256 nonVestedBalance = sPrimeBalance - fullyVestedBalance;
+            uint256 userSPrimeValueInTokenY = whitelistedSPrimeContracts[i].getUserValueInTokenY(userAddress);
 
-            fullyVestedDollarValue += fullyVestedBalance * sPrimePrice;
-            nonVestedDollarValue += nonVestedBalance * sPrimePrice;
+            fullyVestedDollarValue += userSPrimeValueInTokenY * sPrimeTokenYPrice * 1e10 * fullyVestedDollarValue / sPrimeBalance / 10 ** sPrimeTokenYDecimals.decimals();
+            nonVestedBalance += userSPrimeValueInTokenY * sPrimeTokenYPrice * 1e10 * nonVestedDollarValue / sPrimeBalance / 10 ** sPrimeTokenYDecimals.decimals();
         }
         return (fullyVestedDollarValue, nonVestedDollarValue);
     }
