@@ -117,8 +117,7 @@ contract vPrimeController is OwnableUpgradeable, RedstoneConsumerNumericBase, Au
 
     /* ========== VIEW EXTERNAL FUNCTIONS ========== */
 
-    function getPoolsPrices() internal view returns (uint256[] memory) {
-        IPool[] memory whitelistedPools = getWhitelistedPools();
+    function getPoolsPrices(IPool whitelistedPools) internal view returns (uint256[] memory) {
         bytes32[] memory poolsTokenSymbols = new bytes32[](whitelistedPools.length);
         for (uint i = 0; i < whitelistedPools.length; i++) {
             poolsTokenSymbols[i] = tokenManager.tokenAddressToSymbol(whitelistedPools[i].tokenAddress());
@@ -129,8 +128,8 @@ contract vPrimeController is OwnableUpgradeable, RedstoneConsumerNumericBase, Au
     function getUserDepositDollarValueAcrossWhiteListedPoolsVestedAndNonVested(address userAddress) public view returns (uint256 fullyVestedDollarValue, uint256 nonVestedDollarValue) {
         fullyVestedDollarValue = 0;
         nonVestedDollarValue = 0;
-        uint256[] memory prices = getPoolsPrices();
         IPool[] memory whitelistedPools = getWhitelistedPools();
+        uint256[] memory prices = getPoolsPrices(whitelistedPools);
 
         for (uint i = 0; i < whitelistedPools.length; i++) {
             uint256 fullyVestedBalance = whitelistedPools[i].getFullyVestedLockedBalance(userAddress);
