@@ -429,10 +429,10 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
     * @param to The address to transfer to.
     * @param amount The amount to transfer.
     */
-    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override {
+    function _afterTokenTransfer(address from, address to, uint256 amount) internal virtual override {
         if(from != address(0) && to != address(0)) {
-            uint256 lockedBalance = getLockedBalance(from);
-            require(balanceOf(from) >= amount + lockedBalance, "Insufficient Balance");
+            uint256 balance = getLockedBalance(from);
+            require(balanceOf(from) >= amount + balance, "Insufficient Balance");
             require(userTokenId[to] == 0, "Receiver already has a postion");
             
             uint256 tokenId = userTokenId[from];
@@ -454,7 +454,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
                     })
                 );
 
-                (tokenId,,,) = INonfungiblePositionManager(positionManager).mint(INonfungiblePositionManager.MintParams({
+                (uint256 newTokenId,,uint256 amountXAdded, uint256 amountYAdded) = INonfungiblePositionManager(positionManager).mint(INonfungiblePositionManager.MintParams({
                     token0: address(tokenX),
                     token1: address(tokenY),
                     fee: feeTier,
@@ -467,7 +467,16 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
                     recipient: address(this),
                     deadline: block.timestamp
                 }));
-                userTokenId[to] = tokenId;
+                // Reusing balance to avoid stack too deep
+                balance = _getTotalInTokenY(amountXAdded, amountYAdded);
+                if(amount > balance) {
+                    _burn(to, amount - balance);
+                } else {
+                    _mint(to, balance - amount);
+                }
+                _transferTokens(address(this), to, amountX - amountXAdded, amountY - amountYAdded);
+
+                userTokenId[to] = newTokenId;
             }
         }
     }
