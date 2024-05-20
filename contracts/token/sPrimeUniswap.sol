@@ -136,8 +136,8 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
     * @return fullyVestedBalance Fully vested locked balance
     */
     function getFullyVestedLockedBalance(address account) public view returns (uint256 fullyVestedBalance) {
-        for (uint i = 0; i < locks[account].length; i++) {
-            if (locks[account][i].unlockTime <= block.timestamp) {
+        for (uint256 i = 0; i < locks[account].length; i++) {
+            if (locks[account][i].unlockTime > block.timestamp) {
                 fullyVestedBalance += locks[account][i].amount * locks[account][i].lockPeriod / MAX_LOCK_TIME;
             }
         }
@@ -263,7 +263,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
         }
         uint256 share = _getTotalInTokenY(amountXAdded, amountYAdded);
         _transferTokens(address(this), user, amountX - amountXAdded, amountY - amountYAdded);
-        
+
         _mint(user, share);
     }
 
@@ -424,7 +424,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
     /** Overrided Functions */
 
     /**
-    * @dev The hook that happens before token transfer.
+    * @dev The hook that happens after token transfer.
     * @param from The address to transfer from.
     * @param to The address to transfer to.
     * @param amount The amount to transfer.

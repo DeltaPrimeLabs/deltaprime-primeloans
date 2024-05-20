@@ -139,7 +139,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, PendingOwnableUpgradeabl
     */
     function getFullyVestedLockedBalance(address account) public view returns (uint256 fullyVestedBalance) {
         for (uint256 i = 0; i < locks[account].length; i++) {
-            if (locks[account][i].unlockTime <= block.timestamp) {
+            if (locks[account][i].unlockTime > block.timestamp) {
                 fullyVestedBalance += locks[account][i].amount * locks[account][i].lockPeriod / MAX_LOCK_TIME;
             }
         }
