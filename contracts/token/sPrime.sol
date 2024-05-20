@@ -11,16 +11,16 @@ import "../interfaces/IPositionManager.sol";
 import "../lib/joe-v2/LiquidityAmounts.sol";
 import "../lib/joe-v2/math/Uint256x256Math.sol";
 import "../lib/joe-v2/math/LiquidityConfigurations.sol";
+import "../abstract/PendingOwnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@redstone-finance/evm-connector/contracts/core/ProxyConnector.sol";
 
 // SPrime contract declaration
-contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC20Upgradeable, ProxyConnector {
+contract SPrime is ISPrime, ReentrancyGuardUpgradeable, PendingOwnableUpgradeable, ERC20Upgradeable, ProxyConnector {
     using SafeERC20 for IERC20Metadata; // Using SafeERC20 for IERC20 for safe token transfers
     using LiquidityAmounts for address; // Using LiquidityAmounts for address for getting amounts of liquidity
     using SafeCast for uint256; // Using SafeCast for uint256 for safe type casting
@@ -59,7 +59,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC2
     * @param positionManager_ Position Manager contract for sPrime
     */
     function initialize(address tokenX_, address tokenY_, string memory name_, uint256[] memory distributionX_, uint256[] memory distributionY_, int256[] memory deltaIds_, address positionManager_, address _vPrimeController) external initializer {
-        __Ownable_init();
+        __PendingOwnable_init();
         __ReentrancyGuard_init();
         __ERC20_init(name_, "sPrime");
 
