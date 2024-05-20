@@ -229,7 +229,12 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, PendingOwnableUpgradeabl
         uint256 diff = swapTokenX ? amountXToY - amountY : amountY - amountXToY;
         // (amountXToY != 0 || amountX == 0) for excluding the initial LP deposit
         if(amountY * _REBALANCE_MARGIN / 100 < diff && (amountXToY > 0 || amountX == 0)) {
-            uint256 amountIn = amountXToY > 0 ? amountX * diff / amountXToY / 2 : amountX * diff / amountY / 2;
+            uint256 amountIn;
+            {
+                uint256 price = PriceHelper.convert128x128PriceToDecimal(lbPair.getPriceFromId(lbPair.getActiveId()));
+                amountIn = diff / price / 2;
+            }
+
             amountXToY = diff / 2; 
 
             (amountIn, amountXToY) = swapTokenX ? (amountIn, amountXToY) : (amountXToY, amountIn);
@@ -256,7 +261,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, PendingOwnableUpgradeabl
                 tokenPath: tokenPathDynamic
             });
             uint256 amountOut = ILBRouter(getJoeV2RouterAddress()).swapExactTokensForTokens(amountIn, amountXToY * (100 - swapSlippage) / 100, path, address(this), block.timestamp + 1000);
-            (amountX, amountY) = swapTokenX ? (amountX - amountIn, amountY + amountOut) : (amountX + amountOut, amountY - amountIn);
+            (amountX, amountY) = swapTokenX ? (amountX - amountIn,amountY + amountOut) : (amountX + amountOut, amountY - amountIn);
         }
         return (amountX, amountY);
     }
