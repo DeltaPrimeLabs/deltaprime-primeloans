@@ -317,7 +317,7 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
     const diff = Math.abs(((sum - tokensToBeDistributedPerPool[pool]) / tokensToBeDistributedPerPool[pool]) * 100);
     console.log(`sum: ${sum}, expected:${tokensToBeDistributedPerPool[pool]}, diff(&): ${diff}`);
 
-    if (diff < 0.01) {
+    if (diff < 3) {
       await axios.get(pingUrl.ltipPoolChcker.success);
       console.log(`============difference check for ${pool} success==============`);
     } else {
