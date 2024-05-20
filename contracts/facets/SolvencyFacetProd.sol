@@ -624,7 +624,7 @@ abstract contract SolvencyFacetProd is RedstoneConsumerNumericBase, DiamondHelpe
     function getUniswapV3Position(
         INonfungiblePositionManager positionManager,
         uint256 tokenId) internal view returns (IUniswapV3Facet.UniswapV3Position memory position) {
-        (, , address token0, address token1, , int24 tickLower, int24 tickUpper, uint128 liquidity) = positionManager.positions(tokenId);
+        (, , address token0, address token1, , int24 tickLower, int24 tickUpper, uint128 liquidity,,,,) = positionManager.positions(tokenId);
 
         position = IUniswapV3Facet.UniswapV3Position(token0, token1, tickLower, tickUpper, liquidity);
     }

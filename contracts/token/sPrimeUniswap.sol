@@ -5,43 +5,45 @@ pragma solidity 0.8.17;
 // Importing necessary libraries and interfaces
 import "../interfaces/ISPrimeUniswap.sol";
 import "../interfaces/ITokenManager.sol";
-import "../interfaces/uniswap-v3/IUniswapV3Pool.sol";
 import "../interfaces/uniswap-v3/IUniswapV3Factory.sol";
 import "../interfaces/uniswap-v3/ISwapRouter.sol";
-import "../interfaces/uniswap-v3-periphery/INonfungiblePositionManager.sol";
 import "../lib/uniswap-v3/OracleLibrary.sol";
+import "../lib/uniswap-v3/PositionValue.sol";
 import "../lib/SolvencyMethods.sol";
 import "../lib/local/DeploymentConstants.sol";
+import "../abstract/PendingOwnableUpgradeable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 
 // SPrime contract declaration
-contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, OwnableUpgradeable, ERC20Upgradeable, ERC721HolderUpgradeable, SolvencyMethods {
+contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwnableUpgradeable, ERC20Upgradeable, ERC721HolderUpgradeable, SolvencyMethods {
     using SafeERC20 for IERC20Metadata; // Using SafeERC20 for IERC20 for safe token transfers
-
+    using PositionValue for INonfungiblePositionManager;
     // Constants declaration
-    uint256 private constant _TICK_RANGE = 10;
-    uint256 private constant _MAX_SLIPPAGE = 5;
+    uint256 private constant _REBALANCE_MARGIN = 5;
+    uint256 private constant _MAX_SLIPPAGE = 10;
+    int24 private constant _TICK_RANGE = 10;
+    uint256 public constant MAX_LOCK_TIME = 3 * 365 days;
 
     // Mapping for storing pair information and user shares
-    mapping(address => UserInfo) public userInfo;
     mapping(address => LockDetails[]) public locks;
-    mapping(uint256 => address) public nftOwnership;
+    mapping(address => uint256) public userTokenId;
 
     // Immutable variables for storing token and pair information
     IERC20Metadata public tokenX;
     IERC20Metadata public tokenY;
     IUniswapV3Pool public pool;
-    uint24 public feeTier;
-    uint256 public constant MAX_LOCK_TIME = 3 * 365 days;
 
+    address public vPrimeController;
+    uint24 public feeTier;
     uint256 public totalXSupply;
     uint256 public totalYSupply;
+
+    int24[2] private deltaIds;
 
     /**
     * @dev Constructor of the contract.
@@ -50,8 +52,8 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, OwnableUpg
     * @param name_ The name of the SPrime token. ex: PRIME-USDC LP
     * @param feeTier_ Fee Tier of Uniswap V3 Pool
     */
-    function initialize(address tokenX_, address tokenY_, string memory name_, uint24 feeTier_) external initializer {
-        __Ownable_init();
+    function initialize(address tokenX_, address tokenY_, string memory name_, uint24 feeTier_, address _vPrimeController, int24[2] memory deltaIds_) external initializer {
+        __PendingOwnable_init();
         __ReentrancyGuard_init();
         __ERC20_init(name_, "sPrime");
         __ERC721Holder_init();
@@ -65,6 +67,8 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, OwnableUpg
         address poolAddress = IUniswapV3Factory(getUniV3FactoryAddress()).getPool(tokenX_, tokenY_, feeTier_);
         
         pool = IUniswapV3Pool(poolAddress);
+        vPrimeController = _vPrimeController;
+        deltaIds = deltaIds_;
     }
 
     /**
@@ -92,19 +96,51 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, OwnableUpg
     }
 
     /**
-    * @dev Returns the ratio of fully vested locked balance to non-vested balance for an account.
+     * @dev Check if the tick is in the user position range
+     * @param user User Address.
+     * @return status tick status
+     */
+    function tickInRange(address user) public view returns(bool) {
+        uint256 tokenId = userTokenId[user];
+        require(tokenId > 0, "No position");
+
+        address positionManager = getNonfungiblePositionManagerAddress();
+        (, int24 tick,,,,,) = pool.slot0();
+        (,,,,,int24 tickLower, int24 tickUpper,,,,,) = INonfungiblePositionManager(positionManager).positions(tokenId);
+        if (tickLower <= tick && tick <= tickUpper) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * @dev Returns the estimated USD value of the user position
+     * @param user User Address
+     * @return Total Value in tokenY amount for the user's position.
+     */
+    function getUserValueInTokenY(address user) public view returns (uint256) {
+        uint256 tokenId = userTokenId[user];
+        require(tokenId > 0, "No position");
+        
+        (uint160 sqrtRatioX96,,,,,,) = pool.slot0();
+
+        address positionManager = getNonfungiblePositionManagerAddress();
+        (uint256 amountX, uint256 amountY) = INonfungiblePositionManager(positionManager).total(tokenId, sqrtRatioX96);
+        return _getTotalInTokenY(amountX, amountY);
+    }
+
+    /**
+    * @dev Returns the fully vested locked balance for an account.
+    * @dev Full business logic description can be found in Pool::getFullyVestedLockedBalance() docstring
     * @param account The address of the account.
-    * @return The ratio of fully vested locked balance to total balance
+    * @return fullyVestedBalance Fully vested locked balance
     */
-    function getFullyVestedLockedBalanceToNonVestedRatio(address account) public view returns (uint256) {
-        uint256 totalBalance = balanceOf(account);
-        uint256 fullyVestedBalance = 0;
+    function getFullyVestedLockedBalance(address account) public view returns (uint256 fullyVestedBalance) {
         for (uint i = 0; i < locks[account].length; i++) {
             if (locks[account][i].unlockTime <= block.timestamp) {
                 fullyVestedBalance += locks[account][i].amount * locks[account][i].lockPeriod / MAX_LOCK_TIME;
             }
         }
-        return totalBalance == 0 ? 0 : fullyVestedBalance * 1e18 / totalBalance;
     }
 
     /**
@@ -128,26 +164,10 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, OwnableUpg
      * @param amountY Token Y Amount.
      * @return weight The total weight of tokens in the liquidity pair.
      */
-    function _getTotalWeight(uint256 amountX, uint256 amountY) internal view returns(uint256 weight) {
+    function _getTotalInTokenY(uint256 amountX, uint256 amountY) internal view returns(uint256 weight) {
         uint256 amountXToY = _getTokenYFromTokenX(amountX);
         weight = amountY + amountXToY;
     }
-
-    /**
-     * @dev Returns the index of the liquidity information for the specific user.
-     * @param user User address
-     * @param tokenId Token ID of the nft position
-     */
-    function _getLiquidityIndexFromTokenId(address user, uint256 tokenId) internal view returns(uint256) {
-        uint256 length = userInfo[user].amount;
-        for(uint256 i = 0 ; i < length - 1; i ++) {
-            if(userInfo[user].liquidityInfo[i].tokenId == tokenId) {
-                return i + 1;
-            }
-        }
-        return 0;
-    }
-
 
     /**
      * @dev Returns the estimated token Y amount from token X.
@@ -160,56 +180,62 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, OwnableUpg
     }
 
     /**
-    * @dev Locks a specified amount of balance for a specified lock period.
-    * @param amount The amount of balance to be locked.
-    * @param lockPeriod The duration for which the balance will be locked.
+    * @dev Returns the updated amounts of tokens.
+    * @return amountX The updated amount of token X.
+    * @return amountY The updated amount of token Y.
     */
-    function lockBalance(uint256 amount, uint256 lockPeriod) public {
-        uint256 lockedBalance = getLockedBalance(_msgSender());
-        require(balanceOf(_msgSender()) >= amount + lockedBalance, "Insufficient balance to lock");
-        require(lockPeriod <= MAX_LOCK_TIME, "Cannot lock for more than 3 years");
-        locks[_msgSender()].push(LockDetails({
-            lockPeriod: lockPeriod,
-            amount: amount,
-            unlockTime: block.timestamp + lockPeriod
-        }));
-    }
+    function _swapForEqualValues(uint256 amountX, uint256 amountY, uint256 swapSlippage) internal returns(uint256, uint256) {
+        uint256 amountXToY = _getTokenYFromTokenX(amountX);
+        bool swapTokenX = amountY < amountXToY;
+        uint256 diff = swapTokenX ? amountXToY - amountY : amountY - amountXToY;
+        // (amountXToY != 0 || amountX == 0) for excluding the initial LP deposit
+        if(amountY * _REBALANCE_MARGIN / 100 < diff && (amountXToY > 0 || amountX == 0)) {
+            uint256 amountIn = amountXToY > 0 ? amountX * diff / amountXToY / 2 : amountX * diff / amountY / 2;
+            amountXToY = diff / 2; 
+            
+            address swapRouter = getSwapRouter();
+            address tokenIn;
+            address tokenOut;
 
-    /**
-    * @dev Releases a locked balance at a specified index.
-    * @param index The index of the lock to be released.
-    */
-    function releaseBalance(uint256 index) public {
-        require(locks[_msgSender()][index].unlockTime <= block.timestamp, "Still in the lock period");
-        uint256 length = locks[_msgSender()].length;
-        locks[_msgSender()][index] = locks[_msgSender()][length - 1];
+            (amountIn, amountXToY) = swapTokenX ? (amountIn, amountXToY) : (amountXToY, amountIn);
 
-        locks[_msgSender()].pop();
-    }
+            if (swapTokenX) {
+                tokenIn = address(tokenX);
+                tokenOut = address(tokenY);
+                tokenX.safeApprove(swapRouter, amountIn);
+            } else {
+                tokenIn = address(tokenY);
+                tokenOut = address(tokenX);
+                tokenX.safeApprove(swapRouter, amountIn);
+            }
 
-    /**
-    * @dev Users can use deposit function for depositing tokens to the specific bin.
-    * @param amountX The amount of token X to deposit.
-    * @param amountY The amount of token Y to deposit.
-    * @param tickLower Tick Lower for the postion.
-    * @param tickUpper Tick Uppoer for the position.
-    */
-    function deposit(uint256 amountX, uint256 amountY, int24 tickLower, int24 tickUpper) public {
-        _transferTokens(_msgSender(), address(this), amountX, amountY);
+            uint256 amountOut = ISwapRouter(swapRouter).exactInputSingle(
+                ISwapRouter.ExactInputSingleParams({
+                    tokenIn: tokenIn,
+                    tokenOut: tokenOut,
+                    fee: feeTier,
+                    recipient: address(this),
+                    deadline: block.timestamp,
+                    amountIn: amountIn,
+                    amountOutMinimum: amountXToY * (100 - swapSlippage) / 100,
+                    sqrtPriceLimitX96: 0
+                })
+            );
 
-        address positionManager = getNonfungiblePositionManagerAddress();
-        tokenX.safeApprove(positionManager, amountX);
-        tokenY.safeApprove(positionManager, amountY);
-        
-        if(userInfo[_msgSender()].amount > 0) {
-            (uint256 amountXBefore, uint256 amountYBefore) = _withdrawAndUpdateShare(_msgSender());
-            (amountX, amountY) = (amountX + amountXBefore, amountY + amountYBefore);
+            (amountX, amountY) = swapTokenX ? (amountX - amountIn, amountY + amountOut) : (amountX + amountOut, amountY - amountIn);
         }
+        return (amountX, amountY);
+    }
 
-        (amountX, amountY) = _getUpdatedAmounts(amountX, amountY);
 
-        (uint256 tokenId, uint128 lpAmount, uint256 receivedX, uint256 receivedY) = INonfungiblePositionManager(positionManager).mint(
-            INonfungiblePositionManager.MintParams({
+    function _depositToUniswap(address user, int24 tickLower, int24 tickUpper, uint256 amountX, uint256 amountY) internal {
+        uint256 tokenId = userTokenId[user];
+        address positionManager = getNonfungiblePositionManagerAddress();
+        tokenX.approve(positionManager, amountX);
+        tokenY.approve(positionManager, amountY);
+
+        if(tokenId == 0) {
+            (tokenId,,,) = INonfungiblePositionManager(positionManager).mint(INonfungiblePositionManager.MintParams({
                 token0: address(tokenX),
                 token1: address(tokenY),
                 fee: feeTier,
@@ -221,19 +247,18 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, OwnableUpg
                 amount1Min: 0,
                 recipient: address(this),
                 deadline: block.timestamp
-            })
-        );
-
-        uint256 weight = _getTotalWeight(receivedX, receivedY);
-        uint256 totalWeight = _getTotalWeight(totalXSupply, totalYSupply);
-        if (totalSupply() > 0 && totalWeight > 0) {
-            weight = totalSupply() * weight / totalWeight;
-        } 
-
-        totalXSupply += receivedX;
-        totalYSupply += receivedY;
-
-        _updateUserInfo(_msgSender(), lpAmount, weight, tokenId, Status.ADD);
+            }));
+            userTokenId[user] = tokenId;
+        } else  {
+            INonfungiblePositionManager(positionManager).increaseLiquidity(INonfungiblePositionManager.IncreaseLiquidityParams({
+                tokenId: tokenId,
+                amount0Desired: amountX,
+                amount1Desired: amountY,
+                amount0Min: 0,
+                amount1Min: 0,
+                deadline: block.timestamp
+            }));
+        }
     }
 
     /**
@@ -254,169 +279,190 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, OwnableUpg
     }
 
     /**
-    * @dev Updates user information based on the action status (ADD or REMOVE).
-    * @param user The address of the user.
-    * @param lpAmount The lp token amount added for the postion.
-    * @param share The share amount to update.
-    * @param tokenId The ID of the token representing the position.
-    * @param status The status of the action (ADD or REMOVE).
+    * @dev Users can use deposit function for depositing tokens to the specific bin.
+    * @param tickDesired The tick that user wants to add liquidity from
+    * @param tickSlippage The tick slippage that are allowed to slip
+    * @param amountX The amount of token X to deposit.
+    * @param amountY The amount of token Y to deposit.
+    * @param isRebalance Rebalance the existing position with deposit.
+    * @param swapSlippage Slippage for the rebalance.
     */
-    function _updateUserInfo(address user, uint128 lpAmount, uint256 share, uint256 tokenId, Status status) internal {
-        if(status == Status.ADD) {
-            _mint(user, share);
+    function deposit(int24 tickDesired, int24 tickSlippage, uint256 amountX, uint256 amountY, bool isRebalance, uint256 swapSlippage) public {
+        require(swapSlippage <= _MAX_SLIPPAGE, "Slippage too high");
 
-            LiquidityInfo memory newInfo = LiquidityInfo(tokenId, lpAmount, share);
-            userInfo[user].liquidityInfo.push(newInfo);
-            userInfo[user].amount++;
-            nftOwnership[tokenId] = user;
-        } else {
-            // Withdraw all the tokens from the LB pool and return the amounts and the queued withdrawals.
-            _burn(user, share);
+        _transferTokens(_msgSender(), address(this), amountX, amountY);
+        int24 currenTick;
+        int24 tickLower;
+        int24 tickUpper;
 
-            uint256 index = _getLiquidityIndexFromTokenId(user, tokenId);
+        uint256 tokenId = userTokenId[_msgSender()];
+        if(tokenId > 0) {
+            address positionManager = getNonfungiblePositionManagerAddress();
+            uint128 liquidity;
+            (,,,,, tickLower, tickUpper, liquidity,,,,) = INonfungiblePositionManager(positionManager).positions(tokenId);
 
-            userInfo[user].liquidityInfo[index - 1] = userInfo[user].liquidityInfo[userInfo[user].amount - 1];
-            userInfo[user].liquidityInfo.pop();
-            userInfo[user].amount--;
-            delete nftOwnership[tokenId];
-        }
-    }
-
-    /**
-    * @dev Returns the updated amounts of tokens.
-    * @return amountX The updated amount of token X.
-    * @return amountY The updated amount of token Y.
-    */
-    function _getUpdatedAmounts(uint256 amountX, uint256 amountY) internal returns(uint256, uint256) {
-        uint256 amountXToY = _getTokenYFromTokenX(amountX);
-        if(amountXToY != 0) {
-            bool swapTokenX = amountY < amountXToY;
-            uint256 diff = swapTokenX ? amountXToY - amountY : amountY - amountXToY;
-
-            if(amountY * _MAX_SLIPPAGE / 100 < diff) {
-                uint256 amountIn = swapTokenX ? amountX * diff / amountXToY / 2 : diff / 2;
-                address swapRouter = getSwapRouter();
-                address tokenIn;
-                address tokenOut;
-
-                if (swapTokenX) {
-                    tokenIn = address(tokenX);
-                    tokenOut = address(tokenY);
-                    tokenX.safeApprove(swapRouter, amountIn);
-                } else {
-                    tokenIn = address(tokenY);
-                    tokenOut = address(tokenX);
-                    tokenX.safeApprove(swapRouter, amountIn);
-                }
-
-                uint256 amountOut = ISwapRouter(swapRouter).exactInputSingle(
-                  ISwapRouter.ExactInputSingleParams({
-                    tokenIn: tokenIn,
-                    tokenOut: tokenOut,
-                    fee: feeTier,
-                    recipient: address(this),
-                    deadline: block.timestamp,
-                    amountIn: amountIn,
-                    amountOutMinimum: 0,
-                    sqrtPriceLimitX96: 0
-                  })
+            if(isRebalance) { // Withdraw Position For Rebalance
+                (uint256 amountXBefore, uint256 amountYBefore) = INonfungiblePositionManager(positionManager).decreaseLiquidity(
+                    INonfungiblePositionManager.DecreaseLiquidityParams({
+                        tokenId: tokenId, 
+                        liquidity: liquidity,
+                        amount0Min:0, 
+                        amount1Min:0, 
+                        deadline: block.timestamp
+                    })
                 );
 
-                (amountX, amountY) = swapTokenX ? (amountX - amountIn, amountY + amountOut) : (amountX + amountOut, amountY - amountIn);
+                _burn(_msgSender(), balanceOf(_msgSender()));
+                INonfungiblePositionManager(positionManager).burn(tokenId);
+
+                delete userTokenId[_msgSender()];
+
+                (amountX, amountY) = (amountX + amountXBefore, amountY + amountYBefore);
             }
         }
-        return (amountX, amountY);
-    }
+        (amountX, amountY) = _swapForEqualValues(amountX, amountY, swapSlippage);
 
-    /**
-    * @dev Withdraws tokens from the lbPair and applies the AUM annual fee. This function will also reset the range.
-    * @param user The postion owner
-    * @return totalBalanceX The amount of token X withdrawn.
-    * @return totalBalanceY The amount of token Y withdrawn.
-    */
-    function _withdrawAndUpdateShare(address user) internal returns(uint256 totalBalanceX, uint256 totalBalanceY) {
-        uint256 totalShare;
-        uint256 userAmount = userInfo[user].amount;
-        address positionManager = getNonfungiblePositionManagerAddress();
-        for(uint256 i = 0 ; i < userAmount ; i ++) {
-            LiquidityInfo memory info = userInfo[user].liquidityInfo[i];
-            (uint256 balanceX, uint256 balanceY) = INonfungiblePositionManager(positionManager).decreaseLiquidity(
-                INonfungiblePositionManager.DecreaseLiquidityParams({
-                    tokenId: info.tokenId, 
-                    liquidity: info.lpAmount,
-                    amount0Min:0, 
-                    amount1Min:0, 
-                    deadline: block.timestamp
-                })
-            );
-
-            totalBalanceX += balanceX;
-            totalBalanceY += balanceY;
-            totalShare += info.share;
-            delete nftOwnership[info.tokenId];
+        if(userTokenId[_msgSender()] == 0) {
+            (, currenTick,,,,,) = pool.slot0();
+            require(tickDesired + tickSlippage >= currenTick && currenTick + tickSlippage >= tickDesired, "Slippage High");
+            tickLower = currenTick -  _TICK_RANGE * deltaIds[0];
+            tickUpper = currenTick + _TICK_RANGE * deltaIds[1];
         }
-        
-        delete userInfo[user];
-        totalXSupply -= totalBalanceX;
-        totalYSupply -= totalBalanceY;
-
-        _burn(_msgSender(), totalShare);
-    }
-
-
-    function transferPosition(address to, uint256 tokenId) external {
-        require(nftOwnership[tokenId] == _msgSender(), "Not the NFT owner");
-        
-        uint256 index = _getLiquidityIndexFromTokenId(_msgSender(), tokenId);
-        LiquidityInfo memory info = userInfo[_msgSender()].liquidityInfo[index - 1];
-
-        uint256 lockedBalance = getLockedBalance(_msgSender());
-        require(balanceOf(_msgSender()) >= info.share + lockedBalance, "Balance is locked");
-        
-        _updateUserInfo(_msgSender(), info.lpAmount, info.share, tokenId, Status.REMOVE);
-        _updateUserInfo(to, info.lpAmount, info.share, tokenId, Status.ADD);
+        _depositToUniswap(_msgSender(), tickLower, tickUpper, amountX, amountY);
+        proxyCalldata(
+            vPrimeController,
+            abi.encodeWithSignature("updateVPrimeSnapshot(address)", _msgSender()),
+            false
+        );
     }
 
     /**
     * @dev Users can use withdraw function for withdrawing their share.
-    * @param tokenId Token Id to withdraw
+    * @param share Amount to withdraw
     */
-    function withdraw(uint256 tokenId) external {
-        require(nftOwnership[tokenId] == _msgSender(), "Not the NFT owner");
+    function withdraw(uint256 share) external {
+        uint256 tokenId = userTokenId[_msgSender()];
+        require(tokenId > 0, "No Position to withdraw");
+        address positionManager = getNonfungiblePositionManagerAddress();
 
-        uint256 index = _getLiquidityIndexFromTokenId(_msgSender(), tokenId);
-        LiquidityInfo memory info = userInfo[_msgSender()].liquidityInfo[index - 1];
+        (,,,,,,,uint128 liquidity,,,,) = INonfungiblePositionManager(positionManager).positions(tokenId);
 
         uint256 lockedBalance = getLockedBalance(_msgSender());
-        require(balanceOf(_msgSender()) >= info.share + lockedBalance, "Balance is locked");
+        require(balanceOf(_msgSender()) >= share + lockedBalance, "Balance is locked");
 
-        address positionManager = getNonfungiblePositionManagerAddress();
         (uint256 amountX, uint256 amountY) = INonfungiblePositionManager(positionManager).decreaseLiquidity(
             INonfungiblePositionManager.DecreaseLiquidityParams({
                 tokenId: tokenId, 
-                liquidity: info.lpAmount,
-                amount0Min:0,
-                amount1Min:0,
+                liquidity: uint128(liquidity * share / balanceOf(_msgSender())),
+                amount0Min:0, 
+                amount1Min:0, 
                 deadline: block.timestamp
             })
         );
 
-        _updateUserInfo(_msgSender(), info.lpAmount, info.share, tokenId, Status.REMOVE);
+        // Burn Position NFT
+        if(balanceOf(_msgSender()) == share) {
+            INonfungiblePositionManager(positionManager).burn(tokenId);
+        }
+
+        _burn(_msgSender(), share);
 
         // Send the tokens to the user.
         _transferTokens(address(this), _msgSender(), amountX, amountY);
+
+        proxyCalldata(
+            vPrimeController,
+            abi.encodeWithSignature("updateVPrimeSnapshot(address)", _msgSender()),
+            false
+        );
     }
 
     /**
-    * @dev Users can use exit function for withdrawing full share.
+    * @dev Locks a specified amount of balance for a specified lock period.
+    * @param amount The amount of balance to be locked.
+    * @param lockPeriod The duration for which the balance will be locked.
     */
-    function exit() external {
-        require(userInfo[_msgSender()].amount > 0, "No position to withdraw");
-        require(getLockedBalance(_msgSender()) == 0, "Locked");
+    function lockBalance(uint256 amount, uint256 lockPeriod) public {
+        uint256 lockedBalance = getLockedBalance(_msgSender());
+        require(balanceOf(_msgSender()) >= amount + lockedBalance, "Insufficient balance to lock");
+        require(lockPeriod <= MAX_LOCK_TIME, "Cannot lock for more than 3 years");
+        locks[_msgSender()].push(LockDetails({
+            lockPeriod: lockPeriod,
+            amount: amount,
+            unlockTime: block.timestamp + lockPeriod
+        }));
+        proxyCalldata(
+            vPrimeController,
+            abi.encodeWithSignature("updateVPrimeSnapshot(address)", _msgSender()),
+            false
+        );
+    }
 
-        (uint256 amountX, uint256 amountY) = _withdrawAndUpdateShare(_msgSender());
+    /**
+    * @dev Releases a locked balance at a specified index.
+    * @param index The index of the lock to be released.
+    */
+    function releaseBalance(uint256 index) public {
+        require(locks[_msgSender()][index].unlockTime <= block.timestamp, "Still in the lock period");
+        uint256 length = locks[_msgSender()].length;
+        locks[_msgSender()][index] = locks[_msgSender()][length - 1];
 
-        // Send the tokens to the user.
-        _transferTokens(address(this), _msgSender(), amountX, amountY);
+        locks[_msgSender()].pop();
+        proxyCalldata(
+            vPrimeController,
+            abi.encodeWithSignature("updateVPrimeSnapshot(address)", _msgSender()),
+            false
+        );
+    }
+
+    /** Overrided Functions */
+
+    /**
+    * @dev The hook that happens before token transfer.
+    * @param from The address to transfer from.
+    * @param to The address to transfer to.
+    * @param amount The amount to transfer.
+    */
+    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override {
+        if(from != address(0) && to != address(0)) {
+            uint256 lockedBalance = getLockedBalance(from);
+            require(balanceOf(from) >= amount + lockedBalance, "Insufficient Balance");
+            require(userTokenId[to] == 0, "Receiver already has a postion");
+            
+            uint256 tokenId = userTokenId[from];
+
+            if(balanceOf(from) == amount) {
+                userTokenId[to] = userTokenId[from];
+                delete userTokenId[from];
+            } else {
+                address positionManager = getNonfungiblePositionManagerAddress();
+                (,,,,,int24 tickLower,int24 tickUpper,uint128 liquidity,,,,) = INonfungiblePositionManager(positionManager).positions(tokenId);
+
+                (uint256 amountX, uint256 amountY) = INonfungiblePositionManager(positionManager).decreaseLiquidity(
+                    INonfungiblePositionManager.DecreaseLiquidityParams({
+                        tokenId: tokenId, 
+                        liquidity: uint128(liquidity * amount / balanceOf(from)),
+                        amount0Min:0, 
+                        amount1Min:0, 
+                        deadline: block.timestamp
+                    })
+                );
+
+                (tokenId,,,) = INonfungiblePositionManager(positionManager).mint(INonfungiblePositionManager.MintParams({
+                    token0: address(tokenX),
+                    token1: address(tokenY),
+                    fee: feeTier,
+                    tickLower: tickLower,
+                    tickUpper: tickUpper,
+                    amount0Desired: amountX,
+                    amount1Desired: amountY,
+                    amount0Min: 0,
+                    amount1Min: 0,
+                    recipient: address(this),
+                    deadline: block.timestamp
+                }));
+                userTokenId[to] = tokenId;
+            }
+        }
     }
 }
