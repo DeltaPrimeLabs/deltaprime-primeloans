@@ -296,12 +296,16 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
     await axios.get(pingUrl.ltipPool.success);
     console.log('==============calculating success=============');
   } catch (error) {
-    calculateEligibleAirdropPerPool(372, "arbitrum", "second")
-    // console.log(error);
-    // await axios.post(pingUrl.ltipPool.fail, {
-    //   data: error
-    // });
-    // console.log('-----------calculating failed------------');
+    console.log(error);
+
+    if (error.error.code == "SERVER_ERROR") {
+      calculateEligibleAirdropPerPool(372, "arbitrum", "second")
+    } else {
+      await axios.post(pingUrl.ltipPool.fail, {
+        data: error
+      });
+      console.log('-----------calculating failed------------');
+    }
   }
 
     // for each pool sum up depositors eligible airdrops and verify if they sum up to each pool's eligible airdrop
@@ -311,7 +315,7 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
     console.log(`Eligible airdrop for ${pool}: ${tokensToBeDistributedPerPool[pool]}`);
     // % diff between sum of depositors eligible airdrops and pool's eligible airdrop
     const diff = Math.abs(((sum - tokensToBeDistributedPerPool[pool]) / tokensToBeDistributedPerPool[pool]) * 100);
-    console.log(`% diff: `, diff);
+    console.log(`sum: ${sum}, expected:${tokensToBeDistributedPerPool[pool]}, diff(&): ${diff}`);
 
     if (diff < 0.01) {
       await axios.get(pingUrl.ltipPoolChcker.success);
