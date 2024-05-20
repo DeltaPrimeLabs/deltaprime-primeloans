@@ -48,7 +48,7 @@ contract UniswapV3Facet is IUniswapV3Facet, AvalancheDataServiceConsumerBase, Re
         return false;
     }
 
-    function mintLiquidityUniswapV3(INonfungiblePositionManager.MintParams memory params) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent {
+    function mintLiquidityUniswapV3(INonfungiblePositionManager.MintParams memory params) external nonReentrant onlyOwner noBorrowInTheSameBlock remainsSolvent {
         address poolAddress = PoolAddress.computeAddress(UNISWAP_V3_FACTORY_ADDRESS, PoolAddress.getPoolKey(params.token0, params.token1, params.fee));
 
         if (!isPoolWhitelisted(poolAddress)) revert UniswapV3PoolNotWhitelisted();
@@ -100,18 +100,13 @@ contract UniswapV3Facet is IUniswapV3Facet, AvalancheDataServiceConsumerBase, Re
             tokenIds.push(tokenId);
         }
 
-        if (IERC20(params.token0).balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset(token0);
-        }
-
-        if (IERC20(params.token1).balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset(token1);
-        }
+        _decreaseExposure(tokenManager, params.token0, amount0);
+        _decreaseExposure(tokenManager, params.token1, amount1);
 
         emit AddLiquidityUniswapV3(msg.sender, poolAddress, tokenId, token0, token1, liquidity, amount0, amount1, block.timestamp);
     }
 
-    function increaseLiquidityUniswapV3(INonfungiblePositionManager.IncreaseLiquidityParams memory params) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent {
+    function increaseLiquidityUniswapV3(INonfungiblePositionManager.IncreaseLiquidityParams memory params) external nonReentrant onlyOwner noBorrowInTheSameBlock remainsSolvent {
         (
         ,,
         address token0Address,
@@ -161,18 +156,13 @@ contract UniswapV3Facet is IUniswapV3Facet, AvalancheDataServiceConsumerBase, Re
         uint256 amount1
         ) = INonfungiblePositionManager(NONFUNGIBLE_POSITION_MANAGER_ADDRESS).increaseLiquidity(params);
 
-        if (IERC20(token0Address).balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset(token0);
-        }
-
-        if (IERC20(token1Address).balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset(token1);
-        }
+        _decreaseExposure(tokenManager, token0Address, amount0);
+        _decreaseExposure(tokenManager, token1Address, amount1);
 
         emit IncreaseLiquidityUniswapV3(msg.sender, poolAddress, params.tokenId, token0, token1, amount0, amount1, block.timestamp);
     }
 
-    function decreaseLiquidityUniswapV3(INonfungiblePositionManager.DecreaseLiquidityParams memory params) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure onlyOwnerOrInsolvent {
+    function decreaseLiquidityUniswapV3(INonfungiblePositionManager.DecreaseLiquidityParams memory params) external nonReentrant noBorrowInTheSameBlock onlyOwnerOrInsolvent {
         (
         ,,
         address token0Address,
@@ -217,18 +207,13 @@ contract UniswapV3Facet is IUniswapV3Facet, AvalancheDataServiceConsumerBase, Re
 
         INonfungiblePositionManager(NONFUNGIBLE_POSITION_MANAGER_ADDRESS).collect(collectParams);
 
-        if (IERC20(token0Address).balanceOf(address(this)) > 0) {
-            DiamondStorageLib.addOwnedAsset(token0, token0Address);
-        }
-
-        if (IERC20(token1Address).balanceOf(address(this)) > 0) {
-            DiamondStorageLib.addOwnedAsset(token1, token1Address);
-        }
+        _increaseExposure(tokenManager, token0Address, amount0);
+        _increaseExposure(tokenManager, token1Address, amount1);
 
         emit DecreaseLiquidityUniswapV3(msg.sender, poolAddress, params.tokenId, token0, token1, amount0, amount1, block.timestamp);
     }
 
-    function burnLiquidityUniswapV3(uint256 tokenId) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure onlyOwnerOrInsolvent {
+    function burnLiquidityUniswapV3(uint256 tokenId) external nonReentrant onlyOwner noBorrowInTheSameBlock onlyOwnerOrInsolvent {
         uint256[] storage tokenIds = getTokenIds();
         for (uint256 i; i < tokenIds.length; i++) {
             if (tokenIds[i] == tokenId) {

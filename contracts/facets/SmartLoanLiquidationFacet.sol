@@ -134,6 +134,7 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
     * @param config configuration for liquidation
     **/
     function liquidate(LiquidationConfig memory config) internal {
+        require(config.assetsToRepay.length == config.amountsToRepay.length, "Array length mismatch");
         SolvencyFacetProdAvalanche.CachedPrices memory cachedPrices = _getAllPricesForLiquidation(config.assetsToRepay);
 
         uint256 initialTotal = _getTotalValueWithPrices(cachedPrices.ownedAssetsPrices, cachedPrices.stakedPositionsPrices); 

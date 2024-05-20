@@ -235,6 +235,9 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         IERC20Metadata toToken = getERC20TokenInstance(_toAsset, false);
         IERC20Metadata fromToken = getERC20TokenInstance(_fromAsset, false);
 
+        require(address(toToken) == _path[0], "Invalid token input");
+        require(address(fromToken) == _path[_path.length - 1], "Invalid token input");
+
         Pool(tokenManager.getPoolAddress(_toAsset)).borrow(_borrowAmount);
         uint256 initialRepayTokenAmount = fromToken.balanceOf(address(this));
 
