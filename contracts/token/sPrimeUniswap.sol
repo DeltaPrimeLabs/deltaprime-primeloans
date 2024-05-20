@@ -230,12 +230,14 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
 
     function _depositToUniswap(address user, int24 tickLower, int24 tickUpper, uint256 amountX, uint256 amountY) internal {
         uint256 tokenId = userTokenId[user];
+        uint256 amountXAdded;
+        uint256 amountYAdded;
         address positionManager = getNonfungiblePositionManagerAddress();
         tokenX.approve(positionManager, amountX);
         tokenY.approve(positionManager, amountY);
 
         if(tokenId == 0) {
-            (tokenId,,,) = INonfungiblePositionManager(positionManager).mint(INonfungiblePositionManager.MintParams({
+            (tokenId,,amountXAdded, amountYAdded) = INonfungiblePositionManager(positionManager).mint(INonfungiblePositionManager.MintParams({
                 token0: address(tokenX),
                 token1: address(tokenY),
                 fee: feeTier,
@@ -250,7 +252,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
             }));
             userTokenId[user] = tokenId;
         } else  {
-            INonfungiblePositionManager(positionManager).increaseLiquidity(INonfungiblePositionManager.IncreaseLiquidityParams({
+            (, amountXAdded, amountYAdded) = INonfungiblePositionManager(positionManager).increaseLiquidity(INonfungiblePositionManager.IncreaseLiquidityParams({
                 tokenId: tokenId,
                 amount0Desired: amountX,
                 amount1Desired: amountY,
@@ -259,6 +261,10 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
                 deadline: block.timestamp
             }));
         }
+        uint256 share = _getTotalInTokenY(amountXAdded, amountYAdded);
+        _transferTokens(address(this), user, amountX - amountXAdded, amountY - amountYAdded);
+        
+        _mint(user, share);
     }
 
     /**
