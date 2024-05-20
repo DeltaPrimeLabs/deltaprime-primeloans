@@ -56,7 +56,9 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         IPendleRouter.TokenInput memory input,
         IPendleRouter.LimitOrderData memory limit
     ) external onlyOwner nonReentrant remainsSolvent {
-        address lpToken = _getPenpieLpToken(market);
+        require(minLpOut > 0, "Invalid minLpOut");
+
+        address lpToken = _getPendleLpToken(market);
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         IERC20 token = IERC20(tokenManager.getAssetAddress(asset, false));
 
@@ -144,6 +146,8 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
             ITokenManager tokenManager = DeploymentConstants.getTokenManager();
             address token = tokenManager.getAssetAddress(asset, false);
+
+            require(token == output.tokenOut, "Invalid input token");
 
             _increaseExposure(tokenManager, token, netTokenOut);
             _decreaseExposure(tokenManager, lpToken, amount);
