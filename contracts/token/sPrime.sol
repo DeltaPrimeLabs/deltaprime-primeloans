@@ -232,12 +232,12 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, PendingOwnableUpgradeabl
             uint256 amountIn;
             {
                 uint256 price = PriceHelper.convert128x128PriceToDecimal(lbPair.getPriceFromId(lbPair.getActiveId()));
-                amountIn = diff / price / 2;
+                amountIn = diff * 1e18 / price / 2;
             }
 
-            amountXToY = diff / 2; 
+            uint256 amountOut = diff / 2; 
 
-            (amountIn, amountXToY) = swapTokenX ? (amountIn, amountXToY) : (amountXToY, amountIn);
+            (amountIn, amountOut) = swapTokenX ? (amountIn, amountOut) : (amountOut, amountIn);
             IERC20[] memory tokenPathDynamic = new IERC20[](2);
             if (swapTokenX) {
                 tokenPathDynamic[0] = tokenX;
@@ -260,7 +260,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, PendingOwnableUpgradeabl
                 versions: versionsDynamic,
                 tokenPath: tokenPathDynamic
             });
-            uint256 amountOut = ILBRouter(getJoeV2RouterAddress()).swapExactTokensForTokens(amountIn, amountXToY * (100 - swapSlippage) / 100, path, address(this), block.timestamp + 1000);
+            amountOut = ILBRouter(getJoeV2RouterAddress()).swapExactTokensForTokens(amountIn, amountOut * (100 - swapSlippage) / 100, path, address(this), block.timestamp);
             (amountX, amountY) = swapTokenX ? (amountX - amountIn,amountY + amountOut) : (amountX + amountOut, amountY - amountIn);
         }
         return (amountX, amountY);

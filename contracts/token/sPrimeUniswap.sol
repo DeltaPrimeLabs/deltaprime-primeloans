@@ -190,14 +190,18 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
         uint256 diff = swapTokenX ? amountXToY - amountY : amountY - amountXToY;
         // (amountXToY != 0 || amountX == 0) for excluding the initial LP deposit
         if(amountY * _REBALANCE_MARGIN / 100 < diff && (amountXToY > 0 || amountX == 0)) {
-            uint256 amountIn = amountXToY > 0 ? amountX * diff / amountXToY / 2 : amountX * diff / amountY / 2;
-            amountXToY = diff / 2; 
+            uint256 amountIn;
+            {
+                (,int24 tick,,,,,) = pool.slot0();
+                amountIn = OracleLibrary.getQuoteAtTick(tick, uint128(diff / 2), address(tokenY), address(tokenX));
+            }
+            uint256 amountOut = diff / 2; 
             
             address swapRouter = getSwapRouter();
             address tokenIn;
             address tokenOut;
 
-            (amountIn, amountXToY) = swapTokenX ? (amountIn, amountXToY) : (amountXToY, amountIn);
+            (amountIn, amountOut) = swapTokenX ? (amountIn, amountOut) : (amountOut, amountIn);
 
             if (swapTokenX) {
                 tokenIn = address(tokenX);
@@ -209,7 +213,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
                 tokenX.safeApprove(swapRouter, amountIn);
             }
 
-            uint256 amountOut = ISwapRouter(swapRouter).exactInputSingle(
+            amountOut = ISwapRouter(swapRouter).exactInputSingle(
                 ISwapRouter.ExactInputSingleParams({
                     tokenIn: tokenIn,
                     tokenOut: tokenOut,
@@ -217,7 +221,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
                     recipient: address(this),
                     deadline: block.timestamp,
                     amountIn: amountIn,
-                    amountOutMinimum: amountXToY * (100 - swapSlippage) / 100,
+                    amountOutMinimum: amountOut * (100 - swapSlippage) / 100,
                     sqrtPriceLimitX96: 0
                 })
             );
