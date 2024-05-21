@@ -212,7 +212,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, PendingOwnableUpgradeabl
         (uint128 reserveA, ) = lbPair.getReserves();
         if(reserveA > 0) {
             uint256 price = PriceHelper.convert128x128PriceToDecimal(lbPair.getPriceFromId(lbPair.getActiveId())); 
-            amountY = amountX * price / 1e18;
+            amountY = (amountX).mulShiftRoundDown(price, 128);
         } else {
             amountY = 0;
         }
@@ -232,7 +232,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, PendingOwnableUpgradeabl
             uint256 amountIn;
             {
                 uint256 price = PriceHelper.convert128x128PriceToDecimal(lbPair.getPriceFromId(lbPair.getActiveId()));
-                amountIn = diff * 1e18 / price / 2;
+                amountIn = (diff / 2).mulShiftRoundDown(price, 128);
             }
 
             uint256 amountOut = diff / 2; 
