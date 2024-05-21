@@ -13,7 +13,6 @@ import "../lib/joe-v2/math/Uint256x256Math.sol";
 import "../lib/joe-v2/math/LiquidityConfigurations.sol";
 import "../abstract/PendingOwnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
@@ -21,7 +20,7 @@ import "@redstone-finance/evm-connector/contracts/core/ProxyConnector.sol";
 
 // SPrime contract declaration
 contract SPrime is ISPrime, ReentrancyGuardUpgradeable, PendingOwnableUpgradeable, ERC20Upgradeable, ProxyConnector {
-    using SafeERC20 for IERC20Metadata; // Using SafeERC20 for IERC20 for safe token transfers
+    using SafeERC20 for IERC20; // Using SafeERC20 for IERC20 for safe token transfers
     using LiquidityAmounts for address; // Using LiquidityAmounts for address for getting amounts of liquidity
     using SafeCast for uint256; // Using SafeCast for uint256 for safe type casting
     using Uint256x256Math for uint256;
@@ -37,8 +36,8 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, PendingOwnableUpgradeabl
     mapping(address => LockDetails[]) public locks;
 
     // Immutable variables for storing token and pair information
-    IERC20Metadata public tokenX;
-    IERC20Metadata public tokenY;
+    IERC20 public tokenX;
+    IERC20 public tokenY;
     ILBPair public lbPair;
     IPositionManager public positionManager;
     address public vPrimeController;
@@ -68,7 +67,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, PendingOwnableUpgradeabl
 
         ILBRouter traderJoeV2Router = ILBRouter(getJoeV2RouterAddress());
         ILBFactory lbFactory = traderJoeV2Router.getFactory();
-        ILBFactory.LBPairInformation memory pairInfo = lbFactory.getLBPairInformation(IERC20Metadata(tokenX_), IERC20Metadata(tokenY_), DEFAULT_BIN_STEP);
+        ILBFactory.LBPairInformation memory pairInfo = lbFactory.getLBPairInformation(IERC20(tokenX_), IERC20(tokenY_), DEFAULT_BIN_STEP);
 
         lbPair = pairInfo.LBPair;
         tokenX = lbPair.getTokenX();
