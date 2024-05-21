@@ -20,7 +20,7 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
 import "@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 
 // SPrime contract declaration
-contract SPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwnableUpgradeable, ERC20Upgradeable, ERC721HolderUpgradeable, SolvencyMethods {
+contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwnableUpgradeable, ERC20Upgradeable, ERC721HolderUpgradeable, SolvencyMethods {
     using SafeERC20 for IERC20Metadata; // Using SafeERC20 for IERC20 for safe token transfers
     using PositionValue for INonfungiblePositionManager;
     // Constants declaration
