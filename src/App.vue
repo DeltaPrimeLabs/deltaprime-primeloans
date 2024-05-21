@@ -75,6 +75,9 @@
         </b>
       </a>
     </Banner>
+     <Banner v-if="showAvalanchePrimeAccountBanner" :closable="true">
+       Missing GM incentives from the last week are currently being recalculated and will be included in Wednesday's distribution.
+    </Banner>
     <div class="content">
       <div class="top-bar">
         <div class="top-bar__left-part">
@@ -209,7 +212,7 @@ export default {
         // this.showAvalancheDepositorBanner = true;
       }
       if (window.location.href.includes('prime-account')) {
-        this.showAvalanchePrimeAccountBanner = true;
+        // this.showAvalanchePrimeAccountBanner = true;
       }
     }
   },

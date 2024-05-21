@@ -59,7 +59,7 @@ const EthDater = require("ethereum-block-by-date");
 
 const ethers = require('ethers');
 import GM_DISTRIBUTED_ARBITRUM from '../data/arbitrum/GM_EPOCH_9.json';
-import GM_DISTRIBUTED_AVALANCHE from '../data/avalanche/GM_EPOCH_11.json';
+import GM_DISTRIBUTED_AVALANCHE from '../data/avalanche/GM_EPOCH_14.json';
 import {wrapContract} from "../utils/blockchain";
 import DeltaIcon from "./DeltaIcon.vue";
 import BarGaugeBeta from "./BarGaugeBeta.vue";
