@@ -66,14 +66,13 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, PendingOwnableUpgradeabl
 
         require(deltaIds_.length == distributionX_.length && deltaIds_.length == distributionY_.length, "Length Mismatch");
 
-        tokenX = IERC20Metadata(tokenX_);
-        tokenY = IERC20Metadata(tokenY_);
-
         ILBRouter traderJoeV2Router = ILBRouter(getJoeV2RouterAddress());
         ILBFactory lbFactory = traderJoeV2Router.getFactory();
-        ILBFactory.LBPairInformation memory pairInfo = lbFactory.getLBPairInformation(tokenX, tokenY, DEFAULT_BIN_STEP);
+        ILBFactory.LBPairInformation memory pairInfo = lbFactory.getLBPairInformation(IERC20Metadata(tokenX_), IERC20Metadata(tokenY_), DEFAULT_BIN_STEP);
 
         lbPair = pairInfo.LBPair;
+        tokenX = lbPair.getTokenX();
+        tokenY = lbPair.getTokenY();
 
         deltaIds = deltaIds_;
         distributionX = distributionX_;
