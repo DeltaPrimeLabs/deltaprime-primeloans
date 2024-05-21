@@ -192,6 +192,13 @@ functions:
     description: fetch TVLs and APYs of Pendle pools.
     events:
       - schedule: rate(5 minutes)
+  wombatApyAggregator:
+    handler: aggregators/apy.wombatApyAggregator
+    memorySize: 2048
+    timeout: 300
+    description: fetch APYs of Wombat pools.
+    events:
+      - schedule: rate(5 minutes)
   # loanAggregatorAva:
   #   handler: aggregators/loan.loanAggregatorAva
   #   memorySize: 1024
