@@ -158,6 +158,11 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         IERC20Metadata token = getERC20TokenInstance(_asset, false);
         _increaseExposure(tokenManager, address(token), _amount);
 
+        proxyCalldata(
+            tokenManager.getVPrimeControllerAddress(),
+            abi.encodeWithSignature("updateVPrimeSnapshot(address)", address(this)),
+            false
+        );
         emit Borrowed(msg.sender, _asset, _amount, block.timestamp);
     }
 
@@ -190,6 +195,12 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         _decreaseExposure(tokenManager, address(token), _amount);
 
         emit Repaid(msg.sender, _asset, _amount, block.timestamp);
+
+        proxyCalldata(
+            tokenManager.getVPrimeControllerAddress(),
+            abi.encodeWithSignature("updateVPrimeSnapshot(address)", address(this)),
+            false
+        );
     }
 
     function withdrawUnsupportedToken(address token) external nonReentrant onlyOwner remainsSolvent {

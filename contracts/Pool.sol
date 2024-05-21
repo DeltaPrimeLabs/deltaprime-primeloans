@@ -4,11 +4,14 @@ pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "./abstract/PendingOwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
+import "@redstone-finance/evm-connector/contracts/core/ProxyConnector.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./interfaces/IIndex.sol";
+import "./interfaces/ITokenManager.sol";
 import "./interfaces/IRatesCalculator.sol";
 import "./interfaces/IBorrowersRegistry.sol";
 import "./interfaces/IPoolRewarder.sol";
@@ -21,8 +24,9 @@ import "./VestingDistributor.sol";
  * Depositors are rewarded with the interest rates collected from borrowers.
  * The interest rates calculation is delegated to an external calculator contract.
  */
-contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
+contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyConnector {
     using TransferHelper for address payable;
+    using Math for uint256;
 
     uint256 public totalSupplyCap;
 
@@ -40,9 +44,83 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
     address payable public tokenAddress;
 
-    VestingDistributor public vestingDistributor;
+    VestingDistributor public vestingDistributor; // Needs to stay here in order to preserve the storage layout
 
     uint8 internal _decimals;
+
+    struct LockDetails {
+        uint256 lockTime;
+        uint256 amount;
+        uint256 unlockTime;
+    }
+    mapping(address => LockDetails[]) public locks;
+    uint256 public constant MAX_LOCK_TIME = 3 * 365 days;
+
+    ITokenManager public tokenManager;
+
+
+    /* ========== METHODS ========== */
+
+    function getLockedBalance(address account) public view returns (uint256) {
+        uint256 lockedBalance = 0;
+        for (uint i = 0; i < locks[account].length; i++) {
+            if (locks[account][i].unlockTime > block.timestamp) {
+                lockedBalance += locks[account][i].amount;
+            }
+        }
+        return lockedBalance;
+    }
+
+    function getNotLockedBalance(address account) public view returns (uint256 notLockedBalance) {
+        uint256 lockedBalance = getLockedBalance(account);
+        uint256 balance = balanceOf(account);
+        if(balance < lockedBalance) {
+            notLockedBalance = 0;
+        } else {
+            return balance - lockedBalance;
+        }
+    }
+
+
+    function lockDeposit(uint256 amount, uint256 lockTime) public {
+        require(getNotLockedBalance(msg.sender) >= amount, "Insufficient balance to lock");
+        require(lockTime <= MAX_LOCK_TIME, "Cannot lock for more than 3 years");
+        locks[msg.sender].push(LockDetails(lockTime, amount, block.timestamp + lockTime));
+
+        emit DepositLocked(msg.sender, amount, lockTime, block.timestamp + lockTime);
+
+        proxyCalldata(
+            getVPrimeControllerAddress(),
+            abi.encodeWithSignature("updateVPrimeSnapshot(address)", msg.sender),
+            false
+        );
+    }
+
+
+    /**
+     * @notice Calculates and returns the fully vested locked balance for a given account.
+     * @dev The fully vested locked balance is used in the governance mechanism of the system, specifically for the allocation of vPrime tokens.
+     * The method calculates the fully vested locked balance by iterating over all the locks of the account and summing up the amounts of those locks that are still active (i.e., their `unlockTime` is greater than the current block timestamp). However, the amount of each lock is scaled by the ratio of its `lockTime` to the `MAX_LOCK_TIME` (3 years). This means that the longer the lock time, the larger the contribution of the lock to the fully vested locked balance.
+     * The fully vested locked balance is used to calculate the maximum vPrime allocation for a user. Users accrue vPrime over a period of 3 years, from 0 to the maximum vPrime based on their 10-1 pairs of pool-deposit and sPrime. Locking pool deposits and sPrime immediately vests the vPrime.
+     * @param account The address of the account for which to calculate the fully vested locked balance.
+     * @return fullyVestedBalance The fully vested locked balance of the provided account.
+     */
+    function getFullyVestedLockedBalance(address account) public view returns (uint256 fullyVestedBalance) {
+        fullyVestedBalance = 0;
+        for (uint i = 0; i < locks[account].length; i++) {
+            if (locks[account][i].unlockTime > block.timestamp) { // Lock is still active
+                fullyVestedBalance += locks[account][i].amount * locks[account][i].lockTime / MAX_LOCK_TIME;
+            }
+        }
+    }
+
+    function setTokenManager(ITokenManager _tokenManager) public onlyOwner {
+        tokenManager = _tokenManager;
+    }
+
+    function getVPrimeControllerAddress() public view returns (address) {
+        return tokenManager.getVPrimeControllerAddress();
+    }
 
 
     function initialize(IRatesCalculator ratesCalculator_, IBorrowersRegistry borrowersRegistry_, IIndex depositIndex_, IIndex borrowIndex_, address payable tokenAddress_, IPoolRewarder poolRewarder_, uint256 _totalSupplyCap) public initializer {
@@ -121,32 +199,16 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         emit BorrowersRegistryChanged(address(borrowersRegistry_), block.timestamp);
     }
 
-    /**
-     * Sets the new Pool Rewarder.
-     * The IPoolRewarder that distributes additional token rewards to people having a stake in this pool proportionally to their stake and time of participance.
-     * Only the owner of the Contract can execute this function.
-     * @dev _poolRewarder the address of PoolRewarder
-    **/
-    function setVestingDistributor(address _distributor) external onlyOwner {
-        if(!AddressUpgradeable.isContract(_distributor) && _distributor != address(0)) revert NotAContract(_distributor);
-        vestingDistributor = VestingDistributor(_distributor);
-
-        emit VestingDistributorChanged(_distributor, block.timestamp);
-    }
 
     /* ========== MUTATIVE FUNCTIONS ========== */
     function transfer(address recipient, uint256 amount) external override nonReentrant returns (bool) {
+        require(isWithdrawalAmountAvailable(msg.sender, amount) , "Balance is locked");
         if(recipient == address(0)) revert TransferToZeroAddress();
 
         if(recipient == address(this)) revert TransferToPoolAddress();
 
         address account = msg.sender;
         _accumulateDepositInterest(account);
-
-        (uint256 lockedAmount, uint256 transferrableAmount) = _getAmounts(account);
-        if(amount > transferrableAmount) revert TransferAmountExceedsBalance(amount, transferrableAmount);
-
-        _updateWithdrawn(account, amount, lockedAmount);
 
         // (this is verified in "require" above)
         unchecked {
@@ -165,6 +227,18 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         }
 
         emit Transfer(account, recipient, amount);
+
+        proxyCalldata(
+            getVPrimeControllerAddress(),
+            abi.encodeWithSignature("updateVPrimeSnapshot(address)", msg.sender),
+            false
+        );
+
+        proxyCalldata(
+            getVPrimeControllerAddress(),
+            abi.encodeWithSignature("updateVPrimeSnapshot(address)", recipient),
+            false
+        );
 
         return true;
     }
@@ -204,6 +278,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     }
 
     function transferFrom(address sender, address recipient, uint256 amount) external override nonReentrant returns (bool) {
+        require(isWithdrawalAmountAvailable(sender, amount) , "Balance is locked");
         if(_allowed[sender][msg.sender] < amount) revert InsufficientAllowance(amount, _allowed[sender][msg.sender]);
 
         if(recipient == address(0)) revert TransferToZeroAddress();
@@ -211,11 +286,6 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         if(recipient == address(this)) revert TransferToPoolAddress();
 
         _accumulateDepositInterest(sender);
-
-        (uint256 lockedAmount, uint256 transferrableAmount) = _getAmounts(sender);
-        if(amount > transferrableAmount) revert TransferAmountExceedsBalance(amount, transferrableAmount);
-
-        _updateWithdrawn(sender, amount, lockedAmount);
 
         _deposited[sender] -= amount;
         _allowed[sender][msg.sender] -= amount;
@@ -232,6 +302,18 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         }
 
         emit Transfer(sender, recipient, amount);
+
+        proxyCalldata(
+            getVPrimeControllerAddress(),
+            abi.encodeWithSignature("updateVPrimeSnapshot(address)", sender),
+            false
+        );
+
+        proxyCalldata(
+            getVPrimeControllerAddress(),
+            abi.encodeWithSignature("updateVPrimeSnapshot(address)", recipient),
+            false
+        );
 
         return true;
     }
@@ -273,6 +355,12 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         }
 
         emit DepositOnBehalfOf(msg.sender, _of, _amount, block.timestamp);
+
+        proxyCalldata(
+            getVPrimeControllerAddress(),
+            abi.encodeWithSignature("updateVPrimeSnapshot(address)", _of),
+            false
+        );
     }
 
     function _transferToPool(address from, uint256 amount) internal virtual {
@@ -283,11 +371,17 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         tokenAddress.safeTransfer(to, amount);
     }
 
+    function isWithdrawalAmountAvailable(address account, uint256 amount) public view returns (bool) {
+        return amount <= getNotLockedBalance(account);
+    }
+
     /**
      * Withdraws selected amount from the user deposits
      * @dev _amount the amount to be withdrawn
      **/
     function withdraw(uint256 _amount) external nonReentrant {
+        require(isWithdrawalAmountAvailable(msg.sender, _amount) , "Balance is locked");
+
         _accumulateDepositInterest(msg.sender);
         _amount = Math.min(_amount, _deposited[msg.sender]);
 
@@ -309,6 +403,12 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         }
 
         emit Withdrawal(msg.sender, _amount, block.timestamp);
+
+        proxyCalldata(
+            getVPrimeControllerAddress(),
+            abi.encodeWithSignature("updateVPrimeSnapshot(address)", msg.sender),
+            false
+        );
     }
 
     /**
@@ -460,10 +560,6 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
     function _burn(address account, uint256 amount) internal {
         if(amount > _deposited[account]) revert BurnAmountExceedsBalance();
-        (uint256 lockedAmount, uint256 transferrableAmount) = _getAmounts(account);
-        if(amount > transferrableAmount) revert BurnAmountExceedsAvailableForUser();
-
-        _updateWithdrawn(account, amount, lockedAmount);
 
         // verified in "require" above
         unchecked {
@@ -473,25 +569,6 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         emit Transfer(account, address(0), amount);
     }
 
-    function _getAmounts(address account) internal view returns (uint256 lockedAmount, uint256 transferrableAmount) {
-        if (address(vestingDistributor) != address(0)) {
-            lockedAmount = vestingDistributor.locked(account);
-            if (lockedAmount > 0) {
-                transferrableAmount = _deposited[account] - (lockedAmount - vestingDistributor.availableToWithdraw(account));
-            } else {
-                transferrableAmount = _deposited[account];
-            }
-        } else {
-            transferrableAmount = _deposited[account];
-        }
-    }
-
-    function _updateWithdrawn(address account, uint256 amount, uint256 lockedAmount) internal {
-        uint256 availableUnvested = _deposited[account] - lockedAmount;
-        if (amount > availableUnvested && address(vestingDistributor) != address(0)) {
-            vestingDistributor.updateWithdrawn(account, amount - availableUnvested);
-        }
-    }
 
     function _updateRates() internal {
         uint256 _totalBorrowed = totalBorrowed();
@@ -607,12 +684,15 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     **/
     event PoolRewarderChanged(address indexed poolRewarder, uint256 timestamp);
 
+
     /**
-    * @dev emitted after changing vesting distributor
-    * @param distributor an address of the newly set distributor
-    * @param timestamp of the distributor change
-    **/
-    event VestingDistributorChanged(address indexed distributor, uint256 timestamp);
+     * @dev emitted after the user locks deposit
+     * @param user the address that locks the deposit
+     * @param amount the amount locked
+     * @param lockTime the time for which the deposit is locked
+     * @param unlockTime the time when the deposit will be unlocked
+     **/
+    event DepositLocked(address indexed user, uint256 amount, uint256 lockTime, uint256 unlockTime);
 
     /* ========== ERRORS ========== */
 
