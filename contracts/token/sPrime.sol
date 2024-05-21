@@ -212,7 +212,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, PendingOwnableUpgradeabl
     function _getTokenYFromTokenX(uint256 amountX) internal view returns(uint256 amountY) {
         (uint128 reserveA, ) = lbPair.getReserves();
         if(reserveA > 0) {
-            uint256 price = PriceHelper.convert128x128PriceToDecimal(lbPair.getPriceFromId(lbPair.getActiveId())); 
+            uint256 price = lbPair.getPriceFromId(lbPair.getActiveId()); 
             // Swap For Y : Convert token X to token Y
             amountY = (amountX).mulShiftRoundDown(price, 128);
         } else {
@@ -233,7 +233,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, PendingOwnableUpgradeabl
         if(amountY * _REBALANCE_MARGIN / 100 < diff && (amountXToY > 0 || amountX == 0)) {
             uint256 amountIn;
             {
-                uint256 price = PriceHelper.convert128x128PriceToDecimal(lbPair.getPriceFromId(lbPair.getActiveId()));
+                uint256 price = lbPair.getPriceFromId(lbPair.getActiveId());
                 // Swap For X : Convert token Y to token X
                 amountIn = (diff / 2).shiftDivRoundDown(128, price);
             }
