@@ -639,6 +639,7 @@ plugins:
   - serverless-prune-plugin
 
 package:
+  individually: true
   exclude:
     - .secrets/**
     - .serverless/**

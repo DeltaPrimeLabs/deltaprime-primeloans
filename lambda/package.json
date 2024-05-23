@@ -25,7 +25,6 @@
     "ethers": "^5.5.4",
     "graphql-request": "^6.1.0",
     "graphql-tag": "^2.12.6",
-    "jsonwebtoken": "^9.0.2",
     "node-fetch": "^2.7.0",
     "puppeteer": "^22.6.4",
     "puppeteer-core": "^22.6.4",
