@@ -1,6 +1,6 @@
 const ethers = require('ethers');
+const fetch = require('node-fetch');
 const POOL_ARTIFACT = require('../abis/Pool.json');
-const axios = require('axios');
 const { request, gql } = require('graphql-request');
 const incentivesRpcUrl = require('../.secrets/incentivesRpc.json');
 const pingUrl = require('../.secrets/ping.json');
@@ -33,8 +33,8 @@ const getRedstonePrices = async function (tokenSymbols, chain = "arbitrum") {
   const dataServiceId = process.env.dataServiceId ?? `redstone-${chain}-prod`;
   const url = `${rs_cache_url}/data-packages/latest/${dataServiceId}`
 
-  const response = await axios.get(url);
-  const redstonePrices = response.data;
+  const response = await fetch(url);
+  const redstonePrices = await response.json();
 
   let result = [];
   for (const symbol of tokenSymbols) {
@@ -270,30 +270,30 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
     }
 
     // save airdrops to database
-    await Promise.all(
-      Object.entries(depositorsEligibleAirdrop).map(async ([pool, poolAirdrop]) => {
-        await Promise.all(
-          Object.entries(poolAirdrop).map(async ([depositor, airdrop]) => {
-            const params = {
-              TableName: 'pool-arbitrum-incentives-arb-prod',
-              Key: {
-                id: depositor,
-                timestamp: Math.floor(startTime / 1000)
-              },
-              AttributeUpdates: {
-                [pool]: {
-                  Value: airdrop,
-                  Action: "PUT"
-                }
-              }
-            };
-            await dynamoDb.update(params).promise();
-          })
-        )
-      })
-    )
+    // await Promise.all(
+    //   Object.entries(depositorsEligibleAirdrop).map(async ([pool, poolAirdrop]) => {
+    //     await Promise.all(
+    //       Object.entries(poolAirdrop).map(async ([depositor, airdrop]) => {
+    //         const params = {
+    //           TableName: 'pool-arbitrum-incentives-arb-prod',
+    //           Key: {
+    //             id: depositor,
+    //             timestamp: Math.floor(startTime / 1000)
+    //           },
+    //           AttributeUpdates: {
+    //             [pool]: {
+    //               Value: airdrop,
+    //               Action: "PUT"
+    //             }
+    //           }
+    //         };
+    //         await dynamoDb.update(params).promise();
+    //       })
+    //     )
+    //   })
+    // )
 
-    await axios.get(pingUrl.ltipPool.success);
+    await fetch(pingUrl.ltipPool.success);
     console.log('==============calculating success=============');
   } catch (error) {
     console.log(error);
@@ -301,14 +301,18 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
     if (error.error.code == "SERVER_ERROR") {
       calculateEligibleAirdropPerPool(372, "arbitrum", "second")
     } else {
-      await axios.post(pingUrl.ltipPool.fail, {
-        data: error
+      await fetch(pingUrl.ltipPool.fail, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(error)
       });
       console.log('-----------calculating failed------------');
     }
   }
 
-    // for each pool sum up depositors eligible airdrops and verify if they sum up to each pool's eligible airdrop
+  // for each pool sum up depositors eligible airdrops and verify if they sum up to each pool's eligible airdrop
   for (let pool in depositorsEligibleAirdrop) {
     let sum = Object.values(depositorsEligibleAirdrop[pool]).reduce((a, b) => a + b);
     console.log(`Sum of ${pool} depositors eligible airdrops: ${sum}`);
@@ -318,11 +322,15 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
     console.log(`sum: ${sum}, expected:${tokensToBeDistributedPerPool[pool]}, diff(&): ${diff}`);
 
     if (diff < 0.001) {
-      await axios.get(pingUrl.ltipPoolChcker.success);
+      await fetch(pingUrl.ltipPoolChcker.success);
       console.log(`============difference check for ${pool} success==============`);
     } else {
-      await axios.post(pingUrl.ltipPoolChcker.fail, {
-        data: `difference calculated: ${diff}`
+      await fetch(pingUrl.ltipPoolChcker.fail, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(`difference calculated: ${diff}`)
       });
       console.log(`------------difference check for ${pool} failed-------------`)
     }

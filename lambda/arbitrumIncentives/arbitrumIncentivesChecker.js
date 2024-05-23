@@ -2,11 +2,11 @@ const fetch = require('node-fetch');
 const {
   dynamoDb, fetchAllDataFromDB
 } = require('../utils/helpers');
+const pingUrl = require('../.secrets/ping.json');
 
 const arbitrumIncentivesChecker = async () => {
   try {
     const now = Math.floor(Date.now() / 1000);
-    console.log(now - 60 * 60);
     const params = {
       TableName: "arbitrum-incentives-arb-prod",
       FilterExpression: "#timestamp > :min",
@@ -28,10 +28,16 @@ const arbitrumIncentivesChecker = async () => {
     console.log(totalIncentivesPerHour);
 
     if (Math.abs(totalIncentivesPerHour - 0.5952380952380952) < 0.0000000000001) { // change the value accordingly based on incentives of interval
-      const res = await fetch("https://hc-ping.com/7541473d-ae8a-4b07-a632-7ea0c2be3ad7");
+      const res = await fetch(pingUrl.ltipPAChecker.success);
       console.log(res);
     } else {
-      const res = await fetch("https://hc-ping.com/7541473d-ae8a-4b07-a632-7ea0c2be3ad7/fail");
+      const res = await fetch(pingUrl.ltipPAChecker.fail, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(error)
+      });
       console.log(res);
     }
   } catch(error) {

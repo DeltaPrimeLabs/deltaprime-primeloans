@@ -12,6 +12,7 @@ const FACTORY = require('../abis/SmartLoansFactory.json');
 const LOAN = require(`../abis/SmartLoanGigaChadInterface.json`);
 const CACHE_LAYER_URLS = require('../config/redstone-cache-layer-urls.json');
 const extRpcUrl = require('../.secrets/extRpc.json');
+const pingUrl = require('../.secrets/ping.json');
 
 const factoryAddress = constants.arbitrum.factory;
 const arbitrumHistoricalProvider = new ethers.providers.JsonRpcProvider(extRpcUrl.arbitrum);
@@ -153,12 +154,18 @@ const arbitrumIncentives = async () => {
     console.log("LTIP boost APY on Arbitrum saved.");
 
     // ping healthcheck end point
-    const res = await fetch("https://hc-ping.com/79b504c5-e7c3-4167-82a9-0ed42a6a0d1a");
+    const res = await fetch(pingUrl.ltipPA.success);
     console.log(res);
   } catch (error) {
     console.log('Error', error);
 
-    const res = await fetch("https://hc-ping.com/79b504c5-e7c3-4167-82a9-0ed42a6a0d1a/fail");
+    const res = await fetch(pingUrl.ltipPA.fail, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(error)
+    });
     console.log(res);
   }
 }

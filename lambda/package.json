@@ -19,7 +19,6 @@
     "apollo-client": "^2.6.10",
     "apollo-link-http": "^1.5.17",
     "aws-sdk": "^2.1460.0",
-    "axios": "^1.6.8",
     "bluebird": "^3.7.2",
     "ethereum-block-by-date": "^1.4.9",
     "ethers": "^5.5.4",
