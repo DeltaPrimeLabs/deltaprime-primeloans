@@ -270,28 +270,28 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
     }
 
     // save airdrops to database
-    // await Promise.all(
-    //   Object.entries(depositorsEligibleAirdrop).map(async ([pool, poolAirdrop]) => {
-    //     await Promise.all(
-    //       Object.entries(poolAirdrop).map(async ([depositor, airdrop]) => {
-    //         const params = {
-    //           TableName: 'pool-arbitrum-incentives-arb-prod',
-    //           Key: {
-    //             id: depositor,
-    //             timestamp: Math.floor(startTime / 1000)
-    //           },
-    //           AttributeUpdates: {
-    //             [pool]: {
-    //               Value: airdrop,
-    //               Action: "PUT"
-    //             }
-    //           }
-    //         };
-    //         await dynamoDb.update(params).promise();
-    //       })
-    //     )
-    //   })
-    // )
+    await Promise.all(
+      Object.entries(depositorsEligibleAirdrop).map(async ([pool, poolAirdrop]) => {
+        await Promise.all(
+          Object.entries(poolAirdrop).map(async ([depositor, airdrop]) => {
+            const params = {
+              TableName: 'pool-arbitrum-incentives-arb-prod',
+              Key: {
+                id: depositor,
+                timestamp: Math.floor(startTime / 1000)
+              },
+              AttributeUpdates: {
+                [pool]: {
+                  Value: airdrop,
+                  Action: "PUT"
+                }
+              }
+            };
+            await dynamoDb.update(params).promise();
+          })
+        )
+      })
+    )
 
     await fetch(pingUrl.ltipPool.success);
     console.log('==============calculating success=============');
