@@ -142,6 +142,8 @@
   --modal__top-info-color: #{$steel-gray};
   --modal__top-info-warning-color: #{$orange};
   --modal__top-info-divider-color: #{$smoke-gray};
+  --modal__top-info-bar-color: #{$dark-gray};
+  --modal__top-info-bar-background-color: #{$mist-gray};
   --modal__close-button-container-color: #{$delta-accent};
   --modal__backdrop-backdrop-filter: blur(25px);
   --modal__backdrop-background: transparent;
@@ -283,6 +285,16 @@
   --swap-modal__slippage-bar-color: #{$steel-gray};
   --swap-modal__slippage-divider-color: #{$goose-gray};
   --swap-modal__slippage-warning-color: #{$red};
+  --swap-modal__slippage-advanced-color: #{$dark-gray};
+  --swap-modal__slippage-option-pill-color: #{$steel-gray};
+  --swap-modal__slippage-option-pill-color--active: #{$black};
+  --swap-modal__label-with-separator: #{$dark-gray};
+  --swap-modal__label-with-separator-background: #{$goose-gray};
+  --swap-modal__liquidity-shape-border: solid 1px #{$smoke-gray};
+  --swap-modal__liquidity-shape-border-active: solid 2px #{$delta-primary};
+  --swap-modal__liquidity-shape-border-hover: #{$delta-primary};
+  --swap-modal__liquidity-shape-box-shadow: 2px 2px 4px 0 #{$delta-steel}80;
+  --swap-modal__liquidity-shape-background: #{$delta-burnt-out};
   // endregion
 
   // region SimpleInput

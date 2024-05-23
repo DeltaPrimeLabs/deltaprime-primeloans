@@ -22,7 +22,6 @@ export function transactionUrl(tx) {
 export const wrapContract = async function wrapContract(contract, assets) {
   //for more symbols in data feed it's more optimal to not specify asset list
   const providedAssets = (assets && assets.length <= 5) ? assets : undefined;
-
   return WrapperBuilder.wrap(contract).usingDataService(
     {
       dataServiceId: config.dataProviderId,

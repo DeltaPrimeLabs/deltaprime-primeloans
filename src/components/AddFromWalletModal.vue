@@ -2,7 +2,7 @@
   <div v-if="asset" id="modal" class="add-from-wallet-modal-component modal-component">
     <Modal :height="getModalHeight">
       <div class="modal__title">
-        Deposit collateral
+        {{ title }}
       </div>
       <div class="modal-top-desc" v-if="noSmartLoan">
         <div>
@@ -139,6 +139,8 @@ export default {
     levelLpBalances: {},
     gmxV2Assets: {},
     gmxV2Balances: {},
+    penpieLpAssets: {},
+    penpieLpBalances: {},
     traderJoeV2LpAssets: {},
     balancerLpAssets: {},
     balancerLpBalances: {},
@@ -166,6 +168,7 @@ export default {
       validationError: true,
       availableAssetAmount: 0,
       valueAsset: "USDC",
+      title: "Deposit collateral",
     };
   },
 
@@ -282,6 +285,25 @@ export default {
           }
 
           tokens.push({price: data.price, balance: balance ? balance : 0, borrowed: 0, debtCoverage: data.debtCoverage});
+        }
+      }
+
+      if (this.penpieLpAssets) {
+        for (const [symbol, data] of Object.entries(this.penpieLpAssets)) {
+          if (this.penpieLpBalances) {
+            let balance = parseFloat(this.penpieLpBalances[symbol]);
+
+            if (symbol === this.asset.symbol) {
+              balance += added;
+            }
+
+            tokens.push({
+              price: data.price,
+              balance: balance ? balance : 0,
+              borrowed: 0,
+              debtCoverage: data.debtCoverage
+            });
+          }
         }
       }
 

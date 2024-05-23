@@ -9,7 +9,7 @@
             {{ asset.symbol }}
             <img v-if="asset.droppingSupport && assetBalances[asset.symbol] > 0"
                  src="src/assets/icons/warning.svg"
-                 v-tooltip="{content: `We will drop support to this asset on ${ asset.debtCoverage > 0.1 ? '26.04.2024 12:00 CET' : '19.04.2024 12:00 CET'}. Please withdraw or swap to another token.`, classes: 'info-tooltip long'}">
+                 v-tooltip="{content: `We will drop support to this asset on ${ asset.debtCoverage > 0.1 ? '26.04.2024 12:00 CET' : 'Monday 22.04.2024 16:00 CET'}. Please withdraw or swap to another token.`, classes: 'info-tooltip long'}">
           </div>
           <div class="asset__loan" v-if="borrowApyPerPool && borrowApyPerPool[asset.symbol] !== undefined">
             Borrow&nbsp;APY:&nbsp;{{ borrowApyPerPool[asset.symbol] | percent }}
@@ -88,7 +88,7 @@
 
       <div class="table__cell actions">
         <IconButton class="action-button"
-                    :disabled="((disableAllButtons) && (!(asset.debtCoverage > 0 && noSmartLoan)) || asset.inactive || asset.unsupported)"
+                    :disabled="((disableAllButtons) && (!(asset.debtCoverage > 0 && noSmartLoan)) || asset.inactive || asset.unsupported || asset.droppingSupport)"
                     :icon-src="'src/assets/icons/plus.svg'" :size="26"
                     v-tooltip="{content: 'Deposit collateral', classes: 'button-tooltip'}"
                     v-on:click="actionClick('ADD_FROM_WALLET')">
@@ -247,6 +247,8 @@ export default {
       'balancerLpBalances',
       'gmxV2Assets',
       'gmxV2Balances',
+      'penpieLpBalances',
+      'penpieLpAssets',
       'noSmartLoan'
     ]),
     ...mapState('stakeStore', ['farms']),
@@ -563,6 +565,8 @@ export default {
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.balancerLpBalances = this.balancerLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.farms = this.farms;
@@ -618,6 +622,8 @@ export default {
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.targetAsset = Object.keys(config.ASSETS_CONFIG).filter(asset => asset !== this.asset.symbol)[0];
       modalInstance.debt = this.fullLoanStatus.debt;
@@ -673,6 +679,8 @@ export default {
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.balancerLpBalances = this.balancerLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
@@ -718,6 +726,8 @@ export default {
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.gmxV2Assets = this.gmxV2Assets;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.balancerLpBalances = this.balancerLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
@@ -801,6 +811,8 @@ export default {
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.gmxV2Assets = this.gmxV2Assets;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.balancerLpBalances = this.balancerLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
@@ -867,6 +879,8 @@ export default {
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.gmxV2Assets = this.gmxV2Assets;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.balancerLpBalances = this.balancerLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
@@ -949,6 +963,8 @@ export default {
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
@@ -992,6 +1008,8 @@ export default {
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
@@ -1173,6 +1191,7 @@ export default {
         return;
       }
 
+      let userCancelledTransaction = false;
       if (String(error) === '[object Object]' || typeof error === 'object') {
         switch (error.code) {
           case -32000:
@@ -1187,6 +1206,7 @@ export default {
             break;
           case 4001:
             this.progressBarService.emitProgressBarCancelledState()
+            userCancelledTransaction = true;
             break;
           case -32603:
             console.log('error code -32603');
@@ -1203,7 +1223,7 @@ export default {
           this.progressBarService.emitProgressBarErrorState('Insufficient slippage.');
         }
       }
-      this.cleanupAfterError(error.code !== -32000 && !caiMintOrBurnSlippageError);
+      this.cleanupAfterError(userCancelledTransaction);
     },
 
     cleanupAfterError(closeModal = true) {

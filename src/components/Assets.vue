@@ -75,6 +75,10 @@ export default {
                 if (asset.inactive && (!this.hasSmartLoanContract || (this.assetBalances && this.assetBalances[key] === 0)))
                   delete this.funds[key];
               }
+              if (this.assetBalances) {
+                console.warn('-------___--___-___--___-____-ASSETS balances____---___-____-___---___--___--_____');
+                console.log(this.assetBalances);
+              }
             });
           this.updateAssetsData(updatedAssets);
         }
