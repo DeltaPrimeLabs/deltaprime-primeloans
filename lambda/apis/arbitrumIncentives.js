@@ -1,3 +1,4 @@
+const { request, gql } = require('graphql-request');
 const {
   dynamoDb,
   fetchAllDataFromDB
@@ -106,8 +107,86 @@ const getLtipBoostApyApi = (event, context, callback) => {
     });
 };
 
+async function getDepositorsAddressesFromSubgraph() {
+  let skip = 0;
+  let depositors = [];
+  let hasMoreDepositors = true;
+
+  while (hasMoreDepositors) {
+    let query = gql`
+        {
+          depositors(first: 1000, skip: ${skip}) {
+            id
+          }
+        }
+        `
+    let response = await request('https://api.thegraph.com/subgraphs/name/keizir/deltaprime', query);
+    if (response.depositors.length > 0) {
+      depositors = [...depositors, ...response.depositors.map(depositor => depositor.id)];
+      skip += 1000;
+    } else {
+      hasMoreDepositors = false;
+    }
+  }
+  // remove duplicates from depositors array
+  depositors = [...new Set(depositors)];
+
+  console.log(`Found ${depositors.length} depositors.`);
+  return depositors;
+}
+
+const getPoolArbitrumIncentivesApi = async (event, context, callback) => {
+  try {
+    poolsDepositors = await getDepositorsAddressesFromSubgraph();
+
+    const params = {
+      TableName: process.env.POOL_ARBITRUM_INCENTIVES_ARB_TABLE
+    };
+
+    const incentives = await fetchAllDataFromDB(params, true);
+
+    const depositorsIncentives = [];
+
+    poolsDepositors.map(depositor => {
+      const depositorIncentives = incentives.filter((item) => item.id == depositor)
+
+      if (depositorIncentives.length > 0) {
+        let depositorAccumulatedIncentives = 0;
+
+        depositorIncentives.map((item) => {
+          depositorAccumulatedIncentives += (item.ARB ? Number(item.ARB) : 0) +
+                                            (item.BTC ? Number(item.BTC) : 0) +
+                                            (item.DAI ? Number(item.DAI) : 0) +
+                                            (item.ETH ? Number(item.ETH) : 0) +
+                                            (item.USDC ? Number(item.USDC) : 0);
+        });
+
+        depositorsIncentives.push({
+          'id': depositor,
+          'arbCollected': depositorAccumulatedIncentives
+        })
+      }
+    })
+
+    const sortedIncentives = depositorsIncentives.sort((a, b) => b.arbCollected - a.arbCollected);
+
+    const response = {
+      statusCode: 200,
+      body: JSON.stringify({
+        list: sortedIncentives
+      }),
+    };
+    callback(null, response);
+  } catch(error) {
+    console.error(error);
+    callback(new Error('Couldn\'t fetch Pool Arbitrum Incentives values.'));
+    return;
+  };
+};
+
 module.exports = {
   getArbitrumIncentivesApi,
   getLoanArbitrumIncentivesApi,
+  getPoolArbitrumIncentivesApi,
   getLtipBoostApyApi
 }

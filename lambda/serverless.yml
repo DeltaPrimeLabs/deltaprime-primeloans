@@ -272,6 +272,15 @@ functions:
       - httpApi:
           method: get
           path: /arbitrum-grant-list
+  getPoolArbitrumIncentivesApi:
+    handler: apis/arbitrumIncentives.getPoolArbitrumIncentivesApi
+    memorySize: 2048
+    timeout: 30
+    description: Fetch Arbitrum Grant values accumulated for every pool depositors on Arbitrum
+    events:
+      - httpApi:
+          method: get
+          path: /pool-arbitrum-grant-list
   getLtipBoostApyApi:
     handler: apis/arbitrumIncentives.getLtipBoostApyApi
     memorySize: 512
