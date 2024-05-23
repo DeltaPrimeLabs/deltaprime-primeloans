@@ -260,11 +260,11 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
 
     for (let pool in poolsDepositorsBalances) {
       depositorsEligibleAirdrop[pool] = {};
-      // console.log(`arbitrumPoolsDeposits[pool]: ${arbitrumPoolsDeposits[pool]}`)
+      const totalDepositorsBalances = Object.values(poolsDepositorsBalances[pool]).reduce((a, b) => a + b);
       for (let depositor in poolsDepositorsBalances[pool]) {
         let depositorBalance = poolsDepositorsBalances[pool][depositor];
         let poolEligibleAirdrop = tokensToBeDistributedPerPool[pool];
-        let depositorEligibleAirdrop = (depositorBalance / arbitrumPoolsDeposits[pool]) * poolEligibleAirdrop;
+        let depositorEligibleAirdrop = (depositorBalance / totalDepositorsBalances) * poolEligibleAirdrop;
         depositorsEligibleAirdrop[pool][depositor] = depositorEligibleAirdrop;
       }
     }
