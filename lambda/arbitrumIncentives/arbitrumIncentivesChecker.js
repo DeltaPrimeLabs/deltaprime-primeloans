@@ -4,6 +4,9 @@ const {
 } = require('../utils/helpers');
 const pingUrl = require('../.secrets/ping.json');
 
+const threshold = 0.0000000000001;
+const expectedIncentives = 0.5952380952380952; // change the value accordingly based on incentives of interval
+
 const arbitrumIncentivesChecker = async () => {
   try {
     const now = Math.floor(Date.now() / 1000);
@@ -25,9 +28,11 @@ const arbitrumIncentivesChecker = async () => {
     result.map((item) => {
       totalIncentivesPerHour += item.arbCollected ? Number(item.arbCollected) : 0;
     });
-    console.log(totalIncentivesPerHour);
 
-    if (Math.abs(totalIncentivesPerHour - 0.5952380952380952) < 0.0000000000001) { // change the value accordingly based on incentives of interval
+    const diff = Math.abs(totalIncentivesPerHour - expectedIncentives); 
+    console.log(`totalIncentivesPerHour: ${totalIncentivesPerHour}, diff: ${diff}`);
+
+    if (diff < threshold) {
       const res = await fetch(pingUrl.ltipPAChecker.success);
       console.log(res);
     } else {
@@ -36,7 +41,7 @@ const arbitrumIncentivesChecker = async () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(error)
+        body: JSON.stringify(`difference: ${diff}, threshold set: ${threshold}, expected incentives per interval: ${expectedIncentives}`)
       });
       console.log(res);
     }
