@@ -33,17 +33,17 @@ const arbitrumIncentivesChecker = async () => {
     console.log(`totalIncentivesPerHour: ${totalIncentivesPerHour}, diff: ${diff}`);
 
     if (diff < threshold) {
-      const res = await fetch(pingUrl.ltipPAChecker.success);
-      console.log(res);
+      await fetch(pingUrl.ltipPAChecker.success);
     } else {
-      const res = await fetch(pingUrl.ltipPAChecker.fail, {
+      await fetch(pingUrl.ltipPAChecker.fail, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(`difference: ${diff}, threshold set: ${threshold}, expected incentives per interval: ${expectedIncentives}`)
+        body: JSON.stringify({
+          errorMessage: `*this is test* difference: ${diff}, threshold set: ${threshold}, expected incentives per interval: ${expectedIncentives}`
+        })
       });
-      console.log(res);
     }
   } catch(error) {
     console.error('Error', error);

@@ -330,7 +330,9 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(`difference calculated: ${diff}`)
+        body: JSON.stringify({
+          errorMessage: `difference calculated: ${diff}`
+        })
       });
       console.log(`------------difference check for ${pool} failed-------------`)
     }

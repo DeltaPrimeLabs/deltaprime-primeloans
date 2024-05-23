@@ -154,19 +154,17 @@ const arbitrumIncentives = async () => {
     console.log("LTIP boost APY on Arbitrum saved.");
 
     // ping healthcheck end point
-    const res = await fetch(pingUrl.ltipPA.success);
-    console.log(res);
+    await fetch(pingUrl.ltipPA.success);
   } catch (error) {
     console.log('Error', error);
 
-    const res = await fetch(pingUrl.ltipPA.fail, {
+    await fetch(pingUrl.ltipPA.fail, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(error)
     });
-    console.log(res);
   }
 }
 
