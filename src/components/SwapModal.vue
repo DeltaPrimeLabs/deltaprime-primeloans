@@ -209,7 +209,7 @@
       <div class="button-wrapper">
         <Button :label="swapDebtMode ? 'Swap debt' : 'Swap'"
                 v-on:click="submit()"
-                :disabled="sourceInputError || targetInputError"
+                :disabled="sourceInputError || targetInputError || blockSubmitButton"
                 :waiting="transactionOngoing || isTyping || calculatingSwapRoute">
         </Button>
       </div>
@@ -335,6 +335,7 @@ export default {
       selectedSlippageOption: Object.keys(config.SWAP_MODAL_SLIPPAGE_OPTIONS)[1],
       advancedSlippageMode: false,
       blockReversing: false,
+      blockSubmitButton: false,
     };
   },
 

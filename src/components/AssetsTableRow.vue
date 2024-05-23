@@ -224,6 +224,7 @@ export default {
       selectedChart: 'TradingView',
       showTradingViewChart: false,
       avalancheChain: window.avalancheChain,
+      currentlyOpenModalInstance: null,
     };
   },
   computed: {
@@ -468,7 +469,7 @@ export default {
           const swapRate = await paraSwapSDK.swap.getRate({
             srcToken: TOKEN_ADDRESSES[sourceAsset],
             srcDecimals: config.ASSETS_CONFIG[sourceAsset].decimals,
-            destToken: TOKEN_ADDRESSES[targetAsset],
+            destToken: '0xb19b3b8DB8BBa992E74FE710cfe905C05298C65e',
             destDecimals: config.ASSETS_CONFIG[targetAsset].decimals,
             amount: amountIn,
             userAddress: this.smartLoanContract.address,
@@ -493,6 +494,13 @@ export default {
           console.log(String(error));
           if (String(error).includes('No routes found with enough liquidity')) {
             this.progressBarService.emitProgressBarErrorState('The selected aggregator could not find a route. Please switch aggregator, increase slippage or try again later.')
+            this.cleanupAfterError(false);
+          } else if (String(error).includes('ESTIMATED_LOSS_GREATER_THAN_MAX_IMPACT')) {
+            this.progressBarService.emitProgressBarErrorState('Source amount too low')
+            this.cleanupAfterError(false);
+          } else {
+            // Any other random error
+            this.progressBarService.emitProgressBarErrorState('The selected aggregator encountered unexpected error. Please switch aggregator or try again later.')
             this.cleanupAfterError(false);
           }
         }
@@ -601,6 +609,7 @@ export default {
       if (config.SWAP_DEXS_CONFIG.YakSwap.availableAssets && config.SWAP_DEXS_CONFIG.ParaSwapV2.availableAssets.includes(this.asset.symbol)) swapDexSwapMethodMap.ParaSwapV2 = this.paraSwapV2;
 
       const modalInstance = this.openModal(SwapModal);
+      this.currentlyOpenModalInstance = modalInstance;
       modalInstance.dexOptions = Object.entries(config.SWAP_DEXS_CONFIG)
         .filter(([dexName, dexConfig]) => dexConfig.availableAssets.includes(this.asset.symbol))
         .map(([dexName, dexConfig]) => dexConfig.displayName);
@@ -655,6 +664,7 @@ export default {
 
     openDebtSwapModal() {
       const modalInstance = this.openModal(SwapModal);
+      this.currentlyOpenModalInstance = modalInstance;
       modalInstance.dexOptions = Object.entries(config.SWAP_DEXS_CONFIG)
         .filter(([dexName, dexConfig]) => dexConfig.availableAssets.includes(this.asset.symbol))
         .map(([dexName, dexConfig]) => dexName);
@@ -1229,6 +1239,10 @@ export default {
     cleanupAfterError(closeModal = true) {
       if (closeModal) {
         this.closeModal();
+      }
+      if (this.currentlyOpenModalInstance) {
+        this.currentlyOpenModalInstance.calculatingSwapRoute = false;
+        this.currentlyOpenModalInstance.blockSubmitButton = true;
       }
       this.disableAllButtons = false;
       this.isBalanceEstimated = false;
