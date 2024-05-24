@@ -213,7 +213,7 @@ contract UniswapV3Facet is IUniswapV3Facet, AvalancheDataServiceConsumerBase, Re
         emit DecreaseLiquidityUniswapV3(msg.sender, poolAddress, params.tokenId, token0, token1, amount0, amount1, block.timestamp);
     }
 
-    function burnLiquidityUniswapV3(uint256 tokenId) external nonReentrant onlyOwner noBorrowInTheSameBlock onlyOwnerOrInsolvent {
+    function burnLiquidityUniswapV3(uint256 tokenId) external nonReentrant noBorrowInTheSameBlock onlyOwnerOrInsolvent {
         uint256[] storage tokenIds = getTokenIds();
         for (uint256 i; i < tokenIds.length; i++) {
             if (tokenIds[i] == tokenId) {

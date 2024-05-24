@@ -179,7 +179,11 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
             repaidInUSD += repayAmount * cachedPrices.assetsToRepayPrices[i].price * 10 ** 10 / 10 ** token.decimals();
 
             pool.repay(repayAmount);
-            _decreaseExposure(tokenManager, address(token), repayAmount > supplyAmount ? (repayAmount - supplyAmount) : 0);
+            if (repayAmount > supplyAmount) {
+                _decreaseExposure(tokenManager, address(token), repayAmount - supplyAmount);
+            } else {
+                _increaseExposure(tokenManager, address(token), supplyAmount - repayAmount);
+            }
 
             emit LiquidationRepay(msg.sender, config.assetsToRepay[i], repayAmount, block.timestamp);
         }

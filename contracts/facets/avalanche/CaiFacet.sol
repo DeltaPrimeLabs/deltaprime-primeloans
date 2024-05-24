@@ -131,8 +131,11 @@ contract CaiFacet is
 
         uint256[] memory prices = getOracleNumericValuesFromTxMsg(assets);
 
-        uint256 inputValue = prices[0] * inputAmount;
-        uint256 outputValue = prices[1] * outputAmount;
+        IERC20Metadata inputToken = IERC20Metadata(tokenManager.getAssetAddress(inputAsset, true));
+        IERC20Metadata outputToken = IERC20Metadata(tokenManager.getAssetAddress(outputAsset, true));
+
+        uint256 inputValue = prices[0] * inputAmount / 10 ** inputToken.decimals();
+        uint256 outputValue = prices[1] * outputAmount / 10 ** outputToken.decimals();
         uint256 diff = inputValue > outputValue
             ? (inputValue - outputValue)
             : (outputValue - inputValue);
