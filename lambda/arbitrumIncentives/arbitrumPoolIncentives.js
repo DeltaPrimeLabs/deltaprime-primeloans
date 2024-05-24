@@ -231,16 +231,18 @@ async function getDepositorsBalances(depositors, poolContract, poolName, chain) 
   return depositorsBalances;
 }
 
-const getLatestTimestamp = async () => {
+const getIncentivesMultiplier = async () => {
   const params = {
     TableName: "pool-arbitrum-incentives-arb-prod",
   };
 
   const res = await fetchAllDataFromDB(params, true);
 
+  if (res.length == 0) return 1;
+
   res.sort((a, b) => b.timestamp - a.timestamp);
 
-  return res[0].timestamp
+  return Math.round((Math.floor(startTime / 1000) - res[0].timestamp) / 3600);
 };
 
 async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, chain, rpc = "first") {
@@ -253,8 +255,7 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
   let poolsDepositors = []
   let poolsDepositorsBalances = {}
   let depositorsEligibleAirdrop = {};
-  let latestTimestamp = await getLatestTimestamp();
-  let incentivesMultiplier = Math.round((Math.floor(startTime / 1000) - latestTimestamp) / 3600);
+  let incentivesMultiplier = await getIncentivesMultiplier(startTime);
 
   if (incentivesMultiplier == 0) return;
 

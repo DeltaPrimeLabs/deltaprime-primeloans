@@ -41,23 +41,24 @@ const getWrappedContracts = (addresses, network) => {
   });
 }
 
-const getLatestTimestamp = async () => {
+const getIncentivesMultiplier = async (now) => {
   const params = {
     TableName: "arbitrum-incentives-arb-prod",
   };
 
   const res = await fetchAllDataFromDB(params, true);
 
+  if (res.length == 0) return 1;
+
   res.sort((a, b) => b.timestamp - a.timestamp);
 
-  return res[0].timestamp
+  return Math.round((now - res[0].timestamp) / 3600);
 };
 
 const arbitrumIncentives = async () => {
   const incentivesPerWeek = 100;
   const now = Math.floor(Date.now() / 1000);
-  const latestTimestamp = await getLatestTimestamp();
-  const incentivesMultiplier = Math.round((now - latestTimestamp) / 3600);
+  const incentivesMultiplier = await getIncentivesMultiplier(now);
 
   if (incentivesMultiplier == 0) return;
 
