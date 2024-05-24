@@ -124,7 +124,9 @@ contract CaiFacet is
         bytes32 outputAsset,
         uint256 outputAmount,
         uint256 maxSlippage
-    ) internal view {
+    ) internal view {        
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+
         bytes32[] memory assets = new bytes32[](2);
         assets[0] = inputAsset;
         assets[1] = outputAsset;

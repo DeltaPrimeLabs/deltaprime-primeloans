@@ -5,6 +5,7 @@ pragma solidity 0.8.17;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "../ReentrancyGuardKeccak.sol";
+import "../lib/SolvencyMethods.sol";
 import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 import "../interfaces/ITokenManager.sol";
 import "../interfaces/IWrappedNativeToken.sol";
@@ -20,7 +21,7 @@ import "../interfaces/gmx-v2/IWithdrawalCallbackReceiver.sol";
 //This path is updated during deployment
 import "../lib/local/DeploymentConstants.sol";
 
-abstract contract GmxV2CallbacksFacet is IDepositCallbackReceiver, IWithdrawalCallbackReceiver, ReentrancyGuardKeccak {
+abstract contract GmxV2CallbacksFacet is IDepositCallbackReceiver, IWithdrawalCallbackReceiver, ReentrancyGuardKeccak, SolvencyMethods {
     using TransferHelper for address;
     using Deposit for Deposit.Props;
     using Withdrawal for Withdrawal.Props;
@@ -48,7 +49,8 @@ abstract contract GmxV2CallbacksFacet is IDepositCallbackReceiver, IWithdrawalCa
         if(address(this).balance > 0){
             IWrappedNativeToken nativeToken = IWrappedNativeToken(DeploymentConstants.getNativeToken());
             nativeToken.deposit{value : address(this).balance}();
-            DiamondStorageLib.addOwnedAsset(DeploymentConstants.getNativeTokenSymbol(), DeploymentConstants.getNativeToken());
+            ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+            _increaseExposure(tokenManager, address(nativeToken), address(this).balance);
         }
     }
 
