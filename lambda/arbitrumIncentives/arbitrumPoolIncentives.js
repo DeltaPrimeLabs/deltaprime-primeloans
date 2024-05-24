@@ -4,7 +4,7 @@ const POOL_ARTIFACT = require('../abis/Pool.json');
 const { request, gql } = require('graphql-request');
 const incentivesRpcUrl = require('../.secrets/incentivesRpc.json');
 const pingUrl = require('../.secrets/ping.json');
-const { dynamoDb } = require('../utils/helpers');
+const { dynamoDb, fetchAllDataFromDB } = require('../utils/helpers');
 
 function getRpcUrl(chain, rpc) {
   // switch(chain){
@@ -231,6 +231,18 @@ async function getDepositorsBalances(depositors, poolContract, poolName, chain) 
   return depositorsBalances;
 }
 
+const getLatestTimestamp = async () => {
+  const params = {
+    TableName: "pool-arbitrum-incentives-arb-prod",
+  };
+
+  const res = await fetchAllDataFromDB(params, true);
+
+  res.sort((a, b) => b.timestamp - a.timestamp);
+
+  return res[0].timestamp
+};
+
 async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, chain, rpc = "first") {
   let startTime = Date.now();
   let provider = getProvider("arbitrum", rpc);
@@ -241,6 +253,10 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
   let poolsDepositors = []
   let poolsDepositorsBalances = {}
   let depositorsEligibleAirdrop = {};
+  let latestTimestamp = await getLatestTimestamp();
+  let incentivesMultiplier = Math.round((Math.floor(startTime / 1000) - latestTimestamp) / 3600);
+
+  if (incentivesMultiplier == 0) return;
 
   try {
     poolsDepositors = await getDepositorsAddressesFromSubgraph(chain);
@@ -251,7 +267,7 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
       let arbitrumPoolsTVLArray = Object.entries(arbitrumPoolsTVL).map(([pool, tvl]) => ({ pool, tvl }));
 
       let totalTVL = arbitrumPoolsTVLArray.reduce((a, b) => a + (b.tvl * getPoolEligibleTVLMultiplier(chain, b.pool)), 0);
-      let poolTokensToBeDistributed = (poolTVL / totalTVL) * numberOfTokensToBeDistributed;
+      let poolTokensToBeDistributed = (poolTVL / totalTVL) * numberOfTokensToBeDistributed * incentivesMultiplier;
       tokensToBeDistributedPerPool[pool] = poolTokensToBeDistributed;
       console.log(`${pool} eligible airdrop: ${tokensToBeDistributedPerPool[pool]}`);
       poolsDepositorsBalances[pool] = await getDepositorsBalances(poolsDepositors, arbitrumPools[pool], pool, chain);

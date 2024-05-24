@@ -6,6 +6,7 @@ const {
   fromWei,
   fromBytes32,
   formatUnits,
+  fetchAllDataFromDB,
 } = require('../utils/helpers');
 const constants = require('../config/constants.json');
 const FACTORY = require('../abis/SmartLoansFactory.json');
@@ -40,14 +41,32 @@ const getWrappedContracts = (addresses, network) => {
   });
 }
 
+const getLatestTimestamp = async () => {
+  const params = {
+    TableName: "arbitrum-incentives-arb-prod",
+  };
+
+  const res = await fetchAllDataFromDB(params, true);
+
+  res.sort((a, b) => b.timestamp - a.timestamp);
+
+  return res[0].timestamp
+};
+
 const arbitrumIncentives = async () => {
+  const incentivesPerWeek = 100;
+  const now = Math.floor(Date.now() / 1000);
+  const latestTimestamp = await getLatestTimestamp();
+  const incentivesMultiplier = Math.round((now - latestTimestamp) / 3600);
+
+  if (incentivesMultiplier == 0) return;
+
   try {
-    const now = Math.floor(Date.now() / 1000);
     const factoryContract = new ethers.Contract(factoryAddress, FACTORY.abi, arbitrumHistoricalProvider);
     let loanAddresses = await factoryContract.getAllLoans();
     const totalLoans = loanAddresses.length;
 
-    const incentivesPerInterval = 100 / (60 * 60 * 24 * 7) * (60 * 60);
+    const incentivesPerInterval = incentivesPerWeek / (60 * 60 * 24 * 7) * (60 * 60) * incentivesMultiplier;
     const batchSize = 150;
 
     const loanQualifications = {};
