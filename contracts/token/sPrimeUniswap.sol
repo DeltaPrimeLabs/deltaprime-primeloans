@@ -9,7 +9,6 @@ import "../interfaces/uniswap-v3/IUniswapV3Factory.sol";
 import "../interfaces/uniswap-v3/ISwapRouter.sol";
 import "../lib/uniswap-v3/OracleLibrary.sol";
 import "../lib/uniswap-v3/PositionValue.sol";
-import "../lib/SolvencyMethods.sol";
 import "../lib/local/DeploymentConstants.sol";
 import "../abstract/PendingOwnableUpgradeable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
@@ -17,10 +16,11 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@redstone-finance/evm-connector/contracts/core/ProxyConnector.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 
 // SPrime contract declaration
-contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwnableUpgradeable, ERC20Upgradeable, ERC721HolderUpgradeable, SolvencyMethods {
+contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwnableUpgradeable, ERC20Upgradeable, ERC721HolderUpgradeable, ProxyConnector {
     using SafeERC20 for IERC20Metadata; // Using SafeERC20 for IERC20 for safe token transfers
     using PositionValue for INonfungiblePositionManager;
     // Constants declaration
