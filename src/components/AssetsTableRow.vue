@@ -469,7 +469,7 @@ export default {
           const swapRate = await paraSwapSDK.swap.getRate({
             srcToken: TOKEN_ADDRESSES[sourceAsset],
             srcDecimals: config.ASSETS_CONFIG[sourceAsset].decimals,
-            destToken: '0xb19b3b8DB8BBa992E74FE710cfe905C05298C65e',
+            destToken: TOKEN_ADDRESSES[targetAsset],
             destDecimals: config.ASSETS_CONFIG[targetAsset].decimals,
             amount: amountIn,
             userAddress: this.smartLoanContract.address,

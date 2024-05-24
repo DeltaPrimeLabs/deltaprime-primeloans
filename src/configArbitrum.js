@@ -57,7 +57,7 @@ export default {
     SWAP_DEXS_CONFIG: {
         ParaSwapV2: {
             displayName: 'ParaSwap',
-            availableAssets: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH', 'GRAIL', 'WOO', 'MAGIC', 'JOE', 'ezETH', 'weETH'],
+            availableAssets: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH', 'GRAIL', 'WOO', 'MAGIC', 'JOE', 'ezETH', 'weETH', 'rsETH'],
             slippageMargin: 0.05
         },
         YakSwap: {
