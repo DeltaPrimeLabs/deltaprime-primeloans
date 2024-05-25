@@ -34,56 +34,56 @@ const getArbitrumIncentivesApi = async (event, context, callback) => {
 };
 
 // fetch incentives of all the loans
-// const getLoanArbitrumIncentivesApi = async (event, context, callback) => {
-//   try {
-//     let params = {
-//       TableName: process.env.LOAN_ARB_TABLE
-//     };
+const getLoanArbitrumIncentivesApi = async (event, context, callback) => {
+  try {
+    let params = {
+      TableName: process.env.LOAN_ARB_TABLE
+    };
 
-//     const arbLoans = await fetchAllDataFromDB(params, true);
+    const arbLoans = await fetchAllDataFromDB(params, true);
 
-//     params = {
-//       TableName: process.env.ARBITRUM_INCENTIVES_ARB_TABLE
-//     };
+    params = {
+      TableName: process.env.ARBITRUM_INCENTIVES_ARB_TABLE
+    };
 
-//     const incentives = await fetchAllDataFromDB(params, true);
+    const incentives = await fetchAllDataFromDB(params, true);
 
-//     const incentivesOfLoans = [];
+    const incentivesOfLoans = [];
 
-//     arbLoans.map(loan => {
-//       const loanIncentives = incentives.filter((item) => item.id == loan.id)
+    arbLoans.map(loan => {
+      const loanIncentives = incentives.filter((item) => item.id == loan.id)
 
-//       if (loanIncentives.length > 0) {
-//         let loanAccumulatedIncentives = 0;
+      if (loanIncentives.length > 0) {
+        let loanAccumulatedIncentives = 0;
 
-//         loanIncentives.map((item) => {
-//           loanAccumulatedIncentives += item.arbCollected ? Number(item.arbCollected) : 0;
-//         });
+        loanIncentives.map((item) => {
+          loanAccumulatedIncentives += item.arbCollected ? Number(item.arbCollected) : 0;
+        });
 
-//         incentivesOfLoans.push({
-//           'id': loan.id,
-//           'arbCollected': loanAccumulatedIncentives,
-//           'eligibleTvl': loan.eligibleTvl
-//         })
-//       }
-//     })
+        incentivesOfLoans.push({
+          'id': loan.id,
+          'arbCollected': loanAccumulatedIncentives,
+          'eligibleTvl': loan.eligibleTvl
+        })
+      }
+    })
 
-//     const sortedIncentives = incentivesOfLoans.sort((a, b) => b.arbCollected - a.arbCollected);
-//     console.log(sortedIncentives);
+    const sortedIncentives = incentivesOfLoans.sort((a, b) => b.arbCollected - a.arbCollected);
+    console.log(sortedIncentives);
 
-//     const response = {
-//       statusCode: 200,
-//       body: JSON.stringify({
-//         list: sortedIncentives
-//       }),
-//     };
-//     callback(null, response);
-//   } catch(error) {
-//     console.error(error);
-//     callback(new Error('Couldn\'t fetch Arbitrum Incentives values.'));
-//     return;
-//   };
-// };
+    const response = {
+      statusCode: 200,
+      body: JSON.stringify({
+        list: sortedIncentives
+      }),
+    };
+    callback(null, response);
+  } catch(error) {
+    console.error(error);
+    callback(new Error('Couldn\'t fetch Arbitrum Incentives values.'));
+    return;
+  };
+};
 
 const getLoanArbitrumIncentivesForApi = async (event, context, callback) => {
   try {
@@ -126,7 +126,9 @@ const getLoanArbitrumIncentivesForApi = async (event, context, callback) => {
 
     const response = {
       statusCode: 200,
-      body: JSON.stringify(incentivesOfAddresses)
+      body: JSON.stringify({
+        data: incentivesOfAddresses
+      })
     };
     callback(null, response);
   } catch(error) {
@@ -266,7 +268,7 @@ const getPoolArbitrumIncentivesForApi = async (event, context, callback) => {
                                               (item.USDC ? Number(item.USDC) : 0);
           });
   
-          depositorsIncentives[depositor] = {
+          depositorsIncentives[address] = {
             'arbCollected': depositorAccumulatedIncentives
           };
         }
@@ -275,7 +277,9 @@ const getPoolArbitrumIncentivesForApi = async (event, context, callback) => {
 
     const response = {
       statusCode: 200,
-      body: JSON.stringify(depositorsIncentives),
+      body: JSON.stringify({
+        data: depositorsIncentives
+      }),
     };
     callback(null, response);
   } catch(error) {
