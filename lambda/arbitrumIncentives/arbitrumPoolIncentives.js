@@ -326,6 +326,18 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
         body: JSON.stringify(error)
       });
       console.log('-----------calculating failed------------');
+
+      await fetch(pingUrl.ltipPoolChcker.fail, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          errorMessage: 'incentives calculation failed and not saved to db'
+        })
+      });
+
+      return;
     }
   }
 
