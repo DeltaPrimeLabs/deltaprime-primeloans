@@ -14,12 +14,12 @@ const LOAN = require(`../abis/SmartLoanGigaChadInterface.json`);
 const CACHE_LAYER_URLS = require('../config/redstone-cache-layer-urls.json');
 const extRpcUrl = require('../.secrets/extRpc.json');
 const pingUrl = require('../.secrets/ping.json');
+const incentivesRpcUrl = require('../.secrets/incentivesRpc.json');
 
 const factoryAddress = constants.arbitrum.factory;
-const arbitrumHistoricalProvider = new ethers.providers.JsonRpcProvider(extRpcUrl.arbitrum);
-
-const arbitrumWallet = (new ethers.Wallet("0xca63cb3223cb19b06fa42110c89ad21a17bad22ea061e5a2c2487bd37b71e809"))
-  .connect(arbitrumHistoricalProvider);
+const getHistoricalProvider = (rpc) => {
+  return new ethers.providers.JsonRpcProvider(incentivesRpcUrl.arbitrum[rpc])
+};
 
 const wrap = (contract, network) => {
   return WrapperBuilder.wrap(contract).usingDataService(
@@ -32,7 +32,10 @@ const wrap = (contract, network) => {
   );
 }
 
-const getWrappedContracts = (addresses, network) => {
+const getWrappedContracts = (addresses, network, provider) => {
+  const arbitrumWallet = (new ethers.Wallet("0xca63cb3223cb19b06fa42110c89ad21a17bad22ea061e5a2c2487bd37b71e809"))
+    .connect(provider);
+
   return addresses.map(address => {
     const loanContract = new ethers.Contract(address, LOAN.abi, network == "avalanche" ? avalancheWallet : arbitrumWallet);
     const wrappedContract = wrap(loanContract, network);
@@ -55,7 +58,7 @@ const getIncentivesMultiplier = async (now) => {
   return Math.round((now - res[0].timestamp) / 3600);
 };
 
-const arbitrumIncentives = async () => {
+const arbitrumIncentives = async (rpc = 'first') => {
   const incentivesPerWeek = 100;
   const now = Math.floor(Date.now() / 1000);
   const incentivesMultiplier = await getIncentivesMultiplier(now);
@@ -63,7 +66,8 @@ const arbitrumIncentives = async () => {
   if (incentivesMultiplier == 0) return;
 
   try {
-    const factoryContract = new ethers.Contract(factoryAddress, FACTORY.abi, arbitrumHistoricalProvider);
+    const provider = getHistoricalProvider(rpc);
+    const factoryContract = new ethers.Contract(factoryAddress, FACTORY.abi, provider);
     let loanAddresses = await factoryContract.getAllLoans();
     const totalLoans = loanAddresses.length;
 
@@ -78,7 +82,7 @@ const arbitrumIncentives = async () => {
       console.log(`processing ${i * batchSize} - ${(i + 1) * batchSize > totalLoans ? totalLoans : (i + 1) * batchSize} loans`);
 
       const batchLoanAddresses = loanAddresses.slice(i * batchSize, (i + 1) * batchSize);
-      const wrappedContracts = getWrappedContracts(batchLoanAddresses, 'arbitrum');
+      const wrappedContracts = getWrappedContracts(batchLoanAddresses, 'arbitrum', provider);
 
       const loanStats = await Promise.all(
         wrappedContracts.map(contract => contract.getLTIPEligibleTVL())
@@ -178,13 +182,17 @@ const arbitrumIncentives = async () => {
   } catch (error) {
     console.log('Error', error);
 
-    await fetch(pingUrl.ltipPA.fail, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(error)
-    });
+    if (error.error.code == 'SERVER_ERROR' || error.error.code == 'TIMEOUT') {
+      arbitrumIncentives('second');
+    } else {
+      await fetch(pingUrl.ltipPA.fail, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(error)
+      });
+    }
   }
 }
 

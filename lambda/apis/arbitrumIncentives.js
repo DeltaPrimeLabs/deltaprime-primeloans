@@ -87,8 +87,7 @@ const getLoanArbitrumIncentivesApi = async (event, context, callback) => {
 
 const getLoanArbitrumIncentivesForApi = async (event, context, callback) => {
   try {
-    const data = JSON.parse(event.body);
-    const addresses = data.addresses;
+    const addresses = event.queryStringParameters.addresses.split(',');
     const incentivesOfAddresses = {};
 
     await Promise.all(
@@ -241,8 +240,7 @@ const getPoolArbitrumIncentivesApi = async (event, context, callback) => {
 
 const getPoolArbitrumIncentivesForApi = async (event, context, callback) => {
   try {
-    const data = JSON.parse(event.body);
-    const addresses = data.addresses;
+    const addresses = event.queryStringParameters.addresses.split(',');
     const depositorsIncentives = {};
 
     await Promise.all(

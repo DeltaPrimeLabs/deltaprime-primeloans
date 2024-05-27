@@ -211,7 +211,7 @@ async function getDepositorsAddressesFromSubgraph(chain) {
 
 async function getDepositorsBalances(depositors, poolContract, poolName, chain) {
   let depositorsBalances = {};
-  const batchSize = 200; // Define your batch size here
+  const batchSize = 100; // Define your batch size here
 
   console.log(`Checking ${poolName} pool balances of ${depositors.length} depositors in batches of ${batchSize}`)
   for (let i = 0; i < depositors.length; i += batchSize) {
@@ -224,6 +224,9 @@ async function getDepositorsBalances(depositors, poolContract, poolName, chain) 
         depositorsBalances[batch[j]] = Number(balance);
       }
     }
+
+    // wait 1 second for stability
+    await new Promise((resolve, reject) => setTimeout(resolve, 1000));
   }
   // console log sum of balances of all depositors
   let sum = Object.values(depositorsBalances).reduce((a, b) => a + b);
@@ -315,7 +318,7 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
   } catch (error) {
     console.log(error);
 
-    if (error.error.code == "SERVER_ERROR") {
+    if (error.error.code == "SERVER_ERROR" || error.error.code == "TIMEOUT") {
       calculateEligibleAirdropPerPool(372, "arbitrum", "second")
     } else {
       await fetch(pingUrl.ltipPool.fail, {
