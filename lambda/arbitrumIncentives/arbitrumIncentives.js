@@ -103,6 +103,9 @@ const arbitrumIncentives = async (rpc = 'first') => {
           })
         );
       }
+
+      // wait 1 second for stability
+      await new Promise((resolve, reject) => setTimeout(resolve, 1000));
     }
 
     console.log(`${Object.entries(loanQualifications).length} loans analyzed.`);
