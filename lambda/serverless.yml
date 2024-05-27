@@ -314,7 +314,7 @@ functions:
     events:
       - httpApi:
           method: get
-          path: /ltip-boost-apy
+          path: /ltip-pool-boost-apy
   getGmBoostApyApi:
     handler: apis/gmxIncentives.getGmBoostApyApi
     memorySize: 512

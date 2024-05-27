@@ -284,7 +284,8 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
       let poolEligibleAirdrop = tokensToBeDistributedPerPool[pool];
 
       // save boost APY for pool to DB
-      const boostApy = (poolEligibleAirdrop / incentivesMultiplier) / totalDepositorsBalances * 24 * 365;
+      let poolTokenDollarValue = await getPrice(pool, chain);
+      const boostApy = (poolEligibleAirdrop / incentivesMultiplier) / (totalDepositorsBalances * poolTokenDollarValue) * 24 * 365;
       const params = {
         TableName: 'apys-prod',
         Key: {
