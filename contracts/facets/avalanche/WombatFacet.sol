@@ -493,7 +493,7 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     function _unstakeAndWithdrawWombatLP(
         bytes32 lpAsset,
         uint256 amount
-    ) internal onlyOwner nonReentrant remainsSolvent returns (uint256 amountOut) {
+    ) internal onlyOwner nonReentrant remainsSolvent canRepayDebtFully returns (uint256 amountOut) {
         IERC20Metadata lpToken = getERC20TokenInstance(lpAsset, false);
         uint256 pid = IWombatMaster(WOMBAT_MASTER).getAssetPid(address(lpToken));
 
