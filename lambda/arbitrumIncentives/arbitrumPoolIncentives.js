@@ -231,7 +231,7 @@ async function getDepositorsBalances(depositors, poolContract, poolName, chain) 
   return depositorsBalances;
 }
 
-const getIncentivesMultiplier = async () => {
+const getIncentivesMultiplier = async (startTime) => {
   const params = {
     TableName: "pool-arbitrum-incentives-arb-prod",
   };
