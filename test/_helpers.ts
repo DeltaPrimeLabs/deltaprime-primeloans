@@ -931,7 +931,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             'unstakeAndWithdrawAvaxSavaxLpSavax',
             'depositAndStakeAvaxSavaxLpAvax',
             'unstakeAndWithdrawAvaxSavaxLpAvax',
-            'depositAvaxGgavaxGgavaxLp',
+            'depositAvaxGgavaxLpGgavax',
             'unstakeAndWithdrawAvaxGgavaxLpGgavax',
             'depositAndStakeAvaxGgavaxLpAvax',
             'unstakeAndWithdrawAvaxGgavaxLpAvax',

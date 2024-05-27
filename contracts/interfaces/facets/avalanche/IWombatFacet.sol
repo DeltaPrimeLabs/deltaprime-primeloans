@@ -59,7 +59,7 @@ interface IWombatFacet {
         uint256 amount
     ) external returns (uint256 amountOut);
 
-    function depositAvaxGgavaxGgavaxLp(uint256 amount) external;
+    function depositAvaxGgavaxLpGgavax(uint256 amount) external;
 
     function unstakeAndWithdrawAvaxGgavaxLpGgavax(
         uint256 amount

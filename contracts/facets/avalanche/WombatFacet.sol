@@ -201,7 +201,7 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         return _unstakeAndWithdrawWombatLP(WOMBAT_sAVAX_AVAX_LP_AVAX, amount);
     }
 
-    function depositAvaxGgavaxGgavaxLp(uint256 amount) external {
+    function depositAvaxGgavaxLpGgavax(uint256 amount) external {
         _depositAndStakeWombatLP(
             WOMBAT_ggAVAX_AVAX_LP_ggAVAX,
             amount,

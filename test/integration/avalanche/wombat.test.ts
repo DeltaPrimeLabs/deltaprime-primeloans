@@ -216,7 +216,7 @@ describe('Smart loan', () => {
             await expect(nonOwnerWrappedLoan.depositAvaxToAvaxGgavax(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
             await expect(nonOwnerWrappedLoan.depositAndStakeAvaxSavaxLpSavax(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
             await expect(nonOwnerWrappedLoan.depositAndStakeAvaxSavaxLpAvax(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-            await expect(nonOwnerWrappedLoan.depositAvaxGgavaxGgavaxLp(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.depositAvaxGgavaxLpGgavax(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
             await expect(nonOwnerWrappedLoan.depositAndStakeAvaxGgavaxLpAvax(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
         });
 
@@ -275,7 +275,7 @@ describe('Smart loan', () => {
             let initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
             let initialHR = fromWei(await wrappedLoan.getHealthRatio());
 
-            await wrappedLoan.depositAvaxGgavaxGgavaxLp(toWei("10"));
+            await wrappedLoan.depositAvaxGgavaxLpGgavax(toWei("10"));
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(initialTotalValue + 10 * tokensPrices.get("WOMBAT_ggAVAX_AVAX_LP_ggAVAX")!, 20);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.01);
