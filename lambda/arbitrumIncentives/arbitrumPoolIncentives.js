@@ -339,7 +339,7 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
     console.log(error);
 
     if (error.error.code == "SERVER_ERROR" || error.error.code == "TIMEOUT") {
-      calculateEligibleAirdropPerPool(372, "arbitrum", "second")
+      calculateEligibleAirdropPerPool(49.58, "arbitrum", "second")
     } else {
       await fetch(pingUrl.ltipPool.fail, {
         method: "POST",
@@ -393,4 +393,4 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
   console.log(`Execution time: ${Date.now() - startTime} ms`);
 }
 
-calculateEligibleAirdropPerPool(372, "arbitrum")
+calculateEligibleAirdropPerPool(49.58, "arbitrum") // 8330 per week = 49.58 per hour
