@@ -11,11 +11,11 @@ import "../DiamondHelper.sol";
 import "../interfaces/IStakingPositions.sol";
 import "../interfaces/facets/avalanche/ITraderJoeV2Facet.sol";
 import "../interfaces/uniswap-v3-periphery/INonfungiblePositionManager.sol";
-import "../lib/uniswap-v3/UniswapV3IntegrationHelper.sol";
 import {PriceHelper} from "../lib/joe-v2/PriceHelper.sol";
 import {Uint256x256Math} from "../lib/joe-v2/math/Uint256x256Math.sol";
 import {TickMath} from "../lib/uniswap-v3/TickMath.sol";
 import {FullMath} from "../lib/uniswap-v3/FullMath.sol";
+import {SqrtPriceMath} from "../lib/uniswap-v3/SqrtPriceMath.sol";
 
 
 //This path is updated during deployment
@@ -574,6 +574,7 @@ abstract contract SolvencyFacetProd is RedstoneConsumerNumericBase, DiamondHelpe
             for (uint256 i; i < ownedUniswapV3TokenIds.length; i++) {
 
                 IUniswapV3Facet.UniswapV3Position memory position = getUniswapV3Position(INonfungiblePositionManager(0x655C406EBFa14EE2006250925e54ec43AD184f8B), ownedUniswapV3TokenIds[i]);
+                address poolAddress = PoolAddress.computeAddress(0x740b1c1de25031C31FF4fC9A62f554A55cdC1baD, PoolAddress.getPoolKey(position.token0, position.token1, position.fee));
 
                 uint256[] memory prices = new uint256[](2);
 
@@ -590,24 +591,21 @@ abstract contract SolvencyFacetProd is RedstoneConsumerNumericBase, DiamondHelpe
                     uint256 debtCoverage0 = weighted ? DeploymentConstants.getTokenManager().debtCoverage(position.token0) : 1e18;
                     uint256 debtCoverage1 = weighted ? DeploymentConstants.getTokenManager().debtCoverage(position.token1) : 1e18;
 
-                    uint160 sqrtPriceX96_a = TickMath.getSqrtRatioAtTick(position.tickLower);
-                    uint160 sqrtPriceX96_b = TickMath.getSqrtRatioAtTick(position.tickUpper);
+                    uint160 sqrtRatioAX96 = TickMath.getSqrtRatioAtTick(position.tickLower);
+                    uint160 sqrtRatioBX96 = TickMath.getSqrtRatioAtTick(position.tickUpper);
 
-                    uint256 sqrtPrice_a = UniswapV3IntegrationHelper.sqrtPriceX96ToSqrtUint(sqrtPriceX96_a, IERC20Metadata(position.token0).decimals());
-                    uint256 sqrtPrice_b = UniswapV3IntegrationHelper.sqrtPriceX96ToSqrtUint(sqrtPriceX96_b, IERC20Metadata(position.token0).decimals());
-
-                    uint256 sqrtMarketPrice = UniswapV3IntegrationHelper.sqrt(prices[0] * 1e18 / prices[1] * 10 ** IERC20Metadata(position.token1).decimals());
+                    (uint160 sqrtRatioX96,,,,,,) = IUniswapV3Pool(poolAddress).slot0();
 
                     uint256 positionWorth;
 
-                    if (sqrtMarketPrice < sqrtPrice_a) {
-                        positionWorth = debtCoverage0 * position.liquidity / 1e18 * (1e36 / sqrtPrice_a - 1e36 / sqrtPrice_b) / 10 ** IERC20Metadata(position.token0).decimals() * prices[0] / 10 ** 8;
-                    } else if (sqrtMarketPrice < sqrtPrice_b) {
+                    if (sqrtRatioX96 < sqrtRatioAX96) {
+                        positionWorth = debtCoverage0 * SqrtPriceMath.getAmount0Delta(sqrtRatioX96, sqrtRatioBX96, position.liquidity, false) / 10 ** IERC20Metadata(position.token0).decimals() * prices[0] / 10 ** 8;
+                    } else if (sqrtRatioX96 < sqrtRatioBX96) {
                         positionWorth =
-                        position.liquidity * (debtCoverage0 * (sqrtPrice_b - sqrtMarketPrice) * 10 ** IERC20Metadata(position.token0).decimals() / (sqrtMarketPrice * sqrtPrice_b) * prices[0] / 10 ** 8
-                            + debtCoverage1 * (sqrtMarketPrice - sqrtPrice_a) / 10 ** IERC20Metadata(position.token1).decimals() * prices[1] / 10 ** 8) / 10**18;
+                        debtCoverage0 * SqrtPriceMath.getAmount0Delta(sqrtRatioX96, sqrtRatioBX96, position.liquidity, false) / 10 ** IERC20Metadata(position.token0).decimals() * prices[0] / 10 ** 8 + 
+                        debtCoverage1 * SqrtPriceMath.getAmount1Delta(sqrtRatioX96, sqrtRatioBX96, position.liquidity, false) / 10 ** IERC20Metadata(position.token1).decimals() * prices[1] / 10 ** 8;
                     } else {
-                        positionWorth = debtCoverage1 * position.liquidity / 1e18 * (sqrtPrice_b - sqrtPrice_a) / 10 ** IERC20Metadata(position.token1).decimals() * prices[1] / 10 ** 8;
+                        positionWorth = debtCoverage1 * SqrtPriceMath.getAmount1Delta(sqrtRatioAX96, sqrtRatioBX96, position.liquidity, false) / 10 ** IERC20Metadata(position.token1).decimals() * prices[1] / 10 ** 8;
                     }
 
                     total = total + positionWorth;
@@ -624,9 +622,9 @@ abstract contract SolvencyFacetProd is RedstoneConsumerNumericBase, DiamondHelpe
     function getUniswapV3Position(
         INonfungiblePositionManager positionManager,
         uint256 tokenId) internal view returns (IUniswapV3Facet.UniswapV3Position memory position) {
-        (, , address token0, address token1, , int24 tickLower, int24 tickUpper, uint128 liquidity) = positionManager.positions(tokenId);
+        (, , address token0, address token1, uint24 fee, int24 tickLower, int24 tickUpper, uint128 liquidity) = positionManager.positions(tokenId);
 
-        position = IUniswapV3Facet.UniswapV3Position(token0, token1, tickLower, tickUpper, liquidity);
+        position = IUniswapV3Facet.UniswapV3Position(token0, token1, fee, tickLower, tickUpper, liquidity);
     }
 
     /**
