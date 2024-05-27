@@ -7,7 +7,7 @@ import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
 import "../../interfaces/facets/avalanche/IWombatPool.sol";
 import "../../interfaces/facets/avalanche/IWombatMaster.sol";
 import "../../interfaces/facets/avalanche/IWombatRouter.sol";
-import "../../interfaces/facets/avalanche/IMultiRewarder.sol";
+import "../../interfaces/facets/avalanche/IRewarder.sol";
 import "../../interfaces/IStakingPositions.sol";
 import "../../interfaces/IWrappedNativeToken.sol";
 
@@ -171,6 +171,66 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         return getLpTokenBalance(WOMBAT_ggAVAX_AVAX_LP_AVAX);
     }
 
+    function depositAvaxSavaxSavaxLp(uint256 amount) external {
+        _depositAndStakeWombatLP(
+            WOMBAT_sAVAX_AVAX_LP_sAVAX,
+            amount,
+            this.sAvaxBalanceAvaxSavax.selector,
+            this.withdrawAvaxSavaxSavaxLp.selector
+        );
+    }
+
+    function withdrawAvaxSavaxSavaxLp(
+        uint256 amount
+    ) external returns (uint256 amountOut) {
+        return _unstakeAndWithdrawWombatLP(WOMBAT_sAVAX_AVAX_LP_sAVAX, amount);
+    }
+
+    function depositAvaxSavaxAvaxLp(uint256 amount) external {
+        _depositAndStakeWombatLP(
+            WOMBAT_sAVAX_AVAX_LP_AVAX,
+            amount,
+            this.avaxBalanceAvaxSavax.selector,
+            this.withdrawAvaxSavaxAvaxLp.selector
+        );
+    }
+
+    function withdrawAvaxSavaxAvaxLp(
+        uint256 amount
+    ) external returns (uint256 amountOut) {
+        return _unstakeAndWithdrawWombatLP(WOMBAT_sAVAX_AVAX_LP_AVAX, amount);
+    }
+
+    function depositAvaxGgavaxGgavaxLp(uint256 amount) external {
+        _depositAndStakeWombatLP(
+            WOMBAT_ggAVAX_AVAX_LP_ggAVAX,
+            amount,
+            this.ggAvaxBalanceAvaxGgavax.selector,
+            this.withdrawAvaxGgavaxGgavaxLp.selector
+        );
+    }
+
+    function withdrawAvaxGgavaxGgavaxLp(
+        uint256 amount
+    ) external returns (uint256 amountOut) {
+        return _unstakeAndWithdrawWombatLP(WOMBAT_ggAVAX_AVAX_LP_ggAVAX, amount);
+    }
+
+    function depositAvaxGgavaxAvaxLp(uint256 amount) external {
+        _depositAndStakeWombatLP(
+            WOMBAT_ggAVAX_AVAX_LP_AVAX,
+            amount,
+            this.avaxBalanceAvaxGgavax.selector,
+            this.withdrawAvaxGgavaxAvaxLp.selector
+        );
+    }
+
+    function withdrawAvaxGgavaxAvaxLp(
+        uint256 amount
+    ) external returns (uint256 amountOut) {
+        return _unstakeAndWithdrawWombatLP(WOMBAT_ggAVAX_AVAX_LP_AVAX, amount);
+    }
+
     function _depositToken(
         bytes32 stakeAsset,
         bytes32 lpAsset,
@@ -327,19 +387,87 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         handleRewards(pid, reward, additionalRewards);
     }
 
+    function _depositAndStakeWombatLP(
+        bytes32 lpAsset,
+        uint256 amount,
+        bytes4 balanceSelector,
+        bytes4 unstakeSelector
+    ) internal onlyOwner nonReentrant remainsSolvent {
+        IERC20Metadata lpToken = getERC20TokenInstance(lpAsset, false);
+        address(lpToken).safeTransferFrom(msg.sender, address(this), amount);
+
+        address(lpToken).safeApprove(WOMBAT_MASTER, 0);
+        address(lpToken).safeApprove(WOMBAT_MASTER, amount);
+
+        uint256 pid = IWombatMaster(WOMBAT_MASTER).getAssetPid(address(lpToken));
+
+        IWombatMaster(WOMBAT_MASTER).deposit(pid, amount);
+
+        IStakingPositions.StakedPosition memory position = IStakingPositions
+            .StakedPosition({
+                asset: address(lpToken),
+                symbol: lpAsset,
+                identifier: lpAsset,
+                balanceSelector: balanceSelector,
+                unstakeSelector: unstakeSelector
+            });
+        DiamondStorageLib.addStakedPosition(position);
+    }
+
+    function _unstakeAndWithdrawWombatLP(
+        bytes32 lpAsset,
+        uint256 amount
+    ) internal onlyOwner nonReentrant remainsSolvent returns (uint256 amountOut) {
+        IERC20Metadata lpToken = getERC20TokenInstance(lpAsset, false);
+        uint256 pid = IWombatMaster(WOMBAT_MASTER).getAssetPid(address(lpToken));
+
+        amount = Math.min(amount, getLpTokenBalance(lpAsset));
+        require(amount > 0, "Cannot withdraw 0 tokens");
+
+        (uint256 reward, uint256[] memory additionalRewards) = IWombatMaster(
+            WOMBAT_MASTER
+        ).withdraw(pid, amount);
+
+        address(lpToken).safeTransfer(msg.sender, amount);
+
+        if (getLpTokenBalance(lpAsset) == 0) {
+            DiamondStorageLib.removeStakedPosition(lpAsset);
+        }
+
+        handleRewards(pid, reward, additionalRewards);
+
+        return amount;
+    }
+
     function handleRewards(
         uint256 pid,
         uint256 reward,
         uint256[] memory additionalRewards
     ) internal {
         (, , address rewarder, , , , ) = IWombatMaster(WOMBAT_MASTER).poolInfo(pid);
+        address boostedRewarder = IWombatMaster(WOMBAT_MASTER).boostedRewarders(
+            pid
+        );
         address owner = DiamondStorageLib.contractOwner();
         address(WOM_TOKEN).safeTransfer(owner, reward);
+        uint256 baseIdx;
         if (rewarder != address(0)) {
-            address[] memory rewardTokens = IMultiRewarder(rewarder).rewardTokens();
-            for (uint256 i; i != rewardTokens.length; ++i) {
+            address[] memory rewardTokens = IRewarder(rewarder).rewardTokens();
+            baseIdx = rewardTokens.length;
+            for (uint256 i; i != baseIdx; ++i) {
                 if (additionalRewards[i] > 0) {
                     address(rewardTokens[i]).safeTransfer(owner, additionalRewards[i]);
+                }
+            }
+        }
+        if (boostedRewarder != address(0)) {
+            address[] memory rewardTokens = IRewarder(boostedRewarder).rewardTokens();
+            for (uint256 i; i != rewardTokens.length; ++i) {
+                if (additionalRewards[baseIdx + i] > 0) {
+                    address(rewardTokens[i]).safeTransfer(
+                        owner,
+                        additionalRewards[baseIdx + i]
+                    );
                 }
             }
         }

@@ -12,10 +12,14 @@ interface IWombatMaster {
 
     function getAssetPid(address asset) external view returns (uint256);
 
+    function boostedRewarders(uint256 pid) external view returns (address);
+
     function userInfo(
         uint256 pid,
         address user
     ) external view returns (UserInfo memory);
+
+    function deposit(uint256 pid, uint256 amount) external returns (uint256, uint256);
 
     function withdraw(
         uint256 pid,

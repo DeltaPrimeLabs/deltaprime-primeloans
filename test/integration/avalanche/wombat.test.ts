@@ -1,4 +1,4 @@
-import {ethers, waffle} from 'hardhat'
+import {ethers, network, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 import axios from 'axios';
@@ -180,6 +180,25 @@ describe('Smart loan', () => {
             expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.equal(1.157920892373162e+59);
 
+            await network.provider.request({
+                method: "hardhat_setBalance",
+                params: ["0x6521a549834F5E6d253CD2e5F4fbe4048f86cd7b", "0xffffffffffffffff"],
+            });
+            await network.provider.request({
+                method: "hardhat_impersonateAccount",
+                params: ["0x6521a549834F5E6d253CD2e5F4fbe4048f86cd7b"],
+            });
+            const whale = await ethers.provider.getSigner('0x6521a549834F5E6d253CD2e5F4fbe4048f86cd7b');
+
+            await tokenContracts.get('WOMBAT_ggAVAX_AVAX_LP_AVAX')!.connect(whale).transfer(owner.address, toWei("10"));
+            await tokenContracts.get('WOMBAT_ggAVAX_AVAX_LP_AVAX')!.connect(owner).approve(wrappedLoan.address, toWei("10"));
+            await tokenContracts.get('WOMBAT_ggAVAX_AVAX_LP_ggAVAX')!.connect(whale).transfer(owner.address, toWei("10"));
+            await tokenContracts.get('WOMBAT_ggAVAX_AVAX_LP_ggAVAX')!.connect(owner).approve(wrappedLoan.address, toWei("10"));
+            await tokenContracts.get('WOMBAT_sAVAX_AVAX_LP_AVAX')!.connect(whale).transfer(owner.address, toWei("10"));
+            await tokenContracts.get('WOMBAT_sAVAX_AVAX_LP_AVAX')!.connect(owner).approve(wrappedLoan.address, toWei("10"));
+            await tokenContracts.get('WOMBAT_sAVAX_AVAX_LP_sAVAX')!.connect(whale).transfer(owner.address, toWei("10"));
+            await tokenContracts.get('WOMBAT_sAVAX_AVAX_LP_sAVAX')!.connect(owner).approve(wrappedLoan.address, toWei("10"));
+
             await tokenContracts.get('AVAX')!.connect(owner).deposit({value: toWei("300")});
             await tokenContracts.get('AVAX')!.connect(owner).approve(wrappedLoan.address, toWei("300"));
             await wrappedLoan.fund(toBytes32("AVAX"), toWei("300"));
@@ -195,6 +214,10 @@ describe('Smart loan', () => {
             await expect(nonOwnerWrappedLoan.depositGgavaxToAvaxGgavax(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
             await expect(nonOwnerWrappedLoan.depositAvaxToAvaxSavax(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
             await expect(nonOwnerWrappedLoan.depositAvaxToAvaxGgavax(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.depositAvaxSavaxSavaxLp(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.depositAvaxSavaxAvaxLp(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.depositAvaxGgavaxGgavaxLp(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.depositAvaxGgavaxAvaxLp(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
         });
 
         it("should fail to withdraw as a non-owner", async () => {
@@ -202,6 +225,90 @@ describe('Smart loan', () => {
             await expect(nonOwnerWrappedLoan.withdrawGgavaxFromAvaxGgavax(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
             await expect(nonOwnerWrappedLoan.withdrawAvaxFromAvaxSavax(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
             await expect(nonOwnerWrappedLoan.withdrawAvaxFromAvaxGgavax(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.withdrawAvaxSavaxSavaxLp(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.withdrawAvaxSavaxAvaxLp(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.withdrawAvaxGgavaxGgavaxLp(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.withdrawAvaxGgavaxAvaxLp(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+        });
+
+        it("should deposit sAVAX-AVAX pool sAVAX lp", async () => {
+            let initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+
+            await wrappedLoan.depositAvaxSavaxSavaxLp(toWei("10"));
+
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(initialTotalValue + 10 * tokensPrices.get("WOMBAT_sAVAX_AVAX_LP_sAVAX")!, 20);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.01);
+        });
+
+        it("should withdraw sAVAX-AVAX pool sAVAX lp", async () => {
+            let initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+
+            await wrappedLoan.withdrawAvaxSavaxSavaxLp(toWei("9999"));
+
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(initialTotalValue - 10 * tokensPrices.get("WOMBAT_sAVAX_AVAX_LP_sAVAX")!, 20);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.01);
+        });
+
+        it("should deposit sAVAX-AVAX pool AVAX lp", async () => {
+            let initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+
+            await wrappedLoan.depositAvaxSavaxAvaxLp(toWei("10"));
+
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(initialTotalValue + 10 * tokensPrices.get("WOMBAT_sAVAX_AVAX_LP_AVAX")!, 20);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.01);
+        });
+
+        it("should withdraw sAVAX-AVAX pool AVAX lp", async () => {
+            let initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+
+            await wrappedLoan.withdrawAvaxSavaxAvaxLp(toWei("9999"));
+
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(initialTotalValue - 10 * tokensPrices.get("WOMBAT_sAVAX_AVAX_LP_AVAX")!, 20);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.01);
+        });
+
+        it("should deposit ggAVAX-AVAX pool ggAVAX lp", async () => {
+            let initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+
+            await wrappedLoan.depositAvaxGgavaxGgavaxLp(toWei("10"));
+
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(initialTotalValue + 10 * tokensPrices.get("WOMBAT_ggAVAX_AVAX_LP_ggAVAX")!, 20);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.01);
+        });
+
+        it("should withdraw ggAVAX-AVAX pool ggAVAX lp", async () => {
+            let initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+
+            await wrappedLoan.withdrawAvaxGgavaxGgavaxLp(toWei("9999"));
+
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(initialTotalValue - 10 * tokensPrices.get("WOMBAT_ggAVAX_AVAX_LP_ggAVAX")!, 20);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.01);
+        });
+
+        it("should deposit ggAVAX-AVAX pool AVAX lp", async () => {
+            let initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+
+            await wrappedLoan.depositAvaxGgavaxAvaxLp(toWei("10"));
+
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(initialTotalValue + 10 * tokensPrices.get("WOMBAT_ggAVAX_AVAX_LP_AVAX")!, 20);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.01);
+        });
+
+        it("should withdraw ggAVAX-AVAX pool AVAX lp", async () => {
+            let initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
+            let initialHR = fromWei(await wrappedLoan.getHealthRatio());
+
+            await wrappedLoan.withdrawAvaxGgavaxAvaxLp(toWei("9999"));
+
+            expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(initialTotalValue - 10 * tokensPrices.get("WOMBAT_ggAVAX_AVAX_LP_AVAX")!, 20);
+            expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.01);
         });
 
         it("should deposit sAVAX", async () => {
