@@ -159,7 +159,7 @@ const arbitrumIncentives = async (rpc = 'first') => {
     console.log("Loan eligible TVLs successfully updated.");
 
     // save boost APY to DB
-    const boostApy = incentivesPerInterval / totalEligibleTvl * 24 * 365;
+    const boostApy = (incentivesPerInterval / incentivesMultiplier) / totalEligibleTvl * 24 * 365;
     const params = {
       TableName: "apys-prod",
       Key: {

@@ -280,10 +280,29 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
 
     for (let pool in poolsDepositorsBalances) {
       depositorsEligibleAirdrop[pool] = {};
-      const totalDepositorsBalances = Object.values(poolsDepositorsBalances[pool]).reduce((a, b) => a + b);
+      let totalDepositorsBalances = Object.values(poolsDepositorsBalances[pool]).reduce((a, b) => a + b);
+      let poolEligibleAirdrop = tokensToBeDistributedPerPool[pool];
+
+      // save boost APY for pool to DB
+      const boostApy = (poolEligibleAirdrop / incentivesMultiplier) / totalDepositorsBalances * 24 * 365;
+      const params = {
+        TableName: 'apys-prod',
+        Key: {
+          id: 'LTIP_POOL_BOOST'
+        },
+        AttributeUpdates: {
+          [pool]: {
+            Value: Number(boostApy) ? boostApy : null,
+            Action: 'PUT'
+          }
+        }
+      };
+
+      await dynamoDb.update(params).promise();
+      console.log(`LTIP boost pool APY for ${pool} pool on Arbitrum saved.`);
+
       for (let depositor in poolsDepositorsBalances[pool]) {
         let depositorBalance = poolsDepositorsBalances[pool][depositor];
-        let poolEligibleAirdrop = tokensToBeDistributedPerPool[pool];
         let depositorEligibleAirdrop = (depositorBalance / totalDepositorsBalances) * poolEligibleAirdrop;
         depositorsEligibleAirdrop[pool][depositor] = depositorEligibleAirdrop;
       }

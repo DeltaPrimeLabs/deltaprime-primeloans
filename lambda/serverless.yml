@@ -307,6 +307,14 @@ functions:
       - httpApi:
           method: get
           path: /ltip-boost-apy
+  getLtipPoolBoostApyApi:
+    handler: apis/arbitrumIncentives.getLtipPoolBoostApyApi
+    memorySize: 512
+    description: Fetch LTIP Pool Boost APYs on Arbitrum
+    events:
+      - httpApi:
+          method: get
+          path: /ltip-boost-apy
   getGmBoostApyApi:
     handler: apis/gmxIncentives.getGmBoostApyApi
     memorySize: 512

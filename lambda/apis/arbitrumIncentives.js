@@ -118,7 +118,7 @@ const getLoanArbitrumIncentivesForApi = async (event, context, callback) => {
 
         incentivesOfAddresses[address] = {
           arbCollected: loanAccumulatedIncentives,
-          eligibleTvl: loan.Item.eligibleTvl
+          eligibleTvl: loan.Item ? loan.Item.eligibleTvl : 0
         };
       })
     )
@@ -287,11 +287,35 @@ const getPoolArbitrumIncentivesForApi = async (event, context, callback) => {
   };
 };
 
+const getLtipPoolBoostApyApi = (event, context, callback) => {
+  const params = {
+    TableName: process.env.APY_TABLE,
+    Key: {
+      id: "LTIP_POOL_BOOST"
+    }
+  };
+
+  dynamoDb.get(params).promise()
+    .then(result => {
+      const response = {
+        statusCode: 200,
+        body: JSON.stringify(result.Item),
+      };
+      callback(null, response);
+    })
+    .catch(error => {
+      console.error(error);
+      callback(new Error('Couldn\'t fetch LTIP Pool Boost APYs.'));
+      return;
+    });
+};
+
 module.exports = {
   getArbitrumIncentivesApi,
   getLoanArbitrumIncentivesApi,
   getLoanArbitrumIncentivesForApi,
   getPoolArbitrumIncentivesApi,
   getPoolArbitrumIncentivesForApi,
-  getLtipBoostApyApi
+  getLtipBoostApyApi,
+  getLtipPoolBoostApyApi
 }
