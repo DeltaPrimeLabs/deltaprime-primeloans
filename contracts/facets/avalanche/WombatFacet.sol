@@ -394,6 +394,10 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         bytes4 unstakeSelector
     ) internal onlyOwner nonReentrant remainsSolvent {
         IERC20Metadata lpToken = getERC20TokenInstance(lpAsset, false);
+
+        amount = Math.min(amount, lpToken.balanceOf(msg.sender));
+        require(amount > 0, "Cannot deposit 0 tokens");
+
         address(lpToken).safeTransferFrom(msg.sender, address(this), amount);
 
         address(lpToken).safeApprove(WOMBAT_MASTER, 0);
