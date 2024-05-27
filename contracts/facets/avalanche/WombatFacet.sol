@@ -176,11 +176,11 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             WOMBAT_sAVAX_AVAX_LP_sAVAX,
             amount,
             this.sAvaxBalanceAvaxSavax.selector,
-            this.withdrawAndStakeAvaxSavaxLpSavax.selector
+            this.unstakeAndWithdrawAvaxSavaxLpSavax.selector
         );
     }
 
-    function withdrawAndStakeAvaxSavaxLpSavax(
+    function unstakeAndWithdrawAvaxSavaxLpSavax(
         uint256 amount
     ) external returns (uint256 amountOut) {
         return _unstakeAndWithdrawWombatLP(WOMBAT_sAVAX_AVAX_LP_sAVAX, amount);
@@ -191,11 +191,11 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             WOMBAT_sAVAX_AVAX_LP_AVAX,
             amount,
             this.avaxBalanceAvaxSavax.selector,
-            this.withdrawAndStakeAvaxSavaxLpAvax.selector
+            this.unstakeAndWithdrawAvaxSavaxLpAvax.selector
         );
     }
 
-    function withdrawAndStakeAvaxSavaxLpAvax(
+    function unstakeAndWithdrawAvaxSavaxLpAvax(
         uint256 amount
     ) external returns (uint256 amountOut) {
         return _unstakeAndWithdrawWombatLP(WOMBAT_sAVAX_AVAX_LP_AVAX, amount);
@@ -206,11 +206,11 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             WOMBAT_ggAVAX_AVAX_LP_ggAVAX,
             amount,
             this.ggAvaxBalanceAvaxGgavax.selector,
-            this.withdrawAndStakeAvaxGgavaxLpGgavax.selector
+            this.unstakeAndWithdrawAvaxGgavaxLpGgavax.selector
         );
     }
 
-    function withdrawAndStakeAvaxGgavaxLpGgavax(
+    function unstakeAndWithdrawAvaxGgavaxLpGgavax(
         uint256 amount
     ) external returns (uint256 amountOut) {
         return _unstakeAndWithdrawWombatLP(WOMBAT_ggAVAX_AVAX_LP_ggAVAX, amount);
@@ -221,11 +221,11 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             WOMBAT_ggAVAX_AVAX_LP_AVAX,
             amount,
             this.avaxBalanceAvaxGgavax.selector,
-            this.withdrawAndStakeAvaxGgavaxLpAvax.selector
+            this.unstakeAndWithdrawAvaxGgavaxLpAvax.selector
         );
     }
 
-    function withdrawAndStakeAvaxGgavaxLpAvax(
+    function unstakeAndWithdrawAvaxGgavaxLpAvax(
         uint256 amount
     ) external returns (uint256 amountOut) {
         return _unstakeAndWithdrawWombatLP(WOMBAT_ggAVAX_AVAX_LP_AVAX, amount);

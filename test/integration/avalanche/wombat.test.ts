@@ -225,10 +225,10 @@ describe('Smart loan', () => {
             await expect(nonOwnerWrappedLoan.withdrawGgavaxFromAvaxGgavax(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
             await expect(nonOwnerWrappedLoan.withdrawAvaxFromAvaxSavax(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
             await expect(nonOwnerWrappedLoan.withdrawAvaxFromAvaxGgavax(toWei("9999"), toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-            await expect(nonOwnerWrappedLoan.withdrawAndStakeAvaxSavaxLpSavax(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-            await expect(nonOwnerWrappedLoan.withdrawAndStakeAvaxSavaxLpAvax(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-            await expect(nonOwnerWrappedLoan.withdrawAndStakeAvaxGgavaxLpGgavax(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-            await expect(nonOwnerWrappedLoan.withdrawAndStakeAvaxGgavaxLpAvax(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.unstakeAndWithdrawAvaxSavaxLpSavax(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.unstakeAndWithdrawAvaxSavaxLpAvax(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.unstakeAndWithdrawAvaxGgavaxLpGgavax(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
+            await expect(nonOwnerWrappedLoan.unstakeAndWithdrawAvaxGgavaxLpAvax(toWei("9999"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
         });
 
         it("should deposit sAVAX-AVAX pool sAVAX lp", async () => {
@@ -245,7 +245,7 @@ describe('Smart loan', () => {
             let initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
             let initialHR = fromWei(await wrappedLoan.getHealthRatio());
 
-            await wrappedLoan.withdrawAndStakeAvaxSavaxLpSavax(toWei("9999"));
+            await wrappedLoan.unstakeAndWithdrawAvaxSavaxLpSavax(toWei("9999"));
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(initialTotalValue - 10 * tokensPrices.get("WOMBAT_sAVAX_AVAX_LP_sAVAX")!, 20);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.01);
@@ -265,7 +265,7 @@ describe('Smart loan', () => {
             let initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
             let initialHR = fromWei(await wrappedLoan.getHealthRatio());
 
-            await wrappedLoan.withdrawAndStakeAvaxSavaxLpAvax(toWei("9999"));
+            await wrappedLoan.unstakeAndWithdrawAvaxSavaxLpAvax(toWei("9999"));
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(initialTotalValue - 10 * tokensPrices.get("WOMBAT_sAVAX_AVAX_LP_AVAX")!, 20);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.01);
@@ -285,7 +285,7 @@ describe('Smart loan', () => {
             let initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
             let initialHR = fromWei(await wrappedLoan.getHealthRatio());
 
-            await wrappedLoan.withdrawAndStakeAvaxGgavaxLpGgavax(toWei("9999"));
+            await wrappedLoan.unstakeAndWithdrawAvaxGgavaxLpGgavax(toWei("9999"));
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(initialTotalValue - 10 * tokensPrices.get("WOMBAT_ggAVAX_AVAX_LP_ggAVAX")!, 20);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.01);
@@ -305,7 +305,7 @@ describe('Smart loan', () => {
             let initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
             let initialHR = fromWei(await wrappedLoan.getHealthRatio());
 
-            await wrappedLoan.withdrawAndStakeAvaxGgavaxLpAvax(toWei("9999"));
+            await wrappedLoan.unstakeAndWithdrawAvaxGgavaxLpAvax(toWei("9999"));
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(initialTotalValue - 10 * tokensPrices.get("WOMBAT_ggAVAX_AVAX_LP_AVAX")!, 20);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.01);
