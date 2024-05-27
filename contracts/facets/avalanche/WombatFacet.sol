@@ -171,31 +171,31 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         return getLpTokenBalance(WOMBAT_ggAVAX_AVAX_LP_AVAX);
     }
 
-    function depositAvaxSavaxSavaxLp(uint256 amount) external {
+    function depositAndStakeAvaxSavaxLpSavax(uint256 amount) external {
         _depositAndStakeWombatLP(
             WOMBAT_sAVAX_AVAX_LP_sAVAX,
             amount,
             this.sAvaxBalanceAvaxSavax.selector,
-            this.withdrawAvaxSavaxSavaxLp.selector
+            this.withdrawAndStakeAvaxSavaxLpSavax.selector
         );
     }
 
-    function withdrawAvaxSavaxSavaxLp(
+    function withdrawAndStakeAvaxSavaxLpSavax(
         uint256 amount
     ) external returns (uint256 amountOut) {
         return _unstakeAndWithdrawWombatLP(WOMBAT_sAVAX_AVAX_LP_sAVAX, amount);
     }
 
-    function depositAvaxSavaxAvaxLp(uint256 amount) external {
+    function depositAndStakeAvaxSavaxLpAvax(uint256 amount) external {
         _depositAndStakeWombatLP(
             WOMBAT_sAVAX_AVAX_LP_AVAX,
             amount,
             this.avaxBalanceAvaxSavax.selector,
-            this.withdrawAvaxSavaxAvaxLp.selector
+            this.withdrawAndStakeAvaxSavaxLpAvax.selector
         );
     }
 
-    function withdrawAvaxSavaxAvaxLp(
+    function withdrawAndStakeAvaxSavaxLpAvax(
         uint256 amount
     ) external returns (uint256 amountOut) {
         return _unstakeAndWithdrawWombatLP(WOMBAT_sAVAX_AVAX_LP_AVAX, amount);
@@ -206,29 +206,91 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             WOMBAT_ggAVAX_AVAX_LP_ggAVAX,
             amount,
             this.ggAvaxBalanceAvaxGgavax.selector,
-            this.withdrawAvaxGgavaxGgavaxLp.selector
+            this.withdrawAndStakeAvaxGgavaxLpGgavax.selector
         );
     }
 
-    function withdrawAvaxGgavaxGgavaxLp(
+    function withdrawAndStakeAvaxGgavaxLpGgavax(
         uint256 amount
     ) external returns (uint256 amountOut) {
         return _unstakeAndWithdrawWombatLP(WOMBAT_ggAVAX_AVAX_LP_ggAVAX, amount);
     }
 
-    function depositAvaxGgavaxAvaxLp(uint256 amount) external {
+    function depositAndStakeAvaxGgavaxLpAvax(uint256 amount) external {
         _depositAndStakeWombatLP(
             WOMBAT_ggAVAX_AVAX_LP_AVAX,
             amount,
             this.avaxBalanceAvaxGgavax.selector,
-            this.withdrawAvaxGgavaxAvaxLp.selector
+            this.withdrawAndStakeAvaxGgavaxLpAvax.selector
         );
     }
 
-    function withdrawAvaxGgavaxAvaxLp(
+    function withdrawAndStakeAvaxGgavaxLpAvax(
         uint256 amount
     ) external returns (uint256 amountOut) {
         return _unstakeAndWithdrawWombatLP(WOMBAT_ggAVAX_AVAX_LP_AVAX, amount);
+    }
+
+    function pendingRewardsForAvaxSavaxLpSavax()
+        external
+        view
+        returns (
+            uint256 pendingWomRewards,
+            address[] memory bonusTokenAddresses,
+            uint256[] memory pendingBonusRewards
+        )
+    {
+        return _pendingRewardsForLp(WOMBAT_sAVAX_AVAX_LP_sAVAX);
+    }
+
+    function pendingRewardsForAvaxSavaxLpAvax()
+        external
+        view
+        returns (
+            uint256 pendingWomRewards,
+            address[] memory bonusTokenAddresses,
+            uint256[] memory pendingBonusRewards
+        )
+    {
+        return _pendingRewardsForLp(WOMBAT_sAVAX_AVAX_LP_AVAX);
+    }
+
+    function pendingRewardsForAvaxGgavaxLpGgavax()
+        external
+        view
+        returns (
+            uint256 pendingWomRewards,
+            address[] memory bonusTokenAddresses,
+            uint256[] memory pendingBonusRewards
+        )
+    {
+        return _pendingRewardsForLp(WOMBAT_ggAVAX_AVAX_LP_ggAVAX);
+    }
+
+    function pendingRewardsForAvaxGgavaxLpAvax()
+        external
+        view
+        returns (
+            uint256 pendingWomRewards,
+            address[] memory bonusTokenAddresses,
+            uint256[] memory pendingBonusRewards
+        )
+    {
+        return _pendingRewardsForLp(WOMBAT_ggAVAX_AVAX_LP_AVAX);
+    }
+
+    function _pendingRewardsForLp(
+        bytes32 lpAsset
+    ) internal view returns (uint256, address[] memory, uint256[] memory) {
+        IERC20Metadata lpToken = getERC20TokenInstance(lpAsset, false);
+        uint256 pid = IWombatMaster(WOMBAT_MASTER).getAssetPid(address(lpToken));
+        (
+            uint256 pendingWomRewards,
+            address[] memory bonusTokenAddresses,
+            ,
+            uint256[] memory pendingBonusRewards
+        ) = IWombatMaster(WOMBAT_MASTER).pendingTokens(pid, address(this));
+        return (pendingWomRewards, bonusTokenAddresses, pendingBonusRewards);
     }
 
     function _depositToken(

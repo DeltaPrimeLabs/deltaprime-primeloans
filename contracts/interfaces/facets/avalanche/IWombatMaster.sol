@@ -19,7 +19,10 @@ interface IWombatMaster {
         address user
     ) external view returns (UserInfo memory);
 
-    function deposit(uint256 pid, uint256 amount) external returns (uint256, uint256);
+    function deposit(
+        uint256 pid,
+        uint256 amount
+    ) external returns (uint256, uint256);
 
     function withdraw(
         uint256 pid,
@@ -39,5 +42,18 @@ interface IWombatMaster {
             uint104 accWomPerShare,
             uint104 accWomPerFactorShare,
             uint40 lastRewardTimestamp
+        );
+
+    function pendingTokens(
+        uint256 _pid,
+        address _user
+    )
+        external
+        view
+        returns (
+            uint256 pendingRewards,
+            address[] memory bonusTokenAddresses,
+            string[] memory bonusTokenSymbols,
+            uint256[] memory pendingBonusRewards
         );
 }

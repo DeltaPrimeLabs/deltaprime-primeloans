@@ -49,25 +49,61 @@ interface IWombatFacet {
         view
         returns (uint256 _stakedBalance);
 
-    function depositAvaxSavaxSavaxLp(uint256 amount) external;
+    function depositAndStakeAvaxSavaxLpSavax(uint256 amount) external;
 
-    function withdrawAvaxSavaxSavaxLp(uint256 amount) external;
+    function withdrawAndStakeAvaxSavaxLpSavax(uint256 amount) external;
 
-    function depositAvaxSavaxAvaxLp(uint256 amount) external;
+    function depositAndStakeAvaxSavaxLpAvax(uint256 amount) external;
 
-    function withdrawAvaxSavaxAvaxLp(
+    function withdrawAndStakeAvaxSavaxLpAvax(
         uint256 amount
     ) external returns (uint256 amountOut);
 
     function depositAvaxGgavaxGgavaxLp(uint256 amount) external;
 
-    function withdrawAvaxGgavaxGgavaxLp(
+    function withdrawAndStakeAvaxGgavaxLpGgavax(
         uint256 amount
     ) external returns (uint256 amountOut);
 
-    function depositAvaxGgavaxAvaxLp(uint256 amount) external;
+    function depositAndStakeAvaxGgavaxLpAvax(uint256 amount) external;
 
-    function withdrawAvaxGgavaxAvaxLp(
+    function withdrawAndStakeAvaxGgavaxLpAvax(
         uint256 amount
     ) external returns (uint256 amountOut);
+
+    function pendingRewardsForAvaxSavaxLpSavax()
+        external
+        view
+        returns (
+            uint256 pendingWomRewards,
+            address[] memory bonusTokenAddresses,
+            uint256[] memory pendingBonusRewards
+        );
+
+    function pendingRewardsForAvaxSavaxLpAvax()
+        external
+        view
+        returns (
+            uint256 pendingWomRewards,
+            address[] memory bonusTokenAddresses,
+            uint256[] memory pendingBonusRewards
+        );
+
+    function pendingRewardsForAvaxGgavaxLpGgavax()
+        external
+        view
+        returns (
+            uint256 pendingWomRewards,
+            address[] memory bonusTokenAddresses,
+            uint256[] memory pendingBonusRewards
+        );
+
+    function pendingRewardsForAvaxGgavaxLpAvax()
+        external
+        view
+        returns (
+            uint256 pendingWomRewards,
+            address[] memory bonusTokenAddresses,
+            uint256[] memory pendingBonusRewards
+        );
 }
