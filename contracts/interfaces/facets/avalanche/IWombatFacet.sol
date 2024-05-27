@@ -75,35 +75,31 @@ interface IWombatFacet {
         external
         view
         returns (
-            uint256 pendingWomRewards,
-            address[] memory bonusTokenAddresses,
-            uint256[] memory pendingBonusRewards
+            address[] memory rewardTokenAddresses,
+            uint256[] memory pendingRewards
         );
 
     function pendingRewardsForAvaxSavaxLpAvax()
         external
         view
         returns (
-            uint256 pendingWomRewards,
-            address[] memory bonusTokenAddresses,
-            uint256[] memory pendingBonusRewards
+            address[] memory rewardTokenAddresses,
+            uint256[] memory pendingRewards
         );
 
     function pendingRewardsForAvaxGgavaxLpGgavax()
         external
         view
         returns (
-            uint256 pendingWomRewards,
-            address[] memory bonusTokenAddresses,
-            uint256[] memory pendingBonusRewards
+            address[] memory rewardTokenAddresses,
+            uint256[] memory pendingRewards
         );
 
     function pendingRewardsForAvaxGgavaxLpAvax()
         external
         view
         returns (
-            uint256 pendingWomRewards,
-            address[] memory bonusTokenAddresses,
-            uint256[] memory pendingBonusRewards
+            address[] memory rewardTokenAddresses,
+            uint256[] memory pendingRewards
         );
 }

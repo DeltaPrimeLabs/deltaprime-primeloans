@@ -235,9 +235,8 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         external
         view
         returns (
-            uint256 pendingWomRewards,
-            address[] memory bonusTokenAddresses,
-            uint256[] memory pendingBonusRewards
+            address[] memory rewardTokenAddresses,
+            uint256[] memory pendingRewards
         )
     {
         return _pendingRewardsForLp(WOMBAT_sAVAX_AVAX_LP_sAVAX);
@@ -247,9 +246,8 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         external
         view
         returns (
-            uint256 pendingWomRewards,
-            address[] memory bonusTokenAddresses,
-            uint256[] memory pendingBonusRewards
+            address[] memory rewardTokenAddresses,
+            uint256[] memory pendingRewards
         )
     {
         return _pendingRewardsForLp(WOMBAT_sAVAX_AVAX_LP_AVAX);
@@ -259,9 +257,8 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         external
         view
         returns (
-            uint256 pendingWomRewards,
-            address[] memory bonusTokenAddresses,
-            uint256[] memory pendingBonusRewards
+            address[] memory rewardTokenAddresses,
+            uint256[] memory pendingRewards
         )
     {
         return _pendingRewardsForLp(WOMBAT_ggAVAX_AVAX_LP_ggAVAX);
@@ -271,9 +268,8 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         external
         view
         returns (
-            uint256 pendingWomRewards,
-            address[] memory bonusTokenAddresses,
-            uint256[] memory pendingBonusRewards
+            address[] memory rewardTokenAddresses,
+            uint256[] memory pendingRewards
         )
     {
         return _pendingRewardsForLp(WOMBAT_ggAVAX_AVAX_LP_AVAX);
@@ -281,16 +277,30 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
     function _pendingRewardsForLp(
         bytes32 lpAsset
-    ) internal view returns (uint256, address[] memory, uint256[] memory) {
+    ) internal view returns (address[] memory, uint256[] memory) {
         IERC20Metadata lpToken = getERC20TokenInstance(lpAsset, false);
         uint256 pid = IWombatMaster(WOMBAT_MASTER).getAssetPid(address(lpToken));
         (
             uint256 pendingWomRewards,
-            address[] memory bonusTokenAddresses,
+            address[] memory rewardTokenAddresses_,
             ,
-            uint256[] memory pendingBonusRewards
+            uint256[] memory pendingRewards_
         ) = IWombatMaster(WOMBAT_MASTER).pendingTokens(pid, address(this));
-        return (pendingWomRewards, bonusTokenAddresses, pendingBonusRewards);
+
+        address[] memory rewardTokenAddresses = new address[](rewardTokenAddresses_.length + 1);
+        uint256[] memory pendingRewards = new uint256[](pendingRewards_.length + 1);
+
+        rewardTokenAddresses[0] = WOM_TOKEN;
+        pendingRewards[0] = pendingWomRewards;
+
+        for (uint256 i; i != rewardTokenAddresses_.length; ++i) {
+            rewardTokenAddresses[i + 1] = rewardTokenAddresses_[i];
+        }
+        for (uint256 i; i != pendingRewards_.length; ++i) {
+            pendingRewards[i + 1] = pendingRewards_[i];
+        }
+
+        return (rewardTokenAddresses, pendingRewards);
     }
 
     function _depositToken(
