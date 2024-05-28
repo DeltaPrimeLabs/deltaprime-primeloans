@@ -931,6 +931,9 @@ export default {
         }
       }
 
+
+
+
       // TODO remove after removing deprecated assets
       console.warn('TODO remove after removing deprecated assets')
       console.log(state.assets);
