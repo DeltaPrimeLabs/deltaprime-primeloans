@@ -164,7 +164,7 @@ function getPoolEligibleTVLMultiplier(chain, pool) {
         case "BTC":
           return 1;
         case "DAI":
-          return 1.0;
+          return 1.5;
         default:
           return 1;
       }
