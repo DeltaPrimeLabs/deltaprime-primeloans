@@ -1,0 +1,27 @@
+{
+  "name": "deltaprime-eu-cloud",
+  "version": "1.0.0",
+  "description": "Deltaprime Cloud Functions",
+  "scripts": {
+    "deploy-prod": "sls deploy -s prod",
+    "deploy-dev": "sls deploy -s dev"
+  },
+  "author": "",
+  "license": "ISC",
+  "engines": {
+    "node": "16"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@sparticuz/chromium": "^123.0.1",
+    "aws-sdk": "^2.1460.0",
+    "bluebird": "^3.7.2",
+    "node-fetch": "^2.7.0",
+    "puppeteer": "^22.6.4",
+    "puppeteer-core": "^22.6.4"
+  },
+  "private": true,
+  "devDependencies": {
+    "serverless-prune-plugin": "^2.0.2"
+  }
+}
