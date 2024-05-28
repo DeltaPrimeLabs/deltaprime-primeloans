@@ -1,4 +1,4 @@
-import {awaitConfirmation, depositTermsToSign, signMessage} from '../utils/blockchain';
+import {awaitConfirmation, depositTermsToSign, signMessage, wrapContract} from '../utils/blockchain';
 import DEPOSIT_SWAP from '@artifacts/contracts/DepositSwap.sol/DepositSwap.json';
 import {formatUnits, fromWei, parseUnits} from '@/utils/calculate';
 import erc20ABI from '../../test/abis/ERC20.json';
@@ -52,6 +52,11 @@ export default {
           commit('setPools', pools);
           dispatch('setupsPrime');
         });
+
+      // Arbitrum-specific methods
+      if (window.chain === 'arbitrum') {
+        rootState.serviceRegistry.ltipService.emitRefreshPoolLtipData();
+      }
     },
 
     async setupsPrime({rootState, commit, state}) {

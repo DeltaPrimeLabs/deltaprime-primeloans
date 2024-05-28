@@ -7,6 +7,7 @@ export default class LtipService {
   primeAccountsData$ = new BehaviorSubject([]);
   primeAccountsTotalEligibleTvl$ = new BehaviorSubject(null);
   primeAccountEligibleTvl$ = new BehaviorSubject(null);
+  poolApyData$ = new BehaviorSubject([]);
 
   emitRefreshPrimeAccountsLtipData() {
     this.updateLtipData();
@@ -18,6 +19,10 @@ export default class LtipService {
           this.updatePrimeAccountEligibleTvl(wrapped);
         }
     )
+  }
+
+  emitRefreshPoolLtipData() {
+    this.updatePoolLtipData();
   }
 
   observeLtipAccountsData() {
@@ -32,6 +37,10 @@ export default class LtipService {
     return this.primeAccountEligibleTvl$.asObservable();
   }
 
+  observeLtipPoolData() {
+    return this.poolApyData$.asObservable();
+  }
+
   async updateLtipData() {
     fetch(config.ltipAccountsDataEndpoint).then(
         res => res.json().then(
@@ -41,6 +50,14 @@ export default class LtipService {
     fetch(config.ltipApyEndpoint).then(
         res => res.json().then(
             json => this.primeAccountsTotalEligibleTvl$.next(json.totalEligibleTvl)
+        )
+    );
+  }
+
+  async updatePoolLtipData() {
+    fetch(config.ltipPoolApyEndpoint).then(
+        res => res.json().then(
+            json => this.poolApyData$.next(json)
         )
     );
   }

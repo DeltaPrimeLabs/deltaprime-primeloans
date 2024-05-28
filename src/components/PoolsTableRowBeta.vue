@@ -105,6 +105,7 @@ export default {
     this.setupActionsConfiguration();
     this.setupWalletAssetBalances();
     this.setupPoolsAssetsData();
+    this.setupMiningApy();
     this.watchLifi();
   },
 
@@ -116,6 +117,7 @@ export default {
       poolAssetsPrices: {},
       poolContracts: {},
       lifiData: {},
+      miningApy: 0,
       poolsUnlocking: config.poolsUnlocking
     };
   },
@@ -131,11 +133,7 @@ export default {
       'lpBalances',
       'noSmartLoan'
     ]),
-    ...mapState('serviceRegistry', ['poolService', 'walletAssetBalancesService', 'lifiService', 'progressBarService']),
-    miningApy() {
-      if (this.pool.tvl === 0) return 0;
-      return (window.arbitrumChain) ? 0.05 : 0;
-    }
+    ...mapState('serviceRegistry', ['poolService', 'ltipService', 'walletAssetBalancesService', 'lifiService', 'progressBarService']),
   },
 
   methods: {
@@ -201,6 +199,15 @@ export default {
         this.poolContracts = poolContracts;
         this.$forceUpdate();
       })
+    },
+
+    setupMiningApy() {
+      if (window.arbitrumChain) {
+        this.ltipService.observeLtipPoolData().subscribe(res => {
+          let apy = res[this.pool.asset.symbol];
+          if (apy) {this.miningApy =  res[this.pool.asset.symbol];}
+        });
+      }
     },
 
     watchLifi() {

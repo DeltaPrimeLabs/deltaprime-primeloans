@@ -141,7 +141,7 @@ export default {
           let collectedToken;
           let harvested;
           if (window.arbitrumChain) {
-            collectedResponse = await (await fetch(`https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/arbitrum-grant/${smartLoanContract.address}`)).json();
+            collectedResponse = await (await fetch(`https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/arbitrum-grant-for?addresses=${smartLoanContract.address}`)).json();
             harvested = LTIP_DISTRIBUTED_ARBITRUM[this.smartLoanContract.address.toLowerCase()] ? LTIP_DISTRIBUTED_ARBITRUM[this.smartLoanContract.address.toLowerCase()] : 0;
             collectedToken = collectedResponse.total;
           }
