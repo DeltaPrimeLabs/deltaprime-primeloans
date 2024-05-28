@@ -4,8 +4,11 @@
       <div class="table__cell asset">
         <img class="asset__icon" :src="`src/assets/logo/${lpToken.assetLogoName.toLowerCase()}.png`">
         <div class="asset__info">
-          <div class="asset__name">{{ lpToken.assetNameToDisplay }}
-          </div>
+          <a class="asset__name" :href="lpToken.link" target="_blank">{{ lpToken.assetNameToDisplay }}
+          </a>
+          <InfoIcon class="info__icon"
+                    :tooltip="{content: `Maturity ${lpToken.maturity} - ${lpToken.maturityInDays} days`, classes: 'info-tooltip'}"
+                    :classes="'info-tooltip'"></InfoIcon>
           <div class="asset__dex">
             by {{ lpToken.dex }}
           </div>
@@ -127,10 +130,11 @@ import {BigNumber} from "ethers";
 import {wrapContract} from "../utils/blockchain";
 import ClaimRewardsModal from "./ClaimRewardsModal.vue";
 import BarGaugeBeta from './BarGaugeBeta.vue';
+import InfoIcon from './InfoIcon.vue';
 
 export default {
   name: 'PenpieLpTableRow',
-  components: {BarGaugeBeta, SmallBlock, IconButtonMenuBeta, Chart, DoubleAssetIcon},
+  components: {InfoIcon, BarGaugeBeta, SmallBlock, IconButtonMenuBeta, Chart, DoubleAssetIcon},
   props: {
     lpToken: null
   },
@@ -199,6 +203,7 @@ export default {
       this.watchExternalAssetBalanceUpdate();
       this.watchRefreshLP();
       this.watchAssetBalancesDataRefresh();
+      this.setupMaturityInDays();
     })
   },
 
@@ -810,6 +815,17 @@ export default {
       this.disableAllButtons = false;
       this.isBalanceEstimated = false;
     },
+
+    setupMaturityInDays() {
+      const now = new Date();
+      const day = Number(this.lpToken.maturity.split('/')[0]);
+      const month = Number(this.lpToken.maturity.split('/')[1]);
+      const year = Number(this.lpToken.maturity.split('/')[2]);
+      const date = new Date(year, month - 1, day);
+      const diffTime = Math.abs(date - now);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      this.lpToken.maturityInDays = diffDays;
+    },
   }
 }
 </script>
@@ -842,6 +858,10 @@ export default {
       &.asset {
         align-items: center;
 
+        .asset__name {
+          color: var(--default-text-color);
+        }
+
         .asset__icon {
           width: 20px;
           height: 20px;
@@ -849,14 +869,23 @@ export default {
         }
 
         .asset__info {
+          position: relative;
           display: flex;
           flex-direction: column;
           justify-content: center;
           margin-left: 8px;
           font-weight: 500;
+
+          .info__icon {
+            position: absolute;
+            top: 22px;
+            right: -19px;
+          }
         }
 
         .asset__dex {
+          display: flex;
+          flex-direction: row;
           font-size: $font-size-xxs;
           color: var(--asset-table-row__asset-loan-color);
         }
