@@ -914,6 +914,34 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         ],
         hardhatConfig);
 
+        await deployFacet("WombatFacet", diamondAddress, [
+            'depositSavaxToAvaxSavax',
+            'withdrawSavaxFromAvaxSavax',
+            'sAvaxBalanceAvaxSavax',
+            'depositGgavaxToAvaxGgavax',
+            'withdrawGgavaxFromAvaxGgavax',
+            'ggAvaxBalanceAvaxGgavax',
+            'depositAvaxToAvaxSavax',
+            'withdrawAvaxFromAvaxSavax',
+            'avaxBalanceAvaxSavax',
+            'depositAvaxToAvaxGgavax',
+            'withdrawAvaxFromAvaxGgavax',
+            'avaxBalanceAvaxGgavax',
+            'depositAndStakeAvaxSavaxLpSavax',
+            'unstakeAndWithdrawAvaxSavaxLpSavax',
+            'depositAndStakeAvaxSavaxLpAvax',
+            'unstakeAndWithdrawAvaxSavaxLpAvax',
+            'depositAvaxGgavaxLpGgavax',
+            'unstakeAndWithdrawAvaxGgavaxLpGgavax',
+            'depositAndStakeAvaxGgavaxLpAvax',
+            'unstakeAndWithdrawAvaxGgavaxLpAvax',
+            'pendingRewardsForAvaxSavaxLpSavax',
+            'pendingRewardsForAvaxSavaxLpAvax',
+            'pendingRewardsForAvaxGgavaxLpGgavax',
+            'pendingRewardsForAvaxGgavaxLpAvax',
+        ],
+        hardhatConfig);
+
         if (mock) {
             await deployFacet("UniswapV3FacetMock", diamondAddress, ['mintLiquidityUniswapV3', 'increaseLiquidityUniswapV3', 'decreaseLiquidityUniswapV3', 'burnLiquidityUniswapV3', 'getOwnedUniswapV3TokenIds'], hardhatConfig)
 
