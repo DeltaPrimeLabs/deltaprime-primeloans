@@ -33,58 +33,6 @@ const {
 //   };
 // };
 
-// fetch incentives of all the loans
-const getLoanArbitrumIncentivesApi = async (event, context, callback) => {
-  try {
-    let params = {
-      TableName: process.env.LOAN_ARB_TABLE
-    };
-
-    const arbLoans = await fetchAllDataFromDB(params, true);
-
-    params = {
-      TableName: process.env.ARBITRUM_INCENTIVES_ARB_TABLE
-    };
-
-    const incentives = await fetchAllDataFromDB(params, true);
-
-    const incentivesOfLoans = [];
-
-    arbLoans.map(loan => {
-      const loanIncentives = incentives.filter((item) => item.id == loan.id)
-
-      if (loanIncentives.length > 0) {
-        let loanAccumulatedIncentives = 0;
-
-        loanIncentives.map((item) => {
-          loanAccumulatedIncentives += item.arbCollected ? Number(item.arbCollected) : 0;
-        });
-
-        incentivesOfLoans.push({
-          'id': loan.id,
-          'arbCollected': loanAccumulatedIncentives,
-          'eligibleTvl': loan.eligibleTvl
-        })
-      }
-    })
-
-    const sortedIncentives = incentivesOfLoans.sort((a, b) => b.arbCollected - a.arbCollected);
-    console.log(sortedIncentives);
-
-    const response = {
-      statusCode: 200,
-      body: JSON.stringify({
-        list: sortedIncentives
-      }),
-    };
-    callback(null, response);
-  } catch(error) {
-    console.error(error);
-    callback(new Error('Couldn\'t fetch Arbitrum Incentives values.'));
-    return;
-  };
-};
-
 const getLoanArbitrumIncentivesForApi = async (event, context, callback) => {
   try {
     const addresses = event.queryStringParameters.addresses.split(',');
@@ -128,6 +76,70 @@ const getLoanArbitrumIncentivesForApi = async (event, context, callback) => {
       body: JSON.stringify({
         data: incentivesOfAddresses
       })
+    };
+    callback(null, response);
+  } catch(error) {
+    console.error(error);
+    callback(new Error('Couldn\'t fetch Arbitrum Incentives values.'));
+    return;
+  };
+};
+
+// fetch top loans for LTIP PA leaderboard
+const getLoanArbitrumIncentivesLeaderboardApi = async (event, context, callback) => {
+  try {
+    const top = Number(event.queryStringParameters.top) || 200;
+    const from = Number(event.queryStringParameters.from);
+    const to = Number(event.queryStringParameters.to);
+
+    let params = {
+      TableName: process.env.LOAN_ARB_TABLE
+    };
+
+    const arbLoans = await fetchAllDataFromDB(params, true);
+
+    params = {
+      TableName: process.env.ARBITRUM_INCENTIVES_ARB_TABLE,
+      FilterExpression: '#timestamp >= :from AND #timestamp <= :to',
+      ExpressionAttributeNames: {
+        '#timestamp': 'timestamp'
+      },
+      ExpressionAttributeValues: {
+        ':from': from,
+        ':to': to
+      }
+    };
+
+    const incentives = await fetchAllDataFromDB(params, true);
+
+    const incentivesOfLoans = [];
+
+    arbLoans.map(loan => {
+      const loanIncentives = incentives.filter((item) => item.id == loan.id)
+
+      if (loanIncentives.length > 0) {
+        let loanAccumulatedIncentives = 0;
+
+        loanIncentives.map((item) => {
+          loanAccumulatedIncentives += item.arbCollected ? Number(item.arbCollected) : 0;
+        });
+
+        incentivesOfLoans.push({
+          'id': loan.id,
+          'arbCollected': loanAccumulatedIncentives,
+          'eligibleTvl': loan.eligibleTvl
+        })
+      }
+    })
+
+    const sortedIncentives = incentivesOfLoans.sort((a, b) => b.arbCollected - a.arbCollected).slice(0, top);
+    console.log(sortedIncentives);
+
+    const response = {
+      statusCode: 200,
+      body: JSON.stringify({
+        list: sortedIncentives
+      }),
     };
     callback(null, response);
   } catch(error) {
@@ -188,56 +200,6 @@ async function getDepositorsAddressesFromSubgraph() {
   return depositors;
 }
 
-// fetch incentives of all depositors
-const getPoolArbitrumIncentivesApi = async (event, context, callback) => {
-  try {
-    poolsDepositors = await getDepositorsAddressesFromSubgraph();
-
-    const params = {
-      TableName: process.env.POOL_ARBITRUM_INCENTIVES_ARB_TABLE
-    };
-
-    const incentives = await fetchAllDataFromDB(params, true);
-
-    const depositorsIncentives = [];
-
-    poolsDepositors.map(depositor => {
-      const depositorIncentives = incentives.filter((item) => item.id == depositor)
-
-      if (depositorIncentives.length > 0) {
-        let depositorAccumulatedIncentives = 0;
-
-        depositorIncentives.map((item) => {
-          depositorAccumulatedIncentives += (item.ARB ? Number(item.ARB) : 0) +
-                                            (item.BTC ? Number(item.BTC) : 0) +
-                                            (item.DAI ? Number(item.DAI) : 0) +
-                                            (item.ETH ? Number(item.ETH) : 0) +
-                                            (item.USDC ? Number(item.USDC) : 0);
-        });
-
-        depositorsIncentives.push({
-          'id': depositor,
-          'arbCollected': depositorAccumulatedIncentives
-        })
-      }
-    })
-
-    const sortedIncentives = depositorsIncentives.sort((a, b) => b.arbCollected - a.arbCollected);
-
-    const response = {
-      statusCode: 200,
-      body: JSON.stringify({
-        list: sortedIncentives
-      }),
-    };
-    callback(null, response);
-  } catch(error) {
-    console.error(error);
-    callback(new Error('Couldn\'t fetch Pool Arbitrum Incentives values.'));
-    return;
-  };
-};
-
 const getPoolArbitrumIncentivesForApi = async (event, context, callback) => {
   try {
     const addresses = event.queryStringParameters.addresses.split(',');
@@ -277,6 +239,68 @@ const getPoolArbitrumIncentivesForApi = async (event, context, callback) => {
       statusCode: 200,
       body: JSON.stringify({
         data: depositorsIncentives
+      }),
+    };
+    callback(null, response);
+  } catch(error) {
+    console.error(error);
+    callback(new Error('Couldn\'t fetch Pool Arbitrum Incentives values.'));
+    return;
+  };
+};
+
+// fetch top loans for LTIP Pool leaderboard
+const getPoolArbitrumIncentivesLeaderboardApi = async (event, context, callback) => {
+  try {
+    const top = Number(event.queryStringParameters.top) || 200;
+    const from = Number(event.queryStringParameters.from);
+    const to = Number(event.queryStringParameters.to);
+
+    poolsDepositors = await getDepositorsAddressesFromSubgraph();
+
+    const params = {
+      TableName: process.env.POOL_ARBITRUM_INCENTIVES_ARB_TABLE,
+      FilterExpression: '#timestamp >= :from AND #timestamp <= :to',
+      ExpressionAttributeNames: {
+        '#timestamp': 'timestamp'
+      },
+      ExpressionAttributeValues: {
+        ':from': from,
+        ':to': to
+      }
+    };
+
+    const incentives = await fetchAllDataFromDB(params, true);
+
+    const depositorsIncentives = [];
+
+    poolsDepositors.map(depositor => {
+      const depositorIncentives = incentives.filter((item) => item.id == depositor)
+
+      if (depositorIncentives.length > 0) {
+        let depositorAccumulatedIncentives = 0;
+
+        depositorIncentives.map((item) => {
+          depositorAccumulatedIncentives += (item.ARB ? Number(item.ARB) : 0) +
+                                            (item.BTC ? Number(item.BTC) : 0) +
+                                            (item.DAI ? Number(item.DAI) : 0) +
+                                            (item.ETH ? Number(item.ETH) : 0) +
+                                            (item.USDC ? Number(item.USDC) : 0);
+        });
+
+        depositorsIncentives.push({
+          'id': depositor,
+          'arbCollected': depositorAccumulatedIncentives
+        })
+      }
+    })
+
+    const sortedIncentives = depositorsIncentives.sort((a, b) => b.arbCollected - a.arbCollected).slice(0, top);
+
+    const response = {
+      statusCode: 200,
+      body: JSON.stringify({
+        list: sortedIncentives
       }),
     };
     callback(null, response);
@@ -339,11 +363,10 @@ const getLtipPoolTotalIncentivesApi = async (event, context, callback) => {
 }
 
 module.exports = {
-  // getArbitrumIncentivesApi,
-  getLoanArbitrumIncentivesApi,
   getLoanArbitrumIncentivesForApi,
-  getPoolArbitrumIncentivesApi,
+  getLoanArbitrumIncentivesLeaderboardApi,
   getPoolArbitrumIncentivesForApi,
+  getPoolArbitrumIncentivesLeaderboardApi,
   getLtipBoostApyApi,
   getLtipPoolBoostApyApi,
   getLtipPoolTotalIncentivesApi

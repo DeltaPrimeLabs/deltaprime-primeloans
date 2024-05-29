@@ -335,7 +335,7 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
 
     // save total incentives to DB
     let params = {
-      TableName: 'process.env.ARBITRUM_INCENTIVES_ARB_TABLE'
+      TableName: 'pool-arbitrum-incentives-arb-prod'
     };
 
     const incentives = await fetchAllDataFromDB(params, true);

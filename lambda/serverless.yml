@@ -108,14 +108,14 @@ functions:
   glpAprAggregator:
     handler: aggregators/apy.glpAprAggregator
     memorySize: 2048
-    timeout: 300
+    timeout: 200
     description: Fetch GLP Apr from GMX website.
     events:
       - schedule: rate(5 minutes)
   vectorApyAggregator:
     handler: aggregators/apy.vectorApyAggregator
     memorySize: 2048
-    timeout: 300
+    timeout: 200
     description: Fetch auto-compounding APYs from Vector website.
     events:
       - schedule: rate(5 minutes)
@@ -129,70 +129,70 @@ functions:
   steakHutApyAggregator:
     handler: aggregators/apy.steakHutApyAggregator
     memorySize: 2048
-    timeout: 300
+    timeout: 200
     description: Fetch APYs from StackHut website.
     events:
       - schedule: rate(5 minutes)
   traderJoeApyAggregator:
     handler: aggregators/apy.traderJoeApyAggregator
     memorySize: 2048
-    timeout: 300
+    timeout: 200
     description: Fetch APYs from TraderJoe website.
     events:
       - schedule: rate(15 minutes)
   sushiApyAggregator:
     handler: aggregators/apy.sushiApyAggregator
     memorySize: 2048
-    timeout: 300
+    timeout: 200
     description: Fetch APYs from Sushi website.
     events:
       - schedule: rate(5 minutes)
   beefyApyAggregator:
     handler: aggregators/apy.beefyApyAggregator
     memorySize: 2048
-    timeout: 300
+    timeout: 200
     description: Fetch APYs from Beefy website.
     events:
       - schedule: rate(3 minutes)
   gmxApyAggregator:
     handler: aggregators/apy.gmxApyAggregator
     memorySize: 2048
-    timeout: 300
+    timeout: 200
     description: Fetch GM token APYs from GMX website.
     events:
       - schedule: rate(5 minutes)
   balancerTvlAndApyAggregator:
     handler: aggregators/apy.balancerTvlAndApyAggregator
     memorySize: 2048
-    timeout: 300
+    timeout: 200
     description: Fetch pool APYs from Balancer website.
     events:
       - schedule: rate(5 minutes)
   assetStakingApyAggregator:
     handler: aggregators/apy.assetStakingApyAggregator
     memorySize: 2048
-    timeout: 300
+    timeout: 200
     description: Fetch staking APYs of various assets.
     events:
       - schedule: rate(5 minutes)
   gmOpenInterestAggregator:
     handler: gmOpenInterest/gmOpenInterestAggregator.handler
     memorySize: 2048
-    timeout: 300
+    timeout: 200
     description: fetch Open Interests of GM pool.
     events:
       - schedule: rate(3 hours)
   pendleTvlAndApyAggregator:
     handler: aggregators/apy.pendleTvlAndApyAggregator
     memorySize: 2048
-    timeout: 300
+    timeout: 200
     description: fetch TVLs and APYs of Pendle pools.
     events:
       - schedule: rate(5 minutes)
   wombatApyAggregator:
     handler: aggregators/apy.wombatApyAggregator
     memorySize: 2048
-    timeout: 300
+    timeout: 200
     description: fetch APYs of Wombat pools.
     events:
       - schedule: rate(5 minutes)
@@ -236,7 +236,7 @@ functions:
   getGmxIncentivesApi:
     handler: apis/gmxIncentives.getGmxIncentivesApi
     memorySize: 2048
-    timeout: 30
+    timeout: 20
     description: Fetch GMX incentives values for a loan on Avalanche and Arbitrum
     events:
       - httpApi:
@@ -245,57 +245,48 @@ functions:
   getGmxIncentivesNewApi:
     handler: apis/gmxIncentives.getGmxIncentivesNewApi
     memorySize: 2048
-    timeout: 30
+    timeout: 20
     description: Fetch new retroactive GMX incentives values from a week ago to certain timestamp for a loan on Avalanche
     events:
       - httpApi:
           method: get
           path: /gmx-incentives-new/{id}
-  # getArbitrumIncentivesApi:
-  #   handler: apis/arbitrumIncentives.getArbitrumIncentivesApi
-  #   memorySize: 2048
-  #   timeout: 30
-  #   description: Fetch Arbitrum Grant values for a loan on Arbitrum
-  #   events:
-  #     - httpApi:
-  #         method: get
-  #         path: /arbitrum-grant
-  getLoanArbitrumIncentivesApi:
-    handler: apis/arbitrumIncentives.getLoanArbitrumIncentivesApi
-    memorySize: 2048
-    timeout: 30
-    description: Fetch Arbitrum Grant values accumulated for every loan on Arbitrum
-    events:
-      - httpApi:
-          method: get
-          path: /arbitrum-grant-list
   getLoanArbitrumIncentivesForApi:
     handler: apis/arbitrumIncentives.getLoanArbitrumIncentivesForApi
     memorySize: 2048
-    timeout: 30
-    description: Fetch Arbitrum Grant values accumulated for specific loans on Arbitrum
+    timeout: 20
+    description: Fetch LTIP PA ARB incentives accumulated for specific loans on Arbitrum
     events:
       - httpApi:
           method: get
-          path: /arbitrum-grant-for
-  getPoolArbitrumIncentivesApi:
-    handler: apis/arbitrumIncentives.getPoolArbitrumIncentivesApi
+          path: /ltip-loan-for
+  getLoanArbitrumIncentivesLeaderboardApi:
+    handler: apis/arbitrumIncentives.getLoanArbitrumIncentivesLeaderboardApi
     memorySize: 2048
-    timeout: 30
-    description: Fetch Arbitrum Grant values accumulated for every pool depositors on Arbitrum
+    timeout: 20
+    description: Fetch LTIP PA top loans for leaderboard on Arbitrum
     events:
       - httpApi:
           method: get
-          path: /pool-arbitrum-grant-list
+          path: /ltip-loan-leaderboard
   getPoolArbitrumIncentivesForApi:
     handler: apis/arbitrumIncentives.getPoolArbitrumIncentivesForApi
     memorySize: 2048
-    timeout: 30
-    description: Fetch Arbitrum Grant values accumulated for specific pool depositors on Arbitrum
+    timeout: 20
+    description: Fetch LTIP Pool ARB incentives accumulated for specific pool depositors on Arbitrum
     events:
       - httpApi:
           method: get
-          path: /pool-arbitrum-grant-for
+          path: /ltip-pool-for
+  getPoolArbitrumIncentivesLeaderboardApi:
+    handler: apis/arbitrumIncentives.getPoolArbitrumIncentivesLeaderboardApi
+    memorySize: 2048
+    timeout: 20
+    description: Fetch LTIP Pool top loans for leaderboard on Arbitrum
+    events:
+      - httpApi:
+          method: get
+          path: /ltip-pool-leaderboard
   getLtipBoostApyApi:
     handler: apis/arbitrumIncentives.getLtipBoostApyApi
     memorySize: 512
@@ -315,7 +306,7 @@ functions:
   getLtipPoolTotalIncentivesApi:
     handler: apis/arbitrumIncentives.getLtipPoolTotalIncentivesApi
     memorySize: 2048
-    timeout: 30
+    timeout: 20
     description: Fetch total ARB incentives for LTIP PAs on Arbitrum
     events:
       - httpApi:
@@ -332,7 +323,7 @@ functions:
   getGmOpenInterestsApi:
     handler: apis/gmOpenInterests.getGmOpenInterestsApi
     memorySize: 2048
-    timeout: 30
+    timeout: 20
     description: Fetch Open Interest of GM pools
     events:
       - httpApi:
