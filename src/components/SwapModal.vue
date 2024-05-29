@@ -10,27 +10,23 @@
         <Toggle v-on:change="swapDexChange" :options="dexOptions"></Toggle>
       </div>
 
-      <div class="modal-top-desc" v-if="swapDex === 'ParaSwapV2' && showParaSwapWarning && !swapDebtMode">
-        <div>
-          <b>Caution: Paraswap slippage vastly exceeds YakSwap. Use with caution.</b>
+      <div class="modal-top-info-bar-wrapper">
+        <div class="modal-top-info-bar" v-if="swapDex === 'YakSwap' && showYakSwapWarning">
+          <div>
+            We recommend using Paraswap for swaps of $50K+.
+          </div>
         </div>
-      </div>
 
-      <div class="modal-top-desc" v-if="swapDex === 'YakSwap' && showYakSwapWarning">
-        <div>
-          <b>We recommend using Paraswap for swaps of $50K+.</b>
+        <div class="modal-top-info-bar" v-if="['YakSwap', 'ParaSwapV2'].includes(swapDex) && !swapDebtMode">
+          <div>
+            Token availability might change with different aggregators.
+          </div>
         </div>
-      </div>
 
-      <div class="modal-top-desc" v-if="['YakSwap', 'ParaSwapV2'].includes(swapDex) && !swapDebtMode">
-        <div>
-          <b>Token availability might change with different aggregators.</b>
-        </div>
-      </div>
-
-      <div class="modal-top-desc" v-if="info">
-        <div>
-          <b v-html="info"></b>
+        <div class="modal-top-info-bar" v-if="info">
+          <div>
+            <div v-html="info"></div>
+          </div>
         </div>
       </div>
 
@@ -62,7 +58,7 @@
       >
       </CurrencyComboInput>
 
-      <div class="reverse-swap-button" v-on:click="reverseSwap">
+      <div class="reverse-swap-button" v-on:click="reverseSwap" v-bind:style="blockReversing ? 'pointer-events: none' : ''">
         <DeltaIcon class="reverse-swap-icon" :size="22" :icon-src="'src/assets/icons/swap-arrow.svg'"></DeltaIcon>
       </div>
 
@@ -79,44 +75,67 @@
           Price:&nbsp;<span
           class="price-info__value">1 {{
             (targetAssetData && targetAssetData.short) ? targetAssetData.short : targetAsset
-          }} = {{ estimatedNeededTokens / estimatedReceivedTokens | smartRound }} {{ sourceAsset }}</span>
+          }} = {{ estimatedNeededTokens / estimatedReceivedTokens | smartRound }} {{ sourceAssetNameToDisplay ? sourceAssetNameToDisplay : sourceAsset }}</span>
         </div>
       </div>
 
-      <div class="slippage-bar">
-        <div class="slippage-info">
+      <div class="price-impact-option price-impact">
+        <div class="label-with-separator">
+          Acceptable Slippage
+          <InfoIcon
+            class="label__info-icon"
+            :tooltip="{ content: 'Choose the maximum slippage you are willing to accept', placement: 'top', classes: 'info-tooltip' }"
+          ></InfoIcon>
+          <div class="vertical-separator"></div>
+          <div class="advanced-mode">
+            Advanced Mode
+            <ToggleButton class="advanced-mode-toggle" v-on:toggleChange="advancedModeToggle()">
+            </ToggleButton>
+          </div>
+        </div>
+        <div v-if="!advancedSlippageMode" class="price-impact-option__content">
+          <div
+            v-for="(option, key) in slippageOptions"
+            class="price-impact-option-tile"
+            :key="key"
+            :class="[selectedSlippageOption === key ? 'active' : '', option.disabled ? 'disabled' : '']"
+            v-tooltip="{ content: option.tooltip, placement: 'bottom', classes: 'info-tooltip' }"
+            v-on:click="() => handlePriceImpactClick(key)"
+          >
+            <div class="price-impact-label">
+              {{ option.name }} {{option.value / 100 | percent}}
+            </div>
+          </div>
+        </div>
+
+        <div class="advanced-slippage slippage-bar slippage-bar--embedded" v-if="advancedSlippageMode">
           <span class="slippage-label">Max. acceptable slippage:</span>
           <SimpleInput :percent="true" :default-value="userSlippage" v-on:newValue="userSlippageChange"></SimpleInput>
           <span class="percent">%</span>
-        </div>
-        <div class="slippage__divider"></div>
-        <div class="fee" v-if="feeMethods && feeMethods[swapDex]">
-          <span class="slippage-label">Max. fee:</span>
-          <span class="deviation-value">{{ fee | percent }}</span>
-          <div class="info__icon__wrapper">
-            <InfoIcon
-              class="info__icon"
-              :tooltip="{content: 'The fee of underlying protocol.', placement: 'top', classes: 'info-tooltip'}"
-            ></InfoIcon>
-          </div>
-        </div>
-        <div class="dex-slippage" v-else>
-          <span class="slippage-label">DEX slippage:</span>
-          <span class="deviation-value">{{ marketDeviation }}<span class="percent">%</span></span>
-          <div class="info__icon__wrapper">
-            <InfoIcon
-              class="info__icon"
-              :tooltip="{content: 'The difference between DEX and market prices.', placement: 'top', classes: 'info-tooltip'}"
-            ></InfoIcon>
+          <div class="slippage__divider"></div>
+          <div class="dex-slippage">
+            <span v-if="!feeMethods" class="slippage-label">Price impact:</span>
+            <span v-if="feeMethods" class="slippage-label">Max. fee:</span>
+            <span class="deviation-value">{{ feeMethods ? fee * 100 : marketDeviation }}<span class="percent">%</span></span>
+            <div class="info__icon__wrapper">
+              <InfoIcon
+                class="info__icon"
+                :tooltip="{content: 'Compares trade price on an aggregator or DEX to oracle market prices. A lower or negative number indicates prices closer to or better than market, enhancing trade quality', placement: 'top', classes: 'info-tooltip'}"
+              ></InfoIcon>
+            </div>
           </div>
         </div>
       </div>
+
+
+
+
       <div v-if="slippageWarning" class="slippage-warning">
         <img src="src/assets/icons/error.svg"/>
         {{ slippageWarning }}
       </div>
 
-      <div class="transaction-summary-wrapper">
+      <div class="transaction-summary-wrapper transaction-summary-wrapper--swap-modal">
         <TransactionResultSummaryBeta>
           <div class="summary__title">
             Values after transaction
@@ -190,7 +209,7 @@
       <div class="button-wrapper">
         <Button :label="swapDebtMode ? 'Swap debt' : 'Swap'"
                 v-on:click="submit()"
-                :disabled="sourceInputError || targetInputError"
+                :disabled="sourceInputError || targetInputError || blockSubmitButton"
                 :waiting="transactionOngoing || isTyping || calculatingSwapRoute">
         </Button>
       </div>
@@ -212,12 +231,14 @@ import SimpleInput from './SimpleInput';
 import DeltaIcon from "./DeltaIcon.vue";
 import InfoIcon from "./InfoIcon.vue";
 import Toggle from './Toggle.vue';
+import ToggleButton from './notifi/settings/ToggleButton.vue';
 
 const ethers = require('ethers');
 
 export default {
   name: 'SwapModal',
   components: {
+    ToggleButton,
     Toggle,
     InfoIcon,
     DeltaIcon,
@@ -235,6 +256,7 @@ export default {
   data() {
     return {
       swapDebtMode: null,
+      sourceAssetNameToDisplay: null,
       sourceAssets: null,
       targetAssets: null,
       sourceAssetOptions: null,
@@ -251,7 +273,7 @@ export default {
       targetAssetAmount: 0,
       fee: 0,
       info: null,
-      userSlippage: 0,
+      userSlippage: 0.5,
       slippageMargin: null,
       queryMethod: null,
       feeMethods: null,
@@ -282,6 +304,8 @@ export default {
       levelLpBalances: {},
       gmxV2Assets: {},
       gmxV2Balances: {},
+      penpieLpAssets: {},
+      penpieLpBalances: {},
       traderJoeV2LpAssets: {},
       balancerLpAssets: {},
       balancerLpBalances: {},
@@ -307,6 +331,11 @@ export default {
       swapDexsConfig: config.SWAP_DEXS_CONFIG,
       reverseSwapDisabled: false,
       calculatingSwapRoute: false,
+      slippageOptions: config.SWAP_MODAL_SLIPPAGE_OPTIONS,
+      selectedSlippageOption: Object.keys(config.SWAP_MODAL_SLIPPAGE_OPTIONS)[1],
+      advancedSlippageMode: false,
+      blockReversing: false,
+      blockSubmitButton: false,
     };
   },
 
@@ -390,7 +419,6 @@ export default {
 
       this.lastChangedSource = true;
       let sourceDecimals = this.sourceAssetData.decimals;
-      console.log(sourceDecimals);
       let sourceAmountInWei = parseUnits(this.sourceAssetAmount.toFixed(sourceDecimals), BigNumber.from(sourceDecimals));
       let targetDecimals = this.targetAssetData.decimals;
       let oracleReceivedAmountInWei = parseUnits(this.receivedAccordingToOracle.toFixed(targetDecimals), BigNumber.from(targetDecimals));
@@ -452,9 +480,9 @@ export default {
       this.targetAssetAmount =
           this.swapDebtMode
           ?
-          this.receivedAccordingToOracle * (1 + (this.userSlippage / 100 + (this.fee ? this.fee : 0)))
+          this.receivedAccordingToOracle * (1 + ((this.userSlippage + this.marketDeviation) / 100 + (this.fee ? this.fee : 0)))
           :
-          this.receivedAccordingToOracle * (1 - (this.userSlippage / 100 + (this.fee ? this.fee : 0)));
+          this.receivedAccordingToOracle * (1 - ((this.userSlippage + this.marketDeviation) / 100 + (this.fee ? this.fee : 0)));
 
 
       const targetInputChangeEvent = await this.$refs.targetInput.setCurrencyInputValue(this.targetAssetAmount);
@@ -478,20 +506,20 @@ export default {
 
       let updatedSlippage = slippageMargin + 100 * dexSlippage;
 
-      this.userSlippage = parseFloat(updatedSlippage.toFixed(3));
+      // this.userSlippage = parseFloat(updatedSlippage.toFixed(3));
 
       await this.updateAmountsWithSlippage();
     },
 
     setSlippageWarning() {
-      this.slippageWarning = '';
-      if (this.userSlippage > 2) {
-        this.slippageWarning = 'Slippage exceeds 2%. Be careful.';
-      } else if (this.userSlippage < this.marketDeviation) {
-        this.slippageWarning = 'Slippage below current DEX slippage. Transaction will likely fail.';
-      } else if (parseFloat((this.userSlippage - this.marketDeviation).toFixed(3)) < 0.01) {
-        this.slippageWarning = 'Slippage close to current DEX slippage. Transaction can fail.';
-      }
+      // this.slippageWarning = '';
+      // if (this.userSlippage > 2) {
+      //   this.slippageWarning = 'Slippage exceeds 2%. Be careful.';
+      // } else if (this.userSlippage < this.marketDeviation) {
+      //   this.slippageWarning = 'Slippage below current DEX slippage. Transaction will likely fail.';
+      // } else if (parseFloat((this.userSlippage - this.marketDeviation).toFixed(3)) < 0.01) {
+      //   this.slippageWarning = 'Slippage close to current DEX slippage. Transaction can fail.';
+      // }
     },
 
     setupSourceAssetOptions() {
@@ -606,7 +634,7 @@ export default {
         this.sourceInputError = sourceInputChangeEvent.error;
       }
       // TODO remove after we will drop support for deprecated assets
-      if (config.ASSETS_CONFIG[this.targetAsset].droppingSupport) {
+      if (config.ASSETS_CONFIG[this.targetAsset] && config.ASSETS_CONFIG[this.targetAsset].droppingSupport) {
         this.targetInputError = true;
       }
 
@@ -687,7 +715,7 @@ export default {
         },
         {
           validate: async (value) => {
-            if (config.ASSETS_CONFIG[this.targetAsset].droppingSupport) {
+            if (config.ASSETS_CONFIG[this.targetAsset] && config.ASSETS_CONFIG[this.targetAsset].droppingSupport) {
               return 'Unable to swap to deprecated asset.';
             }
           }
@@ -700,6 +728,27 @@ export default {
 
       if (this.customTargetValidators) {
         this.targetValidators.push(...this.customTargetValidators);
+      }
+    },
+
+    async handlePriceImpactClick(key) {
+      console.log(key);
+      if (!this.slippageOptions[key].disabled) {
+        this.selectedSlippageOption = key;
+        this.userSlippage = this.slippageOptions[key].value;
+
+        await this.updateAmountsWithSlippage();
+      }
+    },
+
+    async advancedModeToggle() {
+      const dexSlippageMargin = config.SWAP_DEXS_CONFIG[this.swapDex].slippageMargin;
+      this.advancedSlippageMode = !this.advancedSlippageMode;
+      if (this.advancedSlippageMode) {
+        this.userSlippage = dexSlippageMargin;
+        await this.updateAmountsWithSlippage();
+      } else {
+        this.handlePriceImpactClick('medium');
       }
     },
 
@@ -771,6 +820,29 @@ export default {
             borrowed: 0,
             debtCoverage: data.debtCoverage
           });
+        }
+      }
+
+      if (this.penpieLpAssets) {
+        for (const [symbol, data] of Object.entries(this.penpieLpAssets)) {
+          if (this.penpieLpBalances) {
+            let balance = parseFloat(this.penpieLpBalances[symbol]);
+
+            if (symbol === this.sourceAsset) {
+              balance -= this.sourceAssetAmount;
+            }
+
+            if (symbol === this.targetAsset) {
+              balance += this.targetAssetAmount;
+            }
+
+            tokens.push({
+              price: data.price,
+              balance: balance ? balance : 0,
+              borrowed: 0,
+              debtCoverage: data.debtCoverage
+            });
+          }
         }
       }
 
@@ -907,5 +979,112 @@ export default {
 .dex-toggle {
   margin-bottom: 30px;
 }
+
+.price-impact-option {
+  display: flex;
+  flex-direction: column;
+  &.price-impact {
+    margin-top: 10px;
+  }
+  .label-with-separator {
+    font-family: Montserrat;
+    font-size: $font-size-md;
+    font-weight: 600;
+    font-stretch: normal;
+    font-style: normal;
+    line-height: normal;
+    letter-spacing: normal;
+    text-align: left;
+    color: var(--swap-modal__label-with-separator);
+    display: flex;
+    align-items: center;
+    &:after {
+      content: "";
+      display: block;
+      background-color: var(--swap-modal__label-with-separator-background);
+      height: 2px;
+      flex-grow: 1;
+      margin-left: 10px;
+    }
+    .label__info-icon {
+      margin-left: 8px;
+    }
+
+    .vertical-separator {
+      width: 2px;
+      height: 17px;
+      background-color: var(--swap-modal__label-with-separator-background);
+      margin: 0 10px;
+    }
+  }
+  .price-impact-option__content {
+    width: 100%;
+    margin-top: 24px;
+    margin-bottom: 30px;
+    display: flex;
+    justify-content: space-between;
+    .price-impact-option-tile {
+      height: 32px;
+      padding: 0 13px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      border-radius: 20px;
+      border: var(--swap-modal__liquidity-shape-border);
+      cursor: pointer;
+      color: var(--swap-modal__slippage-option-pill-color);
+
+      &.disabled {
+        cursor: initial;
+      }
+
+      .price-impact-label {
+        font-family: Montserrat;
+        font-size: $font-size-sm;
+        font-stretch: normal;
+        font-style: normal;
+        line-height: normal;
+        letter-spacing: normal;
+        text-align: left;
+      }
+      &.active {
+        padding: 0 10px;
+        border: var(--swap-modal__liquidity-shape-border-active);
+        box-shadow: var(--swap-modal__liquidity-shape-box-shadow);
+        background-color: var(--swap-modal__liquidity-shape-background);
+        color: var(--swap-modal__slippage-option-pill-color--active);
+        .price-impact-label {
+          font-weight: 600;
+        }
+      }
+      &:hover &:not(.disabled) {
+        border-color: var(--swap-modal__liquidity-shape-border-hover);
+      }
+    }
+  }
+}
+
+.advanced-slippage {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+
+.advanced-mode-toggle {
+  margin-left: 8px;
+}
+
+.advanced-mode {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  color: var(--swap-modal__slippage-advanced-color);
+  font-size: $font-size-xsm;
+  font-weight: 500;
+}
+
 
 </style>

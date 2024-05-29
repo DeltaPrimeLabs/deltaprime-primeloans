@@ -19,6 +19,7 @@ export default {
     chainId: 42161,
     chainSlug: 'arbitrum',
     primeAccountsBlocked: true,
+    pendleApiBaseUrl: 'https://api-v2.pendle.finance/sdk/api',
     //update leverage after every change in contracts
     ASSETS_CONFIG: {
       "ETH": {name: "ETH", symbol: "ETH", decimals: 18, address: addresses.ETH, debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:ETHUSDT"},
@@ -39,6 +40,14 @@ export default {
       "wstETH": {name: "wstETH", symbol: "wstETH", logoExt: "png", decimals: 18, address: addresses.wstETH, debtCoverage: 0.83333333333, tradingViewSymbol: "UNISWAP3ETH:WSTETHUSDC"},
       "JOE": {name: "JOE", symbol: "JOE", logoExt: "png", decimals: 18, address: addresses.JOE, groupIdentifier: "JOE_GROUP", debtCoverage: 0.8, tradingViewSymbol: "BINANCE:JOEUSDT"},
       "GRAIL": {name: "GRAIL", symbol: "GRAIL", logoExt: "png", decimals: 18, address: addresses.GRAIL, groupIdentifier: "GRAIL_GROUP", debtCoverage: 0.8, tradingViewSymbol: "BITGET:GRAILUSDT"},
+      "ezETH": {name: "ezETH", symbol: "ezETH", logoExt: "png", decimals: 18, address: addresses.ezETH, debtCoverage: 0.83333333333, tradingViewSymbol: "PYTH:EZETHUSD"},
+      "weETH": {name: "weETH", symbol: "weETH", logoExt: "png", decimals: 18, address: addresses.weETH, debtCoverage: 0.83333333333, tradingViewSymbol: "CRYPTO:WEETHUSD"},
+      "rsETH": {name: "rsETH", symbol: "rsETH", logoExt: "png", decimals: 18, address: addresses.rsETH, debtCoverage: 0.83333333333},
+    },
+    PENPIE_REWARDS_TOKENS: {
+        "PENDLE": {name: "PENDLE", symbol: "PENDLE", logoExt: "png", decimals: 18, address: addresses.PENDLE},
+        "PNP": {name: "PNP", symbol: "PNP", logoExt: "png", decimals: 18, address: addresses.PNP},
+        "SILO": {name: "SILO", symbol: "SILO", logoExt: "png", decimals: 18, address: addresses.SILO},
     },
     AVAILABLE_ASSETS_PER_DEX: {
         YakSwap: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'GLP', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH', 'WOO', 'GRAIL', 'JOE'],
@@ -46,15 +55,15 @@ export default {
     },
 
     SWAP_DEXS_CONFIG: {
-        YakSwap: {
-            displayName: 'YakSwap',
-            availableAssets: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'GLP', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH', 'GRAIL', 'WOO', 'MAGIC', 'JOE'],
-            slippageMargin: 0.02
-        },
         ParaSwapV2: {
             displayName: 'ParaSwap',
-            availableAssets: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH', 'GRAIL', 'WOO', 'MAGIC', 'JOE'],
+            availableAssets: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH', 'GRAIL', 'WOO', 'MAGIC', 'JOE', 'ezETH', 'weETH', 'rsETH'],
             slippageMargin: 0.05
+        },
+        YakSwap: {
+            displayName: 'YakSwap',
+            availableAssets: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'GLP', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH', 'GRAIL', 'WOO', 'MAGIC', 'JOE', 'rsETH'],
+            slippageMargin: 0.02
         },
         Level: {
             availableAssets: [],
@@ -63,7 +72,17 @@ export default {
         GmxV2: {
             availableAssets: [],
             slippageMargin: 0.1
+        },
+        Penpie: {
+            availableAssets: [],
+            slippageMargin: 0.02
         }
+    },
+    SWAP_MODAL_SLIPPAGE_OPTIONS: {
+        low: {value: 0.5, name: 'Low', imgSrc: 'src/assets/icons/check.png', tooltip: 'Ideal for stable market conditions and highly liquid tokens. High chance of transaction failing.'},
+        medium: {value: 1, name: 'Medium', imgSrc: 'src/assets/icons/warning.svg', tooltip: 'Moderate price adjustment likely. Suitable for relatively steady markets. Moderate chance of transaction failing.'},
+        high: {value: 2, name: 'High', imgSrc: 'src/assets/icons/error.svg', tooltip: 'Moderate price adjustment likely. Ideal for relatively steady markets.'},
+        extreme: {value: 5, name: 'Extreme', imgSrc: 'src/assets/icons/error.svg', tooltip: 'Significant price variation expected. Recommended for use during more volatile market conditions.'},
     },
     paraSwapDefaultSlippage: 0.02,
     showYakSwapWarning: true,
@@ -124,6 +143,123 @@ export default {
         'TJLB_ETH_USDC': { primary: 'ETH', secondary: 'USDC', name: 'ETH-USDC', dex: 'TraderJoe', symbol: 'TJLB_ETH_USDC', decimals: 18, baseFee: '0.0015', address: addresses['TJLB_ETH_USDC'], binStep: 15, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2', link: "https://traderjoexyz.com/arbitrum/pool/v21/ETH/0xaf88d065e77c8cc2239327c5edb3a432268e5831/15"},
     },
     BALANCER_LP_ASSETS_CONFIG: {},
+    PENPIE_LP_ASSETS_CONFIG: {
+        'PENDLE_EZ_ETH_LP': {
+            protocol: 'PENPIE',
+            short: 'PENPIE LP',
+            dex: 'Penpie',
+            asset: 'ezETH',
+            assetNameToDisplay: 'ezETH',
+            assetLogoName: 'ezETH',
+            symbol: 'PENDLE_EZ_ETH_LP',
+            protocolIdentifier: 'PENDLE_EZ_ETH_LP',
+            debtCoverage: 0.83333333333,
+            decimals: 18,
+            tvl: 5350000,
+            address: addresses['PENDLE_EZ_ETH_LP'],
+            rewardTokens: ['PNP'],
+            pendleLpSymbol: 'PENDLE_EZ_ETH_27_06_24',
+            stakingContractAddress: '0x5e03c94fc5fb2e21882000a96df0b63d2c4312e2',
+            feedSymbol: 'PENDLE_EZ_ETH_LP',
+            logoExt: 'png',
+            groupIdentifier: 'PENDLE_EZ_ETH_LP_GROUP',
+            name: 'PENPIE',
+            link: 'https://www.pendle.magpiexyz.io/stake/0x5E03C94Fc5Fb2E21882000A96Df0b63d2c4312e2',
+            maturity: '27/06/2024'
+        },
+        'PENDLE_WSTETH_LP': {
+            protocol: 'PENPIE',
+            short: 'PENPIE LP',
+            dex: 'Penpie',
+            asset: 'wstETH',
+            assetNameToDisplay: 'wstETH',
+            assetLogoName: 'wstETH',
+            symbol: 'PENDLE_WSTETH_LP',
+            protocolIdentifier: 'PENDLE_WSTETH_LP',
+            debtCoverage: 0.83333333333,
+            decimals: 18,
+            tvl: 5350000,
+            address: addresses['PENDLE_WSTETH_LP'],
+            rewardTokens: ['PNP'],
+            pendleLpSymbol: 'PENDLE_WSTETH_27_06_24',
+            stakingContractAddress: '0xFd8AeE8FCC10aac1897F8D5271d112810C79e022',
+            feedSymbol: 'PENDLE_WSTETH_LP',
+            logoExt: 'png',
+            groupIdentifier: 'PENDLE_WSTETH_LP_GROUP',
+            name: 'PENPIE',
+            link: 'https://www.pendle.magpiexyz.io/stake/0xFd8AeE8FCC10aac1897F8D5271d112810C79e022',
+            maturity: '27/06/2024'
+        },
+        'PENDLE_E_ETH_LP': {
+            protocol: 'PENPIE',
+            short: 'PENPIE LP',
+            dex: 'Penpie',
+            asset: 'weETH',
+            assetNameToDisplay: 'weETH',
+            assetLogoName: 'weETH',
+            symbol: 'PENDLE_E_ETH_LP',
+            protocolIdentifier: 'PENDLE_E_ETH_LP',
+            debtCoverage: 0.83333333333,
+            decimals: 18,
+            tvl: 5350000,
+            address: addresses['PENDLE_E_ETH_LP'],
+            rewardTokens: ['PNP'],
+            pendleLpSymbol: 'PENDLE_E_ETH_27_06_24',
+            stakingContractAddress: '0x952083cde7aaa11ab8449057f7de23a970aa8472',
+            feedSymbol: 'PENDLE_E_ETH_LP',
+            logoExt: 'png',
+            groupIdentifier: 'PENDLE_E_ETH_LP_GROUP',
+            name: 'PENPIE',
+            link: 'https://www.pendle.magpiexyz.io/stake/0xf9F9779d8fF604732EBA9AD345E6A27EF5c2a9d6',
+            maturity: '26/09/2024'
+        },
+        'PENDLE_RS_ETH_LP': {
+            protocol: 'PENPIE',
+            short: 'PENPIE LP',
+            dex: 'Penpie',
+            asset: 'rsETH',
+            assetNameToDisplay: 'rsETH',
+            assetLogoName: 'rsETH',
+            symbol: 'PENDLE_RS_ETH_LP',
+            protocolIdentifier: 'PENDLE_RS_ETH_LP',
+            debtCoverage: 0.83333333333,
+            decimals: 18,
+            tvl: 5350000,
+            address: addresses['PENDLE_RS_ETH_LP'],
+            rewardTokens: ['PNP'],
+            pendleLpSymbol: 'PENDLE_RS_ETH_27_06_24',
+            stakingContractAddress: '0x6ae79089b2cf4be441480801bb741a531d94312b',
+            feedSymbol: 'PENDLE_RS_ETH_LP',
+            logoExt: 'png',
+            groupIdentifier: 'PENDLE_RS_ETH_LP_GROUP',
+            name: 'PENPIE',
+            link: 'https://www.pendle.magpiexyz.io/stake/0x6Ae79089b2CF4be441480801bb741A531d94312b',
+            maturity: '27/06/2024'
+        },
+        'PENDLE_SILO_ETH_WSTETH_LP': {
+            protocol: 'PENPIE',
+            short: 'PENPIE LP',
+            dex: 'Penpie',
+            asset: 'ETH',
+            assetNameToDisplay: 'Silo ETH',
+            assetLogoName: 'Silo_ETH',
+            symbol: 'PENDLE_SILO_ETH_WSTETH_LP',
+            protocolIdentifier: 'PENDLE_SILO_ETH_WSTETH_LP',
+            debtCoverage: 0.83333333333,
+            decimals: 18,
+            tvl: 5350000,
+            address: addresses['PENDLE_SILO_ETH_WSTETH_LP'],
+            rewardTokens: ['PNP'],
+            pendleLpSymbol: 'PENDLE_SILO_ETH_WSTETH_26_12_24',
+            stakingContractAddress: '0xaccd9a7cb5518326bed715f90bd32cdf2fec2d14',
+            feedSymbol: 'PENDLE_SILO_ETH_WSTETH_LP',
+            logoExt: 'png',
+            groupIdentifier: 'PENDLE_SILO_ETH_WSTETH_LP_GROUP',
+            name: 'PENPIE',
+            link: 'https://www.pendle.magpiexyz.io/stake/0xACcd9A7cb5518326BeD715f90bD32CDf2fEc2D14',
+            maturity: '26/12/2024'
+        }
+    },
     LEVEL_LP_ASSETS_CONFIG: {
         "arbJnrLLP": {name: "Junior", symbol: "arbJnrLLP", pid: 2, short: "Jnr", decimals: 18, address: addresses.arbJnrLLP, debtCoverage: 0.83333333333, balanceMethod: "levelJnrBalance", groupIdentifier: 'STKD_JNR_LLP_GROUP', underlyingAssets: ['BTC', 'ETH', 'ARB', 'USDT', 'USDC'], link: 'https://app.level.finance/liquidity/junior-tranche/buy', disableAddTokenButton: true},
         "arbMzeLLP": {name: "Mezzanine", symbol: "arbMzeLLP", pid: 1, short: "Mze", decimals: 18, address: addresses.arbMzeLLP, debtCoverage: 0.83333333333, balanceMethod: "levelMzeBalance", groupIdentifier: 'STKD_MZE_LLP_GROUP', underlyingAssets: ['BTC', 'ETH', 'USDT', 'USDC'], link: 'https://app.level.finance/liquidity/mezzanine-tranche/buy', disableAddTokenButton: true},
@@ -167,6 +303,14 @@ export default {
         BEEFY_FINANCE: {
             logo: 'beefy.png',
             name: 'Beefy Finance'
+        },
+        PENPIE: {
+            logo: 'penpie.png',
+            name: 'Penpie'
+        },
+        PENDLE: {
+            logo: 'pendle.png',
+            name: 'Pendle'
         },
     },
     FARMED_TOKENS_CONFIG: {
@@ -323,6 +467,7 @@ export default {
     EMAIL_REGEX: /(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])/,
     refreshDelay: 2000,
     gmxV2RefreshDelay: 4000,
+    penpieRefreshDelay: 4000,
     gmxV2IncentivesMilestone: 9000000,
     gmxV2IncentivesDeadline: 'February 5th',
     historicalRpcUrl: "https://nd-767-190-280.p2pify.com/8d546b2f3519965f0f1cb4332abe96b3",

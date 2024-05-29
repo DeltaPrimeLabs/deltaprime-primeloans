@@ -92,6 +92,21 @@ export default function setupFilters() {
     }
   });
 
+  Vue.filter('daysBetweenDates', function (value) {
+    console.warn('day/month/year');
+    const now = new Date();
+    const day = value.split('/')[0];
+    const month = value.split('/')[1];
+    const year = value.split('/')[2];
+    const date = new Date(year, month - 1, day);
+    console.warn('date', date);
+    const diffTime = Math.abs(date - now);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    console.warn('diffDays', diffDays);
+    return diffDays;
+
+  });
+
   Vue.filter('smartRound', function (value, precision = 8, toFixed = false) {
     return smartRound(value, precision, toFixed)
   });

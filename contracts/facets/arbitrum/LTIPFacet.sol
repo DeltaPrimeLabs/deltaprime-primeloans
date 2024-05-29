@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: ;
+// Last deployed from commit: 8e5d3085ec4332d1a170bb7087f08c89141d9afe;
 pragma solidity 0.8.17;
 
 import "@redstone-finance/evm-connector/contracts/core/RedstoneConsumerNumericBase.sol";
-import "../../lib/SolvencyMethods.sol";
+import "../../lib/local/DeploymentConstants.sol";
+import "../SolvencyFacetProd.sol";
 import {ILTIPFacet} from "../../interfaces/facets/arbitrum/ILTIPFacet.sol";
-import "hardhat/console.sol";
 
 contract LTIPFacet is ILTIPFacet, RedstoneConsumerNumericBase {
     function getDataServiceId() public view virtual override returns (string memory) {
@@ -93,7 +93,6 @@ contract LTIPFacet is ILTIPFacet, RedstoneConsumerNumericBase {
     }
 
     function getLTIPEligibleTVL() public view returns (uint256) {
-        console.log('1');
         bytes32[] memory notEligibleTokens = new bytes32[](19);
         notEligibleTokens[0] = bytes32("ETH");
         notEligibleTokens[1] = bytes32("USDC");
@@ -115,14 +114,10 @@ contract LTIPFacet is ILTIPFacet, RedstoneConsumerNumericBase {
         notEligibleTokens[17] = bytes32("weETH");
         notEligibleTokens[18] = bytes32("rsETH");
 
-        console.log('2');
-
         uint256[] memory prices = getOracleNumericValuesFromTxMsg(notEligibleTokens);
 
-        console.log('3');
         SolvencyFacetProd.AssetPrice[] memory assetsPrices = new SolvencyFacetProd.AssetPrice[](notEligibleTokens.length);
 
-        console.log('4');
         for(uint i; i<notEligibleTokens.length; i++){
             assetsPrices[i] = SolvencyFacetProd.AssetPrice({
                 asset: notEligibleTokens[i],
@@ -130,14 +125,8 @@ contract LTIPFacet is ILTIPFacet, RedstoneConsumerNumericBase {
             });
         }
 
-        console.log('5');
-
         uint256 notEligibleAssetsValue = getTotalAssetsValueBase(assetsPrices);
-
-        console.log('6');
         uint256 debt = getDebt();
-        console.log('7');
-        console.log('going to return: %s', debt > notEligibleAssetsValue ? debt - notEligibleAssetsValue : 0);
 
         return debt > notEligibleAssetsValue ? debt - notEligibleAssetsValue : 0;
     }

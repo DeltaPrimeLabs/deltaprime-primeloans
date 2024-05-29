@@ -224,6 +224,7 @@ export default {
       selectedChart: 'TradingView',
       showTradingViewChart: false,
       avalancheChain: window.avalancheChain,
+      currentlyOpenModalInstance: null,
     };
   },
   computed: {
@@ -247,6 +248,8 @@ export default {
       'balancerLpBalances',
       'gmxV2Assets',
       'gmxV2Balances',
+      'penpieLpBalances',
+      'penpieLpAssets',
       'noSmartLoan'
     ]),
     ...mapState('stakeStore', ['farms']),
@@ -492,6 +495,13 @@ export default {
           if (String(error).includes('No routes found with enough liquidity')) {
             this.progressBarService.emitProgressBarErrorState('The selected aggregator could not find a route. Please switch aggregator, increase slippage or try again later.')
             this.cleanupAfterError(false);
+          } else if (String(error).includes('ESTIMATED_LOSS_GREATER_THAN_MAX_IMPACT')) {
+            this.progressBarService.emitProgressBarErrorState('Source amount too low')
+            this.cleanupAfterError(false);
+          } else {
+            // Any other random error
+            this.progressBarService.emitProgressBarErrorState('The selected aggregator encountered unexpected error. Please switch aggregator or try again later.')
+            this.cleanupAfterError(false);
           }
         }
       };
@@ -563,6 +573,8 @@ export default {
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.balancerLpBalances = this.balancerLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.farms = this.farms;
@@ -597,6 +609,7 @@ export default {
       if (config.SWAP_DEXS_CONFIG.YakSwap.availableAssets && config.SWAP_DEXS_CONFIG.ParaSwapV2.availableAssets.includes(this.asset.symbol)) swapDexSwapMethodMap.ParaSwapV2 = this.paraSwapV2;
 
       const modalInstance = this.openModal(SwapModal);
+      this.currentlyOpenModalInstance = modalInstance;
       modalInstance.dexOptions = Object.entries(config.SWAP_DEXS_CONFIG)
         .filter(([dexName, dexConfig]) => dexConfig.availableAssets.includes(this.asset.symbol))
         .map(([dexName, dexConfig]) => dexConfig.displayName);
@@ -618,6 +631,8 @@ export default {
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.targetAsset = Object.keys(config.ASSETS_CONFIG).filter(asset => asset !== this.asset.symbol)[0];
       modalInstance.debt = this.fullLoanStatus.debt;
@@ -649,6 +664,7 @@ export default {
 
     openDebtSwapModal() {
       const modalInstance = this.openModal(SwapModal);
+      this.currentlyOpenModalInstance = modalInstance;
       modalInstance.dexOptions = Object.entries(config.SWAP_DEXS_CONFIG)
         .filter(([dexName, dexConfig]) => dexConfig.availableAssets.includes(this.asset.symbol))
         .map(([dexName, dexConfig]) => dexName);
@@ -673,6 +689,8 @@ export default {
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.balancerLpBalances = this.balancerLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
@@ -718,6 +736,8 @@ export default {
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.gmxV2Assets = this.gmxV2Assets;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.balancerLpBalances = this.balancerLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
@@ -801,6 +821,8 @@ export default {
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.gmxV2Assets = this.gmxV2Assets;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.balancerLpBalances = this.balancerLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
@@ -867,6 +889,8 @@ export default {
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.gmxV2Assets = this.gmxV2Assets;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.balancerLpBalances = this.balancerLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
@@ -949,6 +973,8 @@ export default {
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
@@ -992,6 +1018,8 @@ export default {
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
@@ -1173,6 +1201,7 @@ export default {
         return;
       }
 
+      let userCancelledTransaction = false;
       if (String(error) === '[object Object]' || typeof error === 'object') {
         switch (error.code) {
           case -32000:
@@ -1187,6 +1216,7 @@ export default {
             break;
           case 4001:
             this.progressBarService.emitProgressBarCancelledState()
+            userCancelledTransaction = true;
             break;
           case -32603:
             console.log('error code -32603');
@@ -1203,12 +1233,16 @@ export default {
           this.progressBarService.emitProgressBarErrorState('Insufficient slippage.');
         }
       }
-      this.cleanupAfterError(error.code !== -32000 && !caiMintOrBurnSlippageError);
+      this.cleanupAfterError(userCancelledTransaction);
     },
 
     cleanupAfterError(closeModal = true) {
       if (closeModal) {
         this.closeModal();
+      }
+      if (this.currentlyOpenModalInstance) {
+        this.currentlyOpenModalInstance.calculatingSwapRoute = false;
+        this.currentlyOpenModalInstance.blockSubmitButton = true;
       }
       this.disableAllButtons = false;
       this.isBalanceEstimated = false;

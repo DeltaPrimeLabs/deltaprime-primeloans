@@ -31,4 +31,10 @@ interface IPenpieFacet {
         address market,
         uint256 amount
     ) external;
+
+    function pendingRewards(
+        address market
+    ) external view returns (uint256, address[] memory, uint256[] memory);
+
+    function claimRewards(address market) external;
 }

@@ -161,6 +161,8 @@ export default {
       'gmxV2Balances',
       'balancerLpAssets',
       'balancerLpBalances',
+      'penpieLpAssets',
+      'penpieLpBalances',
       'traderJoeV2LpAssets',
       'fullLoanStatus',
       'noSmartLoan',
@@ -363,6 +365,8 @@ export default {
             this.levelLpBalances,
             this.gmxV2Assets,
             this.gmxV2Balances,
+            this.penpieLpAssets,
+            this.penpieLpBalances,
             this.traderJoeV2LpAssets,
             this.farms,
         );
@@ -424,7 +428,7 @@ export default {
 .tutorial-video {
   position: fixed;
   border-radius: 25px;
-  bottom: 20px;
+  bottom: 60px;
   right: 20px;
   z-index: 2;
 

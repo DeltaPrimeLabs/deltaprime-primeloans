@@ -152,6 +152,8 @@
   --modal__top-info-color: #{$storm-blue};
   --modal__top-info-warning-color: #{$mist-orange};
   --modal__top-info-divider-color: #{$mist-space};
+  --modal__top-info-bar-color: #{$cloud-blue};
+  --modal__top-info-bar-background-color: #{$light-fuchsia};
   --modal__close-button-container-color: #{$pale-lilac};
   --modal__backdrop-backdrop-filter: blur(45px);
   --modal__backdrop-background: #{$dark-space}4c;
@@ -293,6 +295,16 @@
   --swap-modal__slippage-bar-color: #{$storm-blue};
   --swap-modal__slippage-divider-color: #{$mist-space};
   --swap-modal__slippage-warning-color: #{$pale-red};
+  --swap-modal__slippage-advanced-color: #{$storm-blue};
+  --swap-modal__slippage-option-pill-color: #{$washed-blue};
+  --swap-modal__slippage-option-pill-color--active: #{$mist-blue};
+  --swap-modal__label-with-separator: #{$storm-blue};
+  --swap-modal__label-with-separator-background: #{$mist-space};
+  --swap-modal__liquidity-shape-border: solid 1px #{$washed-space};
+  --swap-modal__liquidity-shape-border-active: solid 2px #{$light-navy};
+  --swap-modal__liquidity-shape-border-hover: #{$light-navy};
+  --swap-modal__liquidity-shape-box-shadow: 2px 2px 4px 0 #{$dark-space}80;
+  --swap-modal__liquidity-shape-background: #{$light-fuchsia};
   // endregion
 
   // region SimpleInput

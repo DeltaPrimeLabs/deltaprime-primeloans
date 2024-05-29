@@ -28,6 +28,8 @@ import {
     recompileConstantsFile,
     toBytes32,
     toWei,
+    time,
+    increaseBlocks,
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
@@ -35,6 +37,7 @@ import {AddressProvider, MockTokenManager, SmartLoanGigaChadInterface, SmartLoan
 import {BigNumber, BigNumberish, Contract} from "ethers";
 import {deployDiamond} from '../../../tools/diamond/deploy-diamond';
 import TOKEN_ADDRESSES from '../../../common/addresses/arbitrum/token_addresses.json';
+import pendleStakingAbi from '../../abis/PendleStaking.json';
 
 chai.use(solidity);
 
@@ -49,6 +52,7 @@ const rsETHMarket = "0x6ae79089b2cf4be441480801bb741a531d94312b";
 const wstETHSiloMarket = "0xaccd9a7cb5518326bed715f90bd32cdf2fec2d14";
 // const eETHSiloMarket = "0x99e9028e274FEAFA2E1D8787E1eE6DE39C6F7724";
 const whaleAddr = "0x6db96bbeb081d2a85e0954c252f2c1dc108b3f81";
+const pendleStakingAddr = "0x6DB96BBEB081d2a85E0954C252f2c1dC108b3f81";
 
 describe('Smart loan', () => {
     before("Synchronize blockchain time", async () => {
@@ -60,6 +64,7 @@ describe('Smart loan', () => {
             loan: SmartLoanGigaChadInterface,
             wrappedLoan: any,
             nonOwnerWrappedLoan: any,
+            ezETHBalance: BigNumber,
             wstEthBalance: BigNumber,
             weEthBalance: BigNumber,
             rsEthBalance: BigNumber,
@@ -228,7 +233,11 @@ describe('Smart loan', () => {
             let initialHR = await wrappedLoan.getHealthRatio();
             let initialTWV = await wrappedLoan.getThresholdWeightedValue();
 
-            let swapData = await getSwapData('ETH', 'wstETH', 18, 18, toWei('2'));
+            let swapData = await getSwapData('ETH', 'ezETH', 18, 18, toWei('2'));
+            await wrappedLoan.paraSwapV2(swapData.selector, swapData.data, TOKEN_ADDRESSES['ETH'], toWei('2'), TOKEN_ADDRESSES['ezETH'], 1);
+            ezETHBalance = await tokenContracts.get('ezETH')!.balanceOf(wrappedLoan.address);
+
+            swapData = await getSwapData('ETH', 'wstETH', 18, 18, toWei('2'));
             await wrappedLoan.paraSwapV2(swapData.selector, swapData.data, TOKEN_ADDRESSES['ETH'], toWei('2'), TOKEN_ADDRESSES['wstETH'], 1);
             wstEthBalance = await tokenContracts.get('wstETH')!.balanceOf(wrappedLoan.address);
 
@@ -324,7 +333,7 @@ describe('Smart loan', () => {
 
         it("should stake underlying", async () => {
             const stakeTests = [
-                { asset: "ETH", market: ezETHMarket, amount: toWei('2'), minLpOut: 1, lpToken: "PENDLE_EZ_ETH_LP" },
+                { asset: "ezETH", market: ezETHMarket, amount: ezETHBalance, minLpOut: 1, lpToken: "PENDLE_EZ_ETH_LP" },
                 { asset: "wstETH", market: wstETHMarket, amount: wstEthBalance, minLpOut: 1, lpToken: "PENDLE_WSTETH_LP" },
                 { asset: "weETH", market: eETHMarket, amount: weEthBalance, minLpOut: 1, lpToken: "PENDLE_E_ETH_LP" },
                 { asset: "rsETH", market: rsETHMarket, amount: rsEthBalance, minLpOut: 1, lpToken: "PENDLE_RS_ETH_LP" },
@@ -337,6 +346,24 @@ describe('Smart loan', () => {
             }
         });
 
+        it("should claim rewards", async () => {
+            await time.increase(time.duration.days(5));
+            await increaseBlocks(20);
+
+            const tests = [
+                { market: ezETHMarket },
+                { market: wstETHMarket },
+                { market: eETHMarket },
+                { market: rsETHMarket },
+                { market: wstETHSiloMarket },
+            ];
+
+            for (const test of tests) {
+                console.log(`Testing claims rewards...`)
+                await testClaimReward(test.market);
+            }
+        });
+
         it("should unstake underlying", async () => {
             const unstakeTests = [
                 { asset: "ezETH", market: ezETHMarket, amount: await tokenContracts.get('PENDLE_EZ_ETH_LP')!.balanceOf(wrappedLoan.address), minOut: 1, lpToken: "PENDLE_EZ_ETH_LP" },
@@ -344,7 +371,6 @@ describe('Smart loan', () => {
                 { asset: "weETH", market: eETHMarket, amount: await tokenContracts.get('PENDLE_E_ETH_LP')!.balanceOf(wrappedLoan.address), minOut: 1, lpToken: "PENDLE_E_ETH_LP" },
                 { asset: "rsETH", market: rsETHMarket, amount: await tokenContracts.get('PENDLE_RS_ETH_LP')!.balanceOf(wrappedLoan.address), minOut: 1, lpToken: "PENDLE_RS_ETH_LP" },
                 { asset: "ETH", market: wstETHSiloMarket, amount: await tokenContracts.get('PENDLE_SILO_ETH_WSTETH_LP')!.balanceOf(wrappedLoan.address), minOut: 1, lpToken: "PENDLE_SILO_ETH_WSTETH_LP" },
-                // { asset: "ETH", market: eETHSiloMarket, amount: await tokenContracts.get('PENPIE_EETHSILO_LP')!.balanceOf(wrappedLoan.address), minOut: 1, lpToken: "PENPIE_EETHSILO_LP" }
             ];
 
             for (const test of unstakeTests) {
@@ -365,6 +391,24 @@ describe('Smart loan', () => {
             for (const test of stakeTests) {
                 console.log(`Testing staking ${test.lpToken}...`)
                 await testStakeLp(test.market, test.amount, test.lpToken);
+            }
+        });
+
+        it("should claim rewards", async () => {
+            await time.increase(time.duration.days(5));
+            await increaseBlocks(20);
+
+            const tests = [
+                { market: ezETHMarket },
+                { market: wstETHMarket },
+                { market: eETHMarket },
+                { market: rsETHMarket },
+                { market: wstETHSiloMarket },
+            ];
+
+            for (const test of tests) {
+                console.log(`Testing claims rewards...`)
+                await testClaimReward(test.market);
             }
         });
 
@@ -476,6 +520,19 @@ describe('Smart loan', () => {
             const afterLpExposure = await getAssetExposure(lpToken);
 
             expect(beforeLpExposure.current.sub(afterLpExposure.current)).to.be.eq(amount);
+        }
+
+        async function testClaimReward(market: string) {
+            const pendleStaking = new ethers.Contract(pendleStakingAddr, pendleStakingAbi, provider);
+            await pendleStaking.connect(owner).harvestMarketReward(market, owner.address, 0);
+
+            const res = await wrappedLoan.pendingRewards(market);
+            expect(res[0]).to.be.gt(0);
+            const length = res[1].length;
+            for (let i = 0; i < length; i++) {
+                expect(res[2][i]).to.be.gt(0);
+            }
+            await wrappedLoan.claimRewards(market);
         }
 
         async function loanOwnsAsset(asset: string) {
