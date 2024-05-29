@@ -56,7 +56,7 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         IPendleRouter.TokenInput memory input,
         IPendleRouter.LimitOrderData memory limit
     ) external onlyOwner nonReentrant remainsSolvent {
-        address lpToken = _getPendleLpToken(market);
+        address lpToken = _getPenpieLpToken(market);
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         IERC20 token = IERC20(tokenManager.getAssetAddress(asset, false));
 
@@ -99,7 +99,7 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         IPendleRouter.TokenOutput memory output,
         IPendleRouter.LimitOrderData memory limit
     ) external onlyOwnerOrInsolvent nonReentrant returns (uint256) {
-        address lpToken = _getPendleLpToken(market);
+        address lpToken = _getPenpieLpToken(market);
         uint256 netTokenOut;
 
         {
@@ -168,7 +168,7 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         address market,
         uint256 amount
     ) external onlyOwner nonReentrant remainsSolvent {
-        address lpToken = _getPendleLpToken(market);
+        address lpToken = _getPenpieLpToken(market);
 
         market.safeTransferFrom(msg.sender, address(this), amount);
 
@@ -191,7 +191,7 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         uint256 amount
     ) external onlyOwner canRepayDebtFully nonReentrant remainsSolvent returns (uint256) {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        address lpToken = _getPendleLpToken(market);
+        address lpToken = _getPenpieLpToken(market);
 
         amount = Math.min(IERC20(lpToken).balanceOf(address(this)), amount);
         require(amount > 0, "Cannot unstake 0 tokens");
@@ -257,7 +257,7 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     }
 
     // INTERNAL FUNCTIONS
-    function _getPendleLpToken(address market) internal pure returns (address) {
+    function _getPenpieLpToken(address market) internal pure returns (address) {
         // ezETH
         if (market == PENDLE_EZ_ETH_MARKET) {
             return 0xecCDC2C2191d5148905229c5226375124934b63b;
