@@ -6,9 +6,9 @@ import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFa
 import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json';
 import DoubleMethodTxArtifact
     from '../../../artifacts/contracts/mock/DoubleBorrowExecInSingleTx.sol/DoubleBorrowExecInSingleTx.json';
-import VPrimeArtifact from '../../../artifacts/contracts/tokens/vPrime.sol/vPrime.json';
-import VPrimeControllerArtifact from '../../../artifacts/contracts/tokens/mock/vPrimeControllerAvalancheMock.sol/vPrimeControllerAvalancheMock.json';
-import sPrimeMockArtifact from '../../../artifacts/contracts/tokens/mock/sPrimeMock.sol/SPrimeMock.json';
+import VPrimeArtifact from '../../../artifacts/contracts/token/vPrime.sol/vPrime.json';
+import VPrimeControllerArtifact from '../../../artifacts/contracts/token/mock/vPrimeControllerAvalancheMock.sol/vPrimeControllerAvalancheMock.json';
+import sPrimeMockArtifact from '../../../artifacts/contracts/token/mock/sPrimeMock.sol/SPrimeMock.json';
 import AddressProviderArtifact from '../../../artifacts/contracts/AddressProvider.sol/AddressProvider.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {WrapperBuilder} from "@redstone-finance/evm-connector";

@@ -57,9 +57,8 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, PendingOwnableUpgradeabl
     * @param distributionY_ Pre-defined distribution Y
     * @param deltaIds_ Delta id for bins
     * @param positionManager_ Position Manager contract for sPrime
-    * @param vPrimeController_ VPrime Controller
     */
-    function initialize(address tokenX_, address tokenY_, string memory name_, uint256[] memory distributionX_, uint256[] memory distributionY_, int256[] memory deltaIds_, address positionManager_, address vPrimeController_) external initializer {
+    function initialize(address tokenX_, address tokenY_, string memory name_, uint256[] memory distributionX_, uint256[] memory distributionY_, int256[] memory deltaIds_, address positionManager_) external initializer {
         __PendingOwnable_init();
         __ReentrancyGuard_init();
         __ERC20_init(name_, "sPrime");
@@ -79,7 +78,10 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, PendingOwnableUpgradeabl
         distributionY = distributionY_;
 
         positionManager = IPositionManager(positionManager_);
-        vPrimeController = vPrimeController_;
+    }
+
+    function setVPrimeControllerAddress(address _vPrimeController) public onlyOwner {
+        vPrimeController = _vPrimeController;
     }
 
     /** Public View Functions */

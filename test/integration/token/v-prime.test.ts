@@ -3,7 +3,7 @@ import {ethers, waffle} from 'hardhat'
 import {solidity} from "ethereum-waffle";
 import {SmartLoansFactory, VPrimeMock} from "../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import MockVPrimeArtifact from '../../../artifacts/contracts/tokens/mock/vPrimeMock.sol/vPrimeMock.json';
+import MockVPrimeArtifact from '../../../artifacts/contracts/token/mock/vPrimeMock.sol/vPrimeMock.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import {fromBytes32, getFixedGasSigners, PoolAsset, Asset, toBytes32, toWei, fromWei, time} from "../../_helpers";
 import {BigNumber, Contract} from "ethers";
