@@ -108,14 +108,14 @@ functions:
   glpAprAggregator:
     handler: aggregators/apy.glpAprAggregator
     memorySize: 2048
-    timeout: 200
+    timeout: 300
     description: Fetch GLP Apr from GMX website.
     events:
       - schedule: rate(5 minutes)
   vectorApyAggregator:
     handler: aggregators/apy.vectorApyAggregator
     memorySize: 2048
-    timeout: 200
+    timeout: 300
     description: Fetch auto-compounding APYs from Vector website.
     events:
       - schedule: rate(5 minutes)
@@ -129,70 +129,70 @@ functions:
   steakHutApyAggregator:
     handler: aggregators/apy.steakHutApyAggregator
     memorySize: 2048
-    timeout: 200
+    timeout: 300
     description: Fetch APYs from StackHut website.
     events:
       - schedule: rate(5 minutes)
   traderJoeApyAggregator:
     handler: aggregators/apy.traderJoeApyAggregator
     memorySize: 2048
-    timeout: 200
+    timeout: 900
     description: Fetch APYs from TraderJoe website.
     events:
       - schedule: rate(15 minutes)
   sushiApyAggregator:
     handler: aggregators/apy.sushiApyAggregator
     memorySize: 2048
-    timeout: 200
+    timeout: 300
     description: Fetch APYs from Sushi website.
     events:
       - schedule: rate(5 minutes)
   beefyApyAggregator:
     handler: aggregators/apy.beefyApyAggregator
     memorySize: 2048
-    timeout: 200
+    timeout: 300
     description: Fetch APYs from Beefy website.
     events:
       - schedule: rate(3 minutes)
   gmxApyAggregator:
     handler: aggregators/apy.gmxApyAggregator
     memorySize: 2048
-    timeout: 200
+    timeout: 300
     description: Fetch GM token APYs from GMX website.
     events:
       - schedule: rate(5 minutes)
   balancerTvlAndApyAggregator:
     handler: aggregators/apy.balancerTvlAndApyAggregator
     memorySize: 2048
-    timeout: 200
+    timeout: 300
     description: Fetch pool APYs from Balancer website.
     events:
       - schedule: rate(5 minutes)
   assetStakingApyAggregator:
     handler: aggregators/apy.assetStakingApyAggregator
     memorySize: 2048
-    timeout: 200
+    timeout: 300
     description: Fetch staking APYs of various assets.
     events:
       - schedule: rate(5 minutes)
   gmOpenInterestAggregator:
     handler: gmOpenInterest/gmOpenInterestAggregator.handler
     memorySize: 2048
-    timeout: 200
+    timeout: 300
     description: fetch Open Interests of GM pool.
     events:
       - schedule: rate(3 hours)
   pendleTvlAndApyAggregator:
     handler: aggregators/apy.pendleTvlAndApyAggregator
     memorySize: 2048
-    timeout: 200
+    timeout: 300
     description: fetch TVLs and APYs of Pendle pools.
     events:
       - schedule: rate(5 minutes)
   wombatApyAggregator:
     handler: aggregators/apy.wombatApyAggregator
     memorySize: 2048
-    timeout: 200
+    timeout: 300
     description: fetch APYs of Wombat pools.
     events:
       - schedule: rate(5 minutes)
