@@ -160,10 +160,10 @@ const arbitrumIncentives = async (rpc = 'first') => {
 
     // save boost APY to DB
     const boostApy = (incentivesPerInterval / incentivesMultiplier) / totalEligibleTvl * 24 * 365;
-    const params = {
-      TableName: "apys-prod",
+    let params = {
+      TableName: "statistics-prod",
       Key: {
-        id: "LTIP_BOOST"
+        id: "LTIP_LOAN"
       },
       AttributeUpdates: {
         arbApy: {
@@ -179,6 +179,35 @@ const arbitrumIncentives = async (rpc = 'first') => {
 
     await dynamoDb.update(params).promise();
     console.log("LTIP boost APY on Arbitrum saved.");
+
+    // save total incentives to DB
+    params = {
+      TableName: "arbitrum-incentives-arb-prod"
+    };
+
+    const incentives = await fetchAllDataFromDB(params, true);
+
+    let accumulatedIncentives = 0;
+
+    incentives.map((item) => {
+      accumulatedIncentives += item.arbCollected ? Number(item.arbCollected) : 0;
+    });
+
+    params = {
+      TableName: "statistics-prod",
+      Key: {
+        id: "LTIP_LOAN"
+      },
+      AttributeUpdates: {
+        totalArb: {
+          Value: Number(accumulatedIncentives) ? accumulatedIncentives : null,
+          Action: "PUT"
+        }
+      }
+    };
+
+    await dynamoDb.update(params).promise();
+    console.log("LTIP Loan total ARB saved.");
 
     // ping healthcheck end point
     await fetch(pingUrl.ltipPA.success);

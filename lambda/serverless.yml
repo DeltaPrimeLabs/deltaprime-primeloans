@@ -31,6 +31,7 @@ provider:
     LOAN_AVA_TABLE: loans-ava-${opt:stage, "dev"}
     LOAN_ARB_TABLE: loans-arb-${opt:stage, "dev"}
     APY_TABLE: apys-${opt:stage, "dev"}
+    STATISTICS_TABLE: statistics-${opt:stage, "dev"}
     GMX_INCENTIVES_RETROACTIVE_AVA_TABLE: gmx-incentives-retroactive-ava
     GMX_INCENTIVES_ARB_TABLE: gmx-incentives-arb-${opt:stage, "dev"}
     ARBITRUM_INCENTIVES_ARB_TABLE: arbitrum-incentives-arb-${opt:stage, "dev"}
@@ -250,15 +251,15 @@ functions:
       - httpApi:
           method: get
           path: /gmx-incentives-new/{id}
-  getArbitrumIncentivesApi:
-    handler: apis/arbitrumIncentives.getArbitrumIncentivesApi
-    memorySize: 2048
-    timeout: 30
-    description: Fetch Arbitrum Grant values for a loan on Arbitrum
-    events:
-      - httpApi:
-          method: get
-          path: /arbitrum-grant
+  # getArbitrumIncentivesApi:
+  #   handler: apis/arbitrumIncentives.getArbitrumIncentivesApi
+  #   memorySize: 2048
+  #   timeout: 30
+  #   description: Fetch Arbitrum Grant values for a loan on Arbitrum
+  #   events:
+  #     - httpApi:
+  #         method: get
+  #         path: /arbitrum-grant
   getLoanArbitrumIncentivesApi:
     handler: apis/arbitrumIncentives.getLoanArbitrumIncentivesApi
     memorySize: 2048
@@ -311,6 +312,15 @@ functions:
       - httpApi:
           method: get
           path: /ltip-pool-boost-apy
+  getLtipPoolTotalIncentivesApi:
+    handler: apis/arbitrumIncentives.getLtipPoolTotalIncentivesApi
+    memorySize: 2048
+    timeout: 30
+    description: Fetch total ARB incentives for LTIP PAs on Arbitrum
+    events:
+      - httpApi:
+          method: get
+          path: /arbitrum-grant-total
   getGmBoostApyApi:
     handler: apis/gmxIncentives.getGmBoostApyApi
     memorySize: 512
@@ -449,6 +459,22 @@ resources:
         StreamSpecification:
           StreamViewType: "NEW_AND_OLD_IMAGES"
         TableName: ${self:provider.environment.APY_TABLE}
+    StatisticsTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: "id"
+            AttributeType: "S"
+        KeySchema:
+          -
+            AttributeName: "id"
+            KeyType: "HASH"
+        BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: "NEW_AND_OLD_IMAGES"
+        TableName: ${self:provider.environment.STATISTICS_TABLE}
     gmOpenInterestTable:
       Type: AWS::DynamoDB::Table
       DeletionPolicy: Retain

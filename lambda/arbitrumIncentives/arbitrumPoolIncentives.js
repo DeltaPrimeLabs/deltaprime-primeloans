@@ -287,9 +287,9 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
       let poolTokenDollarValue = await getPrice(pool, chain);
       const boostApy = (poolEligibleAirdrop / incentivesMultiplier) / (totalDepositorsBalances * poolTokenDollarValue) * 24 * 365;
       const params = {
-        TableName: 'apys-prod',
+        TableName: 'statistics-prod',
         Key: {
-          id: 'LTIP_POOL_BOOST'
+          id: 'LTIP_POOL'
         },
         AttributeUpdates: {
           [pool]: {
@@ -332,6 +332,39 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
         )
       })
     )
+
+    // save total incentives to DB
+    let params = {
+      TableName: 'process.env.ARBITRUM_INCENTIVES_ARB_TABLE'
+    };
+
+    const incentives = await fetchAllDataFromDB(params, true);
+
+    let accumulatedIncentives = 0;
+
+    incentives.map((item) => {
+      accumulatedIncentives += (item.ARB ? Number(item.ARB) : 0) +
+                              (item.BTC ? Number(item.BTC) : 0) +
+                              (item.DAI ? Number(item.DAI) : 0) +
+                              (item.ETH ? Number(item.ETH) : 0) +
+                              (item.USDC ? Number(item.USDC) : 0);
+    });
+
+    params = {
+      TableName: "statistics-prod",
+      Key: {
+        id: "LTIP_POOL"
+      },
+      AttributeUpdates: {
+        totalArb: {
+          Value: Number(accumulatedIncentives) ? accumulatedIncentives : null,
+          Action: "PUT"
+        }
+      }
+    };
+
+    await dynamoDb.update(params).promise();
+    console.log("LTIP Pool total ARB saved.");
 
     await fetch(pingUrl.ltipPool.success);
     console.log('==============calculating success=============');

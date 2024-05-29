@@ -897,24 +897,15 @@ const pendleTvlAndApyAggregator = async (event) => {
     timeout: 60000
   });
 
-  // accept tersm and close modal
-  dialog = await page.$(".MuiDialog-paper");
-
-  checkbox = await dialog.$(".MuiCheckbox-root");
-  await checkbox.click();
-
-  acceptBtn = await dialog.$("button");
-  await acceptBtn.click();
-
-  const poolRows = await page.$$('.MuiAccordion-root');
-  const poolInnerTexts = await Promise.all(Array.from(poolRows).map(async pool => {
-    return (await (await pool.getProperty("textContent")).jsonValue()).toLowerCase();
-  }));
-
   for (const [identifier, poolData] of Object.entries(pendleApyConfig)) {
     try {
-      const rowId = poolInnerTexts.findIndex(innerText => innerText.includes(poolData.key));
-      const pool = poolRows[rowId];
+      await page.goto(`${BASE_URL}/${poolData.marketAddress}`, {
+        waitUntil: "networkidle0",
+        timeout: 60000
+      });
+      await new Promise((resolve, reject) => setTimeout(resolve, 5000));
+
+      const pool = await page.$('.MuiAccordion-root.Mui-expanded');
       const poolColumns = await pool.$$("div.MuiAccordionSummary-root > div.MuiAccordionSummary-content > div > div >div");
 
       const poolApy = parseFloat((await (await poolColumns[1].getProperty("textContent")).jsonValue()).split('%')[0].trim());
