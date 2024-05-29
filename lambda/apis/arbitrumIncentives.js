@@ -90,7 +90,7 @@ const getLoanArbitrumIncentivesLeaderboardApi = async (event, context, callback)
   try {
     const top = Number(event.queryStringParameters.top) || 200;
     const from = Number(event.queryStringParameters.from);
-    const to = Number(event.queryStringParameters.to);
+    const to = Number(event.queryStringParameters.to) || Math.floor(Date.now() / 1000);
 
     let params = {
       TableName: process.env.LOAN_ARB_TABLE
@@ -254,7 +254,7 @@ const getPoolArbitrumIncentivesLeaderboardApi = async (event, context, callback)
   try {
     const top = Number(event.queryStringParameters.top) || 200;
     const from = Number(event.queryStringParameters.from);
-    const to = Number(event.queryStringParameters.to);
+    const to = Number(event.queryStringParameters.to) || Math.floor(Date.now() / 1000);
 
     poolsDepositors = await getDepositorsAddressesFromSubgraph();
 
