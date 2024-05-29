@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: bdee015765a0dd3731205df659aae576d57dd473;
+// Last deployed from commit: ec6e7a0ed7ef3d10f4007e7ebad336dc88392717;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -14,7 +14,6 @@ import "../../OnlyOwnerOrInsolvent.sol";
 import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
 import "../../interfaces/IWrappedNativeToken.sol";
 
-// TODO: Check STATUS (tokenManager) of Vault tokens before allowing to stake
 //This path is updated during deployment
 import "../../lib/local/DeploymentConstants.sol";
 
@@ -55,7 +54,7 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
         * @dev This function uses the redstone-evm-connector
         * @param amount amount of AVAX to be staked
     **/
-    function stakeAVAXYak(uint256 amount) public onlyOwner nonReentrant recalculateAssetsExposure remainsSolvent {
+    function stakeAVAXYak(uint256 amount) public onlyOwner nonReentrant remainsSolvent {
         require(amount > 0, "Cannot stake 0 tokens");
         amount = Math.min(IWrappedNativeToken(AVAX_TOKEN).balanceOf(address(this)), amount);
         IERC20Metadata yrtToken = IERC20Metadata(YY_AAVE_AVAX);
@@ -64,14 +63,18 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
         IWrappedNativeToken(AVAX_TOKEN).withdraw(amount);
         IYieldYak(YY_AAVE_AVAX).deposit{value: amount}();
 
-        DiamondStorageLib.addOwnedAsset("YY_AAVE_AVAX", YY_AAVE_AVAX);
+        uint256 yrtTokenReceived = yrtToken.balanceOf(address(this)) - initialYRTBalance;
+
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        _decreaseExposure(tokenManager, AVAX_TOKEN, amount);
+        _increaseExposure(tokenManager, YY_AAVE_AVAX, yrtTokenReceived);
 
         emit Staked(
             msg.sender,
             "AVAX",
             YY_AAVE_AVAX,
             amount,
-            yrtToken.balanceOf(address(this)) - initialYRTBalance,
+            yrtTokenReceived,
             block.timestamp
         );
     }
@@ -194,7 +197,7 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
         * @dev This function uses the redstone-evm-connector
         * @param amount amount of AVAX to be unstaked
     **/
-    function unstakeAVAXYak(uint256 amount) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure {
+    function unstakeAVAXYak(uint256 amount) public onlyOwnerOrInsolvent nonReentrant {
         IYieldYak yakStakingContract = IYieldYak(YY_AAVE_AVAX);
         uint256 initialDepositTokenBalance = address(this).balance;
 
@@ -202,23 +205,21 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
 
         yakStakingContract.withdraw(amount);
 
-        if(yakStakingContract.balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset("YY_AAVE_AVAX");
-        }
-
         uint256 depositTokenBalanceAfterWithdrawal = address(this).balance;
 
         IWrappedNativeToken(AVAX_TOKEN).deposit{value: address(this).balance}();
 
-        if(IERC20(AVAX_TOKEN).balanceOf(address(this)) > 0) {
-            DiamondStorageLib.addOwnedAsset("AVAX", AVAX_TOKEN);
-        }
+        uint256 avaxTokenReceived = depositTokenBalanceAfterWithdrawal - initialDepositTokenBalance;
+
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        _increaseExposure(tokenManager, AVAX_TOKEN, avaxTokenReceived);
+        _decreaseExposure(tokenManager, YY_AAVE_AVAX, amount);
 
         emit Unstaked(
             msg.sender,
             "AVAX",
             YY_AAVE_AVAX,
-            depositTokenBalanceAfterWithdrawal - initialDepositTokenBalance,
+            avaxTokenReceived,
             amount,
             block.timestamp
         );
@@ -336,7 +337,7 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
       * @dev This function uses the redstone-evm-connector
       * @param stakingDetails IYieldYak.YYStakingDetails staking details
     **/
-    function _stakeTokenYY(IYieldYak.YYStakingDetails memory stakingDetails) private recalculateAssetsExposure {
+    function _stakeTokenYY(IYieldYak.YYStakingDetails memory stakingDetails) private {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         IERC20Metadata yrtToken = IERC20Metadata(stakingDetails.vaultAddress);
         uint256 initialYRTBalance = yrtToken.balanceOf(address(this));
@@ -351,18 +352,16 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
         stakingDetails.tokenAddress.safeApprove(stakingDetails.vaultAddress, stakingDetails.amount);
         IYieldYak(stakingDetails.vaultAddress).deposit(stakingDetails.amount);
 
-        // Add/remove owned tokens
-        DiamondStorageLib.addOwnedAsset(stakingDetails.vaultTokenSymbol, stakingDetails.vaultAddress);
-        if(IERC20(stakingDetails.tokenAddress).balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset(stakingDetails.tokenSymbol);
-        }
+        uint256 yrtTokenReceived = yrtToken.balanceOf(address(this)) - initialYRTBalance;
+        _increaseExposure(tokenManager, stakingDetails.vaultAddress, yrtTokenReceived);
+        _decreaseExposure(tokenManager, stakingDetails.tokenAddress, stakingDetails.amount);
 
         emit Staked(
             msg.sender,
             stakingDetails.tokenSymbol,
             stakingDetails.vaultAddress,
             stakingDetails.amount,
-            yrtToken.balanceOf(address(this)) - initialYRTBalance,
+            yrtTokenReceived,
             block.timestamp);
     }
 
@@ -371,7 +370,7 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
       * @dev This function uses the redstone-evm-connector
       * @param stakingDetails IYieldYak.YYStakingDetails staking details
     **/
-    function _unstakeTokenYY(IYieldYak.YYStakingDetails memory stakingDetails) private recalculateAssetsExposure {
+    function _unstakeTokenYY(IYieldYak.YYStakingDetails memory stakingDetails) private {
         IYieldYak vaultContract = IYieldYak(stakingDetails.vaultAddress);
         IERC20Metadata depositToken = IERC20Metadata(stakingDetails.tokenAddress);
         uint256 initialDepositTokenBalance = depositToken.balanceOf(address(this));
@@ -379,11 +378,10 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
 
         vaultContract.withdraw(stakingDetails.amount);
 
-        // Add/remove owned tokens
-        DiamondStorageLib.addOwnedAsset(stakingDetails.tokenSymbol, stakingDetails.tokenAddress);
-        if(vaultContract.balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset(stakingDetails.vaultTokenSymbol);
-        }
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        uint256 depositTokenReceived = depositToken.balanceOf(address(this)) - initialDepositTokenBalance;
+        _increaseExposure(tokenManager, stakingDetails.tokenAddress, depositTokenReceived);
+        _decreaseExposure(tokenManager, stakingDetails.vaultAddress, stakingDetails.amount);
 
         emit Unstaked(
             msg.sender,

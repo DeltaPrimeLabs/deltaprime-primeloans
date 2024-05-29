@@ -183,7 +183,6 @@ export default {
 
     setupWalletAssetBalances() {
       this.walletAssetBalancesService.observeWalletAssetBalances().subscribe(balances => {
-        console.log(balances);
         this.walletAssetBalances = balances;
       });
     },

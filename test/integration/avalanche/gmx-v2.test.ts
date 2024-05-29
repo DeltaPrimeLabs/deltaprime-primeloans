@@ -31,6 +31,7 @@ import {
     toBytes32,
     toWei,
     paraSwapRouteToSimpleData,
+    getContractSelectors
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
@@ -48,6 +49,7 @@ import TOKEN_ADDRESSES from '../../../common/addresses/avax/token_addresses.json
 chai.use(solidity);
 
 const {deployContract, provider} = waffle;
+
 
 describe('Smart loan', () => {
     before("Synchronize blockchain time", async () => {
@@ -131,6 +133,8 @@ describe('Smart loan', () => {
                 []
             ) as MockTokenManager;
 
+            getContractSelectors(tokenManager);
+
             await tokenManager.connect(owner).initialize(supportedAssets, lendingPools);
             await tokenManager.connect(owner).setFactoryAddress(smartLoansFactory.address);
 
@@ -153,7 +157,7 @@ describe('Smart loan', () => {
                 'lib',
                 5000,
                 "1.042e18",
-                100,
+                200,
                 "AVAX",
                 "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7"
             );

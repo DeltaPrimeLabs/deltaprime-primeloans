@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: dcb19937650464dc2dd61f4775a367c64670c3ac;
+// Last deployed from commit: 163cb6d95659cf59c2c6c38001dc26adb791e5bc;
 pragma solidity 0.8.17;
 
 import "./lib/Bytes32EnumerableMap.sol";
 import "./interfaces/IBorrowersRegistry.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "./lib/local/DeploymentConstants.sol";
 
 contract TokenManager is OwnableUpgradeable {
     /**
@@ -52,6 +53,9 @@ contract TokenManager is OwnableUpgradeable {
 
     mapping(bytes32 => bytes32) public identifierToExposureGroup;
     mapping(bytes32 => Exposure) public groupToExposure;
+
+    mapping(address => mapping(bytes32 => uint256)) public pendingUserExposure;
+    mapping(bytes32 => uint256) public pendingProtocolExposure;
 
     function initialize(Asset[] memory tokenAssets, poolAsset[] memory poolAssets) external initializer {
         __Ownable_init();
@@ -265,8 +269,38 @@ contract TokenManager is OwnableUpgradeable {
         debtCoverageStaked[stakedAsset] = coverage;
     }
 
+    function isExposureAvailable(bytes32 assetIdentifier) internal view returns(bool) {
+        bytes32 group = identifierToExposureGroup[assetIdentifier];
+        if(group != ""){
+            Exposure memory exposure = groupToExposure[group];
+            if(exposure.max != 0){
+                if(exposure.max <= exposure.current + pendingProtocolExposure[assetIdentifier]) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    function increasePendingExposure(bytes32 assetIdentifier, address user, uint256 amount) public onlyPrimeAccountOrOwner {
+        require(pendingUserExposure[user][assetIdentifier] == 0, "Pending Tx");
+
+        pendingUserExposure[user][assetIdentifier] += amount;
+        pendingProtocolExposure[assetIdentifier] += amount;
+        
+        require(isExposureAvailable(assetIdentifier), "Lack of Exposure");
+    }
+
+    function setPendingExposureToZero(bytes32 assetIdentifier, address user) public onlyPrimeAccountOrOwner {
+        uint256 pending = pendingUserExposure[user][assetIdentifier];
+        if(pending > 0) {
+            pendingProtocolExposure[assetIdentifier] -= pending;
+            pendingUserExposure[user][assetIdentifier] = 0;
+        }
+    }
+
     function getSmartLoansFactoryAddress() public view virtual returns (address) {
-        return 0x3Ea9D480295A73fd2aF95b4D96c2afF88b21B03D;
+        return DeploymentConstants.getSmartLoansFactoryAddress();
     }
 
     /* ========== OVERRIDDEN FUNCTIONS ========== */

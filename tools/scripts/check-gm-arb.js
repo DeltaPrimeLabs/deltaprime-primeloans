@@ -16,7 +16,7 @@ let collectedTotal = 0;
 async function run() {
     let loans = await factory.getAllLoans();
 
-    let resps = await Promise.all(loans.map(loan => fetch("https://cavsise1n4.execute-api.us-east-1.amazonaws.com/gmx-incentives/${loan}?network=arbitrum")))
+    let resps = await Promise.all(loans.map(loan => fetch("https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/gmx-incentives/${loan}?network=arbitrum")))
     let jsons = await Promise.all(resps.map(json => json.json()))
 
     let collectedArb;

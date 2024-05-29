@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: d5641d2d8be5d188d6e4f4f272ae32174783f6a1;
+// Last deployed from commit: e431e50ac1cb32ed6fa23d9302056e3e06924d8b;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "../interfaces/IWrappedNativeToken.sol";
-import "../lib/SolvencyMethods.sol";
+import "../OnlyOwnerOrInsolvent.sol";
 
 //This path is updated during deployment
 import "../lib/local/DeploymentConstants.sol";
 
-contract SmartLoanWrappedNativeTokenFacet is SolvencyMethods {
+contract SmartLoanWrappedNativeTokenFacet is OnlyOwnerOrInsolvent {
     using TransferHelper for address payable;
 
-    function wrapNativeToken(uint256 amount) onlyOwner public {
+    function wrapNativeToken(uint256 amount) onlyOwnerOrInsolvent public {
         require(amount <= address(this).balance, "Not enough native token to wrap");
         IWrappedNativeToken wrapped = IWrappedNativeToken(DeploymentConstants.getNativeToken());
         wrapped.deposit{value : amount}();

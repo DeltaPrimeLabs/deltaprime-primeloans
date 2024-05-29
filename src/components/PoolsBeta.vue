@@ -176,7 +176,6 @@ export default {
           }
         )
       ).subscribe(walletAssetBalances => {
-        console.log(walletAssetBalances);
         walletAssetBalances.forEach((balance, index) => {
           depositAssetsWalletBalances[pools[index].asset.symbol] = balance;
         });
@@ -218,7 +217,7 @@ export default {
                 sortable: false,
                 class: 'apy',
                 id: 'APY',
-                tooltip: `Deposit interest coming from borrowers + Liquidity Mining Program.<br><a href='https://medium.com/@Delta_Prime/relaunching-deltaprime-on-arbitrum-ac43bdd91ed5' target='_blank'>More information</a>.`
+                tooltip: `Deposit interest coming from borrowers<br><a href='https://medium.com/@Delta_Prime/relaunching-deltaprime-on-arbitrum-ac43bdd91ed5' target='_blank'>More information</a>.`
               },
               {
                 label: 'Pool size',
@@ -283,7 +282,7 @@ export default {
                 sortable: false,
                 class: 'apy',
                 id: 'APY',
-                tooltip: `Deposit interest coming from borrowers + Liquidity Mining Program.<br><a href='https://medium.com/@Delta_Prime/two-days-until-deltaprimes-first-liquidity-mining-program-b17f12fbb23b' target='_blank'>More information</a>.`
+                tooltip: `Deposit interest coming from borrowers<br><a href='https://medium.com/@Delta_Prime/two-days-until-deltaprimes-first-liquidity-mining-program-b17f12fbb23b' target='_blank'>More information</a>.`
               },
               {
                 label: 'Pool size',

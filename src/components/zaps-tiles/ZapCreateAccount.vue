@@ -17,7 +17,7 @@
 import {mapActions, mapState} from 'vuex';
 import config from '../../config';
 import erc20ABI from '../../../test/abis/ERC20.json';
-import {combineLatest} from 'rxjs';
+import {combineLatest, combineLatestWith, from, map} from 'rxjs';
 import ZapTile from "./ZapTile.vue";
 import CreateAccountModal from "../CreateAccountModal.vue";
 
@@ -28,13 +28,11 @@ export default {
   name: 'ZapCreateAccount',
   components: {ZapTile},
   data() {
-    return {
-    };
+    return {};
   },
 
   computed: {
-    ...mapState('fundsStore', [
-    ]),
+    ...mapState('fundsStore', []),
     ...mapState('network', ['provider', 'account', 'accountBalance']),
     ...mapState('serviceRegistry', [
       'progressBarService'
@@ -50,25 +48,28 @@ export default {
           'swap',
           'fund',
           'borrow',
+          'createAndFundLoan',
         ]),
+    ...mapActions('network', ['updateBalance']),
 
     async onTileClick() {
       const modalInstance = this.openModal(CreateAccountModal);
 
-      modalInstance.walletBalances = this.getWalletBalances();
+      this.getWalletBalances().subscribe(balances => {
+        modalInstance.setTokenBalances(balances)
+      })
       modalInstance.assets = Object.keys(config.ASSETS_CONFIG).filter(el => !el.inactive);
-      modalInstance.asset = config.ASSETS_CONFIG[config.nativeToken];
+      modalInstance.selectedAsset = config.ASSETS_CONFIG[config.nativeToken];
 
       this.$forceUpdate();
 
       modalInstance.$on('ZAP_CREATE_ACCOUNT_EVENT', async createAccountEvent => {
         const fundRequest = {
           value: createAccountEvent.value,
-          asset: createAccountEvent.token,
-          assetDecimals: config.ASSETS_CONFIG[createAccountEvent.token].decimals,
-          type: 'ASSET',
+          asset: createAccountEvent.asset,
+          isLP: false,
         };
-        this.handleTransaction(this.fund, {fundRequest: fundRequest}, () => {
+        this.handleTransaction(this.createAndFundLoan, fundRequest, () => {
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
@@ -77,21 +78,42 @@ export default {
       });
     },
 
+    handleTransactionError(error) {
+      if (error.code === 4001 || error.code === -32603) {
+        this.progressBarService.emitProgressBarCancelledState();
+      } else {
+        this.progressBarService.emitProgressBarErrorState();
+      }
+      this.closeModal();
+    },
+
     getWalletBalances() {
       const tokens = Object.values(config.ASSETS_CONFIG).map(asset => asset.symbol);
 
-      return combineLatest(
-          tokens.map(token => {
-                const contract = new ethers.Contract(config.ASSETS_CONFIG[token].address, erc20ABI, this.provider.getSigner());
-                return this.getWalletTokenBalance(
-                    this.account,
-                    token,
-                    contract,
-                    config.ASSETS_CONFIG[token].decimals
-                );
+      return combineLatest(tokens.map(token => {
+            const contract = new ethers.Contract(config.ASSETS_CONFIG[token].address, erc20ABI, this.provider.getSigner());
+            return this.getWalletTokenBalance(
+                this.account,
+                token,
+                contract,
+                config.ASSETS_CONFIG[token].decimals
+            );
+          }
+      )).pipe(combineLatestWith(from(this.updateBalance()).pipe(map(() => this.accountBalance))))
+          .pipe(map(([balances, nativeTokenBalance]) => {
+                const balancesObject = balances.reduce((acc, current, index) => {
+                  const tokenSymbol = tokens[index]
+                  if (tokenSymbol === config.NATIVE_ASSET_TOGGLE_OPTIONS[0]) {
+                    acc[config.NATIVE_ASSET_TOGGLE_OPTIONS[1]] = current
+                  } else {
+                    acc[tokenSymbol] = current
+                  }
+                  return acc
+                }, {})
+                balancesObject[config.NATIVE_ASSET_TOGGLE_OPTIONS[0]] = nativeTokenBalance
+                return balancesObject
               }
-          )
-      );
+          ))
     },
   }
 };

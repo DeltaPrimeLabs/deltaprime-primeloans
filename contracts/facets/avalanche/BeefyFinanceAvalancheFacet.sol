@@ -34,7 +34,7 @@ contract BeefyFinanceAvalancheFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolve
       * @dev This function uses the redstone-evm-connector
       * @param amount amount of PNG_AVAX_USDC_LP to be staked
     **/
-    function stakePngUsdcAvaxLpBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure remainsSolvent {
+    function stakePngUsdcAvaxLpBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant remainsSolvent {
         _stakeLpBeefy(IBeefyFinance.BeefyStakingDetails({
             lpTokenAddress: PNG_AVAX_USDC_LP,
             vaultAddress: MOO_PNG_AVAX_USDC_LP,
@@ -49,7 +49,7 @@ contract BeefyFinanceAvalancheFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolve
       * @dev This function uses the redstone-evm-connector
       * @param amount amount of PNG_AVAX_USDCe_LP to be staked
     **/
-    function stakePngUsdceAvaxLpBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure remainsSolvent {
+    function stakePngUsdceAvaxLpBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant remainsSolvent {
         _stakeLpBeefy(IBeefyFinance.BeefyStakingDetails({
         lpTokenAddress: PNG_AVAX_USDCe_LP,
         vaultAddress: MOO_PNG_AVAX_USDCe_LP,
@@ -64,7 +64,7 @@ contract BeefyFinanceAvalancheFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolve
       * @dev This function uses the redstone-evm-connector
       * @param amount amount of TJ_AVAX_USDC_LP to be staked
     **/
-    function stakeTjUsdcAvaxLpBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure remainsSolvent {
+    function stakeTjUsdcAvaxLpBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant remainsSolvent {
         _stakeLpBeefy(IBeefyFinance.BeefyStakingDetails({
         lpTokenAddress: TJ_AVAX_USDC_LP,
         vaultAddress: MOO_TJ_AVAX_USDC_LP,
@@ -81,7 +81,7 @@ contract BeefyFinanceAvalancheFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolve
       * @dev This function uses the redstone-evm-connector
       * @param amount amount of PNG_AVAX_USDC_LP to be unstaked
     **/
-    function unstakePngUsdcAvaxLpBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure {
+    function unstakePngUsdcAvaxLpBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant {
         _unstakeLpBeefy(IBeefyFinance.BeefyStakingDetails({
         lpTokenAddress: PNG_AVAX_USDC_LP,
         vaultAddress: MOO_PNG_AVAX_USDC_LP,
@@ -96,7 +96,7 @@ contract BeefyFinanceAvalancheFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolve
       * @dev This function uses the redstone-evm-connector
       * @param amount amount of PNG_AVAX_USDCe_LP to be unstaked
     **/
-    function unstakePngUsdceAvaxLpBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure {
+    function unstakePngUsdceAvaxLpBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant {
         _unstakeLpBeefy(IBeefyFinance.BeefyStakingDetails({
         lpTokenAddress: PNG_AVAX_USDCe_LP,
         vaultAddress: MOO_PNG_AVAX_USDCe_LP,
@@ -111,7 +111,7 @@ contract BeefyFinanceAvalancheFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolve
       * @dev This function uses the redstone-evm-connector
       * @param amount amount of TJ_AVAX_USDC_LP to be unstaked
     **/
-    function unstakeTjUsdcAvaxLpBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant recalculateAssetsExposure {
+    function unstakeTjUsdcAvaxLpBeefy(uint256 amount) public onlyOwnerOrInsolvent nonReentrant {
         _unstakeLpBeefy(IBeefyFinance.BeefyStakingDetails({
         lpTokenAddress: TJ_AVAX_USDC_LP,
         vaultAddress: MOO_TJ_AVAX_USDC_LP,
@@ -142,16 +142,12 @@ contract BeefyFinanceAvalancheFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolve
         stakingDetails.lpTokenAddress.safeApprove(stakingDetails.vaultAddress, stakingDetails.amount);
 
         IBeefyFinance vaultContract = IBeefyFinance(stakingDetails.vaultAddress);
+        uint256 initialVaultToken = vaultContract.balanceOf(address(this));
 
         vaultContract.deposit(stakingDetails.amount);
 
-        // Add/remove owned tokens
-        if(vaultContract.balanceOf(address(this)) > 0) {
-            DiamondStorageLib.addOwnedAsset(stakingDetails.vaultTokenSymbol, stakingDetails.vaultAddress);
-        }
-        if(IERC20(stakingDetails.lpTokenAddress).balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset(stakingDetails.lpTokenSymbol);
-        }
+        _increaseExposure(tokenManager, stakingDetails.vaultAddress, vaultContract.balanceOf(address(this)) - initialVaultToken);
+        _decreaseExposure(tokenManager, stakingDetails.lpTokenAddress, stakingDetails.amount);
 
         emit Staked(msg.sender, stakingDetails.lpTokenSymbol, stakingDetails.vaultAddress, stakingDetails.amount, block.timestamp);
     }
@@ -164,18 +160,15 @@ contract BeefyFinanceAvalancheFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolve
     function _unstakeLpBeefy(IBeefyFinance.BeefyStakingDetails memory stakingDetails) private {
         IBeefyFinance vaultContract = IBeefyFinance(stakingDetails.vaultAddress);
         uint256 initialStakedBalance = vaultContract.balanceOf(address(this));
+        uint256 initialLpBalance = IERC20(stakingDetails.lpTokenAddress).balanceOf(address(this));
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         require(initialStakedBalance >= stakingDetails.amount, "Cannot unstake more than was initially staked");
 
         vaultContract.withdraw(stakingDetails.amount);
 
-        // Add/remove owned tokens
-        if(IERC20(stakingDetails.lpTokenAddress).balanceOf(address(this)) > 0) {
-            DiamondStorageLib.addOwnedAsset(stakingDetails.lpTokenSymbol, stakingDetails.lpTokenAddress);
-        }
-        if(vaultContract.balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset(stakingDetails.vaultTokenSymbol);
-        }
+        _decreaseExposure(tokenManager, stakingDetails.vaultAddress, stakingDetails.amount);
+        _increaseExposure(tokenManager, stakingDetails.lpTokenAddress, IERC20(stakingDetails.lpTokenAddress).balanceOf(address(this)) - initialLpBalance);
 
         emit Unstaked(msg.sender, stakingDetails.lpTokenSymbol, stakingDetails.vaultAddress, stakingDetails.amount, block.timestamp);
     }

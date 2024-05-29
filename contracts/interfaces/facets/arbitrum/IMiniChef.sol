@@ -1,6 +1,6 @@
 pragma solidity ^0.8.17;
 
-import "./IRewarder.sol";
+import "../../joe-v2/IRewarder.sol";
 
 interface IMiniChef {
     struct UserInfo {

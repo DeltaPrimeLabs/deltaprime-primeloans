@@ -2,7 +2,7 @@
 // Last deployed from commit: ;
 pragma solidity 0.8.17;
 
-import "./IRewarder.sol";
+import "../../joe-v2/IRewarder.sol";
 
 interface ILevelFinance {
     struct UserInfo {

@@ -5,11 +5,11 @@ import "../TraderJoeV2Facet.sol";
 
 contract TraderJoeV2ArbitrumFacet is TraderJoeV2Facet {
     function maxBinsPerPrimeAccount() public pure override returns (uint256) {
-        return 0;
+        return 1600;
     }
 
     function getWhitelistedTraderJoeV2Pairs() internal pure override returns (ILBPair[] memory pools) {
-        pools = new ILBPair[](11);
+        pools = new ILBPair[](12);
         // TJLB_DAI_USDCe
         pools[0] = ILBPair(0x500173F418137090dad96421811147b63b448A0f);
         // TJLB_ETH_USDT
@@ -32,5 +32,7 @@ contract TraderJoeV2ArbitrumFacet is TraderJoeV2Facet {
         pools[9] = ILBPair(0x69f1216cB2905bf0852f74624D5Fa7b5FC4dA710);
         // TJLB_GRAIL_ETH
         pools[10] = ILBPair(0x461761f2848EC6B9Fb3D3fb031e112c7d5b89563);
+        // TJLB_MAGIC_ETH
+        pools[11] = ILBPair(0xE847C55a3148580E864EC31E7273bc4eC25089c1);
     }
 }

@@ -1,8 +1,16 @@
 <template>
   <div class="lp-table-row-component" :class="{'expanded': rowExpanded}">
-    <div class="table__row" v-if="lpToken">
+    <div class="table__row" v-if="lpToken" :class="{'inactive': lpToken.inactive}">
       <div class="table__cell asset">
         <DoubleAssetIcon :primary="lpToken.primary" :secondary="lpToken.secondary"></DoubleAssetIcon>
+        <img style="margin-left: 5px"
+             v-if="lpToken.droppingSupport && lpBalances[lpToken.symbol] > 0"
+             src="src/assets/icons/warning.svg"
+             v-tooltip="{content: `We will drop support to this asset on 26.04.2024 12:00 CET. Please withdraw or swap to another token.`, classes: 'info-tooltip long'}">
+        <img style="margin-left: 5px"
+             v-if="lpToken.inactive && lpBalances[lpToken.symbol] > 0"
+             src="src/assets/icons/warning.svg"
+             v-tooltip="{content: `We dropped support to this asset. Please withdraw to your wallet.`, classes: 'info-tooltip long'}">
         <div class="asset__info">
           <div class="asset__name">{{ lpToken.primary }} - {{ lpToken.secondary }}</div>
           <div class="asset__dex">
@@ -174,11 +182,16 @@ export default {
       'debtsPerAsset',
       'lpAssets',
       'concentratedLpAssets',
+      'concentratedLpBalances',
       'traderJoeV2LpAssets',
       'levelLpAssets',
       'levelLpBalances',
       'balancerLpAssets',
       'balancerLpBalances',
+      'gmxV2Assets',
+      'gmxV2Balances',
+      'penpieLpBalances',
+      'penpieLpAssets',
       'noSmartLoan'
     ]),
     ...mapState('stakeStore', ['farms']),
@@ -244,15 +257,17 @@ export default {
           {
             iconSrc: 'src/assets/icons/plus.svg',
             tooltip: 'Add',
+            disabled: this.lpToken.inactive,
             menuOptions: [
               {
                 key: 'ADD_FROM_WALLET',
-                name: 'Import existing LP position'
+                name: 'Import existing LP position',
+                disabled: this.lpToken.inactive,
               },
               {
                 key: 'PROVIDE_LIQUIDITY',
                 name: 'Create LP position',
-                disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
+                disabled: !this.hasSmartLoanContract || !this.lpTokenBalances || this.lpToken.inactive,
                 disabledInfo: 'To create LP token, you need to add some funds from you wallet first'
               }
             ]
@@ -273,7 +288,7 @@ export default {
               {
                 key: 'REMOVE_LIQUIDITY',
                 name: 'Remove LP position',
-                disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
+                disabled: !this.hasSmartLoanContract || !this.lpTokenBalances || this.lpToken.inactive,
               }
             ]
           }
@@ -327,6 +342,10 @@ export default {
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.balancerLpBalances = this.balancerLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
+      modalInstance.gmxV2Assets = this.gmxV2Assets;
+      modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.loan = this.debt;
@@ -367,6 +386,10 @@ export default {
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.balancerLpBalances = this.balancerLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
+      modalInstance.gmxV2Assets = this.gmxV2Assets;
+      modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.farms = this.farms;
       modalInstance.health = this.health;
@@ -376,6 +399,8 @@ export default {
           value: withdrawEvent.value.toString(),
           asset: this.lpToken.symbol,
           assetDecimals: config.LP_ASSETS_CONFIG[this.lpToken.symbol].decimals,
+          assetInactive: this.lpToken.inactive,
+          assetAddress: this.lpToken.address,
           type: 'LP',
         };
         this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
@@ -393,7 +418,9 @@ export default {
       modalInstance.lpTokenBalance = Number(this.lpBalances[this.lpToken.symbol]);
       modalInstance.firstAssetBalance = this.assetBalances[this.lpToken.primary];
       modalInstance.secondAssetBalance = this.assetBalances[this.lpToken.secondary];
+      modalInstance.areAmountsLinked = true;
       modalInstance.$on('PROVIDE_LIQUIDITY', provideLiquidityEvent => {
+        console.log(provideLiquidityEvent);
         if (this.smartLoanContract) {
           const provideLiquidityRequest = {
             symbol: this.lpToken.symbol,
@@ -595,6 +622,13 @@ export default {
     border-image-source: var(--asset-table-row__border);
     border-image-slice: 1;
     padding-left: 6px;
+
+
+    &.inactive {
+      .table__cell {
+        color: var(--asset-table-row__double-value-color);
+      }
+    }
 
     .table__cell {
       display: flex;

@@ -11,6 +11,10 @@
           <div class="protocol__details">
             <div class="asset-name">
               {{ asset.name }}
+              <img style="margin-left: 5px"
+                   v-if="farm.droppingSupport && underlyingTokenStaked > 0"
+                   src="src/assets/icons/warning.svg"
+                   v-tooltip="{content: `We will drop support to this asset on ${ farm.debtCoverage > 0.1 ? '26.04.2024 12:00 CET' : 'Monday 22.04.2024 16:00 CET'}. Please withdraw or swap to another token.`, classes: 'info-tooltip long'}">
               <InfoIcon
                 class="info__icon"
                 v-if="farm.info"
@@ -174,6 +178,8 @@ export default {
       'traderJoeV2LpAssets',
       'levelLpAssets',
       'levelLpBalances',
+      'penpieLpBalances',
+      'penpieLpAssets',
       'noSmartLoan'
     ]),
     ...mapState('serviceRegistry', [
@@ -182,7 +188,8 @@ export default {
       'dataRefreshEventService',
       'progressBarService',
       'farmService',
-      'healthService'
+      'healthService',
+      'deprecatedAssetsService'
     ]),
     protocol() {
       return config.PROTOCOLS_CONFIG[this.farm.protocol];
@@ -215,6 +222,7 @@ export default {
     },
 
     async openAddFromWalletModal() {
+      console.log('asdasdasdax', this.farm);
       const modalInstance = this.openModal(AddFromWalletModal);
       modalInstance.asset = this.farm;
       modalInstance.assetBalance = this.balance ? this.balance : 0;
@@ -224,6 +232,8 @@ export default {
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
@@ -270,6 +280,8 @@ export default {
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
       modalInstance.levelLpBalances = this.levelLpBalances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.loan = this.debt;
@@ -396,11 +408,16 @@ export default {
     watchFarmRefreshEvent() {
       this.farmService.observeRefreshFarm().subscribe(async () => {
         // receipt token staked
+        console.log('// receipt token staked', this.farm);
         this.balance = this.farm.totalBalance;
         // normal token staked
         this.underlyingTokenStaked = this.farm.totalStaked;
         this.rewards = this.farm.rewards;
         this.setApy();
+        if (this.farm.totalStaked > 0 && this.farm.droppingSupport) {
+          console.warn('has deprecated farms');
+          this.deprecatedAssetsService.emitHasDeprecatedAssets();
+        }
       });
     },
 
@@ -473,12 +490,11 @@ export default {
       this.addActionsConfig =   {
         iconSrc: 'src/assets/icons/plus.svg',
         tooltip: 'Add',
+        disabled: this.farm.inactive,
         menuOptions: [
           {
             key: 'ADD_FROM_WALLET',
             name: 'Add from wallet',
-            disabled: !this.farm.feedSymbol,
-            disabledInfo: 'Coming soon'
           },
           {
             key: 'STAKE',
@@ -501,6 +517,7 @@ export default {
           {
             key: 'UNSTAKE',
             name: 'Withdraw to assets',
+            disabled: this.farm.inactive
           },
         ]
       }

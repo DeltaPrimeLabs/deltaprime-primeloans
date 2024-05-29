@@ -22,7 +22,6 @@ export function transactionUrl(tx) {
 export const wrapContract = async function wrapContract(contract, assets) {
   //for more symbols in data feed it's more optimal to not specify asset list
   const providedAssets = (assets && assets.length <= 5) ? assets : undefined;
-
   return WrapperBuilder.wrap(contract).usingDataService(
     {
       dataServiceId: config.dataProviderId,
@@ -139,7 +138,9 @@ export async function calculateGmxV2ExecutionFee(
   gasPrice *= (1 + gmxV2GasPriceBuffer);
   gasPrice += gmxV2GasPricePremium;
 
-  return adjustedGasLimit * gasPrice / 10**18;
+  const deltaPrimeMultiplicator = 1.1;
+
+  return deltaPrimeMultiplicator * adjustedGasLimit * gasPrice / 10**18;
 }
 
 export async function handleCall(fun, args, onSuccess, onFail) {
@@ -209,7 +210,7 @@ export async function signMessage(provider, message, wallet, depositor = false) 
 
   if (!result || !result.ok || result.status === 0) throw Error;
 
-  return true;
+  return signedMessage;
 }
 
 export function decodeOutput(abi, functionName, returnData, comment = '') {

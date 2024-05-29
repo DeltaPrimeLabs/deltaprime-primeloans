@@ -1,6 +1,13 @@
 <template>
   <div class="lp-tab">
-    <div class="lp-tokens" v-if="Object.keys(gmxV2LpTokens).length">
+    <div class="lp-tokens" v-if="Object.keys(penpieLpTokens).length">
+      <div class="lp-table">
+        <TableHeader :config="penpieLpTableHeaderConfig"></TableHeader>
+        <PenpieLpTableRow v-for="(lpToken, index) in penpieLpTokens" v-bind:key="index" :index="index"
+                          :lp-token="lpToken" :lp-tokens="penpieLpTokens"></PenpieLpTableRow>
+      </div>
+    </div>
+    <div class="lp-tokens" v-if="isAvalanche && Object.keys(gmxV2LpTokens).length">
       <div class="lp-table" v-if="gmxV2LpTokens && hasGmIncentives">
         <div class="incentives-program-title">GM Incentives Program</div>
         <TableHeader :config="gmIncentivesTableHeaderConfig"></TableHeader>
@@ -39,10 +46,11 @@
                          :lp-token="lpToken"></LevelLpTableRow>
       </div>
     </div>
-    <div class="lp-tokens" v-if="Object.keys(concentratedLpTokens).length">
+    <div class="lp-tokens" v-if="Object.keys(concentratedLpTokens).length && concentratedLpBalances && Object.values(concentratedLpBalances).some(val => val > 0)">
       <div class="lp-table">
         <TableHeader :config="concentratedLpTableHeaderConfig"></TableHeader>
-        <ConcentratedLpTableRow v-for="(lpToken, index) in concentratedLpTokens" v-bind:key="index" :lp-token="lpToken">
+        <ConcentratedLpTableRow v-for="(lpToken, index) in concentratedLpTokens"
+                                v-if="!lpToken.inactive || concentratedLpBalances[lpToken.symbol] > 0" v-bind:key="index" :lp-token="lpToken">
           {{ lpToken }}
         </ConcentratedLpTableRow>
       </div>
@@ -55,7 +63,7 @@
       <div class="lp-table" v-if="Object.keys(lpTokens).length && filteredLpTokens">
         <TableHeader :config="lpTableHeaderConfig"></TableHeader>
         <LpTableRow v-for="(lpToken, index) in filteredLpTokens" v-bind:key="index" :lp-token="lpToken"
-                    showFarmed="false">{{ lpToken }}
+                  showFarmed="false">{{ lpToken }}
         </LpTableRow>
         <!--          <div class="paginator-container">-->
         <!--            <Paginator :total-elements="50" :page-size="6"></Paginator>-->
@@ -78,10 +86,12 @@ import LevelLpTableRow from "./LevelLpTableRow.vue";
 import GmxV2LpTableRow from "./GmxV2LpTableRow.vue";
 import GmIncentivesTableRow from "./GmIncentivesTableRow.vue";
 import BalancerLpTableRow from "./BalancerLpTableRow.vue";
+import PenpieLpTableRow from "./PenpieLpTableRow.vue";
 
 export default {
   name: 'LPTab',
   components: {
+    PenpieLpTableRow,
     BalancerLpTableRow,
     GmIncentivesTableRow,
     GmxV2LpTableRow,
@@ -101,12 +111,15 @@ export default {
       gmxV2LpTableHeaderConfig: null,
       balancerLpTokens: config.BALANCER_LP_ASSETS_CONFIG,
       balancerLpTableHeaderConfig: null,
+      penpieLpTokens: config.PENPIE_LP_ASSETS_CONFIG,
+      penpieLpTableHeaderConfig: null,
       levelLpTokens: config.LEVEL_LP_ASSETS_CONFIG,
       levelLpTableHeaderConfig: null,
       gmIncentivesTableHeaderConfig: null,
       selectedLpTokens: [] = [],
       assets: null,
       openInterestData: {},
+      isAvalanche: null,
     };
   },
   mounted() {
@@ -120,7 +133,9 @@ export default {
     this.setupGmxV2LpTableHeaderConfig();
     this.setupGmIncentivesTableHeaderConfig();
     this.setupBalancerLpTableHeaderConfig();
+    this.setupPenpieLpTableHeaderConfig();
     this.fetchOpenInterestData();
+    this.isAvalanche = window.chain === 'avalanche';
   },
   computed: {
     ...mapState('serviceRegistry', [
@@ -128,6 +143,7 @@ export default {
     ]),
     ...mapState('fundsStore', [
       'concentratedLpBalances',
+      'lpBalances',
     ]),
     filteredLpTokens() {
       return Object.values(this.lpTokens).filter(token =>
@@ -320,17 +336,19 @@ export default {
     },
 
     async fetchOpenInterestData() {
-      const data = await (await fetch('https://cavsise1n4.execute-api.us-east-1.amazonaws.com/gm-open-interests')).json();
-      const newOpenInterestData = {}
-      Object.keys(data[0])
-        .filter(key => key !== 'id')
-        .forEach(tokenName => {
-          newOpenInterestData[tokenName] = data.map(dataEntry => ({
-            y: dataEntry[tokenName] * 100,
-            x: Number(dataEntry.id),
-          }))
-        })
-      this.openInterestData = newOpenInterestData;
+      const data = await (await fetch('https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/gm-open-interests')).json();
+      const mappedData = {};
+      const tokens = Object.keys(data[0]).filter(key => key !== 'id');
+      tokens.forEach(token => {
+        mappedData[token] = []
+      });
+
+      data.forEach(dataPoint => {
+        tokens.forEach(token => {
+          mappedData[token].push({x: Number(dataPoint.id), y: dataPoint[token] * 100})
+        });
+      });
+      this.openInterestData = mappedData;
     },
 
     setupLpTableHeaderConfig() {
@@ -612,6 +630,83 @@ export default {
         ]
       };
     },
+    setupPenpieLpTableHeaderConfig() {
+      this.penpieLpTableHeaderConfig = {
+        gridTemplateColumns: '100px 130px 130px 1fr 80px 120px 110px 100px 40px 80px 22px',
+        cells: [
+          {
+            label: 'Penpie Token',
+            sortable: false,
+            class: 'token',
+            id: 'TOKEN',
+            tooltip: ``
+          },
+          {
+            label: 'LP Balance',
+            sortable: false,
+            class: 'lp-balance',
+            id: 'LP_BALANCE',
+            tooltip: `The balance of this LP token in your Prime Account.`
+          },
+          {
+            label: 'Staked',
+            sortable: false,
+            class: 'staked',
+            id: 'STAKED',
+            // tooltip: `Composition ot the GM token.`
+          },
+          {
+            label: 'Rewards',
+            sortable: false,
+            class: 'rewards',
+            id: 'REWARDS',
+            // tooltip: `7D price change of this GM token.`
+          },
+          {
+            label: 'TVL',
+            sortable: false,
+            class: 'balance',
+            id: 'tvl',
+            tooltip: `The Total Value Locked (TVL) in the underlying pool.<br>
+                      <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/pools#tvl' target='_blank'>More information</a>.`
+          },
+          {
+            label: 'Capacity',
+            sortable: false,
+            class: 'capacity',
+            id: 'CAPACITY',
+            tooltip: `The global maximum capacity of this LP. When the capacity is at 100%, this asset can not be created or deposited.
+            <a href='https://docs.deltaprime.io/protocol/security/token-exposure-protection' target='_blank'>More information</a>.
+            `
+          },
+          {
+            label: 'Min. APR',
+            sortable: false,
+            class: 'apr',
+            id: 'APR',
+            tooltip: `All fees, rewards and counterparty PnL collected, divided by TVL of this tranche. This does not take underlying asset price changes or IL into account.`
+          },
+          {
+            label: 'Max. APR',
+            sortable: false,
+            class: 'apr',
+            id: 'MAX-APR',
+            tooltip: `The APR if you would borrow the lowest-interest asset from 100% to 10%, and put your total value into this pool.`
+          },
+          {
+            label: '',
+          },
+          {
+            label: 'Actions',
+            class: 'actions',
+            id: 'ACTIONS',
+            tooltip: `Click
+                      <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/exchange#actions' target='_blank'>here</a>
+                      for more information on the different actions you can perform in your Prime Account.`
+          },
+        ]
+      };
+    },
     setupGmIncentivesTableHeaderConfig() {
       const token = window.arbitrumChain ? 'ARB' : 'AVAX';
       console.log(token);
@@ -630,7 +725,7 @@ export default {
             sortable: false,
             class: 'composition',
             id: 'COMPOSITION',
-            tooltip: `How close we are to completing the protocol mission: $${config.gmxV2IncentivesMilestone / 1000000}M GM TVL. Deadline: ${config.gmxV2IncentivesDeadline}. Failing the mission results in reduced incentives.`
+            tooltip: `How close we are to completing the protocol mission: $${config.gmxV2IncentivesMilestone / 1000000}M GM TVL.`
           },
           {
             label: 'Your eligible GM',
@@ -658,7 +753,7 @@ export default {
             sortable: false,
             class: 'trend-level',
             id: 'TREND',
-            tooltip: `The total amount of ${token} you have collected this week. Collected ${token} will be distributed weekly. This number is not included in your collateral value, until the ${token} is distributed to all Prime Accounts. This number resets to 0 after the collected ${token} is added to your assets on Monday.`
+            tooltip: `The total amount of ${token} you have collected this week. Collected ${token} will be distributed weekly. This number is not included in your collateral value, until the ${token} is distributed to all Prime Accounts. This number resets to 0 after the collected ${token} is added to your assets on Wednesday.`
           },
         ]
       };

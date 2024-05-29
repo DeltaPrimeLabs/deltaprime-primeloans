@@ -268,6 +268,8 @@ export default {
       'traderJoeV2LpAssets',
       'balancerLpAssets',
       'balancerLpBalances',
+      'penpieLpBalances',
+      'penpieLpAssets',
       'apys',
     ]),
     ...mapState('poolStore', ['pools']),
@@ -304,7 +306,7 @@ export default {
         if (!this.assets['ARB'] || !this.assets['ARB'].price) {
           return 0;
         } else {
-          apy = this.apys['GM_BOOST'].arbApy * (this.assets['ARB'].price || 0);
+          apy = 0;
         }
       } else {
         console.log('avalanche gm boost');
@@ -319,7 +321,7 @@ export default {
     },
 
     hasGmIncentives() {
-      return true;
+      return window.chain === 'avalanche';
     }
   },
 
@@ -517,12 +519,7 @@ export default {
 
 
       return async (sourceAsset, targetAsset, amountIn) => {
-        let gmxData;
-        if (window.chain === 'arbitrum') {
-          gmxData = await (await fetch(`https://${config.chainSlug}-api.gmxinfra.io/prices/tickers`)).json();
-        } else {
-          gmxData = JSON.parse('[{"tokenAddress":"0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB","tokenSymbol":"ETH","minPrice":"2376284700000000","maxPrice":"2376284700000000","updatedAt":1707272591518},{"tokenAddress":"0x152b9d0FdC40C096757F570A51E494bd4b943E50","tokenSymbol":"BTC","minPrice":"430397400000000000000000000","maxPrice":"430397400000000000000000000","updatedAt":1707272591119},{"tokenAddress":"0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7","tokenSymbol":"AVAX","minPrice":"34196331000000","maxPrice":"34196331000000","updatedAt":1707272589916},{"tokenAddress":"0x5947BB275c521040051D82396192181b413227A3","tokenSymbol":"LINK","minPrice":"18312430870000","maxPrice":"18312430870000","updatedAt":1707272589716},{"tokenAddress":"0xFE6B19286885a4F7F55AdAD09C3Cd1f906D2478F","tokenSymbol":"SOL","minPrice":"96820000000000000000000","maxPrice":"96820000000000000000000","updatedAt":1707272589516},{"tokenAddress":"0xC301E6fe31062C557aEE806cc6A841aE989A3ac6","tokenSymbol":"DOGE","minPrice":"788116000000000000000","maxPrice":"788116000000000000000","updatedAt":1707272589716},{"tokenAddress":"0x8E9C35235C38C44b5a53B56A41eaf6dB9a430cD6","tokenSymbol":"LTC","minPrice":"680795000000000000000000","maxPrice":"680795000000000000000000","updatedAt":1707272591722},{"tokenAddress":"0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E","tokenSymbol":"USDC","minPrice":"1000000000000000000000000","maxPrice":"1000198000000000000000000","updatedAt":1707272588361},{"tokenAddress":"0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664","tokenSymbol":"USDC.e","minPrice":"1000000000000000000000000","maxPrice":"1000198000000000000000000","updatedAt":1707272588361},{"tokenAddress":"0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7","tokenSymbol":"USDT","minPrice":"999259570000000000000000","maxPrice":"1000000000000000000000000","updatedAt":1707272588361},{"tokenAddress":"0xc7198437980c041c805A1EDcbA50c1Ce5db95118","tokenSymbol":"USDT.e","minPrice":"999259570000000000000000","maxPrice":"1000000000000000000000000","updatedAt":1707272588361},{"tokenAddress":"0xd586E7F844cEa2F87f50152665BCbc2C279D8d70","tokenSymbol":"DAI.e","minPrice":"999900000000","maxPrice":"1000000000000","updatedAt":1707272588361},{"tokenAddress":"0x34B2885D617cE2ddeD4F60cCB49809fc17bb58Af","tokenSymbol":"XRP","minPrice":"504763000000000000000000","maxPrice":"504763000000000000000000","updatedAt":1707272591518}]')
-        }
+        let gmxData = await (await fetch(`https://${config.chainSlug}-api.gmxinfra.io/prices/tickers`)).json();
 
         let shortTokenGmxData = gmxData.find(el => el.tokenSymbol === shortToken.symbol);
         let longTokenGmxData = gmxData.find(el => el.tokenSymbol === longToken.symbol);
@@ -576,45 +573,14 @@ export default {
         const firstTotalWorth = firstConfig.price * formatUnits(await firstERC20.balanceOf(this.lpToken.address), firstConfig.decimals);
         const secondTotalWorth = secondConfig.price * formatUnits(await secondERC20.balanceOf(this.lpToken.address), secondConfig.decimals);
 
-        return toWei((firstTotalWorth > secondTotalWorth ? 0.0007 : 0.0005).toString());
+        return toWei((firstTotalWorth > secondTotalWorth ? 0.0008 : 0.0006).toString());
       }
     },
 
     gmxV2WithdrawFee() {
       return async (sourceAsset, targetAsset, amountIn, amountOut) => {
-        return toWei('0.0007');
+        return toWei('0.0008');
       }
-    },
-
-    async calculateExecutionFee(isDeposit) {
-      const dataStore = new ethers.Contract(config.gmxV2DataStoreAddress, IDATA_STORE.abi, this.provider.getSigner());
-
-      //TODO: use multicall
-
-      //TODO: withdraw check
-
-      const estimatedGasLimit = isDeposit ?
-          fromWei(await dataStore.getUint(this.depositGasLimitKey(true))) * 10 ** 18 + config.gmxV2DepositCallbackGasLimit
-          :
-          fromWei(await dataStore.getUint(hashData(["bytes32"], [WITHDRAWAL_GAS_LIMIT_KEY]))) * 10 ** 18 + config.gmxV2DepositCallbackGasLimit;
-
-      let baseGasLimit = fromWei(await dataStore.getUint(ESTIMATED_GAS_FEE_BASE_AMOUNT)) * 10 ** 18;
-
-      let multiplierFactor = formatUnits(await dataStore.getUint(ESTIMATED_GAS_FEE_MULTIPLIER_FACTOR), 30);
-
-      const adjustedGasLimit = baseGasLimit + estimatedGasLimit * multiplierFactor;
-
-      const maxPriorityFeePerGas = (await provider.getFeeData()).maxPriorityFeePerGas.toNumber();
-      let gasPrice = (await provider.getGasPrice()).toNumber();
-
-      if (config.gmxV2UseMaxPriorityFeePerGas) gasPrice += maxPriorityFeePerGas;
-      gasPrice *= (1 + config.gmxV2GasPriceBuffer);
-      gasPrice += config.gmxV2GasPricePremium;
-
-
-      const deltaPrimeMultiplicator = 1.5;
-
-      return deltaPrimeMultiplicator * adjustedGasLimit * gasPrice / 10 ** 18;
     },
 
     async openAddFromWalletModal() {
@@ -629,6 +595,8 @@ export default {
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.gmxV2Assets = this.gmxV2Assets;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
@@ -679,6 +647,8 @@ export default {
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.balancerLpBalances = this.balancerLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.farms = this.farms;
       modalInstance.health = this.health;
@@ -723,6 +693,8 @@ export default {
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.gmxV2Assets = this.gmxV2Assets;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
@@ -771,6 +743,8 @@ export default {
 
       modalInstance.$on('SWAP', swapEvent => {
 
+        console.log(JSON.stringify(swapEvent));
+
         const addLiquidityRequest = {
           sourceAsset: swapEvent.sourceAsset,
           targetAsset: swapEvent.targetAsset,
@@ -816,6 +790,8 @@ export default {
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.balancerLpBalances = this.balancerLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.targetAsset = this.lpToken.longToken;
       modalInstance.debt = this.fullLoanStatus.debt;

@@ -233,6 +233,8 @@ export default {
       'traderJoeV2LpAssets',
       'balancerLpAssets',
       'balancerLpBalances',
+      'penpieLpBalances',
+      'penpieLpAssets',
     ]),
     ...mapState('poolStore', ['pools']),
     ...mapState('network', ['account', 'provider']),
@@ -448,6 +450,8 @@ export default {
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.balancerLpBalances = this.balancerLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.loan = this.debt;
@@ -490,6 +494,8 @@ export default {
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.balancerLpBalances = this.balancerLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.farms = this.farms;
       modalInstance.health = this.health;
@@ -544,6 +550,8 @@ export default {
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.balancerLpBalances = this.balancerLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.targetAsset = this.lpToken.symbol;
       modalInstance.debt = this.fullLoanStatus.debt;
@@ -610,6 +618,8 @@ export default {
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.balancerLpBalances = this.balancerLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.targetAsset = this.lpToken.underlyingAssets[0];
       modalInstance.debt = this.fullLoanStatus.debt;
@@ -705,7 +715,7 @@ export default {
     },
 
     async setupTvl() {
-      this.tvl = (await (await fetch(`https://cavsise1n4.execute-api.us-east-1.amazonaws.com/levelTvl/${this.lpToken.symbol}`)).json()).tvl;
+      this.tvl = (await (await fetch(`https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/levelTvl/${this.lpToken.symbol}`)).json()).tvl;
     },
 
     async setupRewards() {

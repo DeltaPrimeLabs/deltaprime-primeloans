@@ -40,7 +40,7 @@
                 :alertId="alert.id"
                 :alertType="alert.type"
                 :toggleOn="alert.created"
-                @alertToggle="handleAlertToggle"
+                @toggleChange="handleAlertToggle"
               ></ToggleButton>
             </div>
           </div>

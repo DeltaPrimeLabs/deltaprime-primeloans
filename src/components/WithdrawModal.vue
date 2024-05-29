@@ -4,7 +4,7 @@
       <div class="modal__title">
         Withdraw collateral
       </div>
-      <div class="modal-top-desc">
+      <div class="modal-top-desc" v-if="showTopDescription">
         Please make sure that every asset's 'balance' is higher than that asset's 'borrowed', in order to withdraw.
         <a target="_blank" href="https://docs.deltaprime.io/protocol/safety#withdrawal-guard"><b>Read more</b></a>
       </div>
@@ -127,11 +127,14 @@ export default {
     concentratedLpBalances: {},
     levelLpAssets: {},
     levelLpBalances: {},
+    penpieLpAssets: {},
+    penpieLpBalances: {},
     traderJoeV2LpAssets: {},
     balancerLpAssets: {},
     balancerLpBalances: {},
     gmxV2Assets: {},
     gmxV2Balances: {},
+    showTopDescription: true,
   },
 
   data() {
@@ -246,6 +249,23 @@ export default {
         }
 
         tokens.push({ price: data.price, balance: balance, borrowed: 0, debtCoverage: data.debtCoverage});
+      }
+
+      if (this.penpieLpAssets) {
+        for (const [symbol, data] of Object.entries(this.penpieLpAssets)) {
+          if (this.penpieLpBalances) {
+            let balance = parseFloat(this.penpieLpBalances[symbol]);
+            if (symbol === this.asset.symbol) {
+              balance -= withdrawn;
+            }
+            tokens.push({
+              price: data.price,
+              balance: balance ? balance : 0,
+              borrowed: 0,
+              debtCoverage: data.debtCoverage
+            });
+          }
+        }
       }
 
       for (const [symbol, data] of Object.entries(this.balancerLpAssets)) {

@@ -117,6 +117,10 @@ export default {
       return `src/assets/logo/${assetSymbol.toLowerCase()}.${asset.logoExt ? asset.logoExt : 'svg'}`;
     },
 
+    getIcon(assetSymbol, extension) {
+      return `src/assets/logo/${assetSymbol.toLowerCase()}.${extension}`;
+    },
+
     async getWalletTokenBalance(account, assetSymbol, tokenContract, decimals) {
       const walletAssetBalanceResponse = await tokenContract.balanceOf(account.toLowerCase());
 

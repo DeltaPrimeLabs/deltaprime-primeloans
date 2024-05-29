@@ -141,7 +141,10 @@
   --modal__border: linear-gradient(145deg, #{$deep-fuchsia} 13%, #{$plum} 56%, #{$dark-teal} 98%);
   --modal__box-shadow: 4px 4px 20px 0 #{$dark-space}66;
   --modal__top-info-color: #{$storm-blue};
+  --modal__top-info-warning-color: #{$mist-orange};
   --modal__top-info-divider-color: #{$mist-space};
+  --modal__top-info-bar-color: #{$cloud-blue};
+  --modal__top-info-bar-background-color: #{$light-fuchsia};
   --modal__close-button-container-color: #{$pale-lilac};
   --modal__backdrop-backdrop-filter: blur(45px);
   --modal__backdrop-background: #{$dark-space}4c;
@@ -162,7 +165,7 @@
   --currency-input__max-background: transparent;
   --currency-input__max-background--hover: transparent;
   --currency-input__error-info-warngin-color: #{$mist-blue};
-  --currency-input__warning-color: #{$pale-red};
+  --currency-input__warning-color: #{$mist-orange};
   --currency-input__error-color: #{$pale-red};
   // endregion
 
@@ -283,6 +286,16 @@
   --swap-modal__slippage-bar-color: #{$storm-blue};
   --swap-modal__slippage-divider-color: #{$mist-space};
   --swap-modal__slippage-warning-color: #{$pale-red};
+  --swap-modal__slippage-advanced-color: #{$storm-blue};
+  --swap-modal__slippage-option-pill-color: #{$washed-blue};
+  --swap-modal__slippage-option-pill-color--active: #{$mist-blue};
+  --swap-modal__label-with-separator: #{$storm-blue};
+  --swap-modal__label-with-separator-background: #{$mist-space};
+  --swap-modal__liquidity-shape-border: solid 1px #{$washed-space};
+  --swap-modal__liquidity-shape-border-active: solid 2px #{$light-navy};
+  --swap-modal__liquidity-shape-border-hover: #{$light-navy};
+  --swap-modal__liquidity-shape-box-shadow: 2px 2px 4px 0 #{$dark-space}80;
+  --swap-modal__liquidity-shape-background: #{$light-fuchsia};
   // endregion
 
   // region SimpleInput
@@ -611,5 +624,12 @@
   --bar__logo--hover-hexagate: url("/src/assets/icons/securityLogos/hexagate--dark--hover.png");
   --bar__logo--hover-atomica: url("/src/assets/icons/securityLogos/atomica--dark--hover.svg");
   --bar__logo--hover-salus: url("/src/assets/icons/securityLogos/salus--dark--hover.svg");
+  // endregion
+
+  // region ProtocolInsurance
+  --protocol-insurance-text: #{$storm-blue};
+  --protocol-insurance-value: #{$violet-mist};
+  --protocol-insurance-border: #{$cloud-navy};
+  --protocol-insurance-background: #{$space};
   // endregion
 }
