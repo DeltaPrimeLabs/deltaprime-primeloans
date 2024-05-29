@@ -6,7 +6,7 @@
       <div class="stat-label">
         Total eligible TVL
         <InfoIcon class="info__icon"
-                  :tooltip="{content: 'Tooltip placeholder', classes: 'info-tooltip'}"
+                  :tooltip="{content: 'The total dollar value of all positions that are eligible for incentives.', classes: 'info-tooltip'}"
                   :classes="'info-tooltip'">
         </InfoIcon>
       </div>
@@ -16,7 +16,7 @@
       <div class="stat-label">
         Mission completion
         <InfoIcon class="info__icon"
-                  :tooltip="{content: 'Tooltip placeholder', classes: 'info-tooltip'}"
+                  :tooltip="{content: 'How close we are to completing the next protocol mission.', classes: 'info-tooltip'}"
                   :classes="'info-tooltip'">
         </InfoIcon>
       </div>
@@ -29,7 +29,7 @@
       <div class="stat-label">
         Your eligible TVL
         <InfoIcon class="info__icon"
-                  :tooltip="{content: 'Tooltip placeholder', classes: 'info-tooltip'}"
+                  :tooltip="{content: 'The dollar value you receive ARB emissions over. This is calculated as: Total LP/Farms deposits - Collateral value.', classes: 'info-tooltip'}"
                   :classes="'info-tooltip'">
         </InfoIcon>
       </div>
@@ -39,7 +39,7 @@
       <div class="stat-label">
         1x APR Boost
         <InfoIcon class="info__icon"
-                  :tooltip="{content: 'Tooltip placeholder', classes: 'info-tooltip'}"
+                  :tooltip="{content: 'The APR you receive over your eligible TVL.', classes: 'info-tooltip'}"
                   :classes="'info-tooltip'">
         </InfoIcon>
       </div>
@@ -52,7 +52,7 @@
       <div class="stat-label">
         Max APR boost
         <InfoIcon class="info__icon"
-                  :tooltip="{content: 'Tooltip placeholder', classes: 'info-tooltip'}"
+                  :tooltip="{content: 'The boost APR received if you would borrow enough to get health to 10%, and put your total value into LP/Farms.', classes: 'info-tooltip'}"
                   :classes="'info-tooltip'">
         </InfoIcon>
       </div>
@@ -65,7 +65,7 @@
       <div class="stat-label">
         ARB collected
         <InfoIcon class="info__icon"
-                  :tooltip="{content: 'Tooltip placeholder', classes: 'info-tooltip'}"
+                  :tooltip="{content: 'The total amount of ARB you have collected this week. Collected ARB will be distributed weekly. This number is not included in your collateral value, until the ARB is distributed to all Prime Accounts. This number resets to 0 after the collected ARB is added to your assets.', classes: 'info-tooltip'}"
                   :classes="'info-tooltip'">
         </InfoIcon>
       </div>
