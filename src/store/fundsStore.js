@@ -256,7 +256,7 @@ export default {
 
       // Arbitrum-specific methods
       if (window.chain === 'arbitrum') {
-        rootState.serviceRegistry.ltipService.emitRefreshPrimeAccountsLtipData();
+        rootState.serviceRegistry.ltipService.emitRefreshPrimeAccountsLtipData(state.smartLoanContract.address);
         rootState.serviceRegistry.ltipService.emitRefreshPrimeAccountEligibleTvl(wrapContract(state.smartLoanContract));
       }
 
@@ -1224,6 +1224,10 @@ export default {
       };
 
       const collateral = fullLoanStatus.totalValue - fullLoanStatus.debt;
+
+      console.log('HEEEREEEE')
+      console.log('debt: ', fullLoanStatus.debt)
+      console.log('collateral: ', collateral)
 
       commit('setFullLoanStatus', fullLoanStatus);
       rootState.serviceRegistry.dataRefreshEventService.emitFullLoanStatusRefresh();

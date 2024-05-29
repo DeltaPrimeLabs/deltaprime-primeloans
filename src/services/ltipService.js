@@ -7,10 +7,11 @@ export default class LtipService {
   primeAccountsData$ = new BehaviorSubject([]);
   primeAccountsTotalEligibleTvl$ = new BehaviorSubject(null);
   primeAccountEligibleTvl$ = new BehaviorSubject(null);
+  primeAccountArbCollected$ = new BehaviorSubject(null);
   poolApyData$ = new BehaviorSubject([]);
 
-  emitRefreshPrimeAccountsLtipData() {
-    this.updateLtipData();
+  emitRefreshPrimeAccountsLtipData(primeAccountAddress) {
+    this.updateLtipData(primeAccountAddress);
   }
 
   emitRefreshPrimeAccountEligibleTvl(wrappedContractPromise) {
@@ -37,11 +38,15 @@ export default class LtipService {
     return this.primeAccountEligibleTvl$.asObservable();
   }
 
+  observeLtipPrimeAccountArbCollected() {
+    return this.primeAccountArbCollected$.asObservable();
+  }
+
   observeLtipPoolData() {
     return this.poolApyData$.asObservable();
   }
 
-  async updateLtipData() {
+  async updateLtipData(primeAccountAddress) {
     fetch(config.ltipAccountsDataEndpoint).then(
         res => res.json().then(
             json => this.primeAccountsData$.next(json.list)
@@ -50,6 +55,13 @@ export default class LtipService {
     fetch(config.ltipApyEndpoint).then(
         res => res.json().then(
             json => this.primeAccountsTotalEligibleTvl$.next(json.totalEligibleTvl)
+        )
+    );
+    console.log(`${config.ltipPrimeAccountArbCollected}?addresses=${primeAccountAddress}`)
+    fetch(`${config.ltipPrimeAccountArbCollected}?addresses=${primeAccountAddress}`).then(
+        res => res.json().then(
+            json => {
+              return this.primeAccountArbCollected$.next(json.data[primeAccountAddress].arbCollected)}
         )
     );
   }

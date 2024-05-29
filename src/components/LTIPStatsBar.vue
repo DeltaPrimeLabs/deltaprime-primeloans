@@ -131,6 +131,9 @@ export default {
       this.ltipService.observeLtipPrimeAccountEligibleTvl().subscribe((tvl) => {
         this.yourEligibleTVL = tvl;
       });
+      this.ltipService.observeLtipPrimeAccountArbCollected().subscribe((arbCollected) => {
+        this.collectedBonus = arbCollected;
+      });
     }
   },
   watch: {
