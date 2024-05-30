@@ -355,7 +355,7 @@ export default {
     }
 
     .select {
-      position: relative;
+      // position: relative;
       display: flex;
       flex-direction: row;
       align-items: center;
