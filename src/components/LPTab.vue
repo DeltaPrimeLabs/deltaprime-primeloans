@@ -7,13 +7,6 @@
                           :lp-token="lpToken" :lp-tokens="penpieLpTokens"></PenpieLpTableRow>
       </div>
     </div>
-    <div class="lp-tokens" v-if="isAvalanche && Object.keys(gmxV2LpTokens).length">
-      <div class="lp-table" v-if="gmxV2LpTokens && hasGmIncentives">
-        <div class="incentives-program-title">GM Incentives Program</div>
-        <TableHeader :config="gmIncentivesTableHeaderConfig"></TableHeader>
-        <GmIncentivesTableRow></GmIncentivesTableRow>
-      </div>
-    </div>
     <div class="lp-tokens" v-if="Object.keys(gmxV2LpTokens).length">
       <div class="lp-table level" v-if="gmxV2LpTokens">
         <TableHeader :config="gmxV2LpTableHeaderConfig"></TableHeader>
