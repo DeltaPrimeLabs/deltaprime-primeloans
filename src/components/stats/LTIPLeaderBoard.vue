@@ -116,7 +116,7 @@ export default {
           .map(entry => ({
             address: entry.id,
             earnedIncentives: entry.arbCollected,
-            eligibleTVL: entry.eligibleTVL,
+            eligibleTVL: entry.eligibleTvl,
             isMe: entry.id.toLowerCase() === this.smartLoanContract.address.toLowerCase(),
           }));
         this.$forceUpdate();
@@ -131,9 +131,11 @@ export default {
 
     watchLtipDataUpdate() {
       this.ltipService.observeLtipAccountsData().subscribe((list) => {
-        this.primeAccountsList = list.sort((a,b) => b.arbCollected - a.arbCollected);
-        this.totalLeaderBoardEntries = this.primeAccountsList.length;
-        this.setPagedData(this.page);
+        if (list) {
+          this.primeAccountsList = list;
+          this.totalLeaderBoardEntries = this.primeAccountsList.length;
+          this.setPagedData(this.page);
+        }
       });
     }
   },

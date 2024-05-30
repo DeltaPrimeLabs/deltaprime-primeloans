@@ -47,7 +47,7 @@ export default class LtipService {
   }
 
   async updateLtipData(primeAccountAddress) {
-    fetch(config.ltipAccountsDataEndpoint).then(
+    fetch(`${config.ltipAccountsLeaderboardEndpoint}?top=200&from=${config.ltipLastDistributionTimestamp}&to=${Math.floor(Date.now() / 1000)}`).then(
         res => res.json().then(
             json => this.primeAccountsData$.next(json.list)
         )
@@ -57,7 +57,6 @@ export default class LtipService {
             json => this.primeAccountsTotalEligibleTvl$.next(json.totalEligibleTvl)
         )
     );
-    console.log(`${config.ltipPrimeAccountArbCollected}?addresses=${primeAccountAddress}`)
     fetch(`${config.ltipPrimeAccountArbCollected}?addresses=${primeAccountAddress}`).then(
         res => res.json().then(
             json => {
