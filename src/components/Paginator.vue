@@ -33,7 +33,7 @@ export default {
       previousDisabled: null,
       nextDisabled: null,
       totalPages: null,
-      currentPage: this.startPage,
+      currentPage: 1
     }
   },
 
@@ -43,7 +43,7 @@ export default {
 
   methods: {
     setup() {
-      this.totalPages = Math.ceil(this.totalElements / this.pageSize) - 1; //TODO: check this - 1
+      this.totalPages = Math.max(Math.ceil(this.totalElements / this.pageSize) - 1, 1); //TODO: check this - 1
     },
 
     nextPage() {

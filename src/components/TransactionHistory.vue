@@ -49,6 +49,7 @@
       </div>
       <Paginator v-if="totalTransactions"
                  :page-size="pageSize"
+                 :start-page="1"
                  :total-elements="totalTransactions"
                  v-on:pageChange="pageChange">
       </Paginator>

@@ -1,6 +1,6 @@
 <template>
   <div id="stats-container" class="stats-container">
-    <LTIPLeaderBoard class="ltip-leaderboard-section"></LTIPLeaderBoard>
+    <LTIPLeaderBoard v-if="isArbitrum" class="ltip-leaderboard-section"></LTIPLeaderBoard>
     <StatsChartSection class="stats-chart-section"></StatsChartSection>
     <StatsSharesSection class="stats-shares-section"></StatsSharesSection>
     <TransactionHistory class="transaction-history"></TransactionHistory>
@@ -17,7 +17,15 @@ import LTIPLeaderBoard from './LTIPLeaderBoard.vue';
 
 export default {
   name: "Stats",
-  components: {LTIPLeaderBoard, StatsChartSection, TransactionHistory, StatsSharesSection, StatsSection, PieChart}
+  components: {LTIPLeaderBoard, StatsChartSection, TransactionHistory, StatsSharesSection, StatsSection, PieChart},
+  data: () => {
+    return {
+      isArbitrum: false
+    }
+  },
+  async mounted() {
+    this.isArbitrum = window.chain === 'arbitrum';
+  },
 }
 </script>
 

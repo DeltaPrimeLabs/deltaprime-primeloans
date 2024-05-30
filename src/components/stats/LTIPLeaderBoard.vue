@@ -5,8 +5,7 @@
         LTIP leaderboard
       </StatsSectionHeader>
 
-
-      <div class="leader-board" v-if="leaderBoardData">
+      <div class="leader-board" v-if="showTable">
         <TableHeader :config="leaderBoardTableHeaderConfig"></TableHeader>
         <div class="leader-board-table">
           <div class="leader-board-row" v-for="(entry, index) of leaderBoardData">
@@ -30,8 +29,8 @@
         </Paginator>
       </div>
 
-      <div class="loader-container" v-if="!leaderBoardData">
-        <VueLoadersBallBeat color="#A6A3FF" scale="2"></VueLoadersBallBeat>
+      <div class="loader-container" v-if="!showTable">
+        <VueLoadersBallBeat color="#A6A3FF" scale="1"></VueLoadersBallBeat>
       </div>
     </div>
   </StatsSection>
@@ -69,6 +68,7 @@ export default {
       PAGE_SIZE: PAGE_SIZE,
       leaderBoardTableHeaderConfig: null,
       leaderBoardData: null,
+      showTable: false,
       totalLeaderBoardEntries: null,
       page: 0,
       smartLoanContract: null,
@@ -121,6 +121,7 @@ export default {
           }));
         this.$forceUpdate();
         this.$forceUpdate();
+        this.showTable = true;
       })
     },
 

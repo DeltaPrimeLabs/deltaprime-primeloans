@@ -4,7 +4,7 @@ import {wrapContract} from "../utils/blockchain";
 import {fromWei} from "../utils/calculate";
 
 export default class LtipService {
-  primeAccountsData$ = new BehaviorSubject([]);
+  primeAccountsData$ = new BehaviorSubject(null);
   primeAccountsTotalEligibleTvl$ = new BehaviorSubject(null);
   primeAccountEligibleTvl$ = new BehaviorSubject(null);
   primeAccountArbCollected$ = new BehaviorSubject(null);
