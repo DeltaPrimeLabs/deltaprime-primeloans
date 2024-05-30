@@ -23,6 +23,7 @@ export default {
   name: 'Paginator',
   components: {IconButton},
   props: {
+    startPage: 1,
     pageSize: null,
     totalElements: null,
   },
@@ -32,7 +33,7 @@ export default {
       previousDisabled: null,
       nextDisabled: null,
       totalPages: null,
-      currentPage: 1,
+      currentPage: this.startPage,
     }
   },
 

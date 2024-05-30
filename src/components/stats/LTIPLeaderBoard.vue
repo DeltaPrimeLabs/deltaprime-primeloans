@@ -24,6 +24,7 @@
         </div>
         <Paginator :page-size="PAGE_SIZE"
                    v-if="totalLeaderBoardEntries"
+                   :start-page="page"
                    :total-elements="totalLeaderBoardEntries"
                    v-on:pageChange="pageChange">
         </Paginator>
@@ -68,7 +69,6 @@ export default {
       PAGE_SIZE: PAGE_SIZE,
       leaderBoardTableHeaderConfig: null,
       leaderBoardData: null,
-      pageNumber: 0,
       totalLeaderBoardEntries: null,
       page: 0,
       smartLoanContract: null,
@@ -134,6 +134,9 @@ export default {
         if (list) {
           this.primeAccountsList = list;
           this.totalLeaderBoardEntries = this.primeAccountsList.length;
+          let myIndex = this.primeAccountsList.findIndex(entry => entry.id.toLowerCase() === this.smartLoanContract.address.toLowerCase());
+
+          this.page = Math.floor(myIndex / PAGE_SIZE);
           this.setPagedData(this.page);
         }
       });
