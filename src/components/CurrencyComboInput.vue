@@ -49,7 +49,7 @@
           </div>
           <input class="dropdown__input" type="text" placeholder="search" v-model="searchPhrase"
                  v-on:change="searchPhraseChange()">
-          <div class="dropdown__list">
+          <div class="dropdown__list" @scroll="handleScroll">
             <div class="dropdown__option"
                  v-for="(assetOption, key) in displayedOptions"
                  v-bind:key="assetOption.symbol + key"
@@ -67,7 +67,7 @@
               <div class="option__symbol">{{ assetOption.short ? assetOption.short : assetOption.symbol }}</div>
               <div class="option__name">{{ assetOption.name }}</div>
               <ContentLoader
-                v-if="isBridge && (!assetsBalances[selectedChain.id] || assetsBalances[selectedChain.id].length !== displayedOptions.length)"
+                v-if="isBridge && (!assetsBalances[selectedChain.id] || assetsBalances[selectedChain.id].length !== availableOptions.length)"
                 class="content-loader"
                 :width="40"
                 :height="8"
@@ -77,7 +77,7 @@
                 :secondaryOpacity="0.2"
               ></ContentLoader>
               <div
-                v-if="isBridge && assetsBalances[selectedChain.id] && assetsBalances[selectedChain.id].length === displayedOptions.length"
+                v-if="isBridge && assetsBalances[selectedChain.id] && assetsBalances[selectedChain.id].length === availableOptions.length"
                 class="option__balance"
               >
                 <div
@@ -141,16 +141,15 @@ export default {
     disabled: false,
     typingTimeout: {type: Number, default: 0}
   },
-  computed: {
-    getDisplayedAssetOptions() {
-      return this.displayedOptions;
-    }
-  },
   data() {
     return {
       expanded: false,
       hasBackground: false,
       displayedOptions: [],
+      availableOptions: null,
+      filteredOptions: null,
+      optionsOffset: 0,
+      optionsSize: 15,
       selectedChain: null,
       selectedAsset: null,
       searchPhrase: null,
@@ -185,6 +184,8 @@ export default {
     },
 
     setupDisplayedAssetOptions() {
+      if (!this.assetOptions) return;
+
       if (this.isBridge && this.availableChains && this.availableChains.length > 0) {
         let assetOptions;
 
@@ -194,7 +195,11 @@ export default {
           assetOptions = this.assetOptions[Object.keys(this.assetOptions)[0]];
         }
 
-        this.displayedOptions = JSON.parse(JSON.stringify(assetOptions));
+        this.availableOptions = assetOptions;
+        this.filteredOptions = assetOptions;
+
+        this.displayedOptions = assetOptions.slice(0, this.optionsSize);
+        this.optionsOffset = this.optionsSize;
 
         if (this.selectedChain) {
           this.$emit('chainChange', {
@@ -214,6 +219,16 @@ export default {
       }
     },
 
+    handleScroll({ target: { scrollTop, clientHeight, scrollHeight }}) {
+      if (this.isBridge && scrollTop + clientHeight >= scrollHeight && this.displayedOptions.length < this.filteredOptions.length) {
+        this.displayedOptions = [
+          ...this.displayedOptions,
+          ...this.filteredOptions.slice(this.optionsOffset, Math.min(this.optionsOffset + this.optionsSize, this.filteredOptions.length))
+        ];
+        this.optionsOffset += this.optionsSize;
+      }
+    },
+
     searchOptions(searchPhrase) {
       let assetOptions = this.assetOptions;
 
@@ -222,16 +237,25 @@ export default {
       }
 
       if (searchPhrase) {
-        return assetOptions.filter(
+        const filtered = assetOptions.filter(
           assetOption => assetOption.symbol.toUpperCase().includes(searchPhrase.toUpperCase()) ||
             assetOption.name.toUpperCase().includes(searchPhrase.toUpperCase()));
+
+        this.filteredOptions = filtered;
+        return filtered;
       } else {
         return assetOptions;
       }
     },
 
     searchPhraseChange() {
-      this.displayedOptions = this.searchOptions(this.searchPhrase);
+      const filteredOptions = this.searchOptions(this.searchPhrase);
+      if (this.isBridge) {
+        this.optionsOffset = 0;
+        this.displayedOptions = filteredOptions.slice(0, this.optionsSize);
+      } else {
+        this.displayedOptions = filteredOptions;
+      }
     },
 
     selectChain(chain) {
