@@ -9,6 +9,7 @@ import FRAX_POOL_TUP from '/deployments/arbitrum/FraxPoolTUP.json';
 import LINK_POOL_TUP from '/deployments/arbitrum/LinkPoolTUP.json';
 import SUSHISWAP_INTERMEDIARY_TUP from '../deployments/arbitrum/SushiSwapIntermediaryTUP.json';
 import {yieldYakBalance} from './utils/calculate';
+import subgraphConfig from '../.secrets/subgraph.json';
 
 export default {
     MIN_ALLOWED_HEALTH: 0.0182,
@@ -461,7 +462,7 @@ export default {
     dataProviderId: "redstone-arbitrum-prod",
     dataProviderHistoricalPrices: "redstone",
     redstoneFeedUrl: "https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-arbitrum-prod",
-    subgraph: "https://api.thegraph.com/subgraphs/name/keizir/deltaprime",
+    subgraph: `https://gateway-arbitrum.network.thegraph.com/api/${subgraphConfig.apiKey}/deployments/id/Qmd1qPVbw2HLtr85BC1gZTKFovQu8vb4rfo7cVrekyxb8A`,
     readRpcUrl: "https://arbitrum-mainnet.core.chainstack.com/9a30fb13b2159a76c8e143c52d5579bf",
     multicallAddress: "0x0674ee727f74752ea9dc630bd5c5d8a374187e7b",
     EMAIL_REGEX: /(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])/,
