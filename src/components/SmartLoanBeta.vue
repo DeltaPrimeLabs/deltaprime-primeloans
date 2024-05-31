@@ -180,7 +180,8 @@ export default {
       'dataRefreshEventService',
       'farmService',
       'collateralService',
-      'debtService'
+      'debtService',
+      'ltipService'
     ]),
     ...mapState('network', ['account']),
     primeAccountsBlocked() {
@@ -271,9 +272,11 @@ export default {
         this.dataRefreshEventService.observeDebtsPerAssetDataRefresh(),
         this.dataRefreshEventService.observeFullLoanStatusRefresh(),
         this.dataRefreshEventService.observeAssetApysDataRefresh(),
+        this.ltipService.observeLtipPrimeAccountEligibleTvl(),
+        this.ltipService.observeLtipMaxBoostApy()
       ])
-          .subscribe(async ([provider, account]) => {
-            await this.getAccountApr();
+          .subscribe(async ([,,,,,,eligibleTvl, maxBoostApy]) => {
+            await this.getAccountApr({eligibleTvl, maxBoostApy});
           });
     },
 

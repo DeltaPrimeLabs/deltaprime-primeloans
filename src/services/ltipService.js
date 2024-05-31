@@ -2,6 +2,7 @@ import {BehaviorSubject, Subject} from 'rxjs';
 import config from '../config';
 import {wrapContract} from "../utils/blockchain";
 import {fromWei} from "../utils/calculate";
+import DataRefreshEventService from "./dataRefreshEventService";
 
 export default class LtipService {
   primeAccountsData$ = new BehaviorSubject(null);
@@ -11,8 +12,8 @@ export default class LtipService {
   poolApyData$ = new BehaviorSubject([]);
   ltipMaxBoostApy$ = new BehaviorSubject(null);
 
-  emitRefreshPrimeAccountsLtipData(primeAccountAddress, arbPrice) {
-    this.updateLtipData(primeAccountAddress, arbPrice);
+  emitRefreshPrimeAccountsLtipData(primeAccountAddress, arbPrice, dataRefreshEventService) {
+    this.updateLtipData(primeAccountAddress, arbPrice, dataRefreshEventService);
   }
 
   emitRefreshPrimeAccountEligibleTvl(wrappedContractPromise) {
@@ -55,7 +56,7 @@ export default class LtipService {
     return this.ltipMaxBoostApy$.asObservable();
   }
 
-  async updateLtipData(primeAccountAddress, arbPrice) {
+  async updateLtipData(primeAccountAddress, arbPrice, dataRefreshEventService) {
     fetch(`${config.ltipAccountsLeaderboardEndpoint}?top=200&from=${config.ltipLastDistributionTimestamp}&to=${Math.floor(Date.now() / 1000)}`).then(
         res => res.json().then(
             json => this.primeAccountsData$.next(json.list)
@@ -76,7 +77,7 @@ export default class LtipService {
     fetch(`${config.ltipApyEndpoint}`).then(
         res => res.json().then(
             json => {
-              this.updateLtipMaxBoostApy(arbPrice, json.arbApy)}
+              this.updateLtipMaxBoostApy(arbPrice, json.arbApy, dataRefreshEventService)}
         )
     );
   }
@@ -89,17 +90,16 @@ export default class LtipService {
     );
   }
 
-  updateLtipMaxBoostApy(arbPrice, arbApy) {
-    console.log('updateLtipMaxBoostApy')
-    console.log('arbPrice: ', arbPrice)
-    console.log('arbApy: ', arbApy)
-    console.log('apy: ', 4.5 * arbPrice * arbApy)
+  updateLtipMaxBoostApy(arbPrice, arbApy, dataRefreshEventService) {
      this.ltipMaxBoostApy$.next(4.5 * arbPrice * arbApy);
+    dataRefreshEventService.emitAssetApysDataRefresh();
   }
 
   async updatePrimeAccountEligibleTvl(wrappedContract) {
     wrappedContract.getLTIPEligibleTVL().then(
-        res => this.primeAccountEligibleTvl$.next(fromWei(res))
+        res => {
+          this.primeAccountEligibleTvl$.next(fromWei(res));
+        }
     )
   }
 };
