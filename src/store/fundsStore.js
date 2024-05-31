@@ -269,10 +269,8 @@ export default {
 
       // Arbitrum-specific methods
       if (window.chain === 'arbitrum') {
-        rootState.serviceRegistry.ltipService.emitRefreshPrimeAccountsLtipData(state.smartLoanContract.address);
+        rootState.serviceRegistry.ltipService.emitRefreshPrimeAccountsLtipData(state.smartLoanContract.address, state.assets['ARB'].price);
         rootState.serviceRegistry.ltipService.emitRefreshPrimeAccountEligibleTvl(wrapContract(state.smartLoanContract));
-        //TODO: race condition? should wait for apys & prices
-        rootState.serviceRegistry.ltipService.emitRefreshLtipMaxBoostApy(state.apys['LTIP_BOOST'].arbApy, state.assets['ARB'].price);
       }
 
     },

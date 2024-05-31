@@ -773,14 +773,6 @@ export default {
     hasLtipIncentives() {
       return window.chain === 'avalanche';
     },
-    setupLtipBoost() {
-      let apy = 0;
-      if (!this.apys || !this.assets) return 0;
-      if (this.apys['LTIP_BOOST'] * this.assets['ARB']) {
-        apy = this.apys['LTIP_BOOST'].arbApy * this.assets['ARB'].price;
-      }
-      return this.hasLtipIncentives ? 4.5 * apy : 0;
-    },
     watchAssetPricesUpdate() {
       this.priceService.observeRefreshPrices().subscribe((updateEvent) => {
         this.assets = config.ASSETS_CONFIG;

@@ -11,8 +11,8 @@ export default class LtipService {
   poolApyData$ = new BehaviorSubject([]);
   ltipMaxBoostApy$ = new BehaviorSubject(null);
 
-  emitRefreshPrimeAccountsLtipData(primeAccountAddress) {
-    this.updateLtipData(primeAccountAddress);
+  emitRefreshPrimeAccountsLtipData(primeAccountAddress, arbPrice) {
+    this.updateLtipData(primeAccountAddress, arbPrice);
   }
 
   emitRefreshPrimeAccountEligibleTvl(wrappedContractPromise) {
@@ -55,7 +55,7 @@ export default class LtipService {
     return this.ltipMaxBoostApy$.asObservable();
   }
 
-  async updateLtipData(primeAccountAddress) {
+  async updateLtipData(primeAccountAddress, arbPrice) {
     fetch(`${config.ltipAccountsLeaderboardEndpoint}?top=200&from=${config.ltipLastDistributionTimestamp}&to=${Math.floor(Date.now() / 1000)}`).then(
         res => res.json().then(
             json => this.primeAccountsData$.next(json.list)
@@ -72,6 +72,13 @@ export default class LtipService {
               return this.primeAccountArbCollected$.next(json.data[primeAccountAddress].arbCollected)}
         )
     );
+
+    fetch(`${config.ltipApyEndpoint}`).then(
+        res => res.json().then(
+            json => {
+              this.updateLtipMaxBoostApy(arbPrice, json.arbApy)}
+        )
+    );
   }
 
   async updatePoolLtipData() {
@@ -83,6 +90,10 @@ export default class LtipService {
   }
 
   updateLtipMaxBoostApy(arbPrice, arbApy) {
+    console.log('updateLtipMaxBoostApy')
+    console.log('arbPrice: ', arbPrice)
+    console.log('arbApy: ', arbApy)
+    console.log('apy: ', 4.5 * arbPrice * arbApy)
      this.ltipMaxBoostApy$.next(4.5 * arbPrice * arbApy);
   }
 

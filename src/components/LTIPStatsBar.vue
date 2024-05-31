@@ -44,7 +44,7 @@
         </InfoIcon>
       </div>
       <div class="stat-value">
-        {{ aprBoost | percent }}
+        {{ boostApy | percent }}
         <div class="shine-icon"></div>
       </div>
     </div>
@@ -57,7 +57,7 @@
         </InfoIcon>
       </div>
       <div class="stat-value">
-        {{ maxAprBoost | percent }}
+        {{ maxBoostApy | percent }}
         <div class="shine-icon"></div>
       </div>
     </div>
@@ -88,6 +88,7 @@ import {fromWei} from "../utils/calculate";
 import {mapState} from "vuex";
 import {wrapContract} from "../utils/blockchain";
 import config from "../config";
+import {maxInt8} from "viem";
 
 export default {
   name: 'LTIPStatsBar',
@@ -98,6 +99,8 @@ export default {
       totalEligibleTVL: null,
       milestone: config.ltipMilestone,
       yourEligibleTVL: null,
+      boostApy: 0,
+      maxBoostApy: 0,
       collectedBonus: null,
     }
   },
@@ -111,15 +114,11 @@ export default {
       'assets',
     ]),
     ...mapState('serviceRegistry', ['ltipService']),
-    aprBoost() {
-        return (this.apys && this.assets && this.assets['ARB'] && this.assets['ARB'].price) ? this.apys['LTIP_BOOST'].arbApy * this.assets['ARB'].price : 0;
-    },
-    maxAprBoost() {
-      if (!this.aprBoost) return 0;
-      return 4.5 * this.aprBoost;
-    },
   },
   methods: {
+    maxInt8() {
+      return maxInt8
+    },
     watchLtipDataUpdate() {
       this.ltipService.observeLtipAccountsData().subscribe((list) => {
         let ltipAccountData = list.find(el => el.id.toLowerCase() === this.smartLoanContract.address.toLowerCase());
@@ -133,6 +132,10 @@ export default {
       });
       this.ltipService.observeLtipPrimeAccountArbCollected().subscribe((arbCollected) => {
         this.collectedBonus = arbCollected;
+      });
+      this.ltipService.observeLtipMaxBoostApy().subscribe((apy) => {
+        this.maxBoostApy = apy;
+        this.boostApy = this.maxBoostApy / 4.5;
       });
     }
   },
