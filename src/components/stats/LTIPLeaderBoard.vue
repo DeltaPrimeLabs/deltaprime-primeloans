@@ -2,7 +2,7 @@
   <StatsSection>
     <div class="ltip-leader-board-component">
       <StatsSectionHeader>
-        LTIP leaderboard
+        LTIPP leaderboard
       </StatsSectionHeader>
 
       <div class="leader-board" v-if="showTable">
@@ -133,7 +133,7 @@ export default {
     watchLtipDataUpdate() {
       this.ltipService.observeLtipAccountsData().subscribe((list) => {
         if (list) {
-          this.primeAccountsList = list;
+          this.primeAccountsList = list.filter(el => el.arbCollected > 0);
           this.totalLeaderBoardEntries = this.primeAccountsList.length;
           let myIndex = this.primeAccountsList.findIndex(entry => entry.id.toLowerCase() === this.smartLoanContract.address.toLowerCase());
 

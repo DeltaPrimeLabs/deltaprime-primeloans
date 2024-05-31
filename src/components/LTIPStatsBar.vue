@@ -1,6 +1,6 @@
 <template>
 <div class="ltip-stats-bar-component">
-  <div class="ltip__title">LTIP Incentives Program</div>
+  <div class="ltip__title">LTIPP Incentives Program</div>
   <div class="stats-row">
     <div class="stat__entry">
       <div class="stat-label">
