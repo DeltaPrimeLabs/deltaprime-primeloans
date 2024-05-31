@@ -321,7 +321,7 @@ export default {
     },
 
     hasGmIncentives() {
-      return window.chain === 'avalanche';
+      return false;
     }
   },
 

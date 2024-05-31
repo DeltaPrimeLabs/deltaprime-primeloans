@@ -57,7 +57,7 @@ export default {
     SWAP_DEXS_CONFIG: {
         ParaSwapV2: {
             displayName: 'ParaSwap',
-            availableAssets: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH', 'GRAIL', 'WOO', 'MAGIC', 'JOE', 'ezETH', 'weETH'],
+            availableAssets: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH', 'GRAIL', 'WOO', 'MAGIC', 'JOE', 'ezETH', 'weETH', 'rsETH'],
             slippageMargin: 0.05
         },
         YakSwap: {
@@ -164,6 +164,8 @@ export default {
             logoExt: 'png',
             groupIdentifier: 'PENDLE_EZ_ETH_LP_GROUP',
             name: 'PENPIE',
+            link: 'https://www.pendle.magpiexyz.io/stake/0x5E03C94Fc5Fb2E21882000A96Df0b63d2c4312e2',
+            maturity: '27/06/2024'
         },
         'PENDLE_WSTETH_LP': {
             protocol: 'PENPIE',
@@ -185,6 +187,8 @@ export default {
             logoExt: 'png',
             groupIdentifier: 'PENDLE_WSTETH_LP_GROUP',
             name: 'PENPIE',
+            link: 'https://www.pendle.magpiexyz.io/stake/0xFd8AeE8FCC10aac1897F8D5271d112810C79e022',
+            maturity: '27/06/2024'
         },
         'PENDLE_E_ETH_LP': {
             protocol: 'PENPIE',
@@ -206,6 +210,8 @@ export default {
             logoExt: 'png',
             groupIdentifier: 'PENDLE_E_ETH_LP_GROUP',
             name: 'PENPIE',
+            link: 'https://www.pendle.magpiexyz.io/stake/0xf9F9779d8fF604732EBA9AD345E6A27EF5c2a9d6',
+            maturity: '26/09/2024'
         },
         'PENDLE_RS_ETH_LP': {
             protocol: 'PENPIE',
@@ -227,6 +233,8 @@ export default {
             logoExt: 'png',
             groupIdentifier: 'PENDLE_RS_ETH_LP_GROUP',
             name: 'PENPIE',
+            link: 'https://www.pendle.magpiexyz.io/stake/0x6Ae79089b2CF4be441480801bb741A531d94312b',
+            maturity: '27/06/2024'
         },
         'PENDLE_SILO_ETH_WSTETH_LP': {
             protocol: 'PENPIE',
@@ -248,6 +256,8 @@ export default {
             logoExt: 'png',
             groupIdentifier: 'PENDLE_SILO_ETH_WSTETH_LP_GROUP',
             name: 'PENPIE',
+            link: 'https://www.pendle.magpiexyz.io/stake/0xACcd9A7cb5518326BeD715f90bD32CDf2fEc2D14',
+            maturity: '26/12/2024'
         }
     },
     LEVEL_LP_ASSETS_CONFIG: {
