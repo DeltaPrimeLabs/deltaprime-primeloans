@@ -29,7 +29,7 @@ const arbitrumIncentivesChecker = async () => {
       totalIncentivesPerHour += item.arbCollected ? Number(item.arbCollected) : 0;
     });
 
-    const multiplier = Math.floor(totalIncentivesPerHour / expectedIncentives);
+    const multiplier = Math.round(totalIncentivesPerHour / expectedIncentives);
 
     const diff = Math.abs(totalIncentivesPerHour / multiplier - expectedIncentives); 
     console.log(`totalIncentivesPerHour: ${totalIncentivesPerHour / multiplier}, diff: ${diff}`);
