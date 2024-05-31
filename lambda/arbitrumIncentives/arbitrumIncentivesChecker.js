@@ -4,8 +4,8 @@ const {
 } = require('../utils/helpers');
 const pingUrl = require('../.secrets/ping.json');
 
-const threshold = 0.0000000000001;
-const expectedIncentives = 0.5952380952380952; // change the value accordingly based on incentives of interval
+const threshold = 0.000001;
+const expectedIncentives = 44.642857143; // change the value accordingly based on incentives of interval
 
 const arbitrumIncentivesChecker = async () => {
   try {
@@ -41,7 +41,7 @@ const arbitrumIncentivesChecker = async () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          errorMessage: `*this is test* difference: ${diff}, threshold set: ${threshold}, expected incentives per interval: ${expectedIncentives}`
+          errorMessage: `difference: ${diff}, threshold set: ${threshold}, expected incentives per interval: ${expectedIncentives}`
         })
       });
     }
