@@ -29,8 +29,10 @@ const arbitrumIncentivesChecker = async () => {
       totalIncentivesPerHour += item.arbCollected ? Number(item.arbCollected) : 0;
     });
 
-    const diff = Math.abs(totalIncentivesPerHour - expectedIncentives); 
-    console.log(`totalIncentivesPerHour: ${totalIncentivesPerHour}, diff: ${diff}`);
+    const multiplier = Math.floor(totalIncentivesPerHour / expectedIncentives);
+
+    const diff = Math.abs(totalIncentivesPerHour / multiplier - expectedIncentives); 
+    console.log(`totalIncentivesPerHour: ${totalIncentivesPerHour / multiplier}, diff: ${diff}`);
 
     if (diff < threshold) {
       await fetch(pingUrl.ltipPAChecker.success);
