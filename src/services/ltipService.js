@@ -9,6 +9,7 @@ export default class LtipService {
   primeAccountEligibleTvl$ = new BehaviorSubject(null);
   primeAccountArbCollected$ = new BehaviorSubject(null);
   poolApyData$ = new BehaviorSubject([]);
+  ltipMaxBoostApy$ = new BehaviorSubject(null);
 
   emitRefreshPrimeAccountsLtipData(primeAccountAddress) {
     this.updateLtipData(primeAccountAddress);
@@ -24,6 +25,10 @@ export default class LtipService {
 
   emitRefreshPoolLtipData() {
     this.updatePoolLtipData();
+  }
+
+  emitRefreshLtipMaxBoostApy(arbPrice, arbApy) {
+    this.updateLtipMaxBoostApy(arbPrice, arbApy);
   }
 
   observeLtipAccountsData() {
@@ -44,6 +49,10 @@ export default class LtipService {
 
   observeLtipPoolData() {
     return this.poolApyData$.asObservable();
+  }
+
+  observeLtipMaxBoostApy() {
+    return this.ltipMaxBoostApy$.asObservable();
   }
 
   async updateLtipData(primeAccountAddress) {
@@ -71,6 +80,10 @@ export default class LtipService {
             json => this.poolApyData$.next(json)
         )
     );
+  }
+
+  updateLtipMaxBoostApy(arbPrice, arbApy) {
+     this.ltipMaxBoostApy$.next(4.5 * arbPrice * arbApy);
   }
 
   async updatePrimeAccountEligibleTvl(wrappedContract) {

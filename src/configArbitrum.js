@@ -33,7 +33,7 @@ export default {
       "UNI": {name: "UNI", symbol: "UNI", logoExt: "png", decimals: 18, address: addresses.UNI, debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:UNIUSDT"},
       "LINK": {name: "LINK", symbol: "LINK", decimals: 18, address: addresses.LINK, debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:LINKUSDT"},
       "GMX": {name: "GMX", symbol: "GMX", logoExt: "png", decimals: 18, address: addresses.GMX, debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:GMXUSDT"},
-      "GLP": {name: "GLP", symbol: "GLP", logoExt: "png", decimals: 18, address: addresses.GLP, debtCoverage: 0.83333333333, tradingViewSymbol: ""},
+      "GLP": {name: "GLP", symbol: "GLP", logoExt: "png", decimals: 18, address: addresses.GLP, debtCoverage: 0.83333333333, tradingViewSymbol: "", hasIncentives: true},
       // "DPX": {name: "DPX", symbol: "DPX", logoExt: "png", decimals: 18, address: addresses.DPX, debtCoverage: 0.83333333333, tradingViewSymbol: "BYBIT:DPXUSDT"},
       "MAGIC": {name: "MAGIC", symbol: "MAGIC", logoExt: "png", decimals: 18, address: addresses.MAGIC, groupIdentifier: "MAGIC_GROUP", debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:MAGICUSDT"},
       "WOO": {name: "WOO", symbol: "WOO", logoExt: "png", decimals: 18, address: addresses.WOO, groupIdentifier: "WOO_GROUP", debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:WOOUSDT"},

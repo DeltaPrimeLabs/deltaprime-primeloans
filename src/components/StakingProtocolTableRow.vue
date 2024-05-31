@@ -61,7 +61,7 @@
       </div>
 
       <div class="table__cell max-apy">
-        {{ maxApy | percent }}
+        <span>{{ (maxApy + boostApy) | percent }}<img v-if="boostApy" v-tooltip="{content: `This pool is incentivized!<br>⁃ up to ${maxApy ? (maxApy * 100).toFixed(2) : 0}% Pool APR<br>⁃ up to ${boostApy ? (boostApy * 100).toFixed(2) : 0}% ${chain === 'arbitrum' ? 'ARB' : 'AVAX'} incentives`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span>
       </div>
 
       <div class="table__cell">
@@ -119,6 +119,7 @@ export default {
     }
   },
   async mounted() {
+    this.chain = window.chain;
     this.setupAddActionsConfiguration();
     this.setupRemoveActionsConfiguration();
     this.watchHardRefreshScheduledEvent();
@@ -127,15 +128,18 @@ export default {
     this.watchProgressBarState();
     this.watchFarmRefreshEvent();
     this.watchExternalStakedPerFarm();
+    this.watchLtipMaxBoostUpdate();
     this.platypusAffected = this.farm.strategy === 'Platypus' && ['AVAX', 'sAVAX'].includes(this.asset.symbol);
     this.platypusAffectedDisableDeposit = this.farm.strategy === 'Platypus' && ['USDC', 'USDT'].includes(this.asset.symbol)
   },
   data() {
     return {
+      chain: null,
       receiptTokenBalance: 0,
       underlyingTokenStaked: 0,
       apy: 0,
       maxApy: 0,
+      boostApy: 0,
       rewards: 0,
       isStakedBalanceEstimated: false,
       disableAllButtons: false,
@@ -189,7 +193,8 @@ export default {
       'progressBarService',
       'farmService',
       'healthService',
-      'deprecatedAssetsService'
+      'deprecatedAssetsService',
+      'ltipService'
     ]),
     protocol() {
       return config.PROTOCOLS_CONFIG[this.farm.protocol];
@@ -433,6 +438,12 @@ export default {
       });
     },
 
+    watchLtipMaxBoostUpdate() {
+      this.ltipService.observeLtipMaxBoostApy().subscribe((boostApy) => {
+        this.boostApy = boostApy;
+      });
+    },
+
     setApy() {
       if (!this.farm.currentApy) return 0;
 
@@ -672,6 +683,12 @@ export default {
 
       &.max-apy {
         font-weight: 600;
+
+        .stars-icon {
+          width: 20px;
+          margin-right: 10px;
+          transform: translateY(-2px);
+        }
       }
 
       .reward__icons {

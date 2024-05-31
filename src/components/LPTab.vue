@@ -35,7 +35,7 @@
                             :lp-token="lpToken" :lp-tokens="balancerLpTokens"></BalancerLpTableRow>
       </div>
     </div>
-    <div class="lp-tokens" v-if="Object.keys(levelLpTokens).length">
+    <div class="lp-tokens" v-if="Object.keys(levelLpTokens).length && showLevel">
       <div class="lp-table level" v-if="levelLpTokens">
         <TableHeader :config="levelLpTableHeaderConfig"></TableHeader>
         <div class="lp-table__warning">
@@ -115,6 +115,7 @@ export default {
       penpieLpTableHeaderConfig: null,
       levelLpTokens: config.LEVEL_LP_ASSETS_CONFIG,
       levelLpTableHeaderConfig: null,
+      showLevel: false,
       gmIncentivesTableHeaderConfig: null,
       selectedLpTokens: [] = [],
       assets: null,
@@ -136,6 +137,7 @@ export default {
     this.setupPenpieLpTableHeaderConfig();
     this.fetchOpenInterestData();
     this.isAvalanche = window.chain === 'avalanche';
+    this.showLevel = this.levelLpBalances;
   },
   computed: {
     ...mapState('serviceRegistry', [
@@ -144,6 +146,7 @@ export default {
     ...mapState('fundsStore', [
       'concentratedLpBalances',
       'lpBalances',
+      'levelLpBalances'
     ]),
     filteredLpTokens() {
       return Object.values(this.lpTokens).filter(token =>
@@ -766,6 +769,17 @@ export default {
           tooltip: `The raffle-tickets you accumulated. Mint more GM to boost your ticket-yield.`
         });
       }
+    },
+    hasLtipIncentives() {
+      return window.chain === 'avalanche';
+    },
+    setupLtipBoost() {
+      let apy = 0;
+      if (!this.apys || !this.assets) return 0;
+      if (this.apys['LTIP_BOOST'] * this.assets['ARB']) {
+        apy = this.apys['LTIP_BOOST'].arbApy * this.assets['ARB'].price;
+      }
+      return this.hasLtipIncentives ? 4.5 * apy : 0;
     },
     watchAssetPricesUpdate() {
       this.priceService.observeRefreshPrices().subscribe((updateEvent) => {
