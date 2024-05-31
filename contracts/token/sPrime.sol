@@ -413,8 +413,8 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, PendingOwnableUpgradeabl
         require(swapSlippage <= _MAX_SLIPPAGE, "Slippage too high");
 
         _transferTokens(_msgSender(), address(this), amountX, amountY);
-        uint256 activeId;
         uint256 tokenId = getUserTokenId(_msgSender());
+        uint256 activeId = lbPair.getActiveId();
         if(tokenId > 0) {
             (,,, uint256 share, uint256 centerId, uint256[] memory liquidityMinted) = positionManager.positions(tokenId);
             activeId = centerId;
@@ -426,14 +426,17 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, PendingOwnableUpgradeabl
                 _burn(_msgSender(), share);
 
                 (amountX, amountY) = (amountX + amountXBefore, amountY + amountYBefore);
+                tokenId = 0;
             }
         }
         (amountX, amountY) = _swapForEqualValues(amountX, amountY, swapSlippage);
+        
+        // Revert if active id moved without rebalancing
+        require(activeId == lbPair.getActiveId() || tokenId == 0, "Bin id changed");
+        activeId = lbPair.getActiveId();
 
-        if(getUserTokenId(_msgSender()) == 0) {
-            activeId = lbPair.getActiveId();
-            require(activeIdDesired + idSlippage >= activeId && activeId + idSlippage >= activeIdDesired, "Slippage High");
-        }
+        require(activeIdDesired + idSlippage >= activeId && activeId + idSlippage >= activeIdDesired, "Slippage High");
+
         _transferTokens(address(this), address(lbPair), amountX, amountY);
         _depositToLB(_msgSender(), activeId);
         proxyCalldata(
