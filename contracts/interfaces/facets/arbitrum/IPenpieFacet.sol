@@ -4,9 +4,8 @@ import "../../arbitrum/IPendleRouter.sol";
 
 interface IPenpieFacet {
     function depositToPendleAndStakeInPenpie(
-        bytes32 asset,
-        uint256 amount,
         address market,
+        uint256 amount,
         uint256 minLpOut,
         IPendleRouter.ApproxParams memory guessPtReceivedFromSy,
         IPendleRouter.TokenInput memory input,
@@ -14,9 +13,8 @@ interface IPenpieFacet {
     ) external;
 
     function unstakeFromPenpieAndWithdrawFromPendle(
-        bytes32 asset,
-        uint256 amount,
         address market,
+        uint256 amount,
         uint256 minOut,
         IPendleRouter.TokenOutput memory output,
         IPendleRouter.LimitOrderData memory limit
@@ -37,4 +35,17 @@ interface IPenpieFacet {
     ) external view returns (uint256, address[] memory, uint256[] memory);
 
     function claimRewards(address market) external;
+
+    function underlyingBalanceForEzEthMarket() external view returns (uint256);
+
+    function underlyingBalanceForWstEthMarket() external view returns (uint256);
+
+    function underlyingBalanceForEEthMarket() external view returns (uint256);
+
+    function underlyingBalanceForRsEthMarket() external view returns (uint256);
+
+    function underlyingBalanceForWstEthSiloMarket()
+        external
+        view
+        returns (uint256);
 }

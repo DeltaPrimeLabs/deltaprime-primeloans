@@ -182,6 +182,12 @@ describe('Smart loan', () => {
 
             await smartLoansFactory.initialize(diamondAddress, tokenManager.address);
 
+            await tokenManager.setDebtCoverageStaked(toBytes32("PENDLE_EZ_ETH"), toWei("0.8333333333333333"));
+            await tokenManager.setDebtCoverageStaked(toBytes32("PENDLE_WST_ETH"), toWei("0.8333333333333333"));
+            await tokenManager.setDebtCoverageStaked(toBytes32("PENDLE_E_ETH"), toWei("0.8333333333333333"));
+            await tokenManager.setDebtCoverageStaked(toBytes32("PENDLE_RS_ETH"), toWei("0.8333333333333333"));
+            await tokenManager.setDebtCoverageStaked(toBytes32("PENDLE_WST_ETH_SILO"), toWei("0.8333333333333333"));
+
             let addressProvider = await deployContract(
                 owner,
                 AddressProviderArtifact,
@@ -276,9 +282,8 @@ describe('Smart loan', () => {
 
         it("should fail to stake as a non-owner", async () => {
             const mockArgs = [
-                toBytes32("ETH"),
-                0,
                 ethers.constants.AddressZero,
+                0,
                 0,
                 {
                     guessMin: 0,
@@ -312,9 +317,8 @@ describe('Smart loan', () => {
 
         it("should fail to unstake as a non-owner", async () => {
             const mockArgs = [
-                toBytes32("ETH"),
-                0,
                 ethers.constants.AddressZero,
+                0,
                 0,
                 {
                     tokenOut: ethers.constants.AddressZero,
@@ -450,25 +454,20 @@ describe('Smart loan', () => {
             });
             const { data: { contractCallParams: { 3: guessPtReceivedFromSy, 4: input, 5: limit } } } = await axios.get(`${pendleApiBaseUrl}/v1/addLiquiditySingleToken?${queryParams}`);
 
-            const beforeLpExposure = await getAssetExposure(lpToken);
             const beforeTokenExposure = await getAssetExposure(asset);
-            expect(await loanOwnsAsset(lpToken)).to.be.false;
 
             console.log(`Depositing ${fromWei(amount)} ${asset} - $${tokensPrices.get(asset)! * fromWei(amount)}`);
 
-            await wrappedLoan.depositToPendleAndStakeInPenpie(toBytes32(asset), amount, market, minLpOut, guessPtReceivedFromSy, input, limit);
+            await wrappedLoan.depositToPendleAndStakeInPenpie(market, amount, minLpOut, guessPtReceivedFromSy, input, limit);
 
             const received = await tokenContracts.get(lpToken)!.balanceOf(wrappedLoan.address);
             console.log(`Received ${fromWei(received)} ${lpToken} - $${tokensPrices.get(lpToken)! * fromWei(received)}`);
 
             console.log(`Expected amount: ${tokensPrices.get(asset)! * fromWei(amount) / tokensPrices.get(lpToken)!}`);
 
-            expect(await loanOwnsAsset(lpToken)).to.be.true;
-            const afterLpExposure = await getAssetExposure(lpToken);
             const afterTokenExposure = await getAssetExposure(asset);
 
             expect(beforeTokenExposure.current.sub(afterTokenExposure.current)).to.be.eq(amount);
-            expect(afterLpExposure.current).to.be.gt(beforeLpExposure.current);
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 100);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.0001);
@@ -489,20 +488,15 @@ describe('Smart loan', () => {
             });
             const { data: { contractCallParams: { 3: output, 4: limit } } } = await axios.get(`${pendleApiBaseUrl}/v1/removeLiquiditySingleToken?${queryParams}`);
 
-            const beforeLpExposure = await getAssetExposure(lpToken);
             const beforeTokenExposure = await getAssetExposure(asset);
-            expect(await loanOwnsAsset(lpToken)).to.be.true;
 
             const beforePnpBalance = await pnp.balanceOf(owner.address);
             const beforePendleBalance = await pendle.balanceOf(owner.address);
 
-            await wrappedLoan.unstakeFromPenpieAndWithdrawFromPendle(toBytes32(asset), amount, market, minOut, output, limit);
+            await wrappedLoan.unstakeFromPenpieAndWithdrawFromPendle(market, amount, minOut, output, limit);
 
-            expect(await loanOwnsAsset(lpToken)).to.be.false;
-            const afterLpExposure = await getAssetExposure(lpToken);
             const afterTokenExposure = await getAssetExposure(asset);
 
-            expect(beforeLpExposure.current.sub(afterLpExposure.current)).to.be.eq(amount);
             expect(afterTokenExposure.current).to.be.gt(beforeTokenExposure.current);
 
             const afterPnpBalance = await pnp.balanceOf(owner.address);
@@ -515,30 +509,14 @@ describe('Smart loan', () => {
         }
 
         async function testStakeLp(market: string, amount: BigNumber, lpToken: string) {
-            const beforeLpExposure = await getAssetExposure(lpToken);
-            expect(await loanOwnsAsset(lpToken)).to.be.false;
-
             await wrappedLoan.depositPendleLPAndStakeInPenpie(market, amount);
-
-            expect(await loanOwnsAsset(lpToken)).to.be.true;
-            const afterLpExposure = await getAssetExposure(lpToken);
-
-            expect(afterLpExposure.current.sub(beforeLpExposure.current)).to.be.eq(amount);
         }
 
         async function testUnstakeLp(market: string, amount: BigNumber, lpToken: string) {
-            const beforeLpExposure = await getAssetExposure(lpToken);
-            expect(await loanOwnsAsset(lpToken)).to.be.true;
-
             const beforePnpBalance = await pnp.balanceOf(owner.address);
             const beforePendleBalance = await pendle.balanceOf(owner.address);
 
             await wrappedLoan.unstakeFromPenpieAndWithdrawPendleLP(market, amount);
-
-            expect(await loanOwnsAsset(lpToken)).to.be.false;
-            const afterLpExposure = await getAssetExposure(lpToken);
-
-            expect(beforeLpExposure.current.sub(afterLpExposure.current)).to.be.eq(amount);
 
             const afterPnpBalance = await pnp.balanceOf(owner.address);
             const afterPendleBalance = await pendle.balanceOf(owner.address);

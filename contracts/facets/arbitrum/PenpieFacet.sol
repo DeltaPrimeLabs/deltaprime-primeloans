@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../../ReentrancyGuardKeccak.sol";
 import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
 import "../../interfaces/arbitrum/IPendleRouter.sol";
+import "../../interfaces/arbitrum/IPendleOracle.sol";
 import "../../interfaces/arbitrum/IPendleDepositHelper.sol";
 import "../../interfaces/arbitrum/IMasterPenpie.sol";
 import "../../OnlyOwnerOrInsolvent.sol";
@@ -27,6 +28,8 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         0x6DB96BBEB081d2a85E0954C252f2c1dC108b3f81;
     address public constant MASTER_PENPIE =
         0x0776C06907CE6Ff3d9Dbf84bA9B3422d7225942D;
+    address public constant PENDLE_ORACLE =
+        0x1Fd95db7B7C0067De8D45C0cb35D59796adfD187;
     address public constant PNP = 0x2Ac2B254Bc18cD4999f64773a966E4f4869c34Ee;
     address public constant PENDLE = 0x0c880f6761F1af8d9Aa9C466984b80DAb9a8c9e8;
     address public constant SILO = 0x0341C0C0ec423328621788d4854119B97f44E391;
@@ -42,15 +45,17 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     address public constant PENDLE_WST_ETH_SILO_MARKET =
         0xACcd9A7cb5518326BeD715f90bD32CDf2fEc2D14;
 
+    // ERRORS
+    error InvalidMarket(address market);
+
     // PUBLIC FUNCTIONS
 
     /**
      * @dev This function uses the redstone-evm-connector
      **/
     function depositToPendleAndStakeInPenpie(
-        bytes32 asset,
-        uint256 amount,
         address market,
+        uint256 amount,
         uint256 minLpOut,
         IPendleRouter.ApproxParams memory guessPtReceivedFromSy,
         IPendleRouter.TokenInput memory input,
@@ -58,6 +63,7 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     ) external onlyOwner nonReentrant remainsSolvent {
         address lpToken = _getPendleLpToken(market);
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        bytes32 asset = _getUnderlyingAssetForMarket(market);
         IERC20 token = IERC20(tokenManager.getAssetAddress(asset, false));
 
         amount = Math.min(token.balanceOf(address(this)), amount);
@@ -82,7 +88,15 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
         IPendleDepositHelper(DEPOSIT_HELPER).depositMarket(market, netLpOut);
 
-        _increaseExposure(tokenManager, lpToken, netLpOut);
+        IStakingPositions.StakedPosition memory position = IStakingPositions
+            .StakedPosition({
+                asset: address(token),
+                symbol: asset,
+                identifier: _getMarketIdentifier(market),
+                balanceSelector: _getBalanceSelectorForMarket(market),
+                unstakeSelector: bytes4(0)
+            });
+        DiamondStorageLib.addStakedPosition(position);
         _decreaseExposure(tokenManager, address(token), amount);
 
         emit Staked(msg.sender, asset, lpToken, amount, netLpOut, block.timestamp);
@@ -92,13 +106,13 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
      * @dev This function uses the redstone-evm-connector
      **/
     function unstakeFromPenpieAndWithdrawFromPendle(
-        bytes32 asset,
-        uint256 amount,
         address market,
+        uint256 amount,
         uint256 minOut,
         IPendleRouter.TokenOutput memory output,
         IPendleRouter.LimitOrderData memory limit
     ) external onlyOwnerOrInsolvent nonReentrant returns (uint256) {
+        bytes32 asset = _getUnderlyingAssetForMarket(market);
         address lpToken = _getPendleLpToken(market);
         uint256 netTokenOut;
 
@@ -146,7 +160,9 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             address token = tokenManager.getAssetAddress(asset, false);
 
             _increaseExposure(tokenManager, token, netTokenOut);
-            _decreaseExposure(tokenManager, lpToken, amount);
+            if (IERC20(lpToken).balanceOf(address(this)) == 0) {
+                DiamondStorageLib.removeStakedPosition(_getMarketIdentifier(market));
+            }
         }
 
         emit Unstaked(
@@ -178,7 +194,18 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         IPendleDepositHelper(DEPOSIT_HELPER).depositMarket(market, amount);
 
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        _increaseExposure(tokenManager, lpToken, amount);
+        bytes32 asset = _getUnderlyingAssetForMarket(market);
+        IERC20 token = IERC20(tokenManager.getAssetAddress(asset, false));
+
+        IStakingPositions.StakedPosition memory position = IStakingPositions
+            .StakedPosition({
+                asset: address(token),
+                symbol: asset,
+                identifier: _getMarketIdentifier(market),
+                balanceSelector: _getBalanceSelectorForMarket(market),
+                unstakeSelector: bytes4(0)
+            });
+        DiamondStorageLib.addStakedPosition(position);
 
         emit PendleLpStaked(msg.sender, lpToken, amount, block.timestamp);
     }
@@ -189,7 +216,14 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     function unstakeFromPenpieAndWithdrawPendleLP(
         address market,
         uint256 amount
-    ) external onlyOwner canRepayDebtFully nonReentrant remainsSolvent returns (uint256) {
+    )
+        external
+        onlyOwner
+        canRepayDebtFully
+        nonReentrant
+        remainsSolvent
+        returns (uint256)
+    {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         address lpToken = _getPendleLpToken(market);
 
@@ -204,7 +238,8 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             true
         );
 
-        uint256 pendleClaimed = IERC20(PENDLE).balanceOf(address(this)) - beforePendleBalance;
+        uint256 pendleClaimed = IERC20(PENDLE).balanceOf(address(this)) -
+            beforePendleBalance;
         if (pendleClaimed > 0) {
             PENDLE.safeTransfer(msg.sender, pendleClaimed);
         }
@@ -216,11 +251,37 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             PNP.safeTransfer(msg.sender, pnpReceived);
         }
 
-        _decreaseExposure(tokenManager, lpToken, amount);
+        if (IERC20(lpToken).balanceOf(address(this)) == 0) {
+            DiamondStorageLib.removeStakedPosition(_getMarketIdentifier(market));
+        }
 
         emit PendleLpUnstaked(msg.sender, lpToken, amount, block.timestamp);
 
         return amount;
+    }
+
+    function underlyingBalanceForEzEthMarket() external view returns (uint256) {
+        return _getUnderlyingBalanceForMarket(PENDLE_EZ_ETH_MARKET, false);
+    }
+
+    function underlyingBalanceForWstEthMarket() external view returns (uint256) {
+        return _getUnderlyingBalanceForMarket(PENDLE_WST_ETH_MARKET, false);
+    }
+
+    function underlyingBalanceForEEthMarket() external view returns (uint256) {
+        return _getUnderlyingBalanceForMarket(PENDLE_E_ETH_MARKET, false);
+    }
+
+    function underlyingBalanceForRsEthMarket() external view returns (uint256) {
+        return _getUnderlyingBalanceForMarket(PENDLE_RS_ETH_MARKET, false);
+    }
+
+    function underlyingBalanceForWstEthSiloMarket()
+        external
+        view
+        returns (uint256)
+    {
+        return _getUnderlyingBalanceForMarket(PENDLE_WST_ETH_SILO_MARKET, true);
     }
 
     function pendingRewards(
@@ -279,7 +340,102 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             return 0xCcCC7c80c9Be9fDf22e322A5fdbfD2ef6ac5D574;
         }
 
-        revert("Invalid market address");
+        revert InvalidMarket(market);
+    }
+
+    function _getMarketIdentifier(
+        address market
+    ) internal pure returns (bytes32) {
+        // ezETH
+        if (market == PENDLE_EZ_ETH_MARKET) {
+            return "PENDLE_EZ_ETH";
+        }
+        // wstETH
+        if (market == PENDLE_WST_ETH_MARKET) {
+            return "PENDLE_WST_ETH";
+        }
+        // eETH
+        if (market == PENDLE_E_ETH_MARKET) {
+            return "PENDLE_E_ETH";
+        }
+        // rsETH
+        if (market == PENDLE_RS_ETH_MARKET) {
+            return "PENDLE_RS_ETH";
+        }
+        // wstETHSilo
+        if (market == PENDLE_WST_ETH_SILO_MARKET) {
+            return "PENDLE_WST_ETH_SILO";
+        }
+
+        revert InvalidMarket(market);
+    }
+
+    function _getUnderlyingAssetForMarket(
+        address market
+    ) internal pure returns (bytes32) {
+        // ezETH
+        if (market == PENDLE_EZ_ETH_MARKET) {
+            return "ezETH";
+        }
+        // wstETH
+        if (market == PENDLE_WST_ETH_MARKET) {
+            return "wstETH";
+        }
+        // eETH
+        if (market == PENDLE_E_ETH_MARKET) {
+            return "weETH";
+        }
+        // rsETH
+        if (market == PENDLE_RS_ETH_MARKET) {
+            return "rsETH";
+        }
+        // wstETHSilo
+        if (market == PENDLE_WST_ETH_SILO_MARKET) {
+            return "ETH";
+        }
+
+        revert InvalidMarket(market);
+    }
+
+    function _getBalanceSelectorForMarket(
+        address market
+    ) internal view returns (bytes4) {
+        // ezETH
+        if (market == PENDLE_EZ_ETH_MARKET) {
+            return this.underlyingBalanceForEzEthMarket.selector;
+        }
+        // wstETH
+        if (market == PENDLE_WST_ETH_MARKET) {
+            return this.underlyingBalanceForWstEthMarket.selector;
+        }
+        // eETH
+        if (market == PENDLE_E_ETH_MARKET) {
+            return this.underlyingBalanceForEEthMarket.selector;
+        }
+        // rsETH
+        if (market == PENDLE_RS_ETH_MARKET) {
+            return this.underlyingBalanceForRsEthMarket.selector;
+        }
+        // wstETHSilo
+        if (market == PENDLE_WST_ETH_SILO_MARKET) {
+            return this.underlyingBalanceForWstEthSiloMarket.selector;
+        }
+
+        revert InvalidMarket(market);
+    }
+
+    function _getUnderlyingBalanceForMarket(
+        address market,
+        bool isSilo
+    ) internal view returns (uint256) {
+        address lpToken = _getPendleLpToken(market);
+        uint256 balance = IERC20(lpToken).balanceOf(address(this));
+        IPendleOracle oracle = IPendleOracle(PENDLE_ORACLE);
+        uint256 rate = isSilo
+            ? oracle.getLpToAssetRate(market, 1 days)
+            : oracle.getLpToSyRate(market, 1 days);
+
+        return (balance * rate) / 1e18;
     }
 
     // MODIFIERS
