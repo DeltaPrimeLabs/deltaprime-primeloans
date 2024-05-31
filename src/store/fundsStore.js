@@ -233,7 +233,6 @@ export default {
       await dispatch('setupLpAssets');
       await dispatch('setupConcentratedLpAssets');
       await dispatch('setupTraderJoeV2LpAssets');
-      await dispatch('setupPenpieLpAssets');
       if (config.BALANCER_LP_ASSETS_CONFIG) await dispatch('setupBalancerLpAssets');
       if (config.LEVEL_LP_ASSETS_CONFIG) await dispatch('setupLevelLpAssets');
       if (config.GMX_V2_ASSETS_CONFIG) await dispatch('setupGmxV2Assets');
@@ -481,6 +480,7 @@ export default {
     },
 
     async setupPenpieLpAssets({state, rootState, commit}) {
+      if (!state.smartLoanContract || state.smartLoanContract.address === NULL_ADDRESS) return;
       const lpService = rootState.serviceRegistry.lpService;
       let lpTokens = {};
       Object.values(config.PENPIE_LP_ASSETS_CONFIG).forEach(
