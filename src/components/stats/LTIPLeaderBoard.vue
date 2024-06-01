@@ -9,7 +9,7 @@
         <TableHeader :config="leaderBoardTableHeaderConfig"></TableHeader>
         <div class="leader-board-table">
           <div class="leader-board-row" v-for="(entry, index) of leaderBoardData">
-            <div class="leader-board-cell place">{{ index + 1 + (page * PAGE_SIZE) | ordinal }}</div>
+            <div class="leader-board-cell place">{{ index + 1 + ((page - 1) * PAGE_SIZE) | ordinal }}</div>
             <div class="leader-board-cell prime-account">
               <span v-if="!entry.isMe">{{ entry.address | tx(false) }}</span>
               <span v-if="entry.isMe" class="prime-account--you">You</span>
@@ -112,7 +112,7 @@ export default {
       setTimeout(() => {
         this.$forceUpdate();
         this.leaderBoardData = this.primeAccountsList
-          .slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+          .slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
           .map(entry => ({
             address: entry.id,
             earnedIncentives: entry.arbCollected,
@@ -137,7 +137,9 @@ export default {
           this.totalLeaderBoardEntries = this.primeAccountsList.length;
           let myIndex = this.primeAccountsList.findIndex(entry => entry.id.toLowerCase() === this.smartLoanContract.address.toLowerCase());
 
-          this.page = Math.floor(myIndex / PAGE_SIZE);
+          console.log('myIndex: ', myIndex)
+          console.log('primeAccountsList.length: ', this.primeAccountsList.length)
+          this.page = Math.max(Math.ceil(myIndex / PAGE_SIZE), 1);
           this.setPagedData(this.page);
         }
       });

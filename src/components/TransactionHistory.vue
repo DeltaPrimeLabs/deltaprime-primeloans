@@ -248,8 +248,8 @@ export default {
     },
 
     pageChange(page) {
-      this.page = page;
-      this.getTransactionHistory(this.account, this.page, this.pageSize);
+      this.page = page ;
+      this.getTransactionHistory(this.account, this.page - 1, this.pageSize);
     },
   }
 };

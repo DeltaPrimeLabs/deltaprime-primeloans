@@ -101,7 +101,7 @@ export default {
       yourEligibleTVL: null,
       boostApy: 0,
       maxBoostApy: 0,
-      collectedBonus: null,
+      collectedBonus: 0,
     }
   },
   mounted() {
@@ -120,10 +120,6 @@ export default {
       return maxInt8
     },
     watchLtipDataUpdate() {
-      this.ltipService.observeLtipAccountsData().subscribe((list) => {
-        let ltipAccountData = list.find(el => el.id.toLowerCase() === this.smartLoanContract.address.toLowerCase());
-        if (ltipAccountData) this.collectedBonus = ltipAccountData.arbCollected;
-      });
       this.ltipService.observeLtipTotalEligibleTvlData().subscribe((tvl) => {
         this.totalEligibleTVL = tvl;
       });
@@ -131,7 +127,7 @@ export default {
         this.yourEligibleTVL = tvl;
       });
       this.ltipService.observeLtipPrimeAccountArbCollected().subscribe((arbCollected) => {
-        this.collectedBonus = arbCollected;
+        if (arbCollected) this.collectedBonus = arbCollected;
       });
       this.ltipService.observeLtipMaxBoostApy().subscribe((apy) => {
         this.maxBoostApy = apy;

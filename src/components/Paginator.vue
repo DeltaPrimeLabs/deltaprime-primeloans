@@ -32,7 +32,8 @@ export default {
     return {
       previousDisabled: null,
       nextDisabled: null,
-      totalPages: null
+      totalPages: null,
+      currentPage: 1
     }
   },
 
@@ -42,14 +43,18 @@ export default {
 
   methods: {
     setup() {
-      this.totalPages = Math.max(Math.ceil(this.totalElements / this.pageSize) - 1, 1); //TODO: check this - 1
+      this.totalPages = Math.max(Math.ceil(this.totalElements / this.pageSize), 1);
       this.currentPage = this.startPage
     },
 
     nextPage() {
+      console.log('nextPage')
       if (this.currentPage !== this.totalPages) {
+        console.log(1)
         this.currentPage++;
+        console.log(2)
         this.nextDisabled = this.currentPage === this.totalPages;
+        console.log(3)
         this.$emit('pageChange', this.currentPage);
       }
     },
