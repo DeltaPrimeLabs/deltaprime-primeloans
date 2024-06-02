@@ -160,9 +160,8 @@ describe('Smart loan', () => {
 
             expect(await loanOwnsAsset("CAI")).to.be.false;
 
-            let minOut = toWei((tokensPrices.get("AVAX")! * 9.8 / tokensPrices.get("CAI")!).toFixed(18));
             const mintData = await getMintData(TOKEN_ADDRESSES['AVAX'], toWei('10').toString(), wrappedLoan.address);
-            await wrappedLoan.mintCai(mintData.selector, mintData.data, TOKEN_ADDRESSES['AVAX'], toWei('10'), minOut);
+            await wrappedLoan.mintCai(mintData.selector, mintData.data, TOKEN_ADDRESSES['AVAX'], toWei('10'), 500);
 
             expect(await loanOwnsAsset("CAI")).to.be.true;
 
@@ -180,9 +179,8 @@ describe('Smart loan', () => {
 
             const caiBalance = await tokenContracts.get("CAI")!.balanceOf(wrappedLoan.address);
 
-            let minOut = toWei((tokensPrices.get("CAI")! * fromWei(caiBalance) * 0.96 / tokensPrices.get("AVAX")!).toFixed(18));
             const burnData = await getBurnData(caiBalance, TOKEN_ADDRESSES['AVAX'], wrappedLoan.address);
-            await wrappedLoan.burnCai(burnData.selector, burnData.data, caiBalance, TOKEN_ADDRESSES['AVAX'], minOut);
+            await wrappedLoan.burnCai(burnData.selector, burnData.data, caiBalance, TOKEN_ADDRESSES['AVAX'], 500);
 
             expect(await loanOwnsAsset("CAI")).to.be.false;
 
