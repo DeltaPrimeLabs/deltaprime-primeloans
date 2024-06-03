@@ -222,6 +222,7 @@ const arbitrumIncentives = async (rpc = 'first') => {
     };
 
     await dynamoDb.put(params).promise();
+    console.log("LTIP Loan total eligible tvl saved.");
 
     // ping healthcheck end point
     await fetch(pingUrl.ltipPA.success);
