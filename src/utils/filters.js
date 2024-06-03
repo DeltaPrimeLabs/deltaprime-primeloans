@@ -56,6 +56,25 @@ export default function setupFilters() {
     return (value * 100).toFixed(precision) + '%';
   });
 
+  Vue.filter('ordinal', function (value, precision = 2) {
+    if (value == null) return null;
+    if (value <= 3 || value > 20) {
+      const lastDigit = value % 10
+      switch (lastDigit) {
+        case 1:
+          return `${value}st`
+        case 2:
+          return `${value}nd`
+        case 3:
+          return `${value}rd`
+        default:
+          return `${value}th`
+      }
+    } else {
+      return `${value}th`
+    }
+  });
+
   Vue.filter('tx', function (value, short) {
     if (value == null) return null;
     if (short) {

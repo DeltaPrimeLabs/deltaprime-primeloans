@@ -15,7 +15,7 @@
             Borrow&nbsp;APY:&nbsp;{{ borrowApyPerPool[asset.symbol] | percent }}
           </div>
           <div class="asset__loan" v-if="asset.apy">
-            Profit APY:&nbsp;{{ asset.apy / 100 | percent }}
+            APY:&nbsp;{{ asset.apy / 100 | percent }}<span v-if="asset.hasIncentives + boostApy"><br>up to {{4.5 * asset.apy / 100 + boostApy | percent}}<img v-if="boostApy" v-tooltip="{content: `This pool is incentivized!<br>⁃ up to ${asset.apy ? (4.5 * asset.apy).toFixed(2) : 0}% Pool APR<br>⁃ up to ${boostApy ? (boostApy * 100).toFixed(2) : 0}% ${chain === 'arbitrum' ? 'ARB' : 'AVAX'} incentives`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span>
           </div>
         </div>
       </div>
@@ -192,6 +192,7 @@ export default {
     index: null,
   },
   async mounted() {
+    this.chain = window.chain;
     await this.setupFiles();
     this.setupBorrowable();
     this.setupAvailableFarms();
@@ -207,9 +208,11 @@ export default {
     this.setupPoolsApy();
     this.watchExternalTotalStakedUpdate();
     this.watchFarmRefreshEvent();
+    this.watchLtipMaxBoostUpdate();
   },
   data() {
     return {
+      chain: null,
       borrowable: [],
       moreActionsConfig: null,
       rowExpanded: false,
@@ -225,6 +228,7 @@ export default {
       showTradingViewChart: false,
       avalancheChain: window.avalancheChain,
       currentlyOpenModalInstance: null,
+      boostApy: 0
     };
   },
   computed: {
@@ -264,6 +268,7 @@ export default {
       'healthService',
       'stakedExternalUpdateService',
       'farmService',
+      'ltipService'
     ]),
 
     loanValue() {
@@ -1137,6 +1142,12 @@ export default {
       });
     },
 
+    watchLtipMaxBoostUpdate() {
+      this.ltipService.observeLtipMaxBoostApy().subscribe((boostApy) => {
+        this.boostApy = boostApy;
+      });
+    },
+
     setupAvailableFarms() {
       this.availableFarms = config.FARMED_TOKENS_CONFIG[this.asset.symbol];
     },
@@ -1338,6 +1349,12 @@ export default {
         .asset__loan {
           font-size: $font-size-xxs;
           color: var(--asset-table-row__asset-loan-color);
+
+          .stars-icon {
+            width: 20px;
+            margin-right: 10px;
+            transform: translateY(-2px);
+          }
         }
       }
 

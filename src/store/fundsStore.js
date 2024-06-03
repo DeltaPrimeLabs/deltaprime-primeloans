@@ -265,6 +265,12 @@ export default {
       } else {
         commit('setNoSmartLoan', true);
       }
+
+      // Arbitrum-specific methods
+      if (window.chain === 'arbitrum') {
+        rootState.serviceRegistry.ltipService.emitRefreshPrimeAccountsLtipData(state.smartLoanContract.address, state.assets['ARB'].price,  rootState.serviceRegistry.dataRefreshEventService);
+        rootState.serviceRegistry.ltipService.emitRefreshPrimeAccountEligibleTvl(wrapContract(state.smartLoanContract));
+      }
     },
 
     async loadDeployments() {
@@ -300,6 +306,11 @@ export default {
 
         rootState.serviceRegistry.aprService.emitRefreshApr();
         rootState.serviceRegistry.healthService.emitRefreshHealth();
+
+        if (window.chain === 'arbitrum') {
+          rootState.serviceRegistry.ltipService.updateLtipData(state.smartLoanContract.address, state.assets['ARB'].price, rootState.serviceRegistry.dataRefreshEventService);
+          rootState.serviceRegistry.ltipService.emitRefreshPrimeAccountEligibleTvl(wrapContract(state.smartLoanContract));
+        }
 
         await dispatch('setupAssetExposures');
 
@@ -1307,7 +1318,7 @@ export default {
       rootState.serviceRegistry.debtService.emitDebt(fullLoanStatus.debt);
     },
 
-    async getAccountApr({state, getters, rootState, commit}) {
+    async getAccountApr({state, getters, rootState, commit}, {eligibleTvl, maxBoostApy}) {
       let apr = 0;
       let yearlyDebtInterest = 0;
 
@@ -1415,22 +1426,6 @@ export default {
 
             yearlyLpInterest += parseFloat(state.gmxV2Balances[symbol]) * apy * lpAsset.price;
           }
-
-          let gmWorth = 0;
-
-          Object.keys(config.GMX_V2_ASSETS_CONFIG).forEach(
-            gmSymbol => gmWorth += state.gmxV2Balances[gmSymbol] * state.gmxV2Assets[gmSymbol].price
-          );
-
-          let collateral = state.fullLoanStatus.totalValue - state.fullLoanStatus.debt;
-
-          let leveragedGm = gmWorth - collateral > 0 ? gmWorth - collateral : 0;
-
-          if (window.arbitrumChain) {
-            yearlyLpInterest += leveragedGm * state.apys['GM_BOOST'].arbApy * state.assets['ARB'].price;
-          } else {
-            yearlyLpInterest += leveragedGm * state.apys['GM_BOOST'].avaxApy * state.assets['AVAX'].price;
-          }
         }
 
         let yearlyTraderJoeV2Interest = 0;
@@ -1479,15 +1474,14 @@ export default {
 
         const collateral = getters.getCollateral;
 
-        console.log('yearlyAssetInterest: ', yearlyAssetInterest)
-        console.log('yearlyLpInterest: ', yearlyLpInterest)
-        console.log('yearlyFarmInterest: ', yearlyFarmInterest)
-        console.log('yearlyTraderJoeV2Interest: ', yearlyTraderJoeV2Interest)
-        console.log('yearlyDebtInterest: ', yearlyDebtInterest)
-        console.log('collateral: ', collateral)
+        let yearlyGrantInterest = 0;
+
+        if (eligibleTvl) {
+          yearlyGrantInterest += eligibleTvl * maxBoostApy / 4.5 * state.assets['ARB'].price;
+        }
 
         if (collateral) {
-          apr = (yearlyAssetInterest + yearlyLpInterest + yearlyFarmInterest + yearlyTraderJoeV2Interest - yearlyDebtInterest) / collateral;
+          apr = (yearlyAssetInterest + yearlyLpInterest + yearlyFarmInterest + yearlyTraderJoeV2Interest + yearlyGrantInterest - yearlyDebtInterest) / collateral;
         }
 
         commit('setAccountApr', apr);
@@ -3263,6 +3257,10 @@ export default {
       }, SUCCESS_DELAY_AFTER_TRANSACTION);
 
       console.log(tx);
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, config.refreshDelay);
     },
 
     async swapDebt({state, rootState, commit, dispatch}, {swapDebtRequest}) {
@@ -3393,6 +3391,10 @@ export default {
         .emitExternalAssetBalanceUpdate('GLP', glpBalanceAfterMint, false, true);
 
       rootState.serviceRegistry.dataRefreshEventService.emitAssetBalancesDataRefresh();
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, config.refreshDelay);
     },
 
     async unstakeAndRedeemGlp({state, rootState, commit, dispatch}, {unstakeAndRedeemGlpRequest}) {
@@ -3439,6 +3441,10 @@ export default {
         .emitExternalAssetBalanceUpdate('GLP', glpBalanceAfterMint, false, true);
 
       rootState.serviceRegistry.dataRefreshEventService.emitAssetBalancesDataRefresh();
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, config.refreshDelay);
     },
 
     async wrapNativeToken({state, rootState, commit, dispatch}, {wrapRequest}) {

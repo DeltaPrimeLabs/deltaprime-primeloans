@@ -77,7 +77,7 @@
       </div>
 
       <div class="table__cell table__cell--double-value max-apr">
-        {{ maxApr() | percent }}
+        <span>{{ (maxApr + boostApy) | percent }}<img v-if="boostApy" v-tooltip="{content: `This pool is incentivized!<br>⁃ up to ${maxApr ? (maxApr * 100).toFixed(2) : 0}% Pool APR<br>⁃ up to ${boostApy ? (boostApy * 100).toFixed(2) : 0}% ${chain === 'arbitrum' ? 'ARB' : 'AVAX'} incentives`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span>
       </div>
 
       <div class="table__cell"></div>
@@ -140,6 +140,7 @@ export default {
   },
   data() {
     return {
+      chain: null,
       addActionsConfig: null,
       removeActionsConfig: null,
       moreActionsConfig: null,
@@ -149,6 +150,7 @@ export default {
       totalStaked: null,
       apr: 0,
       tvl: 0,
+      boostApy: 0,
       rewards: null,
       rewardsTokens: {...config.ASSETS_CONFIG, ...config.PENPIE_REWARDS_TOKENS}
     }
@@ -187,11 +189,16 @@ export default {
       'lpService',
       'healthService',
       'providerService',
+      'ltipService'
     ]),
+    maxApr() {
+      return calculateMaxApy(this.pools, this.apr / 100);
+    },
   },
 
   async mounted() {
     this.providerService.observeProviderCreated().subscribe(() => {
+      this.chain = window.chain;
       this.setupAddActionsConfiguration();
       this.setupRemoveActionsConfiguration();
       this.setupMoreActionsConfiguration();
@@ -203,6 +210,7 @@ export default {
       this.watchExternalAssetBalanceUpdate();
       this.watchRefreshLP();
       this.watchAssetBalancesDataRefresh();
+      this.watchLtipMaxBoostUpdate();
       this.setupMaturityInDays();
     })
   },
@@ -719,10 +727,6 @@ export default {
       return await this.getWalletTokenBalance(this.account, this.lpToken.symbol, tokenContract, this.lpToken.decimals);
     },
 
-    maxApr() {
-      return calculateMaxApy(this.pools, this.apr / 100);
-    },
-
     async setupApr() {
       this.apr = this.apys[this.lpToken.symbol] ? this.apys[this.lpToken.symbol].lp_apy * 100 : 0;
     },
@@ -805,7 +809,11 @@ export default {
       })
     },
 
-
+    watchLtipMaxBoostUpdate() {
+      this.ltipService.observeLtipMaxBoostApy().subscribe((boostApy) => {
+        this.boostApy = boostApy;
+      });
+    },
 
     handleTransactionError(error) {
       if (error.code === 4001 || error.code === -32603) {
