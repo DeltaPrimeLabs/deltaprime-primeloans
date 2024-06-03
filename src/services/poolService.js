@@ -20,7 +20,7 @@ export default class PoolService {
     return this.pools$.asObservable();
   }
 
-  setupPools(provider, account, redstonePriceData) {
+  setupPools(provider, account, redstonePriceData, ltipService) {
     const poolsFromConfig = Object.keys(config.POOLS_CONFIG);
 
     return combineLatest(
@@ -32,13 +32,15 @@ export default class PoolService {
           poolContract.getDepositRate(),
           poolContract.getBorrowingRate(),
           poolContract.totalBorrowed(),
-          poolContract.getMaxPoolUtilisationForBorrowing()
+          poolContract.getMaxPoolUtilisationForBorrowing(),
+          ltipService.observeLtipPoolData(),
         ]).pipe(map(poolDetails => {
           const deposit = formatUnits(String(poolDetails[1]), config.ASSETS_CONFIG[poolAsset].decimals);
           const apy = fromWei(poolDetails[2]);
           const totalBorrowed = formatUnits(String(poolDetails[4]), config.ASSETS_CONFIG[poolAsset].decimals);
           const tvl = formatUnits(String(poolDetails[0]), config.ASSETS_CONFIG[poolAsset].decimals);
           const isPoolDisabled = config.POOLS_CONFIG[poolAsset].disabled;
+          const miningApy = poolDetails[6][poolAsset]
 
           const pool = {
             asset: config.ASSETS_CONFIG[poolAsset],
@@ -54,6 +56,7 @@ export default class PoolService {
             utilisation: isPoolDisabled ? 0 : totalBorrowed / tvl,
             disabled: config.POOLS_CONFIG[poolAsset].disabled,
             poolsUnlocking: config.poolsUnlocking,
+            miningApy: miningApy ? miningApy : null,
           };
           return pool;
         }))

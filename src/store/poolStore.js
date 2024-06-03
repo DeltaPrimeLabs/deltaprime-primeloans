@@ -46,7 +46,7 @@ export default {
       const redstonePriceDataRequest = await fetch(config.redstoneFeedUrl);
       const redstonePriceData = await redstonePriceDataRequest.json();
 
-      await poolService.setupPools(rootState.network.provider, rootState.network.account, redstonePriceData)
+      await poolService.setupPools(rootState.network.provider, rootState.network.account, redstonePriceData, rootState.serviceRegistry.ltipService)
         .subscribe(pools => {
           poolService.emitPools(pools);
           commit('setPools', pools);

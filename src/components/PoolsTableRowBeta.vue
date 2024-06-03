@@ -32,12 +32,14 @@
       <div class="table__cell table__cell--double-value apy">
         <template>
           <div class="double-value__pieces">
-            <LoadedValue :check="() => pool.apy != null" :value="formatPercent(pool.apy + miningApy)">
+            <LoadedValue :check="() => pool.apy != null" :value="formatPercent(pool.apy + pool.miningApy)">
             </LoadedValue>
           </div>
           <div class="double-value__usd">
             <span
-              v-if="pool.apy != null && miningApy">{{ formatPercent(pool.apy) }}&nbsp;+&nbsp;{{ formatPercent(miningApy) }}</span>
+              v-if="pool.apy != null && pool.miningApy">{{ formatPercent(pool.apy) }}&nbsp;+&nbsp;{{
+                formatPercent(pool.miningApy)
+              }}</span>
           </div>
         </template>
       </div>
@@ -107,7 +109,6 @@ export default {
     this.setupActionsConfiguration();
     this.setupWalletAssetBalances();
     this.setupPoolsAssetsData();
-    this.setupMiningApy();
     this.watchLifi();
   },
 
@@ -207,20 +208,6 @@ export default {
         this.poolAssetsPrices = poolAssetsPrices;
         this.poolContracts = poolContracts;
         this.$forceUpdate();
-      })
-    },
-
-    setupMiningApy() {
-      this.providerService.observeProviderCreated().subscribe(() => {
-        if (window.arbitrumChain) {
-          this.ltipService.observeLtipPoolData().subscribe(res => {
-            let apy = res[this.pool.asset.symbol];
-            if (apy) {
-              this.miningApy = res[this.pool.asset.symbol];
-              this.$forceUpdate();
-            }
-          });
-        }
       })
     },
 
