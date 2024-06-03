@@ -434,7 +434,7 @@ export default {
           return;
         }
 
-        if (this.provider.provider.isMetaMask) {
+        if (this.provider.provider.isMetaMask && !this.provider.provider.isRabby) {
           console.warn('METAMASK');
           window.isMetaMask = true;
           window.isRabby = false;
