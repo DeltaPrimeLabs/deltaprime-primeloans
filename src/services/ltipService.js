@@ -17,6 +17,7 @@ export default class LtipService {
   }
 
   emitRefreshPrimeAccountEligibleTvl(wrappedContractPromise) {
+    console.log('emitRefreshPrimeAccountEligibleTvl');
     wrappedContractPromise.then(
         wrapped => {
           this.updatePrimeAccountEligibleTvl(wrapped);
@@ -57,6 +58,7 @@ export default class LtipService {
   }
 
   async updateLtipData(primeAccountAddress, arbPrice, dataRefreshEventService) {
+    console.log('updateLtipData');
     fetch(`${config.ltipAccountsLeaderboardEndpoint}?top=200&from=${config.ltipLastDistributionTimestamp}&to=${Math.floor(Date.now() / 1000)}`).then(
         res => res.json().then(
             json => this.primeAccountsData$.next(json.list)

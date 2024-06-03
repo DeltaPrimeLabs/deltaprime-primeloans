@@ -271,7 +271,6 @@ export default {
         rootState.serviceRegistry.ltipService.emitRefreshPrimeAccountsLtipData(state.smartLoanContract.address, state.assets['ARB'].price,  rootState.serviceRegistry.dataRefreshEventService);
         rootState.serviceRegistry.ltipService.emitRefreshPrimeAccountEligibleTvl(wrapContract(state.smartLoanContract));
       }
-
     },
 
     async loadDeployments() {
@@ -307,6 +306,11 @@ export default {
 
         rootState.serviceRegistry.aprService.emitRefreshApr();
         rootState.serviceRegistry.healthService.emitRefreshHealth();
+
+        if (window.chain === 'arbitrum') {
+          rootState.serviceRegistry.ltipService.updateLtipData(state.smartLoanContract.address, state.assets['ARB'].price, rootState.serviceRegistry.dataRefreshEventService);
+          rootState.serviceRegistry.ltipService.emitRefreshPrimeAccountEligibleTvl(wrapContract(state.smartLoanContract));
+        }
 
         await dispatch('setupAssetExposures');
 
@@ -3253,6 +3257,10 @@ export default {
       }, SUCCESS_DELAY_AFTER_TRANSACTION);
 
       console.log(tx);
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, config.refreshDelay);
     },
 
     async swapDebt({state, rootState, commit, dispatch}, {swapDebtRequest}) {
@@ -3383,6 +3391,10 @@ export default {
         .emitExternalAssetBalanceUpdate('GLP', glpBalanceAfterMint, false, true);
 
       rootState.serviceRegistry.dataRefreshEventService.emitAssetBalancesDataRefresh();
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, config.refreshDelay);
     },
 
     async unstakeAndRedeemGlp({state, rootState, commit, dispatch}, {unstakeAndRedeemGlpRequest}) {
@@ -3429,6 +3441,10 @@ export default {
         .emitExternalAssetBalanceUpdate('GLP', glpBalanceAfterMint, false, true);
 
       rootState.serviceRegistry.dataRefreshEventService.emitAssetBalancesDataRefresh();
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, config.refreshDelay);
     },
 
     async wrapNativeToken({state, rootState, commit, dispatch}, {wrapRequest}) {
