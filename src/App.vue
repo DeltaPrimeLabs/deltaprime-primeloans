@@ -424,6 +424,7 @@ export default {
 
     checkWallet() {
       console.warn('--------__---__------___--___--__---___checking wallet--------___---___-___--___---__--___--__');
+      console.log('this.provider', this.provider);
       if (this.provider && this.provider.provider) {
         console.log('provider', this.provider.provider)
         if (this.provider.provider.isRabby) {

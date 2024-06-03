@@ -31,40 +31,42 @@
   </script>
 
   <script>
-    window.disableExternalData = false;
-    window.arbitrumChain = false;
-    window.avalancheChain = false;
-    if (window.ethereum) {
-      window.ethereum.request({method: 'eth_chainId'}).then((id) => {
-        const chainId = parseInt(id, 16);
-        window.chainId = chainId
+    setTimeout(() => {
+      window.disableExternalData = false;
+      window.arbitrumChain = false;
+      window.avalancheChain = false;
+      if (window.ethereum) {
+        window.ethereum.request({method: 'eth_chainId'}).then((id) => {
+          const chainId = parseInt(id, 16);
+          window.chainId = chainId
 
-        switch (chainId) {
-          case 43114: {
-            window.chain = 'avalanche';
-            window.avalancheChain = true;
+          switch (chainId) {
+            case 43114: {
+              window.chain = 'avalanche';
+              window.avalancheChain = true;
 
-            break;
+              break;
+            }
+            case 42161: {
+              window.chain = 'arbitrum';
+              window.arbitrumChain = true;
+              break;
+            }
+            default: {
+              console.log('chain not supported defaulting to avalanche');
+              window.chain = 'avalanche';
+            }
           }
-          case 42161: {
-            window.chain = 'arbitrum';
-            window.arbitrumChain = true;
-            break;
-          }
-          default: {
-            console.log('chain not supported defaulting to avalanche');
-            window.chain = 'avalanche';
-          }
-        }
 
-        console.log(window.chain);
-      });
-    } else {
-      console.error('No wallet installed');
-      window.chain = 'avalanche';
-      window.chainId = 43114;
-      window.noWalletInstalled = true;
-    }
+          console.log(window.chain);
+        });
+      } else {
+        console.error('No wallet installed');
+        window.chain = 'avalanche';
+        window.chainId = 43114;
+        window.noWalletInstalled = true;
+      }
+    }, 500);
   </script>
 </head>
 
