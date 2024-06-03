@@ -211,14 +211,14 @@ const arbitrumIncentives = async (rpc = 'first') => {
     console.log("LTIP Loan total ARB saved.");
 
     // save/update incentives values to DB
-    params = {
-      TableName: "loan-eligible-tvl-arb-prod",
-      Item: data
-    };
-
     const data = {
       id: now,
       totalEligibleTvl
+    };
+
+    params = {
+      TableName: "loan-eligible-tvl-arb-prod",
+      Item: data
     };
 
     await dynamoDb.put(params).promise();
