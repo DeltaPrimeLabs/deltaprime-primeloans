@@ -45,6 +45,11 @@
       </div>
       <div class="stat-value">
         {{ boostApy | percent }}
+        <span
+          class="speed-bonus"
+          v-tooltip="{content: `A bonus provided to all participants if the mission is completed within 7 days` }"
+          :class="{'speed-bonus-active': speedBonusActive}"
+      >&nbsp;(+{{speedBonus | percent}})</span>
         <div class="shine-icon"></div>
       </div>
     </div>
@@ -89,6 +94,7 @@ import {mapState} from "vuex";
 import {wrapContract} from "../utils/blockchain";
 import config from "../config";
 import {maxInt8} from "viem";
+import {combineLatest} from "rxjs";
 
 export default {
   name: 'LTIPStatsBar',
@@ -99,9 +105,11 @@ export default {
       totalEligibleTVL: null,
       milestone: config.ltipMilestone,
       yourEligibleTVL: null,
+      speedBonus: 0,
       boostApy: 0,
       maxBoostApy: 0,
       collectedBonus: 0,
+      speedBonusActive: false
     }
   },
   mounted() {
@@ -113,15 +121,20 @@ export default {
       'apys',
       'assets',
     ]),
-    ...mapState('serviceRegistry', ['ltipService']),
+    ...mapState('serviceRegistry', ['ltipService', 'priceService']),
   },
   methods: {
     maxInt8() {
       return maxInt8
     },
     watchLtipDataUpdate() {
-      this.ltipService.observeLtipTotalEligibleTvlData().subscribe((tvl) => {
+      combineLatest([this.priceService.observeRefreshPrices(), this.ltipService.observeLtipTotalEligibleTvlData()])
+      .subscribe(([prices, tvl]) => {
         this.totalEligibleTVL = tvl;
+        this.speedBonus = this.assets['ARB'] ? 9166.66 * this.assets['ARB'].price / 7 * 365 / config.ltipMilestone : 0;
+        console.log('this.totalEligibleTVL: ', this.totalEligibleTVL)
+        console.log('config.ltipMilestone: ', config.ltipMilestone)
+        this.speedBonusActive = this.totalEligibleTVL >= config.ltipMilestone;
       });
       this.ltipService.observeLtipPrimeAccountEligibleTvl().subscribe((tvl) => {
         this.yourEligibleTVL = tvl;
@@ -240,6 +253,15 @@ export default {
           height: 20px;
           margin-left: 5px;
           background-image: var(--ltip-stats-bar-value-icon);
+        }
+
+        .speed-bonus {
+          opacity: 80%;
+
+          &.speed-bonus-active {
+            opacity: 100%;
+            color: var(--colored-value-beta__color--positive);
+          }
         }
       }
     }
