@@ -36,7 +36,8 @@
             </LoadedValue>
           </div>
           <div class="double-value__usd">
-            <span v-if="pool.apy != null && miningApy">{{formatPercent(pool.apy)}}&nbsp;+&nbsp;{{formatPercent(miningApy)}}</span>
+            <span
+              v-if="pool.apy != null && miningApy">{{ formatPercent(pool.apy) }}&nbsp;+&nbsp;{{ formatPercent(miningApy) }}</span>
           </div>
         </template>
       </div>
@@ -52,7 +53,8 @@
       </div>
 
       <div class="table__cell unlocked" v-if="poolsUnlocking">
-        <bar-gauge-beta :min="0" :max="1" :width="80" :value="Math.min(pool.tvl * pool.assetPrice / 1000000, 1)"></bar-gauge-beta>
+        <bar-gauge-beta :min="0" :max="1" :width="80"
+                        :value="Math.min(pool.tvl * pool.assetPrice / 1000000, 1)"></bar-gauge-beta>
       </div>
 
       <div class="table__cell utilisation">
@@ -63,12 +65,12 @@
 
       <div class="table__cell actions">
         <IconButtonMenuBeta
-            class="actions__icon-button"
-            v-for="(actionConfig, index) of actionsConfig"
-            :disabled="!pool.contract || pool.disabled"
-            v-bind:key="index"
-            :config="actionConfig"
-            v-on:iconButtonClick="actionClick">
+          class="actions__icon-button"
+          v-for="(actionConfig, index) of actionsConfig"
+          :disabled="!pool.contract || pool.disabled"
+          v-bind:key="index"
+          :config="actionConfig"
+          v-on:iconButtonClick="actionClick">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -88,8 +90,8 @@ const ethers = require('ethers');
 import SimpleSwapModal from './SimpleSwapModal.vue';
 import config from '../config';
 import YAK_ROUTER_ABI from '../../test/abis/YakRouter.json';
-import BarGaugeBeta from "./BarGaugeBeta.vue";
-import InfoIcon from "./InfoIcon.vue";
+import BarGaugeBeta from './BarGaugeBeta.vue';
+import InfoIcon from './InfoIcon.vue';
 
 let TOKEN_ADDRESSES;
 
@@ -133,7 +135,14 @@ export default {
       'lpBalances',
       'noSmartLoan'
     ]),
-    ...mapState('serviceRegistry', ['poolService', 'ltipService', 'walletAssetBalancesService', 'lifiService', 'progressBarService']),
+    ...mapState('serviceRegistry', [
+      'poolService',
+      'ltipService',
+      'walletAssetBalancesService',
+      'lifiService',
+      'progressBarService',
+      'providerService'
+    ]),
   },
 
   methods: {
@@ -202,12 +211,17 @@ export default {
     },
 
     setupMiningApy() {
-      if (window.arbitrumChain) {
-        this.ltipService.observeLtipPoolData().subscribe(res => {
-          let apy = res[this.pool.asset.symbol];
-          if (apy) {this.miningApy =  res[this.pool.asset.symbol];}
-        });
-      }
+      this.providerService.observeProviderCreated().subscribe(() => {
+        if (window.arbitrumChain) {
+          this.ltipService.observeLtipPoolData().subscribe(res => {
+            let apy = res[this.pool.asset.symbol];
+            if (apy) {
+              this.miningApy = res[this.pool.asset.symbol];
+              this.$forceUpdate();
+            }
+          });
+        }
+      })
     },
 
     watchLifi() {
