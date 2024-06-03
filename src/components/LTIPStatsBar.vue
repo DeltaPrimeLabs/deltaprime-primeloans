@@ -21,7 +21,7 @@
         </InfoIcon>
       </div>
       <div class="stat-value">
-        <bar-gauge-beta v-tooltip="{content: `Grant milestone completion: $${(totalEligibleTVL / 1000000).toFixed(1)}M / $${milestone / 1000000}M`, classes: 'info-tooltip'}"
+        <bar-gauge-beta v-tooltip="{content: `Community mission completion: $${(totalEligibleTVL / 1000000).toFixed(1)}M / $${milestone / 1000000}M`, classes: 'info-tooltip'}"
                         :min="0" :max="milestone" :value="totalEligibleTVL" :width="108"></bar-gauge-beta>
       </div>
     </div>
