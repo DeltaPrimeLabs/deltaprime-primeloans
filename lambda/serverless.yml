@@ -36,6 +36,7 @@ provider:
     GMX_INCENTIVES_ARB_TABLE: gmx-incentives-arb-${opt:stage, "dev"}
     ARBITRUM_INCENTIVES_ARB_TABLE: arbitrum-incentives-arb-${opt:stage, "dev"}
     POOL_ARBITRUM_INCENTIVES_ARB_TABLE: pool-arbitrum-incentives-arb-${opt:stage, "dev"}
+    LOAN_ELIGIBLE_TVL_ARB_TABLE: loan-eligible-tvl-arb-${opt:stage, "dev"}
     GM_OPEN_INTEREST_TABLE: gm-open-interest-${opt:stage, "dev"}
     REFERRAL_TABLE: referral-${opt:stage, "dev"}
     TERMS_VERSION_TABLE: terms-version-${opt:stage, "dev"}
@@ -564,6 +565,22 @@ resources:
     #     StreamSpecification:
     #       StreamViewType: "NEW_AND_OLD_IMAGES"
     #     TableName: ${self:provider.environment.POOL_ARBITRUM_INCENTIVES_ARB_TABLE}
+    loanEligibleTvlArbTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: "id"
+            AttributeType: "S"
+        KeySchema:
+          -
+            AttributeName: "id"
+            KeyType: "HASH"
+        BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: "NEW_AND_OLD_IMAGES"
+        TableName: ${self:provider.environment.LOAN_ELIGIBLE_TVL_ARB_TABLE}
     # loansAvaTable:
     #   Type: AWS::DynamoDB::Table
     #   DeletionPolicy: Retain
@@ -594,9 +611,7 @@ resources:
           -
             AttributeName: "id"
             KeyType: "HASH"
-        ProvisionedThroughput:
-          ReadCapacityUnits: 5
-          WriteCapacityUnits: 5
+        BillingMode: PAY_PER_REQUEST
         StreamSpecification:
           StreamViewType: "NEW_AND_OLD_IMAGES"
         TableName: ${self:provider.environment.LOAN_ARB_TABLE}

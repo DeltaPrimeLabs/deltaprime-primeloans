@@ -209,6 +209,19 @@ const arbitrumIncentives = async (rpc = 'first') => {
     await dynamoDb.update(params).promise();
     console.log("LTIP Loan total ARB saved.");
 
+    // save/update incentives values to DB
+    params = {
+      TableName: "loan-eligible-tvl-arb-prod",
+      Item: data
+    };
+
+    const data = {
+      id: now,
+      totalEligibleTvl
+    };
+
+    await dynamoDb.put(params).promise();
+
     // ping healthcheck end point
     await fetch(pingUrl.ltipPA.success);
   } catch (error) {
