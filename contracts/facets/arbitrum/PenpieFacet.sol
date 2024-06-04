@@ -48,6 +48,17 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     // ERRORS
     error InvalidMarket(address market);
 
+    modifier whitelistedOnly() {
+        require(
+            msg.sender == 0x5E03C94Fc5Fb2E21882000A96Df0b63d2c4312e2 ||
+                msg.sender == 0x5E03C94Fc5Fb2E21882000A96Df0b63d2c4312e2 ||
+                msg.sender == 0x5E03C94Fc5Fb2E21882000A96Df0b63d2c4312e2 ||
+                msg.sender == 0x5E03C94Fc5Fb2E21882000A96Df0b63d2c4312e2,
+            "!whitelisted"
+        );
+        _;
+    }
+
     // PUBLIC FUNCTIONS
 
     /**
@@ -60,7 +71,7 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         IPendleRouter.ApproxParams memory guessPtReceivedFromSy,
         IPendleRouter.TokenInput memory input,
         IPendleRouter.LimitOrderData memory limit
-    ) external onlyOwner nonReentrant remainsSolvent {
+    ) public onlyOwner nonReentrant remainsSolvent {
         address lpToken = _getPendleLpToken(market);
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         bytes32 asset = _getUnderlyingAssetForMarket(market);
@@ -111,7 +122,7 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         uint256 minOut,
         IPendleRouter.TokenOutput memory output,
         IPendleRouter.LimitOrderData memory limit
-    ) external onlyOwnerOrInsolvent nonReentrant returns (uint256) {
+    ) public onlyOwnerOrInsolvent nonReentrant returns (uint256) {
         bytes32 asset = _getUnderlyingAssetForMarket(market);
         address lpToken = _getPendleLpToken(market);
         uint256 netTokenOut;
@@ -183,7 +194,7 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     function depositPendleLPAndStakeInPenpie(
         address market,
         uint256 amount
-    ) external onlyOwner nonReentrant remainsSolvent {
+    ) public onlyOwner nonReentrant remainsSolvent {
         address lpToken = _getPendleLpToken(market);
 
         market.safeTransferFrom(msg.sender, address(this), amount);
@@ -217,14 +228,13 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         address market,
         uint256 amount
     )
-        external
+        public
         onlyOwner
         canRepayDebtFully
         nonReentrant
         remainsSolvent
         returns (uint256)
     {
-        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         address lpToken = _getPendleLpToken(market);
 
         amount = Math.min(IERC20(lpToken).balanceOf(address(this)), amount);
@@ -258,6 +268,55 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         emit PendleLpUnstaked(msg.sender, lpToken, amount, block.timestamp);
 
         return amount;
+    }
+
+    function depositToPendleAndStakeInPenpieWhitelisted(
+        address market,
+        uint256 amount,
+        uint256 minLpOut,
+        IPendleRouter.ApproxParams memory guessPtReceivedFromSy,
+        IPendleRouter.TokenInput memory input,
+        IPendleRouter.LimitOrderData memory limit
+    ) external whitelistedOnly {
+        depositToPendleAndStakeInPenpie(
+            market,
+            amount,
+            minLpOut,
+            guessPtReceivedFromSy,
+            input,
+            limit
+        );
+    }
+
+    function unstakeFromPenpieAndWithdrawFromPendleWhitelisted(
+        address market,
+        uint256 amount,
+        uint256 minOut,
+        IPendleRouter.TokenOutput memory output,
+        IPendleRouter.LimitOrderData memory limit
+    ) external whitelistedOnly returns (uint256) {
+        return
+            unstakeFromPenpieAndWithdrawFromPendle(
+                market,
+                amount,
+                minOut,
+                output,
+                limit
+            );
+    }
+
+    function depositPendleLPAndStakeInPenpieWhitelisted(
+        address market,
+        uint256 amount
+    ) external whitelistedOnly {
+        depositPendleLPAndStakeInPenpie(market, amount);
+    }
+
+    function unstakeFromPenpieAndWithdrawPendleLPWhitelisted(
+        address market,
+        uint256 amount
+    ) external whitelistedOnly returns (uint256) {
+        return unstakeFromPenpieAndWithdrawPendleLP(market, amount);
     }
 
     function underlyingBalanceForEzEthMarket() external view returns (uint256) {
@@ -399,7 +458,7 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
     function _getBalanceSelectorForMarket(
         address market
-    ) internal view returns (bytes4) {
+    ) internal pure returns (bytes4) {
         // ezETH
         if (market == PENDLE_EZ_ETH_MARKET) {
             return this.underlyingBalanceForEzEthMarket.selector;
@@ -432,8 +491,8 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         uint256 balance = IERC20(lpToken).balanceOf(address(this));
         IPendleOracle oracle = IPendleOracle(PENDLE_ORACLE);
         uint256 rate = isSilo
-            ? oracle.getLpToAssetRate(market, 1 days)
-            : oracle.getLpToSyRate(market, 1 days);
+            ? oracle.getLpToAssetRate(market, 900)
+            : oracle.getLpToSyRate(market, 900);
 
         return (balance * rate) / 1e18;
     }
