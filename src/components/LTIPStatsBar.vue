@@ -63,6 +63,11 @@
       </div>
       <div class="stat-value">
         {{ maxBoostApy | percent }}
+        <span
+            class="speed-bonus"
+            v-tooltip="{content: `Maximum bonus boost for completing the mission.` }"
+            :class="{'speed-bonus-active': speedBonusActive}"
+        >&nbsp;(+{{4.5 * speedBonus | percent}})</span>
         <div class="shine-icon"></div>
       </div>
     </div>
@@ -102,9 +107,9 @@ export default {
   data() {
     return {
       wrappedContract: null,
-      totalEligibleTVL: null,
+      totalEligibleTVL: 0,
       milestone: config.ltipMilestone,
-      yourEligibleTVL: null,
+      yourEligibleTVL: 0,
       speedBonus: 0,
       boostApy: 0,
       maxBoostApy: 0,
@@ -129,45 +134,29 @@ export default {
     },
     watchLtipDataUpdate() {
       combineLatest([this.priceService.observeRefreshPrices(), this.ltipService.observeLtipTotalEligibleTvlData()])
-      .subscribe(([prices, tvl]) => {
-        this.totalEligibleTVL = tvl;
-        this.speedBonus = this.assets['ARB'] ? 9166.66 * this.assets['ARB'].price / 7 * 365 / config.ltipMilestone : 0;
-        console.log('this.totalEligibleTVL: ', this.totalEligibleTVL)
-        console.log('config.ltipMilestone: ', config.ltipMilestone)
-        this.speedBonusActive = this.totalEligibleTVL >= config.ltipMilestone;
+      .subscribe(([, tvl]) => {
+        if (tvl) {
+          this.totalEligibleTVL = tvl;
+          this.speedBonus = this.assets['ARB'] ? 9166.66 * this.assets['ARB'].price / 7 * 365 / config.ltipMilestone : 0;
+          this.speedBonusActive = this.totalEligibleTVL >= config.ltipMilestone;
+        }
       });
       this.ltipService.observeLtipPrimeAccountEligibleTvl().subscribe((tvl) => {
-        this.yourEligibleTVL = tvl;
+        if (tvl) this.yourEligibleTVL = tvl;
       });
       this.ltipService.observeLtipPrimeAccountArbCollected().subscribe((arbCollected) => {
         if (arbCollected) this.collectedBonus = arbCollected;
       });
       this.ltipService.observeLtipMaxBoostApy().subscribe((apy) => {
-        this.maxBoostApy = apy;
-        this.boostApy = this.maxBoostApy / 4.5;
+        if (apy) {
+          this.maxBoostApy = apy;
+          this.boostApy = this.maxBoostApy / 4.5;
+        }
       });
     }
   },
   watch: {
     smartLoanContract: {
-      async handler(smartLoanContract) {
-        if (smartLoanContract) {
-          let collectedResponse;
-          let collectedToken;
-          let harvested;
-          if (window.arbitrumChain) {
-            collectedResponse = await (await fetch(`https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/arbitrum-grant-for?addresses=${smartLoanContract.address}`)).json();
-            harvested = LTIP_DISTRIBUTED_ARBITRUM[this.smartLoanContract.address.toLowerCase()] ? LTIP_DISTRIBUTED_ARBITRUM[this.smartLoanContract.address.toLowerCase()] : 0;
-            collectedToken = collectedResponse.total;
-          }
-          this.collectedBonus = collectedToken - harvested;
-
-          this.wrappedContract = await wrapContract(this.smartLoanContract);
-
-          //TODO: to LeChiffre- is it a right place for such a call?
-          this.yourEligibleTVL = fromWei(await this.wrappedContract.getLTIPEligibleTVL());
-        }
-      },
     }
   }
 };
@@ -256,7 +245,7 @@ export default {
         }
 
         .speed-bonus {
-          opacity: 80%;
+          opacity: 70%;
 
           &.speed-bonus-active {
             opacity: 100%;

@@ -217,7 +217,7 @@ export default {
                 sortable: false,
                 class: 'apy',
                 id: 'APY',
-                tooltip: `Deposit interest coming from borrowers${window.arbitrumChain ? " + the LTIPP grant incentives. Grant incentives are distributed weekly, directly to your wallet.<br><a href='https://forum.arbitrum.foundation/t/deltaprime-ltipp-application-final/21938' target='_blank'>More information</a>" : ''}.`
+                tooltip: `Deposit interest coming from borrowers + the LTIPP grant incentives. Grant incentives are distributed weekly, directly to your wallet.<br><a href='https://forum.arbitrum.foundation/t/deltaprime-ltipp-application-final/21938' target='_blank'>More information</a>.`
               },
               {
                 label: 'Pool size',
