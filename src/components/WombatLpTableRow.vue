@@ -1,28 +1,25 @@
 <template>
-  <div v-if="provider" class="penpie-lp-table-row-component">
+  <div v-if="provider" class="wombat-lp-table-row-component" v-bind:class="{'wombat-lp-table-row-component--last': last}">
     <div class="table__row" v-if="lpToken">
       <div class="table__cell asset">
-        <img class="asset__icon" :src="`src/assets/logo/${lpToken.assetLogoName.toLowerCase()}.png`">
+        <img class="asset__icon" :src="getAssetIcon(lpToken.name)">
         <div class="asset__info">
-          <a class="asset__name" :href="lpToken.link" target="_blank">{{ lpToken.assetNameToDisplay }}
-          </a>
-          <InfoIcon class="info__icon"
-                    :tooltip="{content: `Maturity ${lpToken.maturity} - ${lpToken.maturityInDays} days`, classes: 'info-tooltip'}"
-                    :classes="'info-tooltip'"></InfoIcon>
+          <div class="asset__name">{{ lpToken.name }}
+          </div>
           <div class="asset__dex">
-            by {{ lpToken.dex }}
+            by Wombat
           </div>
         </div>
       </div>
 
       <div class="table__cell table__cell--double-value lp-balance">
         <template
-            v-if="penpieLpBalances">
+            v-if="wombatLpBalances">
           <div class="double-value__pieces">
-            {{ penpieLpBalances[lpToken.symbol] | smartRound }}
+            {{ wombatLpBalances[lpToken.symbol] | smartRound }}
           </div>
           <div class="double-value__usd">
-            <span v-if="penpieLpBalances">{{ penpieLpBalances[lpToken.symbol] * lpToken.price | usd }}</span>
+            <span v-if="wombatLpBalances">{{ wombatLpBalances[lpToken.symbol] * wombatLpAssets[lpToken.symbol].price | usd }}</span>
           </div>
         </template>
         <template v-else>
@@ -32,12 +29,12 @@
 
       <div class="table__cell table__cell--double-value staked">
         <template
-            v-if="penpieLpBalances">
+            v-if="wombatLpBalances">
           <div class="double-value__pieces">
-            {{ penpieLpBalances[lpToken.symbol] * lpToken.price / assets[lpToken.asset].price | smartRound }}
+            {{ wombatLpBalances[lpToken.symbol] * wombatLpAssets[lpToken.symbol].price / assets[lpToken.asset].price | smartRound }}
           </div>
           <div class="double-value__usd">
-            <span v-if="penpieLpBalances">{{ penpieLpBalances[lpToken.symbol] * lpToken.price | usd }}</span>
+            <span v-if="wombatLpBalances">{{ wombatLpBalances[lpToken.symbol] * wombatLpAssets[lpToken.symbol].price | usd }}</span>
           </div>
         </template>
         <template v-else>
@@ -48,8 +45,8 @@
       <div class="table__cell table__cell--double-value">
         <template>
           <div class="table__cell rewards">
-            <template v-if="lpToken.rewards && lpToken.rewards.length > 0">
-              <span v-for="reward in lpToken.rewards">
+            <template v-if="wombatLpAssets && wombatLpAssets[lpToken.symbol].rewards && wombatLpAssets[lpToken.symbol].rewards.length > 0">
+              <span v-for="reward in wombatLpAssets[lpToken.symbol].rewards">
                 <img class="asset__icon" :src="getIcon(reward.asset, rewardsTokens[reward.asset].logoExt)">
                 <span>{{ formatTokenBalanceWithLessThan(reward.amountFormatted, 4, true) }}</span>
               </span>
@@ -61,12 +58,12 @@
       </div>
 
       <div class="table__cell table__cell--double-value loan" v-if="apys">
-        {{ formatTvl(apys[lpToken.symbol].tvl) }}
+        {{ formatTvl(apys[lpToken.apyKey].lp_tvl) }}
       </div>
 
-      <div class="table__cell capacity">
-        <bar-gauge-beta v-if="lpToken.maxExposure" :min="0" :max="lpToken.maxExposure" :value="Math.max(lpToken.currentExposure, 0.001)" v-tooltip="{content: `${lpToken.currentExposure ? lpToken.currentExposure.toFixed(2) : 0} ($${lpToken.currentExposure ? (lpToken.currentExposure * this.lpToken.price).toFixed(2) : 0}) out of ${lpToken.maxExposure} ($${lpToken.maxExposure ? (lpToken.maxExposure * this.lpToken.price).toFixed(2) : 0}) is currently used.`, classes: 'info-tooltip'}" :width="80"></bar-gauge-beta>
-      </div>
+<!--      <div class="table__cell capacity" v-if="wombatLpAssets">-->
+<!--        <bar-gauge-beta v-if="wombatLpAssets[lpToken.symbol].maxExposure" :min="0" :max="wombatLpAssets[lpToken.symbol].maxExposure" :value="Math.max(wombatLpAssets[lpToken.symbol].currentExposure, 0.001)" v-tooltip="{content: `${wombatLpAssets[lpToken.symbol].currentExposure ? wombatLpAssets[lpToken.symbol].currentExposure.toFixed(2) : 0} ($${wombatLpAssets[lpToken.symbol].currentExposure ? (wombatLpAssets[lpToken.symbol].currentExposure * wombatLpAssets[lpToken.symbol].price).toFixed(2) : 0}) out of ${wombatLpAssets[lpToken.symbol].maxExposure} ($${wombatLpAssets[lpToken.symbol].maxExposure ? (wombatLpAssets[lpToken.symbol].maxExposure * wombatLpAssets[lpToken.symbol].price).toFixed(2) : 0}) is currently used.`, classes: 'info-tooltip'}" :width="80"></bar-gauge-beta>-->
+<!--      </div>-->
 
       <div class="table__cell table__cell--double-value apr" v-bind:class="{'apr--with-warning': lpToken.aprWarning}">
         {{ apr / 100 | percent }}
@@ -120,7 +117,7 @@ import Chart from "./Chart.vue";
 import IconButtonMenuBeta from "./IconButtonMenuBeta.vue";
 import SmallBlock from "./SmallBlock.vue";
 import {mapActions, mapState} from "vuex";
-import {calculateMaxApy} from "../utils/calculate";
+import {calculateMaxApy, formatUnits} from "../utils/calculate";
 import erc20ABI from "../../test/abis/ERC20.json";
 import config from "../config";
 import TOKEN_ADDRESSES from "../../common/addresses/arbitrum/token_addresses.json";
@@ -130,13 +127,14 @@ import {BigNumber} from "ethers";
 import {wrapContract} from "../utils/blockchain";
 import ClaimRewardsModal from "./ClaimRewardsModal.vue";
 import BarGaugeBeta from './BarGaugeBeta.vue';
-import InfoIcon from './InfoIcon.vue';
+import ABI_WOMBAT_DYNAMIC_POOL_V2 from "../abis/WombatDynamicPoolV2.json";
 
 export default {
-  name: 'PenpieLpTableRow',
-  components: {InfoIcon, BarGaugeBeta, SmallBlock, IconButtonMenuBeta, Chart, DoubleAssetIcon},
+  name: 'WombatLpTableRow',
+  components: {BarGaugeBeta, SmallBlock, IconButtonMenuBeta, Chart, DoubleAssetIcon},
   props: {
-    lpToken: null
+    lpToken: null,
+    last: null,
   },
   data() {
     return {
@@ -150,7 +148,8 @@ export default {
       apr: 0,
       tvl: 0,
       rewards: null,
-      rewardsTokens: {...config.ASSETS_CONFIG, ...config.PENPIE_REWARDS_TOKENS}
+      rewardsTokens: {...config.ASSETS_CONFIG, ...config.WOMBAT_REWARDS_TOKENS},
+      contract: null,
     }
   },
   computed: {
@@ -164,8 +163,8 @@ export default {
       'debtsPerAsset',
       'penpieLpBalances',
       'penpieLpAssets',
-      'wombatLpAssets',
       'wombatLpBalances',
+      'wombatLpAssets',
       'noSmartLoan',
       'concentratedLpAssets',
       'concentratedLpBalances',
@@ -205,7 +204,7 @@ export default {
       this.watchExternalAssetBalanceUpdate();
       this.watchRefreshLP();
       this.watchAssetBalancesDataRefresh();
-      this.setupMaturityInDays();
+      this.createContractObject();
     })
   },
 
@@ -213,12 +212,10 @@ export default {
     ...mapActions('fundsStore', [
       'fund',
       'withdraw',
-      'createPendleLpFromLrt',
-      'unwindPendleLpToLrt',
-      'unstakeAndExportPendleLp',
-      'depositPendleLPAndStake',
-      'getPenpiePendingRewards',
-      'claimPenpieRewards',
+      'createWombatLpFromLrt',
+      'unwindWombatLpToLrt',
+      'depositWombatLPAndStake',
+      'unstakeAndExportWombatLp',
     ]),
 
     setupAddActionsConfiguration() {
@@ -228,17 +225,17 @@ export default {
         menuOptions: [
           {
             key: 'ADD_FROM_WALLET',
-            name: 'Import Penpie LP from wallet',
+            name: 'Import existing LP position',
             disabled: this.disableAllButtons,
           },
-          {
-            key: 'IMPORT_AND_STAKE',
-            name: 'Import & stake Pendle LP',
-            disabled: this.disableAllButtons,
-          },
+          // {
+          //   key: 'IMPORT_AND_STAKE',
+          //   name: 'Import & stake Pendle LP',
+          //   disabled: this.disableAllButtons,
+          // },
           {
             key: 'CREATE_LP',
-            name: 'Create LP from LRT',
+            name: 'Create LP position',
             disabled: this.disableAllButtons,
           },
         ]
@@ -252,17 +249,17 @@ export default {
         menuOptions: [
           {
             key: 'EXPORT_LP',
-            name: 'Export Penpie LP',
+            name: 'Export LP position',
             disabled: this.disableAllButtons,
           },
-          {
-            key: 'UNSTAKE_AND_EXPORT',
-            name: 'Unstake & export Pendle LP',
-            disabled: this.disableAllButtons,
-          },
+          // {
+          //   key: 'UNSTAKE_AND_EXPORT',
+          //   name: 'Unstake & export Pendle LP',
+          //   disabled: this.disableAllButtons,
+          // },
           {
             key: 'UNWIND',
-            name: 'Unwind LP to LRT',
+            name: 'Unwind LP position',
             disabled: this.disableAllButtons,
           },
         ]
@@ -270,6 +267,7 @@ export default {
     },
 
     setupMoreActionsConfiguration() {
+      const rewards = this.wombatLpAssets && this.wombatLpAssets[this.lpToken.symbol].rewards
       this.moreActionsConfig = {
         iconSrc: 'src/assets/icons/icon_a_more.svg',
         tooltip: 'More',
@@ -277,8 +275,8 @@ export default {
           {
             key: 'CLAIM_REWARDS',
             name: 'Claim rewards',
-            disabled: !this.lpToken.rewards || this.lpToken.rewards.length === 0,
-            disabledInfo: 'You don\'t have any claimable rewards yet.',
+            disabled: true,
+            disabledInfo: 'Rewards will be claimable soon, for now rewards can be claimed with token withdrawal.',
           }
         ]
       };
@@ -290,18 +288,18 @@ export default {
           case 'ADD_FROM_WALLET':
             this.openAddFromWalletModal();
             break;
-          case 'IMPORT_AND_STAKE':
-            this.openImportAndStakeModal();
-            break;
+          // case 'IMPORT_AND_STAKE':
+          //   this.openImportAndStakeModal();
+          //   break;
           case 'CREATE_LP':
             this.openStakeModal();
             break;
           case 'EXPORT_LP':
             this.openWithdrawModal();
             break;
-          case 'UNSTAKE_AND_EXPORT':
-            this.openUnstakeAndExportModal();
-            break;
+          // case 'UNSTAKE_AND_EXPORT':
+          //   this.openUnstakeAndExportModal();
+          //   break;
           case 'UNWIND':
             this.openUnwindModal();
             break;
@@ -314,8 +312,8 @@ export default {
 
     async openAddFromWalletModal() {
       const modalInstance = this.openModal(AddFromWalletModal);
-      modalInstance.asset = this.lpToken;
-      modalInstance.assetBalance = this.penpieLpBalances && this.penpieLpBalances[this.lpToken.protocolIdentifier] ? this.penpieLpBalances && this.penpieLpBalances[this.lpToken.protocolIdentifier] : 0;
+      modalInstance.asset = {...this.lpToken, ...this.wombatLpAssets[this.lpToken.symbol]};
+      modalInstance.assetBalance = this.wombatLpBalances && this.wombatLpBalances[this.lpToken.symbol] ? this.wombatLpBalances[this.lpToken.symbol] : 0;
       modalInstance.assets = this.assets;
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.lpAssets = this.lpAssets;
@@ -337,66 +335,18 @@ export default {
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.loan = this.debt;
       modalInstance.thresholdWeightedValue = this.thresholdWeightedValue;
-      modalInstance.logo = config.PROTOCOLS_CONFIG['PENPIE'].logo;
+      modalInstance.logo = config.PROTOCOLS_CONFIG['WOMBAT'].logo;
       modalInstance.walletAssetBalance = await this.getWalletAssetBalance();
 
       modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
         if (this.smartLoanContract) {
-          const fundRequest = {
-            value: addFromWalletEvent.value.toString(),
+          const depositAndStakeRequest = {
+            amount: addFromWalletEvent.value.toString(),
             asset: this.lpToken.symbol,
             assetDecimals: this.lpToken.decimals,
-            type: 'PENPIE_LP',
+            depositAndStakeMethod: this.lpToken.depositAndStakeMethod,
           };
-          this.handleTransaction(this.fund, {fundRequest: fundRequest}, () => {
-            this.$forceUpdate();
-          }, (error) => {
-            this.handleTransactionError(error);
-          }).then(() => {
-          });
-        }
-      });
-    },
-
-    async openImportAndStakeModal() {
-      const modalInstance = this.openModal(AddFromWalletModal);
-      modalInstance.asset = {...this.lpToken, short: 'PENDLE LP'};
-      modalInstance.title = 'Import and Stake LP';
-      modalInstance.assetBalance = this.penpieLpBalances && this.penpieLpBalances[this.lpToken.protocolIdentifier] ? this.penpieLpBalances && this.penpieLpBalances[this.lpToken.protocolIdentifier] : 0;
-      modalInstance.assets = this.assets;
-      modalInstance.assetBalances = this.assetBalances;
-      modalInstance.lpAssets = this.lpAssets;
-      modalInstance.lpBalances = this.lpBalances;
-      modalInstance.concentratedLpAssets = this.concentratedLpAssets;
-      modalInstance.concentratedLpBalances = this.concentratedLpBalances;
-      modalInstance.levelLpAssets = this.levelLpAssets;
-      modalInstance.levelLpBalances = this.levelLpBalances;
-      modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
-      modalInstance.balancerLpBalances = this.balancerLpBalances;
-      modalInstance.balancerLpAssets = this.balancerLpAssets;
-      modalInstance.gmxV2Assets = this.gmxV2Assets;
-      modalInstance.gmxV2Balances = this.gmxV2Balances;
-      modalInstance.penpieLpAssets = this.penpieLpAssets;
-      modalInstance.penpieLpBalances = this.penpieLpBalances;
-      modalInstance.wombatLpAssets = this.wombatLpAssets;
-      modalInstance.wombatLpBalances = this.wombatLpBalances;
-      modalInstance.farms = this.farms;
-      modalInstance.debtsPerAsset = this.debtsPerAsset;
-      modalInstance.loan = this.debt;
-      modalInstance.thresholdWeightedValue = this.thresholdWeightedValue;
-      modalInstance.logo = config.PROTOCOLS_CONFIG['PENDLE'].logo;
-      modalInstance.walletAssetBalance = await this.getWalletPendleLpBalance();
-
-      modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
-        if (this.smartLoanContract) {
-          const depositAndStakeRequest = {
-            market: this.lpToken.stakingContractAddress,
-            amount: addFromWalletEvent.value,
-            targetAsset: this.lpToken.symbol,
-            sourceAsset: this.lpToken.pendleLpSymbol,
-            decimals: this.lpToken.decimals,
-          };
-          this.handleTransaction(this.depositPendleLPAndStake, {depositAndStakeRequest: depositAndStakeRequest}, () => {
+          this.handleTransaction(this.depositWombatLPAndStake, {depositAndStakeRequest: depositAndStakeRequest}, () => {
             this.$forceUpdate();
           }, (error) => {
             this.handleTransactionError(error);
@@ -411,19 +361,16 @@ export default {
       let initSourceAsset = this.lpToken.asset;
 
       modalInstance.title = 'Create LP from LRT';
-      modalInstance.swapDex = 'Penpie';
+      modalInstance.swapDex = 'Wombat';
       modalInstance.swapDebtMode = false;
       modalInstance.slippageMargin = 0;
       modalInstance.sourceAsset = initSourceAsset;
       modalInstance.sourceAssetBalance = this.assetBalances[initSourceAsset];
-      modalInstance.assets = {...this.assets};
+      modalInstance.assets = this.assets;
       modalInstance.sourceAssets = [initSourceAsset];
-      modalInstance.targetAssetsConfig = {
-        [this.lpToken.symbol]: this.penpieLpAssets[this.lpToken.symbol],
-        'Penpie': this.penpieLpAssets[this.lpToken.symbol]
-      };
+      modalInstance.targetAssetsConfig = config.WOMBAT_LP_ASSETS;
       modalInstance.targetAssets = [this.lpToken.symbol];
-      modalInstance.assetBalances = {...this.assetBalances, ...this.penpieLpBalances};
+      modalInstance.assetBalances = {...this.assetBalances, ...this.wombatLpBalances};
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
@@ -447,59 +394,25 @@ export default {
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.checkMarketDeviation = true;
       modalInstance.blockReversing = true;
-      let responseGuessPtReceivedFromSy = undefined
-      let responseInput = undefined
-      let responseLimit = undefined
 
       modalInstance.queryMethods = {
-        Penpie: async (sourceAsset, targetAsset, amountIn) => {
-          const queryParams = new URLSearchParams({
-            chainId: "42161",
-            receiverAddr: this.smartLoanContract.address,
-            marketAddr: this.lpToken.stakingContractAddress,
-            tokenInAddr: TOKEN_ADDRESSES[this.lpToken.asset],
-            amountTokenIn: amountIn,
-            slippage: '0.0001',
-          });
-
-          const {
-            contractCallParams: {
-              2: minLpOut,
-              3: guessPtReceivedFromSy,
-              4: input,
-              5: limit
-            }
-          } = await (await fetch(`${config.pendleApiBaseUrl}/v1/addLiquiditySingleToken?${queryParams}`)).json();
-          responseGuessPtReceivedFromSy = guessPtReceivedFromSy;
-          responseInput = input;
-          responseLimit = limit;
-          return BigNumber.from(minLpOut);
+        Wombat: async (sourceAsset, targetAsset, amountIn) => {
+          const sourceAssetAddress = config.ASSETS_CONFIG[sourceAsset].address
+          const [minOut] = await this.contract.quotePotentialDeposit(sourceAssetAddress, amountIn)
+          return minOut;
         },
       };
-
-      modalInstance.customTargetValidators = [
-        {
-          validate: async (value) => {
-            if (!responseGuessPtReceivedFromSy || !responseInput || !responseLimit) {
-              return '';
-            }
-          }
-        }
-      ]
       modalInstance.initiate();
       modalInstance.$on('SWAP', swapEvent => {
         const stakeRequest = {
           sourceAsset: swapEvent.sourceAsset,
           targetAsset: swapEvent.targetAsset,
           amount: swapEvent.sourceAmount,
-          market: this.lpToken.stakingContractAddress,
           minLpOut: swapEvent.targetAmount,
-          guessPtReceivedFromSy: responseGuessPtReceivedFromSy,
-          input: responseInput,
-          limit: responseLimit,
+          methodName: this.lpToken.depositMethod,
         };
 
-        this.handleTransaction(this.createPendleLpFromLrt, {stakeRequest: stakeRequest}, () => {
+        this.handleTransaction(this.createWombatLpFromLrt, {stakeRequest: stakeRequest}, () => {
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
@@ -513,20 +426,20 @@ export default {
       let initSourceAsset = this.lpToken.symbol;
 
       modalInstance.title = 'Unwind LP to LRT';
-      modalInstance.swapDex = 'Penpie';
-      modalInstance.sourceAssetNameToDisplay = 'Penpie';
+      modalInstance.swapDex = 'Wombat';
+      modalInstance.sourceAssetNameToDisplay = 'Wombat';
       modalInstance.swapDebtMode = false;
       modalInstance.slippageMargin = 0;
       modalInstance.sourceAsset = initSourceAsset;
-      modalInstance.sourceAssetBalance = this.penpieLpBalances[initSourceAsset];
+      modalInstance.sourceAssetBalance = this.wombatLpBalances[initSourceAsset];
       modalInstance.sourceAssets = [initSourceAsset];
-      modalInstance.sourceAssetsConfig = config.PENPIE_LP_ASSETS_CONFIG;
-      modalInstance.assets = {...this.assets};
+      modalInstance.sourceAssetsConfig = config.WOMBAT_LP_ASSETS;
+      modalInstance.assets = this.assets;
       modalInstance.targetAssetsConfig = {
         [this.lpToken.asset]: config.ASSETS_CONFIG[this.lpToken.asset]
       };
       modalInstance.targetAssets = [this.lpToken.asset];
-      modalInstance.assetBalances = {...this.assetBalances, ...this.penpieLpBalances};
+      modalInstance.assetBalances = {...this.assetBalances, ...this.wombatLpBalances};
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
@@ -550,54 +463,26 @@ export default {
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.checkMarketDeviation = true;
       modalInstance.blockReversing = true;
-      let responseOutput = undefined
-      let responseLimit = undefined
 
       modalInstance.queryMethods = {
-        Penpie: async (sourceAsset, targetAsset, amountIn) => {
-          const queryParams = new URLSearchParams({
-            chainId: "42161",
-            receiverAddr: this.smartLoanContract.address,
-            marketAddr: this.lpToken.stakingContractAddress,
-            tokenOutAddr: TOKEN_ADDRESSES[this.lpToken.asset],
-            amountLpToRemove: amountIn,
-            slippage: '0.0001'
-          });
-
-          const {
-            contractCallParams: {
-              3: output,
-              4: limit,
-            }
-          } = await (await fetch(`${config.pendleApiBaseUrl}/v1/removeLiquiditySingleToken?${queryParams}`)).json();
-          responseOutput = output;
-          responseLimit = limit;
-          return BigNumber.from(output.minTokenOut);
+        Wombat: async (sourceAsset, targetAsset, amountIn) => {
+          const sourceAssetAddress = config.ASSETS_CONFIG[targetAsset].address
+          const [minOut] = await this.contract.quotePotentialWithdraw(sourceAssetAddress, amountIn)
+          return minOut;
         },
       };
 
-      modalInstance.customTargetValidators = [
-        {
-          validate: async () => {
-            if (!responseOutput || !responseLimit) {
-              return '';
-            }
-          }
-        }
-      ]
       modalInstance.initiate();
       modalInstance.$on('SWAP', swapEvent => {
         const unwindRequest = {
           sourceAsset: swapEvent.sourceAsset,
           targetAsset: swapEvent.targetAsset,
           amount: swapEvent.sourceAmount,
-          market: this.lpToken.stakingContractAddress,
           minOut: swapEvent.targetAmount,
-          output: responseOutput,
-          limit: responseLimit,
+          methodName: this.lpToken.withdrawMethod,
         };
 
-        this.handleTransaction(this.unwindPendleLpToLrt, {unwindRequest: unwindRequest}, () => {
+        this.handleTransaction(this.unwindWombatLpToLrt, {unwindRequest: unwindRequest}, () => {
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
@@ -606,10 +491,10 @@ export default {
       });
     },
 
-    openUnstakeAndExportModal() {
+    openWithdrawModal() {
       const modalInstance = this.openModal(WithdrawModal);
-      modalInstance.asset = {...this.lpToken, short: 'PENDLE LP', name: 'Pendle LP'};
-      modalInstance.assetBalance = this.penpieLpBalances && this.penpieLpBalances[this.lpToken.protocolIdentifier] ? this.penpieLpBalances && this.penpieLpBalances[this.lpToken.protocolIdentifier] : 0;
+      modalInstance.asset = {...this.lpToken, price: this.wombatLpAssets[this.lpToken.symbol].price};
+      modalInstance.assetBalance = this.wombatLpBalances && this.wombatLpBalances[this.lpToken.symbol] ? this.wombatLpBalances && this.wombatLpBalances[this.lpToken.symbol] : 0;
       modalInstance.assets = this.assets;
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
@@ -631,64 +516,20 @@ export default {
       modalInstance.farms = this.farms;
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.debt = this.fullLoanStatus.debt;
-      modalInstance.logo = config.PROTOCOLS_CONFIG['PENDLE'].logo;
+      modalInstance.logo = config.PROTOCOLS_CONFIG['WOMBAT'].logo;
       modalInstance.showTopDescription = false;
+      modalInstance.hideToggle = true;
 
       modalInstance.$on('WITHDRAW', withdrawEvent => {
         const value = Number(withdrawEvent.value).toFixed(config.DECIMALS_PRECISION);
         const unstakeRequest = {
-          market: this.lpToken.stakingContractAddress,
           asset: this.lpToken.symbol,
           value: value,
           assetDecimals: this.lpToken.decimals,
+          unstakeAndWithdrawMethod: this.lpToken.unstakeAndWithdrawMethod,
+          type: 'WOMBAT_LP',
         };
-        this.handleTransaction(this.unstakeAndExportPendleLp, {unstakeRequest: unstakeRequest}, () => {
-          this.$forceUpdate();
-        }, (error) => {
-          this.handleTransactionError(error);
-        })
-            .then(() => {
-            });
-      });
-    },
-
-    openWithdrawModal() {
-      const modalInstance = this.openModal(WithdrawModal);
-      modalInstance.asset = this.lpToken;
-      modalInstance.assetBalance = this.penpieLpBalances && this.penpieLpBalances[this.lpToken.protocolIdentifier] ? this.penpieLpBalances && this.penpieLpBalances[this.lpToken.protocolIdentifier] : 0;
-      modalInstance.assets = this.assets;
-      modalInstance.assetBalances = this.assetBalances;
-      modalInstance.debtsPerAsset = this.debtsPerAsset;
-      modalInstance.lpAssets = this.lpAssets;
-      modalInstance.concentratedLpAssets = this.concentratedLpAssets;
-      modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
-      modalInstance.levelLpAssets = this.levelLpAssets;
-      modalInstance.levelLpBalances = this.levelLpBalances;
-      modalInstance.lpBalances = this.lpBalances;
-      modalInstance.concentratedLpBalances = this.concentratedLpBalances;
-      modalInstance.gmxV2Assets = this.gmxV2Assets;
-      modalInstance.gmxV2Balances = this.gmxV2Balances;
-      modalInstance.balancerLpBalances = this.balancerLpBalances;
-      modalInstance.balancerLpAssets = this.balancerLpAssets;
-      modalInstance.penpieLpAssets = this.penpieLpAssets;
-      modalInstance.penpieLpBalances = this.penpieLpBalances;
-      modalInstance.wombatLpAssets = this.wombatLpAssets;
-      modalInstance.wombatLpBalances = this.wombatLpBalances;
-      modalInstance.farms = this.farms;
-      modalInstance.health = this.fullLoanStatus.health;
-      modalInstance.debt = this.fullLoanStatus.debt;
-      modalInstance.logo = config.PROTOCOLS_CONFIG['PENPIE'].logo;
-      modalInstance.showTopDescription = false;
-
-      modalInstance.$on('WITHDRAW', withdrawEvent => {
-        const value = Number(withdrawEvent.value).toFixed(config.DECIMALS_PRECISION);
-        const withdrawRequest = {
-          asset: this.lpToken.symbol,
-          value: value,
-          assetDecimals: this.lpToken.decimals,
-          type: 'PENPIE_LP',
-        };
-        this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
+        this.handleTransaction(this.unstakeAndExportWombatLp, {unstakeRequest: unstakeRequest}, () => {
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
@@ -700,16 +541,24 @@ export default {
 
     openClaimRewardsModal() {
       const modalInstance = this.openModal(ClaimRewardsModal);
-      modalInstance.totalRewards = this.lpToken.rewards.map(reward => ({
+      modalInstance.totalRewards = this.wombatLpAssets[this.lpToken.symbol].rewards.map(reward => ({
         symbol: reward.asset,
         amount: reward.amountFormatted,
       }))
       modalInstance.header = 'Claim Penpie rewards'
-      modalInstance.tokensConfig = {...config.PENPIE_REWARDS_TOKENS, ...config.ASSETS_CONFIG}
+      modalInstance.tokensConfig = {...config.WOMBAT_REWARDS_TOKENS, ...config.ASSETS_CONFIG}
 
       modalInstance.$on('CLAIM', () => {
         if (this.smartLoanContract) {
-          this.handleTransaction(this.claimPenpieRewards, {market: this.lpToken.stakingContractAddress}, () => {
+          const value = Number(0).toFixed(config.DECIMALS_PRECISION);
+          const unstakeRequest = {
+            asset: this.lpToken.symbol,
+            value: value,
+            assetDecimals: this.lpToken.decimals,
+            unstakeAndWithdrawMethod: this.lpToken.unstakeAndWithdrawMethod,
+            type: 'WOMBAT_LP',
+          };
+          this.handleTransaction(this.unstakeAndExportWombatLp, {unstakeRequest: unstakeRequest}, () => {
             this.$forceUpdate();
           }, (error) => {
             this.handleTransactionError(error);
@@ -724,8 +573,8 @@ export default {
     },
 
     async getWalletAssetBalance() {
-      const tokenContract = new ethers.Contract(this.lpToken.receiptTokenAddress ? this.lpToken.receiptTokenAddress : this.lpToken.address, erc20ABI, this.provider.getSigner());
-      return await this.getWalletTokenBalance(this.account, this.lpToken.symbol, tokenContract, this.lpToken.decimals);
+      const tokenContract = new ethers.Contract(this.lpToken.address, erc20ABI, this.provider.getSigner());
+      return await this.getWalletTokenBalance(this.account, this.lpToken.symbol, tokenContract, config.WOMBAT_LP_ASSETS[this.lpToken.symbol].decimals);
     },
 
     async getWalletPendleLpBalance() {
@@ -738,7 +587,7 @@ export default {
     },
 
     async setupApr() {
-      this.apr = this.apys[this.lpToken.symbol] ? this.apys[this.lpToken.symbol].lp_apy * 100 : 0;
+      this.apr = this.apys[this.lpToken.apyKey] ? this.apys[this.lpToken.apyKey].lp_apy * 100 : 0;
     },
 
     watchAssetBalancesDataRefreshEvent() {
@@ -780,7 +629,7 @@ export default {
 
     watchRefreshLP() {
       this.lpService.observeRefreshLp().subscribe(async (lpType) => {
-        if (lpType === 'PENPIE_LP') {
+        if (lpType === 'WOMBAT_LP') {
           this.setupMoreActionsConfiguration();
         }
       })
@@ -788,9 +637,10 @@ export default {
 
     watchAssetBalancesDataRefresh() {
       this.dataRefreshEventService.observeAssetBalancesDataRefresh().subscribe(() => {
-        this.disableAllButtons = !this.penpieLpBalances || !this.penpieLpBalances[this.lpToken.protocolIdentifier];
+        this.disableAllButtons = !this.wombatLpBalances || !this.wombatLpBalances[this.lpToken.symbol];
         this.setupAddActionsConfiguration();
         this.setupRemoveActionsConfiguration();
+        this.setupMoreActionsConfiguration();
       })
     },
 
@@ -819,8 +669,6 @@ export default {
       })
     },
 
-
-
     handleTransactionError(error) {
       if (error.code === 4001 || error.code === -32603) {
         this.progressBarService.emitProgressBarCancelledState();
@@ -832,16 +680,9 @@ export default {
       this.isBalanceEstimated = false;
     },
 
-    setupMaturityInDays() {
-      const now = new Date();
-      const day = Number(this.lpToken.maturity.split('/')[0]);
-      const month = Number(this.lpToken.maturity.split('/')[1]);
-      const year = Number(this.lpToken.maturity.split('/')[2]);
-      const date = new Date(year, month - 1, day);
-      const diffTime = Math.abs(date - now);
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      this.lpToken.maturityInDays = diffDays;
-    },
+    async createContractObject() {
+      this.contract = await new ethers.Contract(this.lpToken.poolAddress, ABI_WOMBAT_DYNAMIC_POOL_V2, provider.getSigner());
+    }
   }
 }
 </script>
@@ -849,9 +690,14 @@ export default {
 <style scoped lang="scss">
 @import "~@/styles/variables";
 
-.penpie-lp-table-row-component {
+.wombat-lp-table-row-component {
   height: 60px;
   transition: all 200ms;
+
+  &.wombat-lp-table-row-component--last .table__row {
+    border-image-source: none !important;
+    border-color: transparent;
+  }
 
   &.expanded {
     height: 387px;
@@ -859,7 +705,8 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: 100px 130px 130px 1fr 80px 120px 110px 100px 40px 80px 22px;
+    grid-template-columns: 150px 140px 140px 1fr 100px 110px 110px 30px 80px 22px;
+    //grid-template-columns: 130px 120px 140px 1fr 70px 120px 110px 100px 30px 80px 22px;
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;
@@ -874,10 +721,6 @@ export default {
       &.asset {
         align-items: center;
 
-        .asset__name {
-          color: var(--default-text-color);
-        }
-
         .asset__icon {
           width: 20px;
           height: 20px;
@@ -885,23 +728,14 @@ export default {
         }
 
         .asset__info {
-          position: relative;
           display: flex;
           flex-direction: column;
           justify-content: center;
           margin-left: 8px;
           font-weight: 500;
-
-          .info__icon {
-            position: absolute;
-            top: 22px;
-            right: -19px;
-          }
         }
 
         .asset__dex {
-          display: flex;
-          flex-direction: row;
           font-size: $font-size-xxs;
           color: var(--asset-table-row__asset-loan-color);
         }
@@ -921,7 +755,7 @@ export default {
         justify-content: flex-end;
 
         .asset__icon {
-          margin-left: 8px;
+          margin-left: 12px;
           height: 22px;
           width: 22px;
           border-radius: 50%;
@@ -1020,7 +854,7 @@ export default {
 </style>
 
 <style lang="scss">
-.penpie-lp-table-row-component {
+.wombat-lp-table-row-component {
   .table__row {
     .bar-gauge-beta-component .bar-gauge .bar {
       width: 80px;

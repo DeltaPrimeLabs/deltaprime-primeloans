@@ -28,6 +28,7 @@ export default class HealthService {
     levelAssets, levelBalances,
     gmxV2Assets, gmxV2Balances,
     penpieLpAssets, penpieLpBalances,
+    wombatLpAssets, wombatLpBalances,
     traderJoeV2LpAssets,
     stakeStoreFarms
   ) {
@@ -130,6 +131,17 @@ export default class HealthService {
         }
       }
 
+      if (wombatLpAssets) {
+        for (const [symbol, data] of Object.entries(wombatLpAssets)) {
+          tokens.push({
+            price: redstonePriceData[symbol] ? redstonePriceData[symbol][0].dataPoints[0].value : 0,
+            balance: parseFloat(wombatLpBalances[symbol]),
+            borrowed: 0,
+            debtCoverage: data.debtCoverage,
+            symbol: symbol
+          });
+        }
+      }
 
       for (const [symbol, farms] of Object.entries(stakeStoreFarms)) {
         farms.forEach(farm => {

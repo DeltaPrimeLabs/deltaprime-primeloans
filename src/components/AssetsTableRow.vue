@@ -250,6 +250,8 @@ export default {
       'gmxV2Balances',
       'penpieLpBalances',
       'penpieLpAssets',
+      'wombatLpAssets',
+      'wombatLpBalances',
       'noSmartLoan'
     ]),
     ...mapState('stakeStore', ['farms']),
@@ -575,6 +577,8 @@ export default {
       modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.farms = this.farms;
@@ -633,6 +637,8 @@ export default {
       modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.targetAsset = Object.keys(config.ASSETS_CONFIG).filter(asset => asset !== this.asset.symbol)[0];
       modalInstance.debt = this.fullLoanStatus.debt;
@@ -691,6 +697,8 @@ export default {
       modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.balancerLpBalances = this.balancerLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
@@ -738,6 +746,8 @@ export default {
       modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.balancerLpBalances = this.balancerLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
@@ -823,6 +833,8 @@ export default {
       modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.balancerLpBalances = this.balancerLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
@@ -891,6 +903,8 @@ export default {
       modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.balancerLpBalances = this.balancerLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
@@ -975,6 +989,8 @@ export default {
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
@@ -1020,6 +1036,8 @@ export default {
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;

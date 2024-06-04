@@ -101,6 +101,8 @@ export default {
     balancerLpBalances: {},
     penpieLpAssets: {},
     penpieLpBalances: {},
+    wombatLpAssets: {},
+    wombatLpBalances: {},
     farms: {},
     debtsPerAsset: {},
     assetBalance: Number,
@@ -215,6 +217,20 @@ export default {
         for (const [symbol, data] of Object.entries(this.penpieLpAssets)) {
           if (this.penpieLpBalances) {
             let balance = parseFloat(this.penpieLpBalances[symbol]);
+            tokens.push({
+              price: data.price,
+              balance: balance ? balance : 0,
+              borrowed: 0,
+              debtCoverage: data.debtCoverage
+            });
+          }
+        }
+      }
+
+      if (this.wombatLpAssets) {
+        for (const [symbol, data] of Object.entries(this.wombatLpAssets)) {
+          if (this.wombatLpBalances) {
+            let balance = parseFloat(this.wombatLpBalances[symbol]);
             tokens.push({
               price: data.price,
               balance: balance ? balance : 0,

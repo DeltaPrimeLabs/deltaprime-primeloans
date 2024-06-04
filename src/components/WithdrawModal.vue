@@ -75,7 +75,7 @@
         </TransactionResultSummaryBeta>
       </div>
 
-      <div class="toggle-container" v-if="asset.name === toggleOptions[0]">
+      <div class="toggle-container" v-if="asset.name === toggleOptions[0] && !hideToggle">
         <Toggle v-on:change="assetToggleChange" :options="toggleOptions"></Toggle>
       </div>
 
@@ -129,6 +129,8 @@ export default {
     levelLpBalances: {},
     penpieLpAssets: {},
     penpieLpBalances: {},
+    wombatLpAssets: {},
+    wombatLpBalances: {},
     traderJoeV2LpAssets: {},
     balancerLpAssets: {},
     balancerLpBalances: {},
@@ -153,6 +155,7 @@ export default {
       thresholdWeightedValue: 0,
       maxWithdraw: 0,
       valueAsset: "USDC",
+      hideToggle: true,
     };
   },
 
@@ -255,6 +258,23 @@ export default {
         for (const [symbol, data] of Object.entries(this.penpieLpAssets)) {
           if (this.penpieLpBalances) {
             let balance = parseFloat(this.penpieLpBalances[symbol]);
+            if (symbol === this.asset.symbol) {
+              balance -= withdrawn;
+            }
+            tokens.push({
+              price: data.price,
+              balance: balance ? balance : 0,
+              borrowed: 0,
+              debtCoverage: data.debtCoverage
+            });
+          }
+        }
+      }
+
+      if (this.wombatLpAssets) {
+        for (const [symbol, data] of Object.entries(this.wombatLpAssets)) {
+          if (this.wombatLpBalances) {
+            let balance = parseFloat(this.wombatLpBalances[symbol]);
             if (symbol === this.asset.symbol) {
               balance -= withdrawn;
             }

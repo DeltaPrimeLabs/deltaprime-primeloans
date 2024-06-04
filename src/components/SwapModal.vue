@@ -306,6 +306,8 @@ export default {
       gmxV2Balances: {},
       penpieLpAssets: {},
       penpieLpBalances: {},
+      wombatLpAssets: {},
+      wombatLpBalances: {},
       traderJoeV2LpAssets: {},
       balancerLpAssets: {},
       balancerLpBalances: {},
@@ -572,9 +574,12 @@ export default {
     },
 
     setupTargetAsset() {
+      console.log('asfrqger', this.targetAsset);
+      console.log('asfrqger', this.targetAssetsConfig);
       if (this.targetAsset) {
         this.targetAssetData = this.targetAssetsConfig[this.targetAsset];
       }
+      console.log('asfrqger', this.targetAssetData);
     },
 
     async sourceInputChange(changeEvent) {
@@ -827,6 +832,29 @@ export default {
         for (const [symbol, data] of Object.entries(this.penpieLpAssets)) {
           if (this.penpieLpBalances) {
             let balance = parseFloat(this.penpieLpBalances[symbol]);
+
+            if (symbol === this.sourceAsset) {
+              balance -= this.sourceAssetAmount;
+            }
+
+            if (symbol === this.targetAsset) {
+              balance += this.targetAssetAmount;
+            }
+
+            tokens.push({
+              price: data.price,
+              balance: balance ? balance : 0,
+              borrowed: 0,
+              debtCoverage: data.debtCoverage
+            });
+          }
+        }
+      }
+
+      if (this.wombatLpAssets) {
+        for (const [symbol, data] of Object.entries(this.wombatLpAssets)) {
+          if (this.wombatLpBalances) {
+            let balance = parseFloat(this.wombatLpBalances[symbol]);
 
             if (symbol === this.sourceAsset) {
               balance -= this.sourceAssetAmount;

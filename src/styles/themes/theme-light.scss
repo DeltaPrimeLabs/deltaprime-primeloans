@@ -631,4 +631,9 @@
   --protocol-insurance-border: #{$delta-light};
   --protocol-insurance-background: #{$violet-mist};
   // endregion
+
+  // region WombatPoolRow
+  --wombat-pool-row__header-color: #{$medium-gray};
+  --wombat-pool-row__header-border: linear-gradient(to right, #{$delta-pale} 43%, #{$pale-orange} 62%, #{$pale-raspberry} 79%);
+  // endregion
 }
