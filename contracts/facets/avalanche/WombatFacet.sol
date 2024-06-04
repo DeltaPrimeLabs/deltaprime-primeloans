@@ -7,7 +7,7 @@ import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
 import "../../interfaces/facets/avalanche/IWombatPool.sol";
 import "../../interfaces/facets/avalanche/IWombatMaster.sol";
 import "../../interfaces/facets/avalanche/IWombatRouter.sol";
-import "../../interfaces/facets/avalanche/IRewarder.sol";
+import "../../interfaces/facets/avalanche/IMultiRewarder.sol";
 import "../../interfaces/IStakingPositions.sol";
 import "../../interfaces/IWrappedNativeToken.sol";
 
@@ -528,7 +528,7 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         address(WOM_TOKEN).safeTransfer(owner, reward);
         uint256 baseIdx;
         if (rewarder != address(0)) {
-            address[] memory rewardTokens = IRewarder(rewarder).rewardTokens();
+            address[] memory rewardTokens = IMultiRewarder(rewarder).rewardTokens();
             baseIdx = rewardTokens.length;
             for (uint256 i; i != baseIdx; ++i) {
                 if (additionalRewards[i] > 0) {
@@ -537,7 +537,7 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             }
         }
         if (boostedRewarder != address(0)) {
-            address[] memory rewardTokens = IRewarder(boostedRewarder).rewardTokens();
+            address[] memory rewardTokens = IMultiRewarder(boostedRewarder).rewardTokens();
             for (uint256 i; i != rewardTokens.length; ++i) {
                 if (additionalRewards[baseIdx + i] > 0) {
                     address(rewardTokens[i]).safeTransfer(
