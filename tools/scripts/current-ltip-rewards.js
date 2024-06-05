@@ -65,28 +65,27 @@ async function promiseAllInBatches(task, items, batchSize) {
     return results;
 }
 
-async function fetchData(maxTimestamp, file) {
-    let loans = await factory.getAllLoans();
-
-    let resp = fetch(`https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/ltip-loan-for?addresses=${loans.toString()}`)
+async function fetchData() {
+    let resp = await fetch(`https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/ltip-loan-leaderboard?from=1717432200&to=${Math.ceil(Date.now()/1000)}`)
 
 
-    let json = await resp.json();
+    let list = (await resp.json()).list;
+    console.log(list)
 
-    fs.writeFileSync(`src/data/avalanche/${file}.json`, JSON.stringify(json))
+    // fs.writeFileSync(`src/data/avalanche/${file}.json`, JSON.stringify(json))
 
-    let collectedAvax = 0;
+    let collectedArb = 0;
 
-    let json1 = JSON.parse(fs.readFileSync(`src/data/arbitrum/ltip/${file}.json`))
+    // let json1 = JSON.parse(fs.readFileSync(`src/data/arbitrum/ltip/${file}.json`))
 
 
-    Object.entries(json1).forEach(
-        ([k,v]) => {
-            collectedAvax += json1[k];
+    list.forEach(
+        el => {
+            collectedArb += el.arbCollected;
         }
     )
 
-    console.log('collected ARB: ', collectedAvax)
+    console.log('collected ARB: ', collectedArb)
 }
 
 // run().then()
@@ -203,7 +202,7 @@ async function checkCollected() {
 }
 
 
-fetchData(Date.now(), "LTIP_PA_EPOCH_1")
+fetchData()
 // checkNegativeAccounts()
 // checkCollectedInTimestamp(1715152203)
 // checkCollected();
