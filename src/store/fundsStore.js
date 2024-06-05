@@ -785,11 +785,18 @@ export default {
 
       const wrappedSmartLoanFactoryContract = await wrapContract(state.smartLoanFactoryContract);
 
+      console.log(config.chainId === 43114);
+      console.log(config.chainId);
       const transaction = config.chainId === 43114 ?
         await wrappedSmartLoanFactoryContract.createAndFundLoan(toBytes32(asset.symbol), fundTokenContract.address, amount)
         : await wrappedSmartLoanFactoryContract.createAndFundLoan(toBytes32(asset.symbol), amount);
 
-      const smartLoanAddress = getLog(transaction, SMART_LOAN_FACTORY.abi, 'SmartLoanCreated').args.accountAddress;
+      console.log(transaction);
+      const createTx = await awaitConfirmation(transaction, provider, 'create and fund loan');
+      const log = getLog(createTx, SMART_LOAN_FACTORY.abi, 'SmartLoanCreated');
+      console.log('SmartLoanCreated LOGGGG', log);
+
+      const smartLoanAddress = log.args.accountAddress;
 
       await rootState.serviceRegistry.termsService.saveSignedTerms(smartLoanAddress, rootState.network.account, signResult, 'PRIME_ACCOUNT');
 
@@ -799,7 +806,11 @@ export default {
 
       const tx = await awaitConfirmation(transaction, provider, 'create Prime Account');
 
-      const fundAmount = formatUnits(getLog(tx, SMART_LOAN_FACTORY.abi, 'SmartLoanCreated').args.collateralAmount, decimals);
+      console.log(tx);
+
+      const log2 = getLog(tx, SMART_LOAN_FACTORY.abi, 'SmartLoanCreated');
+      console.log('log2', log2);
+      const fundAmount = formatUnits(log2.args.collateralAmount, decimals);
       const fundAmountUSD = Number(fundAmount) * state.assets[asset.symbol].price;
 
       await commit('setSingleAssetBalance', {asset: asset.symbol, balance: fundAmount});
