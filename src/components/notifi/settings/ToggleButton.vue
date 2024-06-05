@@ -31,6 +31,10 @@ export default {
         toggle: this.toggled
       });
     },
+
+    setValue(value) {
+      this.toggled = value;
+    }
   }
 }
 </script>
