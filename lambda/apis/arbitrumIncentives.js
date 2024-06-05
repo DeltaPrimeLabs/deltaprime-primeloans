@@ -358,7 +358,7 @@ const getLtipPoolTotalIncentivesApi = async (event, context, callback) => {
       statusCode: 200,
       body: JSON.stringify({
         totalIncentives: accumulatedIncentives,
-        totalEligibleTvls: tvlList
+        totalEligibleTvls: tvlList.sort((a, b) => a.id - b.id)
       }),
     };
     callback(null, response);
