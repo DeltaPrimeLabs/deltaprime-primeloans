@@ -59,9 +59,8 @@ const getIncentivesMultiplier = async (now) => {
 };
 
 const arbitrumIncentives = async (rpc = 'first') => {
-  // $9469 / $1.12 = 8454.4642857
   const now = Math.floor(Date.now() / 1000);
-  const incentivesPerWeek = 8454.4642857;
+  const incentivesPerWeek = 10990;
   const incentivesMultiplier = await getIncentivesMultiplier(now);
 
   if (incentivesMultiplier == 0) return;
