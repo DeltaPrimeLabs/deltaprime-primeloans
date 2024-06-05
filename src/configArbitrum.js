@@ -476,6 +476,8 @@ export default {
     ltipPrimeAccountArbCollected: "https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/ltip-loan-for",
     ltipApyEndpoint: "https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/ltip-boost-apy",
     ltipPoolApyEndpoint: "https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/ltip-pool-boost-apy",
+    ltipGrantTotalEndpoint: "https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/arbitrum-grant-total",
+    previousLtipMilestone: 5000000,
     ltipMilestone: 7500000,
     ltipLastDistributionTimestamp: 1717432200,
     lastMilestoneHit: 1717432200
