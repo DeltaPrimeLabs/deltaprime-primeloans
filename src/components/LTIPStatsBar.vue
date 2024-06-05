@@ -137,7 +137,10 @@ export default {
       .subscribe(([, tvl]) => {
         if (tvl) {
           this.totalEligibleTVL = tvl;
-          this.speedBonus = this.assets['ARB'] ? 9166.66 * this.assets['ARB'].price / 7 * 365 / config.ltipMilestone : 0;
+
+          let week = 7 * 24 * 3600;
+          this.speedBonus =
+              this.assets['ARB'] ? 9166.66 * this.assets['ARB'].price / 7 * 365 / config.ltipMilestone *  Math.max((week - (Date.now() / 1000 - config.ltipLastDistributionTimestamp))  / week, 0) : 0;
           this.speedBonusActive = this.totalEligibleTVL >= config.ltipMilestone;
         }
       });
