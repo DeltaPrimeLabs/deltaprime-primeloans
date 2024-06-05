@@ -47,7 +47,7 @@
         {{ boostApy | percent }}
         <span
           class="speed-bonus"
-          v-tooltip="{content: `A bonus provided to all participants if the mission is completed within 7 days` }"
+          v-tooltip="{content: `An additional bonus provided to all participants if the mission is completed within 7 days. It is not included in your Account APY.` }"
           :class="{'speed-bonus-active': speedBonusActive}"
       >&nbsp;(+{{speedBonus | percent}})</span>
         <div class="shine-icon"></div>
@@ -99,7 +99,7 @@ import {mapState} from "vuex";
 import {wrapContract} from "../utils/blockchain";
 import config from "../config";
 import {maxInt8} from "viem";
-import {combineLatest} from "rxjs";
+import {combineLatest, endWith} from "rxjs";
 
 export default {
   name: 'LTIPStatsBar',
@@ -133,15 +133,28 @@ export default {
       return maxInt8
     },
     watchLtipDataUpdate() {
-      combineLatest([this.priceService.observeRefreshPrices(), this.ltipService.observeLtipTotalEligibleTvlData()])
-      .subscribe(([, tvl]) => {
+      combineLatest([this.priceService.observeRefreshPrices(), this.ltipService.observeLtipTotalEligibleTvlData(), this.ltipService.observeLtipTotalEligibleTvls()])
+      .subscribe(([, tvl, tvls]) => {
         if (tvl) {
           this.totalEligibleTVL = tvl;
 
           let week = 7 * 24 * 3600;
-          this.speedBonus =
-              this.assets['ARB'] ? 9166.66 * this.assets['ARB'].price / 7 * 365 / config.ltipMilestone *  Math.max((week - (Date.now() / 1000 - config.ltipLastDistributionTimestamp))  / week, 0) : 0;
+
           this.speedBonusActive = this.totalEligibleTVL >= config.ltipMilestone;
+
+          let startTimestamp;
+          let endTimestamp;
+
+          if (this.speedBonusActive) {
+            let sorted = tvls.sort((a,b ) => a.id - b.id);
+            endTimestamp = sorted.find(a => a.totalEligibleTvl > config.ltipMilestone).id
+            startTimestamp = sorted.find(a => a.totalEligibleTvl > config.previousLtipMilestone).id
+          } else {
+            endTimestamp = Date.now() / 1000;
+            startTimestamp = config.ltipLastDistributionTimestamp;
+          }
+
+          this.speedBonus = this.assets['ARB'] ? 9166.66 * this.assets['ARB'].price / 7 * 365 / config.ltipMilestone *  Math.max((week - (endTimestamp - startTimestamp))  / week, 0) : 0;
         }
       });
       this.ltipService.observeLtipPrimeAccountEligibleTvl().subscribe((tvl) => {
