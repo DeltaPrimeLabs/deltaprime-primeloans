@@ -13,12 +13,12 @@
   },
   "main": "index.js",
   "dependencies": {
-    "@sparticuz/chromium": "^123.0.1",
+    "@sparticuz/chromium": "106",
     "aws-sdk": "^2.1460.0",
     "bluebird": "^3.7.2",
     "node-fetch": "^2.7.0",
-    "puppeteer": "^22.6.4",
-    "puppeteer-core": "^22.6.4"
+    "puppeteer": "18.0.5",
+    "puppeteer-core": "18.0.5"
   },
   "private": true,
   "devDependencies": {

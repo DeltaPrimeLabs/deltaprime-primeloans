@@ -23,6 +23,5 @@ const assetApyApi = (event, context, callback) => {
 };
 
 module.exports = {
-  levelTvlApi,
   assetApyApi
 }

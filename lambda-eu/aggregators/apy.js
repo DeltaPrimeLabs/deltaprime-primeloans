@@ -28,7 +28,7 @@ const wombatApyAggregator = async (event) => {
     const poolInnerTexts = await Promise.all(Array.from(poolRows).map(async pool => {
       return (await (await pool.getProperty("textContent")).jsonValue()).replace(/\s+/g, "");
     }));
-    // console.log(poolInnerTexts)
+    console.log(poolInnerTexts)
 
     for (const [identifier, index] of Object.entries(pools)) {
       try {
@@ -50,6 +50,10 @@ const wombatApyAggregator = async (event) => {
             id: identifier
           },
           AttributeUpdates: {
+            lp_tvl: {
+              Value: Number(poolTvl) ? poolTvl : null,
+              Action: "PUT"
+            },
             lp_apy: {
               Value: Number(poolApy) ? poolApy / 100 : null,
               Action: "PUT"

@@ -336,7 +336,7 @@ const getLtipPoolBoostApyApi = (event, context, callback) => {
 
 const getLtipPoolTotalIncentivesApi = async (event, context, callback) => {
   try {
-    const params = {
+    let params = {
       TableName: process.env.ARBITRUM_INCENTIVES_ARB_TABLE
     };
 
@@ -348,10 +348,17 @@ const getLtipPoolTotalIncentivesApi = async (event, context, callback) => {
       accumulatedIncentives += item.arbCollected ? Number(item.arbCollected) : 0;
     });
 
+    params = {
+      TableName: 'loan-eligible-tvl-arb-prod'
+    };
+
+    const tvlList = await fetchAllDataFromDB(params, true);
+
     const response = {
       statusCode: 200,
       body: JSON.stringify({
         totalIncentives: accumulatedIncentives,
+        totalEligibleTvls: tvlList
       }),
     };
     callback(null, response);
