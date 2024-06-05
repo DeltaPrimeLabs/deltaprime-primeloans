@@ -19,4 +19,13 @@ interface IWombatPool {
         address to,
         uint256 deadline
     ) external returns (uint256 amount);
+
+    function withdrawFromOtherAsset(
+        address fromToken,
+        address toToken,
+        uint256 liquidity,
+        uint256 minimumAmount,
+        address to,
+        uint256 deadline
+    ) external returns (uint256 toAmount);
 }
