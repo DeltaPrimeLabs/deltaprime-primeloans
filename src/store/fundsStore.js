@@ -1488,7 +1488,7 @@ export default {
         let yearlyGrantInterest = 0;
 
         if (eligibleTvl) {
-          yearlyGrantInterest += eligibleTvl * maxBoostApy / 4.5 * state.assets['ARB'].price;
+          yearlyGrantInterest += eligibleTvl * maxBoostApy / 4.5;
         }
 
         if (collateral) {
