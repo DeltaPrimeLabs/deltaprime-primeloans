@@ -151,7 +151,7 @@ export default {
             startTimestamp = sorted.find(a => a.totalEligibleTvl > config.previousLtipMilestone).id
           } else {
             endTimestamp = Date.now() / 1000;
-            startTimestamp = config.ltipLastDistributionTimestamp;
+            startTimestamp = config.lastMilestoneHit;
           }
 
           this.speedBonus = this.assets['ARB'] ? 9166.66 * this.assets['ARB'].price / 7 * 365 / config.ltipMilestone *  Math.max((week - (endTimestamp - startTimestamp))  / week, 0) : 0;
@@ -261,7 +261,7 @@ export default {
         }
 
         .speed-bonus {
-          opacity: 70%;
+          opacity: 50%;
 
           &.speed-bonus-active {
             opacity: 100%;

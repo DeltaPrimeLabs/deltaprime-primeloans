@@ -477,8 +477,8 @@ export default {
     ltipApyEndpoint: "https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/ltip-boost-apy",
     ltipPoolApyEndpoint: "https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/ltip-pool-boost-apy",
     ltipGrantTotalEndpoint: "https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/arbitrum-grant-total",
-    previousLtipMilestone: 5000000,
-    ltipMilestone: 7500000,
+    previousLtipMilestone: 7500000,
+    ltipMilestone: 10000000,
     ltipLastDistributionTimestamp: 1717432200,
-    lastMilestoneHit: 1717432200
+    lastMilestoneHit: 1717639804
 }
