@@ -1,4 +1,5 @@
 const {
+  dynamoDb,
   fetchAllDataFromDB
 } = require('../utils/helpers');
 
