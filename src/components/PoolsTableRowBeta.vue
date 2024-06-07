@@ -32,11 +32,14 @@
       <div class="table__cell table__cell--double-value apy">
         <template>
           <div class="double-value__pieces">
-            <LoadedValue :check="() => pool.apy != null" :value="formatPercent(pool.apy + miningApy)">
+            <LoadedValue :check="() => pool.apy != null" :value="formatPercent(pool.apy + pool.miningApy)">
             </LoadedValue>
           </div>
           <div class="double-value__usd">
-            <span v-if="pool.apy != null && miningApy">{{formatPercent(pool.apy)}}&nbsp;+&nbsp;{{formatPercent(miningApy)}}</span>
+            <span
+              v-if="pool.apy != null && pool.miningApy">{{ formatPercent(pool.apy) }}&nbsp;+&nbsp;{{
+                formatPercent(pool.miningApy)
+              }}</span>
           </div>
         </template>
       </div>
@@ -52,7 +55,8 @@
       </div>
 
       <div class="table__cell unlocked" v-if="poolsUnlocking">
-        <bar-gauge-beta :min="0" :max="1" :width="80" :value="Math.min(pool.tvl * pool.assetPrice / 1000000, 1)"></bar-gauge-beta>
+        <bar-gauge-beta :min="0" :max="1" :width="80"
+                        :value="Math.min(pool.tvl * pool.assetPrice / 1000000, 1)"></bar-gauge-beta>
       </div>
 
       <div class="table__cell utilisation">
@@ -63,12 +67,12 @@
 
       <div class="table__cell actions">
         <IconButtonMenuBeta
-            class="actions__icon-button"
-            v-for="(actionConfig, index) of actionsConfig"
-            :disabled="!pool.contract || pool.disabled"
-            v-bind:key="index"
-            :config="actionConfig"
-            v-on:iconButtonClick="actionClick">
+          class="actions__icon-button"
+          v-for="(actionConfig, index) of actionsConfig"
+          :disabled="!pool.contract || pool.disabled"
+          v-bind:key="index"
+          :config="actionConfig"
+          v-on:iconButtonClick="actionClick">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -88,8 +92,8 @@ const ethers = require('ethers');
 import SimpleSwapModal from './SimpleSwapModal.vue';
 import config from '../config';
 import YAK_ROUTER_ABI from '../../test/abis/YakRouter.json';
-import BarGaugeBeta from "./BarGaugeBeta.vue";
-import InfoIcon from "./InfoIcon.vue";
+import BarGaugeBeta from './BarGaugeBeta.vue';
+import InfoIcon from './InfoIcon.vue';
 
 let TOKEN_ADDRESSES;
 
@@ -116,6 +120,7 @@ export default {
       poolAssetsPrices: {},
       poolContracts: {},
       lifiData: {},
+      miningApy: 0,
       poolsUnlocking: config.poolsUnlocking
     };
   },
@@ -131,12 +136,14 @@ export default {
       'lpBalances',
       'noSmartLoan'
     ]),
-    ...mapState('serviceRegistry', ['poolService', 'walletAssetBalancesService', 'lifiService', 'progressBarService']),
-    miningApy() {
-      if (this.pool.tvl === 0) return 0;
-      return (config.chainId === 42161) ?  0 * 1000 * 365 / 4 / (this.pool.tvl * this.pool.assetPrice)
-      : 0 * Math.max((1 - this.pool.tvl * this.pool.assetPrice / 4000000) * 0.1, 0);
-    }
+    ...mapState('serviceRegistry', [
+      'poolService',
+      'ltipService',
+      'walletAssetBalancesService',
+      'lifiService',
+      'progressBarService',
+      'providerService'
+    ]),
   },
 
   methods: {

@@ -124,7 +124,9 @@ export default {
     }
   },
   created() {
-    this.selectedNetwork = this.networks.find(network => network.chainId === window.chainId)
+    setTimeout(() => {
+      this.selectedNetwork = this.networks.find(network => network.chainId === window.chainId)
+    }, 500);
   }
 }
 </script>

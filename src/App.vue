@@ -424,6 +424,7 @@ export default {
 
     checkWallet() {
       console.warn('--------__---__------___--___--__---___checking wallet--------___---___-___--___---__--___--__');
+      console.log('this.provider', this.provider);
       if (this.provider && this.provider.provider) {
         console.log('provider', this.provider.provider)
         if (this.provider.provider.isRabby) {
@@ -433,7 +434,7 @@ export default {
           return;
         }
 
-        if (this.provider.provider.isMetaMask) {
+        if (this.provider.provider.isMetaMask && !this.provider.provider.isRabby) {
           console.warn('METAMASK');
           window.isMetaMask = true;
           window.isRabby = false;

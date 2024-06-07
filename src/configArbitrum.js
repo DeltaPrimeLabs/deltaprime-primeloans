@@ -9,6 +9,7 @@ import FRAX_POOL_TUP from '/deployments/arbitrum/FraxPoolTUP.json';
 import LINK_POOL_TUP from '/deployments/arbitrum/LinkPoolTUP.json';
 import SUSHISWAP_INTERMEDIARY_TUP from '../deployments/arbitrum/SushiSwapIntermediaryTUP.json';
 import {yieldYakBalance} from './utils/calculate';
+import subgraphConfig from '../.secrets/subgraph.json';
 
 export default {
     MIN_ALLOWED_HEALTH: 0.0182,
@@ -33,7 +34,7 @@ export default {
       "UNI": {name: "UNI", symbol: "UNI", logoExt: "png", decimals: 18, address: addresses.UNI, debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:UNIUSDT"},
       "LINK": {name: "LINK", symbol: "LINK", decimals: 18, address: addresses.LINK, debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:LINKUSDT"},
       "GMX": {name: "GMX", symbol: "GMX", logoExt: "png", decimals: 18, address: addresses.GMX, debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:GMXUSDT"},
-      "GLP": {name: "GLP", symbol: "GLP", logoExt: "png", decimals: 18, address: addresses.GLP, debtCoverage: 0.83333333333, tradingViewSymbol: ""},
+      "GLP": {name: "GLP", symbol: "GLP", logoExt: "png", decimals: 18, address: addresses.GLP, debtCoverage: 0.83333333333, tradingViewSymbol: "", hasIncentives: true},
       // "DPX": {name: "DPX", symbol: "DPX", logoExt: "png", decimals: 18, address: addresses.DPX, debtCoverage: 0.83333333333, tradingViewSymbol: "BYBIT:DPXUSDT"},
       "MAGIC": {name: "MAGIC", symbol: "MAGIC", logoExt: "png", decimals: 18, address: addresses.MAGIC, groupIdentifier: "MAGIC_GROUP", debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:MAGICUSDT"},
       "WOO": {name: "WOO", symbol: "WOO", logoExt: "png", decimals: 18, address: addresses.WOO, groupIdentifier: "WOO_GROUP", debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:WOOUSDT"},
@@ -57,7 +58,7 @@ export default {
     SWAP_DEXS_CONFIG: {
         ParaSwapV2: {
             displayName: 'ParaSwap',
-            availableAssets: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH', 'GRAIL', 'WOO', 'MAGIC', 'JOE', 'ezETH', 'weETH'],
+            availableAssets: ['ETH', 'USDC', 'USDT', 'USDC.e', 'ARB', 'BTC', 'GMX', 'DAI', 'FRAX', 'LINK', 'UNI', 'wstETH', 'GRAIL', 'WOO', 'MAGIC', 'JOE', 'ezETH', 'weETH', 'rsETH'],
             slippageMargin: 0.05
         },
         YakSwap: {
@@ -164,6 +165,8 @@ export default {
             logoExt: 'png',
             groupIdentifier: 'PENDLE_EZ_ETH_LP_GROUP',
             name: 'PENPIE',
+            link: 'https://www.pendle.magpiexyz.io/stake/0x5E03C94Fc5Fb2E21882000A96Df0b63d2c4312e2',
+            maturity: '27/06/2024'
         },
         'PENDLE_WSTETH_LP': {
             protocol: 'PENPIE',
@@ -185,6 +188,8 @@ export default {
             logoExt: 'png',
             groupIdentifier: 'PENDLE_WSTETH_LP_GROUP',
             name: 'PENPIE',
+            link: 'https://www.pendle.magpiexyz.io/stake/0xFd8AeE8FCC10aac1897F8D5271d112810C79e022',
+            maturity: '27/06/2024'
         },
         'PENDLE_E_ETH_LP': {
             protocol: 'PENPIE',
@@ -206,6 +211,8 @@ export default {
             logoExt: 'png',
             groupIdentifier: 'PENDLE_E_ETH_LP_GROUP',
             name: 'PENPIE',
+            link: 'https://www.pendle.magpiexyz.io/stake/0xf9F9779d8fF604732EBA9AD345E6A27EF5c2a9d6',
+            maturity: '26/09/2024'
         },
         'PENDLE_RS_ETH_LP': {
             protocol: 'PENPIE',
@@ -227,6 +234,8 @@ export default {
             logoExt: 'png',
             groupIdentifier: 'PENDLE_RS_ETH_LP_GROUP',
             name: 'PENPIE',
+            link: 'https://www.pendle.magpiexyz.io/stake/0x6Ae79089b2CF4be441480801bb741A531d94312b',
+            maturity: '27/06/2024'
         },
         'PENDLE_SILO_ETH_WSTETH_LP': {
             protocol: 'PENPIE',
@@ -248,6 +257,8 @@ export default {
             logoExt: 'png',
             groupIdentifier: 'PENDLE_SILO_ETH_WSTETH_LP_GROUP',
             name: 'PENPIE',
+            link: 'https://www.pendle.magpiexyz.io/stake/0xACcd9A7cb5518326BeD715f90bD32CDf2fEc2D14',
+            maturity: '26/12/2024'
         }
     },
     LEVEL_LP_ASSETS_CONFIG: {
@@ -451,7 +462,7 @@ export default {
     dataProviderId: "redstone-arbitrum-prod",
     dataProviderHistoricalPrices: "redstone",
     redstoneFeedUrl: "https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-arbitrum-prod",
-    subgraph: "https://api.thegraph.com/subgraphs/name/keizir/deltaprime",
+    subgraph: `https://gateway-arbitrum.network.thegraph.com/api/${subgraphConfig.apiKey}/deployments/id/Qmd1qPVbw2HLtr85BC1gZTKFovQu8vb4rfo7cVrekyxb8A`,
     readRpcUrl: "https://arbitrum-mainnet.core.chainstack.com/9a30fb13b2159a76c8e143c52d5579bf",
     multicallAddress: "0x0674ee727f74752ea9dc630bd5c5d8a374187e7b",
     EMAIL_REGEX: /(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])/,
@@ -461,4 +472,13 @@ export default {
     gmxV2IncentivesMilestone: 9000000,
     gmxV2IncentivesDeadline: 'February 5th',
     historicalRpcUrl: "https://nd-767-190-280.p2pify.com/8d546b2f3519965f0f1cb4332abe96b3",
+    ltipAccountsLeaderboardEndpoint: "https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/ltip-loan-leaderboard",
+    ltipPrimeAccountArbCollected: "https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/ltip-loan-for",
+    ltipApyEndpoint: "https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/ltip-boost-apy",
+    ltipPoolApyEndpoint: "https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/ltip-pool-boost-apy",
+    ltipGrantTotalEndpoint: "https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/arbitrum-grant-total",
+    previousLtipMilestone: 7500000,
+    ltipMilestone: 10000000,
+    ltipLastDistributionTimestamp: 1717432200,
+    lastMilestoneHit: 1717639804
 }

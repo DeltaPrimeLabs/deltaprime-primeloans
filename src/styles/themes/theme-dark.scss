@@ -36,6 +36,15 @@
   --stats-bar-beta__divider-background: linear-gradient(to bottom, #{$fuchsia} 19%, #{$pale-plum} 95%);
   // endregion
 
+  // region LTIPStatsBar
+  --ltip-stats-bar__background: #{$space}80;
+  --ltip-stats-bar__box-shadow: 7px 7px 30px 0 #{$dark-space}66;
+  --ltip-stats-bar__divider-background: linear-gradient(to bottom, #{$fuchsia} 19%, #{$pale-plum} 95%);
+  --ltip-stats-bar-text__color: #{$storm-blue};
+  --ltip-stats-bar-value__color: #{$mist-blue};
+  --ltip-stats-bar-value-icon: url("/src/assets/icons/shine_dark.svg");
+  // endregion
+
   // region StatsBarElementBeta
   --stats-bar-element-beta__stat-label-color: #{$storm-blue};
   // endregion
@@ -631,5 +640,9 @@
   --protocol-insurance-value: #{$violet-mist};
   --protocol-insurance-border: #{$cloud-navy};
   --protocol-insurance-background: #{$space};
+  // endregion
+
+  // region ClaimGLPModal
+  --claim-glp-modal__rewards-label-color: #{$storm-blue};
   // endregion
 }
