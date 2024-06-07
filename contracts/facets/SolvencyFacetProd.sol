@@ -568,6 +568,7 @@ abstract contract SolvencyFacetProd is RedstoneConsumerNumericBase, DiamondHelpe
         uint256 total;
 
         uint256[] memory ownedUniswapV3TokenIds = DiamondStorageLib.getUV3OwnedTokenIdsView();
+        uint256 PRECISION = 20;
 
         if (ownedUniswapV3TokenIds.length > 0) {
 
@@ -593,7 +594,8 @@ abstract contract SolvencyFacetProd is RedstoneConsumerNumericBase, DiamondHelpe
                     uint160 sqrtPriceX96_a = TickMath.getSqrtRatioAtTick(position.tickLower);
                     uint160 sqrtPriceX96_b = TickMath.getSqrtRatioAtTick(position.tickUpper);
 
-                    uint160 sqrtMarketPriceX96 = uint160(UniswapV3IntegrationHelper.sqrt(prices[0] * 2**96 / prices[1]));
+                    uint256 price = 10**(PRECISION) * prices[0] * 10 ** IERC20Metadata(position.token1).decimals() / prices[1] / 10 ** IERC20Metadata(position.token0).decimals();
+                    uint160 sqrtMarketPriceX96 = uint160(UniswapV3IntegrationHelper.sqrt(price) * 2**96 / 10**(PRECISION/2));
 
                     (uint256 token0Amount, uint256 token1amount) = LiquidityAmounts.getAmountsForLiquidity(
                         sqrtMarketPriceX96,
