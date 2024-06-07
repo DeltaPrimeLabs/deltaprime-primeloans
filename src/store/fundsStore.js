@@ -827,6 +827,11 @@ export default {
 
       await dispatch('setupSmartLoanContract');
       // TODO check on mainnet
+
+      setTimeout(() => {
+        window.location.reload();
+      }, 3000);
+
       setTimeout(async () => {
         await dispatch('network/updateBalance', {}, {root: true});
         rootState.serviceRegistry.healthService.emitRefreshHealth();
