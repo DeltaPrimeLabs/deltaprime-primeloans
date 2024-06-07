@@ -34,6 +34,7 @@ provider:
     STATISTICS_TABLE: statistics-${opt:stage, "dev"}
     GMX_INCENTIVES_RETROACTIVE_AVA_TABLE: gmx-incentives-retroactive-ava
     GMX_INCENTIVES_ARB_TABLE: gmx-incentives-arb-${opt:stage, "dev"}
+    GGP_INCENTIVES_AVA_TABLE: ggp-incentives-ava-${opt:stage, "dev"}
     ARBITRUM_INCENTIVES_ARB_TABLE: arbitrum-incentives-arb-${opt:stage, "dev"}
     POOL_ARBITRUM_INCENTIVES_ARB_TABLE: pool-arbitrum-incentives-arb-${opt:stage, "dev"}
     GM_OPEN_INTEREST_TABLE: gm-open-interest-${opt:stage, "dev"}
@@ -564,6 +565,28 @@ resources:
     #     StreamSpecification:
     #       StreamViewType: "NEW_AND_OLD_IMAGES"
     #     TableName: ${self:provider.environment.POOL_ARBITRUM_INCENTIVES_ARB_TABLE}
+    ggpIncentivesAvaTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: "id"
+            AttributeType: "S"
+          -
+            AttributeName: "timestamp"
+            AttributeType: "N"
+        KeySchema:
+          -
+            AttributeName: "id"
+            KeyType: "HASH"
+          -
+            AttributeName: "timestamp"
+            KeyType: "RANGE"
+        BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: "NEW_AND_OLD_IMAGES"
+        TableName: ${self:provider.environment.GGP_INCENTIVES_AVA_TABLE}
     # loansAvaTable:
     #   Type: AWS::DynamoDB::Table
     #   DeletionPolicy: Retain
