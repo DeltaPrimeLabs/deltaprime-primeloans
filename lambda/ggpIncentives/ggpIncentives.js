@@ -194,28 +194,28 @@ const ggpIncentives = async (network = 'avalanche', rpc = 'first') => {
     console.log('Error', error);
 
     if (error.error.code == 'SERVER_ERROR' || error.error.code == 'TIMEOUT') {
-      // await fetch(pingUrl.ggp.fail, {
-      //   method: "POST",
-      //   headers: {
-      //     "Content-Type": "application/json",
-      //   },
-      //   body: JSON.stringify({
-      //     error,
-      //     message: "retrying the function."
-      //   })
-      // });
+      await fetch(pingUrl.ggp.fail, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          error,
+          message: "retrying the function."
+        })
+      });
       ggpIncentives('avalanche', 'second');
     } else {
-      // await fetch(pingUrl.ggp.fail, {
-      //   method: "POST",
-      //   headers: {
-      //     "Content-Type": "application/json",
-      //   },
-      //   body: JSON.stringify({
-      //     error,
-      //     message: "function terminated."
-      //   })
-      // });
+      await fetch(pingUrl.ggp.fail, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          error,
+          message: "function terminated."
+        })
+      });
     }
   }
 }

@@ -38,15 +38,15 @@ const ggpIncentivesChecker = async () => {
     if (diff < threshold) {
       await fetch(pingUrl.ggpChecker.success);
     } else {
-      // await fetch(pingUrl.ggpChecker.fail, {
-      //   method: "POST",
-      //   headers: {
-      //     "Content-Type": "application/json",
-      //   },
-      //   body: JSON.stringify({
-      //     errorMessage: `difference: ${diff}, threshold set: ${threshold}, expected incentives per interval: ${expectedIncentives}`
-      //   })
-      // });
+      await fetch(pingUrl.ggpChecker.fail, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          errorMessage: `difference: ${diff}, threshold set: ${threshold}, expected incentives per interval: ${expectedIncentives}`
+        })
+      });
     }
   } catch(error) {
     console.error('Error', error);
