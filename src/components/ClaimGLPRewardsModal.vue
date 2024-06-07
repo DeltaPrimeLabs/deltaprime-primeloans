@@ -85,7 +85,7 @@ export default {
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    color: $steel-gray;
+    color: var(--claim-glp-modal__rewards-label-color);
 
     .rewards__label {
       font-weight: 400;

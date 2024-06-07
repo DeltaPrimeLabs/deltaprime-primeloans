@@ -124,6 +124,8 @@ export default {
       gmxV2Balances: {},
       balancerLpAssets: {},
       balancerLpBalances: {},
+      penpieLpAssets: {},
+      penpieLpBalances: {},
       farms: {},
       debtsPerAsset: {},
       thresholdWeightedValue: Number,
@@ -266,6 +268,20 @@ export default {
           borrowed: 0,
           debtCoverage: data.debtCoverage
         });
+      }
+
+      if (this.penpieLpAssets) {
+        for (const [symbol, data] of Object.entries(this.penpieLpAssets)) {
+          if (this.penpieLpBalances) {
+            let balance = parseFloat(this.penpieLpBalances[symbol]);
+            tokens.push({
+              price: data.price,
+              balance: balance ? balance : 0,
+              borrowed: 0,
+              debtCoverage: data.debtCoverage
+            });
+          }
+        }
       }
 
       for (const [, farms] of Object.entries(this.farms)) {

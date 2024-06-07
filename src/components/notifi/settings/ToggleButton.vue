@@ -25,12 +25,16 @@ export default {
   methods: {
     handleClick() {
       this.toggled = !this.toggled;
-      this.$emit('alertToggle', {
+      this.$emit('toggleChange', {
         alertId: this.alertId,
         alertType: this.alertType,
         toggle: this.toggled
       });
     },
+
+    setValue(value) {
+      this.toggled = value;
+    }
   }
 }
 </script>

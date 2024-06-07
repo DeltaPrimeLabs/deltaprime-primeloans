@@ -18,7 +18,20 @@ export default class HealthService {
     return this.health$.asObservable();
   }
 
-  async calculateHealth(noSmartLoan, debtsPerAsset, assets, assetBalances, lpAssets, lpBalances, concentratedLpAssets, concentratedLpBalances, balancerLpAssets, balancerLpBalances, levelAssets, levelBalances, gmxV2Assets, gmxV2Balances, traderJoeV2LpAssets, stakeStoreFarms) {
+  async calculateHealth(
+    noSmartLoan,
+    debtsPerAsset,
+    assets, assetBalances,
+    lpAssets, lpBalances,
+    concentratedLpAssets, concentratedLpBalances,
+    balancerLpAssets, balancerLpBalances,
+    levelAssets, levelBalances,
+    gmxV2Assets, gmxV2Balances,
+    penpieLpAssets, penpieLpBalances,
+    traderJoeV2LpAssets,
+    stakeStoreFarms
+  ) {
+    console.log('askjdnasjkladn', penpieLpAssets);
     if (noSmartLoan) {
       return 1;
     }
@@ -104,6 +117,19 @@ export default class HealthService {
           });
         }
       }
+
+      if (penpieLpAssets) {
+        for (const [symbol, data] of Object.entries(penpieLpAssets)) {
+          tokens.push({
+            price: redstonePriceData[symbol] ? redstonePriceData[symbol][0].dataPoints[0].value : 0,
+            balance: parseFloat(penpieLpBalances[symbol]),
+            borrowed: 0,
+            debtCoverage: data.debtCoverage,
+            symbol: symbol
+          });
+        }
+      }
+
 
       for (const [symbol, farms] of Object.entries(stakeStoreFarms)) {
         farms.forEach(farm => {

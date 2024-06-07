@@ -31,40 +31,61 @@
   </script>
 
   <script>
-    window.disableExternalData = false;
-    window.arbitrumChain = false;
-    window.avalancheChain = false;
-    if (window.ethereum) {
-      window.ethereum.request({method: 'eth_chainId'}).then((id) => {
-        const chainId = parseInt(id, 16);
-        window.chainId = chainId
-
-        switch (chainId) {
-          case 43114: {
-            window.chain = 'avalanche';
-            window.avalancheChain = true;
-
-            break;
-          }
-          case 42161: {
-            window.chain = 'arbitrum';
-            window.arbitrumChain = true;
-            break;
-          }
-          default: {
-            console.log('chain not supported defaulting to avalanche');
-            window.chain = 'avalanche';
-          }
-        }
-
-        console.log(window.chain);
-      });
+    if (window.location.origin === 'https://app.deltaprime.io') {
+      console.log('prod')
+      (function (h, o, t, j, a, r) {
+        h.hj = h.hj || function () {
+          (h.hj.q = h.hj.q || []).push(arguments)
+        };
+        h._hjSettings = {hjid: 5012563, hjsv: 6};
+        a = o.getElementsByTagName('head')[0];
+        r = o.createElement('script');
+        r.async = 1;
+        r.src = t + h._hjSettings.hjid + j + h._hjSettings.hjsv;
+        a.appendChild(r);
+      })(window, document, 'https://static.hotjar.com/c/hotjar-', '.js?sv=');
     } else {
-      console.error('No wallet installed');
-      window.chain = 'avalanche';
-      window.chainId = 43114;
-      window.noWalletInstalled = true;
+      console.log('not prod')
     }
+  </script>
+
+  <script>
+    setTimeout(() => {
+      window.disableExternalData = false;
+      window.arbitrumChain = false;
+      window.avalancheChain = false;
+      if (window.ethereum) {
+        window.ethereum.request({method: 'eth_chainId'}).then((id) => {
+          const chainId = parseInt(id, 16);
+          window.chainId = chainId
+
+          switch (chainId) {
+            case 43114: {
+              window.chain = 'avalanche';
+              window.avalancheChain = true;
+
+              break;
+            }
+            case 42161: {
+              window.chain = 'arbitrum';
+              window.arbitrumChain = true;
+              break;
+            }
+            default: {
+              console.log('chain not supported defaulting to avalanche');
+              window.chain = 'avalanche';
+            }
+          }
+
+          console.log(window.chain);
+        });
+      } else {
+        console.error('No wallet installed');
+        window.chain = 'avalanche';
+        window.chainId = 43114;
+        window.noWalletInstalled = true;
+      }
+    }, 500);
   </script>
 </head>
 

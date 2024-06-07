@@ -79,7 +79,7 @@
       </div>
 
       <div class="table__cell table__cell--double-value max-apr">
-        {{ maxApr | percent }}
+        <span>{{ (maxApr + boostApy) | percent }}<img v-if="boostApy" v-tooltip="{content: `This pool is incentivized!<br>⁃ up to ${maxApr ? (maxApr * 100).toFixed(2) : 0}% Pool APR<br>⁃ up to ${boostApy ? (boostApy * 100).toFixed(2) : 0}% ${chain === 'arbitrum' ? 'ARB' : 'AVAX'} incentives`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span>
       </div>
       <div class="table__cell"></div>
 
@@ -171,6 +171,7 @@ export default {
   },
 
   async mounted() {
+    this.chain = window.chain;
     this.setupAddActionsConfiguration();
     this.setupRemoveActionsConfiguration();
     this.setupMoreActionsConfiguration();
@@ -181,11 +182,13 @@ export default {
     this.watchHardRefreshScheduledEvent();
     this.watchAssetPricesUpdate();
     this.watchDebtsPerAssetDataRefreshEvent();
+    this.watchLtipMaxBoostUpdate();
     this.initAccount();
   },
 
   data() {
     return {
+      chain: null,
       tokenX: null,
       tokenY: null,
       addActionsConfig: null,
@@ -208,6 +211,7 @@ export default {
       userValue: 0,
       currentPriceIndex: 0,
       currentPrice: 0,
+      boostApy: 0,
       totalRewards: []
     };
   },
@@ -233,6 +237,7 @@ export default {
       'traderJoeService',
       'accountService',
       'priceService',
+      'ltipService'
     ]),
 
     hasSmartLoanContract() {
@@ -331,6 +336,12 @@ export default {
         this.account = account;
         this.getUserBinsAndBalances();
       });
+
+      this.accountService.observeSmartLoanContract$().subscribe(() => {
+        this.setupAddActionsConfiguration();
+        this.setupRemoveActionsConfiguration();
+        this.setupMoreActionsConfiguration();
+      })
     },
 
     async getUserBinsAndBalances() {
@@ -652,6 +663,12 @@ export default {
       });
     },
 
+    watchLtipMaxBoostUpdate() {
+      this.ltipService.observeLtipMaxBoostApy().subscribe((boostApy) => {
+        this.boostApy = boostApy;
+      });
+    },
+
     async setupPool() {
       const tokenX = this.traderJoeService.initializeToken(this.firstAsset);
       const tokenY = this.traderJoeService.initializeToken(this.secondAsset);
@@ -872,6 +889,11 @@ export default {
 
       &.max-apr {
         font-weight: 600;
+        .stars-icon {
+          width: 20px;
+          margin-left: 2px;
+          transform: translateY(-2px);
+        }
       }
 
       &.trend {

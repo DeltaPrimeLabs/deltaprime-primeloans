@@ -75,6 +75,9 @@
         </b>
       </a>
     </Banner>
+     <Banner v-if="showAvalanchePrimeAccountBanner" :closable="true">
+       Missing GM incentives from the last week are currently being recalculated and will be included in Wednesday's distribution.
+    </Banner>
     <div class="content">
       <div class="top-bar">
         <div class="top-bar__left-part">
@@ -209,7 +212,7 @@ export default {
         // this.showAvalancheDepositorBanner = true;
       }
       if (window.location.href.includes('prime-account')) {
-        this.showAvalanchePrimeAccountBanner = true;
+        // this.showAvalanchePrimeAccountBanner = true;
       }
     }
   },
@@ -421,6 +424,7 @@ export default {
 
     checkWallet() {
       console.warn('--------__---__------___--___--__---___checking wallet--------___---___-___--___---__--___--__');
+      console.log('this.provider', this.provider);
       if (this.provider && this.provider.provider) {
         console.log('provider', this.provider.provider)
         if (this.provider.provider.isRabby) {
@@ -430,7 +434,7 @@ export default {
           return;
         }
 
-        if (this.provider.provider.isMetaMask) {
+        if (this.provider.provider.isMetaMask && !this.provider.provider.isRabby) {
           console.warn('METAMASK');
           window.isMetaMask = true;
           window.isRabby = false;

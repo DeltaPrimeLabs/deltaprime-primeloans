@@ -61,7 +61,7 @@
       </div>
 
       <div class="table__cell max-apy">
-        {{ maxApy | percent }}
+        <span>{{ (maxApy + boostApy) | percent }}<img v-if="boostApy" v-tooltip="{content: `This pool is incentivized!<br>⁃ up to ${maxApy ? (maxApy * 100).toFixed(2) : 0}% Pool APR<br>⁃ up to ${boostApy ? (boostApy * 100).toFixed(2) : 0}% ${chain === 'arbitrum' ? 'ARB' : 'AVAX'} incentives`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span>
       </div>
 
       <div class="table__cell">
@@ -119,6 +119,7 @@ export default {
     }
   },
   async mounted() {
+    this.chain = window.chain;
     this.setupAddActionsConfiguration();
     this.setupRemoveActionsConfiguration();
     this.watchHardRefreshScheduledEvent();
@@ -127,15 +128,18 @@ export default {
     this.watchProgressBarState();
     this.watchFarmRefreshEvent();
     this.watchExternalStakedPerFarm();
+    this.watchLtipMaxBoostUpdate();
     this.platypusAffected = this.farm.strategy === 'Platypus' && ['AVAX', 'sAVAX'].includes(this.asset.symbol);
     this.platypusAffectedDisableDeposit = this.farm.strategy === 'Platypus' && ['USDC', 'USDT'].includes(this.asset.symbol)
   },
   data() {
     return {
+      chain: null,
       receiptTokenBalance: 0,
       underlyingTokenStaked: 0,
       apy: 0,
       maxApy: 0,
+      boostApy: 0,
       rewards: 0,
       isStakedBalanceEstimated: false,
       disableAllButtons: false,
@@ -178,6 +182,8 @@ export default {
       'traderJoeV2LpAssets',
       'levelLpAssets',
       'levelLpBalances',
+      'penpieLpBalances',
+      'penpieLpAssets',
       'noSmartLoan'
     ]),
     ...mapState('serviceRegistry', [
@@ -187,7 +193,8 @@ export default {
       'progressBarService',
       'farmService',
       'healthService',
-      'deprecatedAssetsService'
+      'deprecatedAssetsService',
+      'ltipService'
     ]),
     protocol() {
       return config.PROTOCOLS_CONFIG[this.farm.protocol];
@@ -220,6 +227,7 @@ export default {
     },
 
     async openAddFromWalletModal() {
+      console.log('asdasdasdax', this.farm);
       const modalInstance = this.openModal(AddFromWalletModal);
       modalInstance.asset = this.farm;
       modalInstance.assetBalance = this.balance ? this.balance : 0;
@@ -229,6 +237,8 @@ export default {
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
@@ -275,6 +285,8 @@ export default {
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
       modalInstance.levelLpBalances = this.levelLpBalances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.loan = this.debt;
@@ -401,6 +413,7 @@ export default {
     watchFarmRefreshEvent() {
       this.farmService.observeRefreshFarm().subscribe(async () => {
         // receipt token staked
+        console.log('// receipt token staked', this.farm);
         this.balance = this.farm.totalBalance;
         // normal token staked
         this.underlyingTokenStaked = this.farm.totalStaked;
@@ -422,6 +435,12 @@ export default {
           this.farm.totalStaked = stakedBalancesPerFarmUpdate.stakedBalance;
         }
         this.$forceUpdate();
+      });
+    },
+
+    watchLtipMaxBoostUpdate() {
+      this.ltipService.observeLtipMaxBoostApy().subscribe((boostApy) => {
+        this.boostApy = boostApy;
       });
     },
 
@@ -482,12 +501,11 @@ export default {
       this.addActionsConfig =   {
         iconSrc: 'src/assets/icons/plus.svg',
         tooltip: 'Add',
+        disabled: this.farm.inactive,
         menuOptions: [
           {
             key: 'ADD_FROM_WALLET',
             name: 'Add from wallet',
-            disabled: !this.farm.feedSymbol,
-            disabledInfo: 'Coming soon'
           },
           {
             key: 'STAKE',
@@ -510,6 +528,7 @@ export default {
           {
             key: 'UNSTAKE',
             name: 'Withdraw to assets',
+            disabled: this.farm.inactive
           },
         ]
       }
@@ -664,6 +683,12 @@ export default {
 
       &.max-apy {
         font-weight: 600;
+
+        .stars-icon {
+          width: 20px;
+          margin-right: 10px;
+          transform: translateY(-2px);
+        }
       }
 
       .reward__icons {

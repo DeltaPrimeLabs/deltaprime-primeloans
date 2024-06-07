@@ -27,6 +27,7 @@ import {expect} from 'chai';
 import YAK_ROUTER_ABI from '../../test/abis/YakRouter.json';
 import {getSwapData} from '../utils/paraSwapUtils';
 import {getBurnData} from '../utils/caiUtils';
+import {combineLatest, from, map, tap} from "rxjs";
 
 const toBytes32 = require('ethers').utils.formatBytes32String;
 const fromBytes32 = require('ethers').utils.parseBytes32String;
@@ -69,6 +70,8 @@ export default {
     concentratedLpBalances: null,
     levelLpBalances: null,
     gmxV2Balances: null,
+    penpieLpBalances: null,
+    penpieLpAssets: null,
     accountApr: null,
     debt: null,
     totalValue: null,
@@ -108,6 +111,10 @@ export default {
 
     setConcentratedLpAssets(state, assets) {
       state.concentratedLpAssets = assets;
+    },
+
+    setPenpieLpAssets(state, assets) {
+      state.penpieLpAssets = assets;
     },
 
     setTraderJoeV2LpAssets(state, assets) {
@@ -174,6 +181,10 @@ export default {
       state.gmxV2Balances = balances;
     },
 
+    setPenpieLpBalances(state, balances) {
+      state.penpieLpBalances = balances;
+    },
+
     setFullLoanStatus(state, status) {
       state.fullLoanStatus = status;
     },
@@ -225,6 +236,7 @@ export default {
       if (config.BALANCER_LP_ASSETS_CONFIG) await dispatch('setupBalancerLpAssets');
       if (config.LEVEL_LP_ASSETS_CONFIG) await dispatch('setupLevelLpAssets');
       if (config.GMX_V2_ASSETS_CONFIG) await dispatch('setupGmxV2Assets');
+      if (config.PENPIE_LP_ASSETS_CONFIG) await dispatch('setupPenpieLpAssets');
       await dispatch('getAllAssetsApys');
       await dispatch('stakeStore/updateStakedPrices', null, {root: true});
       state.assetBalances = [];
@@ -253,6 +265,12 @@ export default {
       } else {
         commit('setNoSmartLoan', true);
       }
+
+      // Arbitrum-specific methods
+      if (window.chain === 'arbitrum') {
+        rootState.serviceRegistry.ltipService.emitRefreshPrimeAccountsLtipData(state.smartLoanContract.address, state.assets['ARB'].price,  rootState.serviceRegistry.dataRefreshEventService);
+        rootState.serviceRegistry.ltipService.emitRefreshPrimeAccountEligibleTvl(wrapContract(state.smartLoanContract));
+      }
     },
 
     async loadDeployments() {
@@ -279,6 +297,7 @@ export default {
         if (config.BALANCER_LP_ASSETS_CONFIG) await dispatch('setupBalancerLpAssets');
         if (config.LEVEL_LP_ASSETS_CONFIG) await dispatch('setupLevelLpAssets');
         if (config.GMX_V2_ASSETS_CONFIG) await dispatch('setupGmxV2Assets');
+        if (config.PENPIE_LP_ASSETS_CONFIG) await dispatch('setupPenpieLpAssets');
         await dispatch('getAllAssetsBalances');
         await dispatch('getAllAssetsApys');
         await dispatch('getDebtsPerAsset');
@@ -287,6 +306,11 @@ export default {
 
         rootState.serviceRegistry.aprService.emitRefreshApr();
         rootState.serviceRegistry.healthService.emitRefreshHealth();
+
+        if (window.chain === 'arbitrum') {
+          rootState.serviceRegistry.ltipService.updateLtipData(state.smartLoanContract.address, state.assets['ARB'].price, rootState.serviceRegistry.dataRefreshEventService);
+          rootState.serviceRegistry.ltipService.emitRefreshPrimeAccountEligibleTvl(wrapContract(state.smartLoanContract));
+        }
 
         await dispatch('setupAssetExposures');
 
@@ -305,7 +329,7 @@ export default {
     async setupSupportedAssets({commit}) {
       const tokenManager = new ethers.Contract(TOKEN_MANAGER_TUP.address, TOKEN_MANAGER.abi, provider.getSigner());
       const whiteListedTokenAddresses = await tokenManager.getSupportedTokensAddresses();
-
+      console.log('state.supportedAssets', whiteListedTokenAddresses);
       const supported = whiteListedTokenAddresses
         .map(address => Object.keys(TOKEN_ADDRESSES).find(symbol => symbol !== 'default' && TOKEN_ADDRESSES[symbol].toLowerCase() === address.toLowerCase()));
 
@@ -355,7 +379,6 @@ export default {
 
       const redstonePriceDataRequest = await fetch(config.redstoneFeedUrl);
       const redstonePriceData = await redstonePriceDataRequest.json();
-
       Object.keys(assets).forEach(assetSymbol => {
         assets[assetSymbol].price = redstonePriceData[assetSymbol] ? redstonePriceData[assetSymbol][0].dataPoints[0].value : 0;
       });
@@ -370,6 +393,7 @@ export default {
       let allLevelLpAssets = state.levelLpAssets;
       let allBalancerLpAssets = state.balancerLpAssets;
       let allGmxV2Assets = state.gmxV2Assets;
+      let allPenpieAssets = state.penpieLpAssets;
       const dataRefreshNotificationService = rootState.serviceRegistry.dataRefreshEventService;
 
       async function setExposures(assets) {
@@ -405,6 +429,11 @@ export default {
       if (allGmxV2Assets) {
         await setExposures(allGmxV2Assets);
         commit('setGmxV2Assets', allGmxV2Assets);
+      }
+
+      if (allPenpieAssets) {
+        await setExposures(allPenpieAssets);
+        commit('setPenpieLpAssets', allPenpieAssets);
       }
     },
 
@@ -452,6 +481,66 @@ export default {
       });
 
       commit('setConcentratedLpAssets', lpTokens);
+    },
+
+    async setupPenpieLpAssets({state, rootState, commit}) {
+      if (!state.smartLoanContract || state.smartLoanContract.address === NULL_ADDRESS) return;
+      const lpService = rootState.serviceRegistry.lpService;
+      let lpTokens = {};
+      Object.values(config.PENPIE_LP_ASSETS_CONFIG).forEach(
+        asset => {
+          // todo when PENDLE added to supported assets
+          // if (state.supportedAssets.includes(asset.symbol)) {
+          lpTokens[asset.symbol] = asset;
+          // }
+        }
+      );
+
+      const redstonePriceDataRequest = await fetch(config.redstoneFeedUrl);
+      const redstonePriceData = await redstonePriceDataRequest.json();
+
+      Object.keys(lpTokens).forEach(async assetSymbol => {
+        lpTokens[assetSymbol].price = redstonePriceData[assetSymbol] ? redstonePriceData[assetSymbol][0].dataPoints[0].value : 0;
+        lpService.emitRefreshLp();
+      });
+
+      const loanAssets = mergeArrays([
+        (await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG)
+      ]);
+
+      const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets)
+
+      const getAssetFromAddress = (address) => {
+        return Object.entries(TOKEN_ADDRESSES).find(([_, tokenAddress]) => tokenAddress === address)[0]
+      }
+
+
+      combineLatest(
+        Object.keys(lpTokens).map(key =>
+          from(wrappedContract.pendingRewards(lpTokens[key].stakingContractAddress))
+            .pipe(
+              map((rewards) => ([
+                {asset: 'PENPIE', amount: rewards[0]},
+                ...rewards[1].map((rewardAddress, index) => ({
+                  asset: getAssetFromAddress(rewardAddress),
+                  amount: rewards[2][index],
+                  amountFormatted: fromWei(rewards[2][index]),
+                }))
+              ].filter(({amount}) => !amount.isZero()))),
+              map(rewards => ({
+                token: key,
+                rewards
+              })))
+        )
+      ).subscribe(rewardsArray => {
+        rewardsArray.forEach(({token, rewards}) => {
+          lpTokens[token]['rewards'] = rewards
+        })
+        commit('setPenpieLpAssets', lpTokens);
+        lpService.emitRefreshLp('PENPIE_LP');
+      })
     },
 
     async setupTraderJoeV2LpAssets({state, rootState, commit}) {
@@ -696,11 +785,18 @@ export default {
 
       const wrappedSmartLoanFactoryContract = await wrapContract(state.smartLoanFactoryContract);
 
+      console.log(config.chainId === 43114);
+      console.log(config.chainId);
       const transaction = config.chainId === 43114 ?
         await wrappedSmartLoanFactoryContract.createAndFundLoan(toBytes32(asset.symbol), fundTokenContract.address, amount)
         : await wrappedSmartLoanFactoryContract.createAndFundLoan(toBytes32(asset.symbol), amount);
 
-      const smartLoanAddress = getLog(transaction, SMART_LOAN_FACTORY.abi, 'SmartLoanCreated').args.accountAddress;
+      console.log(transaction);
+      const createTx = await awaitConfirmation(transaction, provider, 'create and fund loan');
+      const log = getLog(createTx, SMART_LOAN_FACTORY.abi, 'SmartLoanCreated');
+      console.log('SmartLoanCreated LOGGGG', log);
+
+      const smartLoanAddress = log.args.accountAddress;
 
       await rootState.serviceRegistry.termsService.saveSignedTerms(smartLoanAddress, rootState.network.account, signResult, 'PRIME_ACCOUNT');
 
@@ -710,7 +806,11 @@ export default {
 
       const tx = await awaitConfirmation(transaction, provider, 'create Prime Account');
 
-      const fundAmount = formatUnits(getLog(tx, SMART_LOAN_FACTORY.abi, 'SmartLoanCreated').args.collateralAmount, decimals);
+      console.log(tx);
+
+      const log2 = getLog(tx, SMART_LOAN_FACTORY.abi, 'SmartLoanCreated');
+      console.log('log2', log2);
+      const fundAmount = formatUnits(log2.args.collateralAmount, decimals);
       const fundAmountUSD = Number(fundAmount) * state.assets[asset.symbol].price;
 
       await commit('setSingleAssetBalance', {asset: asset.symbol, balance: fundAmount});
@@ -746,6 +846,7 @@ export default {
       const concentratedLpBalances = {};
       const gmxV2Balances = {};
       const balancerLpBalances = {};
+      const penpieLpBalances = {};
       const balancerLpAssets = state.balancerLpAssets;
       const levelLpBalances = {};
       const assetBalances = await state.readSmartLoanContract.getAllAssetsBalances();
@@ -778,6 +879,9 @@ export default {
           }
           if (config.GMX_V2_ASSETS_CONFIG[symbol]) {
             gmxV2Balances[symbol] = formatUnits(asset.balance.toString(), config.GMX_V2_ASSETS_CONFIG[symbol].decimals);
+          }
+          if (config.PENPIE_LP_ASSETS_CONFIG[symbol]) {
+            penpieLpBalances[symbol] = formatUnits(asset.balance.toString(), config.PENPIE_LP_ASSETS_CONFIG[symbol].decimals);
           }
         }
       );
@@ -870,6 +974,7 @@ export default {
       await commit('setBalancerLpAssets', balancerLpAssets);
       await commit('setLevelLpBalances', levelLpBalances);
       await commit('setGmxV2Balances', gmxV2Balances);
+      await commit('setPenpieLpBalances', penpieLpBalances);
       await dispatch('setupConcentratedLpUnderlyingBalances');
       await dispatch('setupTraderJoeV2LpUnderlyingBalancesAndLiquidity');
       const refreshEvent = {assetBalances: balances, lpBalances: lpBalances};
@@ -1224,7 +1329,7 @@ export default {
       rootState.serviceRegistry.debtService.emitDebt(fullLoanStatus.debt);
     },
 
-    async getAccountApr({state, getters, rootState, commit}) {
+    async getAccountApr({state, getters, rootState, commit}, {eligibleTvl, maxBoostApy}) {
       let apr = 0;
       let yearlyDebtInterest = 0;
 
@@ -1259,6 +1364,7 @@ export default {
           for (let entry of Object.entries(state.lpAssets)) {
             let symbol = entry[0];
             let lpAsset = entry[1];
+            if (lpAsset.inactive) break;
 
             let assetAppreciation = 0;
             //TODO: take from API
@@ -1276,6 +1382,7 @@ export default {
           for (let entry of Object.entries(state.concentratedLpAssets)) {
             let symbol = entry[0];
             let lpAsset = entry[1];
+            if (lpAsset.inactive) break;
 
             const apy = lpAsset.apy ? lpAsset.apy / 100 : 0;
 
@@ -1287,6 +1394,7 @@ export default {
           for (let entry of Object.entries(state.balancerLpAssets)) {
             let symbol = entry[0];
             let lpAsset = entry[1];
+            if (lpAsset.inactive) break;
 
             const apy = lpAsset.apy ? lpAsset.apy / 100 : 0;
 
@@ -1300,6 +1408,7 @@ export default {
           for (let entry of Object.entries(state.levelLpAssets)) {
             let symbol = entry[0];
             let lpAsset = entry[1];
+            if (lpAsset.inactive) break;
 
             const apy = lpAsset.apy ? lpAsset.apy / 100 : 0;
 
@@ -1307,30 +1416,26 @@ export default {
           }
         }
 
+        if (state.penpieLpAssets && state.penpieLpBalances) {
+          for (let entry of Object.entries(state.penpieLpAssets)) {
+            let symbol = entry[0];
+            let lpAsset = entry[1];
+
+            const apy = state.apys[symbol] ? state.apys[symbol].lp_apy : 0;
+
+            yearlyLpInterest += parseFloat(state.penpieLpBalances[symbol]) * apy * lpAsset.price;
+          }
+        }
+
         if (state.gmxV2Assets && state.gmxV2Balances) {
           for (let entry of Object.entries(state.gmxV2Assets)) {
             let symbol = entry[0];
             let lpAsset = entry[1];
+            if (lpAsset.inactive) break;
 
             const apy = lpAsset.apy ? lpAsset.apy / 100 : 0;
 
             yearlyLpInterest += parseFloat(state.gmxV2Balances[symbol]) * apy * lpAsset.price;
-          }
-
-          let gmWorth = 0;
-
-          Object.keys(config.GMX_V2_ASSETS_CONFIG).forEach(
-            gmSymbol => gmWorth += state.gmxV2Balances[gmSymbol] * state.gmxV2Assets[gmSymbol].price
-          );
-
-          let collateral = state.fullLoanStatus.totalValue - state.fullLoanStatus.debt;
-
-          let leveragedGm = gmWorth - collateral > 0 ? gmWorth - collateral : 0;
-
-          if (window.arbitrumChain) {
-            yearlyLpInterest += leveragedGm * state.apys['GM_BOOST'].arbApy * state.assets['ARB'].price;
-          } else {
-            yearlyLpInterest += leveragedGm * state.apys['GM_BOOST'].avaxApy * state.assets['AVAX'].price;
           }
         }
 
@@ -1340,6 +1445,7 @@ export default {
           for (let entry of Object.entries(state.traderJoeV2LpAssets)) {
             let symbol = entry[0];
             let lpAsset = entry[1];
+            if (lpAsset.inactive) break;
 
             const apy = lpAsset.apy ? lpAsset.apy / 100 : 0;
             const userValueInPool =
@@ -1358,6 +1464,7 @@ export default {
             let farms = entry[1];
 
             for (let farm of farms) {
+              if (farm.inactive) break;
               let assetAppretiation = 1;
 
               if (symbol.includes('sAVAX')) assetAppretiation = 1.036;
@@ -1378,15 +1485,14 @@ export default {
 
         const collateral = getters.getCollateral;
 
-        console.log('yearlyAssetInterest: ', yearlyAssetInterest)
-        console.log('yearlyLpInterest: ', yearlyLpInterest)
-        console.log('yearlyFarmInterest: ', yearlyFarmInterest)
-        console.log('yearlyTraderJoeV2Interest: ', yearlyTraderJoeV2Interest)
-        console.log('yearlyDebtInterest: ', yearlyDebtInterest)
-        console.log('collateral: ', collateral)
+        let yearlyGrantInterest = 0;
+
+        if (eligibleTvl) {
+          yearlyGrantInterest += eligibleTvl * maxBoostApy / 4.5;
+        }
 
         if (collateral) {
-          apr = (yearlyAssetInterest + yearlyLpInterest + yearlyFarmInterest + yearlyTraderJoeV2Interest - yearlyDebtInterest) / collateral;
+          apr = (yearlyAssetInterest + yearlyLpInterest + yearlyFarmInterest + yearlyTraderJoeV2Interest + yearlyGrantInterest - yearlyDebtInterest) / collateral;
         }
 
         commit('setAccountApr', apr);
@@ -1465,6 +1571,9 @@ export default {
           break;
         case 'LEVEL_LLP':
           price = state.levelLpAssets[fundRequest.asset].price;
+          break;
+        case 'PENPIE_LP':
+          price = state.penpieLpAssets[fundRequest.asset].price;
       }
 
       const depositAmountUSD = Number(depositAmount) * price;
@@ -1482,6 +1591,9 @@ export default {
           break;
         case 'LEVEL_LLP':
           assetBalanceBeforeDeposit = state.levelLpBalances[fundRequest.asset];
+          break;
+        case 'PENPIE_LP':
+          assetBalanceBeforeDeposit = state.penpieLpBalances[fundRequest.asset];
       }
       const assetBalanceAfterDeposit = Number(assetBalanceBeforeDeposit) + Number(depositAmount);
 
@@ -1577,7 +1689,11 @@ export default {
 
       const amountInWei = parseUnits(parseFloat(withdrawRequest.value).toFixed(withdrawRequest.assetDecimals), withdrawRequest.assetDecimals);
 
-      const transaction = isGlp ?
+      const transaction =
+        withdrawRequest.assetInactive ?
+        await (await wrapContract(state.smartLoanContract, loanAssets)).withdrawUnsupportedToken(withdrawRequest.assetAddress)
+        :
+        isGlp ?
         await (await wrapContract(state.smartLoanContract, loanAssets)).withdrawGLP(
           parseUnits(String(withdrawRequest.value)))
         :
@@ -1594,7 +1710,7 @@ export default {
       let tx = await awaitConfirmation(transaction, provider, 'withdraw');
 
 
-      const withdrawAmount = formatUnits(getLog(tx, SMART_LOAN.abi, isLevel ? 'WithdrewLLP' : 'Withdrawn').args[isLevel ? 'depositAmount' : 'amount'], withdrawRequest.assetDecimals);
+      const withdrawAmount = formatUnits(getLog(tx, SMART_LOAN.abi, withdrawRequest.assetInactive ? 'WithdrawUnsupportedToken' : isLevel ? 'WithdrewLLP' : 'Withdrawn').args[isLevel ? 'depositAmount' : 'amount'], withdrawRequest.assetDecimals);
 
       let price;
       switch (withdrawRequest.type) {
@@ -1609,6 +1725,9 @@ export default {
           break;
         case 'LEVEL_LLP':
           price = state.levelLpAssets[withdrawRequest.asset].price;
+          break;
+        case 'PENPIE_LP':
+          price = state.penpieLpAssets[withdrawRequest.asset].price;
       }
       const withdrawAmountUSD = Number(withdrawAmount) * price;
 
@@ -1625,6 +1744,9 @@ export default {
           break;
         case 'LEVEL_LLP':
           assetBalanceBeforeWithdraw = state.levelLpBalances[withdrawRequest.asset];
+          break;
+        case 'PENPIE_LP':
+          assetBalanceBeforeWithdraw = state.penpieLpBalances[withdrawRequest.asset].price;
       }
       const assetBalanceAfterWithdraw = Number(assetBalanceBeforeWithdraw) - Number(withdrawAmount);
       const totalCollateralAfterTransaction = state.fullLoanStatus.totalValue - state.fullLoanStatus.debt - withdrawAmountUSD;
@@ -1641,6 +1763,74 @@ export default {
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate(withdrawRequest.asset, assetBalanceAfterWithdraw, withdrawRequest.isLP, true);
       rootState.serviceRegistry.collateralService.emitCollateral(totalCollateralAfterTransaction);
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, config.refreshDelay);
+    },
+
+    async unstakeAndExportPendleLp({state, rootState, commit, dispatch}, {unstakeRequest}) {
+      const provider = rootState.network.provider;
+      const amountInWei = parseUnits(parseFloat(unstakeRequest.value).toFixed(unstakeRequest.assetDecimals), unstakeRequest.assetDecimals);
+
+      const loanAssets = mergeArrays([
+        (await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+        [unstakeRequest.targetAsset, unstakeRequest.sourceAsset],
+      ]);
+
+      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).unstakeFromPenpieAndWithdrawPendleLP(
+        unstakeRequest.market,
+        amountInWei);
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      let tx = await awaitConfirmation(transaction, provider, 'withdraw');
+
+      const price = state.penpieLpAssets[unstakeRequest.asset].price;
+      const withdrawAmountUSD = Number(amountInWei) * price;
+      const assetBalanceBeforeWithdraw = state.penpieLpBalances[unstakeRequest.asset].price;
+
+      const assetBalanceAfterWithdraw = Number(assetBalanceBeforeWithdraw) - Number(unstakeRequest.value);
+      const totalCollateralAfterTransaction = state.fullLoanStatus.totalValue - state.fullLoanStatus.debt - withdrawAmountUSD;
+
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate(unstakeRequest.asset, assetBalanceAfterWithdraw, false, true);
+      rootState.serviceRegistry.collateralService.emitCollateral(totalCollateralAfterTransaction);
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, config.refreshDelay);
+    },
+
+    async claimPenpieRewards({state, rootState, commit, dispatch}, {market}) {
+      const loanAssets = mergeArrays([
+        (await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+      ]);
+
+      await (await wrapContract(state.smartLoanContract, loanAssets))
+        .claimRewards(
+          market
+        )
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      // let tx = await awaitConfirmation(transaction, provider, 'claimRewards');
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {
@@ -2602,6 +2792,143 @@ export default {
       }, config.refreshDelay);
     },
 
+    async createPendleLpFromLrt({state, rootState, commit, dispatch}, {stakeRequest}) {
+      const provider = rootState.network.provider;
+      const loanAssets = mergeArrays([(
+        await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+        [stakeRequest.sourceAsset, stakeRequest.targetAsset]
+      ]);
+
+      const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
+
+      const transaction = await wrappedContract.depositToPendleAndStakeInPenpie(
+        toBytes32(stakeRequest.sourceAsset),
+        toWei(stakeRequest.amount.toFixed(18)),
+        stakeRequest.market,
+        toWei(stakeRequest.minLpOut.toFixed(18)),
+        stakeRequest.guessPtReceivedFromSy,
+        stakeRequest.input,
+        stakeRequest.limit
+      );
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      let tx = await awaitConfirmation(transaction, provider, 'create Pendle LP');
+      const firstAssetBalanceAfterTransaction = Number(state.assetBalances[stakeRequest.sourceAsset]) - Number(stakeRequest.amount);
+      const secondAssetBalanceAfterTransaction = Number(state.penpieLpBalances[stakeRequest.targetAsset]) + Number(stakeRequest.minLpOut);
+
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate(stakeRequest.sourceAsset, firstAssetBalanceAfterTransaction, false, false);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate(stakeRequest.targetAsset, secondAssetBalanceAfterTransaction, true, false);
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+        setTimeout(async () => {
+          await dispatch('updateFunds');
+        }, config.penpieRefreshDelay)
+      }, config.refreshDelay);
+    },
+
+    async unwindPendleLpToLrt({state, rootState, commit, dispatch}, {unwindRequest}) {
+      console.log('unwindPendleLpToLrt', unwindRequest);
+      const provider = rootState.network.provider;
+      const loanAssets = mergeArrays([(
+        await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+        [unwindRequest.sourceAsset, unwindRequest.targetAsset]
+      ]);
+
+      const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
+      const transaction = await wrappedContract.unstakeFromPenpieAndWithdrawFromPendle(
+        toBytes32(unwindRequest.targetAsset),
+        toWei(unwindRequest.amount.toFixed(18)),
+        unwindRequest.market,
+        toWei(unwindRequest.minOut.toFixed(18)),
+        unwindRequest.output,
+        unwindRequest.limit
+      );
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      let tx = await awaitConfirmation(transaction, provider, 'unwind Pendle LP');
+
+      const firstAssetBalanceAfterTransaction = Number(state.assetBalances[unwindRequest.sourceAsset]) - Number(unwindRequest.amount);
+      const secondAssetBalanceAfterTransaction = Number(state.penpieLpBalances[unwindRequest.targetAsset]) + Number(unwindRequest.minOut);
+
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate(unwindRequest.sourceAsset, firstAssetBalanceAfterTransaction, false, false);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate(unwindRequest.targetAsset, secondAssetBalanceAfterTransaction, true, false);
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+        setTimeout(async () => {
+          await dispatch('updateFunds');
+        }, config.penpieRefreshDelay)
+      }, config.refreshDelay);
+    },
+
+    async depositPendleLPAndStake({state, rootState, commit, dispatch}, {depositAndStakeRequest}) {
+      const provider = rootState.network.provider;
+
+      const tokenForApprove = TOKEN_ADDRESSES[depositAndStakeRequest.sourceAsset];
+      const fundToken = new ethers.Contract(tokenForApprove, erc20ABI, provider.getSigner());
+      const allowance = formatUnits(await fundToken.allowance(rootState.network.account, state.smartLoanContract.address), depositAndStakeRequest.decimals);
+
+      if (parseFloat(allowance) < parseFloat(depositAndStakeRequest.amount)) {
+        const approveTransaction = await fundToken.connect(provider.getSigner()).approve(state.smartLoanContract.address, toWei(depositAndStakeRequest.amount));
+        await awaitConfirmation(approveTransaction, provider, 'approve');
+      }
+
+      const loanAssets = mergeArrays([(
+        await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+        [depositAndStakeRequest.targetAsset, depositAndStakeRequest.sourceAsset]
+      ]);
+
+      const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
+      const transaction = await wrappedContract.depositPendleLPAndStakeInPenpie(
+        depositAndStakeRequest.market,
+        toWei(depositAndStakeRequest.amount),
+      );
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      let tx = await awaitConfirmation(transaction, provider, 'deposit and stake Pendle LP');
+
+      const secondAssetBalanceAfterTransaction = Number(state.gmxV2Balances[depositAndStakeRequest.targetAsset]) + Number(depositAndStakeRequest.amount);
+
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate(depositAndStakeRequest.targetAsset, secondAssetBalanceAfterTransaction, true, false);
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+        setTimeout(async () => {
+          await dispatch('updateFunds');
+        }, config.penpieRefreshDelay)
+      }, config.refreshDelay);
+    },
+
     async addLiquidityGmxV2({state, rootState, commit, dispatch}, {addLiquidityRequest}) {
       const provider = rootState.network.provider;
 
@@ -2941,6 +3268,10 @@ export default {
       }, SUCCESS_DELAY_AFTER_TRANSACTION);
 
       console.log(tx);
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, config.refreshDelay);
     },
 
     async swapDebt({state, rootState, commit, dispatch}, {swapDebtRequest}) {
@@ -3071,6 +3402,10 @@ export default {
         .emitExternalAssetBalanceUpdate('GLP', glpBalanceAfterMint, false, true);
 
       rootState.serviceRegistry.dataRefreshEventService.emitAssetBalancesDataRefresh();
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, config.refreshDelay);
     },
 
     async unstakeAndRedeemGlp({state, rootState, commit, dispatch}, {unstakeAndRedeemGlpRequest}) {
@@ -3117,6 +3452,10 @@ export default {
         .emitExternalAssetBalanceUpdate('GLP', glpBalanceAfterMint, false, true);
 
       rootState.serviceRegistry.dataRefreshEventService.emitAssetBalancesDataRefresh();
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, config.refreshDelay);
     },
 
     async wrapNativeToken({state, rootState, commit, dispatch}, {wrapRequest}) {

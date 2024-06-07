@@ -15,7 +15,7 @@
             Borrow&nbsp;APY:&nbsp;{{ borrowApyPerPool[asset.symbol] | percent }}
           </div>
           <div class="asset__loan" v-if="asset.apy">
-            Profit APY:&nbsp;{{ asset.apy / 100 | percent }}
+            APY:&nbsp;{{ asset.apy / 100 | percent }}<span v-if="asset.hasIncentives + boostApy"><br>up to {{4.5 * asset.apy / 100 + boostApy | percent}}<img v-if="boostApy" v-tooltip="{content: `This pool is incentivized!<br>⁃ up to ${asset.apy ? (4.5 * asset.apy).toFixed(2) : 0}% Pool APR<br>⁃ up to ${boostApy ? (boostApy * 100).toFixed(2) : 0}% ${chain === 'arbitrum' ? 'ARB' : 'AVAX'} incentives`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span>
           </div>
         </div>
       </div>
@@ -192,6 +192,7 @@ export default {
     index: null,
   },
   async mounted() {
+    this.chain = window.chain;
     await this.setupFiles();
     this.setupBorrowable();
     this.setupAvailableFarms();
@@ -207,9 +208,11 @@ export default {
     this.setupPoolsApy();
     this.watchExternalTotalStakedUpdate();
     this.watchFarmRefreshEvent();
+    this.watchLtipMaxBoostUpdate();
   },
   data() {
     return {
+      chain: null,
       borrowable: [],
       moreActionsConfig: null,
       rowExpanded: false,
@@ -224,6 +227,8 @@ export default {
       selectedChart: 'TradingView',
       showTradingViewChart: false,
       avalancheChain: window.avalancheChain,
+      currentlyOpenModalInstance: null,
+      boostApy: 0
     };
   },
   computed: {
@@ -247,6 +252,8 @@ export default {
       'balancerLpBalances',
       'gmxV2Assets',
       'gmxV2Balances',
+      'penpieLpBalances',
+      'penpieLpAssets',
       'noSmartLoan'
     ]),
     ...mapState('stakeStore', ['farms']),
@@ -261,6 +268,7 @@ export default {
       'healthService',
       'stakedExternalUpdateService',
       'farmService',
+      'ltipService'
     ]),
 
     loanValue() {
@@ -492,6 +500,13 @@ export default {
           if (String(error).includes('No routes found with enough liquidity')) {
             this.progressBarService.emitProgressBarErrorState('The selected aggregator could not find a route. Please switch aggregator, increase slippage or try again later.')
             this.cleanupAfterError(false);
+          } else if (String(error).includes('ESTIMATED_LOSS_GREATER_THAN_MAX_IMPACT')) {
+            this.progressBarService.emitProgressBarErrorState('Source amount too low')
+            this.cleanupAfterError(false);
+          } else {
+            // Any other random error
+            this.progressBarService.emitProgressBarErrorState('The selected aggregator encountered unexpected error. Please switch aggregator or try again later.')
+            this.cleanupAfterError(false);
           }
         }
       };
@@ -563,6 +578,8 @@ export default {
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.balancerLpBalances = this.balancerLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.farms = this.farms;
@@ -597,6 +614,7 @@ export default {
       if (config.SWAP_DEXS_CONFIG.YakSwap.availableAssets && config.SWAP_DEXS_CONFIG.ParaSwapV2.availableAssets.includes(this.asset.symbol)) swapDexSwapMethodMap.ParaSwapV2 = this.paraSwapV2;
 
       const modalInstance = this.openModal(SwapModal);
+      this.currentlyOpenModalInstance = modalInstance;
       modalInstance.dexOptions = Object.entries(config.SWAP_DEXS_CONFIG)
         .filter(([dexName, dexConfig]) => dexConfig.availableAssets.includes(this.asset.symbol))
         .map(([dexName, dexConfig]) => dexConfig.displayName);
@@ -618,6 +636,8 @@ export default {
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.targetAsset = Object.keys(config.ASSETS_CONFIG).filter(asset => asset !== this.asset.symbol)[0];
       modalInstance.debt = this.fullLoanStatus.debt;
@@ -649,6 +669,7 @@ export default {
 
     openDebtSwapModal() {
       const modalInstance = this.openModal(SwapModal);
+      this.currentlyOpenModalInstance = modalInstance;
       modalInstance.dexOptions = Object.entries(config.SWAP_DEXS_CONFIG)
         .filter(([dexName, dexConfig]) => dexConfig.availableAssets.includes(this.asset.symbol))
         .map(([dexName, dexConfig]) => dexName);
@@ -673,6 +694,8 @@ export default {
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.balancerLpBalances = this.balancerLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
@@ -718,6 +741,8 @@ export default {
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.gmxV2Assets = this.gmxV2Assets;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.balancerLpBalances = this.balancerLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
@@ -801,6 +826,8 @@ export default {
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.gmxV2Assets = this.gmxV2Assets;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.balancerLpBalances = this.balancerLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
@@ -867,6 +894,8 @@ export default {
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.gmxV2Assets = this.gmxV2Assets;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.balancerLpBalances = this.balancerLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
@@ -915,7 +944,8 @@ export default {
     },
 
     async claimGLPRewardsAction() {
-      const rewardsDecimals = this.avalancheChain ? config.ASSETS_CONFIG.AVAX.decimals : config.ASSETS_CONFIG.ETH.decimals;
+      const avalancheChain = config.chainSlug === 'avalanche';
+      const rewardsDecimals = avalancheChain ? config.ASSETS_CONFIG.AVAX.decimals : config.ASSETS_CONFIG.ETH.decimals;
       const glpRewardRouterContract = new ethers.Contract(config.glpRewardsRouterAddress, GLP_REWARD_ROUTER.abi, this.provider.getSigner());
       const feeGLPTrackerAddress = await glpRewardRouterContract.feeGlpTracker();
       const feeGLPTrackedContract = new ethers.Contract(feeGLPTrackerAddress, GLP_REWARD_TRACKER.abi, this.provider.getSigner());
@@ -923,7 +953,7 @@ export default {
       const modalInstance = this.openModal(ClaimGLPRewardsModal);
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.glpRewardsToClaim = rewards;
-      modalInstance.glpRewardsAsset = this.avalancheChain ? 'AVAX' : 'ETH';
+      modalInstance.glpRewardsAsset = avalancheChain ? 'AVAX' : 'ETH';
 
       modalInstance.$on('CLAIM', () => {
         this.handleTransaction(this.claimGLPRewards, () => {
@@ -949,6 +979,8 @@ export default {
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
@@ -992,6 +1024,8 @@ export default {
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
+      modalInstance.penpieLpAssets = this.penpieLpAssets;
+      modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
@@ -1109,6 +1143,12 @@ export default {
       });
     },
 
+    watchLtipMaxBoostUpdate() {
+      this.ltipService.observeLtipMaxBoostApy().subscribe((boostApy) => {
+        this.boostApy = boostApy;
+      });
+    },
+
     setupAvailableFarms() {
       this.availableFarms = config.FARMED_TOKENS_CONFIG[this.asset.symbol];
     },
@@ -1173,6 +1213,7 @@ export default {
         return;
       }
 
+      let userCancelledTransaction = false;
       if (String(error) === '[object Object]' || typeof error === 'object') {
         switch (error.code) {
           case -32000:
@@ -1187,6 +1228,7 @@ export default {
             break;
           case 4001:
             this.progressBarService.emitProgressBarCancelledState()
+            userCancelledTransaction = true;
             break;
           case -32603:
             console.log('error code -32603');
@@ -1203,12 +1245,16 @@ export default {
           this.progressBarService.emitProgressBarErrorState('Insufficient slippage.');
         }
       }
-      this.cleanupAfterError(error.code !== -32000 && !caiMintOrBurnSlippageError);
+      this.cleanupAfterError(userCancelledTransaction);
     },
 
     cleanupAfterError(closeModal = true) {
       if (closeModal) {
         this.closeModal();
+      }
+      if (this.currentlyOpenModalInstance) {
+        this.currentlyOpenModalInstance.calculatingSwapRoute = false;
+        this.currentlyOpenModalInstance.blockSubmitButton = true;
       }
       this.disableAllButtons = false;
       this.isBalanceEstimated = false;
@@ -1304,6 +1350,12 @@ export default {
         .asset__loan {
           font-size: $font-size-xxs;
           color: var(--asset-table-row__asset-loan-color);
+
+          .stars-icon {
+            width: 20px;
+            margin-right: 10px;
+            transform: translateY(-2px);
+          }
         }
       }
 

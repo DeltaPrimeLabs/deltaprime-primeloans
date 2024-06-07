@@ -434,6 +434,7 @@ export default {
     },
 
     handleShapeClick(key) {
+      console.log(key);
       if (!this.liquidityShapes[key].disabled) {
         this.selectedShape = key;
         this.calculateParameters();
