@@ -2,9 +2,9 @@
   <div class="lp-tab">
     <div class="lp-tokens" v-if="Object.keys(gmxV2LpTokens).length">
       <div class="lp-table level" v-if="gmxV2LpTokens">
-        <InfoBubble >
-          Super cool LRT strats!
-        </InfoBubble>
+<!--        <InfoBubble >-->
+<!--          Super cool LRT strats!-->
+<!--        </InfoBubble>-->
         <TableHeader :config="gmxV2LpTableHeaderConfig"></TableHeader>
         <LrtTableRow v-for="(lpToken, index) in gmxV2LpTokens" v-bind:key="index" :index="index"
                          :lp-token="lpToken" :openInterestData="openInterestData[lpToken.symbol]"></LrtTableRow>

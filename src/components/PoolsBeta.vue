@@ -29,9 +29,9 @@
                  :tab-icon-slim="'src/assets/icons/transfer.svg'"
             >
               <div class="lrt">
-                <InfoBubble >
-                  Super cool LRT deposits!
-                </InfoBubble>
+<!--                <InfoBubble >-->
+<!--                  Super cool LRT deposits!-->
+<!--                </InfoBubble>-->
                 <div class="pools">
                   <div class="pools-table">
                     <TableHeader :config="lrtTableHeaderConfig"></TableHeader>
