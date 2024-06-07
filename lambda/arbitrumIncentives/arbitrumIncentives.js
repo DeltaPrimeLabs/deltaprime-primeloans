@@ -60,7 +60,7 @@ const getIncentivesMultiplier = async (now) => {
 
 const arbitrumIncentives = async (rpc = 'first') => {
   const now = Math.floor(Date.now() / 1000);
-  const incentivesPerWeek = 10990;
+  const incentivesPerWeek = 18140;
   const incentivesMultiplier = await getIncentivesMultiplier(now);
 
   if (incentivesMultiplier == 0) return;
@@ -229,6 +229,16 @@ const arbitrumIncentives = async (rpc = 'first') => {
     console.log('Error', error);
 
     if (error.error.code == 'SERVER_ERROR' || error.error.code == 'TIMEOUT') {
+      await fetch(pingUrl.ltipPA.fail, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          error,
+          message: "retrying the function."
+        })
+      });
       arbitrumIncentives('second');
     } else {
       await fetch(pingUrl.ltipPA.fail, {
@@ -236,7 +246,10 @@ const arbitrumIncentives = async (rpc = 'first') => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(error)
+        body: JSON.stringify({
+          error,
+          message: "function terminated."
+        })
       });
     }
   }
