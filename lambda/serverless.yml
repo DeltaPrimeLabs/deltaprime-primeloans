@@ -330,6 +330,23 @@ functions:
       - httpApi:
           method: get
           path: /gm-open-interests
+  getGgpIncentivesForApi:
+    handler: apis/ggpIncentives.getGgpIncentivesForApi
+    memorySize: 1024
+    timeout: 20
+    description: Fetch GGP incentives on Avalanche
+    events:
+      - httpApi:
+          method: get
+          path: /ggp-incentives-for
+  getGgpBoostApyApi:
+    handler: apis/ggpIncentives.getGgpBoostApyApi
+    memorySize: 512
+    description: Fetch GGP Boost APY on Avalanche
+    events:
+      - httpApi:
+          method: get
+          path: /ggp-boost-apy
   getAccountByReferralApi:
     handler: apis/referral.getAccountByReferralApi
     memorySize: 512

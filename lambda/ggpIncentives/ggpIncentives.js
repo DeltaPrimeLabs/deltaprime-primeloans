@@ -5,20 +5,30 @@ const {
   dynamoDb,
   fromWei,
   fromBytes32,
-  formatUnits
+  formatUnits,
+  fetchAllDataFromDB
 } = require('../utils/helpers');
 const constants = require('../config/constants.json');
 const ggpTokens = require('../config/ggpTokens.json');
 const FACTORY = require('../abis/SmartLoansFactory.json');
 const LOAN = require(`../abis/SmartLoanGigaChadInterface.json`);
 const CACHE_LAYER_URLS = require('../config/redstone-cache-layer-urls.json');
+const pingUrl = require('../.secrets/ping.json');
+const incentivesRpcUrl = require('../.secrets/incentivesRpc.json');
 
-const factoryAddress = constants.avalanche.factory;
 const redstoneFeedUrl = constants.avalanche.redstoneFeedUrl;
-const avalancheHistoricalProvider = new ethers.providers.JsonRpcProvider('https://nd-033-589-713.p2pify.com/d41fdf9956747a40bae4edec06ad4ab9/ext/bc/C/rpc');
 
-const avalancheWallet = (new ethers.Wallet("0xca63cb3223cb19b06fa42110c89ad21a17bad22ea061e5a2c2487bd37b71e809"))
-  .connect(avalancheHistoricalProvider);
+const getHistoricalProvider = (network, rpc) => {
+  return new ethers.providers.JsonRpcProvider(incentivesRpcUrl[network][rpc])
+};
+
+const getFactoryContract = (network, provider) => {
+  const factoryAddress = constants[network].factory;
+  const factoryContract = new ethers.Contract(factoryAddress, FACTORY.abi, provider);
+
+  return factoryContract;
+}
+
 
 const wrap = (contract, network) => {
   return WrapperBuilder.wrap(contract).usingDataService(
@@ -31,9 +41,12 @@ const wrap = (contract, network) => {
   );
 }
 
-const getWrappedContracts = (addresses, network) => {
+const getWrappedContracts = (addresses, network, provider) => {
+  const wallet = (new ethers.Wallet("0xca63cb3223cb19b06fa42110c89ad21a17bad22ea061e5a2c2487bd37b71e809"))
+    .connect(provider);
+  
   return addresses.map(address => {
-    const loanContract = new ethers.Contract(address, LOAN.abi, network == "avalanche" ? avalancheWallet : arbitrumWallet);
+    const loanContract = new ethers.Contract(address, LOAN.abi, wallet);
     const wrappedContract = wrap(loanContract, network);
 
     return wrappedContract;
@@ -54,7 +67,7 @@ const getIncentivesMultiplier = async (now) => {
   return Math.round((now - res[0].timestamp) / 3600);
 };
 
-const ggpIncentives = async () => {
+const ggpIncentives = async (network = 'avalanche', rpc = 'first') => {
   const now = Math.floor(Date.now() / 1000);
   const incentivesPerWeek = 1250;
   const incentivesMultiplier = await getIncentivesMultiplier(now);
@@ -62,7 +75,8 @@ const ggpIncentives = async () => {
   if (incentivesMultiplier == 0) return;
 
   try {
-    const factoryContract = new ethers.Contract(factoryAddress, FACTORY.abi, avalancheHistoricalProvider);
+    const provider = getHistoricalProvider(network, rpc);
+    const factoryContract = getFactoryContract(network, provider);
     let loanAddresses = await factoryContract.getAllLoans();
     const totalLoans = loanAddresses.length;
 
@@ -71,14 +85,13 @@ const ggpIncentives = async () => {
 
     const loanQualifications = {};
     let totalEligibleTvl = 0;
-    let gmTvl = 0;
 
-    // calculate gm leveraged by the loan
+    // calculate eligible ggAVAX of loan
     for (let i = 0; i < Math.ceil(totalLoans/batchSize); i++) {
       console.log(`processing ${i * batchSize} - ${(i + 1) * batchSize > totalLoans ? totalLoans : (i + 1) * batchSize} loans`);
 
       const batchLoanAddresses = loanAddresses.slice(i * batchSize, (i + 1) * batchSize);
-      const wrappedContracts = getWrappedContracts(batchLoanAddresses, 'avalanche');
+      const wrappedContracts = getWrappedContracts(batchLoanAddresses, network, provider);
 
       const loanStats = await Promise.all(
         wrappedContracts.map(contract => Promise.all([contract.getFullLoanStatus(), contract.getAllAssetsBalances()]))
@@ -86,7 +99,6 @@ const ggpIncentives = async () => {
 
       const redstonePriceDataRequest = await fetch(redstoneFeedUrl);
       const redstonePriceData = await redstonePriceDataRequest.json();
-      console.log(redstonePriceData['ggAVAX']);
 
       if (loanStats.length > 0) {
         await Promise.all(
@@ -97,13 +109,12 @@ const ggpIncentives = async () => {
             const collateral = fromWei(status[0]) - fromWei(status[1]);
 
             loanQualifications[loanId] = {
-              collateral,
-              ggpTokens: {},
               eligibleTvl: 0
             };
 
             let loanggAvaxValue = 0;
 
+            // calculate ggAVAX values by multiplying price
             await Promise.all(
               Object.entries(ggpTokens.avalanche).map(async ([symbol, tokenConfig]) => {
                 const price = redstonePriceData[symbol] ? redstonePriceData[symbol][0].dataPoints[0].value : 0;
@@ -111,7 +122,6 @@ const ggpIncentives = async () => {
                 const asset = assetBalances.find(asset => fromBytes32(asset.name) == symbol);
                 const balance = formatUnits(asset.balance.toString(), tokenConfig.decimals);
 
-                loanQualifications[loanId].ggpTokens[symbol] = balance * price;
                 loanggAvaxValue += balance * price;
               })
             );
@@ -119,7 +129,6 @@ const ggpIncentives = async () => {
             const eligibleTvl = loanggAvaxValue - collateral > 0 ? loanggAvaxValue - collateral : 0;
             loanQualifications[loanId].eligibleTvl = eligibleTvl;
             totalEligibleTvl += eligibleTvl;
-            gmTvl += loanggAvaxValue;
           })
         );
       }
@@ -138,47 +147,77 @@ const ggpIncentives = async () => {
       }
     })
 
+    console.log(loanIncentives)
+
     // save/update incentives values to DB
-    // await Promise.all(
-    //   Object.entries(loanIncentives).map(async ([loanId, value]) => {
-    //     const data = {
-    //       id: loanId,
-    //       timestamp: now,
-    //       avaxCollected: value
-    //     };
+    await Promise.all(
+      Object.entries(loanIncentives).map(async ([loanId, value]) => {
+        const data = {
+          id: loanId,
+          timestamp: now,
+          ggpCollected: value
+        };
 
-    //     const params = {
-    //       TableName: "ggp-incentives-ava-prod",
-    //       Item: data
-    //     };
-    //     await dynamoDb.put(params).promise();
-    //   })
-    // );
+        const params = {
+          TableName: "ggp-incentives-ava-prod",
+          Item: data
+        };
+        await dynamoDb.put(params).promise();
+      })
+    );
 
-    // console.log("GGP incentives successfully updated.")
+    console.log("GGP incentives successfully updated.")
 
     // save boost APY to DB
     const boostApy = (incentivesPerInterval / incentivesMultiplier) / totalEligibleTvl * 24 * 365;
-    console.log('boost APY', boostApy);
-    // const params = {
-    //   TableName: "statistics-prod",
-    //   Key: {
-    //     id: "GGP_ggAVAX"
-    //   },
-    //   AttributeUpdates: {
-    //     boostApy: {
-    //       Value: Number(boostApy) ? boostApy : null,
-    //       Action: "PUT"
-    //     }
-    //   }
-    // };
 
-    // await dynamoDb.update(params).promise();
+    const params = {
+      TableName: "statistics-prod",
+      Key: {
+        id: "GGP_ggAVAX"
+      },
+      AttributeUpdates: {
+        boostApy: {
+          Value: Number(boostApy) ? boostApy : null,
+          Action: "PUT"
+        }
+      }
+    };
+
+    await dynamoDb.update(params).promise();
 
     console.log("GGP boost APY on Avalanche saved.");
+
+    // ping healthcheck end point
+    await fetch(pingUrl.ggp.success);
   } catch (error) {
     console.log('Error', error);
+
+    if (error.error.code == 'SERVER_ERROR' || error.error.code == 'TIMEOUT') {
+      // await fetch(pingUrl.ggp.fail, {
+      //   method: "POST",
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //   },
+      //   body: JSON.stringify({
+      //     error,
+      //     message: "retrying the function."
+      //   })
+      // });
+      ggpIncentives('avalanche', 'second');
+    } else {
+      // await fetch(pingUrl.ggp.fail, {
+      //   method: "POST",
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //   },
+      //   body: JSON.stringify({
+      //     error,
+      //     message: "function terminated."
+      //   })
+      // });
+    }
   }
 }
 
-ggpIncentives();
+ggpIncentives('avalanche', 'first');

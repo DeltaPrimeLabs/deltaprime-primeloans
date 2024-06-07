@@ -4,35 +4,6 @@ const {
   fetchAllDataFromDB
 } = require('../utils/helpers');
 
-// const getArbitrumIncentivesApi = async (event, context, callback) => {
-//   try {
-//     const params = {
-//       TableName: process.env.ARBITRUM_INCENTIVES_ARB_TABLE
-//     };
-
-//     const incentives = await fetchAllDataFromDB(params, true);
-
-//     let accumulatedIncentives = 0;
-
-//     incentives.map((item) => {
-//       accumulatedIncentives += item.arbCollected ? Number(item.arbCollected) : 0;
-//     });
-
-//     const response = {
-//       statusCode: 200,
-//       body: JSON.stringify({
-//         total: accumulatedIncentives,
-//         list: incentives
-//       }),
-//     };
-//     callback(null, response);
-//   } catch (error) {
-//     console.error(error);
-//     callback(new Error('Couldn\'t fetch Arbitrum Incentives values.'));
-//     return;
-//   };
-// };
-
 const getLoanArbitrumIncentivesForApi = async (event, context, callback) => {
   try {
     const addresses = event.queryStringParameters.addresses.split(',');
