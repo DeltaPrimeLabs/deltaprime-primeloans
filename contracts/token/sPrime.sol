@@ -447,6 +447,56 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, PendingOwnableUpgradeabl
     }
 
     /**
+    * @dev Users can use deposit function for depositing tokens to the specific bin.
+    * @param user The active id that user wants to add liquidity from
+    * @param percentForLocks sPrime amount % to lock
+    * @param lockPeriods Lock period to Lock for each amount
+    * @param amountX The amount of token X to deposit.
+    * @param amountY The amount of token Y to deposit.
+    */
+    function mintForUserAndLock(address user, uint256[] calldata percentForLocks, uint256[] calldata lockPeriods, uint256 amountX, uint256 amountY) public {
+        uint256 activeId = lbPair.getActiveId();
+
+        require(balanceOf(user) == 0, "User already has position");
+        require(percentForLocks.length == lockPeriods.length, "Length dismatch");
+
+        deposit(activeId, 0, amountX, amountY, false, 0);
+
+        uint256 balance = balanceOf(user);
+        for(uint8 i = 0 ; i < lockPeriods.length ; i ++) {
+            require(lockPeriods[i] <= MAX_LOCK_TIME, "Cannot lock for more than 3 years");
+            locks[user].push(LockDetails({
+                lockPeriod: lockPeriods[i],
+                amount: balance * percentForLocks[i] / 100,
+                unlockTime: block.timestamp + lockPeriods[i]
+            }));
+        }
+
+        proxyCalldata(
+            vPrimeController,
+            abi.encodeWithSignature("updateVPrimeSnapshot(address)", user),
+            false
+        );
+    }
+
+    /**
+    * @dev Users can use deposit function for depositing tokens to the specific bin.
+    * @param ids Depoisit Ids from TraderJoe
+    * @param amounts Minted LBT amount for each deposit id
+    * @param activeIdDesired The active id that user wants to add liquidity from
+    * @param idSlippage The number of id that are allowed to slip
+    * @param swapSlippage Slippage for the rebalance.
+    */
+    function migrateLiquidity(uint256[] calldata ids, uint256[] calldata amounts, uint256 activeIdDesired, uint256 idSlippage, uint256 swapSlippage) public {
+        uint256 balanceXBefore = tokenX.balanceOf(address(this));
+        uint256 balanceYBefore = tokenY.balanceOf(address(this));
+
+        lbPair.burn(address(this), address(this), ids, amounts);
+
+        deposit(activeIdDesired, idSlippage, tokenX.balanceOf(address(this)) - balanceXBefore, tokenY.balanceOf(address(this)) - balanceYBefore, true, swapSlippage);
+    }
+
+    /**
     * @dev Users can use withdraw function for withdrawing their share.
     * @param share Amount to withdraw
     */
