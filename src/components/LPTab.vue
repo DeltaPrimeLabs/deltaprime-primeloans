@@ -7,13 +7,6 @@
                           :lp-token="lpToken" :lp-tokens="penpieLpTokens"></PenpieLpTableRow>
       </div>
     </div>
-    <div class="lp-tokens" v-if="isAvalanche && Object.keys(gmxV2LpTokens).length">
-      <div class="lp-table" v-if="gmxV2LpTokens && hasGmIncentives">
-        <div class="incentives-program-title">GM Incentives Program</div>
-        <TableHeader :config="gmIncentivesTableHeaderConfig"></TableHeader>
-        <GmIncentivesTableRow></GmIncentivesTableRow>
-      </div>
-    </div>
     <div class="lp-tokens" v-if="Object.keys(gmxV2LpTokens).length">
       <div class="lp-table level" v-if="gmxV2LpTokens">
         <TableHeader :config="gmxV2LpTableHeaderConfig"></TableHeader>
@@ -35,7 +28,7 @@
                             :lp-token="lpToken" :lp-tokens="balancerLpTokens"></BalancerLpTableRow>
       </div>
     </div>
-    <div class="lp-tokens" v-if="Object.keys(levelLpTokens).length">
+    <div class="lp-tokens" v-if="Object.keys(levelLpTokens).length && showLevel">
       <div class="lp-table level" v-if="levelLpTokens">
         <TableHeader :config="levelLpTableHeaderConfig"></TableHeader>
         <div class="lp-table__warning">
@@ -115,6 +108,7 @@ export default {
       penpieLpTableHeaderConfig: null,
       levelLpTokens: config.LEVEL_LP_ASSETS_CONFIG,
       levelLpTableHeaderConfig: null,
+      showLevel: false,
       gmIncentivesTableHeaderConfig: null,
       selectedLpTokens: [] = [],
       assets: null,
@@ -136,6 +130,7 @@ export default {
     this.setupPenpieLpTableHeaderConfig();
     this.fetchOpenInterestData();
     this.isAvalanche = window.chain === 'avalanche';
+    this.showLevel = this.levelLpBalances;
   },
   computed: {
     ...mapState('serviceRegistry', [
@@ -144,6 +139,7 @@ export default {
     ...mapState('fundsStore', [
       'concentratedLpBalances',
       'lpBalances',
+      'levelLpBalances'
     ]),
     filteredLpTokens() {
       return Object.values(this.lpTokens).filter(token =>
@@ -152,7 +148,7 @@ export default {
       );
     },
     hasGmIncentives() {
-      return true;
+      return window.chain === 'avalanche';
     }
   },
   methods: {
@@ -766,6 +762,9 @@ export default {
           tooltip: `The raffle-tickets you accumulated. Mint more GM to boost your ticket-yield.`
         });
       }
+    },
+    hasLtipIncentives() {
+      return window.chain === 'avalanche';
     },
     watchAssetPricesUpdate() {
       this.priceService.observeRefreshPrices().subscribe((updateEvent) => {

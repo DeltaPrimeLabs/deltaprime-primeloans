@@ -23,6 +23,7 @@ import NotifiService from '../services/notifiService';
 import TraderJoeService from '../services/traderJoeService';
 import TermsService from '../services/termsService';
 import DeprecatedAssetsService from '../services/deprecatedAssetsService';
+import LtipService from "../services/ltipService";
 
 export default {
   namespaced: true,
@@ -52,5 +53,6 @@ export default {
     traderJoeService: new TraderJoeService(),
     termsService: new TermsService(),
     deprecatedAssetsService: new DeprecatedAssetsService(),
+    ltipService: new LtipService(),
   },
 };

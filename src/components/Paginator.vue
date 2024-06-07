@@ -2,11 +2,11 @@
   <div class="paginator-component">
     <div class="paginator">
       <div class="paginator__button paginator__previous" v-on:click="previousPage()">
-        <IconButton :disabled="currentPage === 0"
+        <IconButton :disabled="currentPage === 1"
                     :icon-src="'src/assets/icons/icon_previous_off.svg'" :size="20"></IconButton>
       </div>
       <div class="paginator__text">
-        Page {{ currentPage + 1 }} of {{ totalPages }}
+        Page {{ currentPage  }} of {{ totalPages }}
       </div>
       <div class="paginator__button paginator__next" v-on:click="nextPage()">
         <IconButton :disabled="currentPage === totalPages"
@@ -23,6 +23,7 @@ export default {
   name: 'Paginator',
   components: {IconButton},
   props: {
+    startPage: 1,
     pageSize: null,
     totalElements: null,
   },
@@ -32,7 +33,7 @@ export default {
       previousDisabled: null,
       nextDisabled: null,
       totalPages: null,
-      currentPage: 0,
+      currentPage: 1
     }
   },
 
@@ -42,21 +43,26 @@ export default {
 
   methods: {
     setup() {
-      this.totalPages = Math.ceil(this.totalElements / this.pageSize);
+      this.totalPages = Math.max(Math.ceil(this.totalElements / this.pageSize), 1);
+      this.currentPage = this.startPage
     },
 
     nextPage() {
+      console.log('nextPage')
       if (this.currentPage !== this.totalPages) {
+        console.log(1)
         this.currentPage++;
+        console.log(2)
         this.nextDisabled = this.currentPage === this.totalPages;
+        console.log(3)
         this.$emit('pageChange', this.currentPage);
       }
     },
 
     previousPage() {
-      if (this.currentPage > 0) {
+      if (this.currentPage > 1) {
         this.currentPage--;
-        this.previousDisabled = this.currentPage === 0;
+        this.previousDisabled = this.currentPage === 1;
         this.$emit('pageChange', this.currentPage);
       }
 

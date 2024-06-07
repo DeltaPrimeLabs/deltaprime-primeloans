@@ -11,6 +11,9 @@
           :noSmartLoan="noSmartLoanInternal"
           :healthLoading="healthLoading">
       </StatsBarBeta>
+
+      <LTIPStatsBar v-if="isArbitrum"></LTIPStatsBar>
+
       <InfoBubble v-if="noSmartLoanInternal === false" cacheKey="ACCOUNT-READY">
         Your Prime Account is ready! Now you can borrow,<br>
         provide liquidity and farm on the <b v-on:click="tabChange(1); selectedTabIndex = 1" style="cursor: pointer;">Farms</b>
@@ -98,6 +101,7 @@ import TransactionHistory from './TransactionHistory';
 import Stats from './stats/Stats.vue';
 import LPTab from "./LPTab.vue";
 import Zaps from "./Zaps.vue";
+import LTIPStatsBar from './LTIPStatsBar.vue';
 
 const TABS = [
   {
@@ -127,6 +131,7 @@ const TUTORIAL_VIDEO_CLOSED_LOCALSTORAGE_KEY = 'TUTORIAL_VIDEO_CLOSED';
 export default {
   name: 'SmartLoanBeta',
   components: {
+    LTIPStatsBar,
     Zaps,
     LPTab,
     TransactionHistory,
@@ -175,7 +180,8 @@ export default {
       'dataRefreshEventService',
       'farmService',
       'collateralService',
-      'debtService'
+      'debtService',
+      'ltipService'
     ]),
     ...mapState('network', ['account']),
     primeAccountsBlocked() {
@@ -229,10 +235,12 @@ export default {
       showLPTab: Object.keys(config.TRADERJOEV2_LP_ASSETS_CONFIG).length || Object.keys(config.CONCENTRATED_LP_ASSETS_CONFIG).length || Object.keys(config.LP_ASSETS_CONFIG).length,
       showFarmsTab: Object.keys(config.FARMED_TOKENS_CONFIG).length,
       tabsRefs: [],
+      isArbitrum: false
     };
   },
 
   async mounted() {
+    this.isArbitrum = window.chain === 'arbitrum';
     this.setupSelectedTab();
     this.watchHealthRefresh();
     this.watchAprRefresh();
@@ -264,9 +272,11 @@ export default {
         this.dataRefreshEventService.observeDebtsPerAssetDataRefresh(),
         this.dataRefreshEventService.observeFullLoanStatusRefresh(),
         this.dataRefreshEventService.observeAssetApysDataRefresh(),
+        this.ltipService.observeLtipPrimeAccountEligibleTvl(),
+        this.ltipService.observeLtipMaxBoostApy()
       ])
-          .subscribe(async ([provider, account]) => {
-            await this.getAccountApr();
+          .subscribe(async ([,,,,,,eligibleTvl, maxBoostApy]) => {
+            await this.getAccountApr({eligibleTvl, maxBoostApy});
           });
     },
 

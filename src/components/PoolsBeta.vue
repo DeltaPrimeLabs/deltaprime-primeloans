@@ -217,7 +217,7 @@ export default {
                 sortable: false,
                 class: 'apy',
                 id: 'APY',
-                tooltip: `Deposit interest coming from borrowers<br><a href='https://medium.com/@Delta_Prime/relaunching-deltaprime-on-arbitrum-ac43bdd91ed5' target='_blank'>More information</a>.`
+                tooltip: `Deposit interest coming from borrowers + the LTIPP grant incentives. Grant incentives are distributed weekly, directly to your wallet.<br><a href='https://forum.arbitrum.foundation/t/deltaprime-ltipp-application-final/21938' target='_blank'>More information</a>.`
               },
               {
                 label: 'Pool size',
@@ -282,7 +282,7 @@ export default {
                 sortable: false,
                 class: 'apy',
                 id: 'APY',
-                tooltip: `Deposit interest coming from borrowers<br><a href='https://medium.com/@Delta_Prime/two-days-until-deltaprimes-first-liquidity-mining-program-b17f12fbb23b' target='_blank'>More information</a>.`
+                tooltip: `Deposit interest coming from borrowers${window.arbitrumChain ? " + the LTIPP grant incentives. Grant incentives are distributed weekly, directly to your wallet.<br><a href='https://forum.arbitrum.foundation/t/deltaprime-ltipp-application-final/21938' target='_blank'>More information</a>" : ''}.`
               },
               {
                 label: 'Pool size',

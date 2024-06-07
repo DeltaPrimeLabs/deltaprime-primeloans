@@ -1,4 +1,4 @@
-import {awaitConfirmation, depositTermsToSign, signMessage} from '../utils/blockchain';
+import {awaitConfirmation, depositTermsToSign, signMessage, wrapContract} from '../utils/blockchain';
 import DEPOSIT_SWAP from '@artifacts/contracts/DepositSwap.sol/DepositSwap.json';
 import {formatUnits, fromWei, parseUnits} from '@/utils/calculate';
 import erc20ABI from '../../test/abis/ERC20.json';
@@ -46,12 +46,17 @@ export default {
       const redstonePriceDataRequest = await fetch(config.redstoneFeedUrl);
       const redstonePriceData = await redstonePriceDataRequest.json();
 
-      await poolService.setupPools(rootState.network.provider, rootState.network.account, redstonePriceData)
+      await poolService.setupPools(rootState.network.provider, rootState.network.account, redstonePriceData, rootState.serviceRegistry.ltipService)
         .subscribe(pools => {
           poolService.emitPools(pools);
           commit('setPools', pools);
           dispatch('setupsPrime');
         });
+
+      // Arbitrum-specific methods
+      if (window.chain === 'arbitrum') {
+        rootState.serviceRegistry.ltipService.emitRefreshPoolLtipData();
+      }
     },
 
     async setupsPrime({rootState, commit, state}) {

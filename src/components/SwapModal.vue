@@ -89,21 +89,37 @@
           <div class="vertical-separator"></div>
           <div class="advanced-mode">
             Advanced Mode
-            <ToggleButton class="advanced-mode-toggle" v-on:toggleChange="advancedModeToggle()">
+            <ToggleButton ref="advancedModeToggle"
+                          class="advanced-mode-toggle"
+                          v-on:toggleChange="advancedModeToggle()">
             </ToggleButton>
           </div>
         </div>
-        <div v-if="!advancedSlippageMode" class="price-impact-option__content">
-          <div
-            v-for="(option, key) in slippageOptions"
-            class="price-impact-option-tile"
-            :key="key"
-            :class="[selectedSlippageOption === key ? 'active' : '', option.disabled ? 'disabled' : '']"
-            v-tooltip="{ content: option.tooltip, placement: 'bottom', classes: 'info-tooltip' }"
-            v-on:click="() => handlePriceImpactClick(key)"
-          >
-            <div class="price-impact-label">
-              {{ option.name }} {{option.value / 100 | percent}}
+        <div v-if="!advancedSlippageMode" class="price-impact-wrapper">
+          <div class="price-impact-option__content">
+            <div
+              v-for="(option, key) in slippageOptions"
+              class="price-impact-option-tile"
+              :key="key"
+              :class="[selectedSlippageOption === key ? 'active' : '', option.disabled ? 'disabled' : '']"
+              v-tooltip="{ content: option.tooltip, placement: 'bottom', classes: 'info-tooltip' }"
+              v-on:click="() => handlePriceImpactClick(key)"
+            >
+              <div class="price-impact-label">
+                {{ option.name }} {{ option.value / 100 | percent }}
+              </div>
+            </div>
+          </div>
+
+          <div class="dex-slippage-standalone">
+            <span v-if="!feeMethods" class="slippage-label">Price impact:</span>
+            <span v-if="feeMethods" class="slippage-label">Max. fee:</span>
+            <span class="deviation-value">{{ feeMethods ? fee * 100 : marketDeviation }}<span class="percent">%</span></span>
+            <div class="info__icon__wrapper">
+              <InfoIcon
+                class="info__icon"
+                :tooltip="{content: 'Compares trade price on an aggregator or DEX to oracle market prices. A lower or negative number indicates prices closer to or better than market, enhancing trade quality', placement: 'top', classes: 'info-tooltip'}"
+              ></InfoIcon>
             </div>
           </div>
         </div>
@@ -209,7 +225,7 @@
       <div class="button-wrapper">
         <Button :label="swapDebtMode ? 'Swap debt' : 'Swap'"
                 v-on:click="submit()"
-                :disabled="sourceInputError || targetInputError"
+                :disabled="sourceInputError || targetInputError || blockSubmitButton"
                 :waiting="transactionOngoing || isTyping || calculatingSwapRoute">
         </Button>
       </div>
@@ -335,6 +351,7 @@ export default {
       selectedSlippageOption: Object.keys(config.SWAP_MODAL_SLIPPAGE_OPTIONS)[1],
       advancedSlippageMode: false,
       blockReversing: false,
+      blockSubmitButton: false,
     };
   },
 
@@ -357,6 +374,8 @@ export default {
 
   methods: {
     initiate() {
+      this.setupAdvancedSlippageMode();
+      console.log(this.advancedSlippageMode);
       if (this.swapDebtMode && !this.swapDex) {
         this.swapDex = 'YakSwap'
       }
@@ -740,9 +759,15 @@ export default {
       }
     },
 
+    setupAdvancedSlippageMode() {
+      this.advancedSlippageMode = localStorage.getItem('ADVANCED_SLIPPAGE_MODE') === 'true';
+      this.$refs.advancedModeToggle.setValue(this.advancedSlippageMode);
+    },
+
     async advancedModeToggle() {
       const dexSlippageMargin = config.SWAP_DEXS_CONFIG[this.swapDex].slippageMargin;
       this.advancedSlippageMode = !this.advancedSlippageMode;
+      localStorage.setItem('ADVANCED_SLIPPAGE_MODE', this.advancedSlippageMode);
       if (this.advancedSlippageMode) {
         this.userSlippage = dexSlippageMargin;
         await this.updateAmountsWithSlippage();
@@ -1016,49 +1041,60 @@ export default {
       margin: 0 10px;
     }
   }
-  .price-impact-option__content {
-    width: 100%;
-    margin-top: 24px;
-    margin-bottom: 30px;
+
+  .price-impact-wrapper {
     display: flex;
-    justify-content: space-between;
-    .price-impact-option-tile {
-      height: 32px;
-      padding: 0 13px;
+    flex-direction: column;
+    margin-top: 24px;
+    margin-bottom: 2px;
+    width: 100%;
+
+    .price-impact-option__content {
+      width: 100%;
       display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      border-radius: 20px;
-      border: var(--swap-modal__liquidity-shape-border);
-      cursor: pointer;
-      color: var(--swap-modal__slippage-option-pill-color);
+      justify-content: space-between;
 
-      &.disabled {
-        cursor: initial;
-      }
+      .price-impact-option-tile {
+        height: 32px;
+        padding: 0 13px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        border-radius: 20px;
+        border: var(--swap-modal__liquidity-shape-border);
+        cursor: pointer;
+        color: var(--swap-modal__slippage-option-pill-color);
 
-      .price-impact-label {
-        font-family: Montserrat;
-        font-size: $font-size-sm;
-        font-stretch: normal;
-        font-style: normal;
-        line-height: normal;
-        letter-spacing: normal;
-        text-align: left;
-      }
-      &.active {
-        padding: 0 10px;
-        border: var(--swap-modal__liquidity-shape-border-active);
-        box-shadow: var(--swap-modal__liquidity-shape-box-shadow);
-        background-color: var(--swap-modal__liquidity-shape-background);
-        color: var(--swap-modal__slippage-option-pill-color--active);
-        .price-impact-label {
-          font-weight: 600;
+        &.disabled {
+          cursor: initial;
         }
-      }
-      &:hover &:not(.disabled) {
-        border-color: var(--swap-modal__liquidity-shape-border-hover);
+
+        .price-impact-label {
+          font-family: Montserrat;
+          font-size: $font-size-sm;
+          font-stretch: normal;
+          font-style: normal;
+          line-height: normal;
+          letter-spacing: normal;
+          text-align: left;
+        }
+
+        &.active {
+          padding: 0 10px;
+          border: var(--swap-modal__liquidity-shape-border-active);
+          box-shadow: var(--swap-modal__liquidity-shape-box-shadow);
+          background-color: var(--swap-modal__liquidity-shape-background);
+          color: var(--swap-modal__slippage-option-pill-color--active);
+
+          .price-impact-label {
+            font-weight: 600;
+          }
+        }
+
+        &:hover &:not(.disabled) {
+          border-color: var(--swap-modal__liquidity-shape-border-hover);
+        }
       }
     }
   }
@@ -1083,6 +1119,39 @@ export default {
   color: var(--swap-modal__slippage-advanced-color);
   font-size: $font-size-xsm;
   font-weight: 500;
+}
+
+.dex-slippage-standalone {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  color: var(--swap-modal__slippage-bar-color);
+  margin-top: 10px;
+
+  .slippage-label {
+    font-size: $font-size-xsm;
+    margin-right: 6px;
+  }
+
+  .percent {
+    margin-left: 4px;
+    font-weight: 600;
+  }
+
+  .slippage-info {
+    display: flex;
+    align-items: center;
+
+    .percent {
+      margin-left: 6px;
+    }
+  }
+
+  .deviation-value {
+    font-weight: 600;
+    margin-right: 6px;
+  }
 }
 
 
