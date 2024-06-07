@@ -55,6 +55,7 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         return
             _withdrawToken(
                 "sAVAX",
+                "sAVAX",
                 WOMBAT_sAVAX_AVAX_LP_sAVAX,
                 sAVAX_AVAX_POOL,
                 amount,
@@ -92,6 +93,7 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         return
             _withdrawToken(
                 "ggAVAX",
+                "ggAVAX",
                 WOMBAT_ggAVAX_AVAX_LP_ggAVAX,
                 ggAVAX_AVAX_POOL,
                 amount,
@@ -124,6 +126,7 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     ) external returns (uint256 amountOut) {
         return
             _withdrawNative(
+                "AVAX",
                 WOMBAT_sAVAX_AVAX_LP_AVAX,
                 sAVAX_AVAX_POOL,
                 amount,
@@ -156,6 +159,7 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     ) external returns (uint256 amountOut) {
         return
             _withdrawNative(
+                "AVAX",
                 WOMBAT_ggAVAX_AVAX_LP_AVAX,
                 ggAVAX_AVAX_POOL,
                 amount,
@@ -169,6 +173,64 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         returns (uint256 _stakedBalance)
     {
         return getLpTokenBalance(WOMBAT_ggAVAX_AVAX_LP_AVAX);
+    }
+
+    function withdrawSavaxFromAvaxSavaxInOtherToken(
+        uint256 amount,
+        uint256 minOut
+    ) external returns (uint256 amountOut) {
+        return
+            _withdrawToken(
+                "AVAX",
+                "sAVAX",
+                WOMBAT_sAVAX_AVAX_LP_AVAX,
+                sAVAX_AVAX_POOL,
+                amount,
+                minOut
+            );
+    }
+
+    function withdrawGgavaxFromAvaxGgavaxInOtherToken(
+        uint256 amount,
+        uint256 minOut
+    ) external returns (uint256 amountOut) {
+        return
+            _withdrawToken(
+                "AVAX",
+                "ggAVAX",
+                WOMBAT_ggAVAX_AVAX_LP_AVAX,
+                ggAVAX_AVAX_POOL,
+                amount,
+                minOut
+            );
+    }
+
+    function withdrawAvaxFromAvaxSavaxInOtherToken(
+        uint256 amount,
+        uint256 minOut
+    ) external returns (uint256 amountOut) {
+        return
+            _withdrawNative(
+                "sAVAX",
+                WOMBAT_sAVAX_AVAX_LP_sAVAX,
+                sAVAX_AVAX_POOL,
+                amount,
+                minOut
+            );
+    }
+
+    function withdrawAvaxFromAvaxGgavaxInOtherToken(
+        uint256 amount,
+        uint256 minOut
+    ) external returns (uint256 amountOut) {
+        return
+            _withdrawNative(
+                "ggAVAX",
+                WOMBAT_ggAVAX_AVAX_LP_ggAVAX,
+                ggAVAX_AVAX_POOL,
+                amount,
+                minOut
+            );
     }
 
     function depositAndStakeAvaxSavaxLpSavax(uint256 amount) external {
@@ -231,6 +293,34 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         return _unstakeAndWithdrawWombatLP(WOMBAT_ggAVAX_AVAX_LP_AVAX, amount);
     }
 
+    function claimAllWombatRewards()
+        external
+        onlyOwner
+        nonReentrant
+        remainsSolvent
+    {
+        uint256[] memory pids = new uint256[](4);
+        bytes32[4] memory lpAssets = [
+            WOMBAT_ggAVAX_AVAX_LP_AVAX,
+            WOMBAT_ggAVAX_AVAX_LP_ggAVAX,
+            WOMBAT_sAVAX_AVAX_LP_AVAX,
+            WOMBAT_sAVAX_AVAX_LP_sAVAX
+        ];
+        for (uint256 i; i != 4; ++i) {
+            IERC20Metadata lpToken = getERC20TokenInstance(lpAssets[i], false);
+            pids[i] = IWombatMaster(WOMBAT_MASTER).getAssetPid(address(lpToken));
+        }
+        (
+            ,
+            uint256[] memory amounts,
+            uint256[][] memory additionalRewards
+        ) = IWombatMaster(WOMBAT_MASTER).multiClaim(pids);
+
+        for (uint256 i; i != 4; ++i) {
+            handleRewards(pids[i], amounts[i], additionalRewards[i]);
+        }
+    }
+
     function pendingRewardsForAvaxSavaxLpSavax()
         external
         view
@@ -287,7 +377,9 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             uint256[] memory pendingRewards_
         ) = IWombatMaster(WOMBAT_MASTER).pendingTokens(pid, address(this));
 
-        address[] memory rewardTokenAddresses = new address[](rewardTokenAddresses_.length + 1);
+        address[] memory rewardTokenAddresses = new address[](
+            rewardTokenAddresses_.length + 1
+        );
         uint256[] memory pendingRewards = new uint256[](pendingRewards_.length + 1);
 
         rewardTokenAddresses[0] = WOM_TOKEN;
@@ -321,7 +413,7 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         address(stakeToken).safeApprove(pool, 0);
         address(stakeToken).safeApprove(pool, amount);
 
-        uint256 lpOut = IWombatPool(pool).deposit(
+        IWombatPool(pool).deposit(
             address(stakeToken),
             amount,
             minLpOut,
@@ -345,13 +437,15 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     }
 
     function _withdrawToken(
-        bytes32 stakeAsset,
+        bytes32 fromAsset,
+        bytes32 toAsset,
         bytes32 lpAsset,
         address pool,
         uint256 amount,
         uint256 minOut
     ) internal onlyOwner nonReentrant remainsSolvent returns (uint256 amountOut) {
-        IERC20Metadata unstakeToken = getERC20TokenInstance(stakeAsset, false);
+        IERC20Metadata fromToken = getERC20TokenInstance(fromAsset, false);
+        IERC20Metadata toToken = getERC20TokenInstance(toAsset, false);
         IERC20Metadata lpToken = getERC20TokenInstance(lpAsset, false);
         uint256 pid = IWombatMaster(WOMBAT_MASTER).getAssetPid(address(lpToken));
 
@@ -365,20 +459,31 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         address(lpToken).safeApprove(pool, 0);
         address(lpToken).safeApprove(pool, amount);
 
-        amountOut = IWombatPool(pool).withdraw(
-            address(unstakeToken),
-            amount,
-            minOut,
-            address(this),
-            block.timestamp
-        );
+        if (fromAsset == toAsset) {
+            amountOut = IWombatPool(pool).withdraw(
+                address(fromToken),
+                amount,
+                minOut,
+                address(this),
+                block.timestamp
+            );
+        } else {
+            amountOut = IWombatPool(pool).withdrawFromOtherAsset(
+                address(fromToken),
+                address(toToken),
+                amount,
+                minOut,
+                address(this),
+                block.timestamp
+            );
+        }
 
         if (getLpTokenBalance(lpAsset) == 0) {
             DiamondStorageLib.removeStakedPosition(lpAsset);
         }
 
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        _increaseExposure(tokenManager, address(unstakeToken), amountOut);
+        _increaseExposure(tokenManager, address(toToken), amountOut);
         handleRewards(pid, reward, additionalRewards);
     }
 
@@ -400,7 +505,7 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
         wrapped.withdraw(amount);
 
-        uint256 lpOut = IWombatRouter(WOMBAT_ROUTER).addLiquidityNative{
+        IWombatRouter(WOMBAT_ROUTER).addLiquidityNative{
             value: amount
         }(pool, minLpOut, address(this), block.timestamp, true);
 
@@ -419,11 +524,13 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     }
 
     function _withdrawNative(
+        bytes32 fromAsset,
         bytes32 lpAsset,
         address pool,
         uint256 amount,
         uint256 minOut
     ) internal onlyOwner nonReentrant remainsSolvent returns (uint256 amountOut) {
+        IERC20Metadata fromToken = getERC20TokenInstance(fromAsset, false);
         IWrappedNativeToken wrapped = IWrappedNativeToken(
             DeploymentConstants.getNativeToken()
         );
@@ -440,13 +547,24 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         address(lpToken).safeApprove(WOMBAT_ROUTER, 0);
         address(lpToken).safeApprove(WOMBAT_ROUTER, amount);
 
-        amountOut = IWombatRouter(WOMBAT_ROUTER).removeLiquidityNative(
-            pool,
-            amount,
-            minOut,
-            address(this),
-            block.timestamp
-        );
+        if (fromAsset == bytes32("AVAX")) {
+            amountOut = IWombatRouter(WOMBAT_ROUTER).removeLiquidityNative(
+                pool,
+                amount,
+                minOut,
+                address(this),
+                block.timestamp
+            );
+        } else {
+            amountOut = IWombatRouter(WOMBAT_ROUTER).removeLiquidityFromOtherAssetAsNative(
+                pool,
+                address(fromToken),
+                amount,
+                minOut,
+                address(this),
+                block.timestamp
+            );
+        }
 
         wrapped.deposit{value: amountOut}();
 
@@ -493,7 +611,14 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     function _unstakeAndWithdrawWombatLP(
         bytes32 lpAsset,
         uint256 amount
-    ) internal onlyOwner nonReentrant remainsSolvent canRepayDebtFully returns (uint256 amountOut) {
+    )
+        internal
+        onlyOwner
+        nonReentrant
+        remainsSolvent
+        canRepayDebtFully
+        returns (uint256 amountOut)
+    {
         IERC20Metadata lpToken = getERC20TokenInstance(lpAsset, false);
         uint256 pid = IWombatMaster(WOMBAT_MASTER).getAssetPid(address(lpToken));
 

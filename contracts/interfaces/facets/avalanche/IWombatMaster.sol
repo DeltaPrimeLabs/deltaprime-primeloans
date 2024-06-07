@@ -29,6 +29,16 @@ interface IWombatMaster {
         uint256 amount
     ) external returns (uint256 reward, uint256[] memory additionalRewards);
 
+    function multiClaim(
+        uint256[] calldata _pids
+    )
+        external
+        returns (
+            uint256 reward,
+            uint256[] memory amounts,
+            uint256[][] memory additionalRewards
+        );
+
     function poolInfo(
         uint256 _pid
     )

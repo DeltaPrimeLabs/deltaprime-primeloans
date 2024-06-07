@@ -49,6 +49,26 @@ interface IWombatFacet {
         view
         returns (uint256 _stakedBalance);
 
+    function withdrawSavaxFromAvaxSavaxInOtherToken(
+        uint256 amount,
+        uint256 minOut
+    ) external returns (uint256 amountOut);
+
+    function withdrawGgavaxFromAvaxGgavaxInOtherToken(
+        uint256 amount,
+        uint256 minOut
+    ) external returns (uint256 amountOut);
+
+    function withdrawAvaxFromAvaxSavaxInOtherToken(
+        uint256 amount,
+        uint256 minOut
+    ) external returns (uint256 amountOut);
+
+    function withdrawAvaxFromAvaxGgavaxInOtherToken(
+        uint256 amount,
+        uint256 minOut
+    ) external returns (uint256 amountOut);
+
     function depositAndStakeAvaxSavaxLpSavax(uint256 amount) external;
 
     function unstakeAndWithdrawAvaxSavaxLpSavax(uint256 amount) external;
@@ -70,6 +90,8 @@ interface IWombatFacet {
     function unstakeAndWithdrawAvaxGgavaxLpAvax(
         uint256 amount
     ) external returns (uint256 amountOut);
+
+    function claimAllWombatRewards() external;
 
     function pendingRewardsForAvaxSavaxLpSavax()
         external
