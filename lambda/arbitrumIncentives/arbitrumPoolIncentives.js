@@ -379,7 +379,10 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(error)
+        body: JSON.stringify({
+          error,
+          message: "retrying the function."
+        })
       });
       console.log('-----------calculating failed------------');
 
