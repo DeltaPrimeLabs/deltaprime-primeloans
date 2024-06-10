@@ -325,8 +325,6 @@ export async function penpieMaxUnstaked(stakingContractAddress, loanAddress, dec
       },
     ]);
 
-    console.log('asdjhabsjdbajsdakjsnd', response);
-
     const loanBalance = formatUnits(decodeOutput(IPenpieFacet.abi, 'balanceOf', response.returnData[0])[0], decimals);
     const balance = decodeOutput(IPenpieFacet.abi, 'balance', response.returnData[1])[0];
     const totalSupply = decodeOutput(IPenpieFacet.abi, 'totalSupply', response.returnData[2])[0];

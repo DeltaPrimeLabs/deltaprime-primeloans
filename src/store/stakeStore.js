@@ -437,8 +437,8 @@ export default {
         farmService.emitRefreshFarm();
       } else {
         combineLatest(
-          Object.values(config.FARMED_TOKENS_CONFIG).map(tokenFarms => {
-            console.log(tokenFarms);
+          [...Object.values(config.FARMED_TOKENS_CONFIG), ...config.PENPIE_STAKED_ASSETS_CONFIG].map(tokenFarms => {
+            console.log('tokenFarms: ', tokenFarms);
             console.log(tokenFarms.balanceMethod);
             return combineLatest(tokenFarms.map(farm => {
               const assetDecimals = config.ASSETS_CONFIG[farm.token] ? config.ASSETS_CONFIG[farm.token].decimals : 18;
@@ -461,7 +461,8 @@ export default {
         ).subscribe(farmsDataPerToken => {
           const farmsDataPerFarm = farmsDataPerToken.flat();
 
-          Object.values(config.FARMED_TOKENS_CONFIG).forEach(tokenFarms => {
+          [...Object.values(config.FARMED_TOKENS_CONFIG), ...config.PENPIE_STAKED_ASSETS_CONFIG].forEach(tokenFarms => {
+            console.log('tokenFarms 2', tokenFarms);
             console.log(tokenFarms);
             tokenFarms.forEach(farm => {
               console.log(farm);

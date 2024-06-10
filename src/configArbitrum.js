@@ -261,6 +261,31 @@ export default {
             maturity: '26/12/2024'
         }
     },
+    PENPIE_STAKED_ASSETS_CONFIG: {
+        'PENDLE_EZ_ETH_26_09': {
+            protocol: 'PENPIE',
+            short: 'PENPIE LP',
+            dex: 'Penpie',
+            asset: 'ezETH',
+            assetNameToDisplay: 'ezETH',
+            assetLogoName: 'ezETH',
+            symbol: 'PENDLE_EZ_ETH_26_09',
+            protocolIdentifier: 'PENDLE_EZ_ETH_LP',
+            debtCoverage: 0.83333333333,
+            decimals: 18,
+            tvl: 5350000,
+            address: addresses['PENDLE_EZ_ETH_LP'],
+            rewardTokens: ['PNP'],
+            pendleLpSymbol: 'PENDLE_EZ_ETH_26_09',
+            stakingContractAddress: '0x35f3dB08a6e9cB4391348b0B404F493E7ae264c0',
+            feedSymbol: 'PENDLE_EZ_ETH_LP',
+            logoExt: 'png',
+            groupIdentifier: 'PENDLE_EZ_ETH_LP_GROUP',
+            name: 'PENPIE',
+            link: 'https://www.pendle.magpiexyz.io/stake/0x35f3dB08a6e9cB4391348b0B404F493E7ae264c0',
+            maturity: '26/09/2024'
+        },
+    },
     LEVEL_LP_ASSETS_CONFIG: {
         "arbJnrLLP": {name: "Junior", symbol: "arbJnrLLP", pid: 2, short: "Jnr", decimals: 18, address: addresses.arbJnrLLP, debtCoverage: 0.83333333333, balanceMethod: "levelJnrBalance", groupIdentifier: 'STKD_JNR_LLP_GROUP', underlyingAssets: ['BTC', 'ETH', 'ARB', 'USDT', 'USDC'], link: 'https://app.level.finance/liquidity/junior-tranche/buy', disableAddTokenButton: true},
         "arbMzeLLP": {name: "Mezzanine", symbol: "arbMzeLLP", pid: 1, short: "Mze", decimals: 18, address: addresses.arbMzeLLP, debtCoverage: 0.83333333333, balanceMethod: "levelMzeBalance", groupIdentifier: 'STKD_MZE_LLP_GROUP', underlyingAssets: ['BTC', 'ETH', 'USDT', 'USDC'], link: 'https://app.level.finance/liquidity/mezzanine-tranche/buy', disableAddTokenButton: true},

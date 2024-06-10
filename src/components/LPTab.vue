@@ -5,6 +5,8 @@
         <TableHeader :config="penpieLpTableHeaderConfig"></TableHeader>
         <PenpieLpTableRow v-for="(lpToken, index) in penpieLpTokens" v-bind:key="index" :index="index"
                           :lp-token="lpToken" :lp-tokens="penpieLpTokens"></PenpieLpTableRow>
+        <PenpieTableRow v-for="(lpToken, index) in penpieTokens" v-bind:key="index" :index="index"
+                          :lp-token="lpToken" :lp-tokens="penpieTokens"></PenpieTableRow>
       </div>
     </div>
     <div class="lp-tokens" v-if="Object.keys(gmxV2LpTokens).length">
@@ -80,11 +82,13 @@ import GmxV2LpTableRow from "./GmxV2LpTableRow.vue";
 import GmIncentivesTableRow from "./GmIncentivesTableRow.vue";
 import BalancerLpTableRow from "./BalancerLpTableRow.vue";
 import PenpieLpTableRow from "./PenpieLpTableRow.vue";
+import PenpieTableRow from "./PenpieTableRow.vue";
 
 export default {
   name: 'LPTab',
   components: {
     PenpieLpTableRow,
+    PenpieTableRow,
     BalancerLpTableRow,
     GmIncentivesTableRow,
     GmxV2LpTableRow,
@@ -105,6 +109,7 @@ export default {
       balancerLpTokens: config.BALANCER_LP_ASSETS_CONFIG,
       balancerLpTableHeaderConfig: null,
       penpieLpTokens: config.PENPIE_LP_ASSETS_CONFIG,
+      penpieTokens: config.PENPIE_STAKED_ASSETS_CONFIG,
       penpieLpTableHeaderConfig: null,
       levelLpTokens: config.LEVEL_LP_ASSETS_CONFIG,
       levelLpTableHeaderConfig: null,
