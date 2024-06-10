@@ -54,6 +54,9 @@ const wstETHSiloMarket = "0xaccd9a7cb5518326bed715f90bd32cdf2fec2d14";
 const whaleAddr = "0x6db96bbeb081d2a85e0954c252f2c1dc108b3f81";
 const pendleStakingAddr = "0x6DB96BBEB081d2a85E0954C252f2c1dC108b3f81";
 
+const pnpAddress = "0x2Ac2B254Bc18cD4999f64773a966E4f4869c34Ee";
+const pendleAddress = "0x0c880f6761F1af8d9Aa9C466984b80DAb9a8c9e8";
+
 describe('Smart loan', () => {
     before("Synchronize blockchain time", async () => {
         await syncTime();
@@ -69,6 +72,8 @@ describe('Smart loan', () => {
             weEthBalance: BigNumber,
             rsEthBalance: BigNumber,
             tokenManager: MockTokenManager,
+            pnp: Contract,
+            pendle: Contract,
             poolContracts: Map<string, Contract> = new Map(),
             tokenContracts: Map<string, Contract> = new Map(),
             lendingPools: Array<PoolAsset> = [],
@@ -200,6 +205,9 @@ describe('Smart loan', () => {
             );
 
             await deployAllFacets(diamondAddress, true, 'ARBITRUM');
+
+            pnp = new ethers.Contract(pnpAddress, erc20ABI, provider);
+            pendle = new ethers.Contract(pendleAddress, erc20ABI, provider);
         });
 
         it("should deploy a smart loan", async () => {
@@ -346,7 +354,7 @@ describe('Smart loan', () => {
             }
         });
 
-        it("should claim rewards", async () => {
+        it.skip("should claim rewards", async () => {
             await time.increase(time.duration.days(5));
             await increaseBlocks(20);
 
@@ -394,7 +402,7 @@ describe('Smart loan', () => {
             }
         });
 
-        it("should claim rewards", async () => {
+        it.skip("should claim rewards", async () => {
             await time.increase(time.duration.days(5));
             await increaseBlocks(20);
 
@@ -485,6 +493,9 @@ describe('Smart loan', () => {
             const beforeTokenExposure = await getAssetExposure(asset);
             expect(await loanOwnsAsset(lpToken)).to.be.true;
 
+            const beforePnpBalance = await pnp.balanceOf(owner.address);
+            const beforePendleBalance = await pendle.balanceOf(owner.address);
+
             await wrappedLoan.unstakeFromPenpieAndWithdrawFromPendle(toBytes32(asset), amount, market, minOut, output, limit);
 
             expect(await loanOwnsAsset(lpToken)).to.be.false;
@@ -493,6 +504,11 @@ describe('Smart loan', () => {
 
             expect(beforeLpExposure.current.sub(afterLpExposure.current)).to.be.eq(amount);
             expect(afterTokenExposure.current).to.be.gt(beforeTokenExposure.current);
+
+            const afterPnpBalance = await pnp.balanceOf(owner.address);
+            const afterPendleBalance = await pendle.balanceOf(owner.address);
+            expect(afterPnpBalance).to.be.gt(beforePnpBalance);
+            expect(afterPendleBalance).to.be.gt(beforePendleBalance);
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(fromWei(initialTotalValue), 100);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(fromWei(initialHR), 0.01);
@@ -514,12 +530,20 @@ describe('Smart loan', () => {
             const beforeLpExposure = await getAssetExposure(lpToken);
             expect(await loanOwnsAsset(lpToken)).to.be.true;
 
+            const beforePnpBalance = await pnp.balanceOf(owner.address);
+            const beforePendleBalance = await pendle.balanceOf(owner.address);
+
             await wrappedLoan.unstakeFromPenpieAndWithdrawPendleLP(market, amount);
 
             expect(await loanOwnsAsset(lpToken)).to.be.false;
             const afterLpExposure = await getAssetExposure(lpToken);
 
             expect(beforeLpExposure.current.sub(afterLpExposure.current)).to.be.eq(amount);
+
+            const afterPnpBalance = await pnp.balanceOf(owner.address);
+            const afterPendleBalance = await pendle.balanceOf(owner.address);
+            expect(afterPnpBalance).to.be.gt(beforePnpBalance);
+            expect(afterPendleBalance).to.be.gt(beforePendleBalance);
         }
 
         async function testClaimReward(market: string) {

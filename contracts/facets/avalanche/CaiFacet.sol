@@ -1,19 +1,24 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 70f3282b1751e5abb80bec8675a5d2be940a592e;
+// Last deployed from commit: 6d86e26ff5a23ee2fa4ddb079d0569c41d45f7dd;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@redstone-finance/evm-connector/contracts/data-services/AvalancheDataServiceConsumerBase.sol";
 
 import "../../ReentrancyGuardKeccak.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
-import "../../lib/SolvencyMethods.sol";
+import "../../OnlyOwnerOrInsolvent.sol";
 import "../../interfaces/IWrappedNativeToken.sol";
 
 //This path is updated during deployment
 import "../../lib/local/DeploymentConstants.sol";
 
-contract CaiFacet is ReentrancyGuardKeccak, SolvencyMethods {
+contract CaiFacet is
+    ReentrancyGuardKeccak,
+    OnlyOwnerOrInsolvent,
+    AvalancheDataServiceConsumerBase
+{
     using TransferHelper for address;
 
     address private constant INDEX_ROUTER =
@@ -26,11 +31,10 @@ contract CaiFacet is ReentrancyGuardKeccak, SolvencyMethods {
         bytes memory data,
         address fromToken,
         uint256 fromAmount,
-        uint256 minOut
+        uint256 maxSlippage
     ) external nonReentrant onlyOwner remainsSolvent {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
-        require(minOut > 0, "minOut needs to be > 0");
         require(
             fromAmount > 0,
             "Amount of tokens to sell has to be greater than 0"
@@ -53,11 +57,13 @@ contract CaiFacet is ReentrancyGuardKeccak, SolvencyMethods {
         address(CAI).safeApprove(INDEX_ROUTER, 0);
         address(CAI).safeApprove(INDEX_ROUTER, type(uint256).max);
 
+        uint256 fromTokenUsed = beforeFromTokenBalance - afterFromTokenBalance;
         uint256 caiBoughtAmount = afterCaiBalance - beforeCaiBalance;
-        require(caiBoughtAmount >= minOut, "Too little received");
+
+        checkSlippage(fromTokenSymbol, fromTokenUsed, "CAI", caiBoughtAmount, maxSlippage);
 
         _increaseExposure(tokenManager, CAI, caiBoughtAmount);
-        _decreaseExposure(tokenManager, fromToken, beforeFromTokenBalance - afterFromTokenBalance);
+        _decreaseExposure(tokenManager, fromToken, fromTokenUsed);
 
         emit CaiMinted(
             msg.sender,
@@ -73,11 +79,10 @@ contract CaiFacet is ReentrancyGuardKeccak, SolvencyMethods {
         bytes memory data,
         uint256 shares,
         address toToken,
-        uint256 minOut
-    ) external nonReentrant onlyOwner remainsSolvent {
+        uint256 maxSlippage
+    ) external nonReentrant onlyOwnerOrInsolvent remainsSolvent {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
-        require(minOut > 0, "minOut needs to be > 0");
         require(shares > 0, "Amount of tokens to sell has to be greater than 0");
 
         bytes32 toTokenSymbol = tokenManager.tokenAddressToSymbol(toToken);
@@ -85,19 +90,26 @@ contract CaiFacet is ReentrancyGuardKeccak, SolvencyMethods {
         address(CAI).safeApprove(INDEX_ROUTER, 0);
         address(CAI).safeApprove(INDEX_ROUTER, shares);
 
-        uint256 beforeCaiBalance = IERC20(CAI).balanceOf(address(this));
-        uint256 beforeTokenBalance = IERC20(toToken).balanceOf(address(this));
+        uint256 caiBurnt;
+        uint256 boughtAmount;
 
-        (bool success, ) = INDEX_ROUTER.call((abi.encodePacked(selector, data)));
-        require(success, "Burn failed");
+        {
+            uint256 beforeCaiBalance = IERC20(CAI).balanceOf(address(this));
+            uint256 beforeTokenBalance = IERC20(toToken).balanceOf(address(this));
 
-        uint256 afterCaiBalance = IERC20(CAI).balanceOf(address(this));
-        uint256 afterTokenBalance = IERC20(toToken).balanceOf(address(this));
+            (bool success, ) = INDEX_ROUTER.call((abi.encodePacked(selector, data)));
+            require(success, "Burn failed");
 
-        uint256 boughtAmount = afterTokenBalance - beforeTokenBalance;
-        require(boughtAmount >= minOut, "Too little received");
+            uint256 afterCaiBalance = IERC20(CAI).balanceOf(address(this));
+            uint256 afterTokenBalance = IERC20(toToken).balanceOf(address(this));
 
-        _decreaseExposure(tokenManager, CAI, beforeCaiBalance - afterCaiBalance);
+            caiBurnt = beforeCaiBalance - afterCaiBalance;
+            boughtAmount = afterTokenBalance - beforeTokenBalance;
+        }
+
+        checkSlippage("CAI", caiBurnt, toTokenSymbol, boughtAmount, maxSlippage);
+
+        _decreaseExposure(tokenManager, CAI, caiBurnt);
         _increaseExposure(tokenManager, toToken, boughtAmount);
 
         emit CaiBurned(
@@ -107,6 +119,29 @@ contract CaiFacet is ReentrancyGuardKeccak, SolvencyMethods {
             boughtAmount,
             block.timestamp
         );
+    }
+
+    function checkSlippage(
+        bytes32 inputAsset,
+        uint256 inputAmount,
+        bytes32 outputAsset,
+        uint256 outputAmount,
+        uint256 maxSlippage
+    ) internal {
+        bytes32[] memory assets = new bytes32[](2);
+        assets[0] = inputAsset;
+        assets[1] = outputAsset;
+
+        uint256[] memory prices = getOracleNumericValuesFromTxMsg(assets);
+
+        uint256 inputValue = prices[0] * inputAmount;
+        uint256 outputValue = prices[1] * outputAmount;
+        uint256 diff = inputValue > outputValue
+            ? (inputValue - outputValue)
+            : (outputValue - inputValue);
+        uint256 slippage = (diff * 10000) / inputValue;
+
+        require(slippage <= maxSlippage, "Slippage too high");
     }
 
     modifier onlyOwner() {

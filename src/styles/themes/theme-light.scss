@@ -645,4 +645,9 @@
   --claim-glp-modal__rewards-label-color: #{$steel-gray};
   // endregion
 
+
+  // region WombatPoolRow
+  --wombat-pool-row__header-color: #{$medium-gray};
+  --wombat-pool-row__header-border: linear-gradient(to right, #{$delta-pale} 43%, #{$pale-orange} 62%, #{$pale-raspberry} 79%);
+  // endregion
 }

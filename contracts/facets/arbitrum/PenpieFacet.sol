@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 0121136d8f948e046eba25bde335b6b0b4f33442;
+// Last deployed from commit: 65215bd8e6b18ad26f6667044ffbd8b2dd19ab9d;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -20,7 +20,7 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     // CONSTANTS
 
     address private constant PENDLE_ROUTER =
-        0x00000000005BBB0EF59571E58418F9a4357b68A0;
+        0x888888888889758F76e7103c6CbF23ABbF58F946;
     address public constant DEPOSIT_HELPER =
         0xc06a5d3014b9124Bf215287980305Af2f793eB30;
     address public constant PENDLE_STAKING =
@@ -28,6 +28,8 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     address public constant MASTER_PENPIE =
         0x0776C06907CE6Ff3d9Dbf84bA9B3422d7225942D;
     address public constant PNP = 0x2Ac2B254Bc18cD4999f64773a966E4f4869c34Ee;
+    address public constant PENDLE = 0x0c880f6761F1af8d9Aa9C466984b80DAb9a8c9e8;
+    address public constant SILO = 0x0341C0C0ec423328621788d4854119B97f44E391;
 
     address public constant PENDLE_EZ_ETH_MARKET =
         0x5E03C94Fc5Fb2E21882000A96Df0b63d2c4312e2;
@@ -104,15 +106,27 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             amount = Math.min(IERC20(lpToken).balanceOf(address(this)), amount);
             require(amount > 0, "Cannot unstake 0 tokens");
 
-            IPendleDepositHelper(DEPOSIT_HELPER).withdrawMarketWithClaim(
-                market,
-                amount,
-                true
-            );
+            {
+                address owner = DiamondStorageLib.contractOwner();
+                IPendleDepositHelper(DEPOSIT_HELPER).withdrawMarketWithClaim(
+                    market,
+                    amount,
+                    true
+                );
 
-            uint256 pnpReceived = IERC20(PNP).balanceOf(address(this));
-            if (pnpReceived > 0) {
-                PNP.safeTransfer(msg.sender, pnpReceived);
+                uint256 pnpBalance = IERC20(PNP).balanceOf(address(this));
+                uint256 pendleBalance = IERC20(PENDLE).balanceOf(address(this));
+                uint256 siloBalance = IERC20(SILO).balanceOf(address(this));
+
+                if (pnpBalance > 0) {
+                    PNP.safeTransfer(owner, pnpBalance);
+                }
+                if (pendleBalance > 0) {
+                    PENDLE.safeTransfer(owner, pendleBalance);
+                }
+                if (siloBalance > 0) {
+                    SILO.safeTransfer(owner, siloBalance);
+                }
             }
 
             market.safeApprove(PENDLE_ROUTER, 0);
@@ -175,18 +189,25 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     function unstakeFromPenpieAndWithdrawPendleLP(
         address market,
         uint256 amount
-    ) external onlyOwner canRepayDebtFully nonReentrant returns (uint256) {
+    ) external onlyOwner canRepayDebtFully nonReentrant remainsSolvent returns (uint256) {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         address lpToken = _getPendleLpToken(market);
 
         amount = Math.min(IERC20(lpToken).balanceOf(address(this)), amount);
         require(amount > 0, "Cannot unstake 0 tokens");
 
+        uint256 beforePendleBalance = IERC20(PENDLE).balanceOf(address(this));
+
         IPendleDepositHelper(DEPOSIT_HELPER).withdrawMarketWithClaim(
             market,
             amount,
             true
         );
+
+        uint256 pendleClaimed = IERC20(PENDLE).balanceOf(address(this)) - beforePendleBalance;
+        if (pendleClaimed > 0) {
+            PENDLE.safeTransfer(msg.sender, pendleClaimed);
+        }
 
         market.safeTransfer(msg.sender, amount);
 

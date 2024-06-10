@@ -163,6 +163,8 @@ export default {
       'balancerLpBalances',
       'penpieLpAssets',
       'penpieLpBalances',
+      'wombatLpAssets',
+      'wombatLpBalances',
       'traderJoeV2LpAssets',
       'fullLoanStatus',
       'noSmartLoan',
@@ -370,6 +372,8 @@ export default {
             this.gmxV2Balances,
             this.penpieLpAssets,
             this.penpieLpBalances,
+            this.wombatLpAssets,
+            this.wombatLpBalances,
             this.traderJoeV2LpAssets,
             this.farms,
         );

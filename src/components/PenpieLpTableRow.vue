@@ -166,6 +166,8 @@ export default {
       'debtsPerAsset',
       'penpieLpBalances',
       'penpieLpAssets',
+      'wombatLpAssets',
+      'wombatLpBalances',
       'noSmartLoan',
       'concentratedLpAssets',
       'concentratedLpBalances',
@@ -337,6 +339,8 @@ export default {
       modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.loan = this.debt;
@@ -382,6 +386,8 @@ export default {
       modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.loan = this.debt;
@@ -434,6 +440,8 @@ export default {
       modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
@@ -535,6 +543,8 @@ export default {
       modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
@@ -624,6 +634,8 @@ export default {
       modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.debt = this.fullLoanStatus.debt;
@@ -668,6 +680,8 @@ export default {
       modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.debt = this.fullLoanStatus.debt;
