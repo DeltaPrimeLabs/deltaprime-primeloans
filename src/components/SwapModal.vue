@@ -455,6 +455,7 @@ export default {
 
       let estimated;
       if (queryResponse) {
+        this.blockSubmitButton = false;
         if (this.swapDebtMode) {
           console.log(queryResponse);
           estimated = queryResponse.amounts[queryResponse.amounts.length - 1];
