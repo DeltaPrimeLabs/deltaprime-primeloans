@@ -58,6 +58,8 @@ const getIncentivesMultiplier = async (now) => {
   return Math.round((now - res[0].timestamp) / 3600);
 };
 
+let retryTime = 0;
+
 const arbitrumIncentives = async (rpc = 'first') => {
   const now = Math.floor(Date.now() / 1000);
   const incentivesPerWeek = 18140;
@@ -229,17 +231,22 @@ const arbitrumIncentives = async (rpc = 'first') => {
     console.log('Error', error);
 
     if (error.error.code == 'SERVER_ERROR' || error.error.code == 'TIMEOUT') {
-      await fetch(pingUrl.ltipPA.fail, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          error,
-          message: "retrying the function."
-        })
-      });
-      arbitrumIncentives('second');
+      retry += 1;
+
+      if (retry === 3) {
+        await fetch(pingUrl.ltipPA.fail, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            error,
+            message: "function retried 3 times and failed yet."
+          })
+        });
+      }
+
+      arbitrumIncentives(rpc == "first" ? "second" : "first");
     } else {
       await fetch(pingUrl.ltipPA.fail, {
         method: "POST",

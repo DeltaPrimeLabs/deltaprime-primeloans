@@ -248,6 +248,8 @@ const getIncentivesMultiplier = async (startTime) => {
   return Math.round((Math.floor(startTime / 1000) - res[0].timestamp) / 3600);
 };
 
+let retryTime = 0;
+
 async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, chain, rpc = "first") {
   let startTime = Date.now();
   let provider = getProvider("arbitrum", rpc);
@@ -372,7 +374,22 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
     console.log(error);
 
     if (error.error.code == "SERVER_ERROR" || error.error.code == "TIMEOUT") {
-      calculateEligibleAirdropPerPool(49.60317, "arbitrum", "second")
+      retry += 1;
+
+      if (retry === 3) {
+        await fetch(pingUrl.ltipPool.fail, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            error,
+            message: "function retried 3 times and failed yet."
+          })
+        });
+      }
+
+      calculateEligibleAirdropPerPool(49.60317, "arbitrum", rpc == "first" ? "second" : "first")
     } else {
       await fetch(pingUrl.ltipPool.fail, {
         method: "POST",
@@ -381,7 +398,7 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
         },
         body: JSON.stringify({
           error,
-          message: "retrying the function."
+          message: "function terminated."
         })
       });
       console.log('-----------calculating failed------------');
