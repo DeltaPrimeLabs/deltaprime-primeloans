@@ -3187,7 +3187,7 @@ export default {
       let tx = await awaitConfirmation(transaction, provider, 'withdraw wombat LP');
 
       const price = state.wombatLpAssets[unstakeRequest.asset].price;
-      const withdrawAmountUSD = Number(amountInWei) * price;
+      const withdrawAmountUSD = fromWei(amountInWei) * price;
       const assetBalanceBeforeWithdraw = state.wombatLpBalances[unstakeRequest.asset];
 
       const assetBalanceAfterWithdraw = Number(assetBalanceBeforeWithdraw) - Number(unstakeRequest.value);
