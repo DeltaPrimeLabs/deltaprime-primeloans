@@ -93,7 +93,7 @@
 
 import BarGaugeBeta from './BarGaugeBeta.vue';
 import InfoIcon from './InfoIcon.vue';
-import LTIP_DISTRIBUTED_ARBITRUM from "../data/arbitrum/ltip/LTIP_EPOCH_0.json";
+import LTIP_DISTRIBUTED_ARBITRUM from "../data/arbitrum/ltip/LTIP_EPOCH_1.json";
 import {fromWei} from "../utils/calculate";
 import {mapState} from "vuex";
 import {wrapContract} from "../utils/blockchain";
@@ -161,7 +161,7 @@ export default {
         if (tvl) this.yourEligibleTVL = tvl;
       });
       this.ltipService.observeLtipPrimeAccountArbCollected().subscribe((arbCollected) => {
-        if (arbCollected) this.collectedBonus = arbCollected;
+        if (arbCollected) this.collectedBonus = Math.max(arbCollected - (LTIP_DISTRIBUTED_ARBITRUM[this.smartLoanContract.address] ? LTIP_DISTRIBUTED_ARBITRUM[this.smartLoanContract.address] : 0), 0);
       });
       this.ltipService.observeLtipMaxBoostApy().subscribe((apy) => {
         if (apy) {
@@ -259,7 +259,7 @@ export default {
           margin-left: 5px;
           background-image: var(--ltip-stats-bar-value-icon);
         }
-
+        EPOCH_1.json
         .speed-bonus {
           opacity: 50%;
 
