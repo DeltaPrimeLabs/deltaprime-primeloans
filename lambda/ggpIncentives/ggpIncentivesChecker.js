@@ -44,7 +44,12 @@ const ggpIncentivesChecker = async () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          errorMessage: `difference: ${diff}, threshold set: ${threshold}, expected incentives per interval: ${expectedIncentives}`
+          errorMessage: `difference higher than threshold`,
+          difference: diff,
+          threshold: threshold,
+          expectedIncentives,
+          sumOfIncentives: totalIncentivesPerHour / multiplier,
+          multiplier: multiplier
         })
       });
     }
