@@ -360,7 +360,7 @@ export default {
       const modalInstance = this.openModal(SwapModal);
       let initSourceAsset = this.lpToken.asset;
 
-      modalInstance.title = 'Create LP from LRT';
+      modalInstance.title = 'Create LP';
       modalInstance.swapDex = 'Wombat';
       modalInstance.swapDebtMode = false;
       modalInstance.slippageMargin = 0;
@@ -425,7 +425,7 @@ export default {
       const modalInstance = this.openModal(SwapModal);
       let initSourceAsset = this.lpToken.symbol;
 
-      modalInstance.title = 'Unwind LP to LRT';
+      modalInstance.title = 'Unwind LP';
       modalInstance.swapDex = 'Wombat';
       modalInstance.sourceAssetNameToDisplay = 'Wombat';
       modalInstance.swapDebtMode = false;
