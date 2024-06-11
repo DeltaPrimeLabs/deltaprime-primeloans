@@ -59,7 +59,7 @@ const getLoanArbitrumIncentivesForApi = async (event, context, callback) => {
 // fetch top loans for LTIP PA leaderboard
 const getLoanArbitrumIncentivesLeaderboardApi = async (event, context, callback) => {
   try {
-    const top = Number(event.queryStringParameters.top) || 200;
+    const top = Number(event.queryStringParameters.top) || null;
     const from = Number(event.queryStringParameters.from);
     const to = Number(event.queryStringParameters.to) || Math.floor(Date.now() / 1000);
 
@@ -103,7 +103,7 @@ const getLoanArbitrumIncentivesLeaderboardApi = async (event, context, callback)
       }
     })
 
-    const sortedIncentives = incentivesOfLoans.sort((a, b) => b.arbCollected - a.arbCollected).slice(0, top);
+    const sortedIncentives = top ? incentivesOfLoans.sort((a, b) => b.arbCollected - a.arbCollected).slice(0, top) : incentivesOfLoans;
     console.log(sortedIncentives);
 
     const response = {
@@ -223,7 +223,7 @@ const getPoolArbitrumIncentivesForApi = async (event, context, callback) => {
 // fetch top loans for LTIP Pool leaderboard
 const getPoolArbitrumIncentivesLeaderboardApi = async (event, context, callback) => {
   try {
-    const top = Number(event.queryStringParameters.top) || 200;
+    const top = Number(event.queryStringParameters.top) || null;
     const from = Number(event.queryStringParameters.from);
     const to = Number(event.queryStringParameters.to) || Math.floor(Date.now() / 1000);
 
@@ -266,7 +266,7 @@ const getPoolArbitrumIncentivesLeaderboardApi = async (event, context, callback)
       }
     })
 
-    const sortedIncentives = depositorsIncentives.sort((a, b) => b.arbCollected - a.arbCollected).slice(0, top);
+    const sortedIncentives = top ? depositorsIncentives.sort((a, b) => b.arbCollected - a.arbCollected).slice(0, top) : depositorsIncentives;
 
     const response = {
       statusCode: 200,
