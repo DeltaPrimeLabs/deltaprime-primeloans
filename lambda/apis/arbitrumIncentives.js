@@ -143,34 +143,6 @@ const getLtipBoostApyApi = (event, context, callback) => {
     });
 };
 
-async function getDepositorsAddressesFromSubgraph() {
-  let skip = 0;
-  let depositors = [];
-  let hasMoreDepositors = true;
-
-  while (hasMoreDepositors) {
-    let query = gql`
-        {
-          depositors(first: 1000, skip: ${skip}) {
-            id
-          }
-        }
-        `
-    let response = await request('https://api.thegraph.com/subgraphs/name/keizir/deltaprime', query);
-    if (response.depositors.length > 0) {
-      depositors = [...depositors, ...response.depositors.map(depositor => depositor.id)];
-      skip += 1000;
-    } else {
-      hasMoreDepositors = false;
-    }
-  }
-  // remove duplicates from depositors array
-  depositors = [...new Set(depositors)];
-
-  console.log(`Found ${depositors.length} depositors.`);
-  return depositors;
-}
-
 const getPoolArbitrumIncentivesForApi = async (event, context, callback) => {
   try {
     const addresses = event.queryStringParameters.addresses.split(',');
@@ -227,8 +199,6 @@ const getPoolArbitrumIncentivesLeaderboardApi = async (event, context, callback)
     const from = Number(event.queryStringParameters.from);
     const to = Number(event.queryStringParameters.to) || Math.floor(Date.now() / 1000);
 
-    poolsDepositors = await getDepositorsAddressesFromSubgraph();
-
     const params = {
       TableName: process.env.POOL_ARBITRUM_INCENTIVES_ARB_TABLE,
       FilterExpression: '#timestamp >= :from AND #timestamp <= :to',
@@ -244,27 +214,26 @@ const getPoolArbitrumIncentivesLeaderboardApi = async (event, context, callback)
     const incentives = await fetchAllDataFromDB(params, true);
 
     const depositorsIncentives = [];
+    const poolsDepositors = {};
 
-    poolsDepositors.map(depositor => {
-      const depositorIncentives = incentives.filter((item) => item.id == depositor)
+    incentives.map(item => {
+      if (!poolsDepositors[item.id]) poolsDepositors[item.id] = 0;
 
-      if (depositorIncentives.length > 0) {
-        let depositorAccumulatedIncentives = 0;
-
-        depositorIncentives.map((item) => {
-          depositorAccumulatedIncentives += (item.ARB ? Number(item.ARB) : 0) +
+      const incentivesAtTimestamp = (item.ARB ? Number(item.ARB) : 0) +
                                             (item.BTC ? Number(item.BTC) : 0) +
                                             (item.DAI ? Number(item.DAI) : 0) +
                                             (item.ETH ? Number(item.ETH) : 0) +
                                             (item.USDC ? Number(item.USDC) : 0);
-        });
 
-        depositorsIncentives.push({
-          'id': depositor,
-          'arbCollected': depositorAccumulatedIncentives
-        })
-      }
+      poolsDepositors[item.id] = poolsDepositors[item.id] + incentivesAtTimestamp;
     })
+
+    Object.entries(poolsDepositors).map(([id, arbCollected]) => {
+      depositorsIncentives.push({
+        id,
+        arbCollected
+      })
+    });
 
     const sortedIncentives = top ? depositorsIncentives.sort((a, b) => b.arbCollected - a.arbCollected).slice(0, top) : depositorsIncentives;
 
