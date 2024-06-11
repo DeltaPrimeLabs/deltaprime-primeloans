@@ -427,9 +427,9 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
     console.log(error);
 
     if (error.error.code == "SERVER_ERROR" || error.error.code == "TIMEOUT") {
-      retry += 1;
+      retryTime += 1;
 
-      if (retry === 3) {
+      if (retryTime === 3) {
         await fetch(pingUrl.ltipPool.fail, {
           method: "POST",
           headers: {
