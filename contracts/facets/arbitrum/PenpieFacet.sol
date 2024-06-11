@@ -219,6 +219,10 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         if (pnpReceived > 0) {
             PNP.safeTransfer(msg.sender, pnpReceived);
         }
+        uint256 siloBalance = IERC20(SILO).balanceOf(address(this));
+        if (siloBalance > 0) {
+            SILO.safeTransfer(msg.sender, siloBalance);
+        }
 
         _decreaseExposure(tokenManager, lpToken, amount);
 
