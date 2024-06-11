@@ -161,7 +161,9 @@ export default {
         if (tvl) this.yourEligibleTVL = tvl;
       });
       this.ltipService.observeLtipPrimeAccountArbCollected().subscribe((arbCollected) => {
-        if (arbCollected) this.collectedBonus = Math.max(arbCollected - (LTIP_DISTRIBUTED_ARBITRUM[this.smartLoanContract.address] ? LTIP_DISTRIBUTED_ARBITRUM[this.smartLoanContract.address] : 0), 0);
+        let alreadyCollectedRecord = Object.entries(LTIP_DISTRIBUTED_ARBITRUM).find(([k,v]) => k.toLowerCase() === this.smartLoanContract.address.toLowerCase());
+        alreadyCollectedRecord = alreadyCollectedRecord ? alreadyCollectedRecord[1] : 0;
+        if (arbCollected) this.collectedBonus = Math.max(arbCollected - alreadyCollectedRecord, 0);
       });
       this.ltipService.observeLtipMaxBoostApy().subscribe((apy) => {
         if (apy) {
