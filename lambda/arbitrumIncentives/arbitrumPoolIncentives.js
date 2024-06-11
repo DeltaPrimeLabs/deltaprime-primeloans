@@ -6,7 +6,7 @@ const { request, gql } = require('graphql-request');
 const incentivesRpcUrl = require('../.secrets/incentivesRpc.json');
 const pingUrl = require('../.secrets/ping.json');
 const { dynamoDb, fetchAllDataFromDB } = require('../utils/helpers');
-const chainbaseConfig = JSON.parse(fs.readFileSync('.secrets/chainbase.json', 'utf-8'));
+const chainbaseConfig = require('../.secrets/chainbase.json');
 
 function getRpcUrl(chain, rpc) {
   // switch(chain){
