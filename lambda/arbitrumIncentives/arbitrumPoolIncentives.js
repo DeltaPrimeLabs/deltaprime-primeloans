@@ -1,10 +1,12 @@
 const ethers = require('ethers');
 const fetch = require('node-fetch');
+const fs = require("fs");
 const POOL_ARTIFACT = require('../abis/Pool.json');
 const { request, gql } = require('graphql-request');
 const incentivesRpcUrl = require('../.secrets/incentivesRpc.json');
 const pingUrl = require('../.secrets/ping.json');
 const { dynamoDb, fetchAllDataFromDB } = require('../utils/helpers');
+const chainbaseConfig = JSON.parse(fs.readFileSync('.secrets/chainbase.json', 'utf-8'));
 
 function getRpcUrl(chain, rpc) {
   // switch(chain){
@@ -181,6 +183,56 @@ function getSubgraphEndpoint(chain) {
   }
 }
 
+async function getDepositorsAddressesFromChainbase(chain) {
+  let chainId;
+  let depositors = [];
+
+  if (chain === "arbitrum") {
+    chainId = 42161;
+  } else if (chain == "avalanche") {
+    chainId = 43114;
+  }
+
+  const pools = {
+    "arbitrum": [
+      "0x8FE3842e0B7472a57f2A2D56cF6bCe08517A1De0",
+      "0x0BeBEB5679115f143772CfD97359BBcc393d46b3",
+      "0x2B8C610F3fC6F883817637d15514293565C3d08A",
+      "0x5CdE36c23f0909960BA4D6E8713257C6191f8C35",
+      "0xd5E8f691756c3d7b86FD8A89A06497D38D362540"
+    ]
+  }
+
+  for (let pool of pools[chain]) {
+    let page = 1;
+    let limit = 100;
+    let hasMoreDepositors = true;
+
+    while (hasMoreDepositors) {
+      const url = `https://api.chainbase.online/v1/token/holders?chain_id=${chainId}&contract_address=${pool}&page=${page}&limit=${limit}`;
+      const response = await fetch(url, {
+        headers: {
+          "x-api-key": chainbaseConfig.apiKey
+        }
+      });
+      const json = await response.json();
+
+      if (json.data && json.data.length > 0) {
+        depositors = [...depositors, ...json.data];
+        page++;
+
+        await new Promise((resolve, reject) => setTimeout(resolve, 600));
+      } else {
+        hasMoreDepositors = false;
+      }
+    }
+  }
+  depositors = [...new Set(depositors)];
+  console.log(`Found ${depositors.length} depositors.`);
+
+  return depositors;
+}
+
 async function getDepositorsAddressesFromSubgraph(chain) {
   let skip = 0;
   let depositors = [];
@@ -265,7 +317,7 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
   if (incentivesMultiplier == 0) return;
 
   try {
-    poolsDepositors = await getDepositorsAddressesFromSubgraph(chain);
+    poolsDepositors = await getDepositorsAddressesFromChainbase(chain);
     for (let pool in arbitrumPoolsTVL) {
       let poolEligibleTVLMultiplier = getPoolEligibleTVLMultiplier(chain, pool);
       console.log(`${pool} eligible TVL multiplier: ${poolEligibleTVLMultiplier}`)
@@ -306,7 +358,8 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
 
       for (let depositor in poolsDepositorsBalances[pool]) {
         let depositorBalance = poolsDepositorsBalances[pool][depositor];
-        let depositorEligibleAirdrop = (depositorBalance / totalDepositorsBalances) * poolEligibleAirdrop;
+        // let depositorEligibleAirdrop = (depositorBalance / totalDepositorsBalances) * poolEligibleAirdrop;
+        let depositorEligibleAirdrop = (depositorBalance / arbitrumPoolsDeposits[pool]) * poolEligibleAirdrop;
         depositorsEligibleAirdrop[pool][depositor] = depositorEligibleAirdrop;
       }
     }
