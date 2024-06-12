@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: ;
+// Last deployed from commit: a623e02728121f63e0642bb849c3b76aa4dffa21;
 
 pragma solidity 0.8.17;
 
@@ -413,7 +413,12 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, PendingOwnableUpgradeabl
         require(swapSlippage <= _MAX_SLIPPAGE, "Slippage too high");
 
         _transferTokens(_msgSender(), address(this), amountX, amountY);
-        uint256 tokenId = getUserTokenId(_msgSender());
+
+        _deposit(_msgSender(), activeIdDesired, idSlippage, amountX, amountY, isRebalance, swapSlippage);
+    }
+
+    function _deposit(address user, uint256 activeIdDesired, uint256 idSlippage, uint256 amountX, uint256 amountY, bool isRebalance, uint256 swapSlippage) internal {
+        uint256 tokenId = getUserTokenId(user);
         uint256 activeId = lbPair.getActiveId();
         if(tokenId > 0) {
             (,,, uint256 share, uint256 centerId, uint256[] memory liquidityMinted) = positionManager.positions(tokenId);
@@ -423,7 +428,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, PendingOwnableUpgradeabl
                 (uint256 amountXBefore, uint256 amountYBefore, ) = _withdrawFromLB(depositConfig.depositIds, liquidityMinted, share);
                 
                 positionManager.burn(tokenId);   
-                _burn(_msgSender(), share);
+                _burn(user, share);
 
                 (amountX, amountY) = (amountX + amountXBefore, amountY + amountYBefore);
                 tokenId = 0;
@@ -438,10 +443,10 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, PendingOwnableUpgradeabl
         require(activeIdDesired + idSlippage >= activeId && activeId + idSlippage >= activeIdDesired, "Slippage High");
 
         _transferTokens(address(this), address(lbPair), amountX, amountY);
-        _depositToLB(_msgSender(), activeId);
+        _depositToLB(user, activeId);
         proxyCalldata(
             vPrimeController,
-            abi.encodeWithSignature("updateVPrimeSnapshot(address)", _msgSender()),
+            abi.encodeWithSignature("updateVPrimeSnapshot(address)", user),
             false
         );
     }
@@ -493,7 +498,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, PendingOwnableUpgradeabl
 
         lbPair.burn(address(this), address(this), ids, amounts);
 
-        deposit(activeIdDesired, idSlippage, tokenX.balanceOf(address(this)) - balanceXBefore, tokenY.balanceOf(address(this)) - balanceYBefore, true, swapSlippage);
+        _deposit(_msgSender(), activeIdDesired, idSlippage, tokenX.balanceOf(address(this)) - balanceXBefore, tokenY.balanceOf(address(this)) - balanceYBefore, true, swapSlippage);
     }
 
     /**

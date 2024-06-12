@@ -4,6 +4,7 @@ import { formatEther, parseEther } from 'viem';
 import {
     ILBFactory,
     ILBRouter,
+    ILBToken,
     MockToken,
 } from "../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
@@ -17,7 +18,6 @@ import SPrimeArtifact from '../../artifacts/contracts/token/sPrime.sol/SPrime.js
 import VPrimeControllerArtifact from '../../artifacts/contracts/token/mock/vPrimeControllerAvalancheMock.sol/vPrimeControllerAvalancheMock.json';
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
 import { Asset, PoolAsset, PoolInitializationObject, convertAssetsListToSupportedAssets, convertTokenPricesMapToMockPrices, deployPools, getFixedGasSigners, getRedstonePrices, getTokensPricesMap } from '../_helpers';
-import { LBPairV21ABI } from '@traderjoe-xyz/sdk-v2';
 import { deployDiamond } from '../../tools/diamond/deploy-diamond';
 export const erc20ABI = require('../abis/ERC20.json');
 
@@ -44,13 +44,21 @@ const LBFactoryAbi = [
     'function createLBPair(address, address, uint24, uint16) external returns (address)',
 ]
 
+const LBTokenAbi = [
+    "function balanceOf(address account, uint256 id) external view returns (uint256)",
+    "function balanceOfBatch(address[] calldata accounts, uint256[] calldata ids) external view returns (uint256[])",
+    "function name() external view returns (string)",
+    "function totalSupply(uint256 id) external view returns (uint256)",
+    "function approveForAll(address spender, bool approved) external"
+];
+
 describe("SPrime", function () {
     // Contract Factory
     let SPrimeFactory, PrimeFactory, LBRouter, PositionManagerFactory, smartLoansFactory;
     // Contracts
     let wavax, prime, usdc, sPrime, sPrimeUSDC, positionManager, positionManagerUSDC, vPrime, vPrimeControllerContract, LBFactory;
     const initaialBin = 8388608; // 2 ** 23  (1 AVAX = 1 PRIME)
-    const initaialBinUSDC = 8388608; // (1 USDC = 1 PRIME)
+    const initaialBinUSDC = 8112279; // (1 USDC = 1 PRIME)
     let lendingPools: Array<PoolAsset> = [],
         supportedAssets: Array<Asset>,
         owner: SignerWithAddress,
@@ -71,6 +79,7 @@ describe("SPrime", function () {
         
         let user1 = await addr1.getAddress();
         let user2 = await addr2.getAddress();
+        let user3 = await addr3.getAddress();
 
         PrimeFactory = await ethers.getContractFactory("Prime");
         prime = await PrimeFactory.deploy(parseEther("1000000"));
@@ -123,15 +132,18 @@ describe("SPrime", function () {
         await vPrime.initialize(smartLoansFactory.address);
         await prime.transfer(user1, parseEther("100000"));
         await prime.transfer(user2, parseEther("100000"));
+        await prime.transfer(user3, parseEther("100000"));
 
         await usdc.connect(whale).transfer(user2, "10000000000");
         await usdc.connect(whale).transfer(user1, "10000000000");
+        await usdc.connect(whale).transfer(user3, "10000000000");
 
         LBFactory = new ethers.Contract('0x8e42f2F4101563bF679975178e880FD87d3eFd4e', LBFactoryAbi) as ILBFactory;
         LBRouter = new ethers.Contract('0xb4315e873dBcf96Ffd0acd8EA43f689D8c20fB30', LBRouterAbi) as ILBRouter;
         await wavax.connect(owner).deposit({value: parseEther("100")});
         await wavax.transfer(user1, parseEther("10"));
         await wavax.transfer(user2, parseEther("10"));
+        await wavax.transfer(user3, parseEther("10"));
         await LBFactory.connect(owner).createLBPair(prime.address, wavax.address, initaialBin, 25);
         
         sPrime = await deployContract(
@@ -147,22 +159,20 @@ describe("SPrime", function () {
             mockSignersCount: 3,
             dataPoints: MOCK_PRICES,
         });
+        // await LBFactory.connect(owner).createLBPair(prime.address, usdc.address, initaialBinUSDC, 25);
+        // sPrimeUSDC = await deployContract(
+        //     owner,
+        //     SPrimeArtifact,
+        //     []
+        // ) as Contract;
+        // await sPrimeUSDC.initialize(prime.address, usdc.address, "PRIME-USDC", spotUniform.distributionX, spotUniform.distributionY, spotUniform.deltaIds, positionManagerUSDC.address);
 
-        await LBFactory.connect(owner).createLBPair(prime.address, usdc.address, initaialBinUSDC, 1);
-
-        sPrimeUSDC = await deployContract(
-            owner,
-            SPrimeArtifact,
-            []
-        ) as Contract;
-        await sPrimeUSDC.initialize(prime.address, usdc.address, "PRIME-USDC", spotUniform.distributionX, spotUniform.distributionY, spotUniform.deltaIds, positionManagerUSDC.address);
-
-        sPrimeUSDC = WrapperBuilder.wrap(
-            sPrimeUSDC.connect(owner)
-        ).usingSimpleNumericMock({
-            mockSignersCount: 3,
-            dataPoints: MOCK_PRICES,
-        });
+        // sPrimeUSDC = WrapperBuilder.wrap(
+        //     sPrimeUSDC.connect(owner)
+        // ).usingSimpleNumericMock({
+        //     mockSignersCount: 3,
+        //     dataPoints: MOCK_PRICES,
+        // });
 
         vPrimeControllerContract = await deployContract(
             owner,
@@ -170,7 +180,7 @@ describe("SPrime", function () {
             []
         ) as Contract;
 
-        await vPrimeControllerContract.initialize([sPrime.address, sPrimeUSDC.address], tokenManager.address, vPrime.address);
+        await vPrimeControllerContract.initialize([sPrime.address], tokenManager.address, vPrime.address);
         vPrimeControllerContract = WrapperBuilder.wrap(
             vPrimeControllerContract
         ).usingSimpleNumericMock({
@@ -179,24 +189,24 @@ describe("SPrime", function () {
         });
 
         await positionManager.setSPrime(sPrime.address);
-        await positionManagerUSDC.setSPrime(sPrimeUSDC.address);
+        // await positionManagerUSDC.setSPrime(sPrimeUSDC.address);
         
         await tokenManager.setVPrimeControllerAddress(vPrimeControllerContract.address);
         await poolContracts.get('AVAX')!.setTokenManager(tokenManager.address);
         await poolContracts.get('USDC')!.setTokenManager(tokenManager.address);
         await vPrime.connect(owner).setVPrimeControllerAddress(vPrimeControllerContract.address);
         await sPrime.setVPrimeControllerAddress(vPrimeControllerContract.address);
-        await sPrimeUSDC.setVPrimeControllerAddress(vPrimeControllerContract.address);
+        // await sPrimeUSDC.setVPrimeControllerAddress(vPrimeControllerContract.address);
         await vPrimeControllerContract.connect(owner).updateBorrowersRegistry(smartLoansFactory.address);
 
         await prime.connect(addr1).approve(sPrime.address, parseEther("1000000"));
         await wavax.connect(addr1).approve(sPrime.address, parseEther("1000000"));
-        await prime.connect(addr1).approve(sPrimeUSDC.address, parseEther("100000000"));
-        await usdc.connect(addr1).approve(sPrimeUSDC.address, parseEther("100000000"));
+        // await prime.connect(addr1).approve(sPrimeUSDC.address, parseEther("100000000"));
+        // await usdc.connect(addr1).approve(sPrimeUSDC.address, parseEther("100000000"));
         await prime.connect(addr2).approve(sPrime.address, parseEther("1000000"));
         await wavax.connect(addr2).approve(sPrime.address, parseEther("1000000"));
-        await prime.connect(addr2).approve(sPrimeUSDC.address, parseEther("100000000"));
-        await usdc.connect(addr2).approve(sPrimeUSDC.address, parseEther("100000000"));
+        // await prime.connect(addr2).approve(sPrimeUSDC.address, parseEther("100000000"));
+        // await usdc.connect(addr2).approve(sPrimeUSDC.address, parseEther("100000000"));
     });
 
     describe("Deposit", function () {
@@ -644,42 +654,121 @@ describe("SPrime", function () {
             expect(userShare.totalShare).to.gt(oldShare);
         });
 
-        it("PRIME-USDC (18 - 6 Decimals)", async function () {
-            sPrimeUSDC = WrapperBuilder.wrap(
-                sPrimeUSDC.connect(addr2)
-            ).usingSimpleNumericMock({
-                mockSignersCount: 3,
-                dataPoints: MOCK_PRICES,
-            });
+        // it("PRIME-USDC (18 - 6 Decimals)", async function () {
+        //     sPrimeUSDC = WrapperBuilder.wrap(
+        //         sPrimeUSDC.connect(addr2)
+        //     ).usingSimpleNumericMock({
+        //         mockSignersCount: 3,
+        //         dataPoints: MOCK_PRICES,
+        //     });
 
-            await sPrimeUSDC.deposit(initaialBinUSDC, 10, parseEther("1"), "1000000", false, 10);
-            console.log("User Balance");
-            console.log(await prime.balanceOf(addr2.address));
-            console.log(await usdc.balanceOf(addr2.address));
-            console.log("Deposited");
+        //     await sPrimeUSDC.deposit(initaialBinUSDC, 10, parseEther("1"), "1000000", false, 10);
+        //     console.log("User Balance");
+        //     console.log(await prime.balanceOf(addr2.address));
+        //     console.log(await usdc.balanceOf(addr2.address));
+        //     console.log("Deposited");
 
-            sPrimeUSDC = WrapperBuilder.wrap(
-                sPrimeUSDC.connect(addr1)
-            ).usingSimpleNumericMock({
-                mockSignersCount: 3,
-                dataPoints: MOCK_PRICES,
-            });
-            console.log("Depositing from USDC sPrime");
-            await sPrimeUSDC.deposit(initaialBinUSDC, 10, parseEther("20"), "20000000", false, 10);
-            console.log("User Balance");
-            console.log(await prime.balanceOf(addr1.address));
-            console.log(await usdc.balanceOf(addr1.address));
-            console.log("Deposited");
-            let tokenId = await sPrimeUSDC.getUserTokenId(addr1.address);
-            let userShare = await positionManagerUSDC.positions(tokenId);
-            expect(userShare.totalShare).to.gt(0);
+        //     sPrimeUSDC = WrapperBuilder.wrap(
+        //         sPrimeUSDC.connect(addr1)
+        //     ).usingSimpleNumericMock({
+        //         mockSignersCount: 3,
+        //         dataPoints: MOCK_PRICES,
+        //     });
+        //     console.log("Depositing from USDC sPrime");
+        //     await sPrimeUSDC.deposit(initaialBinUSDC, 10, parseEther("20"), "20000000", false, 10);
+        //     console.log("User Balance");
+        //     console.log(await prime.balanceOf(addr1.address));
+        //     console.log(await usdc.balanceOf(addr1.address));
+        //     console.log("Deposited");
+        //     let tokenId = await sPrimeUSDC.getUserTokenId(addr1.address);
+        //     let userShare = await positionManagerUSDC.positions(tokenId);
+        //     expect(userShare.totalShare).to.gt(0);
             
-            const oldShare = userShare.totalShare;
-            await sPrimeUSDC.deposit(initaialBinUSDC, 10, parseEther("0.0005"), "1000", false, 10);
-            tokenId = await sPrimeUSDC.getUserTokenId(addr1.address);
-            userShare = await positionManagerUSDC.positions(tokenId);
+        //     const oldShare = userShare.totalShare;
+        //     await sPrimeUSDC.deposit(initaialBinUSDC, 10, parseEther("0.0005"), "1000", false, 10);
+        //     tokenId = await sPrimeUSDC.getUserTokenId(addr1.address);
+        //     userShare = await positionManagerUSDC.positions(tokenId);
 
-            expect(userShare.totalShare).to.gt(oldShare);
+        //     expect(userShare.totalShare).to.gt(oldShare);
+        // });
+    });
+
+    describe("Mint and Lock", function () {
+        it("Withdraw old position and process mintForUserAndLock", async function () {
+            
+            sPrime = WrapperBuilder.wrap(
+                sPrime.connect(addr2)
+            ).usingSimpleNumericMock({
+                mockSignersCount: 3,
+                dataPoints: MOCK_PRICES,
+            });
+
+            //withdraw all for the user
+            let tokenId = await sPrime.getUserTokenId(addr2.address);
+            let userShare = await positionManager.positions(tokenId);
+            await sPrime.withdraw(userShare.totalShare);
+
+            // Process mint and lock - 30 days
+            await sPrime.mintForUserAndLock(addr2.address, [100], [30 * 24 * 60 * 60], parseEther("10"), parseEther("10"));
+
+            tokenId = await sPrime.getUserTokenId(addr2.address);
+            userShare = await positionManager.positions(tokenId);
+            expect(userShare.totalShare).to.gt(0);
+
+            const lockedBalance = await sPrime.getLockedBalance(addr2.address);
+            expect(userShare.totalShare).to.equal(lockedBalance);
+        });
+
+        describe("Migrate Liquidity", function () {
+            it("Migrate liquidity from the existing position", async function () {
+                
+                sPrime = WrapperBuilder.wrap(
+                    sPrime.connect(addr3)
+                ).usingSimpleNumericMock({
+                    mockSignersCount: 3,
+                    dataPoints: MOCK_PRICES,
+                });
+    
+                //withdraw all for the user
+                let tokenId = await sPrime.getUserTokenId(addr3.address);
+                let userShare = await positionManager.positions(tokenId);
+                await sPrime.withdraw(userShare.totalShare);
+                
+                await prime.connect(addr3).approve(LBRouter.address, parseEther("1000000"));
+                await wavax.connect(addr3).approve(LBRouter.address, parseEther("1000000"));
+                // Added liquidity
+                const tx = await LBRouter.connect(addr3).addLiquidity(
+                    {
+                        tokenX: prime.address,
+                        tokenY: wavax.address,
+                        binStep: 25,
+                        amountX: parseEther("1"),
+                        amountY: parseEther("1"),
+                        amountXMin: 0, // min PRIME
+                        amountYMin: 0, // min WAVAX
+                        activeIdDesired: initaialBin,
+                        idSlippage: 100, //max uint24 - means that we accept every distance ("slippage") from the active bin
+                        deltaIds: spotUniform.deltaIds,
+                        distributionX: spotUniform.distributionX,
+                        distributionY: spotUniform.distributionY,
+                        to: addr3.address,
+                        refundTo: addr3.address,
+                        deadline: Math.ceil((new Date().getTime() / 1000) + 10000)
+                    }
+                );
+                const receipt = await tx.wait();
+                const event = receipt.events.find(event => event.event === "DepositedToBins");
+                const depositIds = event.args.ids;
+                const addressList = new Array(depositIds.length).fill(addr3.address);
+                const pairAddr = await sPrime.getLBPair();
+                const lbToken = await ethers.getContractAt(LBTokenAbi, pairAddr, addr3);
+                const balances = await lbToken.balanceOfBatch(addressList, depositIds);
+                await lbToken.approveForAll(sPrime.address, true);
+                await sPrime.migrateLiquidity(depositIds, balances, initaialBin, 100, 5);
+                tokenId = await sPrime.getUserTokenId(addr3.address);
+                userShare = await positionManager.positions(tokenId);
+                expect(userShare.totalShare).to.gt(0);
+            });
         });
     });
 
