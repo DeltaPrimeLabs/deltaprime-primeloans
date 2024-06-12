@@ -465,16 +465,27 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, PendingOwnableUpgradeabl
         require(balanceOf(user) == 0, "User already has position");
         require(percentForLocks.length == lockPeriods.length, "Length dismatch");
 
-        deposit(activeId, 0, amountX, amountY, false, 0);
+        _transferTokens(_msgSender(), address(this), amountX, amountY);
+        _deposit(user, activeId, 0, amountX, amountY, false, 0);
+        
+        uint256 totalLock;
+        for(uint8 i = 0 ; i < lockPeriods.length ; i ++) {
+            totalLock += percentForLocks[i];
+        }
+        require(totalLock == 100, "Should lock all");
 
         uint256 balance = balanceOf(user);
+        totalLock = 0;
         for(uint8 i = 0 ; i < lockPeriods.length ; i ++) {
             require(lockPeriods[i] <= MAX_LOCK_TIME, "Cannot lock for more than 3 years");
+            // Should minus from total balance to avoid the round issue
+            uint256 amount = i == lockPeriods.length - 1 ? balance - totalLock : balance * percentForLocks[i] / 100;
             locks[user].push(LockDetails({
                 lockPeriod: lockPeriods[i],
-                amount: balance * percentForLocks[i] / 100,
+                amount: amount,
                 unlockTime: block.timestamp + lockPeriods[i]
             }));
+            totalLock += amount;
         }
 
         proxyCalldata(

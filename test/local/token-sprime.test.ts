@@ -66,13 +66,14 @@ describe("SPrime", function () {
         addr2: SignerWithAddress,
         addr3: SignerWithAddress,
         addr4: SignerWithAddress,
+        addr5: SignerWithAddress,
         whale: SignerWithAddress,
         MOCK_PRICES: any,
         poolContracts: Map<string, Contract> = new Map(),
         tokenContracts: Map<string, Contract> = new Map();
 
     before(async function () {
-        [owner, addr1, addr2, addr3, addr4] = await getFixedGasSigners(10000000);
+        [owner, addr1, addr2, addr3, addr4, addr5] = await getFixedGasSigners(10000000);
 
         SPrimeFactory = await ethers.getContractFactory("SPrime");
         PositionManagerFactory = await ethers.getContractFactory("PositionManager");
@@ -719,56 +720,90 @@ describe("SPrime", function () {
             expect(userShare.totalShare).to.equal(lockedBalance);
         });
 
-        describe("Migrate Liquidity", function () {
-            it("Migrate liquidity from the existing position", async function () {
-                
-                sPrime = WrapperBuilder.wrap(
-                    sPrime.connect(addr3)
-                ).usingSimpleNumericMock({
-                    mockSignersCount: 3,
-                    dataPoints: MOCK_PRICES,
-                });
-    
-                //withdraw all for the user
-                let tokenId = await sPrime.getUserTokenId(addr3.address);
-                let userShare = await positionManager.positions(tokenId);
-                await sPrime.withdraw(userShare.totalShare);
-                
-                await prime.connect(addr3).approve(LBRouter.address, parseEther("1000000"));
-                await wavax.connect(addr3).approve(LBRouter.address, parseEther("1000000"));
-                // Added liquidity
-                const tx = await LBRouter.connect(addr3).addLiquidity(
-                    {
-                        tokenX: prime.address,
-                        tokenY: wavax.address,
-                        binStep: 25,
-                        amountX: parseEther("1"),
-                        amountY: parseEther("1"),
-                        amountXMin: 0, // min PRIME
-                        amountYMin: 0, // min WAVAX
-                        activeIdDesired: initaialBin,
-                        idSlippage: 100, //max uint24 - means that we accept every distance ("slippage") from the active bin
-                        deltaIds: spotUniform.deltaIds,
-                        distributionX: spotUniform.distributionX,
-                        distributionY: spotUniform.distributionY,
-                        to: addr3.address,
-                        refundTo: addr3.address,
-                        deadline: Math.ceil((new Date().getTime() / 1000) + 10000)
-                    }
-                );
-                const receipt = await tx.wait();
-                const event = receipt.events.find(event => event.event === "DepositedToBins");
-                const depositIds = event.args.ids;
-                const addressList = new Array(depositIds.length).fill(addr3.address);
-                const pairAddr = await sPrime.getLBPair();
-                const lbToken = await ethers.getContractAt(LBTokenAbi, pairAddr, addr3);
-                const balances = await lbToken.balanceOfBatch(addressList, depositIds);
-                await lbToken.approveForAll(sPrime.address, true);
-                await sPrime.migrateLiquidity(depositIds, balances, initaialBin, 100, 5);
-                tokenId = await sPrime.getUserTokenId(addr3.address);
-                userShare = await positionManager.positions(tokenId);
-                expect(userShare.totalShare).to.gt(0);
+        it("Process mintForUserAndLock for another user", async function () {
+            
+            sPrime = WrapperBuilder.wrap(
+                sPrime.connect(addr2)
+            ).usingSimpleNumericMock({
+                mockSignersCount: 3,
+                dataPoints: MOCK_PRICES,
             });
+
+            // Process mint and lock - 30 days
+            //  lock 20% for 10 days, 30% for 15 days and 50% for 30 days
+            const day = 24 * 60 * 60;
+            await sPrime.mintForUserAndLock(addr5.address, [20, 30, 50], [10 * day, 15 * day, 30 * day], parseEther("10"), parseEther("10"));
+
+            let tokenId = await sPrime.getUserTokenId(addr5.address);
+            let userShare = await positionManager.positions(tokenId);
+            expect(userShare.totalShare).to.gt(0);
+
+            const lockedBalance = await sPrime.getLockedBalance(addr5.address);
+            expect(userShare.totalShare).to.equal(lockedBalance);
+
+            let lockInfo = await sPrime.locks(addr5.address, 0);
+            expect(lockInfo.lockPeriod).to.eq(10 * day);
+            expect(lockInfo.amount).to.gt(0);
+
+            lockInfo = await sPrime.locks(addr5.address, 1);
+            expect(lockInfo.lockPeriod).to.eq(15 * day);
+            expect(lockInfo.amount).to.gt(0);
+
+            lockInfo = await sPrime.locks(addr5.address, 2);
+            expect(lockInfo.lockPeriod).to.eq(30 * day);
+            expect(lockInfo.amount).to.gt(0);
+        });
+    });
+
+    describe("Migrate Liquidity", function () {
+        it("Migrate liquidity from the existing position", async function () {
+            
+            sPrime = WrapperBuilder.wrap(
+                sPrime.connect(addr3)
+            ).usingSimpleNumericMock({
+                mockSignersCount: 3,
+                dataPoints: MOCK_PRICES,
+            });
+
+            //withdraw all for the user
+            let tokenId = await sPrime.getUserTokenId(addr3.address);
+            let userShare = await positionManager.positions(tokenId);
+            await sPrime.withdraw(userShare.totalShare);
+            
+            await prime.connect(addr3).approve(LBRouter.address, parseEther("1000000"));
+            await wavax.connect(addr3).approve(LBRouter.address, parseEther("1000000"));
+            // Added liquidity
+            const tx = await LBRouter.connect(addr3).addLiquidity(
+                {
+                    tokenX: prime.address,
+                    tokenY: wavax.address,
+                    binStep: 25,
+                    amountX: parseEther("1"),
+                    amountY: parseEther("1"),
+                    amountXMin: 0, // min PRIME
+                    amountYMin: 0, // min WAVAX
+                    activeIdDesired: initaialBin,
+                    idSlippage: 100, //max uint24 - means that we accept every distance ("slippage") from the active bin
+                    deltaIds: spotUniform.deltaIds,
+                    distributionX: spotUniform.distributionX,
+                    distributionY: spotUniform.distributionY,
+                    to: addr3.address,
+                    refundTo: addr3.address,
+                    deadline: Math.ceil((new Date().getTime() / 1000) + 10000)
+                }
+            );
+            const receipt = await tx.wait();
+            const event = receipt.events.find(event => event.event === "DepositedToBins");
+            const depositIds = event.args.ids;
+            const addressList = new Array(depositIds.length).fill(addr3.address);
+            const pairAddr = await sPrime.getLBPair();
+            const lbToken = await ethers.getContractAt(LBTokenAbi, pairAddr, addr3);
+            const balances = await lbToken.balanceOfBatch(addressList, depositIds);
+            await lbToken.approveForAll(sPrime.address, true);
+            await sPrime.migrateLiquidity(depositIds, balances, initaialBin, 100, 5);
+            tokenId = await sPrime.getUserTokenId(addr3.address);
+            userShare = await positionManager.positions(tokenId);
+            expect(userShare.totalShare).to.gt(0);
         });
     });
 
