@@ -219,6 +219,19 @@
       "type": "event"
     },
     {
+      "inputs": [],
+      "name": "ggAvaxBalanceAvaxGgavax",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "_stakedBalance",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
       "anonymous": false,
       "inputs": [
         {

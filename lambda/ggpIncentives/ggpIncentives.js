@@ -94,7 +94,7 @@ const ggpIncentives = async (network = 'avalanche', rpc = 'first') => {
       const wrappedContracts = getWrappedContracts(batchLoanAddresses, network, provider);
 
       const loanStats = await Promise.all(
-        wrappedContracts.map(contract => Promise.all([contract.getFullLoanStatus(), contract.getAllAssetsBalances()]))
+        wrappedContracts.map(contract => Promise.all([contract.getFullLoanStatus(), contract.ggAvaxBalanceAvaxGgavax()]))
       );
 
       const redstonePriceDataRequest = await fetch(redstoneFeedUrl);
@@ -105,29 +105,18 @@ const ggpIncentives = async (network = 'avalanche', rpc = 'first') => {
           loanStats.map(async (loan, batchId) => {
             const loanId = batchLoanAddresses[batchId].toLowerCase();
             const status = loan[0];
-            const assetBalances = loan[1];
             const collateral = fromWei(status[0]) - fromWei(status[1]);
 
-            loanQualifications[loanId] = {
-              eligibleTvl: 0
-            };
-
-            let loanggAvaxValue = 0;
-
-            // calculate ggAVAX values by multiplying price
-            await Promise.all(
-              Object.entries(ggpTokens.avalanche).map(async ([symbol, tokenConfig]) => {
-                const price = redstonePriceData[symbol] ? redstonePriceData[symbol][0].dataPoints[0].value : 0;
-
-                const asset = assetBalances.find(asset => fromBytes32(asset.name) == symbol);
-                const balance = formatUnits(asset.balance.toString(), tokenConfig.decimals);
-
-                loanggAvaxValue += balance * price;
-              })
-            );
+            const ggAvaxBalance = formatUnits(loan[1]);
+            const ggAvaxPrice = redstonePriceData['WOMBAT_ggAVAX_AVAX_LP_ggAVAX'] ? redstonePriceData['WOMBAT_ggAVAX_AVAX_LP_ggAVAX'][0].dataPoints[0].value : 0;
+            const loanggAvaxValue = ggAvaxBalance * ggAvaxPrice;
 
             const eligibleTvl = loanggAvaxValue - collateral > 0 ? loanggAvaxValue - collateral : 0;
-            loanQualifications[loanId].eligibleTvl = eligibleTvl;
+
+            loanQualifications[loanId] = {
+              eligibleTvl
+            };
+
             totalEligibleTvl += eligibleTvl;
           })
         );
@@ -146,8 +135,6 @@ const ggpIncentives = async (network = 'avalanche', rpc = 'first') => {
         loanIncentives[loanId] = incentivesPerInterval * loanData.eligibleTvl / totalEligibleTvl;
       }
     })
-
-    console.log(loanIncentives)
 
     // save/update incentives values to DB
     await Promise.all(
@@ -169,7 +156,7 @@ const ggpIncentives = async (network = 'avalanche', rpc = 'first') => {
     console.log("GGP incentives successfully updated.")
 
     // save boost APY to DB
-    const boostApy = (incentivesPerInterval / incentivesMultiplier) / totalEligibleTvl * 24 * 365;
+    const boostApy = totalEligibleTvl > 0 ? (incentivesPerInterval / incentivesMultiplier) / totalEligibleTvl * 24 * 365 : 0;
 
     const params = {
       TableName: "statistics-prod",
