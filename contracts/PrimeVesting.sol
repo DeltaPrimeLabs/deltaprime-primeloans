@@ -56,7 +56,7 @@ contract PrimeVesting is Ownable {
 
     event Claimed(
         address indexed user,
-        address indexed grantClaimRightTo,
+        address indexed claimant,
         uint256 indexed amount,
         uint256 timestamp
     );
@@ -109,10 +109,10 @@ contract PrimeVesting is Ownable {
 
     /// Internal functions
 
-    function _claimFor(address user, address grantClaimRightTo, uint256 amount) internal {
+    function _claimFor(address user, address claimant, uint256 amount) internal {
         UserInfo storage userInfo = userInfos[user];
 
-        if (user != grantClaimRightTo && userInfo.info.grantClaimRightTo != grantClaimRightTo) {
+        if (user != claimant && userInfo.info.grantClaimRightTo != claimant) {
             revert Unauthorized();
         }
 
@@ -129,7 +129,7 @@ contract PrimeVesting is Ownable {
 
         primeToken.safeTransfer(user, amount);
 
-        emit Claimed(user, grantClaimRightTo, amount, block.timestamp);
+        emit Claimed(user, claimant, amount, block.timestamp);
     }
 
     function _claimable(address user) internal view returns (uint256) {
