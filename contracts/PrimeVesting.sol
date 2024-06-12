@@ -49,6 +49,9 @@ contract PrimeVesting is Ownable {
     /// @dev No claim available
     error NothingToClaim();
 
+    /// @dev Trying to claim 0 amount
+    error ZeroClaimAmount();
+
     /// Events
 
     event Claimed(
@@ -92,12 +95,12 @@ contract PrimeVesting is Ownable {
 
     /// Public functions
 
-    function claim() external {
-        _claimFor(msg.sender, msg.sender);
+    function claim(uint256 amount) external {
+        _claimFor(msg.sender, msg.sender, amount);
     }
 
-    function claimFor(address user) external {
-        _claimFor(user, msg.sender);
+    function claimFor(address user, uint256 amount) external {
+        _claimFor(user, msg.sender, amount);
     }
 
     function claimable(address user) public view returns (uint256) {
@@ -106,7 +109,7 @@ contract PrimeVesting is Ownable {
 
     /// Internal functions
 
-    function _claimFor(address user, address onBehalfOf) internal {
+    function _claimFor(address user, address onBehalfOf, uint256 amount) internal {
         UserInfo storage userInfo = userInfos[user];
 
         if (user != onBehalfOf && userInfo.info.onBehalfOf != onBehalfOf) {
@@ -117,12 +120,16 @@ contract PrimeVesting is Ownable {
         if (claimableAmount == 0) {
             revert NothingToClaim();
         }
+        amount = Math.min(amount, claimableAmount);
+        if (amount == 0) {
+            revert ZeroClaimAmount();
+        }
 
-        userInfo.claimed += claimableAmount;
+        userInfo.claimed += amount;
 
-        primeToken.safeTransfer(user, claimableAmount);
+        primeToken.safeTransfer(user, amount);
 
-        emit Claimed(user, onBehalfOf, claimableAmount, block.timestamp);
+        emit Claimed(user, onBehalfOf, amount, block.timestamp);
     }
 
     function _claimable(address user) internal view returns (uint256) {

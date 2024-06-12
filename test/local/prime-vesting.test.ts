@@ -1,5 +1,5 @@
-import { ethers, waffle } from 'hardhat'
-import chai, { expect } from 'chai'
+import { ethers, waffle } from "hardhat"
+import chai, { expect } from "chai"
 import { solidity } from "ethereum-waffle";
 
 import MockTokenArtifact from "../../artifacts/contracts/mock/MockToken.sol/MockToken.json";
@@ -17,7 +17,7 @@ chai.use(solidity);
 const { deployContract } = waffle;
 const ZERO = ethers.constants.AddressZero;
 
-describe('Prime Vesting', () => {
+describe("Prime Vesting", () => {
     let owner: SignerWithAddress,
         user1: SignerWithAddress,
         user2: SignerWithAddress,
@@ -82,7 +82,7 @@ describe('Prime Vesting', () => {
         expect(fromWei(claimable2)).to.be.eq(0);
         expect(fromWei(claimable3)).to.be.eq(0);
 
-        await expect(vesting.connect(user1).claim()).to.be.revertedWith("NothingToClaim");
+        await expect(vesting.connect(user1).claim(toWei("9999"))).to.be.revertedWith("NothingToClaim");
     });
 
     it("should be able to claim after cliff period", async () => {
@@ -101,8 +101,8 @@ describe('Prime Vesting', () => {
         const beforeBalance1 = await mockToken.balanceOf(user1.address);
         const beforeBalance2 = await mockToken.balanceOf(user2.address);
 
-        await vesting.connect(user1).claim();
-        await vesting.connect(user2).claim();
+        await vesting.connect(user1).claim(toWei("9999"));
+        await vesting.connect(user2).claim(toWei("9999"));
 
         const afterBalance1 = await mockToken.balanceOf(user1.address);
         const afterBalance2 = await mockToken.balanceOf(user2.address);
@@ -124,11 +124,11 @@ describe('Prime Vesting', () => {
         expect(fromWei(claimable2)).to.be.gt(0);
         expect(fromWei(claimable3)).to.be.gt(0);
 
-        await expect(vesting.connect(user2).claimFor(user3.address)).to.be.revertedWith("Unauthorized");
+        await expect(vesting.connect(user2).claimFor(user3.address, toWei("9999"))).to.be.revertedWith("Unauthorized");
 
         const beforeBalance = await mockToken.balanceOf(user3.address);
 
-        await vesting.connect(user1).claimFor(user3.address);
+        await vesting.connect(user1).claimFor(user3.address, toWei("9999"));
 
         const afterBalance = await mockToken.balanceOf(user3.address);
 
@@ -138,9 +138,9 @@ describe('Prime Vesting', () => {
     it("should not claim more than allocated", async () => {
         await time.increase(time.duration.days(40));
 
-        await vesting.connect(user1).claim();
-        await vesting.connect(user2).claim();
-        await vesting.connect(user3).claim();
+        await vesting.connect(user1).claim(toWei("9999"));
+        await vesting.connect(user2).claim(toWei("9999"));
+        await vesting.connect(user3).claim(toWei("9999"));
 
         const afterBalance1 = await mockToken.balanceOf(user1.address);
         const afterBalance2 = await mockToken.balanceOf(user2.address);
