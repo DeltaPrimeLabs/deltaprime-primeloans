@@ -17,7 +17,7 @@ contract PrimeVesting is Ownable {
     struct VestingInfo {
         uint32 cliffPeriod;
         uint32 vestingPeriod;
-        address onBehalfOf;
+        address grantClaimRightTo;
         uint256 totalAmount;
     }
 
@@ -56,7 +56,7 @@ contract PrimeVesting is Ownable {
 
     event Claimed(
         address indexed user,
-        address indexed onBehalfOf,
+        address indexed grantClaimRightTo,
         uint256 indexed amount,
         uint256 timestamp
     );
@@ -109,10 +109,10 @@ contract PrimeVesting is Ownable {
 
     /// Internal functions
 
-    function _claimFor(address user, address onBehalfOf, uint256 amount) internal {
+    function _claimFor(address user, address grantClaimRightTo, uint256 amount) internal {
         UserInfo storage userInfo = userInfos[user];
 
-        if (user != onBehalfOf && userInfo.info.onBehalfOf != onBehalfOf) {
+        if (user != grantClaimRightTo && userInfo.info.grantClaimRightTo != grantClaimRightTo) {
             revert Unauthorized();
         }
 
@@ -129,7 +129,7 @@ contract PrimeVesting is Ownable {
 
         primeToken.safeTransfer(user, amount);
 
-        emit Claimed(user, onBehalfOf, amount, block.timestamp);
+        emit Claimed(user, grantClaimRightTo, amount, block.timestamp);
     }
 
     function _claimable(address user) internal view returns (uint256) {

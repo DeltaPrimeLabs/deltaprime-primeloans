@@ -49,19 +49,19 @@ describe("Prime Vesting", () => {
                     {
                         cliffPeriod: time.duration.days(10),
                         vestingPeriod: time.duration.days(10),
-                        onBehalfOf: ZERO,
+                        grantClaimRightTo: ZERO,
                         totalAmount: toWei("1000"),
                     },
                     {
                         cliffPeriod: time.duration.days(10),
                         vestingPeriod: time.duration.days(20),
-                        onBehalfOf: ZERO,
+                        grantClaimRightTo: ZERO,
                         totalAmount: toWei("1500"),
                     },
                     {
                         cliffPeriod: time.duration.days(15),
                         vestingPeriod: time.duration.days(10),
-                        onBehalfOf: user1.address,
+                        grantClaimRightTo: user1.address,
                         totalAmount: toWei("2000"),
                     }
                 ]
