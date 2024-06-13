@@ -18,9 +18,7 @@
     "bluebird": "^3.7.2",
     "node-fetch": "^2.7.0",
     "puppeteer": "^22.7.0",
-    "puppeteer-core": "^22.7.0",
     "puppeteer-extra": "^3.3.6",
-    "puppeteer-extra-plugin-adblocker": "^2.13.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2"
   },
   "private": true,
