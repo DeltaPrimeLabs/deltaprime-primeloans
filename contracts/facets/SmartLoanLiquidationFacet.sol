@@ -213,8 +213,6 @@ contract SmartLoanLiquidationFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
                 payable(DeploymentConstants.getTreasuryAddress()).safeTransferETH(transferAmount);
                 emit LiquidationFeesTransfer(DeploymentConstants.getTreasuryAddress(), DeploymentConstants.getNativeTokenSymbol(), transferAmount, block.timestamp);
-
-                _decreaseExposure(tokenManager, DeploymentConstants.getNativeToken(), transferAmount*2);
             }
 
             for (uint256 i; i < assetsOwned.length; i++) {
