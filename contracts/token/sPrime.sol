@@ -415,6 +415,12 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, PendingOwnableUpgradeabl
         _transferTokens(_msgSender(), address(this), amountX, amountY);
 
         _deposit(_msgSender(), activeIdDesired, idSlippage, amountX, amountY, isRebalance, swapSlippage);
+
+        proxyCalldata(
+            vPrimeController,
+            abi.encodeWithSignature("updateVPrimeSnapshot(address)", _msgSender()),
+            false
+        );
     }
 
     function _deposit(address user, uint256 activeIdDesired, uint256 idSlippage, uint256 amountX, uint256 amountY, bool isRebalance, uint256 swapSlippage) internal {
@@ -444,11 +450,6 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, PendingOwnableUpgradeabl
 
         _transferTokens(address(this), address(lbPair), amountX, amountY);
         _depositToLB(user, activeId);
-        proxyCalldata(
-            vPrimeController,
-            abi.encodeWithSignature("updateVPrimeSnapshot(address)", user),
-            false
-        );
     }
 
     /**
@@ -466,7 +467,7 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, PendingOwnableUpgradeabl
         require(percentForLocks.length == lockPeriods.length, "Length dismatch");
 
         _transferTokens(_msgSender(), address(this), amountX, amountY);
-        _deposit(user, activeId, 0, amountX, amountY, false, 0);
+        _deposit(user, activeId, 0, amountX, amountY, false, _MAX_SLIPPAGE);
         
         uint256 totalLock;
         for(uint8 i = 0 ; i < lockPeriods.length ; i ++) {
@@ -510,6 +511,12 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, PendingOwnableUpgradeabl
         lbPair.burn(address(this), address(this), ids, amounts);
 
         _deposit(_msgSender(), activeIdDesired, idSlippage, tokenX.balanceOf(address(this)) - balanceXBefore, tokenY.balanceOf(address(this)) - balanceYBefore, true, swapSlippage);
+
+        proxyCalldata(
+            vPrimeController,
+            abi.encodeWithSignature("updateVPrimeSnapshot(address)", _msgSender()),
+            false
+        );
     }
 
     /**

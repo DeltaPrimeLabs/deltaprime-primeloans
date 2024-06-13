@@ -208,11 +208,11 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
             if (swapTokenX) {
                 tokenIn = address(tokenX);
                 tokenOut = address(tokenY);
-                tokenX.safeApprove(swapRouter, amountIn);
+                tokenX.forceApprove(swapRouter, amountIn);
             } else {
                 tokenIn = address(tokenY);
                 tokenOut = address(tokenX);
-                tokenY.safeApprove(swapRouter, amountIn);
+                tokenY.forceApprove(swapRouter, amountIn);
             }
 
             amountOut = ISwapRouter(swapRouter).exactInputSingle(
@@ -239,8 +239,8 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
         uint256 amountXAdded;
         uint256 amountYAdded;
         address positionManager = getNonfungiblePositionManagerAddress();
-        tokenX.approve(positionManager, amountX);
-        tokenY.approve(positionManager, amountY);
+        tokenX.forceApprove(positionManager, amountX);
+        tokenY.forceApprove(positionManager, amountY);
 
         if(tokenId == 0) {
             (tokenId,,amountXAdded, amountYAdded) = INonfungiblePositionManager(positionManager).mint(INonfungiblePositionManager.MintParams({
@@ -300,9 +300,14 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
     * @param swapSlippage Slippage for the rebalance.
     */
     function deposit(int24 tickDesired, int24 tickSlippage, uint256 amountX, uint256 amountY, bool isRebalance, uint256 swapSlippage) public {
+        _transferTokens(_msgSender(), address(this), amountX, amountY);
+
+        _deposit(tickDesired, tickSlippage, amountX, amountY, isRebalance, swapSlippage);
+    }
+
+    function _deposit(int24 tickDesired, int24 tickSlippage, uint256 amountX, uint256 amountY, bool isRebalance, uint256 swapSlippage) internal {
         require(swapSlippage <= _MAX_SLIPPAGE, "Slippage too high");
 
-        _transferTokens(_msgSender(), address(this), amountX, amountY);
         int24 currenTick;
         int24 tickLower;
         int24 tickUpper;
@@ -350,6 +355,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
             tickUpper = currenTick + _TICK_RANGE * deltaIds[1];
         }
         _depositToUniswap(_msgSender(), tickLower, tickUpper, amountX, amountY);
+
         proxyCalldata(
             vPrimeController,
             abi.encodeWithSignature("updateVPrimeSnapshot(address)", _msgSender()),
@@ -404,6 +410,88 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
             abi.encodeWithSignature("updateVPrimeSnapshot(address)", _msgSender()),
             false
         );
+    }
+
+    /**
+    * @dev Users can use deposit function for depositing tokens to the specific bin.
+    * @param user The active id that user wants to add liquidity from
+    * @param percentForLocks sPrime amount % to lock
+    * @param lockPeriods Lock period to Lock for each amount
+    * @param amountX The amount of token X to deposit.
+    * @param amountY The amount of token Y to deposit.
+    */
+    function mintForUserAndLock(address user, uint256[] calldata percentForLocks, uint256[] calldata lockPeriods, uint256 amountX, uint256 amountY) public {
+        
+        _transferTokens(_msgSender(), address(this), amountX, amountY);
+
+        require(balanceOf(user) == 0, "User already has position");
+        require(percentForLocks.length == lockPeriods.length, "Length dismatch");
+
+        (amountX, amountY) = _swapForEqualValues(amountX, amountY, _MAX_SLIPPAGE);
+
+        (, int24 currenTick,,,,,) = pool.slot0();
+        int24 tickLower = currenTick -  _TICK_RANGE * deltaIds[0];
+        int24 tickUpper = currenTick + _TICK_RANGE * deltaIds[1];
+        _depositToUniswap(_msgSender(), tickLower, tickUpper, amountX, amountY);
+        
+        uint256 totalLock;
+        for(uint8 i = 0 ; i < lockPeriods.length ; i ++) {
+            totalLock += percentForLocks[i];
+        }
+        require(totalLock == 100, "Should lock all");
+
+        uint256 balance = balanceOf(user);
+        totalLock = 0;
+        for(uint8 i = 0 ; i < lockPeriods.length ; i ++) {
+            require(lockPeriods[i] <= MAX_LOCK_TIME, "Cannot lock for more than 3 years");
+            // Should minus from total balance to avoid the round issue
+            uint256 amount = i == lockPeriods.length - 1 ? balance - totalLock : balance * percentForLocks[i] / 100;
+            locks[user].push(LockDetails({
+                lockPeriod: lockPeriods[i],
+                amount: amount,
+                unlockTime: block.timestamp + lockPeriods[i]
+            }));
+            totalLock += amount;
+        }
+
+        proxyCalldata(
+            vPrimeController,
+            abi.encodeWithSignature("updateVPrimeSnapshot(address)", user),
+            false
+        );
+    }
+
+    /**
+    * @dev Users can use deposit function for depositing tokens to the specific bin.
+    * @param tokenId Token ID from UniswapPositionManager
+    * @param liquidity Liquidity amount for position
+    * @param tickDesired The tick that user wants to add liquidity from
+    * @param tickSlippage The tick slippage that are allowed to slip
+    * @param swapSlippage Slippage for the rebalance.
+    */
+    function migrateLiquidity(uint256 tokenId, uint128 liquidity, int24 tickDesired, int24 tickSlippage, uint256 swapSlippage) public {
+        address positionManager = getNonfungiblePositionManagerAddress();
+        INonfungiblePositionManager(positionManager).decreaseLiquidity(
+            INonfungiblePositionManager.DecreaseLiquidityParams({
+                tokenId: tokenId, 
+                liquidity: liquidity,
+                amount0Min:0, 
+                amount1Min:0, 
+                deadline: block.timestamp
+            })
+        );
+
+        (uint256 amountX, uint256 amountY) = INonfungiblePositionManager(positionManager).collect(
+            INonfungiblePositionManager.CollectParams({
+                tokenId: tokenId,
+                recipient: address(this),
+                amount0Max:type(uint128).max, 
+                amount1Max:type(uint128).max
+            })
+        );
+
+        INonfungiblePositionManager(positionManager).burn(tokenId);
+        _deposit(tickDesired, tickSlippage, amountX, amountY, true, swapSlippage);
     }
 
     /**
