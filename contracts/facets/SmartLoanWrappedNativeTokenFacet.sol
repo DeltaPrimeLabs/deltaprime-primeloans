@@ -34,7 +34,7 @@ contract SmartLoanWrappedNativeTokenFacet is OnlyOwnerOrInsolvent {
         }
 
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        tokenManager.increaseProtocolExposure(DeploymentConstants.getNativeTokenSymbol(), msg.value);
+        _increaseExposure(tokenManager, address(wrapped), msg.value);
 
         emit DepositNative(msg.sender, msg.value, block.timestamp);
     }
@@ -51,7 +51,7 @@ contract SmartLoanWrappedNativeTokenFacet is OnlyOwnerOrInsolvent {
         }
 
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        tokenManager.decreaseProtocolExposure(DeploymentConstants.getNativeTokenSymbol(), _amount);
+        _decreaseExposure(tokenManager, address(wrapped), _amount);
 
         payable(msg.sender).safeTransferETH(_amount);
 
