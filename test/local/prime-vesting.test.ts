@@ -101,13 +101,13 @@ describe("Prime Vesting", () => {
         const beforeBalance1 = await mockToken.balanceOf(user1.address);
         const beforeBalance2 = await mockToken.balanceOf(user2.address);
 
-        await vesting.connect(user1).claim(toWei("9999"));
+        await vesting.connect(user1).claim(claimable1.div(2));
         await vesting.connect(user2).claim(toWei("9999"));
 
         const afterBalance1 = await mockToken.balanceOf(user1.address);
         const afterBalance2 = await mockToken.balanceOf(user2.address);
 
-        expect(fromWei(afterBalance1) - fromWei(beforeBalance1)).to.be.closeTo(fromWei(claimable1), 0.1);
+        expect(fromWei(afterBalance1) - fromWei(beforeBalance1)).to.be.closeTo(fromWei(claimable1.div(2)), 0.1);
         expect(fromWei(afterBalance2) - fromWei(beforeBalance2)).to.be.closeTo(fromWei(claimable2), 0.1);
     });
 
