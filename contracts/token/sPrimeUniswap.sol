@@ -212,7 +212,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
             } else {
                 tokenIn = address(tokenY);
                 tokenOut = address(tokenX);
-                tokenX.safeApprove(swapRouter, amountIn);
+                tokenY.safeApprove(swapRouter, amountIn);
             }
 
             amountOut = ISwapRouter(swapRouter).exactInputSingle(
@@ -314,13 +314,22 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
             (,,,,, tickLower, tickUpper, liquidity,,,,) = INonfungiblePositionManager(positionManager).positions(tokenId);
 
             if(isRebalance) { // Withdraw Position For Rebalance
-                (uint256 amountXBefore, uint256 amountYBefore) = INonfungiblePositionManager(positionManager).decreaseLiquidity(
+                INonfungiblePositionManager(positionManager).decreaseLiquidity(
                     INonfungiblePositionManager.DecreaseLiquidityParams({
                         tokenId: tokenId, 
                         liquidity: liquidity,
                         amount0Min:0, 
                         amount1Min:0, 
                         deadline: block.timestamp
+                    })
+                );
+
+                (uint256 amountXBefore, uint256 amountYBefore) = INonfungiblePositionManager(positionManager).collect(
+                    INonfungiblePositionManager.CollectParams({
+                        tokenId: tokenId,
+                        recipient: address(this),
+                        amount0Max:type(uint128).max, 
+                        amount1Max:type(uint128).max
                     })
                 );
 
@@ -362,7 +371,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
         uint256 lockedBalance = getLockedBalance(_msgSender());
         require(balanceOf(_msgSender()) >= share + lockedBalance, "Balance is locked");
 
-        (uint256 amountX, uint256 amountY) = INonfungiblePositionManager(positionManager).decreaseLiquidity(
+        INonfungiblePositionManager(positionManager).decreaseLiquidity(
             INonfungiblePositionManager.DecreaseLiquidityParams({
                 tokenId: tokenId, 
                 liquidity: uint128(liquidity * share / balanceOf(_msgSender())),
@@ -372,15 +381,23 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
             })
         );
 
+        // Directly send tokens to the user
+        INonfungiblePositionManager(positionManager).collect(
+            INonfungiblePositionManager.CollectParams({
+                tokenId: tokenId,
+                recipient: _msgSender(),
+                amount0Max:type(uint128).max, 
+                amount1Max:type(uint128).max
+            })
+        );
+
         // Burn Position NFT
         if(balanceOf(_msgSender()) == share) {
             INonfungiblePositionManager(positionManager).burn(tokenId);
+            delete userTokenId[_msgSender()];
         }
 
         _burn(_msgSender(), share);
-
-        // Send the tokens to the user.
-        _transferTokens(address(this), _msgSender(), amountX, amountY);
 
         proxyCalldata(
             vPrimeController,
@@ -450,13 +467,22 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
                 address positionManager = getNonfungiblePositionManagerAddress();
                 (,,,,,int24 tickLower,int24 tickUpper,uint128 liquidity,,,,) = INonfungiblePositionManager(positionManager).positions(tokenId);
 
-                (uint256 amountX, uint256 amountY) = INonfungiblePositionManager(positionManager).decreaseLiquidity(
+                INonfungiblePositionManager(positionManager).decreaseLiquidity(
                     INonfungiblePositionManager.DecreaseLiquidityParams({
                         tokenId: tokenId, 
                         liquidity: uint128(liquidity * amount / balanceOf(from)),
                         amount0Min:0, 
                         amount1Min:0, 
                         deadline: block.timestamp
+                    })
+                );
+
+                (uint256 amountX, uint256 amountY) = INonfungiblePositionManager(positionManager).collect(
+                    INonfungiblePositionManager.CollectParams({
+                        tokenId: tokenId,
+                        recipient: address(this),
+                        amount0Max:type(uint128).max, 
+                        amount1Max:type(uint128).max
                     })
                 );
 
