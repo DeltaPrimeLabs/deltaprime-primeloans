@@ -499,9 +499,13 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
         wrapped.withdraw(amount);
 
-        IWombatRouter(WOMBAT_ROUTER).addLiquidityNative{
-            value: amount
-        }(pool, minLpOut, address(this), block.timestamp, true);
+        IWombatRouter(WOMBAT_ROUTER).addLiquidityNative{value: amount}(
+            pool,
+            minLpOut,
+            address(this),
+            block.timestamp,
+            true
+        );
 
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         _decreaseExposure(tokenManager, address(wrapped), amount);
@@ -550,14 +554,15 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
                 block.timestamp
             );
         } else {
-            amountOut = IWombatRouter(WOMBAT_ROUTER).removeLiquidityFromOtherAssetAsNative(
-                pool,
-                address(fromToken),
-                amount,
-                minOut,
-                address(this),
-                block.timestamp
-            );
+            amountOut = IWombatRouter(WOMBAT_ROUTER)
+                .removeLiquidityFromOtherAssetAsNative(
+                    pool,
+                    address(fromToken),
+                    amount,
+                    minOut,
+                    address(this),
+                    block.timestamp
+                );
         }
 
         wrapped.deposit{value: amountOut}();
@@ -643,26 +648,48 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         address boostedRewarder = IWombatMaster(WOMBAT_MASTER).boostedRewarders(
             pid
         );
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         address owner = DiamondStorageLib.contractOwner();
-        address(WOM_TOKEN).safeTransfer(owner, reward);
+
+        if (reward > 0 && tokenManager.isTokenAssetActive(WOM_TOKEN)) {
+            _increaseExposure(tokenManager, WOM_TOKEN, reward);
+        } else if (reward > 0) {
+            WOM_TOKEN.safeTransfer(owner, reward);
+        }
+
         uint256 baseIdx;
         if (rewarder != address(0)) {
             address[] memory rewardTokens = IRewarder(rewarder).rewardTokens();
             baseIdx = rewardTokens.length;
             for (uint256 i; i != baseIdx; ++i) {
-                if (additionalRewards[i] > 0) {
-                    address(rewardTokens[i]).safeTransfer(owner, additionalRewards[i]);
+                address rewardToken = rewardTokens[i];
+                uint256 pendingReward = additionalRewards[i];
+
+                if (pendingReward == 0) {
+                    continue;
+                }
+
+                if (tokenManager.isTokenAssetActive(rewardToken)) {
+                    _increaseExposure(tokenManager, rewardToken, pendingReward);
+                } else {
+                    rewardToken.safeTransfer(owner, pendingReward);
                 }
             }
         }
         if (boostedRewarder != address(0)) {
             address[] memory rewardTokens = IRewarder(boostedRewarder).rewardTokens();
             for (uint256 i; i != rewardTokens.length; ++i) {
-                if (additionalRewards[baseIdx + i] > 0) {
-                    address(rewardTokens[i]).safeTransfer(
-                        owner,
-                        additionalRewards[baseIdx + i]
-                    );
+                address rewardToken = rewardTokens[i];
+                uint256 pendingReward = additionalRewards[baseIdx + i];
+
+                if (pendingReward == 0) {
+                    continue;
+                }
+
+                if (tokenManager.isTokenAssetActive(rewardToken)) {
+                    _increaseExposure(tokenManager, rewardToken, pendingReward);
+                } else {
+                    rewardToken.safeTransfer(owner, pendingReward);
                 }
             }
         }
