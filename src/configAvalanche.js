@@ -149,6 +149,7 @@ export default {
           short: 'Wombat LP',
           decimals: 18,
           apyKey: 'WOM_sAVAX_sAVAX',
+          aprWarning: 'Wombat APRs are currently overvalued. This will be resolved soon'
         },
         {
           name: 'AVAX',
@@ -164,6 +165,7 @@ export default {
           short: 'Wombat LP',
           decimals: 18,
           apyKey: 'WOM_sAVAX_AVAX',
+          aprWarning: 'Wombat APRs are currently overvalued. This will be resolved soon'
         },
       ],
       'ggAVAX-AVAX': [
@@ -181,6 +183,7 @@ export default {
           short: 'Wombat LP',
           decimals: 18,
           apyKey: 'WOM_ggAVAX_ggAVAX',
+          aprWarning: 'Wombat APRs are currently overvalued. This will be resolved soon'
         },
         {
           name: 'AVAX',
@@ -196,6 +199,7 @@ export default {
           short: 'Wombat LP',
           decimals: 18,
           apyKey: 'WOM_ggAVAX_AVAX',
+          aprWarning: 'Wombat APRs are currently overvalued. This will be resolved soon'
         },
       ],
     },
