@@ -27,6 +27,9 @@
     "node-fetch": "^2.7.0",
     "puppeteer": "^22.6.4",
     "puppeteer-core": "^22.6.4",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-adblocker": "^2.13.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
     "redstone-api": "^0.4.11"
   },
   "private": true,

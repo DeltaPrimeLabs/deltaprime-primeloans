@@ -25,7 +25,6 @@ const wombatApyAggregator = async (event) => {
     await new Promise((resolve, reject) => setTimeout(resolve, 10000));
 
     const poolRows = await page.$$("#pool-list > div.flex-col > div.flex-col > div.flex-col > div");
-    await page.screenshot({ path: 'fullpage.png', fullPage: true });
 
     for (const [identifier, index] of Object.entries(pools)) {
       try {

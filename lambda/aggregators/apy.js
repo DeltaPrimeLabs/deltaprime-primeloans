@@ -683,21 +683,23 @@ const fetchAssetApy = async () => {
   console.log("yyAVAX APR: ", yyAvaxApr);
 
   // fetch staking APR of ggAVAX
-  const { page } = await newChrome();
-  const GGP_URL = "https://multisiglabs.grafana.net/public-dashboards/4d21b06344684b8ab05ddd2828898ec8?orgId=1";
+  // const { page } = await newChrome();
+  // const GGP_URL = "https://multisiglabs.grafana.net/public-dashboards/4d21b06344684b8ab05ddd2828898ec8?orgId=1";
 
-  await page.setViewport({
-    width: 1920,
-    height: 1080
-  });
+  // await page.setViewport({
+  //   width: 1920,
+  //   height: 1080
+  // });
 
-  await page.goto(GGP_URL, {
-    waitUntil: "networkidle0",
-    timeout: 60000
-  });
+  // await page.goto(GGP_URL, {
+  //   waitUntil: "networkidle0",
+  //   timeout: 60000
+  // });
 
-  const panels = await page.$$(".react-grid-layout > .react-grid-item");
-  const ggAvaxApr = parseFloat((await (await panels[2].getProperty("textContent")).jsonValue()).split('APR')[1].split('%')[0].trim());
+  // const panels = await page.$$(".react-grid-layout > .react-grid-item");
+  // const ggAvaxApr = parseFloat((await (await panels[2].getProperty("textContent")).jsonValue()).split('APR')[1].split('%')[0].trim());
+  const ggpApiRes = await (await fetch('https://api.gogopool.com/metrics/apy')).json();
+  const ggAvaxApr = ggpApiRes.total_apy;
   console.log("ggAVAX APR: ", ggAvaxApr);
 
   // CAI API
