@@ -58,7 +58,7 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     ) external onlyOwner nonReentrant remainsSolvent {
         require(minLpOut > 0, "Invalid minLpOut");
 
-        address lpToken = _getPendleLpToken(market);
+        address lpToken = _getPenpieLpToken(market);
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         IERC20 token = IERC20(tokenManager.getAssetAddress(asset, false));
 
