@@ -33,12 +33,24 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
     address public constant PENDLE_EZ_ETH_MARKET =
         0x5E03C94Fc5Fb2E21882000A96Df0b63d2c4312e2;
+    address public constant PENDLE_EZ_ETH_26_09_24 =
+    0x35f3db08a6e9cb4391348b0b404f493e7ae264c0;
+
     address public constant PENDLE_WST_ETH_MARKET =
         0xFd8AeE8FCC10aac1897F8D5271d112810C79e022;
+    address public constant PENDLE_WSTETH_26_06_25 =
+    0x08a152834de126d2ef83d612ff36e4523fd0017f;
+
     address public constant PENDLE_E_ETH_MARKET =
         0x952083cde7aaa11AB8449057F7de23A970AA8472;
+    address public constant PENDLE_E_ETH_26_09_24 =
+    0xf9f9779d8ff604732eba9ad345e6a27ef5c2a9d6;
+
     address public constant PENDLE_RS_ETH_MARKET =
         0x6Ae79089b2CF4be441480801bb741A531d94312b;
+    address public constant PENDLE_RS_ETH_26_09_24 =
+    0xed99fc8bdb8e9e7b8240f62f69609a125a0fbf14;
+
     address public constant PENDLE_WST_ETH_SILO_MARKET =
         0xACcd9A7cb5518326BeD715f90bD32CDf2fEc2D14;
 
@@ -253,18 +265,34 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         if (market == PENDLE_EZ_ETH_MARKET) {
             return 0xecCDC2C2191d5148905229c5226375124934b63b;
         }
+        if (market == PENDLE_EZ_ETH_26_09_24) {
+            return 0xB3f215aFD47Dd29f4B82D9b480BB86FeAF543e67;
+        }
+
         // wstETH
         if (market == PENDLE_WST_ETH_MARKET) {
             return 0xdb0e1D1872202A81Eb0cb655137f4a937873E02f;
         }
+        if (market == PENDLE_WSTETH_26_06_25) {
+            return 0x4d2Faa48Ef93Cc3c8A7Ec27F3Cb91cEB1a36F89B;
+        }
+
         // eETH
         if (market == PENDLE_E_ETH_MARKET) {
             return 0x264f4138161aaE16b76dEc7D4eEb756f25Fa67Cd;
         }
+        if (market == PENDLE_E_ETH_26_09_24) {
+            return 0xa7D760926F3098E9fb5A93018155578fCDad75C0;
+        }
+
         // rsETH
         if (market == PENDLE_RS_ETH_MARKET) {
             return 0xe3B327c43b5002eb7280Eef52823698b6cDA06cF;
         }
+        if (market == PENDLE_RS_ETH_26_09_24) {
+            return 0x9e411b97437Af296D6c4b482893c63Ffd8DfBE6D;
+        }
+
         // wstETHSilo
         if (market == PENDLE_WST_ETH_SILO_MARKET) {
             return 0xCcCC7c80c9Be9fDf22e322A5fdbfD2ef6ac5D574;
