@@ -299,7 +299,6 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         nonReentrant
         remainsSolvent
     {
-        uint256[] memory pids = new uint256[](4);
         bytes32[4] memory lpAssets = [
             WOMBAT_ggAVAX_AVAX_LP_AVAX,
             WOMBAT_ggAVAX_AVAX_LP_ggAVAX,
@@ -308,16 +307,11 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         ];
         for (uint256 i; i != 4; ++i) {
             IERC20Metadata lpToken = getERC20TokenInstance(lpAssets[i], false);
-            pids[i] = IWombatMaster(WOMBAT_MASTER).getAssetPid(address(lpToken));
-        }
-        (
-            ,
-            uint256[] memory amounts,
-            uint256[][] memory additionalRewards
-        ) = IWombatMaster(WOMBAT_MASTER).multiClaim(pids);
-
-        for (uint256 i; i != 4; ++i) {
-            handleRewards(pids[i], amounts[i], additionalRewards[i]);
+            uint256 pid = IWombatMaster(WOMBAT_MASTER).getAssetPid(address(lpToken));
+            (uint256 reward, uint256[] memory additionalRewards) = IWombatMaster(
+                WOMBAT_MASTER
+            ).withdraw(pid, 0);
+            handleRewards(pid, reward, additionalRewards);
         }
     }
 
