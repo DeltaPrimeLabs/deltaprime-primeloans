@@ -1,5 +1,6 @@
 <template>
-  <div v-if="provider" class="wombat-lp-table-row-component" v-bind:class="{'wombat-lp-table-row-component--last': last}">
+  <div v-if="provider" class="wombat-lp-table-row-component"
+       v-bind:class="{'wombat-lp-table-row-component--last': last}">
     <div class="table__row" v-if="lpToken">
       <div class="table__cell asset">
         <img class="asset__icon" :src="getAssetIcon(lpToken.name)">
@@ -19,7 +20,9 @@
             {{ wombatLpBalances[lpToken.symbol] | smartRound }}
           </div>
           <div class="double-value__usd">
-            <span v-if="wombatLpBalances">{{ wombatLpBalances[lpToken.symbol] * wombatLpAssets[lpToken.symbol].price | usd }}</span>
+            <span v-if="wombatLpBalances">{{
+                wombatLpBalances[lpToken.symbol] * wombatLpAssets[lpToken.symbol].price | usd
+              }}</span>
           </div>
         </template>
         <template v-else>
@@ -31,10 +34,14 @@
         <template
             v-if="wombatLpBalances">
           <div class="double-value__pieces">
-            {{ wombatLpBalances[lpToken.symbol] * wombatLpAssets[lpToken.symbol].price / assets[lpToken.asset].price | smartRound }}
+            {{
+              wombatLpBalances[lpToken.symbol] * wombatLpAssets[lpToken.symbol].price / assets[lpToken.asset].price | smartRound
+            }}
           </div>
           <div class="double-value__usd">
-            <span v-if="wombatLpBalances">{{ wombatLpBalances[lpToken.symbol] * wombatLpAssets[lpToken.symbol].price | usd }}</span>
+            <span v-if="wombatLpBalances">{{
+                wombatLpBalances[lpToken.symbol] * wombatLpAssets[lpToken.symbol].price | usd
+              }}</span>
           </div>
         </template>
         <template v-else>
@@ -45,10 +52,27 @@
       <div class="table__cell table__cell--double-value">
         <template>
           <div class="table__cell rewards">
-            <template v-if="wombatLpAssets && wombatLpAssets[lpToken.symbol].rewards && wombatLpAssets[lpToken.symbol].rewards.length > 0">
+            <template
+                v-if="wombatLpAssets && wombatLpAssets[lpToken.symbol].rewards && wombatLpAssets[lpToken.symbol].rewards.length > 0">
               <span v-for="reward in wombatLpAssets[lpToken.symbol].rewards">
                 <img class="asset__icon" :src="getIcon(reward.asset, rewardsTokens[reward.asset].logoExt)">
                 <span>{{ formatTokenBalanceWithLessThan(reward.amountFormatted, 4, true) }}</span>
+              </span>
+            </template>
+            <div v-else class="no-value-dash"></div>
+            <vue-loaders-ball-beat v-else color="#A6A3FF" scale="0.5"></vue-loaders-ball-beat>
+          </div>
+        </template>
+      </div>
+
+      <div class="table__cell table__cell--double-value">
+        <template>
+          <div class="table__cell ggp-collected">
+            <template
+                v-if="collectedGGP !== null && lpToken.showGGPCollected">
+              <span>
+                <img class="asset__icon" :src="getIcon('GGP', rewardsTokens['GGP'].logoExt)">
+                <span>{{ formatTokenBalanceWithLessThan(collectedGGP, 4, true) }}</span>
               </span>
             </template>
             <div v-else class="no-value-dash"></div>
@@ -61,9 +85,9 @@
         {{ formatTvl(apys[lpToken.apyKey].lp_tvl) }}
       </div>
 
-<!--      <div class="table__cell capacity" v-if="wombatLpAssets">-->
-<!--        <bar-gauge-beta v-if="wombatLpAssets[lpToken.symbol].maxExposure" :min="0" :max="wombatLpAssets[lpToken.symbol].maxExposure" :value="Math.max(wombatLpAssets[lpToken.symbol].currentExposure, 0.001)" v-tooltip="{content: `${wombatLpAssets[lpToken.symbol].currentExposure ? wombatLpAssets[lpToken.symbol].currentExposure.toFixed(2) : 0} ($${wombatLpAssets[lpToken.symbol].currentExposure ? (wombatLpAssets[lpToken.symbol].currentExposure * wombatLpAssets[lpToken.symbol].price).toFixed(2) : 0}) out of ${wombatLpAssets[lpToken.symbol].maxExposure} ($${wombatLpAssets[lpToken.symbol].maxExposure ? (wombatLpAssets[lpToken.symbol].maxExposure * wombatLpAssets[lpToken.symbol].price).toFixed(2) : 0}) is currently used.`, classes: 'info-tooltip'}" :width="80"></bar-gauge-beta>-->
-<!--      </div>-->
+      <!--      <div class="table__cell capacity" v-if="wombatLpAssets">-->
+      <!--        <bar-gauge-beta v-if="wombatLpAssets[lpToken.symbol].maxExposure" :min="0" :max="wombatLpAssets[lpToken.symbol].maxExposure" :value="Math.max(wombatLpAssets[lpToken.symbol].currentExposure, 0.001)" v-tooltip="{content: `${wombatLpAssets[lpToken.symbol].currentExposure ? wombatLpAssets[lpToken.symbol].currentExposure.toFixed(2) : 0} ($${wombatLpAssets[lpToken.symbol].currentExposure ? (wombatLpAssets[lpToken.symbol].currentExposure * wombatLpAssets[lpToken.symbol].price).toFixed(2) : 0}) out of ${wombatLpAssets[lpToken.symbol].maxExposure} ($${wombatLpAssets[lpToken.symbol].maxExposure ? (wombatLpAssets[lpToken.symbol].maxExposure * wombatLpAssets[lpToken.symbol].price).toFixed(2) : 0}) is currently used.`, classes: 'info-tooltip'}" :width="80"></bar-gauge-beta>-->
+      <!--      </div>-->
 
       <div class="table__cell table__cell--double-value apr" v-bind:class="{'apr--with-warning': lpToken.aprWarning}">
         {{ apr / 100 | percent }}
@@ -74,7 +98,9 @@
       </div>
 
       <div class="table__cell table__cell--double-value max-apr">
-        {{ maxApr() | percent }}
+        <span>{{ (maxApr + boostApy) | percent }}<img v-if="boostApy"
+                                                      v-tooltip="{content: `This pool is incentivized!<br>⁃ up to ${maxApr ? (maxApr * 100).toFixed(2) : 0}% Pool APR<br>⁃ up to ${boostApy ? (boostApy * 100).toFixed(2) : 0}% GGP incentives`, classes: 'info-tooltip'}"
+                                                      src="src/assets/icons/stars.png" class="stars-icon"></span>
       </div>
 
       <div class="table__cell"></div>
@@ -150,6 +176,8 @@ export default {
       rewards: null,
       rewardsTokens: {...config.ASSETS_CONFIG, ...config.WOMBAT_REWARDS_TOKENS},
       contract: null,
+      collectedGGP: null,
+      boostApy: null,
     }
   },
   computed: {
@@ -188,7 +216,11 @@ export default {
       'lpService',
       'healthService',
       'providerService',
+      'ggpIncentivesService',
     ]),
+    maxApr() {
+      return calculateMaxApy(this.pools, this.apr / 100);
+    },
   },
 
   async mounted() {
@@ -205,6 +237,7 @@ export default {
       this.watchRefreshLP();
       this.watchAssetBalancesDataRefresh();
       this.createContractObject();
+      this.watchGgpIncentives();
     })
   },
 
@@ -216,6 +249,7 @@ export default {
       'unwindWombatLpToLrt',
       'depositWombatLPAndStake',
       'unstakeAndExportWombatLp',
+      'claimWombatRewards',
     ]),
 
     setupAddActionsConfiguration() {
@@ -288,18 +322,18 @@ export default {
           case 'ADD_FROM_WALLET':
             this.openAddFromWalletModal();
             break;
-          // case 'IMPORT_AND_STAKE':
-          //   this.openImportAndStakeModal();
-          //   break;
+            // case 'IMPORT_AND_STAKE':
+            //   this.openImportAndStakeModal();
+            //   break;
           case 'CREATE_LP':
             this.openStakeModal();
             break;
           case 'EXPORT_LP':
             this.openWithdrawModal();
             break;
-          // case 'UNSTAKE_AND_EXPORT':
-          //   this.openUnstakeAndExportModal();
-          //   break;
+            // case 'UNSTAKE_AND_EXPORT':
+            //   this.openUnstakeAndExportModal();
+            //   break;
           case 'UNWIND':
             this.openUnwindModal();
             break;
@@ -541,24 +575,26 @@ export default {
 
     openClaimRewardsModal() {
       const modalInstance = this.openModal(ClaimRewardsModal);
-      modalInstance.totalRewards = this.wombatLpAssets[this.lpToken.symbol].rewards.map(reward => ({
-        symbol: reward.asset,
-        amount: reward.amountFormatted,
-      }))
-      modalInstance.header = 'Claim Penpie rewards'
+      modalInstance.totalRewards = Object.values(this.wombatLpAssets).map(asset => asset.rewards).reduce((totalRewards, rewards) => {
+        rewards.forEach(asset => {
+          const foundIndex = totalRewards.findIndex(reward => reward.symbol === asset.asset)
+          if (foundIndex < 0) {
+            totalRewards.push({
+              symbol: asset.asset,
+              amount: asset.amountFormatted,
+            })
+          } else {
+            totalRewards[foundIndex].amount += asset.amountFormatted
+          }
+        })
+        return totalRewards
+      }, [])
+      modalInstance.header = 'Claim Wombat rewards'
       modalInstance.tokensConfig = {...config.WOMBAT_REWARDS_TOKENS, ...config.ASSETS_CONFIG}
 
       modalInstance.$on('CLAIM', () => {
         if (this.smartLoanContract) {
-          const value = Number(0).toFixed(config.DECIMALS_PRECISION);
-          const unstakeRequest = {
-            asset: this.lpToken.symbol,
-            value: value,
-            assetDecimals: this.lpToken.decimals,
-            unstakeAndWithdrawMethod: this.lpToken.unstakeAndWithdrawMethod,
-            type: 'WOMBAT_LP',
-          };
-          this.handleTransaction(this.unstakeAndExportWombatLp, {unstakeRequest: unstakeRequest}, () => {
+          this.handleTransaction(this.claimWombatRewards, () => {
             this.$forceUpdate();
           }, (error) => {
             this.handleTransactionError(error);
@@ -580,10 +616,6 @@ export default {
     async getWalletPendleLpBalance() {
       const tokenContract = new ethers.Contract(this.lpToken.stakingContractAddress ? this.lpToken.stakingContractAddress : this.lpToken.address, erc20ABI, this.provider.getSigner());
       return await this.getWalletTokenBalance(this.account, this.lpToken.symbol, tokenContract, this.lpToken.decimals);
-    },
-
-    maxApr() {
-      return calculateMaxApy(this.pools, this.apr / 100);
     },
 
     async setupApr() {
@@ -682,6 +714,11 @@ export default {
 
     async createContractObject() {
       this.contract = await new ethers.Contract(this.lpToken.poolAddress, ABI_WOMBAT_DYNAMIC_POOL_V2, provider.getSigner());
+    },
+
+    watchGgpIncentives() {
+      this.ggpIncentivesService.collectedGGP$.subscribe(collected => this.collectedGGP = collected)
+      this.ggpIncentivesService.boostGGPApy$.subscribe(boost => this.boostApy = boost.boostApy)
     }
   }
 }
@@ -705,11 +742,11 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: 150px 140px 140px 1fr 100px 110px 110px 30px 80px 22px;
+    grid-template-columns: 140px 125px 125px 1fr 125px 65px 110px 110px 30px 80px 22px;
     //grid-template-columns: 130px 120px 140px 1fr 70px 120px 110px 100px 30px 80px 22px;
     height: 60px;
     border-style: solid;
-    border-width: 0 0 2px 0;
+    border-width: 0 0 1px 0;
     border-image-source: var(--asset-table-row__border);
     border-image-slice: 1;
     padding-left: 6px;
@@ -749,7 +786,7 @@ export default {
         align-items: flex-end;
       }
 
-      &.rewards {
+      &.rewards, &.ggp-collected {
         display: flex;
         align-items: center;
         justify-content: flex-end;

@@ -283,6 +283,10 @@ export default {
         rootState.serviceRegistry.ltipService.emitRefreshPrimeAccountsLtipData(state.smartLoanContract.address, state.assets['ARB'].price,  rootState.serviceRegistry.dataRefreshEventService);
         rootState.serviceRegistry.ltipService.emitRefreshPrimeAccountEligibleTvl(wrapContract(state.smartLoanContract));
       }
+      // Avalanche-specific methods
+      if (window.chain === 'avalanche') {
+        rootState.serviceRegistry.ggpIncentivesService.emitLoadData(state.smartLoanContract.address);
+      }
     },
 
     async loadDeployments() {
@@ -779,6 +783,7 @@ export default {
       commit('setHistoricalSmartLoanContract', historicalSmartLoanContract);
       commit('setReadSmartLoanContract', readSmartLoanContract);
       commit('setSmartLoanContract', smartLoanContract);
+
       rootState.serviceRegistry.accountService.emitSmartLoanContract(smartLoanContract);
     },
 
@@ -1964,6 +1969,29 @@ export default {
       }, config.refreshDelay);
     },
 
+    async claimWombatRewards({state, rootState, commit, dispatch}) {
+      const loanAssets = mergeArrays([
+        (await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+      ]);
+
+      await (await wrapContract(state.smartLoanContract, loanAssets))
+        .claimAllWombatRewards()
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, config.refreshDelay);
+    },
+
     async withdrawNativeToken({state, rootState, commit, dispatch}, {withdrawRequest}) {
       const provider = rootState.network.provider;
       const nativeAssetOptions = config.NATIVE_ASSET_TOGGLE_OPTIONS;
@@ -2987,8 +3015,10 @@ export default {
 
       setTimeout(async () => {
         await dispatch('updateFunds');
+        await dispatch('setupWombatLpAssets');
         setTimeout(async () => {
           await dispatch('updateFunds');
+          await dispatch('setupWombatLpAssets');
         }, config.wombatRefreshDelay)
       }, config.refreshDelay);
     },

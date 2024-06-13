@@ -149,6 +149,7 @@ export default {
           short: 'Wombat LP',
           decimals: 18,
           apyKey: 'WOM_sAVAX_sAVAX',
+          showGGPCollected: false,
         },
         {
           name: 'AVAX',
@@ -164,6 +165,7 @@ export default {
           short: 'Wombat LP',
           decimals: 18,
           apyKey: 'WOM_sAVAX_AVAX',
+          showGGPCollected: false,
         },
       ],
       'ggAVAX-AVAX': [
@@ -181,6 +183,7 @@ export default {
           short: 'Wombat LP',
           decimals: 18,
           apyKey: 'WOM_ggAVAX_ggAVAX',
+          showGGPCollected: true,
         },
         {
           name: 'AVAX',
@@ -196,6 +199,7 @@ export default {
           short: 'Wombat LP',
           decimals: 18,
           apyKey: 'WOM_ggAVAX_AVAX',
+          showGGPCollected: true,
         },
       ],
     },
@@ -615,4 +619,8 @@ export default {
     gmxV2IncentivesMilestone: 21000000,
     gmxV2IncentivesDeadline: 'March 3rd',
     historicalRpcUrl: "https://nd-875-171-632.p2pify.com/1e4e4e399220d21d56677b5be69f9326/ext/bc/C/rpc",
+    ggpIncentivesEnpoints: {
+      boostApy: 'https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/ggp-boost-apy',
+      collectedGGP: 'https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/ggp-incentives-for'
+    }
 }

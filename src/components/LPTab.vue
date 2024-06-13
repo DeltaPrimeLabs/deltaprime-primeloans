@@ -721,7 +721,7 @@ export default {
     setupWombatLpTableHeaderConfig() {
       this.wombatLpTableHeaderConfig = {
         // gridTemplateColumns: '130px 120px 120px 1fr 70px 120px 110px 100px 30px 80px 22px',
-        gridTemplateColumns: '150px 140px 140px 1fr 100px 110px 110px 30px 80px 22px',
+        gridTemplateColumns: '140px 125px 125px 1fr 125px 65px 110px 110px 30px 80px 22px',
         cells: [
           {
             label: 'Wombat Token',
@@ -750,6 +750,12 @@ export default {
             class: 'rewards',
             id: 'REWARDS',
             // tooltip: `7D price change of this GM token.`
+          },
+          {
+            label: 'GGP Collected',
+            sortable: false,
+            class: 'ggp-collected',
+            id: 'GGP_COLLECTED',
           },
           {
             label: 'TVL',
