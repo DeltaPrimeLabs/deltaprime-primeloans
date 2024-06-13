@@ -14,8 +14,6 @@ const wombatApyAggregator = async (event) => {
     height: 1080
   });
 
-  await new Promise((resolve, reject) => setTimeout(resolve, 10000));
-
   // fetch GM tokens' APYs on Arbitrum and Avalanche
   for (const [network, pools] of Object.entries(wombatApyConfig)) {
     const PAGE_URL = `${BASE_URL}?chain=${network}`;
@@ -24,11 +22,10 @@ const wombatApyAggregator = async (event) => {
       timeout: 60000
     });
 
+    await new Promise((resolve, reject) => setTimeout(resolve, 10000));
+
     const poolRows = await page.$$("#pool-list > div.flex-col > div.flex-col > div.flex-col > div");
-    const poolInnerTexts = await Promise.all(Array.from(poolRows).map(async pool => {
-      return (await (await pool.getProperty("textContent")).jsonValue()).replace(/\s+/g, "");
-    }));
-    console.log(poolInnerTexts)
+    await page.screenshot({ path: 'fullpage.png', fullPage: true });
 
     for (const [identifier, index] of Object.entries(pools)) {
       try {
@@ -39,7 +36,7 @@ const wombatApyAggregator = async (event) => {
         const poolTvl = tvlUnit * parseFloat(tvlRaw.slice(0, -1));
 
         // const poolApy = poolInnerTexts[index].split('Avg.APR')[1].split('AverageTotalAPR')[0].replace('%', '').trim();
-        const apyColumn = await pool.$("div > div.relative > div.items-center > div.justify-self-center > p");
+        const apyColumn = await pool.$("div > div.relative > div.items-center > div.justify-self-center > p > span");
         const poolApy = (await (await apyColumn.getProperty("textContent")).jsonValue()).replace(/\s+/g, "").replace('%', '').trim();
 
         console.log(identifier, poolTvl, poolApy);
