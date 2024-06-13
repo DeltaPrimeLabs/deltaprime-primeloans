@@ -6,7 +6,7 @@ const EthDater = require("ethereum-block-by-date");
 const redstone = require('redstone-api');
 const poolsDepositors = require("./missing.json");
 
-let blockTimestampStart = 1717432200;
+let blockTimestampStart = 1717669800;
 let blockTimestampEnd = 1718121600;
 
 // get historical provider
@@ -189,8 +189,8 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed) {
 
       for (let depositor in poolsDepositorsBalances[pool]) {
         let depositorBalance = poolsDepositorsBalances[pool][depositor];
-        console.log(`TotalDepositorsBalances: ${totalDepositorsBalances}`);
-        console.log(`arbitrumPoolsDeposits[pool]: ${arbitrumPoolsDeposits[pool]}`);
+        // console.log(`TotalDepositorsBalances: ${totalDepositorsBalances}`);
+        // console.log(`arbitrumPoolsDeposits[pool]: ${arbitrumPoolsDeposits[pool]}`);
         // let depositorEligibleAirdrop = (depositorBalance / totalDepositorsBalances) * poolEligibleAirdrop;
         let depositorEligibleAirdrop = (depositorBalance / arbitrumPoolsDeposits[pool]) * poolEligibleAirdrop;
         depositorsEligibleAirdrop[pool][depositor] = depositorEligibleAirdrop;
