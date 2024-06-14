@@ -69,7 +69,7 @@ const getIncentivesMultiplier = async (now) => {
 
 const ggpIncentives = async (network = 'avalanche', rpc = 'first') => {
   const now = Math.floor(Date.now() / 1000);
-  const incentivesPerWeek = 1250;
+  const incentivesPerWeek = 125;
   const incentivesMultiplier = await getIncentivesMultiplier(now);
 
   if (incentivesMultiplier == 0) return;
