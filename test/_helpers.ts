@@ -972,7 +972,10 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                 'unstakeAndWithdrawAvaxGgavaxLpGgavaxYY',
                 'depositAndStakeAvaxGgavaxLpAvaxYY',
                 'unstakeAndWithdrawAvaxGgavaxLpAvaxYY',
-                'migrateFromWombatToYY',
+                'migrateAvaxSavaxLpSavaxFromWombatToYY',
+                'migrateAvaxGgavaxLpGgavaxFromWombatToYY',
+                'migrateAvaxSavaxLpAvaxFromWombatToYY',
+                'migrateAvaxGgavaxLpAvaxFromWombatToYY',
             ],
             hardhatConfig
         );

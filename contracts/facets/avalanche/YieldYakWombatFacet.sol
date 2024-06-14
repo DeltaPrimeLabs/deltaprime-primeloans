@@ -342,30 +342,34 @@ contract YieldYakWombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             );
     }
 
-    function migrateFromWombatToYY()
-        external
-        onlyOwner
-        nonReentrant
-        remainsSolvent
-    {
+    function migrateAvaxSavaxLpSavaxFromWombatToYY() external {
         _migrate(
             WOMBAT_sAVAX_AVAX_LP_sAVAX,
             YY_sAVAX_AVAX_LP_sAVAX,
             this.sAvaxBalanceAvaxSavaxYY.selector,
             this.withdrawSavaxFromAvaxSavaxYY.selector
         );
+    }
+
+    function migrateAvaxGgavaxLpGgavaxFromWombatToYY() external {
         _migrate(
             WOMBAT_ggAVAX_AVAX_LP_ggAVAX,
             YY_ggAVAX_AVAX_LP_ggAVAX,
             this.ggAvaxBalanceAvaxGgavaxYY.selector,
             this.withdrawGgavaxFromAvaxGgavaxYY.selector
         );
+    }
+
+    function migrateAvaxSavaxLpAvaxFromWombatToYY() external {
         _migrate(
             WOMBAT_sAVAX_AVAX_LP_AVAX,
             YY_sAVAX_AVAX_LP_AVAX,
             this.avaxBalanceAvaxSavaxYY.selector,
             this.withdrawAvaxFromAvaxSavaxYY.selector
         );
+    }
+
+    function migrateAvaxGgavaxLpAvaxFromWombatToYY() external {
         _migrate(
             WOMBAT_ggAVAX_AVAX_LP_AVAX,
             YY_ggAVAX_AVAX_LP_AVAX,
@@ -647,7 +651,7 @@ contract YieldYakWombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         bytes32 yyLpAsset,
         bytes4 balanceSelector,
         bytes4 unstakeSelector
-    ) internal {
+    ) internal onlyOwner nonReentrant remainsSolvent {
         IERC20Metadata wombatLpToken = getERC20TokenInstance(wombatLpAsset, false);
         IERC20Metadata yyLpToken = getERC20TokenInstance(yyLpAsset, false);
         uint256 pid = IWombatMaster(WOMBAT_MASTER).getAssetPid(

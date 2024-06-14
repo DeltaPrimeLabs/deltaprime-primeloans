@@ -91,5 +91,11 @@ interface IYieldYakWombatFacet {
         uint256 amount
     ) external returns (uint256 amountOut);
 
-    function migrateFromWombatToYY() external;
+    function migrateAvaxSavaxLpSavaxFromWombatToYY() external;
+
+    function migrateAvaxGgavaxLpGgavaxFromWombatToYY() external;
+
+    function migrateAvaxSavaxLpAvaxFromWombatToYY() external;
+
+    function migrateAvaxGgavaxLpAvaxFromWombatToYY() external;
 }

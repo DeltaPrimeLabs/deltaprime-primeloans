@@ -330,7 +330,10 @@ describe('Smart loan', () => {
             let initialTotalValue = fromWei(await wrappedLoan.getTotalValue());
             let initialHR = fromWei(await wrappedLoan.getHealthRatio());
 
-            await wrappedLoan.migrateFromWombatToYY();
+            await wrappedLoan.migrateAvaxSavaxLpSavaxFromWombatToYY();
+            await wrappedLoan.migrateAvaxGgavaxLpGgavaxFromWombatToYY();
+            await wrappedLoan.migrateAvaxSavaxLpAvaxFromWombatToYY();
+            await wrappedLoan.migrateAvaxGgavaxLpAvaxFromWombatToYY();
 
             expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(initialTotalValue, 1);
             expect(fromWei(await wrappedLoan.getHealthRatio())).to.be.closeTo(initialHR, 0.01);
