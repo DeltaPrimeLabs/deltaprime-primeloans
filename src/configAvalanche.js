@@ -149,7 +149,7 @@ export default {
           short: 'Wombat LP',
           decimals: 18,
           apyKey: 'WOM_sAVAX_sAVAX',
-          showGGPCollected: false,
+          boostGGP: false,
         },
         {
           name: 'AVAX',
@@ -165,7 +165,7 @@ export default {
           short: 'Wombat LP',
           decimals: 18,
           apyKey: 'WOM_sAVAX_AVAX',
-          showGGPCollected: false,
+          boostGGP: false,
         },
       ],
       'ggAVAX-AVAX': [
@@ -183,7 +183,7 @@ export default {
           short: 'Wombat LP',
           decimals: 18,
           apyKey: 'WOM_ggAVAX_ggAVAX',
-          showGGPCollected: true,
+          boostGGP: true,
         },
         {
           name: 'AVAX',
@@ -199,7 +199,7 @@ export default {
           short: 'Wombat LP',
           decimals: 18,
           apyKey: 'WOM_ggAVAX_AVAX',
-          showGGPCollected: true,
+          boostGGP: false,
         },
       ],
     },

@@ -1612,6 +1612,10 @@ export default {
           yearlyGrantInterest += eligibleTvl * maxBoostApy / 4.5;
         }
 
+        if (window.chain === 'avalanche') {
+          yearlyGrantInterest += Number(state.wombatLpBalances['WOMBAT_ggAVAX_AVAX_LP_ggAVAX']) * state.wombatLpAssets['WOMBAT_ggAVAX_AVAX_LP_ggAVAX'].price * rootState.serviceRegistry.ggpIncentivesService.boostGGPApy$.value.boostApy * state.assets['GGP'].price
+        }
+
         if (collateral) {
           apr = (yearlyAssetInterest + yearlyLpInterest + yearlyFarmInterest + yearlyTraderJoeV2Interest + yearlyGrantInterest - yearlyDebtInterest) / collateral;
         }

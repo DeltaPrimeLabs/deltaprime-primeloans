@@ -69,7 +69,7 @@
         <template>
           <div class="table__cell ggp-collected">
             <template
-                v-if="collectedGGP !== null && lpToken.showGGPCollected">
+                v-if="collectedGGP !== null && lpToken.boostGGP">
               <span>
                 <img class="asset__icon" :src="getIcon('GGP', rewardsTokens['GGP'].logoExt)">
                 <span>{{ formatTokenBalanceWithLessThan(collectedGGP, 4, true) }}</span>
@@ -98,9 +98,10 @@
       </div>
 
       <div class="table__cell table__cell--double-value max-apr">
-        <span>{{ (maxApr + boostApy) | percent }}<img v-if="boostApy"
+        <span v-if="lpToken.boostGGP">{{ (maxApr + boostApy) | percent }}<img v-if="boostApy"
                                                       v-tooltip="{content: `This pool is incentivized!<br>⁃ up to ${maxApr ? (maxApr * 100).toFixed(2) : 0}% Pool APR<br>⁃ up to ${boostApy ? (boostApy * 100).toFixed(2) : 0}% GGP incentives`, classes: 'info-tooltip'}"
                                                       src="src/assets/icons/stars.png" class="stars-icon"></span>
+        <span v-if="!lpToken.boostGGP">{{ maxApr | percent }}</span>
       </div>
 
       <div class="table__cell"></div>
@@ -718,7 +719,7 @@ export default {
 
     watchGgpIncentives() {
       this.ggpIncentivesService.collectedGGP$.subscribe(collected => this.collectedGGP = collected)
-      this.ggpIncentivesService.boostGGPApy$.subscribe(boost => this.boostApy = boost.boostApy)
+      this.ggpIncentivesService.boostGGPApy$.subscribe(boost => this.boostApy = boost.boostApy * this.assets['GGP'].price)
     }
   }
 }
