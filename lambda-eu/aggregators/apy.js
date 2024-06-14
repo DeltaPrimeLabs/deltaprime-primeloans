@@ -26,17 +26,22 @@ const wombatApyAggregator = async (event) => {
 
     const poolRows = await page.$$("#pool-list > div.flex-col > div.flex-col > div.flex-col > div");
 
-    for (const [identifier, index] of Object.entries(pools)) {
+    for (const [identifier, poolInfo] of Object.entries(pools)) {
       try {
-        const pool = poolRows[index];
+        const pool = poolRows[poolInfo.index];
         const tvlColumn = await pool.$("div > div.relative > div.items-center > div.justify-center > div.relative > span");
         const tvlRaw = (await (await tvlColumn.getProperty("textContent")).jsonValue()).replace(/\s+/g, "").replace('$', '').trim();
         const tvlUnit = tvlRaw.charAt(tvlRaw.length - 1) === "K" ? 1000 : 1000000;
         const poolTvl = tvlUnit * parseFloat(tvlRaw.slice(0, -1));
 
-        // const poolApy = poolInnerTexts[index].split('Avg.APR')[1].split('AverageTotalAPR')[0].replace('%', '').trim();
-        const apyColumn = await pool.$("div > div.relative > div.items-center > div.justify-self-center > p > span");
-        const poolApy = (await (await apyColumn.getProperty("textContent")).jsonValue()).replace(/\s+/g, "").replace('%', '').trim();
+        const apyColumn = await pool.$$("div > div.relative > div.items-center > div.justify-self-center > span > div > div.hidden > div.justify-between > span");
+        let poolApy = 0;
+
+        for (const rowIndex of poolInfo.apyIndexes) {
+          const apyRaw = apyColumn[rowIndex];
+          const rowApy = (await (await apyRaw.getProperty("textContent")).jsonValue()).replace(/\s+/g, "").replace('%', '').trim();
+          poolApy += Number(rowApy);
+        }
 
         console.log(identifier, poolTvl, poolApy);
 
