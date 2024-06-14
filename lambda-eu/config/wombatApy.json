@@ -1,8 +1,20 @@
 {
   "avalanche": {
-    "WOM_sAVAX_AVAX": 2,
-    "WOM_sAVAX_sAVAX": 3,
-    "WOM_ggAVAX_AVAX": 6,
-    "WOM_ggAVAX_ggAVAX": 7
+    "WOM_sAVAX_AVAX": {
+      "index": 2,
+      "apyIndexes": [0, 2]
+    },
+    "WOM_sAVAX_sAVAX": {
+      "index": 3,
+      "apyIndexes": [0, 1, 4]
+    },
+    "WOM_ggAVAX_AVAX": {
+      "index": 6,
+      "apyIndexes": [0, 2]
+    },
+    "WOM_ggAVAX_ggAVAX": {
+      "index": 7,
+      "apyIndexes": [0, 2]
+    }
   }
 }
