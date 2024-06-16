@@ -1628,7 +1628,7 @@ export default {
         }
 
         if (window.chain === 'avalanche') {
-          yearlyGrantInterest += Number(state.wombatLpBalances['WOMBAT_ggAVAX_AVAX_LP_ggAVAX']) * state.wombatLpAssets['WOMBAT_ggAVAX_AVAX_LP_ggAVAX'].price * rootState.serviceRegistry.ggpIncentivesService.boostGGPApy$.value.boostApy * state.assets['GGP'].price
+          yearlyGrantInterest += Math.max(Number(state.wombatLpBalances['WOMBAT_ggAVAX_AVAX_LP_ggAVAX']) * state.wombatLpAssets['WOMBAT_ggAVAX_AVAX_LP_ggAVAX'].price - collateral, 0) * rootState.serviceRegistry.ggpIncentivesService.boostGGPApy$.value.boostApy * state.assets['GGP'].price
         }
 
         if (collateral) {

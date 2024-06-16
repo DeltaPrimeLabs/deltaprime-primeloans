@@ -98,8 +98,8 @@
       </div>
 
       <div class="table__cell table__cell--double-value max-apr">
-        <span v-if="lpToken.boostGGP">{{ (maxApr + boostApy) | percent }}<img v-if="boostApy"
-                                                      v-tooltip="{content: `This pool is incentivized!<br>⁃ up to ${maxApr ? (maxApr * 100).toFixed(2) : 0}% Pool APR<br>⁃ up to ${boostApy ? (boostApy * 100).toFixed(2) : 0}% GGP incentives`, classes: 'info-tooltip'}"
+        <span v-if="lpToken.boostGGP">{{ (maxApr + 4.5 * boostApy) | percent }}<img v-if="boostApy"
+                                                      v-tooltip="{content: `This pool is incentivized!<br>⁃ up to ${maxApr ? (maxApr * 100).toFixed(2) : 0}% Pool APR<br>⁃ up to ${boostApy ? (4.5 * boostApy * 100).toFixed(2) : 0}% GGP incentives`, classes: 'info-tooltip'}"
                                                       src="src/assets/icons/stars.png" class="stars-icon"></span>
         <span v-if="!lpToken.boostGGP">{{ maxApr | percent }}</span>
       </div>
