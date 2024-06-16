@@ -405,6 +405,21 @@ export default {
       commit('setAssets', assets);
 
       rootState.serviceRegistry.priceService.emitRefreshPrices();
+
+      //Done here to speed up
+      Object.keys(assets).forEach(assetSymbol => {
+        if (assets[assetSymbol].fetchPrice) {
+          fetch(assets[assetSymbol].priceEndpoint).then(
+              async resp => {
+                let json = await resp.json();
+                assets[assetSymbol].price = json[assets[assetSymbol].priceJsonField];
+                commit('setAssets', assets);
+                rootState.serviceRegistry.priceService.emitRefreshPrices();
+              }
+          )
+        }
+      });
+
     },
 
     async setupAssetExposures({state, rootState, commit}) {
