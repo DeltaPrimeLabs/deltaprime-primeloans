@@ -1996,11 +1996,13 @@ export default {
         Object.keys(config.POOLS_CONFIG),
       ]);
 
-      await (await wrapContract(state.smartLoanContract, loanAssets))
+      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets))
         .claimAllWombatRewards()
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
+
+      let tx = await awaitConfirmation(transaction, provider, 'Claim wombat rewards');
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {
