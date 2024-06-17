@@ -718,8 +718,18 @@ export default {
     },
 
     watchGgpIncentives() {
-      this.ggpIncentivesService.collectedGGP$.subscribe(collected => this.collectedGGP = collected)
-      this.ggpIncentivesService.boostGGPApy$.subscribe(boost => this.boostApy = boost ? boost.boostApy * this.assets['GGP'].price : 0)
+      this.ggpIncentivesService.collectedGGP$.subscribe(collected => {
+        this.collectedGGP = collected;
+        setTimeout(() => {
+          this.$forceUpdate();
+        });
+      });
+      this.ggpIncentivesService.boostGGPApy$.subscribe(boost => {
+        this.boostApy = boost ? boost.boostApy * this.assets['GGP'].price : 0;
+        setTimeout(() => {
+          this.$forceUpdate();
+        });
+      });
     }
   }
 }
