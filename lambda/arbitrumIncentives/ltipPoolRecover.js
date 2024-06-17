@@ -225,4 +225,4 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed) {
   }
 }
 
-calculateEligibleAirdropPerPool(49.60317, "arbitrum") // 100_000 per 12 weeks = 49.60317 per hour
+calculateEligibleAirdropPerPool(49.60317 * 6, "arbitrum") // 100_000 per 12 weeks = 49.60317 per hour
