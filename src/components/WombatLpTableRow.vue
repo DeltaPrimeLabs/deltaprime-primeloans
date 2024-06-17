@@ -91,7 +91,7 @@
 
       <div class="table__cell table__cell--double-value apr" v-bind:class="{'apr--with-warning': lpToken.aprWarning}">
         {{ apr / 100 | percent }}
-        <div class="apr-warning" v-if="lpToken.aprWarning">
+        <div class="apr-warning" v-if="lpToken.aprWarning && apr !== 0">
           <img src="src/assets/icons/warning.svg"
                v-tooltip="{content: lpToken.aprWarning, classes: 'info-tooltip long'}">
         </div>
@@ -805,7 +805,7 @@ export default {
 
         .apr-warning {
           position: absolute;
-          right: -25px;
+          left: 45px;
         }
       }
 
