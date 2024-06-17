@@ -94,7 +94,7 @@ describe('Smart loan', () => {
 
         before("deploy factory and pool", async () => {
             [owner, depositor, liquidator] = await getFixedGasSigners(10000000);
-            let assetsList = ['AVAX', 'ggAVAX', 'sAVAX', 'WOMBAT_ggAVAX_AVAX_LP_AVAX', 'WOMBAT_ggAVAX_AVAX_LP_ggAVAX', 'WOMBAT_sAVAX_AVAX_LP_AVAX', 'WOMBAT_sAVAX_AVAX_LP_sAVAX', 'YY_ggAVAX_AVAX_LP_AVAX', 'YY_ggAVAX_AVAX_LP_ggAVAX', 'YY_sAVAX_AVAX_LP_AVAX', 'YY_sAVAX_AVAX_LP_sAVAX'];
+            let assetsList = ['AVAX', 'ggAVAX', 'sAVAX', 'WOMBAT_ggAVAX_AVAX_LP_AVAX', 'WOMBAT_ggAVAX_AVAX_LP_ggAVAX', 'WOMBAT_sAVAX_AVAX_LP_AVAX', 'WOMBAT_sAVAX_AVAX_LP_sAVAX'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'AVAX', airdropList: [depositor]},
             ];
@@ -105,7 +105,7 @@ describe('Smart loan', () => {
 
             await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, owner, depositor);
             tokensPrices = await getTokensPricesMap(
-                assetsList.filter(asset => !asset.includes("YY_")),
+                assetsList,
                 "avalanche",
                 getRedstonePrices,
                 []

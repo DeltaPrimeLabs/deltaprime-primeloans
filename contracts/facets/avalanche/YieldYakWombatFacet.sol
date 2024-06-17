@@ -390,7 +390,7 @@ contract YieldYakWombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     ) internal onlyOwner nonReentrant remainsSolvent {
         IERC20Metadata stakeToken = getERC20TokenInstance(stakeAsset, false);
         IERC20Metadata wombatLpToken = getERC20TokenInstance(wombatLpAsset, false);
-        IERC20Metadata yyLpToken = getERC20TokenInstance(yyLpAsset, false);
+        address yyLpToken = _getYRT(yyLpAsset);
 
         amount = Math.min(stakeToken.balanceOf(address(this)), amount);
         require(amount > 0, "Cannot deposit 0 tokens");
@@ -409,10 +409,10 @@ contract YieldYakWombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
         uint256 wombatLpAmount = wombatLpToken.balanceOf(address(this));
 
-        address(wombatLpToken).safeApprove(address(yyLpToken), 0);
-        address(wombatLpToken).safeApprove(address(yyLpToken), wombatLpAmount);
+        address(wombatLpToken).safeApprove(yyLpToken, 0);
+        address(wombatLpToken).safeApprove(yyLpToken, wombatLpAmount);
 
-        IYYWombatPool(address(yyLpToken)).deposit(wombatLpAmount);
+        IYYWombatPool(yyLpToken).deposit(wombatLpAmount);
 
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         _decreaseExposure(tokenManager, address(stakeToken), amount);
@@ -440,12 +440,12 @@ contract YieldYakWombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         IERC20Metadata fromToken = getERC20TokenInstance(fromAsset, false);
         IERC20Metadata toToken = getERC20TokenInstance(toAsset, false);
         IERC20Metadata wombatLpToken = getERC20TokenInstance(wombatLpAsset, false);
-        IERC20Metadata yyLpToken = getERC20TokenInstance(yyLpAsset, false);
+        address yyLpToken = _getYRT(yyLpAsset);
 
-        amount = Math.min(amount, yyLpToken.balanceOf(address(this)));
+        amount = Math.min(amount, IERC20Metadata(yyLpToken).balanceOf(address(this)));
         require(amount > 0, "Cannot withdraw 0 tokens");
 
-        IYYWombatPool(address(yyLpToken)).withdraw(amount);
+        IYYWombatPool(yyLpToken).withdraw(amount);
 
         uint256 wombatLpAmount = wombatLpToken.balanceOf(address(this));
 
@@ -492,7 +492,7 @@ contract YieldYakWombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             DeploymentConstants.getNativeToken()
         );
         IERC20Metadata wombatLpToken = getERC20TokenInstance(wombatLpAsset, false);
-        IERC20Metadata yyLpToken = getERC20TokenInstance(yyLpAsset, false);
+        address yyLpToken = _getYRT(yyLpAsset);
 
         amount = Math.min(wrapped.balanceOf(address(this)), amount);
         require(amount > 0, "Cannot deposit 0 tokens");
@@ -509,10 +509,10 @@ contract YieldYakWombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
         uint256 wombatLpAmount = wombatLpToken.balanceOf(address(this));
 
-        address(wombatLpToken).safeApprove(address(yyLpToken), 0);
-        address(wombatLpToken).safeApprove(address(yyLpToken), wombatLpAmount);
+        address(wombatLpToken).safeApprove(yyLpToken, 0);
+        address(wombatLpToken).safeApprove(yyLpToken, wombatLpAmount);
 
-        IYYWombatPool(address(yyLpToken)).deposit(wombatLpAmount);
+        IYYWombatPool(yyLpToken).deposit(wombatLpAmount);
 
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         _decreaseExposure(tokenManager, address(wrapped), amount);
@@ -541,12 +541,12 @@ contract YieldYakWombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             DeploymentConstants.getNativeToken()
         );
         IERC20Metadata wombatLpToken = getERC20TokenInstance(wombatLpAsset, false);
-        IERC20Metadata yyLpToken = getERC20TokenInstance(yyLpAsset, false);
+        address yyLpToken = _getYRT(yyLpAsset);
 
-        amount = Math.min(amount, yyLpToken.balanceOf(address(this)));
+        amount = Math.min(amount, IERC20Metadata(yyLpToken).balanceOf(address(this)));
         require(amount > 0, "Cannot withdraw 0 tokens");
 
-        IYYWombatPool(address(yyLpToken)).withdraw(amount);
+        IYYWombatPool(yyLpToken).withdraw(amount);
 
         uint256 wombatLpAmount = wombatLpToken.balanceOf(address(this));
 
@@ -591,17 +591,17 @@ contract YieldYakWombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         bytes4 unstakeSelector
     ) internal onlyOwner nonReentrant remainsSolvent {
         IERC20Metadata wombatLpToken = getERC20TokenInstance(wombatLpAsset, false);
-        IERC20Metadata yyLpToken = getERC20TokenInstance(yyLpAsset, false);
+        address yyLpToken = _getYRT(yyLpAsset);
 
         amount = Math.min(amount, wombatLpToken.balanceOf(msg.sender));
         require(amount > 0, "Cannot deposit 0 tokens");
 
         address(wombatLpToken).safeTransferFrom(msg.sender, address(this), amount);
 
-        address(wombatLpToken).safeApprove(address(yyLpToken), 0);
-        address(wombatLpToken).safeApprove(address(yyLpToken), amount);
+        address(wombatLpToken).safeApprove(yyLpToken, 0);
+        address(wombatLpToken).safeApprove(yyLpToken, amount);
 
-        IYYWombatPool(address(yyLpToken)).deposit(amount);
+        IYYWombatPool(yyLpToken).deposit(amount);
 
         IStakingPositions.StakedPosition memory position = IStakingPositions
             .StakedPosition({
@@ -627,12 +627,12 @@ contract YieldYakWombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         returns (uint256 amountOut)
     {
         IERC20Metadata wombatLpToken = getERC20TokenInstance(wombatLpAsset, false);
-        IERC20Metadata yyLpToken = getERC20TokenInstance(yyLpAsset, false);
+        address yyLpToken = _getYRT(yyLpAsset);
 
-        amount = Math.min(amount, yyLpToken.balanceOf(address(this)));
+        amount = Math.min(amount, IERC20Metadata(yyLpToken).balanceOf(address(this)));
         require(amount > 0, "Cannot withdraw 0 tokens");
 
-        IYYWombatPool(address(yyLpToken)).withdraw(amount);
+        IYYWombatPool(yyLpToken).withdraw(amount);
 
         address(wombatLpToken).safeTransfer(
             msg.sender,
@@ -653,7 +653,7 @@ contract YieldYakWombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         bytes4 unstakeSelector
     ) internal onlyOwner nonReentrant remainsSolvent {
         IERC20Metadata wombatLpToken = getERC20TokenInstance(wombatLpAsset, false);
-        IERC20Metadata yyLpToken = getERC20TokenInstance(yyLpAsset, false);
+        address yyLpToken = _getYRT(yyLpAsset);
         uint256 pid = IWombatMaster(WOMBAT_MASTER).getAssetPid(
             address(wombatLpToken)
         );
@@ -669,10 +669,10 @@ contract YieldYakWombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             WOMBAT_MASTER
         ).withdraw(pid, wombatLpAmount);
 
-        address(wombatLpToken).safeApprove(address(yyLpToken), 0);
-        address(wombatLpToken).safeApprove(address(yyLpToken), wombatLpAmount);
+        address(wombatLpToken).safeApprove(yyLpToken, 0);
+        address(wombatLpToken).safeApprove(yyLpToken, wombatLpAmount);
 
-        IYYWombatPool(address(yyLpToken)).deposit(wombatLpAmount);
+        IYYWombatPool(yyLpToken).deposit(wombatLpAmount);
 
         DiamondStorageLib.removeStakedPosition(wombatLpAsset);
         IStakingPositions.StakedPosition memory position = IStakingPositions
@@ -686,6 +686,21 @@ contract YieldYakWombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         DiamondStorageLib.addStakedPosition(position);
 
         handleRewards(pid, reward, additionalRewards);
+    }
+
+    function _getYRT(bytes32 yyLpAsset) internal view returns (address) {
+        if (yyLpAsset == YY_ggAVAX_AVAX_LP_AVAX) {
+            return 0x7f0eB376eabF4b2B4290D09EFb2f4da99B3ea311;
+        }
+        if (yyLpAsset == YY_ggAVAX_AVAX_LP_ggAVAX) {
+            return 0x13404B1C715aF60869fc658d6D99c117e3543592;
+        }
+        if (yyLpAsset == YY_sAVAX_AVAX_LP_AVAX) {
+            return 0xa84D83787eA216F616C6Bd02C6edC6D6d63f042f;
+        }
+        if (yyLpAsset == YY_sAVAX_AVAX_LP_sAVAX) {
+            return 0x9B5d890d563EE4c9255bB500a790Ca6B1FB9dB6b;
+        }
     }
 
     function handleRewards(
@@ -745,9 +760,9 @@ contract YieldYakWombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     }
 
     function getLpTokenBalance(bytes32 asset) internal view returns (uint256) {
-        IERC20Metadata lpToken = getERC20TokenInstance(asset, false);
-        uint256 balance = lpToken.balanceOf(address(this));
-        return IYYWombatPool(address(lpToken)).getDepositTokensForShares(balance);
+        address lpToken = _getYRT(asset);
+        uint256 balance = IERC20Metadata(lpToken).balanceOf(address(this));
+        return IYYWombatPool(lpToken).getDepositTokensForShares(balance);
     }
 
     modifier onlyOwner() {
