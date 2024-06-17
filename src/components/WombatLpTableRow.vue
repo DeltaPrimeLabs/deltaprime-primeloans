@@ -743,7 +743,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: 140px 125px 125px 1fr 125px 65px 110px 110px 30px 80px 22px;
+    grid-template-columns: 140px 125px 125px 1fr 140px 65px 110px 110px 30px 80px 22px;
     //grid-template-columns: 130px 120px 140px 1fr 70px 120px 110px 100px 30px 80px 22px;
     height: 60px;
     border-style: solid;
