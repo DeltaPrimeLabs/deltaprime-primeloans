@@ -437,7 +437,7 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         address pool,
         uint256 amount,
         uint256 minOut
-    ) internal onlyOwner nonReentrant remainsSolvent returns (uint256 amountOut) {
+    ) internal onlyOwnerOrInsolvent nonReentrant remainsSolvent returns (uint256 amountOut) {
         IERC20Metadata fromToken = getERC20TokenInstance(fromAsset, false);
         IERC20Metadata toToken = getERC20TokenInstance(toAsset, false);
         IERC20Metadata lpToken = getERC20TokenInstance(lpAsset, false);
@@ -527,7 +527,7 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         address pool,
         uint256 amount,
         uint256 minOut
-    ) internal onlyOwner nonReentrant remainsSolvent returns (uint256 amountOut) {
+    ) internal onlyOwnerOrInsolvent nonReentrant remainsSolvent returns (uint256 amountOut) {
         IERC20Metadata fromToken = getERC20TokenInstance(fromAsset, false);
         IWrappedNativeToken wrapped = IWrappedNativeToken(
             DeploymentConstants.getNativeToken()
