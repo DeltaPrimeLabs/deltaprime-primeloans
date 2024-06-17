@@ -526,6 +526,7 @@ export default {
     },
 
     async setupWombatLpAssets({state, rootState, commit}) {
+      if (!state.smartLoanContract || state.smartLoanContract.address === NULL_ADDRESS) return;
       const lpService = rootState.serviceRegistry.lpService;
       let lpTokens = {};
       Object.entries(config.WOMBAT_LP_ASSETS).forEach(
