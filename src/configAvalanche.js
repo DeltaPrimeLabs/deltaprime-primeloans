@@ -150,8 +150,7 @@ export default {
           decimals: 18,
           apyKey: 'WOM_sAVAX_sAVAX',
           boostGGP: false,
-          addTokenApy: true,
-          aprWarning: 'Wombat APRs are currently undervalued. This will be resolved soon'
+          addTokenApy: true
         },
         {
           name: 'AVAX',
@@ -168,8 +167,7 @@ export default {
           decimals: 18,
           apyKey: 'WOM_sAVAX_AVAX',
           boostGGP: false,
-          addTokenApy: false,
-          aprWarning: 'Wombat APRs are currently undervalued. This will be resolved soon'
+          addTokenApy: false
         },
       ],
       'ggAVAX-AVAX': [
@@ -188,8 +186,7 @@ export default {
           decimals: 18,
           apyKey: 'WOM_ggAVAX_ggAVAX',
           boostGGP: true,
-          addTokenApy: true,
-          aprWarning: 'Wombat APRs are currently undervalued. This will be resolved soon'
+          addTokenApy: true
         },
         {
           name: 'AVAX',
@@ -206,8 +203,7 @@ export default {
           decimals: 18,
           apyKey: 'WOM_ggAVAX_AVAX',
           boostGGP: false,
-          addTokenApy: false,
-          aprWarning: 'Wombat APRs are currently undervalued. This will be resolved soon'
+          addTokenApy: false
         },
       ],
     },
