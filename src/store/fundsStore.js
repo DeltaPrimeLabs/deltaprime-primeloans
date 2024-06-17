@@ -249,6 +249,10 @@ export default {
       if (config.LEVEL_LP_ASSETS_CONFIG) await dispatch('setupLevelLpAssets');
       if (config.GMX_V2_ASSETS_CONFIG) await dispatch('setupGmxV2Assets');
       if (config.PENPIE_LP_ASSETS_CONFIG) await dispatch('setupPenpieLpAssets');
+      // Avalanche-specific methods
+      if (window.chain === 'avalanche') {
+        rootState.serviceRegistry.ggpIncentivesService.emitLoadData(state.smartLoanContract.address);
+      }
       await dispatch('getAllAssetsApys');
       await dispatch('stakeStore/updateStakedPrices', null, {root: true});
       state.assetBalances = [];
@@ -310,6 +314,7 @@ export default {
         if (config.LEVEL_LP_ASSETS_CONFIG) await dispatch('setupLevelLpAssets');
         if (config.GMX_V2_ASSETS_CONFIG) await dispatch('setupGmxV2Assets');
         if (config.PENPIE_LP_ASSETS_CONFIG) await dispatch('setupPenpieLpAssets');
+        if (config.WOMBAT_LP_ASSETS_CONFIG) await dispatch('setupWombatLpAssets');
         await dispatch('getAllAssetsBalances');
         await dispatch('getAllAssetsApys');
         await dispatch('getDebtsPerAsset');
@@ -401,6 +406,21 @@ export default {
       commit('setAssets', assets);
 
       rootState.serviceRegistry.priceService.emitRefreshPrices();
+
+      //Done here to speed up
+      Object.keys(assets).forEach(assetSymbol => {
+        if (assets[assetSymbol].fetchPrice) {
+          fetch(assets[assetSymbol].priceEndpoint).then(
+              async resp => {
+                let json = await resp.json();
+                assets[assetSymbol].price = json[assets[assetSymbol].priceJsonField];
+                commit('setAssets', assets);
+                rootState.serviceRegistry.priceService.emitRefreshPrices();
+              }
+          )
+        }
+      });
+
     },
 
     async setupAssetExposures({state, rootState, commit}) {
@@ -506,6 +526,7 @@ export default {
     },
 
     async setupWombatLpAssets({state, rootState, commit}) {
+      if (!state.smartLoanContract || state.smartLoanContract.address === NULL_ADDRESS) return;
       const lpService = rootState.serviceRegistry.lpService;
       let lpTokens = {};
       Object.entries(config.WOMBAT_LP_ASSETS).forEach(
@@ -779,6 +800,7 @@ export default {
       commit('setHistoricalSmartLoanContract', historicalSmartLoanContract);
       commit('setReadSmartLoanContract', readSmartLoanContract);
       commit('setSmartLoanContract', smartLoanContract);
+
       rootState.serviceRegistry.accountService.emitSmartLoanContract(smartLoanContract);
     },
 
@@ -1536,9 +1558,9 @@ export default {
           for (let entry of Object.entries(state.wombatLpAssets)) {
             let symbol = entry[0];
             let lpAsset = entry[1];
+            let lpSymbol = lpAsset.apyKey;
 
-            const apy = state.apys[symbol] ? state.apys[symbol].lp_apy : 0;
-
+            const apy = state.apys[lpSymbol] ? state.apys[lpSymbol].lp_apy + (lpAsset.addTokenApy ? state.apys[lpAsset.asset].apy / 100 : 0) : 0;
             yearlyLpInterest += parseFloat(state.wombatLpBalances[symbol]) * apy * lpAsset.price;
           }
         }
@@ -1605,6 +1627,10 @@ export default {
 
         if (eligibleTvl) {
           yearlyGrantInterest += eligibleTvl * maxBoostApy / 4.5;
+        }
+
+        if (window.chain === 'avalanche') {
+          yearlyGrantInterest += Math.max(Number(state.wombatLpBalances['WOMBAT_ggAVAX_AVAX_LP_ggAVAX']) * state.wombatLpAssets['WOMBAT_ggAVAX_AVAX_LP_ggAVAX'].price - collateral, 0) * rootState.serviceRegistry.ggpIncentivesService.boostGGPApy$.value.boostApy * state.assets['GGP'].price
         }
 
         if (collateral) {
@@ -1953,6 +1979,31 @@ export default {
       rootState.serviceRegistry.modalService.closeModal();
 
       // let tx = await awaitConfirmation(transaction, provider, 'claimRewards');
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+      }, config.refreshDelay);
+    },
+
+    async claimWombatRewards({state, rootState, commit, dispatch}) {
+      const loanAssets = mergeArrays([
+        (await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+      ]);
+
+      const transaction = await (await wrapContract(state.smartLoanContract, loanAssets))
+        .claimAllWombatRewards()
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      let tx = await awaitConfirmation(transaction, provider, 'Claim wombat rewards');
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {
@@ -3214,7 +3265,6 @@ export default {
 
       setTimeout(async () => {
         await dispatch('updateFunds');
-        await dispatch('setupWombatLpAssets')
       }, config.refreshDelay);
     },
 

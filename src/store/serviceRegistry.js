@@ -24,6 +24,7 @@ import TraderJoeService from '../services/traderJoeService';
 import TermsService from '../services/termsService';
 import DeprecatedAssetsService from '../services/deprecatedAssetsService';
 import LtipService from "../services/ltipService";
+import GgpIncentivesService from "../services/ggpIncentivesService";
 
 export default {
   namespaced: true,
@@ -54,5 +55,6 @@ export default {
     termsService: new TermsService(),
     deprecatedAssetsService: new DeprecatedAssetsService(),
     ltipService: new LtipService(),
+    ggpIncentivesService: new GgpIncentivesService(),
   },
 };

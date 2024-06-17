@@ -70,7 +70,7 @@ export default {
     &.asset {
     }
 
-    &.balance, &.composition, &.staked, &.lp-balance{
+    &.balance, &.composition, &.staked, &.lp-balance, &.ggp-collected {
       justify-content: flex-end;
     }
 

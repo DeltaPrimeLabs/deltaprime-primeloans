@@ -42,7 +42,7 @@ export default {
       "PNG": {name: "PNG", symbol: "PNG", logoExt: "png", decimals: 18, address: addresses.PNG, debtCoverage: 0, tradingViewSymbol: "COINBASE:PNGUSD"},
       // "PTP": {droppingSupport: true, name: "PTP", symbol: "PTP", logoExt: "png", decimals: 18, address: addresses.PTP, debtCoverage: 0, tradingViewSymbol: "COINEX:PTPUSDT"},
       "BAL": {unsupported: true, name: "BAL", symbol: "BAL", logoExt: "png", decimals: 18, address: addresses.BAL, debtCoverage: 0, tradingViewSymbol: "BINANCE:BALUSDT"},
-      "GGP": {unsupported: true, name: "GGP", symbol: "GGP", logoExt: "png", decimals: 18, address: addresses.GGP, debtCoverage: 0, tradingViewSymbol: "TRADERJOE:GGPWAVAX_AE671E.USD"},
+      "GGP": {unsupported: true, name: "GGP", symbol: "GGP", logoExt: "png", decimals: 18, address: addresses.GGP, debtCoverage: 0, tradingViewSymbol: "TRADERJOE:GGPWAVAX_AE671E.USD", fetchPrice: true, priceEndpoint: "https://api.gogopool.com/prices", priceJsonField: "ggpInUSD"},
     },
     WOMBAT_REWARDS_TOKENS: {
         "WOM": {name: "WOM", symbol: "WOM", logoExt: "png", decimals: 18, address: addresses.WOM},
@@ -149,7 +149,8 @@ export default {
           short: 'Wombat LP',
           decimals: 18,
           apyKey: 'WOM_sAVAX_sAVAX',
-          aprWarning: 'Wombat APRs are currently undervalued. This will be resolved soon'
+          boostGGP: false,
+          addTokenApy: true
         },
         {
           name: 'AVAX',
@@ -165,7 +166,8 @@ export default {
           short: 'Wombat LP',
           decimals: 18,
           apyKey: 'WOM_sAVAX_AVAX',
-          aprWarning: 'Wombat APRs are currently undervalued. This will be resolved soon'
+          boostGGP: false,
+          addTokenApy: false
         },
       ],
       'ggAVAX-AVAX': [
@@ -183,7 +185,8 @@ export default {
           short: 'Wombat LP',
           decimals: 18,
           apyKey: 'WOM_ggAVAX_ggAVAX',
-          aprWarning: 'Wombat APRs are currently undervalued. This will be resolved soon'
+          boostGGP: true,
+          addTokenApy: true
         },
         {
           name: 'AVAX',
@@ -199,15 +202,16 @@ export default {
           short: 'Wombat LP',
           decimals: 18,
           apyKey: 'WOM_ggAVAX_AVAX',
-          aprWarning: 'Wombat APRs are currently undervalued. This will be resolved soon'
+          boostGGP: false,
+          addTokenApy: false
         },
       ],
     },
     WOMBAT_LP_ASSETS: {
-      'WOMBAT_ggAVAX_AVAX_LP_AVAX': { decimals: 18, debtCoverage: 0.83333333333, balanceMethod: 'avaxBalanceAvaxGgavax', pendingRewardsMethod: 'pendingRewardsForAvaxGgavaxLpAvax', short: 'WOMBAT LP', logoExt: 'png', name: 'WOMBAT LP' },
-      'WOMBAT_ggAVAX_AVAX_LP_ggAVAX': { decimals: 18, debtCoverage: 0.83333333333, balanceMethod: 'ggAvaxBalanceAvaxGgavax', pendingRewardsMethod: 'pendingRewardsForAvaxGgavaxLpGgavax', short: 'WOMBAT LP', logoExt: 'png', name: 'WOMBAT LP' },
-      'WOMBAT_sAVAX_AVAX_LP_AVAX': { decimals: 18, debtCoverage: 0.83333333333, balanceMethod: 'avaxBalanceAvaxSavax', pendingRewardsMethod: 'pendingRewardsForAvaxSavaxLpAvax', short: 'WOMBAT LP', logoExt: 'png', name: 'WOMBAT LP' },
-      'WOMBAT_sAVAX_AVAX_LP_sAVAX': { decimals: 18, debtCoverage: 0.83333333333, balanceMethod: 'sAvaxBalanceAvaxSavax', pendingRewardsMethod: 'pendingRewardsForAvaxSavaxLpSavax', short: 'WOMBAT LP', logoExt: 'png', name: 'WOMBAT LP' },
+      'WOMBAT_ggAVAX_AVAX_LP_AVAX': { decimals: 18, debtCoverage: 0.83333333333, balanceMethod: 'avaxBalanceAvaxGgavax', pendingRewardsMethod: 'pendingRewardsForAvaxGgavaxLpAvax', short: 'WOMBAT LP', logoExt: 'png', name: 'WOMBAT LP', addTokenApy: false, asset: 'AVAX', apyKey: 'WOM_ggAVAX_AVAX' },
+      'WOMBAT_ggAVAX_AVAX_LP_ggAVAX': { decimals: 18, debtCoverage: 0.83333333333, balanceMethod: 'ggAvaxBalanceAvaxGgavax', pendingRewardsMethod: 'pendingRewardsForAvaxGgavaxLpGgavax', short: 'WOMBAT LP', logoExt: 'png', name: 'WOMBAT LP', addTokenApy: true, asset: 'ggAVAX', apyKey: 'WOM_ggAVAX_ggAVAX' },
+      'WOMBAT_sAVAX_AVAX_LP_AVAX': { decimals: 18, debtCoverage: 0.83333333333, balanceMethod: 'avaxBalanceAvaxSavax', pendingRewardsMethod: 'pendingRewardsForAvaxSavaxLpAvax', short: 'WOMBAT LP', logoExt: 'png', name: 'WOMBAT LP', addTokenApy: false, asset: 'AVAX', apyKey: 'WOM_sAVAX_AVAX' },
+      'WOMBAT_sAVAX_AVAX_LP_sAVAX': { decimals: 18, debtCoverage: 0.83333333333, balanceMethod: 'sAvaxBalanceAvaxSavax', pendingRewardsMethod: 'pendingRewardsForAvaxSavaxLpSavax', short: 'WOMBAT LP', logoExt: 'png', name: 'WOMBAT LP', addTokenApy: true, asset: 'sAVAX', apyKey: 'WOM_sAVAX_sAVAX' },
     },
     TRADERJOEV2_LP_ASSETS_CONFIG: {
         'TJLB_AVAX-USDC': { primary: 'AVAX', secondary: 'USDC', name: 'AVAX-USDC', dex: 'TraderJoe', symbol: 'TJLB_AVAX-USDC', debtCoverage: 0.83333333333, decimals: 18, baseFee: '0.002', address: addresses['TJLB_AVAX-USDC'], binStep: 20, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2', link: "https://traderjoexyz.com/avalanche/pool/v21/AVAX/0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e/20"},
@@ -619,4 +623,8 @@ export default {
     gmxV2IncentivesMilestone: 21000000,
     gmxV2IncentivesDeadline: 'March 3rd',
     historicalRpcUrl: "https://nd-875-171-632.p2pify.com/1e4e4e399220d21d56677b5be69f9326/ext/bc/C/rpc",
+    ggpIncentivesEnpoints: {
+      boostApy: 'https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/ggp-boost-apy',
+      collectedGGP: 'https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/ggp-incentives-for'
+    }
 }
