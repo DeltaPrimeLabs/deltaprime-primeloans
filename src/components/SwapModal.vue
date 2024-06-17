@@ -758,6 +758,7 @@ export default {
     async handlePriceImpactClick(key) {
       console.log(key);
       if (!this.slippageOptions[key].disabled) {
+        this.blockSubmitButton = false;
         this.selectedSlippageOption = key;
         this.userSlippage = this.slippageOptions[key].value;
 
@@ -771,6 +772,7 @@ export default {
     },
 
     async advancedModeToggle() {
+      this.blockSubmitButton = false;
       const dexSlippageMargin = config.SWAP_DEXS_CONFIG[this.swapDex].slippageMargin;
       this.advancedSlippageMode = !this.advancedSlippageMode;
       localStorage.setItem('ADVANCED_SLIPPAGE_MODE', this.advancedSlippageMode);
