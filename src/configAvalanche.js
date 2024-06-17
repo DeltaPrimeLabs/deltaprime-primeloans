@@ -150,6 +150,7 @@ export default {
           decimals: 18,
           apyKey: 'WOM_sAVAX_sAVAX',
           boostGGP: false,
+          addTokenApy: true,
         },
         {
           name: 'AVAX',
@@ -166,6 +167,7 @@ export default {
           decimals: 18,
           apyKey: 'WOM_sAVAX_AVAX',
           boostGGP: false,
+          addTokenApy: false,
         },
       ],
       'ggAVAX-AVAX': [
@@ -184,6 +186,7 @@ export default {
           decimals: 18,
           apyKey: 'WOM_ggAVAX_ggAVAX',
           boostGGP: true,
+          addTokenApy: true,
         },
         {
           name: 'AVAX',
@@ -200,14 +203,15 @@ export default {
           decimals: 18,
           apyKey: 'WOM_ggAVAX_AVAX',
           boostGGP: false,
+          addTokenApy: false,
         },
       ],
     },
     WOMBAT_LP_ASSETS: {
-      'WOMBAT_ggAVAX_AVAX_LP_AVAX': { decimals: 18, debtCoverage: 0.83333333333, balanceMethod: 'avaxBalanceAvaxGgavax', pendingRewardsMethod: 'pendingRewardsForAvaxGgavaxLpAvax', short: 'WOMBAT LP', logoExt: 'png', name: 'WOMBAT LP' },
-      'WOMBAT_ggAVAX_AVAX_LP_ggAVAX': { decimals: 18, debtCoverage: 0.83333333333, balanceMethod: 'ggAvaxBalanceAvaxGgavax', pendingRewardsMethod: 'pendingRewardsForAvaxGgavaxLpGgavax', short: 'WOMBAT LP', logoExt: 'png', name: 'WOMBAT LP' },
-      'WOMBAT_sAVAX_AVAX_LP_AVAX': { decimals: 18, debtCoverage: 0.83333333333, balanceMethod: 'avaxBalanceAvaxSavax', pendingRewardsMethod: 'pendingRewardsForAvaxSavaxLpAvax', short: 'WOMBAT LP', logoExt: 'png', name: 'WOMBAT LP' },
-      'WOMBAT_sAVAX_AVAX_LP_sAVAX': { decimals: 18, debtCoverage: 0.83333333333, balanceMethod: 'sAvaxBalanceAvaxSavax', pendingRewardsMethod: 'pendingRewardsForAvaxSavaxLpSavax', short: 'WOMBAT LP', logoExt: 'png', name: 'WOMBAT LP' },
+      'WOMBAT_ggAVAX_AVAX_LP_AVAX': { decimals: 18, debtCoverage: 0.83333333333, balanceMethod: 'avaxBalanceAvaxGgavax', pendingRewardsMethod: 'pendingRewardsForAvaxGgavaxLpAvax', short: 'WOMBAT LP', logoExt: 'png', name: 'WOMBAT LP', addTokenApy: false, asset: 'AVAX', apyKey: 'WOM_ggAVAX_AVAX' },
+      'WOMBAT_ggAVAX_AVAX_LP_ggAVAX': { decimals: 18, debtCoverage: 0.83333333333, balanceMethod: 'ggAvaxBalanceAvaxGgavax', pendingRewardsMethod: 'pendingRewardsForAvaxGgavaxLpGgavax', short: 'WOMBAT LP', logoExt: 'png', name: 'WOMBAT LP', addTokenApy: true, asset: 'ggAVAX', apyKey: 'WOM_ggAVAX_ggAVAX' },
+      'WOMBAT_sAVAX_AVAX_LP_AVAX': { decimals: 18, debtCoverage: 0.83333333333, balanceMethod: 'avaxBalanceAvaxSavax', pendingRewardsMethod: 'pendingRewardsForAvaxSavaxLpAvax', short: 'WOMBAT LP', logoExt: 'png', name: 'WOMBAT LP', addTokenApy: false, asset: 'AVAX', apyKey: 'WOM_sAVAX_AVAX' },
+      'WOMBAT_sAVAX_AVAX_LP_sAVAX': { decimals: 18, debtCoverage: 0.83333333333, balanceMethod: 'sAvaxBalanceAvaxSavax', pendingRewardsMethod: 'pendingRewardsForAvaxSavaxLpSavax', short: 'WOMBAT LP', logoExt: 'png', name: 'WOMBAT LP', addTokenApy: true, asset: 'sAVAX', apyKey: 'WOM_sAVAX_sAVAX' },
     },
     TRADERJOEV2_LP_ASSETS_CONFIG: {
         'TJLB_AVAX-USDC': { primary: 'AVAX', secondary: 'USDC', name: 'AVAX-USDC', dex: 'TraderJoe', symbol: 'TJLB_AVAX-USDC', debtCoverage: 0.83333333333, decimals: 18, baseFee: '0.002', address: addresses['TJLB_AVAX-USDC'], binStep: 20, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2', link: "https://traderjoexyz.com/avalanche/pool/v21/AVAX/0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e/20"},

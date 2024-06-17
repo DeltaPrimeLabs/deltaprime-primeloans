@@ -249,6 +249,10 @@ export default {
       if (config.LEVEL_LP_ASSETS_CONFIG) await dispatch('setupLevelLpAssets');
       if (config.GMX_V2_ASSETS_CONFIG) await dispatch('setupGmxV2Assets');
       if (config.PENPIE_LP_ASSETS_CONFIG) await dispatch('setupPenpieLpAssets');
+      // Avalanche-specific methods
+      if (window.chain === 'avalanche') {
+        rootState.serviceRegistry.ggpIncentivesService.emitLoadData(state.smartLoanContract.address);
+      }
       await dispatch('getAllAssetsApys');
       await dispatch('stakeStore/updateStakedPrices', null, {root: true});
       state.assetBalances = [];
@@ -283,10 +287,6 @@ export default {
         rootState.serviceRegistry.ltipService.emitRefreshPrimeAccountsLtipData(state.smartLoanContract.address, state.assets['ARB'].price,  rootState.serviceRegistry.dataRefreshEventService);
         rootState.serviceRegistry.ltipService.emitRefreshPrimeAccountEligibleTvl(wrapContract(state.smartLoanContract));
       }
-      // Avalanche-specific methods
-      if (window.chain === 'avalanche') {
-        rootState.serviceRegistry.ggpIncentivesService.emitLoadData(state.smartLoanContract.address);
-      }
     },
 
     async loadDeployments() {
@@ -314,6 +314,7 @@ export default {
         if (config.LEVEL_LP_ASSETS_CONFIG) await dispatch('setupLevelLpAssets');
         if (config.GMX_V2_ASSETS_CONFIG) await dispatch('setupGmxV2Assets');
         if (config.PENPIE_LP_ASSETS_CONFIG) await dispatch('setupPenpieLpAssets');
+        if (config.WOMBAT_LP_ASSETS_CONFIG) await dispatch('setupWombatLpAssets');
         await dispatch('getAllAssetsBalances');
         await dispatch('getAllAssetsApys');
         await dispatch('getDebtsPerAsset');
@@ -1556,9 +1557,9 @@ export default {
           for (let entry of Object.entries(state.wombatLpAssets)) {
             let symbol = entry[0];
             let lpAsset = entry[1];
+            let lpSymbol = lpAsset.apyKey;
 
-            const apy = state.apys[symbol] ? state.apys[symbol].lp_apy : 0;
-
+            const apy = state.apys[lpSymbol] ? state.apys[lpSymbol].lp_apy + (lpAsset.addTokenApy ? state.apys[lpAsset.asset].apy / 100 : 0) : 0;
             yearlyLpInterest += parseFloat(state.wombatLpBalances[symbol]) * apy * lpAsset.price;
           }
         }
@@ -3034,10 +3035,8 @@ export default {
 
       setTimeout(async () => {
         await dispatch('updateFunds');
-        await dispatch('setupWombatLpAssets');
         setTimeout(async () => {
           await dispatch('updateFunds');
-          await dispatch('setupWombatLpAssets');
         }, config.wombatRefreshDelay)
       }, config.refreshDelay);
     },
@@ -3263,7 +3262,6 @@ export default {
 
       setTimeout(async () => {
         await dispatch('updateFunds');
-        await dispatch('setupWombatLpAssets')
       }, config.refreshDelay);
     },
 

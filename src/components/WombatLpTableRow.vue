@@ -310,8 +310,8 @@ export default {
           {
             key: 'CLAIM_REWARDS',
             name: 'Claim rewards',
-            disabled: true,
-            disabledInfo: 'Rewards will be claimable soon, for now rewards can be claimed with token withdrawal.',
+            disabled: this.disableAllButtons || !Object.values(this.wombatLpAssets).some(lpAsset => lpAsset.rewards.length !== 0),
+            disabledInfo: 'You don\'t have any claimable rewards yet.',
           }
         ]
       };
@@ -595,7 +595,7 @@ export default {
 
       modalInstance.$on('CLAIM', () => {
         if (this.smartLoanContract) {
-          this.handleTransaction(this.claimWombatRewards, () => {
+          this.handleTransaction(this.claimWombatRewards, {}, () => {
             this.$forceUpdate();
           }, (error) => {
             this.handleTransactionError(error);
@@ -620,7 +620,7 @@ export default {
     },
 
     async setupApr() {
-      this.apr = this.apys[this.lpToken.apyKey] ? this.apys[this.lpToken.apyKey].lp_apy * 100 : 0;
+      this.apr = this.apys[this.lpToken.apyKey] ? this.apys[this.lpToken.apyKey].lp_apy * 100 + (this.lpToken.addTokenApy ? this.apys[this.lpToken.asset].apy : 0) : 0;
     },
 
     watchAssetBalancesDataRefreshEvent() {
@@ -719,7 +719,7 @@ export default {
 
     watchGgpIncentives() {
       this.ggpIncentivesService.collectedGGP$.subscribe(collected => this.collectedGGP = collected)
-      this.ggpIncentivesService.boostGGPApy$.subscribe(boost => this.boostApy = boost.boostApy * this.assets['GGP'].price)
+      this.ggpIncentivesService.boostGGPApy$.subscribe(boost => this.boostApy = boost ? boost.boostApy * this.assets['GGP'].price : 0)
     }
   }
 }
