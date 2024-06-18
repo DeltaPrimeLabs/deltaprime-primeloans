@@ -9,10 +9,12 @@ contract PrimeBridge is BaseOFTV2{
     using SafeERC20 for IERC20;
 
     IERC20 internal immutable innerToken;
-    uint internal immutable ld2sdRate;
+
+    /// @notice long decimals to short decimals rate.
+    uint256 internal immutable ld2sdRate;
 
     // total amount is transferred from this chain to other chains, ensuring the total is less than uint64.max in sd
-    uint public outboundAmount;
+    uint256 public outboundAmount;
 
     constructor(
         address _token,
@@ -32,7 +34,7 @@ contract PrimeBridge is BaseOFTV2{
     /************************************************************************
      * public functions
      ************************************************************************/
-    function circulatingSupply() public view virtual override returns (uint) {
+    function circulatingSupply() public view virtual override returns (uint256) {
         return innerToken.totalSupply() - outboundAmount;
     }
 
@@ -47,19 +49,19 @@ contract PrimeBridge is BaseOFTV2{
         address _from,
         uint16,
         bytes32,
-        uint _amount
-    ) internal virtual override returns (uint) {
+        uint256 _amount
+    ) internal virtual override returns (uint256) {
         require(_from == _msgSender(), "ProxyOFT: owner is not send caller");
 
         _amount = _transferFrom(_from, address(this), _amount);
 
         // _amount still may have dust if the token has transfer fee, then give the dust back to the sender
-        (uint amount, uint dust) = _removeDust(_amount);
+        (uint256 amount, uint256 dust) = _removeDust(_amount);
         if (dust > 0) innerToken.safeTransfer(_from, dust);
 
         // check total outbound amount
         outboundAmount += amount;
-        uint cap = _sd2ld(type(uint64).max);
+        uint256 cap = _sd2ld(type(uint64).max);
         require(cap >= outboundAmount, "ProxyOFT: outboundAmount overflow");
 
         return amount;
@@ -68,8 +70,8 @@ contract PrimeBridge is BaseOFTV2{
     function _creditTo(
         uint16,
         address _toAddress,
-        uint _amount
-    ) internal virtual override returns (uint) {
+        uint256 _amount
+    ) internal virtual override returns (uint256) {
         outboundAmount -= _amount;
 
         // tokens are already in this contract, so no need to transfer
@@ -83,9 +85,9 @@ contract PrimeBridge is BaseOFTV2{
     function _transferFrom(
         address _from,
         address _to,
-        uint _amount
-    ) internal virtual override returns (uint) {
-        uint before = innerToken.balanceOf(_to);
+        uint256 _amount
+    ) internal virtual override returns (uint256) {
+        uint256 before = innerToken.balanceOf(_to);
         if (_from == address(this)) {
             innerToken.safeTransfer(_to, _amount);
         } else {
@@ -94,7 +96,7 @@ contract PrimeBridge is BaseOFTV2{
         return innerToken.balanceOf(_to) - before;
     }
 
-    function _ld2sdRate() internal view virtual override returns (uint) {
+    function _ld2sdRate() internal view virtual override returns (uint256) {
         return ld2sdRate;
     }
 }
