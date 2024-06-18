@@ -22,6 +22,7 @@ abstract contract vPrimeController is PendingOwnableUpgradeable, RedstoneConsume
     uint256 public constant MAX_V_PRIME_VESTING_YEARS = 3;
     uint256 public constant V_PRIME_DETERIORATION_DAYS = 14;
     uint256 public constant V_PRIME_PAIR_RATIO = 10;
+    uint256 public constant RS_PRICE_PRECISION_1e18_COMPLEMENT = 1e10;
 
     /* ========== INITIALIZER ========== */
 
@@ -123,8 +124,8 @@ abstract contract vPrimeController is PendingOwnableUpgradeable, RedstoneConsume
             uint256 fullyVestedBalance = whitelistedPools[i].getFullyVestedLockedBalance(userAddress);
             uint256 nonVestedBalance = IERC20(whitelistedPools[i]).balanceOf(userAddress) - fullyVestedBalance;
 
-            fullyVestedDollarValue += FullMath.mulDiv(fullyVestedBalance, prices[i] * 1e10, 10 ** whitelistedPools[i].decimals());
-            nonVestedDollarValue += FullMath.mulDiv(nonVestedBalance, prices[i] * 1e10, 10 ** whitelistedPools[i].decimals());
+            fullyVestedDollarValue += FullMath.mulDiv(fullyVestedBalance, prices[i] * RS_PRICE_PRECISION_1e18_COMPLEMENT, 10 ** whitelistedPools[i].decimals());
+            nonVestedDollarValue += FullMath.mulDiv(nonVestedBalance, prices[i] * RS_PRICE_PRECISION_1e18_COMPLEMENT, 10 ** whitelistedPools[i].decimals());
         }
         return (fullyVestedDollarValue, nonVestedDollarValue);
     }
@@ -140,7 +141,7 @@ abstract contract vPrimeController is PendingOwnableUpgradeable, RedstoneConsume
 
         for (uint i = 0; i < whitelistedPools.length; i++) {
             uint256 poolBorrowedAmount = whitelistedPools[i].getBorrowed(userAddress);
-            uint256 poolDollarValue = FullMath.mulDiv(poolBorrowedAmount, prices[i] * 1e10, 10 ** whitelistedPools[i].decimals());
+            uint256 poolDollarValue = FullMath.mulDiv(poolBorrowedAmount, prices[i] * RS_PRICE_PRECISION_1e18_COMPLEMENT, 10 ** whitelistedPools[i].decimals());
             totalDollarValue += poolDollarValue;
         }
         return totalDollarValue;
@@ -158,8 +159,8 @@ abstract contract vPrimeController is PendingOwnableUpgradeable, RedstoneConsume
             uint256 nonVestedBalance = sPrimeBalance - fullyVestedBalance;
             uint256 userSPrimeValueInTokenY = whitelistedSPrimeContracts[i].getUserValueInTokenY(userAddress);
             if(sPrimeBalance > 0) {
-                fullyVestedDollarValue += FullMath.mulDiv(userSPrimeValueInTokenY, sPrimeTokenYPrice * 1e10 * fullyVestedBalance,  sPrimeBalance * 10 ** sPrimeTokenYDecimals);
-                nonVestedDollarValue += FullMath.mulDiv(userSPrimeValueInTokenY, sPrimeTokenYPrice * 1e10 * nonVestedBalance,  sPrimeBalance * 10 ** sPrimeTokenYDecimals);
+                fullyVestedDollarValue += FullMath.mulDiv(userSPrimeValueInTokenY, sPrimeTokenYPrice * RS_PRICE_PRECISION_1e18_COMPLEMENT * fullyVestedBalance,  sPrimeBalance * 10 ** sPrimeTokenYDecimals);
+                nonVestedDollarValue += FullMath.mulDiv(userSPrimeValueInTokenY, sPrimeTokenYPrice * RS_PRICE_PRECISION_1e18_COMPLEMENT * nonVestedBalance,  sPrimeBalance * 10 ** sPrimeTokenYDecimals);
             }
         }
         return (fullyVestedDollarValue, nonVestedDollarValue);
