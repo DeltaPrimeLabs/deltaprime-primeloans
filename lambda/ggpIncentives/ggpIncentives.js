@@ -67,6 +67,8 @@ const getIncentivesMultiplier = async (now) => {
   return Math.round((now - res[0].timestamp) / 3600);
 };
 
+let retryTime = 0;
+
 const ggpIncentives = async (network = 'avalanche', rpc = 'first') => {
   const now = Math.floor(Date.now() / 1000);
   const incentivesPerWeek = 125;
@@ -135,6 +137,7 @@ const ggpIncentives = async (network = 'avalanche', rpc = 'first') => {
         loanIncentives[loanId] = incentivesPerInterval * loanData.eligibleTvl / totalEligibleTvl;
       }
     })
+    console.log(loanIncentives);
 
     // save/update incentives values to DB
     await Promise.all(
@@ -180,7 +183,9 @@ const ggpIncentives = async (network = 'avalanche', rpc = 'first') => {
   } catch (error) {
     console.log('Error', error);
 
-    if (error.error.code == 'SERVER_ERROR' || error.error.code == 'TIMEOUT') {
+    retryTime += 1;
+
+    if (retryTime < 3) {
       await fetch(pingUrl.ggp.fail, {
         method: "POST",
         headers: {
@@ -191,7 +196,7 @@ const ggpIncentives = async (network = 'avalanche', rpc = 'first') => {
           message: "retrying the function."
         })
       });
-      ggpIncentives('avalanche', 'second');
+      ggpIncentives('avalanche', rpc == "first" ? "second" : "first");
     } else {
       await fetch(pingUrl.ggp.fail, {
         method: "POST",
