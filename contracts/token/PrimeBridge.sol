@@ -17,13 +17,13 @@ contract PrimeBridge is BaseOFTV2{
     uint256 public outboundAmount;
 
     constructor(
-        address _token,
+        IERC20 _token,
         uint8 _sharedDecimals,
         address _lzEndpoint
     ) BaseOFTV2(_sharedDecimals, _lzEndpoint) {
-        innerToken = IERC20(_token);
+        innerToken = _token;
 
-        (bool success, bytes memory data) = _token.staticcall(abi.encodeWithSignature("decimals()"));
+        (bool success, bytes memory data) = address(_token).staticcall(abi.encodeWithSignature("decimals()"));
         require(success, "ProxyOFT: failed to get token decimals");
         uint8 decimals = abi.decode(data, (uint8));
 
