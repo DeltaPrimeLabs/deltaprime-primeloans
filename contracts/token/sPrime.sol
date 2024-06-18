@@ -5,7 +5,7 @@ pragma solidity 0.8.17;
 
 // Importing necessary libraries and interfaces
 import "../lib/joe-v2/math/SafeCast.sol";
-import "../interfaces/ISPrime.sol";
+import "../interfaces/ISPrimeTraderJoe.sol";
 import "../interfaces/joe-v2/ILBRouter.sol";
 import "../interfaces/IPositionManager.sol";
 import "../lib/joe-v2/LiquidityAmounts.sol";
@@ -20,7 +20,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@redstone-finance/evm-connector/contracts/core/ProxyConnector.sol";
 
 // SPrime contract declaration
-contract SPrime is ISPrime, ReentrancyGuardUpgradeable, PendingOwnableUpgradeable, ERC20Upgradeable, ProxyConnector {
+contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableUpgradeable, ERC20Upgradeable, ProxyConnector {
     using SafeERC20 for IERC20; // Using SafeERC20 for IERC20 for safe token transfers
     using LiquidityAmounts for address; // Using LiquidityAmounts for address for getting amounts of liquidity
     using SafeCast for uint256; // Using SafeCast for uint256 for safe type casting
@@ -641,5 +641,11 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, PendingOwnableUpgradeabl
                 }));
             }
         }
+    }
+
+    // Temprory function
+
+    function getUserDepositDollarValue(address user) external view returns (uint256) {
+        return 1;
     }
 }
