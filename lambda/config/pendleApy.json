@@ -1,31 +1,42 @@
 {
   "PENDLE_EZ_ETH_LP": {
-    "key": "renzo ezethon pendle finance4x",
+    "key": "renzo ezethon pendle finance",
+    "maturity": "27/06/2024",
     "marketAddress": "0x5E03C94Fc5Fb2E21882000A96Df0b63d2c4312e2"
   },
   "PENDLE_WSTETH_LP": {
     "key": "lido wstethon",
+    "maturity": "27/06/2024",
     "marketAddress": "0xFd8AeE8FCC10aac1897F8D5271d112810C79e022"
   },
   "PENDLE_E_ETH_LP": {
-    "key": "ether.fi eethon pendle finance2x",
+    "key": "ether.fi eethon pendle finance",
+    "maturity": "27/06/2024",
     "marketAddress": "0x952083cde7aaa11AB8449057F7de23A970AA8472"
   },
   "PENDLE_RS_ETH_LP": {
-    "key": "kelp rsethon pendle finance2.5x",
+    "key": "kelp rsethon pendle finance",
+    "maturity": "27/06/2024",
     "marketAddress": "0x6Ae79089b2CF4be441480801bb741A531d94312b"
   },
   "PENDLE_SILO_ETH_WSTETH_LP": {
-    "key": "silo sethon",
+    "key": "silo sethon pendle finance",
+    "maturity": "26/12/2024",
     "marketAddress": "0xACcd9A7cb5518326BeD715f90bD32CDf2fEc2D14"
   },
   "PENDLE_EZ_ETH_26_09_24": {
+    "key": "renzo ezethon pendle finance",
+    "maturity": "26/09/2024",
     "marketAddress": "0x35f3dB08a6e9cB4391348b0B404F493E7ae264c0"
   },
   "PENDLE_E_ETH_26_09_24": {
+    "key": "ether.fi eethon pendle finance",
+    "maturity": "26/09/2024",
     "marketAddress": "0xf9F9779d8fF604732EBA9AD345E6A27EF5c2a9d6"
   },
   "PENDLE_WSTETH_26_06_25": {
+    "key": "lido wstethon",
+    "maturity": "26/06/2025",
     "marketAddress": "0x08a152834de126d2ef83D612ff36e4523FD0017F"
   }
 }
