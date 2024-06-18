@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@layerzerolabs/solidity-examples/contracts/token/oft/v2/BaseOFTV2.sol";
 
 contract Prime_L2 is BaseOFTV2, ERC20 {
+    /// @notice long decimals to short decimals rate.
     uint internal immutable ld2sdRate;
 
     constructor(
@@ -16,8 +17,11 @@ contract Prime_L2 is BaseOFTV2, ERC20 {
         address _lzEndpoint
     ) ERC20(_name, _symbol) BaseOFTV2(_sharedDecimals, _lzEndpoint) {
         uint8 decimals = decimals();
-        require(_sharedDecimals <= decimals, "OFT: sharedDecimals must be <= decimals");
-        ld2sdRate = 10**(decimals - _sharedDecimals);
+        require(
+            _sharedDecimals <= decimals,
+            "OFT: sharedDecimals must be <= decimals"
+        );
+        ld2sdRate = 10 ** (decimals - _sharedDecimals);
     }
 
     /************************************************************************
@@ -62,7 +66,8 @@ contract Prime_L2 is BaseOFTV2, ERC20 {
     ) internal virtual override returns (uint) {
         address spender = _msgSender();
         // if transfer from this contract, no need to check allowance
-        if (_from != address(this) && _from != spender) _spendAllowance(_from, spender, _amount);
+        if (_from != address(this) && _from != spender)
+            _spendAllowance(_from, spender, _amount);
         _transfer(_from, _to, _amount);
         return _amount;
     }
