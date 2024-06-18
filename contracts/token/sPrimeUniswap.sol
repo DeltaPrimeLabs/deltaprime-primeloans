@@ -9,6 +9,7 @@ import "../interfaces/uniswap-v3/IUniswapV3Factory.sol";
 import "../interfaces/uniswap-v3/ISwapRouter.sol";
 import "../lib/uniswap-v3/OracleLibrary.sol";
 import "../lib/uniswap-v3/PositionValue.sol";
+import "../lib/uniswap-v3/TickMath.sol";
 import "../lib/local/DeploymentConstants.sol";
 import "../abstract/PendingOwnableUpgradeable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
@@ -26,7 +27,6 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
     // Constants declaration
     uint256 private constant _REBALANCE_MARGIN = 5;
     uint256 private constant _MAX_SLIPPAGE = 10;
-    int24 private constant _TICK_RANGE = 10;
     uint256 public constant MAX_LOCK_TIME = 3 * 365 days;
 
     // Mapping for storing pair information and user shares
@@ -37,6 +37,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
     IERC20Metadata public tokenX;
     IERC20Metadata public tokenY;
     IUniswapV3Pool public pool;
+    int24 public tickSpacing;
 
     address public vPrimeController;
     uint24 public feeTier;
@@ -52,9 +53,8 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
     * @param name_ The name of the SPrime token. ex: PRIME-USDC LP
     * @param feeTier_ Fee Tier of Uniswap V3 Pool
     * @param deltaIds_ Delta id for tick lower and tick upper
-    * @param vPrimeController_ VPrime Controller
     */
-    function initialize(address tokenX_, address tokenY_, string memory name_, uint24 feeTier_, int24[2] memory deltaIds_, address vPrimeController_) external initializer {
+    function initialize(address tokenX_, address tokenY_, string memory name_, uint24 feeTier_, int24[2] memory deltaIds_) external initializer {
         __PendingOwnable_init();
         __ReentrancyGuard_init();
         __ERC20_init(name_, "sPrime");
@@ -69,8 +69,12 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
         address poolAddress = IUniswapV3Factory(getUniV3FactoryAddress()).getPool(tokenX_, tokenY_, feeTier_);
         
         pool = IUniswapV3Pool(poolAddress);
-        vPrimeController = vPrimeController_;
+        tickSpacing = pool.tickSpacing();
         deltaIds = deltaIds_;
+    }
+
+    function setVPrimeControllerAddress(address _vPrimeController) public onlyOwner {
+        vPrimeController = _vPrimeController;
     }
 
     /**
@@ -78,7 +82,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
      * @return The address of the Uniswap V3 Factory.
      */
     function getUniV3FactoryAddress() public view virtual returns (address){
-        return 0x1F98431c8aD98523631AE4a59f267346ea31F984;
+        return 0x740b1c1de25031C31FF4fC9A62f554A55cdC1baD;
     }
 
     /**
@@ -86,7 +90,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
      * @return The address of the Uniswap V3 NonfungiblePositionManager.
      */
     function getNonfungiblePositionManagerAddress() public view virtual returns (address){
-        return 0xC36442b4a4522E871399CD717aBDD847Ab11FE88;
+        return 0x655C406EBFa14EE2006250925e54ec43AD184f8B;
     }
 
     /**
@@ -95,6 +99,14 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
      */
     function getSwapRouter() public view virtual returns (address){
         return 0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45;
+    }
+
+    function getTokenX() public view returns (address) {
+        return address(tokenX);
+    }
+
+    function getTokenY() public view returns (address) {
+        return address(tokenY);
     }
 
     /**
@@ -241,7 +253,6 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
         address positionManager = getNonfungiblePositionManagerAddress();
         tokenX.forceApprove(positionManager, amountX);
         tokenY.forceApprove(positionManager, amountY);
-
         if(tokenId == 0) {
             (tokenId,,amountXAdded, amountYAdded) = INonfungiblePositionManager(positionManager).mint(INonfungiblePositionManager.MintParams({
                 token0: address(tokenX),
@@ -351,8 +362,8 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
         if(userTokenId[_msgSender()] == 0) {
             (, currenTick,,,,,) = pool.slot0();
             require(tickDesired + tickSlippage >= currenTick && currenTick + tickSlippage >= tickDesired, "Slippage High");
-            tickLower = currenTick -  _TICK_RANGE * deltaIds[0];
-            tickUpper = currenTick + _TICK_RANGE * deltaIds[1];
+            tickLower = currenTick +  tickSpacing * deltaIds[0] >= TickMath.MIN_TICK ? currenTick +  tickSpacing * deltaIds[0] : TickMath.MIN_TICK;
+            tickUpper = currenTick + tickSpacing * deltaIds[1] <= TickMath.MAX_TICK ? currenTick + tickSpacing * deltaIds[1] : TickMath.MAX_TICK;
         }
         _depositToUniswap(_msgSender(), tickLower, tickUpper, amountX, amountY);
 
@@ -430,8 +441,8 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
         (amountX, amountY) = _swapForEqualValues(amountX, amountY, _MAX_SLIPPAGE);
 
         (, int24 currenTick,,,,,) = pool.slot0();
-        int24 tickLower = currenTick -  _TICK_RANGE * deltaIds[0];
-        int24 tickUpper = currenTick + _TICK_RANGE * deltaIds[1];
+        int24 tickLower = currenTick -  tickSpacing * deltaIds[0];
+        int24 tickUpper = currenTick + tickSpacing * deltaIds[1];
         _depositToUniswap(_msgSender(), tickLower, tickUpper, amountX, amountY);
         
         uint256 totalLock;
