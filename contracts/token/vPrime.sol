@@ -51,7 +51,7 @@ contract vPrime is PendingOwnableUpgradeable {
     function adjustRateAndCap(address user, int256 rate, uint256 newMaxVPrimeCap) external onlyVPrimeController {
         uint256 lastRecordedVotes = getVotes(user);
         uint256 currentVotesBalance = balanceOf(user);
-        int256 votesDiff = int256(currentVotesBalance) - int256(lastRecordedVotes);
+        int256 votesDiff = SafeCast.toInt256(currentVotesBalance) - SafeCast.toInt256(lastRecordedVotes);
 
         if (votesDiff > 0) {
             increaseTotalSupply(uint256(votesDiff));
