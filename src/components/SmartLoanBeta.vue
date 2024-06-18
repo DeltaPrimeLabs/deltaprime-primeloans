@@ -183,6 +183,7 @@ export default {
       'farmService',
       'collateralService',
       'debtService',
+      'ggpIncentivesService',
       'ltipService'
     ]),
     ...mapState('network', ['account']),
@@ -275,7 +276,8 @@ export default {
         this.dataRefreshEventService.observeFullLoanStatusRefresh(),
         this.dataRefreshEventService.observeAssetApysDataRefresh(),
         this.ltipService.observeLtipPrimeAccountEligibleTvl(),
-        this.ltipService.observeLtipMaxBoostApy()
+        this.ltipService.observeLtipMaxBoostApy(),
+        this.ggpIncentivesService.observeBoostGGPApy$(),
       ])
           .subscribe(async ([,,,,,,eligibleTvl, maxBoostApy]) => {
             await this.getAccountApr({eligibleTvl, maxBoostApy});

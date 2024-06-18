@@ -39,7 +39,7 @@ export default class LtipService {
     return this.primeAccountsData$.asObservable();
   }
 
-  observeLtipAccountsDataSinceLastDistribution() {
+  observeLtipAccountsDataSinceLastMilestone() {
     return this.primeAccountsDataSinceLastDistribution$.asObservable();
   }
 
@@ -69,14 +69,14 @@ export default class LtipService {
 
   async updateLtipData(primeAccountAddress, arbPrice, dataRefreshEventService) {
     console.log('updateLtipData');
-    fetch(`${config.ltipAccountsLeaderboardEndpoint}?top=200&from=${config.ltipLastDistributionTimestamp}&to=${Math.floor(Date.now() / 1000)}`).then(
+    fetch(`${config.ltipAccountsLeaderboardEndpoint}?top=200&from=${config.ltipProgramStart}&to=${Math.floor(Date.now() / 1000)}`).then(
         res => res.json().then(
             json => {
               this.primeAccountsData$.next(json.list)
             }
         )
     );
-    fetch(`${config.ltipAccountsLeaderboardEndpoint}?top=2000&from=${config.lastMilestoneHit}&to=${Math.floor(Date.now() / 1000)}`).then(
+    fetch(`${config.ltipAccountsLeaderboardEndpoint}?top=4000&from=${config.lastMilestoneHit}&to=${Math.floor(Date.now() / 1000)}`).then(
         res => res.json().then(
             json => {
               this.primeAccountsDataSinceLastDistribution$.next(json.list)

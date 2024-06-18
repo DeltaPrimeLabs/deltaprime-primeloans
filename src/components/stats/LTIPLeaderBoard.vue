@@ -110,7 +110,7 @@ export default {
             id: 'INCENTIVES_EARNED',
           },
           {
-            label: 'Incentives since last distribution',
+            label: 'Incentives since last milestone',
             sortable: false,
             class: 'incentives-earned',
             id: 'INCENTIVES_EARNED',
@@ -127,7 +127,7 @@ export default {
           .map(entry => ({
             address: entry.id,
             earnedIncentives: entry.arbCollected,
-            earnedIncentivesSinceLastDistribution: entry.arbCollectedSinceLastDistribution,
+            earnedIncentivesSinceLastDistribution: entry.arbCollectedSinceLastMilestone,
             eligibleTVL: entry.eligibleTvl,
             isMe: entry.id.toLowerCase() === this.smartLoanContract.address.toLowerCase(),
           }));
@@ -145,13 +145,13 @@ export default {
     watchLtipDataUpdate() {
       combineLatest({
         ltipAccountsData: this.ltipService.observeLtipAccountsData(),
-        ltipAccountsDataSinceLastDistribution: this.ltipService.observeLtipAccountsDataSinceLastDistribution()
+        ltipAccountsDataSinceLastMilestone: this.ltipService.observeLtipAccountsDataSinceLastMilestone()
       }).subscribe(data => {
-        if (data.ltipAccountsData && data.ltipAccountsDataSinceLastDistribution) {
+        if (data.ltipAccountsData && data.ltipAccountsDataSinceLastMilestone) {
           this.primeAccountsList = data.ltipAccountsData.filter(el => el.arbCollected > 0);
           this.primeAccountsList.forEach(entry => {
-            const entrySinceLastDistribution = data.ltipAccountsDataSinceLastDistribution.find(el => el.id === entry.id);
-            entry.arbCollectedSinceLastDistribution = entrySinceLastDistribution ? entrySinceLastDistribution.arbCollected : 0;
+            const entrySinceLastMilestone = data.ltipAccountsDataSinceLastMilestone.find(el => el.id === entry.id);
+            entry.arbCollectedSinceLastMilestone = entrySinceLastMilestone ? entrySinceLastMilestone.arbCollected : 0;
           });
           this.totalLeaderBoardEntries = this.primeAccountsList.length;
           let myIndex = this.primeAccountsList.findIndex(entry => entry.id.toLowerCase() === this.smartLoanContract.address.toLowerCase());

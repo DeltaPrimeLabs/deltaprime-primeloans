@@ -18,4 +18,13 @@ interface IWombatRouter {
         address to,
         uint256 deadline
     ) external returns (uint256 amount);
+
+    function removeLiquidityFromOtherAssetAsNative(
+        address pool,
+        address fromToken,
+        uint256 liquidity,
+        uint256 minimumAmount,
+        address to,
+        uint256 deadline
+    ) external returns (uint256 amount);
 }

@@ -1272,6 +1272,7 @@ export default {
       }
       if (this.currentlyOpenModalInstance) {
         this.currentlyOpenModalInstance.calculatingSwapRoute = false;
+        this.currentlyOpenModalInstance.transactionOngoing = false;
         this.currentlyOpenModalInstance.blockSubmitButton = true;
       }
       this.disableAllButtons = false;
