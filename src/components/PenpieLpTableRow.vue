@@ -398,7 +398,7 @@ export default {
       modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
         if (this.smartLoanContract) {
           const depositAndStakeRequest = {
-            market: this.lpToken.stakingContractAddress,
+            market: this.lpToken.pendleLpAddress,
             amount: addFromWalletEvent.value,
             targetAsset: this.lpToken.symbol,
             sourceAsset: this.lpToken.pendleLpSymbol,
@@ -464,7 +464,7 @@ export default {
           const queryParams = new URLSearchParams({
             chainId: "42161",
             receiverAddr: this.smartLoanContract.address,
-            marketAddr: this.lpToken.stakingContractAddress,
+            marketAddr: this.lpToken.pendleLpAddress,
             tokenInAddr: TOKEN_ADDRESSES[this.lpToken.asset],
             amountTokenIn: amountIn,
             slippage: '0.0001',
@@ -500,7 +500,7 @@ export default {
           sourceAsset: swapEvent.sourceAsset,
           targetAsset: swapEvent.targetAsset,
           amount: swapEvent.sourceAmount,
-          market: this.lpToken.stakingContractAddress,
+          market: this.lpToken.pendleLpAddress,
           minLpOut: swapEvent.targetAmount,
           guessPtReceivedFromSy: responseGuessPtReceivedFromSy,
           input: responseInput,
@@ -566,7 +566,7 @@ export default {
           const queryParams = new URLSearchParams({
             chainId: "42161",
             receiverAddr: this.smartLoanContract.address,
-            marketAddr: this.lpToken.stakingContractAddress,
+            marketAddr: this.lpToken.pendleLpAddress,
             tokenOutAddr: TOKEN_ADDRESSES[this.lpToken.asset],
             amountLpToRemove: amountIn,
             slippage: '0.0001'
@@ -599,7 +599,7 @@ export default {
           sourceAsset: swapEvent.sourceAsset,
           targetAsset: swapEvent.targetAsset,
           amount: swapEvent.sourceAmount,
-          market: this.lpToken.stakingContractAddress,
+          market: this.lpToken.pendleLpAddress,
           minOut: swapEvent.targetAmount,
           output: responseOutput,
           limit: responseLimit,
@@ -645,7 +645,7 @@ export default {
       modalInstance.$on('WITHDRAW', withdrawEvent => {
         const value = Number(withdrawEvent.value).toFixed(config.DECIMALS_PRECISION);
         const unstakeRequest = {
-          market: this.lpToken.stakingContractAddress,
+          market: this.lpToken.pendleLpAddress,
           asset: this.lpToken.symbol,
           value: value,
           assetDecimals: this.lpToken.decimals,
@@ -717,7 +717,7 @@ export default {
 
       modalInstance.$on('CLAIM', () => {
         if (this.smartLoanContract) {
-          this.handleTransaction(this.claimPenpieRewards, {market: this.lpToken.stakingContractAddress}, () => {
+          this.handleTransaction(this.claimPenpieRewards, {market: this.lpToken.pendleLpAddress}, () => {
             this.$forceUpdate();
           }, (error) => {
             this.handleTransactionError(error);
@@ -737,7 +737,7 @@ export default {
     },
 
     async getWalletPendleLpBalance() {
-      const tokenContract = new ethers.Contract(this.lpToken.stakingContractAddress ? this.lpToken.stakingContractAddress : this.lpToken.address, erc20ABI, this.provider.getSigner());
+      const tokenContract = new ethers.Contract(this.lpToken.pendleLpAddress ? this.lpToken.pendleLpAddress : this.lpToken.address, erc20ABI, this.provider.getSigner());
       return await this.getWalletTokenBalance(this.account, this.lpToken.symbol, tokenContract, this.lpToken.decimals);
     },
 
