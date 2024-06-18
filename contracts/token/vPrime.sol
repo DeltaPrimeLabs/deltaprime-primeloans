@@ -44,7 +44,12 @@ contract vPrime is PendingOwnableUpgradeable {
     * @param _vPrimeControllerAddress The address of the vPrimeController contract.
     */
     function setVPrimeControllerAddress(address _vPrimeControllerAddress) external onlyOwner {
+        require(_vPrimeControllerAddress != address(0), "vPrime: vPrimeController address cannot be 0");
+        address oldVPrimeControllerAddress = vPrimeControllerAddress;
+
         vPrimeControllerAddress = _vPrimeControllerAddress;
+
+        emit NewVPrimeControllerSet(oldVPrimeControllerAddress, _vPrimeControllerAddress, msg.sender, block.timestamp);
     }
 
     // Called by the vPrimeController to adjust the rate and balanceLimit of a user
@@ -319,4 +324,11 @@ contract vPrime is PendingOwnableUpgradeable {
             result.slot := add(keccak256(0, 0x20), pos)
         }
     }
+
+    // event for setting new vPrimeContoller with old address, new address, msg.sender and timestamp
+    event NewVPrimeControllerSet(
+        address indexed oldVPrimeControllerAddress,
+        address indexed newVPrimeControllerAddress,
+        address indexed sender,
+        uint256 timestamp);
 }
