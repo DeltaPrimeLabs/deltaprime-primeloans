@@ -8,6 +8,7 @@ import "../lib/joe-v2/math/SafeCast.sol";
 import "../interfaces/ISPrimeTraderJoe.sol";
 import "../interfaces/joe-v2/ILBRouter.sol";
 import "../interfaces/IPositionManager.sol";
+import "../lib/uniswap-v3/FullMath.sol";
 import "../lib/joe-v2/LiquidityAmounts.sol";
 import "../lib/joe-v2/math/Uint256x256Math.sol";
 import "../lib/joe-v2/math/LiquidityConfigurations.sol";
@@ -142,7 +143,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     function getFullyVestedLockedBalance(address account) public view returns (uint256 fullyVestedBalance) {
         for (uint256 i = 0; i < locks[account].length; i++) {
             if (locks[account][i].unlockTime > block.timestamp) {
-                fullyVestedBalance += locks[account][i].amount * locks[account][i].lockPeriod / MAX_LOCK_TIME;
+                fullyVestedBalance += FullMath.mulDiv(locks[account][i].amount, locks[account][i].lockPeriod, MAX_LOCK_TIME);
             }
         }
     }

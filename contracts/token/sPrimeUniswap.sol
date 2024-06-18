@@ -9,7 +9,6 @@ import "../interfaces/uniswap-v3/IUniswapV3Factory.sol";
 import "../interfaces/uniswap-v3/ISwapRouter.sol";
 import "../lib/uniswap-v3/OracleLibrary.sol";
 import "../lib/uniswap-v3/PositionValue.sol";
-import "../lib/uniswap-v3/TickMath.sol";
 import "../lib/local/DeploymentConstants.sol";
 import "../abstract/PendingOwnableUpgradeable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
@@ -152,7 +151,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
     function getFullyVestedLockedBalance(address account) public view returns (uint256 fullyVestedBalance) {
         for (uint256 i = 0; i < locks[account].length; i++) {
             if (locks[account][i].unlockTime > block.timestamp) {
-                fullyVestedBalance += locks[account][i].amount * locks[account][i].lockPeriod / MAX_LOCK_TIME;
+                fullyVestedBalance += FullMath.mulDiv(locks[account][i].amount, locks[account][i].lockPeriod, MAX_LOCK_TIME);
             }
         }
     }

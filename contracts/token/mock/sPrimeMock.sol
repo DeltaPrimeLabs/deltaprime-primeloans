@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@redstone-finance/evm-connector/contracts/core/ProxyConnector.sol";
 import {SolvencyFacetProd} from "../../facets/SolvencyFacetProd.sol";
+import "../../lib/uniswap-v3/FullMath.sol";
 import "../vPrimeController.sol";
 
 contract SPrimeMock is ERC20, Ownable, ProxyConnector {
@@ -39,7 +40,7 @@ contract SPrimeMock is ERC20, Ownable, ProxyConnector {
         fullyVestedBalance = 0;
         for (uint i = 0; i < locks[account].length; i++) {
             if (locks[account][i].unlockTime > block.timestamp) {
-                fullyVestedBalance += locks[account][i].amount * locks[account][i].lockTime / MAX_LOCK_TIME;
+                fullyVestedBalance += FullMath.mulDiv(locks[account][i].amount, locks[account][i].lockTime, MAX_LOCK_TIME);
             }
         }
     }
