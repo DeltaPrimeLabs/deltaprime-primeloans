@@ -93,7 +93,7 @@
 
 import BarGaugeBeta from './BarGaugeBeta.vue';
 import InfoIcon from './InfoIcon.vue';
-import LTIP_DISTRIBUTED_ARBITRUM from "../data/arbitrum/ltip/LTIP_EPOCH_1.json";
+import LTIP_DISTRIBUTED_ARBITRUM from "../data/arbitrum/ltip/LTIP_EPOCH_2.json";
 import {fromWei} from "../utils/calculate";
 import {mapState} from "vuex";
 import {wrapContract} from "../utils/blockchain";
