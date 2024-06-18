@@ -11,10 +11,6 @@ module.exports.newChrome = async () => {
     const StealthPlugin = require('puppeteer-extra-plugin-stealth')
     puppeteer.use(StealthPlugin())
 
-    // Add adblocker plugin to block all ads and trackers (saves bandwidth)
-    const AdblockerPlugin = require('puppeteer-extra-plugin-adblocker')
-    puppeteer.use(AdblockerPlugin({ blockTrackers: true }))
-
     const chromium = require("@sparticuz/chromium");
 
     browser = await puppeteer.launch({
