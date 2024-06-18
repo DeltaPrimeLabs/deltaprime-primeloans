@@ -231,9 +231,9 @@ const arbitrumIncentives = async (rpc = 'first') => {
     console.log('Error', error);
 
     if (error.error.code == 'SERVER_ERROR' || error.error.code == 'TIMEOUT') {
-      retry += 1;
+      retryTime += 1;
 
-      if (retry === 3) {
+      if (retryTime === 3) {
         await fetch(pingUrl.ltipPA.fail, {
           method: "POST",
           headers: {
