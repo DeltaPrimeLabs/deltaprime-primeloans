@@ -95,10 +95,11 @@ contract vPrime is PendingOwnableUpgradeable {
         address ownerToLoan = borrowersRegistry.getLoanForOwner(account);
         account = ownerToLoan != address(0) ? ownerToLoan : account;
 
-        if (_checkpoints[account].length == 0) {
+        uint256 userCkpsLen = _checkpoints[account].length;
+        if (userCkpsLen == 0) {
             return 0;
         }
-        Checkpoint memory cp = _checkpoints[account][_checkpoints[account].length - 1];
+        Checkpoint memory cp = _checkpoints[account][userCkpsLen - 1];
 
         uint256 elapsedTime = block.timestamp - cp.blockTimestamp;
         uint256 newBalance;
