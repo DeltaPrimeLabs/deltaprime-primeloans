@@ -61,7 +61,7 @@
       </div>
 
       <div class="table__cell table__cell--double-value loan" v-if="apys">
-<!--        {{ formatTvl(apys[lpToken.symbol].tvl) }}-->
+        {{ formatTvl(apys[lpToken.symbol].tvl) }}
       </div>
 
       <div class="table__cell capacity">
