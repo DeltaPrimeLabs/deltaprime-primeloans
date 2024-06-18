@@ -59,6 +59,8 @@
   --bar__background-color: #{$delta-steel}33;
   --bar__box-shadow: inset 0 1px 3px 0 #{$delta-steel}B2;
   --bar__value-background-image: linear-gradient(to right, #{$delta-cloudy} 17%, #{$washed-lilac} 91%);
+  --bar__value-background-image--completion: linear-gradient(120deg, #{$lime-green} 0%, #{$pale-green} 100%);
+  --bar__value-background-image--error: #{$red};
   // endregion
 
   // region NameValueBadgeBeta

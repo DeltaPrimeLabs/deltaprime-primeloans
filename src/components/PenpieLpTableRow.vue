@@ -941,7 +941,7 @@ export default {
 
         .apr-warning {
           position: absolute;
-          right: -25px;
+          right: 52px;
         }
       }
 

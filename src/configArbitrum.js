@@ -550,7 +550,7 @@ export default {
     ltipGrantTotalEndpoint: "https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/arbitrum-grant-total",
     previousLtipMilestone: 7500000,
     ltipMilestone: 10000000,
-    ltipLastDistributionTimestamp: 1718039400,
+    ltipLastDistributionTimestamp: 1718644520,
     ltipProgramStart: 1717432200,
     lastMilestoneHit: 1717639804
 }

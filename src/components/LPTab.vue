@@ -779,7 +779,7 @@ export default {
             sortable: false,
             class: 'apr',
             id: 'APR',
-            tooltip: `All fees, rewards and counterparty PnL collected, divided by TVL of this tranche. This does not take underlying asset price changes or IL into account.`
+            tooltip: `All fees, rewards and counterparty PnL collected, divided by TVL of this tranche. This takes into account inherent sAVAX & ggAVAX price appreciation.`
           },
           {
             label: 'Max. APR',

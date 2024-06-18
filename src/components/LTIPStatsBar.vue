@@ -22,7 +22,7 @@
       </div>
       <div class="stat-value">
         <bar-gauge-beta v-tooltip="{content: `Community mission completion: $${(totalEligibleTVL / 1000000).toFixed(1)}M / $${milestone / 1000000}M`, classes: 'info-tooltip'}"
-                        :min="0" :max="milestone" :value="totalEligibleTVL" :width="108"></bar-gauge-beta>
+                        :min="0" :max="milestone" :value="totalEligibleTVL" :width="108" :green-on-completion="true"></bar-gauge-beta>
       </div>
     </div>
     <div class="stat__entry">
@@ -93,7 +93,7 @@
 
 import BarGaugeBeta from './BarGaugeBeta.vue';
 import InfoIcon from './InfoIcon.vue';
-import LTIP_DISTRIBUTED_ARBITRUM from "../data/arbitrum/ltip/LTIP_EPOCH_1.json";
+import LTIP_DISTRIBUTED_ARBITRUM from "../data/arbitrum/ltip/LTIP_EPOCH_2.json";
 import {fromWei} from "../utils/calculate";
 import {mapState} from "vuex";
 import {wrapContract} from "../utils/blockchain";

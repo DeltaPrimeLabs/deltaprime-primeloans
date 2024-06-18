@@ -2,7 +2,7 @@
   <div class="bar-gauge-beta-component" v-bind:class="{'bar-gauge-beta-component--inline': displayInline}">
     <div class="bar-gauge">
       <div class="bar" v-bind:class="{'bar--slim': slim, 'bar--zero': value === 0}">
-        <div v-if="value > 0" class="bar__value" :style="{'width': barGaugeValueWidth + 'px'}"></div>
+        <div v-if="value > 0" class="bar__value" v-bind:class="{'bar__value--completion': value >= max && greenOnCompletion}" :style="{'width': barGaugeValueWidth + 'px'}"></div>
       </div>
       <div v-if="!slim && min && max" class="range">
         <div>{{min | percent(0)}}</div>
@@ -40,6 +40,10 @@ export default {
       default: false,
     },
     displayInline: {
+      type: Boolean,
+      default: false,
+    },
+    greenOnCompletion: {
       type: Boolean,
       default: false,
     }
@@ -114,7 +118,11 @@ export default {
 
         &.bar__value--error {
           background-image: none;
-          background-color: $red;
+          background-color: var(--bar__value-background-image--error);
+        }
+
+        &.bar__value--completion {
+          background-image: var(--bar__value-background-image--completion);
         }
       }
     }
