@@ -23,103 +23,39 @@ function timeout(ms) {
     return new Promise((resolve, reject) => setTimeout(() => reject(new Error('Timeout')), ms));
 }
 
-let currentSleepTimeMs = 0;
 
-// Function to perform your async operations with retry on timeout
-async function runWithTimeout(promises, timeoutMs) {
-    try {
-        // Race the promises against a timeout
-        return await Promise.race([
-            Promise.all(promises),
-            timeout(timeoutMs)
-        ]);
-    } catch (error) {
-        if (error.message === 'Timeout') {
-            if(currentSleepTimeMs < 15000){
-                currentSleepTimeMs += 5000;
-            } else {
-                currentSleepTimeMs = 0;
-            }
-            console.log(`Operation timed out, retrying after ${currentSleepTimeMs/1000}seconds...`);
-            await sleep(currentSleepTimeMs); // Sleep for 5000 milliseconds (5 seconds)
-            return await runWithTimeout(promises, timeoutMs); // For automatic retry
-        }
-        throw error; // For other errors
-    }
-}
+async function fetchData(file, from, to, top, pool = false) {
+    let type = pool ? 'pool' : 'loan';
+    let resp = await fetch(`https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/ltip-${type}-leaderboard?top=${top}&from=${from}&to=${to}`)
 
-async function promiseAllInBatches(task, items, batchSize) {
-    let position = 0;
-    let results = [];
-    while (position < items.length) {
-
-        console.log(`Processing from position ${position} to ${batchSize}`)
-        const itemsForBatch = items.slice(position, position + batchSize);
-        currentSleepTimeMs = 0;
-        results = [...results, ...await runWithTimeout(itemsForBatch.map(item => task(item)), 2000)];
-
-
-        position += batchSize;
-        // await sleep(1000); // Sleep for 5000 milliseconds (5 seconds)
-    }
-    return results;
-}
-
-async function fetchData() {
-    let resp = await fetch(`https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/ltip-loan-leaderboard?from=1717432200&to=${Math.ceil(Date.now()/1000)}`)
-
+    console.log(`https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/ltip-${type}-leaderboard?from=${from}&to=${to}`)
 
     let list = (await resp.json()).list;
     console.log(list)
 
-    // fs.writeFileSync(`src/data/avalanche/${file}.json`, JSON.stringify(json))
+    let json = {};
+    list.forEach(el => json[el.id] = el.arbCollected)
+
+    fs.writeFileSync(`src/data/arbitrum/ltip/${file}.json`, JSON.stringify(json))
 
     let collectedArb = 0;
 
-    // let json1 = JSON.parse(fs.readFileSync(`src/data/arbitrum/ltip/${file}.json`))
+    let json1 = JSON.parse(fs.readFileSync(`src/data/arbitrum/ltip/${file}.json`))
 
 
-    list.forEach(
-        el => {
-            collectedArb += el.arbCollected;
+    Object.values(json1).forEach(
+        v => {
+            collectedArb += v;
         }
     )
 
     console.log('collected ARB: ', collectedArb)
 }
 
-// run().then()
 
-
-function includeDoubleFunded() {
-    let json = JSON.parse(fs.readFileSync('src/data/avalanche/GM_EPOCH_1.json'))
-    let doublefunded = JSON.parse(fs.readFileSync('src/data/avalanche/double-funded.json')).list
-
-    let excessiveAmount = 0;
-    for (let wallet of doublefunded) {
-        excessiveAmount += json[wallet];
-        json[wallet] = 2 * json[wallet];
-    }
-
-    let distributedAvax = 0;
-
-    Object.entries(json).forEach(
-        ([k,v]) => {
-            distributedAvax += json[k];
-        }
-    );
-
-    fs.writeFileSync('src/data/avalanche/GM_EPOCH_1_fixed.json', JSON.stringify(json))
-
-    console.log('distributed Avax in this epoch: ', distributedAvax)
-    console.log('excessive amount: ', excessiveAmount)
-
-
-}
-
-function createDiffJson(file1, file2) {
-    let json0 = JSON.parse(fs.readFileSync(`src/data/avalanche/${file1}.json`))
-    let json1 = JSON.parse(fs.readFileSync(`src/data/avalanche/${file2}.json`))
+function createDiffJson(file1, file2, location = 'avalanche') {
+    let json0 = JSON.parse(fs.readFileSync(`src/data/${location}/${file1}.json`))
+    let json1 = JSON.parse(fs.readFileSync(`src/data/${location}/${file2}.json`))
     let json2 = {};
 
     let collectedAvax = 0;
@@ -130,26 +66,7 @@ function createDiffJson(file1, file2) {
         }
     )
 
-    fs.writeFileSync(`src/data/avalanche/${file2}_diff.json`, JSON.stringify(json2))
-
-    console.log('distributed Avax in this epoch: ', collectedAvax)
-
-}
-
-function createAddJson(file1, file2, file3) {
-    let json0 = JSON.parse(fs.readFileSync(`src/data/avalanche/${file1}.json`))
-    let json1 = JSON.parse(fs.readFileSync(`src/data/avalanche/${file2}.json`))
-    let json2 = {};
-
-    let collectedAvax = 0;
-    Object.entries(json1).forEach(
-        ([k,v]) => {
-            json2[k] = (json1[k] ? json1[k] : 0) + (json0[k] ? json0[k] : 0)
-            collectedAvax += json2[k];
-        }
-    )
-
-    fs.writeFileSync(`src/data/avalanche/${file3}.json`, JSON.stringify(json2))
+    fs.writeFileSync(`src/data/${location}/${file2}_diff.json`, JSON.stringify(json2))
 
     console.log('distributed Avax in this epoch: ', collectedAvax)
 
@@ -202,10 +119,10 @@ async function checkCollected() {
 }
 
 
-fetchData()
+fetchData("LTIP_EPOCH_2_SAVINGS", 1718039400, Math.ceil(Date.now()/1000), 5000, true)
 // checkNegativeAccounts()
 // checkCollectedInTimestamp(1715152203)
 // checkCollected();
-// createDiffJson( "GM_EPOCH_11", "GM_EPOCH_12")
+// createDiffJson( "LTIP_EPOCH_1", "LTIP_EPOCH_2", "arbitrum/ltip")
 // createAddJson( "GM_EPOCH_8", "GM_EPOCH_9_diff", "GM_EPOCH_9")
 // analyzeJson("GM_EPOCH_9")
