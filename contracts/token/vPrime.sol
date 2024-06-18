@@ -74,7 +74,7 @@ contract vPrime is PendingOwnableUpgradeable {
     // In our case that would be locking deposit/sPrime pairs (up to 3 years) for an instant vPrime unvesting
     function adjustRateCapAndBalance(address user, int256 rate, uint256 newBalanceLimit, uint256 balance) external onlyVPrimeController {
         uint256 lastRecordedVotes = getVotes(user);
-        int256 votesDiff = int256(balance) - int256(lastRecordedVotes);
+        int256 votesDiff = SafeCast.toInt256(balance) - SafeCast.toInt256(lastRecordedVotes);
 
         if (votesDiff > 0) {
             increaseTotalSupply(uint256(votesDiff));
