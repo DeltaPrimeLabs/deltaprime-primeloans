@@ -14,7 +14,7 @@ contract vPrime is PendingOwnableUpgradeable {
         uint32 blockTimestamp;
         uint256 balance;
         int256 rate; // Tokens per second
-        uint256 maxVPrimeCap;
+        uint256 balanceLimit;
     }
 
     IBorrowersRegistry public borrowersRegistry;
@@ -47,38 +47,38 @@ contract vPrime is PendingOwnableUpgradeable {
         vPrimeControllerAddress = _vPrimeControllerAddress;
     }
 
-    // Called by the vPrimeController to adjust the rate and maxVPrimeCap of a user
-    function adjustRateAndCap(address user, int256 rate, uint256 newMaxVPrimeCap) external onlyVPrimeController {
+    // Called by the vPrimeController to adjust the rate and balanceLimit of a user
+    function adjustRateAndCap(address user, int256 rate, uint256 newBalanceLimit) external onlyVPrimeController {
         uint256 lastRecordedVotes = getVotes(user);
         uint256 currentVotesBalance = balanceOf(user);
         int256 votesDiff = SafeCast.toInt256(currentVotesBalance) - SafeCast.toInt256(lastRecordedVotes);
 
         if (votesDiff > 0) {
             increaseTotalSupply(uint256(votesDiff));
-            _writeCheckpoint(_checkpoints[user], _add, uint256(votesDiff), rate, newMaxVPrimeCap);
+            _writeCheckpoint(_checkpoints[user], _add, uint256(votesDiff), rate, newBalanceLimit);
         } else if (votesDiff < 0) {
             decreaseTotalSupply(uint256(- votesDiff));
-            _writeCheckpoint(_checkpoints[user], _subtract, uint256(- votesDiff), rate, newMaxVPrimeCap);
+            _writeCheckpoint(_checkpoints[user], _subtract, uint256(- votesDiff), rate, newBalanceLimit);
         } else {
-            _writeCheckpoint(_checkpoints[user], _add, 0, rate, newMaxVPrimeCap);
+            _writeCheckpoint(_checkpoints[user], _add, 0, rate, newBalanceLimit);
         }
     }
 
-    // Called by the vPrimeController to adjust the rate, maxVPrimeCap and overwrite the balance of a user
+    // Called by the vPrimeController to adjust the rate, balanceLimit and overwrite the balance of a user
     // Balance overwrite is used when the user's balance is changed by a different mechanism than the rate
     // In our case that would be locking deposit/sPrime pairs (up to 3 years) for an instant vPrime unvesting
-    function adjustRateCapAndBalance(address user, int256 rate, uint256 newMaxVPrimeCap, uint256 balance) external onlyVPrimeController {
+    function adjustRateCapAndBalance(address user, int256 rate, uint256 newBalanceLimit, uint256 balance) external onlyVPrimeController {
         uint256 lastRecordedVotes = getVotes(user);
         int256 votesDiff = int256(balance) - int256(lastRecordedVotes);
 
         if (votesDiff > 0) {
             increaseTotalSupply(uint256(votesDiff));
-            _writeCheckpointOverwriteBalance(_checkpoints[user], balance, rate, newMaxVPrimeCap);
+            _writeCheckpointOverwriteBalance(_checkpoints[user], balance, rate, newBalanceLimit);
         } else if (votesDiff < 0) {
             decreaseTotalSupply(uint256(- votesDiff));
-            _writeCheckpointOverwriteBalance(_checkpoints[user], balance, rate, newMaxVPrimeCap);
+            _writeCheckpointOverwriteBalance(_checkpoints[user], balance, rate, newBalanceLimit);
         } else {
-            _writeCheckpointOverwriteBalance(_checkpoints[user], lastRecordedVotes, rate, newMaxVPrimeCap);
+            _writeCheckpointOverwriteBalance(_checkpoints[user], lastRecordedVotes, rate, newBalanceLimit);
         }
     }
 
@@ -101,16 +101,16 @@ contract vPrime is PendingOwnableUpgradeable {
         if (cp.rate >= 0) {
             uint256 balanceIncrease = uint256(cp.rate) * elapsedTime;
             newBalance = cp.balance + balanceIncrease;
-            return (newBalance > cp.maxVPrimeCap) ? cp.maxVPrimeCap : newBalance;
+            return (newBalance > cp.balanceLimit) ? cp.balanceLimit : newBalance;
         } else {
             // If rate is negative, convert to positive for calculation, then subtract
             uint256 balanceDecrease = uint256(- cp.rate) * elapsedTime;
             if (balanceDecrease > cp.balance) {
                 // Prevent underflow, setting balance to min cap if decrease exceeds current balance
-                return cp.maxVPrimeCap;
+                return cp.balanceLimit;
             } else {
                 newBalance = cp.balance - balanceDecrease;
-                return (newBalance < cp.maxVPrimeCap) ? cp.maxVPrimeCap : newBalance;
+                return (newBalance < cp.balanceLimit) ? cp.balanceLimit : newBalance;
             }
         }
     }
@@ -203,7 +203,7 @@ contract vPrime is PendingOwnableUpgradeable {
         function(uint256, uint256) view returns (uint256) op,
         uint256 delta,
         int256 rate,
-        uint256 maxVPrimeCap
+        uint256 balanceLimit
     ) private returns (uint256 oldWeight, uint256 newWeight) {
         uint256 pos = ckpts.length;
         Checkpoint memory oldCkpt = pos == 0 ? Checkpoint(0, 0, 0, 0) : ckpts[pos - 1];
@@ -214,13 +214,13 @@ contract vPrime is PendingOwnableUpgradeable {
         if (pos > 0 && oldCkpt.blockTimestamp == clock()) {
             oldCkpt.balance = newWeight;
             oldCkpt.rate = rate;
-            oldCkpt.maxVPrimeCap = maxVPrimeCap;
+            oldCkpt.balanceLimit = balanceLimit;
         } else {
             ckpts.push(Checkpoint({
                 blockTimestamp: SafeCast.toUint32(clock()),
                 balance: newWeight,
                 rate: rate,
-                maxVPrimeCap: maxVPrimeCap
+                balanceLimit: balanceLimit
             }));
         }
     }
@@ -229,7 +229,7 @@ contract vPrime is PendingOwnableUpgradeable {
         Checkpoint[] storage ckpts,
         uint256 balance,
         int256 rate,
-        uint256 maxVPrimeCap
+        uint256 balanceLimit
     ) private returns (uint256 oldWeight, uint256 newWeight) {
         uint256 pos = ckpts.length;
         Checkpoint memory oldCkpt = pos == 0 ? Checkpoint(0, 0, 0, 0) : ckpts[pos - 1];
@@ -237,13 +237,13 @@ contract vPrime is PendingOwnableUpgradeable {
         if (pos > 0 && oldCkpt.blockTimestamp == clock()) {
             oldCkpt.balance = balance;
             oldCkpt.rate = rate;
-            oldCkpt.maxVPrimeCap = maxVPrimeCap;
+            oldCkpt.balanceLimit = balanceLimit;
         } else {
             ckpts.push(Checkpoint({
                 blockTimestamp: SafeCast.toUint32(clock()),
                 balance: balance,
                 rate: rate,
-                maxVPrimeCap: maxVPrimeCap
+                balanceLimit: balanceLimit
             }));
         }
     }
