@@ -5,7 +5,7 @@ pragma solidity 0.8.17;
 import "@layerzerolabs/solidity-examples/contracts/token/oft/v2/BaseOFTV2.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-contract PrimeBridge is BaseOFTV2{
+contract PrimeBridge is BaseOFTV2 {
     using SafeERC20 for IERC20;
 
     IERC20 internal immutable innerToken;
@@ -23,12 +23,17 @@ contract PrimeBridge is BaseOFTV2{
     ) BaseOFTV2(_sharedDecimals, _lzEndpoint) {
         innerToken = _token;
 
-        (bool success, bytes memory data) = address(_token).staticcall(abi.encodeWithSignature("decimals()"));
+        (bool success, bytes memory data) = address(_token).staticcall(
+            abi.encodeWithSignature("decimals()")
+        );
         require(success, "ProxyOFT: failed to get token decimals");
         uint8 decimals = abi.decode(data, (uint8));
 
-        require(_sharedDecimals <= decimals, "ProxyOFT: sharedDecimals must be <= decimals");
-        ld2sdRate = 10**(decimals - _sharedDecimals);
+        require(
+            _sharedDecimals <= decimals,
+            "ProxyOFT: sharedDecimals must be <= decimals"
+        );
+        ld2sdRate = 10 ** (decimals - _sharedDecimals);
     }
 
     /************************************************************************
@@ -77,9 +82,9 @@ contract PrimeBridge is BaseOFTV2{
         // tokens are already in this contract, so no need to transfer
         if (_toAddress == address(this)) {
             return _amount;
+        } else {
+            return _transferFrom(address(this), _toAddress, _amount);
         }
-
-        return _transferFrom(address(this), _toAddress, _amount);
     }
 
     function _transferFrom(
