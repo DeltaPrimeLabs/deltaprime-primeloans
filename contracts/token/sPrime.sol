@@ -43,6 +43,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     ILBPair public lbPair;
     IPositionManager public positionManager;
     address public vPrimeController;
+    address public traderJoeV2Router;
 
     // Arrays for storing deltaIds and distributions
     int256[] private deltaIds;
@@ -58,16 +59,16 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     * @param distributionY_ Pre-defined distribution Y
     * @param deltaIds_ Delta id for bins
     * @param positionManager_ Position Manager contract for sPrime
+    * @param traderJoeV2Router_ Trader Joe V2 Router Address
     */
-    function initialize(address tokenX_, address tokenY_, string memory name_, uint256[] memory distributionX_, uint256[] memory distributionY_, int256[] memory deltaIds_, address positionManager_) external initializer {
+    function initialize(address tokenX_, address tokenY_, string memory name_, uint256[] memory distributionX_, uint256[] memory distributionY_, int256[] memory deltaIds_, address positionManager_, address traderJoeV2Router_) external initializer {
         __PendingOwnable_init();
         __ReentrancyGuard_init();
         __ERC20_init(name_, "sPrime");
 
         require(deltaIds_.length == distributionX_.length && deltaIds_.length == distributionY_.length, "Length Mismatch");
-
-        ILBRouter traderJoeV2Router = ILBRouter(getJoeV2RouterAddress());
-        ILBFactory lbFactory = traderJoeV2Router.getFactory();
+        traderJoeV2Router = traderJoeV2Router_;
+        ILBFactory lbFactory = ILBRouter(traderJoeV2Router).getFactory();
         ILBFactory.LBPairInformation memory pairInfo = lbFactory.getLBPairInformation(IERC20(tokenX_), IERC20(tokenY_), DEFAULT_BIN_STEP);
 
         lbPair = pairInfo.LBPair;
@@ -86,10 +87,6 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     }
 
     /** Public View Functions */
-
-    function getJoeV2RouterAddress() public view virtual returns (address){
-        return 0xb4315e873dBcf96Ffd0acd8EA43f689D8c20fB30;
-    }
 
     function getLBPair() public view returns (address) {
         return address(lbPair);
@@ -216,7 +213,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
         if(reserveA > 0) {
             uint256 price = PriceHelper.convert128x128PriceToDecimal(lbPair.getPriceFromId(lbPair.getActiveId()));
             // Swap For Y : Convert token X to token Y
-            amountY = amountX * price / (10 ** IERC20Metadata(address(tokenX)).decimals());
+            amountY = FullMath.mulDiv(amountX, price, 10 ** IERC20Metadata(address(tokenX)).decimals());
         } else {
             amountY = 0;
         }
@@ -232,12 +229,12 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
         bool swapTokenX = amountY < amountXToY;
         uint256 diff = swapTokenX ? amountXToY - amountY : amountY - amountXToY;
         // (amountXToY != 0 || amountX == 0) for excluding the initial LP deposit
-        if(amountY * _REBALANCE_MARGIN / 100 < diff && (amountXToY > 0 || amountX == 0)) {
+        if(FullMath.mulDiv(amountY, _REBALANCE_MARGIN, 100) < diff && (amountXToY > 0 || amountX == 0)) {
             uint256 amountIn;
             {
                 uint256 price = PriceHelper.convert128x128PriceToDecimal(lbPair.getPriceFromId(lbPair.getActiveId()));
                 // Swap For X : Convert token Y to token X
-                amountIn = (diff / 2) * (10 ** IERC20Metadata(address(tokenX)).decimals()) / price;
+                amountIn = FullMath.mulDiv(diff / 2, 10 ** IERC20Metadata(address(tokenX)).decimals(), price);
             }
 
             uint256 amountOut = diff / 2; 
@@ -247,13 +244,13 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
             if (swapTokenX) {
                 tokenPathDynamic[0] = tokenX;
                 tokenPathDynamic[1] = tokenY;
-                tokenX.safeApprove(getJoeV2RouterAddress(), 0);
-                tokenX.safeApprove(getJoeV2RouterAddress(), amountIn);
+                tokenX.safeApprove(traderJoeV2Router, 0);
+                tokenX.safeApprove(traderJoeV2Router, amountIn);
             } else {
                 tokenPathDynamic[0] = tokenY;
                 tokenPathDynamic[1] = tokenX;
-                tokenY.safeApprove(getJoeV2RouterAddress(), 0);
-                tokenY.safeApprove(getJoeV2RouterAddress(), amountIn);
+                tokenY.safeApprove(traderJoeV2Router, 0);
+                tokenY.safeApprove(traderJoeV2Router, amountIn);
             }
 
             ILBRouter.Version[] memory versionsDynamic = new ILBRouter.Version[](1);
@@ -267,7 +264,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
                 versions: versionsDynamic,
                 tokenPath: tokenPathDynamic
             });
-            amountOut = ILBRouter(getJoeV2RouterAddress()).swapExactTokensForTokens(amountIn, amountOut * (100 - swapSlippage) / 100, path, address(this), block.timestamp);
+            amountOut = ILBRouter(traderJoeV2Router).swapExactTokensForTokens(amountIn, amountOut * (100 - swapSlippage) / 100, path, address(this), block.timestamp);
             (amountX, amountY) = swapTokenX ? (amountX - amountIn,amountY + amountOut) : (amountX + amountOut, amountY - amountIn);
         }
         return (amountX, amountY);
@@ -312,7 +309,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
         // Get the ids and amounts of the tokens to withdraw.
         for (uint256 i; i < delta;) {
             uint256 id = depositIds[i];
-            liquidityAmounts[i] = liquidityMinted[i] * share / totalShare;
+            liquidityAmounts[i] = FullMath.mulDiv(liquidityMinted[i], share, totalShare);
             if (liquidityAmounts[i] != 0) {
                 ids[length] = id;
                 amounts[length] = liquidityAmounts[i];
@@ -622,7 +619,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
                 (,,,,uint256 centerId, uint256[] memory liquidityMinted) = positionManager.positions(tokenId);
                 IPositionManager.DepositConfig memory depositConfig = positionManager.getDepositConfig(centerId);
                 for(uint256 i = 0 ; i < liquidityMinted.length ; i ++) {
-                    liquidityMinted[i] = liquidityMinted[i] * amount / balanceOf(from);
+                    liquidityMinted[i] = FullMath.mulDiv(liquidityMinted[i], amount, balanceOf(from));
                 }
 
                 positionManager.update(IPositionManager.UpdateParams({
