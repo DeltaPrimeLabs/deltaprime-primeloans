@@ -235,6 +235,8 @@ export default {
       'balancerLpBalances',
       'penpieLpBalances',
       'penpieLpAssets',
+      'wombatLpAssets',
+      'wombatLpBalances',
     ]),
     ...mapState('poolStore', ['pools']),
     ...mapState('network', ['account', 'provider']),
@@ -452,6 +454,8 @@ export default {
       modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.loan = this.debt;
@@ -496,6 +500,8 @@ export default {
       modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.farms = this.farms;
       modalInstance.health = this.health;
@@ -552,6 +558,8 @@ export default {
       modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.targetAsset = this.lpToken.symbol;
       modalInstance.debt = this.fullLoanStatus.debt;
@@ -620,6 +628,8 @@ export default {
       modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.targetAsset = this.lpToken.underlyingAssets[0];
       modalInstance.debt = this.fullLoanStatus.debt;

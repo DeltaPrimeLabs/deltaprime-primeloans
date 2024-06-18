@@ -19,6 +19,10 @@
               {{ entry.earnedIncentives | smartRound(8, true) }}
               <img class="incentives-icon" src="src/assets/logo/arb.png">
             </div>
+            <div class="leader-board-cell incentives-earned">
+              {{ entry.earnedIncentivesSinceLastDistribution | smartRound(8, true) }}
+              <img class="incentives-icon" src="src/assets/logo/arb.png">
+            </div>
           </div>
         </div>
         <Paginator :page-size="PAGE_SIZE"
@@ -44,6 +48,7 @@ import StatsSectionHeader from './StatsSectionHeader.vue';
 import TableHeader from '../TableHeader.vue';
 import Paginator from '../Paginator.vue';
 import {mapState} from 'vuex';
+import {combineLatest, forkJoin} from 'rxjs';
 
 const PAGE_SIZE = 10;
 
@@ -78,7 +83,7 @@ export default {
   methods: {
     setupTableHeader() {
       this.leaderBoardTableHeaderConfig = {
-        gridTemplateColumns: '140px 350px 1fr 2fr',
+        gridTemplateColumns: '140px 250px 1fr 1fr 2fr',
         cells: [
           {
             label: 'Place',
@@ -104,6 +109,12 @@ export default {
             class: 'incentives-earned',
             id: 'INCENTIVES_EARNED',
           },
+          {
+            label: 'Incentives since last milestone',
+            sortable: false,
+            class: 'incentives-earned',
+            id: 'INCENTIVES_EARNED',
+          },
         ]
       };
     },
@@ -116,6 +127,7 @@ export default {
           .map(entry => ({
             address: entry.id,
             earnedIncentives: entry.arbCollected,
+            earnedIncentivesSinceLastDistribution: entry.arbCollectedSinceLastMilestone,
             eligibleTVL: entry.eligibleTvl,
             isMe: entry.id.toLowerCase() === this.smartLoanContract.address.toLowerCase(),
           }));
@@ -131,18 +143,24 @@ export default {
     },
 
     watchLtipDataUpdate() {
-      this.ltipService.observeLtipAccountsData().subscribe((list) => {
-        if (list) {
-          this.primeAccountsList = list.filter(el => el.arbCollected > 0);
+      combineLatest({
+        ltipAccountsData: this.ltipService.observeLtipAccountsData(),
+        ltipAccountsDataSinceLastMilestone: this.ltipService.observeLtipAccountsDataSinceLastMilestone()
+      }).subscribe(data => {
+        if (data.ltipAccountsData && data.ltipAccountsDataSinceLastMilestone) {
+          this.primeAccountsList = data.ltipAccountsData.filter(el => el.arbCollected > 0);
+          this.primeAccountsList.forEach(entry => {
+            const entrySinceLastMilestone = data.ltipAccountsDataSinceLastMilestone.find(el => el.id === entry.id);
+            entry.arbCollectedSinceLastMilestone = entrySinceLastMilestone ? entrySinceLastMilestone.arbCollected : 0;
+          });
           this.totalLeaderBoardEntries = this.primeAccountsList.length;
           let myIndex = this.primeAccountsList.findIndex(entry => entry.id.toLowerCase() === this.smartLoanContract.address.toLowerCase());
 
-          console.log('myIndex: ', myIndex)
-          console.log('primeAccountsList.length: ', this.primeAccountsList.length)
           this.page = Math.max(Math.ceil(myIndex / PAGE_SIZE), 1);
           this.setPagedData(this.page);
         }
-      });
+
+      })
     }
   },
   watch: {}
@@ -162,7 +180,7 @@ export default {
 .leader-board-table {
   .leader-board-row {
     display: grid;
-    grid-template-columns: 140px 350px 1fr 2fr;
+    grid-template-columns: 140px 250px 1fr 1fr 2fr;
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;

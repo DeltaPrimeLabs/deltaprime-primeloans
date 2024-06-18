@@ -99,6 +99,8 @@ export default {
       display: flex;
 
       .rewards__reward-token {
+        text-align: center;
+
         &:not(:first-child) {
           margin-left: 15px;
         }

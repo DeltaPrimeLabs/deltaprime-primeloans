@@ -261,6 +261,8 @@ export default {
             maturity: '26/12/2024'
         }
     },
+    WOMBAT_LP_ASSETS_CONFIG: {},
+    WOMBAT_LP_ASSETS: {},
     LEVEL_LP_ASSETS_CONFIG: {
         "arbJnrLLP": {name: "Junior", symbol: "arbJnrLLP", pid: 2, short: "Jnr", decimals: 18, address: addresses.arbJnrLLP, debtCoverage: 0.83333333333, balanceMethod: "levelJnrBalance", groupIdentifier: 'STKD_JNR_LLP_GROUP', underlyingAssets: ['BTC', 'ETH', 'ARB', 'USDT', 'USDC'], link: 'https://app.level.finance/liquidity/junior-tranche/buy', disableAddTokenButton: true},
         "arbMzeLLP": {name: "Mezzanine", symbol: "arbMzeLLP", pid: 1, short: "Mze", decimals: 18, address: addresses.arbMzeLLP, debtCoverage: 0.83333333333, balanceMethod: "levelMzeBalance", groupIdentifier: 'STKD_MZE_LLP_GROUP', underlyingAssets: ['BTC', 'ETH', 'USDT', 'USDC'], link: 'https://app.level.finance/liquidity/mezzanine-tranche/buy', disableAddTokenButton: true},
@@ -479,6 +481,7 @@ export default {
     ltipGrantTotalEndpoint: "https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/arbitrum-grant-total",
     previousLtipMilestone: 7500000,
     ltipMilestone: 10000000,
-    ltipLastDistributionTimestamp: 1717432200,
+    ltipLastDistributionTimestamp: 1718644520,
+    ltipProgramStart: 1717432200,
     lastMilestoneHit: 1717639804
 }

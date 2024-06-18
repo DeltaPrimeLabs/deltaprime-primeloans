@@ -59,6 +59,8 @@
   --bar__background-color: #{$cloud-navy};
   --bar__box-shadow: inset 0 1px 3px 0 #{$washed-fuchsia};
   --bar__value-background-image: linear-gradient(to left, #{$deep-blue} 9%, #{$deep-lilac} 83%);
+  --bar__value-background-image--completion: linear-gradient(to right, #{$lime-green} 0%, #{$pale-green} 100%);
+  --bar__value-background-image--error: #{$pale-red};
   // endregion
 
   // region NameValueBadgeBeta
@@ -644,5 +646,10 @@
 
   // region ClaimGLPModal
   --claim-glp-modal__rewards-label-color: #{$storm-blue};
+  // endregion
+
+  // region WombatPoolRow
+  --wombat-pool-row__header-color: #{$washed-blue};
+  --wombat-pool-row__header-border: linear-gradient(to right, #{$dark-fuchsia} 19%, #{$pale-plum} 57%, #{$teal} 88%);
   // endregion
 }

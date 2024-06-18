@@ -163,6 +163,8 @@ export default {
       'balancerLpBalances',
       'penpieLpAssets',
       'penpieLpBalances',
+      'wombatLpAssets',
+      'wombatLpBalances',
       'traderJoeV2LpAssets',
       'fullLoanStatus',
       'noSmartLoan',
@@ -181,6 +183,7 @@ export default {
       'farmService',
       'collateralService',
       'debtService',
+      'ggpIncentivesService',
       'ltipService'
     ]),
     ...mapState('network', ['account']),
@@ -273,7 +276,8 @@ export default {
         this.dataRefreshEventService.observeFullLoanStatusRefresh(),
         this.dataRefreshEventService.observeAssetApysDataRefresh(),
         this.ltipService.observeLtipPrimeAccountEligibleTvl(),
-        this.ltipService.observeLtipMaxBoostApy()
+        this.ltipService.observeLtipMaxBoostApy(),
+        this.ggpIncentivesService.observeBoostGGPApy$(),
       ])
           .subscribe(async ([,,,,,,eligibleTvl, maxBoostApy]) => {
             await this.getAccountApr({eligibleTvl, maxBoostApy});
@@ -370,6 +374,8 @@ export default {
             this.gmxV2Balances,
             this.penpieLpAssets,
             this.penpieLpBalances,
+            this.wombatLpAssets,
+            this.wombatLpBalances,
             this.traderJoeV2LpAssets,
             this.farms,
         );

@@ -322,6 +322,8 @@ export default {
       gmxV2Balances: {},
       penpieLpAssets: {},
       penpieLpBalances: {},
+      wombatLpAssets: {},
+      wombatLpBalances: {},
       traderJoeV2LpAssets: {},
       balancerLpAssets: {},
       balancerLpBalances: {},
@@ -453,6 +455,7 @@ export default {
 
       let estimated;
       if (queryResponse) {
+        this.blockSubmitButton = false;
         if (this.swapDebtMode) {
           console.log(queryResponse);
           estimated = queryResponse.amounts[queryResponse.amounts.length - 1];
@@ -590,9 +593,12 @@ export default {
     },
 
     setupTargetAsset() {
+      console.log('asfrqger', this.targetAsset);
+      console.log('asfrqger', this.targetAssetsConfig);
       if (this.targetAsset) {
         this.targetAssetData = this.targetAssetsConfig[this.targetAsset];
       }
+      console.log('asfrqger', this.targetAssetData);
     },
 
     async sourceInputChange(changeEvent) {
@@ -752,6 +758,7 @@ export default {
     async handlePriceImpactClick(key) {
       console.log(key);
       if (!this.slippageOptions[key].disabled) {
+        this.blockSubmitButton = false;
         this.selectedSlippageOption = key;
         this.userSlippage = this.slippageOptions[key].value;
 
@@ -765,6 +772,7 @@ export default {
     },
 
     async advancedModeToggle() {
+      this.blockSubmitButton = false;
       const dexSlippageMargin = config.SWAP_DEXS_CONFIG[this.swapDex].slippageMargin;
       this.advancedSlippageMode = !this.advancedSlippageMode;
       localStorage.setItem('ADVANCED_SLIPPAGE_MODE', this.advancedSlippageMode);
@@ -851,6 +859,29 @@ export default {
         for (const [symbol, data] of Object.entries(this.penpieLpAssets)) {
           if (this.penpieLpBalances) {
             let balance = parseFloat(this.penpieLpBalances[symbol]);
+
+            if (symbol === this.sourceAsset) {
+              balance -= this.sourceAssetAmount;
+            }
+
+            if (symbol === this.targetAsset) {
+              balance += this.targetAssetAmount;
+            }
+
+            tokens.push({
+              price: data.price,
+              balance: balance ? balance : 0,
+              borrowed: 0,
+              debtCoverage: data.debtCoverage
+            });
+          }
+        }
+      }
+
+      if (this.wombatLpAssets) {
+        for (const [symbol, data] of Object.entries(this.wombatLpAssets)) {
+          if (this.wombatLpBalances) {
+            let balance = parseFloat(this.wombatLpBalances[symbol]);
 
             if (symbol === this.sourceAsset) {
               balance -= this.sourceAssetAmount;

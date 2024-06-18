@@ -13,7 +13,7 @@
     <div class="account" v-tooltip="{content: 'Your wallet address', classes: 'info-tooltip long'}">
       <a :href='getWalletExplorerUrl' target="_blank">{{account | tx(true)}}</a>
     </div>
-    <div class="balance">{{accountBalance | avax}}</div>
+    <div class="balance">{{accountBalance | avax(3)}}</div>
     <img class="logo" :src="tokenLogos[nativeToken]"/>
     <div class="separator"></div>
     <IconButton :disabled="!account || !notifiScreenLoaded || !isNotifiEnabled"
