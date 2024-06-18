@@ -627,7 +627,7 @@ export default {
 
       combineLatest(
         Object.keys(lpTokens).map(key =>
-          from(wrappedContract.pendingRewards(lpTokens[key].stakingContractAddress))
+          from(wrappedContract.pendingRewards(lpTokens[key].pendleLpAddress))
             .pipe(
               map((rewards) => ([
                 {asset: 'PENPIE', amount: rewards[0]},
