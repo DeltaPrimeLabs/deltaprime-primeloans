@@ -246,10 +246,12 @@ contract SPrime is ISPrime, ReentrancyGuardUpgradeable, PendingOwnableUpgradeabl
             if (swapTokenX) {
                 tokenPathDynamic[0] = tokenX;
                 tokenPathDynamic[1] = tokenY;
+                tokenX.safeApprove(getJoeV2RouterAddress(), 0);
                 tokenX.safeApprove(getJoeV2RouterAddress(), amountIn);
             } else {
                 tokenPathDynamic[0] = tokenY;
                 tokenPathDynamic[1] = tokenX;
+                tokenY.safeApprove(getJoeV2RouterAddress(), 0);
                 tokenY.safeApprove(getJoeV2RouterAddress(), amountIn);
             }
 

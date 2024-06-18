@@ -220,11 +220,13 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
             if (swapTokenX) {
                 tokenIn = address(tokenX);
                 tokenOut = address(tokenY);
-                tokenX.forceApprove(swapRouter, amountIn);
+                tokenX.safeApprove(swapRouter, 0);
+                tokenX.safeApprove(swapRouter, amountIn);
             } else {
                 tokenIn = address(tokenY);
                 tokenOut = address(tokenX);
-                tokenY.forceApprove(swapRouter, amountIn);
+                tokenY.safeApprove(swapRouter, 0);
+                tokenY.safeApprove(swapRouter, amountIn);
             }
 
             amountOut = ISwapRouter(swapRouter).exactInputSingle(
