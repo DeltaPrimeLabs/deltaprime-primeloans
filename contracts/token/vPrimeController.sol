@@ -124,8 +124,9 @@ abstract contract vPrimeController is PendingOwnableUpgradeable, RedstoneConsume
             uint256 fullyVestedBalance = whitelistedPools[i].getFullyVestedLockedBalance(userAddress);
             uint256 nonVestedBalance = IERC20(whitelistedPools[i]).balanceOf(userAddress) - fullyVestedBalance;
 
-            fullyVestedDollarValue += FullMath.mulDiv(fullyVestedBalance, prices[i] * RS_PRICE_PRECISION_1e18_COMPLEMENT, 10 ** whitelistedPools[i].decimals());
-            nonVestedDollarValue += FullMath.mulDiv(nonVestedBalance, prices[i] * RS_PRICE_PRECISION_1e18_COMPLEMENT, 10 ** whitelistedPools[i].decimals());
+            uint256 _denominator = 10 ** whitelistedPools[i].decimals();
+            fullyVestedDollarValue += FullMath.mulDiv(fullyVestedBalance, prices[i] * RS_PRICE_PRECISION_1e18_COMPLEMENT, _denominator);
+            nonVestedDollarValue += FullMath.mulDiv(nonVestedBalance, prices[i] * RS_PRICE_PRECISION_1e18_COMPLEMENT, _denominator);
         }
         return (fullyVestedDollarValue, nonVestedDollarValue);
     }
