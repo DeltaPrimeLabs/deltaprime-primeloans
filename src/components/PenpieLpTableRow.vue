@@ -6,13 +6,13 @@
         <div class="asset__info">
           <a class="asset__name" :href="lpToken.link" target="_blank">{{ lpToken.assetNameToDisplay }}
           </a>
-          <InfoIcon class="info__icon"
-                    :tooltip="{content: `Maturity ${lpToken.maturity} - ${lpToken.maturityInDays} days`, classes: 'info-tooltip'}"
-                    :classes="'info-tooltip'"></InfoIcon>
           <div class="asset__dex">
             by {{ lpToken.dex }}
           </div>
         </div>
+        <InfoIcon class="info__icon"
+                  :tooltip="{content: `Maturity ${lpToken.maturity} - ${lpToken.maturityInDays} days`, classes: 'info-tooltip'}"
+                  :classes="'info-tooltip'"></InfoIcon>
       </div>
 
       <div class="table__cell table__cell--double-value lp-balance">
@@ -61,7 +61,7 @@
       </div>
 
       <div class="table__cell table__cell--double-value loan" v-if="apys">
-        {{ formatTvl(apys[lpToken.symbol].tvl) }}
+<!--        {{ formatTvl(apys[lpToken.symbol].tvl) }}-->
       </div>
 
       <div class="table__cell capacity">
@@ -867,7 +867,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: 100px 130px 130px 1fr 80px 120px 110px 100px 40px 80px 22px;
+    grid-template-columns: 105px 130px 130px 1fr 80px 120px 110px 100px 40px 80px 22px;
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;
