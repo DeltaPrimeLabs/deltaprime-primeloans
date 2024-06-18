@@ -5,7 +5,7 @@ pragma solidity 0.8.17;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import '@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol';
 
-import "../../interfaces/ISPrime.sol";
+import "../../interfaces/ISPrimeTraderJoe.sol";
 import "../../interfaces/IPositionManager.sol";
 import "../../lib/joe-v2/LiquidityAmounts.sol";
 
@@ -57,9 +57,9 @@ contract PositionManager is
     {
         Position memory position = _positions[tokenId];
 
-        address lbPair = ISPrime(sPrime).getLBPair();
-        address tokenX = ISPrime(sPrime).getTokenX();
-        address tokenY = ISPrime(sPrime).getTokenY();
+        address lbPair = ISPrimeTraderJoe(sPrime).getLBPair();
+        address tokenX = ISPrimeTraderJoe(sPrime).getTokenX();
+        address tokenY = ISPrimeTraderJoe(sPrime).getTokenY();
 
         return (
             tokenX,

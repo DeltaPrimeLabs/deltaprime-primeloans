@@ -67,7 +67,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
         feeTier = feeTier_;
 
         address poolAddress = IUniswapV3Factory(getUniV3FactoryAddress()).getPool(tokenX_, tokenY_, feeTier_);
-        
+        require(poolAddress != address(0), "Pool not existing");
         pool = IUniswapV3Pool(poolAddress);
         tickSpacing = pool.tickSpacing();
         deltaIds = deltaIds_;
@@ -612,5 +612,11 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
                 userTokenId[to] = newTokenId;
             }
         }
+    }
+
+    // Temprory function
+
+    function getUserDepositDollarValue(address user) external pure returns (uint256) {
+        return 1;
     }
 }
