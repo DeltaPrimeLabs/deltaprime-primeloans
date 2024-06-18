@@ -21,6 +21,7 @@ abstract contract vPrimeController is PendingOwnableUpgradeable, RedstoneConsume
     uint256 public constant DEPOSITOR_YEARLY_V_PRIME_RATE = 5;
     uint256 public constant MAX_V_PRIME_VESTING_YEARS = 3;
     uint256 public constant V_PRIME_DETERIORATION_DAYS = 14;
+    uint256 public constant V_PRIME_PAIR_RATIO = 10;
 
     /* ========== INITIALIZER ========== */
 
@@ -177,7 +178,7 @@ abstract contract vPrimeController is PendingOwnableUpgradeable, RedstoneConsume
         uint256 userBorrowedDollarValue = getUserBorrowedDollarValueAcrossWhitelistedPools(userAddress);
         (uint256 userSPrimeDollarValueFullyVested, uint256 userSPrimeDollarValueNonVested) = getUserSPrimeDollarValueVestedAndNonVested(userAddress);
         uint256 borrowerVPrimePairsCount = Math.min
-            (userBorrowedDollarValue / 10,
+            (userBorrowedDollarValue / V_PRIME_PAIR_RATIO,
             (userSPrimeDollarValueFullyVested + userSPrimeDollarValueNonVested)
         ) / 1e18;
         return borrowerVPrimePairsCount;
@@ -198,13 +199,13 @@ abstract contract vPrimeController is PendingOwnableUpgradeable, RedstoneConsume
 
     /*
     * For every $10 deposited and $1 $sPRIME staked into one of DeltaPrime’s liquidity pools, your balance increases with 5 $vPRIME per year.
-    * Only full 10-1 pairs can produce $vPRIME.
+    * Only full ${V_PRIME_PAIR_RATIO}-1 pairs can produce $vPRIME.
     */
     function getDepositorVPrimePairsCount(address userAddress) public view returns (uint256 depositVestedPairsCount, uint256 depositNonVestedPairsCount){
         (uint256 userDepositFullyVestedDollarValue, uint256 userDepositNonVestedDollarValue) = getUserDepositDollarValueAcrossWhiteListedPoolsVestedAndNonVested(userAddress);
         (uint256 userSPrimeDollarValueFullyVested, uint256 userSPrimeDollarValueNonVested) = getUserSPrimeDollarValueVestedAndNonVested(userAddress);
-        uint256 depositVestedPairsCount = Math.min(userDepositFullyVestedDollarValue / 10, userSPrimeDollarValueFullyVested) / 1e18;
-        uint256 depositNonVestedPairsCount = Math.min(userDepositNonVestedDollarValue / 10, userSPrimeDollarValueNonVested) / 1e18;
+        uint256 depositVestedPairsCount = Math.min(userDepositFullyVestedDollarValue / V_PRIME_PAIR_RATIO, userSPrimeDollarValueFullyVested) / 1e18;
+        uint256 depositNonVestedPairsCount = Math.min(userDepositNonVestedDollarValue / V_PRIME_PAIR_RATIO, userSPrimeDollarValueNonVested) / 1e18;
         return (depositVestedPairsCount, depositNonVestedPairsCount);
     }
 
