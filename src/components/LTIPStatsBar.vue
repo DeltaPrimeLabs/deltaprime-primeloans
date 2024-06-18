@@ -22,7 +22,7 @@
       </div>
       <div class="stat-value">
         <bar-gauge-beta v-tooltip="{content: `Community mission completion: $${(totalEligibleTVL / 1000000).toFixed(1)}M / $${milestone / 1000000}M`, classes: 'info-tooltip'}"
-                        :min="0" :max="milestone" :value="totalEligibleTVL" :width="108"></bar-gauge-beta>
+                        :min="0" :max="milestone" :value="totalEligibleTVL" :width="108" :green-on-completion="true"></bar-gauge-beta>
       </div>
     </div>
     <div class="stat__entry">
