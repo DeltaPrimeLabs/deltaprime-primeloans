@@ -8,12 +8,12 @@ import "../abstract/PendingOwnableUpgradeable.sol";
 import "../interfaces/ITokenManager.sol";
 import "../interfaces/IBorrowersRegistry.sol";
 import "../interfaces/IPool.sol";
-import "./mock/sPrimeMock.sol";
+import "../interfaces/ISPrime.sol";
 import "./vPrime.sol";
 import "../lib/uniswap-v3/FullMath.sol";
 
 abstract contract vPrimeController is PendingOwnableUpgradeable, RedstoneConsumerNumericBase {
-    SPrimeMock[] public whitelistedSPrimeContracts;
+    ISPrime[] public whitelistedSPrimeContracts;
     ITokenManager public tokenManager;
     vPrime public vPrimeContract;
     IBorrowersRegistry public borrowersRegistry;
@@ -26,7 +26,7 @@ abstract contract vPrimeController is PendingOwnableUpgradeable, RedstoneConsume
 
     /* ========== INITIALIZER ========== */
 
-    function initialize(SPrimeMock[] memory _whitelistedSPrimeContracts, ITokenManager _tokenManager, vPrime _vPrime) external initializer {
+    function initialize(ISPrime[] memory _whitelistedSPrimeContracts, ITokenManager _tokenManager, vPrime _vPrime) external initializer {
         whitelistedSPrimeContracts = _whitelistedSPrimeContracts;
         tokenManager = _tokenManager;
         vPrimeContract = _vPrime;
@@ -78,7 +78,7 @@ abstract contract vPrimeController is PendingOwnableUpgradeable, RedstoneConsume
     * @dev Can only be called by the contract owner.
     * @param newWhitelistedSPrimeContracts An array of addresses representing the new list of whitelisted sPrime contracts.
     */
-    function updateWhitelistedSPrimeContracts(SPrimeMock[] memory newWhitelistedSPrimeContracts) external onlyOwner {
+    function updateWhitelistedSPrimeContracts(ISPrime[] memory newWhitelistedSPrimeContracts) external onlyOwner {
         whitelistedSPrimeContracts = newWhitelistedSPrimeContracts;
         emit WhitelistedSPrimeContractsUpdated(newWhitelistedSPrimeContracts, msg.sender, block.timestamp);
     }
@@ -238,6 +238,6 @@ abstract contract vPrimeController is PendingOwnableUpgradeable, RedstoneConsume
 
 
     // EVENTS
-    event WhitelistedSPrimeContractsUpdated(SPrimeMock[] newWhitelistedSPrimeContracts, address userAddress, uint256 timestamp);
+    event WhitelistedSPrimeContractsUpdated(ISPrime[] newWhitelistedSPrimeContracts, address userAddress, uint256 timestamp);
     event TokenManagerUpdated(ITokenManager newTokenManager, address userAddress, uint256 timestamp);
 }

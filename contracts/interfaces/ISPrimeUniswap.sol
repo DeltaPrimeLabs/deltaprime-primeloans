@@ -2,7 +2,9 @@
 
 pragma solidity ^0.8.17;
 
-interface ISPrimeUniswap {
+import "./ISPrime.sol";
+
+interface ISPrimeUniswap is ISPrime {
   /**
    * @dev Struct representing the information for the nft position.
    * @param tokenId NFT Position Token Id.
@@ -13,17 +15,5 @@ interface ISPrimeUniswap {
     uint256 tokenId;
     uint128 lpAmount;
     uint256 share;
-  }
-
-  /**
-   * @dev Struct representing details of a locked amount.
-   * @param lockPeriod The duration for which the amount is locked.
-   * @param amount The amount that is locked.
-   * @param unlockTime The timestamp when the locked amount will be able to released.
-   */
-  struct LockDetails {
-    uint256 lockPeriod;
-    uint256 amount;
-    uint256 unlockTime;
   }
 }
