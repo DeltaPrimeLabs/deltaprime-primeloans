@@ -160,8 +160,9 @@ abstract contract vPrimeController is PendingOwnableUpgradeable, RedstoneConsume
             uint256 nonVestedBalance = sPrimeBalance - fullyVestedBalance;
             uint256 userSPrimeValueInTokenY = whitelistedSPrimeContracts[i].getUserValueInTokenY(userAddress);
             if(sPrimeBalance > 0) {
-                fullyVestedDollarValue += FullMath.mulDiv(userSPrimeValueInTokenY, sPrimeTokenYPrice * RS_PRICE_PRECISION_1e18_COMPLEMENT * fullyVestedBalance,  sPrimeBalance * 10 ** sPrimeTokenYDecimals);
-                nonVestedDollarValue += FullMath.mulDiv(userSPrimeValueInTokenY, sPrimeTokenYPrice * RS_PRICE_PRECISION_1e18_COMPLEMENT * nonVestedBalance,  sPrimeBalance * 10 ** sPrimeTokenYDecimals);
+                uint256 _denominator = sPrimeBalance * 10 ** sPrimeTokenYDecimals;
+                fullyVestedDollarValue += FullMath.mulDiv(userSPrimeValueInTokenY, sPrimeTokenYPrice * RS_PRICE_PRECISION_1e18_COMPLEMENT * fullyVestedBalance, _denominator);
+                nonVestedDollarValue += FullMath.mulDiv(userSPrimeValueInTokenY, sPrimeTokenYPrice * RS_PRICE_PRECISION_1e18_COMPLEMENT * nonVestedBalance, _denominator);
             }
         }
         return (fullyVestedDollarValue, nonVestedDollarValue);
