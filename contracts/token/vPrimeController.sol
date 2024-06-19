@@ -18,6 +18,7 @@ abstract contract vPrimeController is PendingOwnableUpgradeable, RedstoneConsume
     ITokenManager public tokenManager;
     vPrime public vPrimeContract;
     IBorrowersRegistry public borrowersRegistry;
+    bool public useOraclePrimeFeed;
     uint256 public constant BORROWER_YEARLY_V_PRIME_RATE = 1;
     uint256 public constant DEPOSITOR_YEARLY_V_PRIME_RATE = 5;
     uint256 public constant MAX_V_PRIME_VESTING_YEARS = 3;
@@ -27,10 +28,11 @@ abstract contract vPrimeController is PendingOwnableUpgradeable, RedstoneConsume
 
     /* ========== INITIALIZER ========== */
 
-    function initialize(ISPrime[] memory _whitelistedSPrimeContracts, ITokenManager _tokenManager, vPrime _vPrime) external initializer {
+    function initialize(ISPrime[] memory _whitelistedSPrimeContracts, ITokenManager _tokenManager, vPrime _vPrime, bool _useOraclePrimeFeed) external initializer {
         whitelistedSPrimeContracts = _whitelistedSPrimeContracts;
         tokenManager = _tokenManager;
         vPrimeContract = _vPrime;
+        useOraclePrimeFeed = _useOraclePrimeFeed;
         __PendingOwnable_init();
     }
 
@@ -94,6 +96,12 @@ abstract contract vPrimeController is PendingOwnableUpgradeable, RedstoneConsume
         emit TokenManagerUpdated(newTokenManager, msg.sender, block.timestamp);
     }
 
+    // only owner setter for useOraclePriceFeed
+    function setUseOraclePrimeFeed(bool _useOraclePrimeFeed) external onlyOwner {
+        useOraclePrimeFeed = _useOraclePrimeFeed;
+        emit UseOraclePrimeFeedUpdated(_useOraclePrimeFeed, msg.sender, block.timestamp);
+    }
+
     /**
     * @notice Updates the borrowers registry contract.
     * @dev Can only be called by the contract owner.
@@ -149,6 +157,20 @@ abstract contract vPrimeController is PendingOwnableUpgradeable, RedstoneConsume
         return totalDollarValue;
     }
 
+    function getPrimeTokenPoolPrice(ISPrime sPrimeContract, uint256 tokenYPrice) public view returns (uint256) {
+        if(useOraclePrimeFeed){
+            bytes32 primeSymbol = "PRIME";
+            uint256 primePrice = getOracleNumericValueFromTxMsg(primeSymbol);
+            return primePrice * 1e8 / tokenYPrice; // both tokenYPrice and primePrice have 8 decimals
+        } else {
+            uint256 poolPrice = sPrimeContract.getPoolPrice(); // returns price with 8 decimals
+            if(poolPrice * tokenYPrice / 1e8 > 13125 * 1e5){ // 13.125 with 8 decimals which comes from 10xinitialPrice MAX PRICE CAP before oracle feed will be ready
+                poolPrice = 13125 * 1e13 / tokenYPrice; // 13125 * 1e5 * 1e8 / tokenYPrice
+            }
+            return poolPrice;
+        }
+    }
+
     function getUserSPrimeDollarValueVestedAndNonVested(address userAddress) public view returns (uint256 fullyVestedDollarValue, uint256 nonVestedDollarValue) {
         fullyVestedDollarValue = 0;
         nonVestedDollarValue = 0;
@@ -156,10 +178,11 @@ abstract contract vPrimeController is PendingOwnableUpgradeable, RedstoneConsume
             bytes32 sPrimeTokenYSymbol = tokenManager.tokenAddressToSymbol(whitelistedSPrimeContracts[i].getTokenY());
             uint256 sPrimeTokenYDecimals = IERC20Metadata(whitelistedSPrimeContracts[i].getTokenY()).decimals();
             uint256 sPrimeTokenYPrice = getOracleNumericValueFromTxMsg(sPrimeTokenYSymbol);
+            uint256 poolPrice = getPrimeTokenPoolPrice(whitelistedSPrimeContracts[i], sPrimeTokenYPrice);
             uint256 sPrimeBalance = IERC20Metadata(address(whitelistedSPrimeContracts[i])).balanceOf(userAddress);
             uint256 fullyVestedBalance = whitelistedSPrimeContracts[i].getFullyVestedLockedBalance(userAddress);
             uint256 nonVestedBalance = sPrimeBalance - fullyVestedBalance;
-            uint256 userSPrimeValueInTokenY = whitelistedSPrimeContracts[i].getUserValueInTokenY(userAddress);
+            uint256 userSPrimeValueInTokenY = whitelistedSPrimeContracts[i].getUserValueInTokenY(userAddress, poolPrice);
             if(sPrimeBalance > 0) {
                 uint256 _denominator = sPrimeBalance * 10 ** sPrimeTokenYDecimals;
                 fullyVestedDollarValue += FullMath.mulDiv(userSPrimeValueInTokenY, sPrimeTokenYPrice * RS_PRICE_PRECISION_1e18_COMPLEMENT * fullyVestedBalance, _denominator);
@@ -242,4 +265,5 @@ abstract contract vPrimeController is PendingOwnableUpgradeable, RedstoneConsume
     // EVENTS
     event WhitelistedSPrimeContractsUpdated(ISPrime[] newWhitelistedSPrimeContracts, address userAddress, uint256 timestamp);
     event TokenManagerUpdated(ITokenManager newTokenManager, address userAddress, uint256 timestamp);
+    event UseOraclePrimeFeedUpdated(bool _useOraclePrimeFeed, address userAddress, uint256 timestamp);
 }
