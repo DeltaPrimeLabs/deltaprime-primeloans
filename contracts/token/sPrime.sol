@@ -611,18 +611,19 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override {
         if(from != address(0) && to != address(0)) {
             uint256 lockedBalance = getLockedBalance(from);
-            require(balanceOf(from) >= amount + lockedBalance, "Insufficient Balance");
+            uint256 fromBalance = balanceOf(from);
+            require(fromBalance >= amount + lockedBalance, "Insufficient Balance");
             require(getUserTokenId(to) == 0, "Receiver already has a postion");
             
             uint256 tokenId = getUserTokenId(from);
 
-            if(balanceOf(from) == amount) {
+            if(fromBalance == amount) {
                 positionManager.forceTransfer(from, to, tokenId);
             } else {
                 (,,,,uint256 centerId, uint256[] memory liquidityMinted) = positionManager.positions(tokenId);
                 IPositionManager.DepositConfig memory depositConfig = positionManager.getDepositConfig(centerId);
                 for(uint256 i = 0 ; i < liquidityMinted.length ; i ++) {
-                    liquidityMinted[i] = FullMath.mulDiv(liquidityMinted[i], amount, balanceOf(from));
+                    liquidityMinted[i] = FullMath.mulDiv(liquidityMinted[i], amount, fromBalance);
                 }
 
                 positionManager.update(IPositionManager.UpdateParams({
