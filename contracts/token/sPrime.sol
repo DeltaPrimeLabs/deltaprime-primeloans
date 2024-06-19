@@ -179,6 +179,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     * @param liquidityMinted Liquidity minted for each bin.
     */
     function _getLiquidityTokenAmounts(uint256[] memory depositIds, uint256[] memory liquidityMinted) internal view returns(uint256 amountX, uint256 amountY) {
+        require(depositIds.length == liquidityMinted.length, "Length Dismatch");
         for (uint256 i; i < depositIds.length; ++i) {
             uint24 id = depositIds[i].safe24();
 
