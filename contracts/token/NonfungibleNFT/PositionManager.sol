@@ -100,6 +100,7 @@ contract PositionManager is
         onlySPrime
     {
         Position storage position = _positions[params.tokenId];
+        require(position.liquidityMinted.length == params.liquidityAmounts.length, "Length Dismatch");
         if(params.isAdd) {
             position.totalShare += params.share;
             for(uint i = 0 ; i < params.liquidityAmounts.length ; i ++) {
