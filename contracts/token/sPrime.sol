@@ -298,6 +298,8 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     * @return balanceY The amount of token Y received.
     */
     function _withdrawFromLB(uint256[] memory depositIds, uint256[] memory liquidityMinted, uint256 share) internal returns (uint256 balanceX, uint256 balanceY, uint256[] memory liquidityAmounts) {
+        require(depositIds.length == liquidityMinted.length, "Length dismatch");
+
         uint256 length;
         uint256 totalShare = balanceOf(_msgSender());
         // Get the lbPair address and the delta between the upper and lower range.
