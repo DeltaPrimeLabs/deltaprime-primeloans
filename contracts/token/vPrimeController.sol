@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "../abstract/PendingOwnableUpgradeable.sol";
 import "../interfaces/ITokenManager.sol";
 import "../interfaces/IBorrowersRegistry.sol";
+import "../interfaces/facets/IOwnershipFacet.sol";
 import "../interfaces/IPool.sol";
 import "../interfaces/ISPrime.sol";
 import "./vPrime.sol";
@@ -131,7 +132,7 @@ abstract contract vPrimeController is PendingOwnableUpgradeable, RedstoneConsume
         return (fullyVestedDollarValue, nonVestedDollarValue);
     }
 
-    function getUserBorrowedDollarValueAcrossWhitelistedPools(address userAddress) public view returns (uint256) {
+    function getPrimeAccountBorrowedDollarValueAcrossWhitelistedPools(address primeAccountAddress) public view returns (uint256) {
         uint256 totalDollarValue = 0;
         IPool[] memory whitelistedPools = getWhitelistedPools();
         bytes32[] memory poolsTokenSymbols = new bytes32[](whitelistedPools.length);
@@ -141,7 +142,7 @@ abstract contract vPrimeController is PendingOwnableUpgradeable, RedstoneConsume
         uint256[] memory prices = getOracleNumericValuesFromTxMsg(poolsTokenSymbols);
 
         for (uint i = 0; i < whitelistedPools.length; i++) {
-            uint256 poolBorrowedAmount = whitelistedPools[i].getBorrowed(userAddress);
+            uint256 poolBorrowedAmount = whitelistedPools[i].getBorrowed(primeAccountAddress);
             uint256 poolDollarValue = FullMath.mulDiv(poolBorrowedAmount, prices[i] * RS_PRICE_PRECISION_1e18_COMPLEMENT, 10 ** whitelistedPools[i].decimals());
             totalDollarValue += poolDollarValue;
         }
@@ -177,20 +178,21 @@ abstract contract vPrimeController is PendingOwnableUpgradeable, RedstoneConsume
         return totalDollarValue;
     }
 
-    function getBorrowerVPrimePairsCount(address userAddress) public view returns (uint256){
-        uint256 userBorrowedDollarValue = getUserBorrowedDollarValueAcrossWhitelistedPools(userAddress);
-        (uint256 userSPrimeDollarValueFullyVested, uint256 userSPrimeDollarValueNonVested) = getUserSPrimeDollarValueVestedAndNonVested(userAddress);
+    function getBorrowerVPrimePairsCount(address primeAccountAddress) public view returns (uint256){
+        uint256 primeAccountBorrowedDollarValue = getPrimeAccountBorrowedDollarValueAcrossWhitelistedPools(primeAccountAddress);
+        address primeAccountOwner = IOwnershipFacet(primeAccountAddress).owner();
+        (uint256 userSPrimeDollarValueFullyVested, uint256 userSPrimeDollarValueNonVested) = getUserSPrimeDollarValueVestedAndNonVested(primeAccountOwner);
         uint256 borrowerVPrimePairsCount = Math.min
-            (userBorrowedDollarValue / V_PRIME_PAIR_RATIO,
+            (primeAccountBorrowedDollarValue / V_PRIME_PAIR_RATIO,
             (userSPrimeDollarValueFullyVested + userSPrimeDollarValueNonVested)
         ) / 1e18;
         return borrowerVPrimePairsCount;
     }
 
-    function getBorrowerVPrimeRateAndMaxCap(address userAddress) public view returns (int256, uint256){
-        uint256 vPrimePairsCount = getBorrowerVPrimePairsCount(userAddress);
+    function getBorrowerVPrimeRateAndMaxCap(address primeAccountAddress) public view returns (int256, uint256){
+        uint256 vPrimePairsCount = getBorrowerVPrimePairsCount(primeAccountAddress);
         uint256 vPrimeMaxCap = vPrimePairsCount * BORROWER_YEARLY_V_PRIME_RATE * MAX_V_PRIME_VESTING_YEARS * 1e18;
-        uint256 currentVPrimeBalance = vPrimeContract.balanceOf(userAddress);
+        uint256 currentVPrimeBalance = vPrimeContract.balanceOf(primeAccountAddress);
         int256 vPrimeRate = int256(vPrimeMaxCap) - int256(currentVPrimeBalance);
         if(vPrimeRate < 0){
             vPrimeRate = vPrimeRate / int256(V_PRIME_DETERIORATION_DAYS) / 1 days;
