@@ -42,6 +42,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
     uint24 public feeTier;
     uint256 public totalXSupply;
     uint256 public totalYSupply;
+    bool public tokenSequence;
 
     int24[2] private deltaIds;
 
@@ -59,8 +60,8 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
         __ERC20_init(name_, "sPrime");
         __ERC721Holder_init();
 
+        tokenSequence = tokenX_ > tokenY_;
         (tokenX_, tokenY_) = tokenX_ < tokenY_ ? (tokenX_, tokenY_) : (tokenY_, tokenX_);
-
         tokenX = IERC20Metadata(tokenX_);
         tokenY = IERC20Metadata(tokenY_);
         feeTier = feeTier_;
@@ -131,7 +132,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
      * @param user User Address
      * @return Total Value in tokenY amount for the user's position.
      */
-    function getUserValueInTokenY(address user) public view returns (uint256) {
+    function getUserValueInTokenY(address user, uint256 poolPrice) public view returns (uint256) {
         uint256 tokenId = userTokenId[user];
         require(tokenId > 0, "No position");
         
@@ -139,7 +140,16 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
 
         address positionManager = getNonfungiblePositionManagerAddress();
         (uint256 amountX, uint256 amountY) = INonfungiblePositionManager(positionManager).total(tokenId, sqrtRatioX96);
-        return _getTotalInTokenY(amountX, amountY);
+        
+        (amountX, amountY) = tokenSequence ? (amountY, amountX) : (amountX, amountY);
+        (IERC20Metadata token0, IERC20Metadata token1) = tokenSequence ? (IERC20Metadata(address(tokenY)), IERC20Metadata(address(tokenX))) : (IERC20Metadata(address(tokenX)), IERC20Metadata(address(tokenY)));
+
+        if(token1.decimals() >= token0.decimals() + 8) {
+            amountY = amountY + amountX * poolPrice * 10 ** (token1.decimals() - token0.decimals() - 8);
+        } else {
+            amountY = amountY + FullMath.mulDiv(amountX, poolPrice, 10 ** (token0.decimals() + 8 - token1.decimals()));
+        }
+        return amountY;
     }
 
     /**
@@ -190,6 +200,13 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
     function _getTokenYFromTokenX(uint256 amountX) internal view returns(uint256 amountY) {
         (,int24 tick,,,,,) = pool.slot0();
         amountY = OracleLibrary.getQuoteAtTick(tick, uint128(amountX), address(tokenX), address(tokenY));
+    }
+
+    function getPoolPrice() public view returns(uint256) {
+        (,int24 tick,,,,,) = pool.slot0();
+        (address token0, address token1) = tokenSequence ? (address(tokenY), address(tokenX)) : (address(tokenX), address(tokenY));
+        uint256 price = OracleLibrary.getQuoteAtTick(tick, uint128(10 ** IERC20Metadata(address(token0)).decimals()), address(token0), address(token1));
+        return FullMath.mulDiv(price, 1e8, 10 ** IERC20Metadata(address(token1)).decimals());
     }
 
     /**

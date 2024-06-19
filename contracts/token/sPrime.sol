@@ -124,11 +124,17 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
      * @param user User Address
      * @return Total Value in tokenY amount for the user's position.
      */
-    function getUserValueInTokenY(address user) public view returns (uint256) {
+    function getUserValueInTokenY(address user, uint256 poolPrice) public view returns (uint256) {
         (,,,,uint256 centerId, uint256[] memory liquidityMinted) = positionManager.positions(getUserTokenId(user));
         IPositionManager.DepositConfig memory depositConfig = positionManager.getDepositConfig(centerId);
         (uint256 amountX, uint256 amountY) = _getLiquidityTokenAmounts(depositConfig.depositIds, liquidityMinted);
-        return _getTotalInTokenY(amountX, amountY);
+
+        if(IERC20Metadata(address(tokenY)).decimals() >= IERC20Metadata(address(tokenX)).decimals() + 8) {
+            amountY = amountY + amountX * poolPrice * 10 ** (IERC20Metadata(address(tokenY)).decimals() - IERC20Metadata(address(tokenX)).decimals() - 8);
+        } else {
+            amountY = amountY + FullMath.mulDiv(amountX, poolPrice, 10 ** (IERC20Metadata(address(tokenX)).decimals() + 8 - IERC20Metadata(address(tokenY)).decimals()));
+        }
+        return amountY;
     }
 
     /**
@@ -203,6 +209,10 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
         weight = amountY + amountXToY;
     }
 
+    function getPoolPrice() public view returns(uint256) {
+        uint256 price = PriceHelper.convert128x128PriceToDecimal(lbPair.getPriceFromId(lbPair.getActiveId()));
+        return FullMath.mulDiv(price, 1e8, 10 ** IERC20Metadata(address(tokenY)).decimals());
+    }
 
     /**
      * @dev Returns the estimated token Y amount from token X.
