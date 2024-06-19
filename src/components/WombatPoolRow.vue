@@ -3,7 +3,7 @@
     <div class="wombat-pool-row__header-wrapper">
       <div class="wombat-pool-row__header-line"></div>
       <div class="wombat-pool-row__header">
-        {{ poolName }} Pool
+        {{ poolName }}
       </div>
     </div>
     <div class="wombat-pool-row__tokens">
