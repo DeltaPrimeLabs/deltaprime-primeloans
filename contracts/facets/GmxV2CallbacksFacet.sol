@@ -46,11 +46,12 @@ abstract contract GmxV2CallbacksFacet is IDepositCallbackReceiver, IWithdrawalCa
     }
 
     function wrapNativeToken() internal {
-        if(address(this).balance > 0){
+        uint256 balance = address(this).balance;
+        if(balance > 0){
             IWrappedNativeToken nativeToken = IWrappedNativeToken(DeploymentConstants.getNativeToken());
-            nativeToken.deposit{value : address(this).balance}();
+            nativeToken.deposit{value : balance}();
             ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-            _increaseExposure(tokenManager, address(nativeToken), address(this).balance);
+            _increaseExposure(tokenManager, address(nativeToken), balance);
         }
     }
 
