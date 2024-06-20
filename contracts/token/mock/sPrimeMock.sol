@@ -85,12 +85,6 @@ contract SPrimeMock is ERC20, Ownable, ProxyConnector {
         );
     }
 
-    // We can either proxy RS calldata from vPrimeController to this function or call it directly with already extracted prices in vPrimeController
-    function getUserDepositDollarValue(address userAddress) public view returns (uint256) {
-        // TODO: Implement calculating dollar value of user's deposit (we can use SolvencyFacetProd::_getTotalTraderJoeV2() for reference)
-        return balanceOf(userAddress) * DOLLAR_VALUE_MULTIPLIER;
-    }
-
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal override {
         super._beforeTokenTransfer(from, to, amount);
         if(from != address(0)) {

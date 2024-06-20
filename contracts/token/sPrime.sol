@@ -654,10 +654,4 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
             }
         }
     }
-
-    // Temprory function
-
-    function getUserDepositDollarValue(address user) external view returns (uint256) {
-        return 1;
-    }
 }

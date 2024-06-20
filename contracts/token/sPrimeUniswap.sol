@@ -639,10 +639,4 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
             );
         }
     }
-
-    // Temprory function
-
-    function getUserDepositDollarValue(address user) external pure returns (uint256) {
-        return 1;
-    }
 }

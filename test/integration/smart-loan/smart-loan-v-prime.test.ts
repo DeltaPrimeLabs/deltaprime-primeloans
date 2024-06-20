@@ -225,7 +225,7 @@ describe('Smart loan', () => {
             expect(await vPrimeContract.balanceOf(wrappedLoan.address)).to.equal(0);
             expect(fromWei(await sPrimeContract.balanceOf(wrappedLoan.address))).to.equal(10);
             expect(await vPrimeControllerContract.getBorrowerVPrimePairsCount(wrappedLoan.address)).to.equal(20);
-            expect(fromWei(await vPrimeControllerContract.getUserSPrimeDollarValue(wrappedLoan.address))).to.equal(20);
+            // TODO: Add dollar value check based on the getUserValueInTokenY
             const [rate, maxCap] = await vPrimeControllerContract.getBorrowerVPrimeRateAndMaxCap(wrappedLoan.address);
             const newRate = (60-0) * 1e18 / 365 / 24 / 60 / 60 / 3;
             expect(fromWei(maxCap)).to.be.closeTo(60, 1e-6);

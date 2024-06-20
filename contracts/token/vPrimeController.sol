@@ -199,15 +199,6 @@ abstract contract vPrimeController is PendingOwnableUpgradeable, RedstoneConsume
         return (fullyVestedDollarValue, nonVestedDollarValue);
     }
 
-    function getUserSPrimeDollarValue(address userAddress) public view returns (uint256 totalDollarValue) {
-        uint256 totalDollarValue = 0;
-        for (uint i = 0; i < whitelistedSPrimeContracts.length; i++) {
-            uint256 sPrimeDollarValue = whitelistedSPrimeContracts[i].getUserDepositDollarValue(userAddress);
-            totalDollarValue += sPrimeDollarValue;
-        }
-        return totalDollarValue;
-    }
-
     function getBorrowerVPrimePairsCount(address primeAccountAddress) public view returns (uint256){
         uint256 primeAccountBorrowedDollarValue = getPrimeAccountBorrowedDollarValueAcrossWhitelistedPools(primeAccountAddress);
         address primeAccountOwner = IOwnershipFacet(primeAccountAddress).owner();

@@ -163,9 +163,7 @@ describe('Pool with variable utilisation interest rates', () => {
         expect((await vPrimeControllerContract.getUserDepositDollarValueAcrossWhiteListedPoolsVestedAndNonVested(depositor2.address)).map(bn => bn.toString())).to.deep.equal(["0" ,"0"]);
         expect((await vPrimeControllerContract.getUserDepositDollarValueAcrossWhiteListedPoolsVestedAndNonVested(depositor3.address)).map(bn => bn.toString())).to.deep.equal(["0" ,"0"]);
 
-        expect(await vPrimeControllerContract.getUserSPrimeDollarValue(depositor.address)).to.equal(0);
-        expect(await vPrimeControllerContract.getUserSPrimeDollarValue(depositor2.address)).to.equal(0);
-        expect(await vPrimeControllerContract.getUserSPrimeDollarValue(depositor3.address)).to.equal(0);
+        // TODO: Add dollar value check based on the getUserValueInTokenY
 
         expect((await vPrimeControllerContract.getDepositorVPrimeRateAndMaxCap(depositor.address)).map(bn => bn.toString())).to.deep.equal(["0", "0", "0"]);
         expect((await vPrimeControllerContract.getDepositorVPrimeRateAndMaxCap(depositor2.address)).map(bn => bn.toString())).to.deep.equal(["0" ,"0", "0"]);
@@ -181,7 +179,7 @@ describe('Pool with variable utilisation interest rates', () => {
     }
 
     async function checkSPrimeDollarValue(depositor: SignerWithAddress, sPrimeDollarValue: number) {
-        expect(fromWei(await vPrimeControllerContract.getUserSPrimeDollarValue(depositor.address))).to.equal(sPrimeDollarValue);
+        // TODO: Add dollar value check based on the getUserValueInTokenY
     }
 
     async function checkDepositorSPrimeDollarValue(depositor: SignerWithAddress, sPrimeDollarValue: number) {

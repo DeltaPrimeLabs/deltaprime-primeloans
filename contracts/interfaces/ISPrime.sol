@@ -27,6 +27,5 @@ interface ISPrime {
     function getTokenY() external view returns(address);
     function getPoolPrice() external view returns(uint256);
     function getUserValueInTokenY(address user, uint256 poolPrice) external view returns (uint256);
-    function getUserDepositDollarValue(address user) external view returns (uint256);
     function getFullyVestedLockedBalance(address account) external view returns(uint256);
 }
