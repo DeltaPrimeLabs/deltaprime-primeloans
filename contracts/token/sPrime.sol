@@ -22,7 +22,7 @@ import "@redstone-finance/evm-connector/contracts/core/ProxyConnector.sol";
 
 // SPrime contract declaration
 contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableUpgradeable, ERC20Upgradeable, ProxyConnector {
-    using SafeERC20 for IERC20; // Using SafeERC20 for IERC20 for safe token transfers
+    using SafeERC20 for IERC20Metadata; // Using SafeERC20 for IERC20Metadata for safe token transfers
     using LiquidityAmounts for address; // Using LiquidityAmounts for address for getting amounts of liquidity
     using SafeCast for uint256; // Using SafeCast for uint256 for safe type casting
     using Uint256x256Math for uint256;
@@ -38,8 +38,8 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     mapping(address => LockDetails[]) public locks;
 
     // Immutable variables for storing token and pair information
-    IERC20 public tokenX;
-    IERC20 public tokenY;
+    IERC20Metadata public tokenX;
+    IERC20Metadata public tokenY;
     ILBPair public lbPair;
     IPositionManager public positionManager;
     address public vPrimeController;
@@ -53,32 +53,25 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     * @param tokenX_ The address of the token X.
     * @param tokenY_ The address of the token Y.
     * @param name_ The name of the SPrime token. ex: PRIME-USDC LP
-    * @param distributionX_ Pre-defined distribution X
-    * @param distributionY_ Pre-defined distribution Y
-    * @param deltaIds_ Delta id for bins
+    * @param depositForm_ Pre-defined distributions and delta ids
     * @param positionManager_ Position Manager contract for sPrime
     * @param traderJoeV2Router_ Trader Joe V2 Router Address
     */
-    function initialize(address tokenX_, address tokenY_, string memory name_, uint64[] memory distributionX_, uint64[] memory distributionY_, int256[] memory deltaIds_, IPositionManager positionManager_, address traderJoeV2Router_) external initializer {
+    function initialize(address tokenX_, address tokenY_, string memory name_, DepositForm[] calldata depositForm_, IPositionManager positionManager_, address traderJoeV2Router_) external initializer {
         __PendingOwnable_init();
         __ReentrancyGuard_init();
         __ERC20_init(name_, "sPrime");
 
-        require(deltaIds_.length == distributionX_.length && deltaIds_.length == distributionY_.length, "Length Mismatch");
         traderJoeV2Router = traderJoeV2Router_;
         ILBFactory lbFactory = ILBRouter(traderJoeV2Router).getFactory();
         ILBFactory.LBPairInformation memory pairInfo = lbFactory.getLBPairInformation(IERC20(tokenX_), IERC20(tokenY_), DEFAULT_BIN_STEP);
 
         lbPair = pairInfo.LBPair;
-        tokenX = lbPair.getTokenX();
-        tokenY = lbPair.getTokenY();
+        tokenX = IERC20Metadata(address(lbPair.getTokenX()));
+        tokenY = IERC20Metadata(address(lbPair.getTokenY()));
 
-        for(uint256 i = 0 ; i < deltaIds_.length ; i ++) {
-            depositForm.push(DepositForm({
-                deltaId: deltaIds_[i],
-                distributionX: distributionX_[i],
-                distributionY: distributionY_[i]
-            }));
+        for(uint256 i = 0 ; i < depositForm_.length ; i ++) {
+            depositForm.push(depositForm_[i]);
         }
 
         positionManager = positionManager_;
@@ -129,12 +122,12 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     function getUserValueInTokenY(address user, uint256 poolPrice) public view returns (uint256) {
         (,,,,uint256 centerId, uint256[] memory liquidityMinted) = positionManager.positions(getUserTokenId(user));
         IPositionManager.DepositConfig memory depositConfig = positionManager.getDepositConfig(centerId);
-        (uint256 amountX, uint256 amountY) = _getLiquidityTokenAmounts(depositConfig.depositIds, liquidityMinted);
+        (uint256 amountX, uint256 amountY) = _getLiquidityTokenAmounts(depositConfig.depositIds, liquidityMinted, poolPrice);
 
-        if(IERC20Metadata(address(tokenY)).decimals() >= IERC20Metadata(address(tokenX)).decimals() + 8) {
-            amountY = amountY + amountX * poolPrice * 10 ** (IERC20Metadata(address(tokenY)).decimals() - IERC20Metadata(address(tokenX)).decimals() - 8);
+        if(tokenY.decimals() >= tokenX.decimals() + 8) {
+            amountY = amountY + amountX * poolPrice * 10 ** (tokenY.decimals() - tokenX.decimals() - 8);
         } else {
-            amountY = amountY + FullMath.mulDiv(amountX, poolPrice, 10 ** (IERC20Metadata(address(tokenX)).decimals() + 8 - IERC20Metadata(address(tokenY)).decimals()));
+            amountY = amountY + FullMath.mulDiv(amountX, poolPrice, 10 ** (tokenX.decimals() + 8 - tokenY.decimals()));
         }
         return amountY;
     }
@@ -189,18 +182,35 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     * @dev Returns the token balances for the specific bin.
     * @param depositIds Deposited bin id list.
     * @param liquidityMinted Liquidity minted for each bin.
+    * @param poolPrice Oracle Price
     */
-    function _getLiquidityTokenAmounts(uint256[] memory depositIds, uint256[] memory liquidityMinted) internal view returns(uint256 amountX, uint256 amountY) {
+    function _getLiquidityTokenAmounts(uint256[] memory depositIds, uint256[] memory liquidityMinted, uint256 poolPrice) internal view returns(uint256 amountX, uint256 amountY) {
         require(depositIds.length == liquidityMinted.length, "Length Dismatch");
+        poolPrice = FullMath.mulDiv(poolPrice, (10 ** tokenY.decimals()), 1e8);
+        uint24 binId = lbPair.getIdFromPrice(PriceHelper.convertDecimalPriceTo128x128(poolPrice));
+
         for (uint256 i; i < depositIds.length; ++i) {
             uint24 id = depositIds[i].safe24();
 
             uint256 liquidity = liquidityMinted[i];
             (uint256 binReserveX, uint256 binReserveY) = lbPair.getBin(id);
-            uint256 totalSupply = lbPair.totalSupply(id);
 
-            amountX += liquidity.mulDivRoundDown(binReserveX, totalSupply);
-            amountY += liquidity.mulDivRoundDown(binReserveY, totalSupply);
+            // Get Current Pool price from id.
+            uint256 currentPrice = PriceHelper.convert128x128PriceToDecimal(lbPair.getPriceFromId(id));
+
+            uint256 totalSupply = lbPair.totalSupply(id);
+            uint256 xAmount = liquidity.mulDivRoundDown(binReserveX, totalSupply);
+            uint256 yAmount = liquidity.mulDivRoundDown(binReserveY, totalSupply);
+            if(binId > id) {
+                xAmount = xAmount + FullMath.mulDiv(yAmount, 10 ** tokenX.decimals(), currentPrice);
+                yAmount = 0;
+            } else if(binId < id) {
+                yAmount = yAmount + FullMath.mulDiv(xAmount, currentPrice, 10 ** tokenX.decimals());
+                xAmount = 0;
+            } 
+
+            amountX += xAmount;
+            amountY += yAmount;
         }
     }
 
@@ -217,7 +227,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
 
     function getPoolPrice() public view returns(uint256) {
         uint256 price = PriceHelper.convert128x128PriceToDecimal(lbPair.getPriceFromId(lbPair.getActiveId()));
-        return FullMath.mulDiv(price, 1e8, 10 ** IERC20Metadata(address(tokenY)).decimals());
+        return FullMath.mulDiv(price, 1e8, 10 ** tokenY.decimals());
     }
 
     /**
@@ -230,7 +240,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
         if(reserveA > 0) {
             uint256 price = PriceHelper.convert128x128PriceToDecimal(lbPair.getPriceFromId(lbPair.getActiveId()));
             // Swap For Y : Convert token X to token Y
-            amountY = FullMath.mulDiv(amountX, price, 10 ** IERC20Metadata(address(tokenX)).decimals());
+            amountY = FullMath.mulDiv(amountX, price, 10 ** tokenX.decimals());
         } else {
             amountY = 0;
         }
@@ -251,7 +261,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
             {
                 uint256 price = PriceHelper.convert128x128PriceToDecimal(lbPair.getPriceFromId(lbPair.getActiveId()));
                 // Swap For X : Convert token Y to token X
-                amountIn = FullMath.mulDiv(diff / 2, 10 ** IERC20Metadata(address(tokenX)).decimals(), price);
+                amountIn = FullMath.mulDiv(diff / 2, 10 ** tokenX.decimals(), price);
             }
 
             uint256 amountOut = diff / 2; 
