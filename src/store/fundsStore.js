@@ -1943,7 +1943,7 @@ export default {
       let tx = await awaitConfirmation(transaction, provider, 'withdraw');
 
       const price = state.penpieLpAssets[unstakeRequest.asset].price;
-      const withdrawAmountUSD = Number(amountInWei) * price;
+      const withdrawAmountUSD = fromWei(amountInWei) * price;
       const assetBalanceBeforeWithdraw = state.penpieLpBalances[unstakeRequest.asset].price;
 
       const assetBalanceAfterWithdraw = Number(assetBalanceBeforeWithdraw) - Number(unstakeRequest.value);
@@ -3136,9 +3136,7 @@ export default {
 
     async depositPendleLPAndStake({state, rootState, commit, dispatch}, {depositAndStakeRequest}) {
       const provider = rootState.network.provider;
-
-      const tokenForApprove = TOKEN_ADDRESSES[depositAndStakeRequest.sourceAsset];
-      const fundToken = new ethers.Contract(tokenForApprove, erc20ABI, provider.getSigner());
+      const fundToken = new ethers.Contract(depositAndStakeRequest.sourceAssetAddress, erc20ABI, provider.getSigner());
       const allowance = formatUnits(await fundToken.allowance(rootState.network.account, state.smartLoanContract.address), depositAndStakeRequest.decimals);
 
       if (parseFloat(allowance) < parseFloat(depositAndStakeRequest.amount)) {
@@ -3163,7 +3161,7 @@ export default {
 
       let tx = await awaitConfirmation(transaction, provider, 'deposit and stake Pendle LP');
 
-      const secondAssetBalanceAfterTransaction = Number(state.gmxV2Balances[depositAndStakeRequest.targetAsset]) + Number(depositAndStakeRequest.amount);
+      const secondAssetBalanceAfterTransaction = Number(state.penpieLpBalances[depositAndStakeRequest.targetAsset]) + Number(depositAndStakeRequest.amount);
 
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate(depositAndStakeRequest.targetAsset, secondAssetBalanceAfterTransaction, true, false);

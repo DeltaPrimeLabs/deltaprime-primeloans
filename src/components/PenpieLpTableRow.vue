@@ -402,6 +402,7 @@ export default {
             amount: addFromWalletEvent.value,
             targetAsset: this.lpToken.symbol,
             sourceAsset: this.lpToken.pendleLpSymbol,
+            sourceAssetAddress: this.lpToken.pendleLpAddress,
             decimals: this.lpToken.decimals,
           };
           this.handleTransaction(this.depositPendleLPAndStake, {depositAndStakeRequest: depositAndStakeRequest}, () => {
