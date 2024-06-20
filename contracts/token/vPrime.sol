@@ -4,12 +4,13 @@ pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "../interfaces/IBorrowersRegistry.sol";
 import "../abstract/PendingOwnableUpgradeable.sol";
 import {vPrimeController} from "./vPrimeController.sol";
 
 
-contract vPrime is PendingOwnableUpgradeable {
+contract vPrime is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable {
     struct Checkpoint {
         uint32 blockTimestamp;
         uint256 balance;
@@ -53,7 +54,7 @@ contract vPrime is PendingOwnableUpgradeable {
     }
 
     // Called by the vPrimeController to adjust the rate and balanceLimit of a user
-    function adjustRateAndCap(address user, int256 rate, uint256 newBalanceLimit) external onlyVPrimeController {
+    function adjustRateAndCap(address user, int256 rate, uint256 newBalanceLimit) external onlyVPrimeController nonReentrant {
         uint256 lastRecordedVotes = getVotes(user);
         uint256 currentVotesBalance = balanceOf(user);
         int256 votesDiff = SafeCast.toInt256(currentVotesBalance) - SafeCast.toInt256(lastRecordedVotes);
@@ -72,7 +73,7 @@ contract vPrime is PendingOwnableUpgradeable {
     // Called by the vPrimeController to adjust the rate, balanceLimit and overwrite the balance of a user
     // Balance overwrite is used when the user's balance is changed by a different mechanism than the rate
     // In our case that would be locking deposit/sPrime pairs (up to 3 years) for an instant vPrime unvesting
-    function adjustRateCapAndBalance(address user, int256 rate, uint256 newBalanceLimit, uint256 balance) external onlyVPrimeController {
+    function adjustRateCapAndBalance(address user, int256 rate, uint256 newBalanceLimit, uint256 balance) external onlyVPrimeController nonReentrant {
         uint256 lastRecordedVotes = getVotes(user);
         int256 votesDiff = SafeCast.toInt256(balance) - SafeCast.toInt256(lastRecordedVotes);
 

@@ -328,7 +328,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
     * @param isRebalance Rebalance the existing position with deposit.
     * @param swapSlippage Slippage for the rebalance.
     */
-    function deposit(int24 tickDesired, int24 tickSlippage, uint256 amountX, uint256 amountY, bool isRebalance, uint256 swapSlippage) public {
+    function deposit(int24 tickDesired, int24 tickSlippage, uint256 amountX, uint256 amountY, bool isRebalance, uint256 swapSlippage) public nonReentrant {
         _transferTokens(_msgSender(), address(this), amountX, amountY);
 
         _deposit(tickDesired, tickSlippage, amountX, amountY, isRebalance, swapSlippage);
@@ -396,7 +396,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
     * @dev Users can use withdraw function for withdrawing their share.
     * @param share Amount to withdraw
     */
-    function withdraw(uint256 share) external {
+    function withdraw(uint256 share) external nonReentrant {
         uint256 tokenId = userTokenId[_msgSender()];
         require(tokenId > 0, "No Position to withdraw");
         address positionManager = getNonfungiblePositionManagerAddress();
@@ -449,7 +449,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
     * @param amountX The amount of token X to deposit.
     * @param amountY The amount of token Y to deposit.
     */
-    function mintForUserAndLock(address user, uint256[] calldata percentForLocks, uint256[] calldata lockPeriods, uint256 amountX, uint256 amountY) public {
+    function mintForUserAndLock(address user, uint256[] calldata percentForLocks, uint256[] calldata lockPeriods, uint256 amountX, uint256 amountY) public nonReentrant {
         
         _transferTokens(_msgSender(), address(this), amountX, amountY);
 
@@ -498,7 +498,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
     * @param tickSlippage The tick slippage that are allowed to slip
     * @param swapSlippage Slippage for the rebalance.
     */
-    function migrateLiquidity(uint256 tokenId, uint128 liquidity, int24 tickDesired, int24 tickSlippage, uint256 swapSlippage) public {
+    function migrateLiquidity(uint256 tokenId, uint128 liquidity, int24 tickDesired, int24 tickSlippage, uint256 swapSlippage) public nonReentrant {
         address positionManager = getNonfungiblePositionManagerAddress();
         INonfungiblePositionManager(positionManager).decreaseLiquidity(
             INonfungiblePositionManager.DecreaseLiquidityParams({
@@ -528,7 +528,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
     * @param amount The amount of balance to be locked.
     * @param lockPeriod The duration for which the balance will be locked.
     */
-    function lockBalance(uint256 amount, uint256 lockPeriod) public {
+    function lockBalance(uint256 amount, uint256 lockPeriod) public nonReentrant {
         uint256 lockedBalance = getLockedBalance(_msgSender());
         require(balanceOf(_msgSender()) >= amount + lockedBalance, "Insufficient balance to lock");
         require(lockPeriod <= MAX_LOCK_TIME, "Cannot lock for more than 3 years");
@@ -548,7 +548,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
     * @dev Releases a locked balance at a specified index.
     * @param index The index of the lock to be released.
     */
-    function releaseBalance(uint256 index) public {
+    function releaseBalance(uint256 index) public nonReentrant {
         require(locks[_msgSender()][index].unlockTime <= block.timestamp, "Still in the lock period");
         uint256 length = locks[_msgSender()].length;
         locks[_msgSender()][index] = locks[_msgSender()][length - 1];

@@ -422,7 +422,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     * @param isRebalance Rebalance the existing position with deposit.
     * @param swapSlippage Slippage for the rebalance.
     */
-    function deposit(uint256 activeIdDesired, uint256 idSlippage, uint256 amountX, uint256 amountY, bool isRebalance, uint256 swapSlippage) public {
+    function deposit(uint256 activeIdDesired, uint256 idSlippage, uint256 amountX, uint256 amountY, bool isRebalance, uint256 swapSlippage) public nonReentrant {
         require(swapSlippage <= _MAX_SLIPPAGE, "Slippage too high");
 
         _transferTokens(_msgSender(), address(this), amountX, amountY);
@@ -473,7 +473,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     * @param amountX The amount of token X to deposit.
     * @param amountY The amount of token Y to deposit.
     */
-    function mintForUserAndLock(address user, uint256[] calldata percentForLocks, uint256[] calldata lockPeriods, uint256 amountX, uint256 amountY) public {
+    function mintForUserAndLock(address user, uint256[] calldata percentForLocks, uint256[] calldata lockPeriods, uint256 amountX, uint256 amountY) public nonReentrant {
         uint256 activeId = lbPair.getActiveId();
 
         require(balanceOf(user) == 0, "User already has position");
@@ -517,7 +517,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     * @param idSlippage The number of id that are allowed to slip
     * @param swapSlippage Slippage for the rebalance.
     */
-    function migrateLiquidity(uint256[] calldata ids, uint256[] calldata amounts, uint256 activeIdDesired, uint256 idSlippage, uint256 swapSlippage) public {
+    function migrateLiquidity(uint256[] calldata ids, uint256[] calldata amounts, uint256 activeIdDesired, uint256 idSlippage, uint256 swapSlippage) public nonReentrant {
         uint256 balanceXBefore = tokenX.balanceOf(address(this));
         uint256 balanceYBefore = tokenY.balanceOf(address(this));
 
@@ -536,7 +536,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     * @dev Users can use withdraw function for withdrawing their share.
     * @param share Amount to withdraw
     */
-    function withdraw(uint256 share) external {
+    function withdraw(uint256 share) external nonReentrant {
         uint256 tokenId = getUserTokenId(_msgSender());
         require(tokenId > 0, "No Position to withdraw");
 
@@ -576,7 +576,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     * @param amount The amount of balance to be locked.
     * @param lockPeriod The duration for which the balance will be locked.
     */
-    function lockBalance(uint256 amount, uint256 lockPeriod) public {
+    function lockBalance(uint256 amount, uint256 lockPeriod) public nonReentrant {
         uint256 lockedBalance = getLockedBalance(_msgSender());
         require(balanceOf(_msgSender()) >= amount + lockedBalance, "Insufficient balance to lock");
         require(lockPeriod <= MAX_LOCK_TIME, "Cannot lock for more than 3 years");
@@ -596,7 +596,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     * @dev Releases a locked balance at a specified index.
     * @param index The index of the lock to be released.
     */
-    function releaseBalance(uint256 index) public {
+    function releaseBalance(uint256 index) public nonReentrant {
         require(locks[_msgSender()][index].unlockTime <= block.timestamp, "Still in the lock period");
         uint256 length = locks[_msgSender()].length;
         locks[_msgSender()][index] = locks[_msgSender()][length - 1];
