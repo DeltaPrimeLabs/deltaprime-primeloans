@@ -46,9 +46,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     address public traderJoeV2Router;
 
     // Arrays for storing deltaIds and distributions
-    int256[] private deltaIds;
-    uint256[] private distributionX;
-    uint256[] private distributionY;
+    DepositForm[] private depositForm;
 
     /**
     * @dev initialize of the contract.
@@ -61,7 +59,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     * @param positionManager_ Position Manager contract for sPrime
     * @param traderJoeV2Router_ Trader Joe V2 Router Address
     */
-    function initialize(address tokenX_, address tokenY_, string memory name_, uint256[] memory distributionX_, uint256[] memory distributionY_, int256[] memory deltaIds_, IPositionManager positionManager_, address traderJoeV2Router_) external initializer {
+    function initialize(address tokenX_, address tokenY_, string memory name_, uint64[] memory distributionX_, uint64[] memory distributionY_, int256[] memory deltaIds_, IPositionManager positionManager_, address traderJoeV2Router_) external initializer {
         __PendingOwnable_init();
         __ReentrancyGuard_init();
         __ERC20_init(name_, "sPrime");
@@ -75,9 +73,13 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
         tokenX = lbPair.getTokenX();
         tokenY = lbPair.getTokenY();
 
-        deltaIds = deltaIds_;
-        distributionX = distributionX_;
-        distributionY = distributionY_;
+        for(uint256 i = 0 ; i < deltaIds_.length ; i ++) {
+            depositForm.push(DepositForm({
+                deltaId: deltaIds_[i],
+                distributionX: distributionX_[i],
+                distributionY: distributionY_[i]
+            }));
+        }
 
         positionManager = positionManager_;
     }
@@ -292,14 +294,15 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     * @return depositIds Deposit ID list.
     */
     function _encodeDepositConfigs(uint256 centerId) internal view returns (bytes32[] memory liquidityConfigs, uint256[] memory depositIds) {
-        uint256 length = deltaIds.length;
+        uint256 length = depositForm.length;
         liquidityConfigs = new bytes32[](length);
         depositIds = new uint256[](length);
         for (uint256 i = 0; i < length; ++i) {
-            int256 _id = int256(centerId) + deltaIds[i];
+            DepositForm memory config = depositForm[i];
+            int256 _id = int256(centerId) + config.deltaId;
             require(_id >= 0 && uint256(_id) <= type(uint24).max, "Overflow");
             depositIds[i] = uint256(_id);
-            liquidityConfigs[i] = LiquidityConfigurations.encodeParams(uint64(distributionX[i]), uint64(distributionY[i]), uint24(uint256(_id)));
+            liquidityConfigs[i] = LiquidityConfigurations.encodeParams(config.distributionX, config.distributionY, uint24(uint256(_id)));
         }
     }
 

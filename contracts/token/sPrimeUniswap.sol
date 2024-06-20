@@ -102,12 +102,12 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
         return 0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45;
     }
 
-    function getTokenX() public view returns (address) {
-        return address(tokenX);
+    function getTokenX() public view returns (IERC20) {
+        return IERC20(tokenX);
     }
 
-    function getTokenY() public view returns (address) {
-        return address(tokenY);
+    function getTokenY() public view returns (IERC20) {
+        return IERC20(tokenY);
     }
 
     /**

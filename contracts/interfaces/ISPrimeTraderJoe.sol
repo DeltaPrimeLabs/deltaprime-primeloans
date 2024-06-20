@@ -6,6 +6,12 @@ import "./ISPrime.sol";
 import "./joe-v2/ILBPair.sol";
 
 interface ISPrimeTraderJoe is ISPrime {
+  struct DepositForm{
+    int256 deltaId;
+    uint64 distributionX;
+    uint64 distributionY;
+  }
+
   /**
     * @dev Users can use deposit function for depositing tokens to the specific bin.
     * @param activeIdDesired The active id that user wants to add liquidity from

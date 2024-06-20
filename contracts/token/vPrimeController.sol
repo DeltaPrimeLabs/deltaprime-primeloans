@@ -182,8 +182,8 @@ abstract contract vPrimeController is PendingOwnableUpgradeable, RedstoneConsume
         fullyVestedDollarValue = 0;
         nonVestedDollarValue = 0;
         for (uint i = 0; i < whitelistedSPrimeContracts.length; i++) {
-            bytes32 sPrimeTokenYSymbol = tokenManager.tokenAddressToSymbol(whitelistedSPrimeContracts[i].getTokenY());
-            uint256 sPrimeTokenYDecimals = IERC20Metadata(whitelistedSPrimeContracts[i].getTokenY()).decimals();
+            bytes32 sPrimeTokenYSymbol = tokenManager.tokenAddressToSymbol(address(whitelistedSPrimeContracts[i].getTokenY()));
+            uint256 sPrimeTokenYDecimals = IERC20Metadata(address(whitelistedSPrimeContracts[i].getTokenY())).decimals();
             uint256 sPrimeTokenYPrice = getOracleNumericValueFromTxMsg(sPrimeTokenYSymbol);
             uint256 poolPrice = getPrimeTokenPoolPrice(whitelistedSPrimeContracts[i], sPrimeTokenYPrice);
             uint256 sPrimeBalance = IERC20Metadata(address(whitelistedSPrimeContracts[i])).balanceOf(userAddress);
