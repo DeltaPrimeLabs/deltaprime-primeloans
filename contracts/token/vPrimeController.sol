@@ -39,11 +39,18 @@ abstract contract vPrimeController is PendingOwnableUpgradeable, RedstoneConsume
 
     /* ========== MUTATIVE EXTERNAL FUNCTIONS ========== */
 
+    // Depositors and borrowers follow different vPrime accrual rules.
+    // If a given address is a PrimeAccount or a PrimeAccount owner, then his vPrime balance will counted as a borrower.
+    // For depositors (which get a higher vPrime accrual rate) it is advised to use wallets that are not PrimeAccount owners.
     function updateVPrimeSnapshot(address userAddress) public {
         int256 vPrimeRate;
         uint256 vPrimeMaxCap;
         if(borrowersRegistry.canBorrow(userAddress)){   // It's a PrimeAccount
             (vPrimeRate, vPrimeMaxCap) = getBorrowerVPrimeRateAndMaxCap(userAddress);
+            vPrimeContract.adjustRateAndCap(userAddress, vPrimeRate, vPrimeMaxCap);
+        } else if(borrowersRegistry.getLoanForOwner(userAddress) != address(0)){ // It's a PrimeAccount owner
+            address primeAccountAddress = borrowersRegistry.getLoanForOwner(userAddress);
+            (vPrimeRate, vPrimeMaxCap) = getBorrowerVPrimeRateAndMaxCap(primeAccountAddress);
             vPrimeContract.adjustRateAndCap(userAddress, vPrimeRate, vPrimeMaxCap);
         } else {
             uint256 alreadyVestedPrimeBalance;
