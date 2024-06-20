@@ -627,6 +627,16 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
 
                 userTokenId[to] = newTokenId;
             }
+            proxyCalldata(
+                vPrimeController,
+                abi.encodeWithSignature("updateVPrimeSnapshot(address)", from),
+                false
+            );
+            proxyCalldata(
+                vPrimeController,
+                abi.encodeWithSignature("updateVPrimeSnapshot(address)", to),
+                false
+            );
         }
     }
 
