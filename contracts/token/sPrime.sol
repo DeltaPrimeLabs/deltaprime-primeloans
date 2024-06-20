@@ -61,7 +61,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     * @param positionManager_ Position Manager contract for sPrime
     * @param traderJoeV2Router_ Trader Joe V2 Router Address
     */
-    function initialize(address tokenX_, address tokenY_, string memory name_, uint256[] memory distributionX_, uint256[] memory distributionY_, int256[] memory deltaIds_, address positionManager_, address traderJoeV2Router_) external initializer {
+    function initialize(address tokenX_, address tokenY_, string memory name_, uint256[] memory distributionX_, uint256[] memory distributionY_, int256[] memory deltaIds_, IPositionManager positionManager_, address traderJoeV2Router_) external initializer {
         __PendingOwnable_init();
         __ReentrancyGuard_init();
         __ERC20_init(name_, "sPrime");
@@ -79,7 +79,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
         distributionX = distributionX_;
         distributionY = distributionY_;
 
-        positionManager = IPositionManager(positionManager_);
+        positionManager = positionManager_;
     }
 
     function setVPrimeControllerAddress(address _vPrimeController) public onlyOwner {
