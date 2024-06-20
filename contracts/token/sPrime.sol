@@ -144,9 +144,11 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     * @return fullyVestedBalance Fully vested locked balance
     */
     function getFullyVestedLockedBalance(address account) public view returns (uint256 fullyVestedBalance) {
-        for (uint256 i = 0; i < locks[account].length; i++) {
-            if (locks[account][i].unlockTime > block.timestamp) {
-                fullyVestedBalance += FullMath.mulDiv(locks[account][i].amount, locks[account][i].lockPeriod, MAX_LOCK_TIME);
+        uint256 length = locks[account].length;
+        for (uint256 i; i != length; ++i) {
+            LockDetails memory lock = locks[account][i];
+            if (lock.unlockTime > block.timestamp) {
+                fullyVestedBalance += FullMath.mulDiv(lock.amount, lock.lockPeriod, MAX_LOCK_TIME);
             }
         }
     }
@@ -158,9 +160,11 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     */
     function getLockedBalance(address account) public view returns (uint256) {
         uint256 lockedBalance;
-        for (uint256 i = 0; i < locks[account].length; i++) {
-            if (locks[account][i].unlockTime > block.timestamp) {
-                lockedBalance += locks[account][i].amount;
+        uint256 length = locks[account].length;
+        for (uint256 i; i != length; ++i) {
+            LockDetails memory lock = locks[account][i];
+            if (lock.unlockTime > block.timestamp) {
+                lockedBalance += lock.amount;
             }
         }
         return lockedBalance;
