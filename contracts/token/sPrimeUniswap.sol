@@ -135,14 +135,30 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
     function getUserValueInTokenY(address user, uint256 poolPrice) public view returns (uint256) {
         uint256 tokenId = userTokenId[user];
         require(tokenId > 0, "No position");
+        (IERC20Metadata token0, IERC20Metadata token1) = (IERC20Metadata(address(tokenX)), IERC20Metadata(address(tokenY)));
         
+        if(tokenSequence) {
+            (token0, token1) = (IERC20Metadata(address(tokenY)), IERC20Metadata(address(tokenX)));
+            poolPrice = 1e16 / poolPrice;
+        }
+
         (uint160 sqrtRatioX96,,,,,,) = pool.slot0();
 
         address positionManager = getNonfungiblePositionManagerAddress();
         (uint256 amountX, uint256 amountY) = INonfungiblePositionManager(positionManager).total(tokenId, sqrtRatioX96);
+
+        uint256 sqrtPrice = UniswapV3IntegrationHelper.sqrtPriceX96ToSqrtUint(sqrtRatioX96, IERC20Metadata(tokenX).decimals());
+        uint256 sqrtMarketPrice = UniswapV3IntegrationHelper.sqrt(poolPrice * 1e10 * 10 ** IERC20Metadata(tokenY).decimals());
+
+        if (sqrtMarketPrice < sqrtPrice) {
+            amountX = amountX + amountY * poolPrice * 10 ** IERC20Metadata(tokenX).decimals() / 10 ** 8;
+            amountY = 0;
+        } else if (sqrtPrice < sqrtMarketPrice) {
+            amountY = amountY + amountY * poolPrice * 10 ** IERC20Metadata(tokenY).decimals() / 10 ** 8;
+            amountX = 0;
+        }
         
         (amountX, amountY) = tokenSequence ? (amountY, amountX) : (amountX, amountY);
-        (IERC20Metadata token0, IERC20Metadata token1) = tokenSequence ? (IERC20Metadata(address(tokenY)), IERC20Metadata(address(tokenX))) : (IERC20Metadata(address(tokenX)), IERC20Metadata(address(tokenY)));
 
         if(token1.decimals() >= token0.decimals() + 8) {
             amountY = amountY + amountX * poolPrice * 10 ** (token1.decimals() - token0.decimals() - 8);
