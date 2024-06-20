@@ -96,6 +96,7 @@
     "web3-eth-abi": "^1.7.0"
   },
   "devDependencies": {
+    "@layerzerolabs/solidity-examples": "^1.1.0",
     "@nomiclabs/hardhat-waffle": "^2.0.6",
     "@nomiclabs/hardhat-web3": "^2.0.0",
     "@openzeppelin/test-helpers": "^0.5.11",
@@ -158,7 +159,7 @@
     "webpack-merge": "^5.8.0"
   },
   "engines": {
-    "node": ">= 4.0.0 <= 16.20.2",
+    "node": ">= 4.0.0 <= 18.20.2",
     "npm": ">= 3.0.0"
   },
   "browserslist": [
