@@ -88,16 +88,16 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
 
     /** Public View Functions */
 
-    function getLBPair() public view returns (address) {
-        return address(lbPair);
+    function getLBPair() public view returns (ILBPair) {
+        return lbPair;
     }
 
-    function getTokenX() public view returns (address) {
-        return address(tokenX);
+    function getTokenX() public view returns (IERC20) {
+        return tokenX;
     }
 
-    function getTokenY() public view returns (address) {
-        return address(tokenY);
+    function getTokenY() public view returns (IERC20) {
+        return tokenY;
     }
 
     /**

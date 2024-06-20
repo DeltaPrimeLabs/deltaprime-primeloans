@@ -3,6 +3,7 @@
 pragma solidity ^0.8.17;
 
 import "./ISPrime.sol";
+import "./joe-v2/ILBPair.sol";
 
 interface ISPrimeTraderJoe is ISPrime {
   /**
@@ -23,5 +24,5 @@ interface ISPrimeTraderJoe is ISPrime {
         uint256 swapSlippage
     ) external;
     
-  function getLBPair() external view returns(address);
+  function getLBPair() external view returns(ILBPair);
 }

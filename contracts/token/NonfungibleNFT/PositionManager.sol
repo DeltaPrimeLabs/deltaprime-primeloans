@@ -58,8 +58,8 @@ contract PositionManager is
         Position memory position = _positions[tokenId];
 
         address lbPair = ISPrimeTraderJoe(sPrime).getLBPair();
-        address tokenX = ISPrimeTraderJoe(sPrime).getTokenX();
-        address tokenY = ISPrimeTraderJoe(sPrime).getTokenY();
+        address tokenX = address(ISPrimeTraderJoe(sPrime).getTokenX());
+        address tokenY = address(ISPrimeTraderJoe(sPrime).getTokenY());
 
         return (
             tokenX,

@@ -2,6 +2,8 @@
 
 pragma solidity ^0.8.17;
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 interface ISPrime {
     /**
     * @dev Struct representing details of a locked amount.
@@ -23,8 +25,8 @@ interface ISPrime {
         uint256 shareWithdraw
     ) external;
 
-    function getTokenX() external view returns(address);
-    function getTokenY() external view returns(address);
+    function getTokenX() external view returns(IERC20);
+    function getTokenY() external view returns(IERC20);
     function getPoolPrice() external view returns(uint256);
     function getUserValueInTokenY(address user, uint256 poolPrice) external view returns (uint256);
     function getFullyVestedLockedBalance(address account) external view returns(uint256);
