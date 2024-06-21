@@ -56,9 +56,6 @@ contract DepositRewarder is IDepositRewarder, Ownable, ReentrancyGuard {
     /// @notice Error for when msg.sender is unauthorized
     error Unauthorized();
 
-    /// @notice Error for when input array lengths mismatch
-    error ArrayLengthMismatch();
-
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                        EVENTS                                             //
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -77,7 +74,6 @@ contract DepositRewarder is IDepositRewarder, Ownable, ReentrancyGuard {
 
     event BatchDeposited(
         address[] accounts,
-        uint256[] amounts,
         uint256 timestamp
     );
 
@@ -128,27 +124,21 @@ contract DepositRewarder is IDepositRewarder, Ownable, ReentrancyGuard {
             totalSupply;
     }
 
-    function addDeposits(
-        uint256[] memory amounts,
-        address[] memory accounts
-    ) external onlyOwner {
-        if (accounts.length != amounts.length) {
-            revert ArrayLengthMismatch();
-        }
-
+    function addDeposits(address[] memory accounts) external onlyOwner {
         rewardPerTokenStored = rewardPerToken();
         updatedAt = lastTimeRewardApplicable();
 
         uint256 length = accounts.length;
         for (uint256 i; i != length; ++i) {
-            uint256 amount = amounts[i];
             address account = accounts[i];
-            balanceOf[account] = amount;
-            totalSupply += amount;
+            uint256 balance = IERC20(pool).balanceOf(account);
+            uint256 oldBalance = balanceOf[account];
+            balanceOf[account] = balance;
+            totalSupply = totalSupply + balance - oldBalance;
             userRewardPerTokenPaid[account] = rewardPerTokenStored;
         }
 
-        emit BatchDeposited(accounts, amounts, block.timestamp);
+        emit BatchDeposited(accounts, block.timestamp);
     }
 
     function stakeFor(
