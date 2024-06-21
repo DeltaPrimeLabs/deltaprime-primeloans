@@ -120,15 +120,22 @@ contract PositionManager is
     }
 
     function forceTransfer(address from, address to, uint256 tokenId) external override {
-        require(sPrime == _msgSender(), "Only allowed SPrime");
-
         _transfer(from, to, tokenId);
     }
 
     function burn(uint256 tokenId) external override {        
+        _burn(tokenId);
+        delete _positions[tokenId];
+    }
+
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 firstTokenId,
+        uint256 batchSize
+    ) internal virtual override {
         require(sPrime == _msgSender(), "Only allowed SPrime");
 
-        delete _positions[tokenId];
-        _burn(tokenId);
+        super._beforeTokenTransfer(from, to, firstTokenId, batchSize);
     }
 }
