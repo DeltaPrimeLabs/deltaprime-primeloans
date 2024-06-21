@@ -34,6 +34,11 @@
     "maturity": "26/09/2024",
     "marketAddress": "0xf9F9779d8fF604732EBA9AD345E6A27EF5c2a9d6"
   },
+  "PENDLE_RS_ETH_26_09_24": {
+    "key": "kelp rsethon pendle finance",
+    "maturity": "26/09/2024",
+    "marketAddress": "0xED99fC8bdB8E9e7B8240f62f69609a125A0Fbf14"
+  },
   "PENDLE_WSTETH_26_06_25": {
     "key": "lido wstethon",
     "maturity": "26/06/2025",
