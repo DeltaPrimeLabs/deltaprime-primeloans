@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 // Last deployed from commit: a623e02728121f63e0642bb849c3b76aa4dffa21;
 
-pragma solidity 0.8.17;
+pragma solidity ^0.8.17;
 
 // Importing necessary libraries and interfaces
 import "../lib/joe-v2/math/SafeCast.sol";
