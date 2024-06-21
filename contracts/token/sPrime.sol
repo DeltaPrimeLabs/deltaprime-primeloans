@@ -29,7 +29,8 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     using PackedUint128Math for bytes32;
 
     // Constants declaration
-    uint256 private constant _REBALANCE_MARGIN = 5;
+    uint256 private constant _REBALANCE_MARGIN = 500;
+    uint256 private constant _DENOMINATOR = 10000;
     uint256 private constant _MAX_SLIPPAGE = 10;
     uint16 internal constant DEFAULT_BIN_STEP = 25;
     uint256 public constant MAX_LOCK_TIME = 3 * 365 days;
@@ -256,7 +257,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
         bool swapTokenX = amountY < amountXToY;
         uint256 diff = swapTokenX ? amountXToY - amountY : amountY - amountXToY;
         // (amountXToY != 0 || amountX == 0) for excluding the initial LP deposit
-        if(FullMath.mulDiv(amountY, _REBALANCE_MARGIN, 100) < diff && (amountXToY > 0 || amountX == 0)) {
+        if(FullMath.mulDiv(amountY, _REBALANCE_MARGIN, _DENOMINATOR) < diff && (amountXToY > 0 || amountX == 0)) {
             uint256 amountIn;
             {
                 uint256 price = PriceHelper.convert128x128PriceToDecimal(lbPair.getPriceFromId(lbPair.getActiveId()));
@@ -291,7 +292,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
                 versions: versionsDynamic,
                 tokenPath: tokenPathDynamic
             });
-            amountOut = ILBRouter(traderJoeV2Router).swapExactTokensForTokens(amountIn, amountOut * (100 - swapSlippage) / 100, path, address(this), block.timestamp);
+            amountOut = ILBRouter(traderJoeV2Router).swapExactTokensForTokens(amountIn, amountOut * (_DENOMINATOR - swapSlippage) / _DENOMINATOR, path, address(this), block.timestamp);
             (amountX, amountY) = swapTokenX ? (amountX - amountIn,amountY + amountOut) : (amountX + amountOut, amountY - amountIn);
         }
         return (amountX, amountY);
