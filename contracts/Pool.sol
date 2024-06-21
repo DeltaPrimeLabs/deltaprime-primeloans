@@ -33,7 +33,6 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     IRatesCalculator public ratesCalculator;
     IBorrowersRegistry public borrowersRegistry;
     IPoolRewarder public poolRewarder;
-    IPoolRewarder public depositRewarder;
 
     IIndex public depositIndex;
     IIndex public borrowIndex;
@@ -51,7 +50,6 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         IIndex borrowIndex_,
         address payable tokenAddress_,
         IPoolRewarder poolRewarder_,
-        IPoolRewarder depositRewarder_,
         uint256 totalSupplyCap_
     ) public initializer {
         require(
@@ -60,8 +58,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
                 AddressUpgradeable.isContract(address(depositIndex_)) &&
                 AddressUpgradeable.isContract(address(borrowIndex_)) &&
                 (AddressUpgradeable.isContract(address(poolRewarder_)) ||
-                    address(poolRewarder_) == address(0) ||
-                    address(depositRewarder_) == address(0)),
+                    address(poolRewarder_) == address(0)),
             "Wrong init arguments"
         );
         borrowersRegistry = borrowersRegistry_;
@@ -69,7 +66,6 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         depositIndex = depositIndex_;
         borrowIndex = borrowIndex_;
         poolRewarder = poolRewarder_;
-        depositRewarder = depositRewarder_;
         tokenAddress = tokenAddress_;
         totalSupplyCap = totalSupplyCap_;
         _decimals = IERC20Metadata(tokenAddress_).decimals();
@@ -103,24 +99,6 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         poolRewarder = _poolRewarder;
 
         emit PoolRewarderChanged(address(_poolRewarder), block.timestamp);
-    }
-
-    /**
-     * Sets the new Deposit Rewarder.
-     * The IPoolRewarder that distributes additional token rewards to people having a stake in this pool proportionally to their stake and time of participance.
-     * Only the owner of the Contract can execute this function.
-     * @dev _depositRewarder the address of depositRewarder
-     **/
-    function setDepositRewarder(
-        IPoolRewarder _depositRewarder
-    ) external onlyOwner {
-        if (
-            !AddressUpgradeable.isContract(address(_depositRewarder)) &&
-            address(_depositRewarder) != address(0)
-        ) revert NotAContract(address(_depositRewarder));
-        depositRewarder = _depositRewarder;
-
-        emit DepositRewarderChanged(address(_depositRewarder), block.timestamp);
     }
 
     /**
@@ -206,12 +184,6 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
             uint256 unstaked = poolRewarder.withdrawFor(amount, account);
             if (unstaked > 0) {
                 poolRewarder.stakeFor(unstaked, recipient);
-            }
-        }
-        if (address(depositRewarder) != address(0) && amount != 0) {
-            uint256 unstaked = depositRewarder.withdrawFor(amount, account);
-            if (unstaked > 0) {
-                depositRewarder.stakeFor(unstaked, recipient);
             }
         }
 
@@ -300,12 +272,6 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
                 poolRewarder.stakeFor(unstaked, recipient);
             }
         }
-        if (address(depositRewarder) != address(0) && amount != 0) {
-            uint256 unstaked = depositRewarder.withdrawFor(amount, sender);
-            if (unstaked > 0) {
-                depositRewarder.stakeFor(unstaked, recipient);
-            }
-        }
 
         emit Transfer(sender, recipient, amount);
 
@@ -350,9 +316,6 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         if (address(poolRewarder) != address(0)) {
             poolRewarder.stakeFor(_amount, _of);
         }
-        if (address(depositRewarder) != address(0)) {
-            depositRewarder.stakeFor(_amount, _of);
-        }
 
         emit DepositOnBehalfOf(msg.sender, _of, _amount, block.timestamp);
     }
@@ -389,9 +352,6 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
         if (address(poolRewarder) != address(0)) {
             poolRewarder.withdrawFor(_amount, msg.sender);
-        }
-        if (address(depositRewarder) != address(0)) {
-            depositRewarder.withdrawFor(_amount, msg.sender);
         }
 
         emit Withdrawal(msg.sender, _amount, block.timestamp);
@@ -473,15 +433,11 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     // Calls the IPoolRewarder.getRewardsFor() that sends pending rewards to msg.sender
     function getRewards() external {
         poolRewarder.getRewardsFor(msg.sender);
-        depositRewarder.getRewardsFor(msg.sender);
     }
 
     // Returns number of pending rewards for msg.sender
-    function checkRewards() external view returns (uint256, uint256) {
-        return (
-            poolRewarder.earned(msg.sender),
-            depositRewarder.earned(msg.sender)
-        );
+    function checkRewards() external view returns (uint256) {
+        return poolRewarder.earned(msg.sender);
     }
 
     // Returns max. acceptable pool utilisation after borrow action
@@ -734,16 +690,6 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      * @param timestamp of the pool rewarder change
      **/
     event PoolRewarderChanged(address indexed poolRewarder, uint256 timestamp);
-
-    /**
-     * @dev emitted after changing deposit rewarder
-     * @param depositRewarder an address of the newly set deposit rewarder
-     * @param timestamp of the deposit rewarder change
-     **/
-    event DepositRewarderChanged(
-        address indexed depositRewarder,
-        uint256 timestamp
-    );
 
     /**
      * @dev emitted after changing vesting distributor
