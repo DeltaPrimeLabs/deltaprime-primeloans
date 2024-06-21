@@ -255,23 +255,29 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
                 tokenY.safeApprove(swapRouter, 0);
                 tokenY.safeApprove(swapRouter, amountIn);
             }
-
-            amountOut = ISwapRouter(swapRouter).exactInputSingle(
-                ISwapRouter.ExactInputSingleParams({
-                    tokenIn: tokenIn,
-                    tokenOut: tokenOut,
-                    fee: feeTier,
-                    recipient: address(this),
-                    deadline: block.timestamp,
-                    amountIn: amountIn,
-                    amountOutMinimum: amountOut * (100 - swapSlippage) / 100,
-                    sqrtPriceLimitX96: 0
-                })
-            );
+            (amountIn, amountOut) = _processTokenSwap(tokenIn, tokenOut, amountIn, amountOut * (100 - swapSlippage) / 100);
 
             (amountX, amountY) = swapTokenX ? (amountX - amountIn, amountY + amountOut) : (amountX + amountOut, amountY - amountIn);
         }
         return (amountX, amountY);
+    }
+
+    function _processTokenSwap(address tokenIn, address tokenOut, uint256 amount, uint256 amountOutMinimum) internal returns (uint256 amountIn, uint256 amountOut){
+        address swapRouter = getSwapRouter();
+        uint256 beforeBalance = IERC20(tokenIn).balanceOf(address(this));
+        amountOut = ISwapRouter(swapRouter).exactInputSingle(
+            ISwapRouter.ExactInputSingleParams({
+                tokenIn: tokenIn,
+                tokenOut: tokenOut,
+                fee: feeTier,
+                recipient: address(this),
+                deadline: block.timestamp,
+                amountIn: amount,
+                amountOutMinimum: amountOutMinimum,
+                sqrtPriceLimitX96: 0
+            })
+        );
+        amountIn = IERC20(tokenIn).balanceOf(address(this)) - beforeBalance;
     }
 
 
