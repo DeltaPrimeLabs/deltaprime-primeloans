@@ -5,7 +5,7 @@
         <Block :bordered="true">
           <div class="title">Savings</div>
           <NameValueBadgeBeta :name="'Your deposits'">{{ totalDeposit | usd }}</NameValueBadgeBeta>
-          <SPrimePanel></SPrimePanel>
+          <SPrimePanel :user-address="account"></SPrimePanel>
           <div class="pools">
             <div class="pools-table">
               <TableHeader :config="poolsTableHeaderConfig"></TableHeader>

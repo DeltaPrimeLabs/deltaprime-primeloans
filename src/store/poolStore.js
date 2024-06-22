@@ -12,7 +12,7 @@ import {getSwapData} from "../utils/paraSwapUtils";
 
 const ethers = require('ethers');
 const SUCCESS_DELAY_AFTER_TRANSACTION = 1000;
-let TOKEN_ADDRESSES, SPRIME_TUP;
+let TOKEN_ADDRESSES;
 
 
 export default {
@@ -34,7 +34,6 @@ export default {
 
     async loadDeployments() {
       TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
-      SPRIME_TUP = await import(`/deployments/${window.chain}/SPrimeUP.json`);
     },
 
     async poolStoreSetup({dispatch}) {
@@ -248,7 +247,7 @@ export default {
 
       // let dataFeeds = ['PRIME', sPrimeMintRequest.secondAsset]
       let dataFeeds = [...Object.keys(config.POOLS_CONFIG), sPrimeMintRequest.secondAsset]
-      const sprimeContract = await wrapContract(new ethers.Contract(SPRIME_TUP.address, SPRIME.abi, provider.getSigner()), dataFeeds);
+      const sprimeContract = await wrapContract(new ethers.Contract(sPrimeMintRequest.sPrimeAddress, SPRIME.abi, provider.getSigner()), dataFeeds);
 
       const secondAssetDecimals = config.SPRIME_CONFIG.TRADERJOEV2[sPrimeMintRequest.secondAsset].secondAssetDecimals;
       let amountPrime = toWei(sPrimeMintRequest.amountPrime.toString())
@@ -262,11 +261,11 @@ export default {
 
       async function approve(address, amount) {
         const tokenContract = new ethers.Contract(address, erc20ABI, provider.getSigner());
-        const allowance = await tokenContract.allowance(rootState.network.account, SPRIME_TUP.address);
+        const allowance = await tokenContract.allowance(rootState.network.account, sPrimeMintRequest.sPrimeAddress);
 
         if (allowance.lt(amount)) {
           let approveTransaction = await tokenContract.connect(provider.getSigner())
-            .approve(SPRIME_TUP.address, amount);
+            .approve(sPrimeMintRequest.sPrimeAddress, amount);
           rootState.serviceRegistry.progressBarService.requestProgressBar();
           rootState.serviceRegistry.modalService.closeModal();
 
@@ -282,12 +281,23 @@ export default {
 
       // let dataFeeds = ['PRIME', sPrimeMintRequest.secondAsset]
       let dataFeeds = [...Object.keys(config.POOLS_CONFIG), sPrimeRebalanceRequest.secondAsset]
-      const sprimeContract = await wrapContract(new ethers.Contract(SPRIME_TUP.address, SPRIME.abi, provider.getSigner()), dataFeeds);
+      const sprimeContract = await wrapContract(new ethers.Contract(sPrimeRebalanceRequest.sPrimeAddress, SPRIME.abi, provider.getSigner()), dataFeeds);
 
       let idSlippage = getTraderJoeV2IdSlippageFromPriceSlippage(sPrimeRebalanceRequest.slippage / 100, config.SPRIME_CONFIG.TRADERJOEV2[sPrimeRebalanceRequest.secondAsset].binStep);
 
       //approvals
       await sprimeContract.deposit(sPrimeRebalanceRequest.activeId, idSlippage, 0, 0, sPrimeRebalanceRequest.isRebalance, sPrimeRebalanceRequest.slippage)
+
+    },
+    async sPrimeTjV2Redeem({state, rootState, dispatch}, {sPrimeRedeemRequest: sPrimeRedeemRequest}) {
+      const provider = rootState.network.provider;
+
+      let share = toWei(sPrimeRedeemRequest.share);
+
+      let dataFeeds = [...Object.keys(config.POOLS_CONFIG), sPrimeRedeemRequest.secondAsset]
+      const sprimeContract = await wrapContract(new ethers.Contract(sPrimeRedeemRequest.sPrimeAddress, SPRIME.abi, provider.getSigner()), dataFeeds);
+
+      await sprimeContract.withdraw(share);
 
     }
   }

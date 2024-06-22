@@ -10,14 +10,14 @@
         <FlatButton v-if="isPrimeAccount" :active="true">deposit</FlatButton>
         <FlatButton v-on:buttonClick="openRebalanceSPrimeModal()" :active="true">rebalance</FlatButton>
         <FlatButton v-if="isPrimeAccount" :active="true">withdraw</FlatButton>
-        <FlatButton :active="true">redeem</FlatButton>
+        <FlatButton v-on:buttonClick="openRedeemSPrimeModal()" :active="true">redeem</FlatButton>
       </div>
     </div>
     <div class="sprime-panel__body">
       <div class="stats">
         <div class="stat">
           <div class="stat__title">Total value</div>
-          <div class="stat__value">{{ 50.31 | usd }}</div>
+          <div class="stat__value">{{ value | usd }}</div>
         </div>
         <div class="stat">
           <div class="stat__title">Revenue received</div>
@@ -35,7 +35,7 @@
         <div class="governance__title">Governance power</div>
         <div class="power__gauge">
           <div class="gauge__value">
-            265
+            {{ governancePoints }}
           </div>
         </div>
       </div>
@@ -59,6 +59,7 @@
 import FlatButton from './FlatButton.vue';
 import {mapActions, mapState} from "vuex";
 import config from "../config";
+import {combineLatest} from "rxjs";
 
 export default {
   name: 'SPrimePanel',
@@ -67,31 +68,60 @@ export default {
     isPrimeAccount: false
   },
   data() {
-    return {};
+    return {
+      dex: null,
+      secondAsset: null,
+      sPrimeConfig: null,
+      value: null,
+      governancePoints: null
+    };
   },
   mounted() {
+    this.dex = config.SPRIME_CONFIG.default;
+    this.secondAsset = config.SPRIME_CONFIG[this.dex].default;
+    this.sPrimeConfig = config.SPRIME_CONFIG[this.dex][this.secondAsset];
+
+    combineLatest([
+      this.accountService.observeAccountLoaded(),
+      this.providerService.observeProviderCreated()
+    ]).subscribe(value => {
+      this.fetchSPrimeData();
+    });
+    combineLatest([
+      this.sPrimeService.observeSPrimeValue(),
+      this.priceService.observeRefreshPrices()
+    ]).subscribe(value => {
+      this.value = value * config.ASSETS_CONFIG[this.secondAsset].price
+    });
+
+    this.accountService.observeAccountLoaded().subscribe(() => {
+      this.fetchVPrimeData();
+    });
+
+    this.vPrimeService.observeVPrimePoints().subscribe(points => {
+      this.governancePoints = points;
+    });
   },
   watch: {},
   computed: {
-    ...mapState('serviceRegistry', ['traderJoeService']),
+    ...mapState('serviceRegistry', ['sPrimeService', 'vPrimeService', 'priceService', 'providerService', 'accountService', 'traderJoeService']),
+    ...mapState('network', ['provider', 'account']),
   },
   methods: {
     ...mapActions('poolStore', [
       'sPrimeTjV2Mint',
-      'sPrimeTjV2Rebalance'
+      'sPrimeTjV2Rebalance',
+      'sPrimeTjV2Redeem'
     ]),
     async openMintSPrimeModal() {
-      let defaultDexForSPrime = config.SPRIME_CONFIG.default;
-      let defaultSPrimeAsset = config.SPRIME_CONFIG[defaultDexForSPrime].default;
-      let sPrimeConfig = config.SPRIME_CONFIG[defaultDexForSPrime][defaultSPrimeAsset];
-
       const [, activeId] = await this
           .traderJoeService
-          .getLBPairReservesAndActiveBin(sPrimeConfig.lbAddress, this.provider);
+          .getLBPairReservesAndActiveBin(this.sPrimeConfig.lbAddress, this.provider);
 
       // modalInstance.$on('MINT', sPrimeMintEvent => {
       let sPrimeMintRequest = {
-        secondAsset: defaultSPrimeAsset,
+        sPrimeAddress: this.sPrimeConfig.sPrimeAddress,
+        secondAsset: this.secondAsset,
         isRebalance: true,
         amountPrime: 0.0001,
         amountSecond: 0.0001,
@@ -108,17 +138,14 @@ export default {
       // });
     },
     async openRebalanceSPrimeModal() {
-      let defaultDexForSPrime = config.SPRIME_CONFIG.default;
-      let defaultSPrimeAsset = config.SPRIME_CONFIG[defaultDexForSPrime].default;
-      let sPrimeConfig = config.SPRIME_CONFIG[defaultDexForSPrime][defaultSPrimeAsset];
-
       const [, activeId] = await this
           .traderJoeService
-          .getLBPairReservesAndActiveBin(sPrimeConfig.lbAddress, this.provider);
+          .getLBPairReservesAndActiveBin(this.sPrimeConfig.lbAddress, this.provider);
 
       // modalInstance.$on('REBALANCE', sPrimeRebalanceEvent => {
       let sPrimeRebalanceRequest = {
-        secondAsset: defaultSPrimeAsset,
+        sPrimeAddress: this.sPrimeConfig.sPrimeAddress,
+        secondAsset: this.secondAsset,
         isRebalance: true,
         idSlippage: 10,
         slippage: 5,
@@ -132,7 +159,27 @@ export default {
       });
       // });
     },
-
+    async openRedeemSPrimeModal() {
+      // modalInstance.$on('REDEEM', sPrimeRebalanceEvent => {
+      let sPrimeRedeemRequest = {
+        sPrimeAddress: this.sPrimeConfig.sPrimeAddress,
+        secondAsset: this.secondAsset,
+        share: '0.0000000000000001'
+      };
+      this.handleTransaction(this.sPrimeTjV2Redeem, { sPrimeRedeemRequest: sPrimeRedeemRequest }, () => {
+        this.$forceUpdate();
+      }, (error) => {
+        this.handleTransactionError(error);
+      }).then(() => {
+      });
+      // });
+    },
+    fetchSPrimeData() {
+      this.sPrimeService.emitRefreshSPrimeData(this.provider, this.sPrimeConfig.sPrimeAddress, this.dex, this.secondAsset, this.account);
+    },
+    fetchVPrimeData() {
+      this.vPrimeService.emitRefreshVPrimeData(config.VPRIME_CONFIG.address, this.account);
+    }
   },
 };
 </script>

@@ -8,6 +8,7 @@ import DAI_POOL_TUP from '/deployments/arbitrum/DaiPoolTUP.json';
 import FRAX_POOL_TUP from '/deployments/arbitrum/FraxPoolTUP.json';
 import LINK_POOL_TUP from '/deployments/arbitrum/LinkPoolTUP.json';
 import SUSHISWAP_INTERMEDIARY_TUP from '../deployments/arbitrum/SushiSwapIntermediaryTUP.json';
+import VPRIME_TUP from '/deployments/arbitrum/vPrimeUP.json';
 import {yieldYakBalance} from './utils/calculate';
 import subgraphConfig from '../.secrets/subgraph.json';
 
@@ -50,11 +51,15 @@ export default {
         TRADERJOEV2: {
             default: "USDC",
             USDC: {
+                sPrimeAddress: "0x83BE7c8768df4600E643d1a05734198709E505da",
                 lbAddress: "0x37b03c3Da5FC76D266693B3bf2f143300FDCb282",
                 binStep: 25,
                 secondAssetDecimals: 6,
             }
         }
+    },
+    VPRIME_CONFIG: {
+        address: VPRIME_TUP.address
     },
     PENPIE_REWARDS_TOKENS: {
         "PENDLE": {name: "PENDLE", symbol: "PENDLE", logoExt: "png", decimals: 18, address: addresses.PENDLE},

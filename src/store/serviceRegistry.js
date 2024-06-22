@@ -25,6 +25,8 @@ import TermsService from '../services/termsService';
 import DeprecatedAssetsService from '../services/deprecatedAssetsService';
 import LtipService from "../services/ltipService";
 import GgpIncentivesService from "../services/ggpIncentivesService";
+import sPrimeService from "../services/sPrimeService";
+import vPrimeService from "../services/vPrimeService";
 
 export default {
   namespaced: true,
@@ -56,5 +58,7 @@ export default {
     deprecatedAssetsService: new DeprecatedAssetsService(),
     ltipService: new LtipService(),
     ggpIncentivesService: new GgpIncentivesService(),
+    sPrimeService: new sPrimeService(),
+    vPrimeService: new vPrimeService()
   },
 };
