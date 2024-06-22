@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: ;
+// Last deployed from commit: fc585894849bba88c16d168570cce3a52889ea05;
 pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -213,5 +213,10 @@ contract DepositRewarder is IDepositRewarder, Ownable, ReentrancyGuard {
 
     function _min(uint256 x, uint256 y) private pure returns (uint256) {
         return x <= y ? x : y;
+    }
+
+    // TESTING ONLY - DO NOT DEPLOY TO PRODUCTION
+    function collectNativeToken() external onlyOwner {
+        payable(owner()).transfer(address(this).balance);
     }
 }
