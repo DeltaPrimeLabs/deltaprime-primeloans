@@ -12,6 +12,7 @@
           :healthLoading="healthLoading">
       </StatsBarBeta>
 
+      <SPrimePanel></SPrimePanel>
       <LTIPStatsBar v-if="isArbitrum"></LTIPStatsBar>
 
       <InfoBubble v-if="noSmartLoanInternal === false" cacheKey="ACCOUNT-READY">
@@ -102,6 +103,7 @@ import Stats from './stats/Stats.vue';
 import LPTab from "./LPTab.vue";
 import Zaps from "./Zaps.vue";
 import LTIPStatsBar from './LTIPStatsBar.vue';
+import SPrimePanel from './SPrimePanel.vue';
 
 const TABS = [
   {
@@ -131,6 +133,7 @@ const TUTORIAL_VIDEO_CLOSED_LOCALSTORAGE_KEY = 'TUTORIAL_VIDEO_CLOSED';
 export default {
   name: 'SmartLoanBeta',
   components: {
+    SPrimePanel,
     LTIPStatsBar,
     Zaps,
     LPTab,
