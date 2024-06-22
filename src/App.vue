@@ -125,6 +125,7 @@ import ProtectedByBar from './components/ProtectedByBar.vue';
 import InfoIcon from './components/InfoIcon.vue';
 import TermsModal from './components/TermsModal.vue';
 import {combineLatest, forkJoin, map} from 'rxjs';
+import fetch from 'node-fetch';
 
 export default {
   components: {
@@ -230,6 +231,7 @@ export default {
     setTimeout(() => {
       this.checkWallet();
     }, 500)
+    this.getCountry();
   },
   computed: {
     ...mapState('network', ['account', 'provider']),
@@ -442,6 +444,14 @@ export default {
         }
       }
     },
+
+    async getCountry() {
+      console.warn('get country');
+      const countryRequest = await fetch('https://geo-service-frtt8nrlk-deltaprimelabs.vercel.app/api/hello');
+      const countryResponse = await countryRequest.json();
+      console.warn('----___---___--__---___--___countryResponse-_--___---___--___---__--____-----');
+      console.warn(countryResponse);
+    }
   },
   destroyed() {
     clearInterval(this.gasPriceIntervalId);
