@@ -17,30 +17,38 @@
       <div class="stats">
         <div class="stat">
           <div class="stat__title">Total value</div>
-          <div class="stat__value">{{50.31 | usd}}</div>
+          <div class="stat__value">{{ 50.31 | usd }}</div>
         </div>
         <div class="stat">
           <div class="stat__title">Revenue received</div>
-          <div class="stat__value">{{50.31 | usd}}</div>
+          <div class="stat__value">{{ 50.31 | usd }}</div>
         </div>
         <div class="stat">
           <div class="stat__title">YTD APR</div>
-          <div class="stat__value">{{0.15512 | percent}}</div>
+          <div class="stat__value">{{ 0.15512 | percent }}</div>
         </div>
       </div>
       <div class="distribution">
         Distribution
       </div>
       <div class="governance">
-        <div class="governance__power">
-          Governance power
-          <div class="power__gauge">
-            <div class="gauge__value">
-              265
-            </div>
+        <div class="governance__title">Governance power</div>
+        <div class="power__gauge">
+          <div class="gauge__value">
+            265
           </div>
         </div>
-        <div class="rates"></div>
+      </div>
+      <div class="rates">
+        <div class="rate">
+          <div class="rate__title">Accrual rate (yearly)</div>
+          <div class="rate__value">58</div>
+        </div>
+        <div class="rate">
+          <div class="rate__title">Max. accrual rate</div>
+          <div class="rate__value">58</div>
+          <div class="rate__extra-info">(Borrow 10$ more)</div>
+        </div>
       </div>
     </div>
   </div>
@@ -105,7 +113,7 @@ export default {
   .sprime-panel__body {
     padding: 30px 50px;
     display: grid;
-    grid-template-columns: 250px 1fr 420px;
+    grid-template-columns: 250px 1fr 280px 170px;
 
     .stats {
       display: flex;
@@ -135,37 +143,67 @@ export default {
     }
 
     .distribution {
-
+      border-style: solid;
+      border-width: 0 2px 0 0;
+      border-image-source: var(--stats-bar-beta__divider-background);
+      border-image-slice: 1;
     }
 
     .governance {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
 
-      .governance__power {
 
-        .power__gauge {
-          width: 130px;
-          height: 130px;
-          display: flex;
-          flex-direction: row;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 2px 2px 10px 0 rgba(191, 188, 255, 0.9);
-          border-radius: 65px;
-          border-style: solid;
-          border-width: 2px;
-          border-image-source: linear-gradient(to right, #dfe0ff, #ffe1c2 48%, #ffd3e0);
-          border-image-slice: 1;
+      .power__gauge {
+        width: 130px;
+        height: 130px;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 2px 2px 10px 0 rgba(191, 188, 255, 0.9);
+        border-radius: 65px;
+        border-style: solid;
+        border-width: 2px;
+        border-image-source: linear-gradient(to right, #dfe0ff, #ffe1c2 48%, #ffd3e0);
+        border-image-slice: 1;
 
-          .gauge__value {
-            font-size: 44px;
-            font-weight: 600;
-            color: #9a97ff;
-          }
+        .gauge__value {
+          font-size: 44px;
+          font-weight: 600;
+          color: #9a97ff;
         }
       }
+    }
 
-      .rates {
+    .rates {
+      .rate {
+        display: flex;
+        flex-direction: column;
 
+        &:not(:last-child) {
+          margin-bottom: 40px;
+        }
+
+        .rate__title {
+          font-size: 16px;
+          font-weight: 500;
+          color: #696969;
+        }
+
+        .rate__value {
+          font-size: 18px;
+          font-weight: 500;
+          color: #000;
+        }
+
+        .rate__extra-info {
+          font-size: 14px;
+          font-weight: 500;
+          color: #696969;
+        }
       }
     }
   }
