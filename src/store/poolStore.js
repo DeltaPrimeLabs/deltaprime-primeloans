@@ -274,7 +274,20 @@ export default {
         }
       }
 
-      await sprimeContract.deposit(sPrimeMintRequest.activeId, idSlippage, amountPrime, amountSecond, sPrimeMintRequest.isRebalance, sPrimeMintRequest.slippage, {gasLimit: 4000000})
+      await sprimeContract.deposit(sPrimeMintRequest.activeId, idSlippage, amountPrime, amountSecond, sPrimeMintRequest.isRebalance, sPrimeMintRequest.slippage)
+
+    },
+    async sPrimeTjV2Rebalance({state, rootState, dispatch}, {sPrimeRebalanceRequest: sPrimeRebalanceRequest}) {
+      const provider = rootState.network.provider;
+
+      // let dataFeeds = ['PRIME', sPrimeMintRequest.secondAsset]
+      let dataFeeds = [...Object.keys(config.POOLS_CONFIG), sPrimeRebalanceRequest.secondAsset]
+      const sprimeContract = await wrapContract(new ethers.Contract(SPRIME_TUP.address, SPRIME.abi, provider.getSigner()), dataFeeds);
+
+      let idSlippage = getTraderJoeV2IdSlippageFromPriceSlippage(sPrimeRebalanceRequest.slippage / 100, config.SPRIME_CONFIG.TRADERJOEV2[sPrimeRebalanceRequest.secondAsset].binStep);
+
+      //approvals
+      await sprimeContract.deposit(sPrimeRebalanceRequest.activeId, idSlippage, 0, 0, sPrimeRebalanceRequest.isRebalance, sPrimeRebalanceRequest.slippage)
 
     }
   }

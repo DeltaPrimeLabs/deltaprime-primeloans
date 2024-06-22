@@ -5,7 +5,7 @@
         <Block :bordered="true">
           <div class="title">Savings</div>
           <NameValueBadgeBeta :name="'Your deposits'">{{ totalDeposit | usd }}</NameValueBadgeBeta>
-          <SPrimeTJV2Test></SPrimeTJV2Test>
+          <SPrimePanel></SPrimePanel>
           <div class="pools">
             <div class="pools-table">
               <TableHeader :config="poolsTableHeaderConfig"></TableHeader>
@@ -36,7 +36,7 @@ import {mapActions, mapState} from 'vuex';
 import {BehaviorSubject, combineLatest, forkJoin} from 'rxjs';
 import erc20ABI from '../../test/abis/ERC20.json';
 import ResumeBridgeModal from './ResumeBridgeModal';
-import SPrimeTJV2Test from "./sPrimeTJV2Test.vue";
+import SPrimePanel from "./SPrimePanel.vue";
 
 const ethers = require('ethers');
 
@@ -45,7 +45,7 @@ let TOKEN_ADDRESSES;
 export default {
   name: 'PoolsBeta',
   components: {
-    SPrimeTJV2Test,
+    SPrimePanel,
     PoolsTableRowBeta,
     Block,
     NameValueBadgeBeta,

@@ -46,7 +46,9 @@ export default {
       "rsETH": {name: "rsETH", symbol: "rsETH", logoExt: "png", decimals: 18, address: addresses.rsETH, debtCoverage: 0.83333333333},
     },
     SPRIME_CONFIG: {
+        default: "TRADERJOEV2",
         TRADERJOEV2: {
+            default: "USDC",
             USDC: {
                 lbAddress: "0x37b03c3Da5FC76D266693B3bf2f143300FDCb282",
                 binStep: 25,

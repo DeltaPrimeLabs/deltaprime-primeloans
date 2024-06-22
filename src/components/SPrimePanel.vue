@@ -6,10 +6,10 @@
         $sPRIME
       </div>
       <div class="actions">
-        <FlatButton :active="true">mint</FlatButton>
-        <FlatButton :active="true">deposit</FlatButton>
-        <FlatButton :active="true">rebalance</FlatButton>
-        <FlatButton :active="true">withdraw</FlatButton>
+        <FlatButton v-on:buttonClick="openMintSPrimeModal()" :active="true">mint</FlatButton>
+        <FlatButton v-if="isPrimeAccount" :active="true">deposit</FlatButton>
+        <FlatButton v-on:buttonClick="openRebalanceSPrimeModal()" :active="true">rebalance</FlatButton>
+        <FlatButton v-if="isPrimeAccount" :active="true">withdraw</FlatButton>
         <FlatButton :active="true">redeem</FlatButton>
       </div>
     </div>
@@ -57,18 +57,83 @@
 <script>
 
 import FlatButton from './FlatButton.vue';
+import {mapActions, mapState} from "vuex";
+import config from "../config";
 
 export default {
   name: 'SPrimePanel',
   components: {FlatButton},
-  props: {},
+  props: {
+    isPrimeAccount: false
+  },
   data() {
     return {};
   },
   mounted() {
   },
   watch: {},
-  methods: {}
+  computed: {
+    ...mapState('serviceRegistry', ['traderJoeService']),
+  },
+  methods: {
+    ...mapActions('poolStore', [
+      'sPrimeTjV2Mint',
+      'sPrimeTjV2Rebalance'
+    ]),
+    async openMintSPrimeModal() {
+      let defaultDexForSPrime = config.SPRIME_CONFIG.default;
+      let defaultSPrimeAsset = config.SPRIME_CONFIG[defaultDexForSPrime].default;
+      let sPrimeConfig = config.SPRIME_CONFIG[defaultDexForSPrime][defaultSPrimeAsset];
+
+      const [, activeId] = await this
+          .traderJoeService
+          .getLBPairReservesAndActiveBin(sPrimeConfig.lbAddress, this.provider);
+
+      // modalInstance.$on('MINT', sPrimeMintEvent => {
+      let sPrimeMintRequest = {
+        secondAsset: defaultSPrimeAsset,
+        isRebalance: true,
+        amountPrime: 0.0001,
+        amountSecond: 0.0001,
+        idSlippage: 10,
+        slippage: 5,
+        activeId: activeId
+      };
+      this.handleTransaction(this.sPrimeTjV2Mint, { sPrimeMintRequest: sPrimeMintRequest }, () => {
+        this.$forceUpdate();
+      }, (error) => {
+        this.handleTransactionError(error);
+      }).then(() => {
+      });
+      // });
+    },
+    async openRebalanceSPrimeModal() {
+      let defaultDexForSPrime = config.SPRIME_CONFIG.default;
+      let defaultSPrimeAsset = config.SPRIME_CONFIG[defaultDexForSPrime].default;
+      let sPrimeConfig = config.SPRIME_CONFIG[defaultDexForSPrime][defaultSPrimeAsset];
+
+      const [, activeId] = await this
+          .traderJoeService
+          .getLBPairReservesAndActiveBin(sPrimeConfig.lbAddress, this.provider);
+
+      // modalInstance.$on('REBALANCE', sPrimeRebalanceEvent => {
+      let sPrimeRebalanceRequest = {
+        secondAsset: defaultSPrimeAsset,
+        isRebalance: true,
+        idSlippage: 10,
+        slippage: 5,
+        activeId: activeId
+      };
+      this.handleTransaction(this.sPrimeTjV2Rebalance, { sPrimeRebalanceRequest: sPrimeRebalanceRequest }, () => {
+        this.$forceUpdate();
+      }, (error) => {
+        this.handleTransactionError(error);
+      }).then(() => {
+      });
+      // });
+    },
+
+  },
 };
 </script>
 
