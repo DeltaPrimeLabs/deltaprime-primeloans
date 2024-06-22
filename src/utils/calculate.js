@@ -542,3 +542,9 @@ function formatTokenBalance(value, precision = 5, toFixed = false) {
     return '';
   }
 }
+
+export  function getTraderJoeV2IdSlippageFromPriceSlippage(priceSlippage, binStep) {
+  return Math.floor(
+      Math.log(1 + priceSlippage) / Math.log(1 + binStep / 1e4)
+  );
+}

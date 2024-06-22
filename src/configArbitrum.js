@@ -45,6 +45,15 @@ export default {
       "weETH": {name: "weETH", symbol: "weETH", logoExt: "png", decimals: 18, address: addresses.weETH, debtCoverage: 0.83333333333, tradingViewSymbol: "CRYPTO:WEETHUSD"},
       "rsETH": {name: "rsETH", symbol: "rsETH", logoExt: "png", decimals: 18, address: addresses.rsETH, debtCoverage: 0.83333333333},
     },
+    SPRIME_CONFIG: {
+        TRADERJOEV2: {
+            USDC: {
+                lbAddress: "0x37b03c3Da5FC76D266693B3bf2f143300FDCb282",
+                binStep: 25,
+                secondAssetDecimals: 6,
+            }
+        }
+    },
     PENPIE_REWARDS_TOKENS: {
         "PENDLE": {name: "PENDLE", symbol: "PENDLE", logoExt: "png", decimals: 18, address: addresses.PENDLE},
         "PNP": {name: "PNP", symbol: "PNP", logoExt: "png", decimals: 18, address: addresses.PNP},
