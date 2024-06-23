@@ -21,16 +21,20 @@ export default class sPrimeService {
 
       const sPrimeContract = await wrapContract(new ethers.Contract(sPrimeAddress, SPRIME.abi, provider.getSigner()), dataFeeds);
 
-      sPrimeContract.getPoolPrice().then(
-          poolPrice => {
-              sPrimeContract.getUserValueInTokenY(ownerAddress, poolPrice).then(
-                  res => res.json().then(
-                      value => {
-                          this.sPrimeValue$.next(fromWei(value))
-                      }
-                  )
-              );
+      sPrimeContract.getUserValueInTokenY(ownerAddress).then(
+          value => {
+              this.sPrimeValue$.next(fromWei(value))
           }
-      )
+      );
+
+      // sPrimeContract.getPoolPrice().then(
+      //     poolPrice => {
+      //         sPrimeContract.getUserValueInTokenY(ownerAddress, poolPrice).then(
+      //                 value => {
+      //                     this.sPrimeValue$.next(fromWei(value))
+      //                 }
+      //         );
+      //     }
+      // )
   }
 };

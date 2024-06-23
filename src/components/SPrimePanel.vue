@@ -42,7 +42,7 @@
       <div class="rates">
         <div class="rate">
           <div class="rate__title">Accrual rate (yearly)</div>
-          <div class="rate__value">58</div>
+          <div class="rate__value">{{ governanceRate }}</div>
         </div>
         <div class="rate">
           <div class="rate__title">Max. accrual rate</div>
@@ -73,7 +73,8 @@ export default {
       secondAsset: null,
       sPrimeConfig: null,
       value: null,
-      governancePoints: null
+      governancePoints: null,
+      governanceRate: null
     };
   },
   mounted() {
@@ -90,7 +91,9 @@ export default {
     combineLatest([
       this.sPrimeService.observeSPrimeValue(),
       this.priceService.observeRefreshPrices()
-    ]).subscribe(value => {
+    ]).subscribe(([value,]) => {
+      console.log('value: ',  value)
+      console.log('config.ASSETS_CONFIG[this.secondAsset].price: ',  config.ASSETS_CONFIG[this.secondAsset].price)
       this.value = value * config.ASSETS_CONFIG[this.secondAsset].price
     });
 
@@ -100,6 +103,10 @@ export default {
 
     this.vPrimeService.observeVPrimePoints().subscribe(points => {
       this.governancePoints = points;
+    });
+
+    this.vPrimeService.observeVPrimeRate().subscribe(rate => {
+      this.governanceRate = rate;
     });
   },
   watch: {},

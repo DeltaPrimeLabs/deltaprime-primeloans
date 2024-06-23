@@ -15,6 +15,10 @@ export default class vPrimeService {
     return this.vPrimePoints$.asObservable();
   }
 
+    observeVPrimeRate() {
+        return this.vPrimeRate$.asObservable();
+    }
+
   async updateVPrimeData(vPrimeAddress, ownerAddress) {
       const vPrimeContract = new ethers.Contract(vPrimeAddress, vPRIME.abi, provider.getSigner());
 
@@ -22,5 +26,17 @@ export default class vPrimeService {
           points => {
               this.vPrimePoints$.next(fromWei(points));
       });
+
+      vPrimeContract.numCheckpoints(ownerAddress).then(
+          num => {
+              if (!num) {
+                  this.vPrimeRate$.next(0);
+              } else {
+                  vPrimeContract.checkpoints(ownerAddress, num - 1).then(
+                      checkpoint => {
+                          this.vPrimeRate$.next(fromWei(checkpoint.rate));
+                      });
+              }
+          });
   }
 };
