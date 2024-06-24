@@ -25,8 +25,8 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
     using SafeERC20 for IERC20Metadata; // Using SafeERC20 for IERC20 for safe token transfers
     using PositionValue for INonfungiblePositionManager;
     // Constants declaration
-    uint256 private constant _REBALANCE_MARGIN = 5;
-    uint256 private constant _MAX_SLIPPAGE = 10;
+    uint256 private constant _REBALANCE_MARGIN = 5; // Rebalance Limit - If token diff is smaller than this percent, it will skip the token swap part
+    uint256 private constant _MAX_SLIPPAGE = 10;   // Max slippage percent at the time of token swap for equal values
     uint256 public constant MAX_LOCK_TIME = 3 * 365 days;
 
     // Mapping for storing pair information and user shares
