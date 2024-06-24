@@ -77,6 +77,7 @@ export default {
 
   methods: {
     ...mapActions('poolStore', ['poolStoreSetup', 'deposit']),
+    ...mapActions('sPrimeStore', ['sPrimeStoreSetup']),
 
     async setupFiles() {
       TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
@@ -85,7 +86,8 @@ export default {
     initStoresWhenProviderAndAccountCreated() {
       combineLatest([this.providerService.observeProviderCreated(), this.accountService.observeAccountLoaded()])
         .subscribe(async ([provider, account]) => {
-          await this.poolStoreSetup();
+          this.poolStoreSetup();
+          this.sPrimeStoreSetup();
         });
     },
 

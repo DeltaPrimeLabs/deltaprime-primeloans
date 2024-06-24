@@ -260,10 +260,12 @@ export default {
     ...mapActions('fundsStore', ['fundsStoreSetup', 'getAccountApr']),
     ...mapActions('stakeStore', ['stakeStoreSetup']),
     ...mapActions('poolStore', ['poolStoreSetup']),
+    ...mapActions('sPrimeStore', ['sPrimeStoreSetup']),
 
     initStoresWhenProviderAndAccountCreated() {
       combineLatest([this.providerService.observeProviderCreated(), this.accountService.observeAccountLoaded()])
           .subscribe(async ([provider, account]) => {
+            this.sPrimeStoreSetup();
             await this.poolStoreSetup();
             await this.fundsStoreSetup();
             await this.stakeStoreSetup();

@@ -7,9 +7,7 @@
       </div>
       <div class="actions">
         <FlatButton v-on:buttonClick="openMintSPrimeModal()" :active="true">mint</FlatButton>
-        <FlatButton v-if="isPrimeAccount" :active="true">deposit</FlatButton>
         <FlatButton v-on:buttonClick="openRebalanceSPrimeModal()" :active="true">rebalance</FlatButton>
-        <FlatButton v-if="isPrimeAccount" :active="true">withdraw</FlatButton>
         <FlatButton v-on:buttonClick="openRedeemSPrimeModal()" :active="true">redeem</FlatButton>
       </div>
     </div>
@@ -111,7 +109,7 @@ export default {
     ...mapState('network', ['provider', 'account']),
   },
   methods: {
-    ...mapActions('poolStore', [
+    ...mapActions('sPrimeStore', [
       'sPrimeTjV2Mint',
       'sPrimeTjV2Rebalance',
       'sPrimeTjV2Redeem'
