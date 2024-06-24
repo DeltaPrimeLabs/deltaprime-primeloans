@@ -82,20 +82,14 @@ export default {
   },
   mounted() {
     this.setupFiles();
-    console.log('mounted')
-    console.log('config: ', config)
     this.dex = config.SPRIME_CONFIG.default;
-    console.log('mounted 2')
-    console.log('dex: ', this.dex)
     this.secondAsset = config.SPRIME_CONFIG[this.dex].default;
-    console.log('secondAsset: ', this.secondAsset)
     this.sPrimeConfig = config.SPRIME_CONFIG[this.dex][this.secondAsset];
-    console.log('sPrimeConfig: ', this.sPrimeConfig)
 
     combineLatest([
       this.accountService.observeAccountLoaded(),
       this.providerService.observeProviderCreated()
-    ]).subscribe(value => {
+    ]).subscribe(() => {
       this.fetchSPrimeData();
     });
 
@@ -138,9 +132,6 @@ export default {
           [this.fetchUserTokenBalance('PRIME'),
             this.fetchUserTokenBalance(this.secondAsset)]
       );
-
-      console.log('prime 2: ', primeBalance)
-      console.log('second 2: ', secondAssetBalance)
 
       const modalInstance = this.openModal(MintsPrimeModal);
       modalInstance.primeBalance = primeBalance;

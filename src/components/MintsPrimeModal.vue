@@ -94,7 +94,7 @@ export default {
       secondInputValidators: [],
       addedLiquidity: 0,
       transactionOngoing: false,
-      primeInputError: true,
+      primeInputError: false,
       secondInputError: false,
     };
   },

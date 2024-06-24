@@ -1,7 +1,7 @@
 import {BehaviorSubject, Subject} from 'rxjs';
 import config from '../config';
 import {wrapContract} from "../utils/blockchain";
-import {fromWei} from "../utils/calculate";
+import {formatUnits, fromWei} from "../utils/calculate";
 import SPRIME from '@artifacts/contracts/token/sPrime.sol/sPrime.json';
 const ethers = require('ethers');
 
