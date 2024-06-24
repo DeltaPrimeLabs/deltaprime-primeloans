@@ -370,7 +370,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
         if(userTokenId[_msgSender()] == 0) {
             (, currenTick,,,,,) = pool.slot0();
             require(tickDesired + tickSlippage >= currenTick && currenTick + tickSlippage >= tickDesired, "Slippage High");
-            tickLower = currenTick +  tickSpacing * deltaIds[0] >= TickMath.MIN_TICK ? currenTick +  tickSpacing * deltaIds[0] : TickMath.MIN_TICK;
+            tickLower = currenTick + tickSpacing * deltaIds[0] >= TickMath.MIN_TICK ? currenTick + tickSpacing * deltaIds[0] : TickMath.MIN_TICK;
             tickUpper = currenTick + tickSpacing * deltaIds[1] <= TickMath.MAX_TICK ? currenTick + tickSpacing * deltaIds[1] : TickMath.MAX_TICK;
         }
         _depositToUniswap(_msgSender(), tickLower, tickUpper, amountX, amountY);
