@@ -123,6 +123,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     /**
      * @dev Returns the estimated USD value of the user position
      * @param user User Address
+     * @param poolPrice Pool Price or oracle price for calculating proper token amount
      * @return Total Value in tokenY amount for the user's position.
      */
     function getUserValueInTokenY(address user, uint256 poolPrice) public view returns (uint256) {
@@ -136,6 +137,16 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
             amountY = amountY + FullMath.mulDiv(amountX, poolPrice, 10 ** (tokenXDecimals + 8 - tokenYDecimals));
         }
         return amountY;
+    }
+
+    /**
+     * @dev Returns the estimated USD value of the user position
+     * @param user User Address
+     * @return Total Value in tokenY amount for the user's position.
+     */
+    function getUserValueInTokenY(address user) external view returns (uint256) {
+        uint256 poolPrice = getPoolPrice();
+        return getUserValueInTokenY(user, poolPrice);
     }
 
     /**
