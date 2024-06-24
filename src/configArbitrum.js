@@ -575,5 +575,7 @@ export default {
     ltipMilestone: 12500000,
     ltipLastDistributionTimestamp: 1718644520,
     ltipProgramStart: 1717432200,
-    lastMilestoneHit: 1718712602
+    lastMilestoneHit: 1718712602,
+    geolocationServiceUrl: "https://geo-service-p19wbkdp8-deltaprimelabs.vercel.app/api/geolocation",
+    restrictedCountries: ['US', 'AS', 'GU', 'PR', 'MP', 'VI', 'BY', 'CU', 'KP', 'SY', 'CI', 'LR', 'SD', 'ZW', 'IQ']
 }

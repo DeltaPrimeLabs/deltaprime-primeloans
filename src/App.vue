@@ -42,9 +42,16 @@
       Data feeds error. Some functions might be not available.
     </Banner>
 
-<!--    <Banner v-if="showPrimeAccountBanner" :closable="true">
-      GM positions temporarily illiquid. Please see Discord before redeeming GM
-    </Banner>-->
+    <Banner v-if="showRestrictedCountryBanner">
+      Important: users connecting from your country will not be able to access our services starting June 28th.
+      <a class="banner-link" href="https://discord.com/channels/889510301421166643/912702114252329060/1251122070172205067"
+         target="_blank"><b>Read more.</b>
+      </a>
+    </Banner>
+
+    <!--    <Banner v-if="showPrimeAccountBanner" :closable="true">
+          GM positions temporarily illiquid. Please see Discord before redeeming GM
+        </Banner>-->
 
     <Banner v-if="showArbitrumDepositorBanner" background="green-accent" :closable="true">
       Liquidity mining event is updated! Shortly after a pool hits $1M the next pool opens up.
@@ -154,6 +161,7 @@ export default {
       showAvalancheDepositorBanner: false,
       showAvalanchePrimeAccountBanner: false,
       showArbitrumCongestionBanner: false,
+      showRestrictedCountryBanner: false,
       remainingTime: '',
       darkMode: false,
       showNoWalletBanner: window.noWalletInstalled,
@@ -230,6 +238,7 @@ export default {
     setTimeout(() => {
       this.checkWallet();
     }, 500)
+    this.getCountry();
   },
   computed: {
     ...mapState('network', ['account', 'provider']),
@@ -442,6 +451,15 @@ export default {
         }
       }
     },
+
+    async getCountry() {
+      const countryRequest = await fetch(config.geolocationServiceUrl);
+      const countryResponse = await countryRequest.json();
+      if (config.restrictedCountries.includes(countryResponse.country)) {
+        console.warn('RESTRICTED COUNTRY');
+        this.showRestrictedCountryBanner = true;
+      }
+    }
   },
   destroyed() {
     clearInterval(this.gasPriceIntervalId);
@@ -583,4 +601,3 @@ a {
 }
 
 </style>
-
