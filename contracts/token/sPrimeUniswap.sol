@@ -51,12 +51,15 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
     int24[2] private deltaIds;
 
     /**
-    * @dev Constructor of the contract.
+    * @dev Initializer of the contract.
     * @param tokenX_ The address of the token X.
     * @param tokenY_ The address of the token Y.
     * @param name_ The name of the SPrime token. ex: PRIME-USDC LP
     * @param feeTier_ Fee Tier of Uniswap V3 Pool
     * @param deltaIds_ Delta id for tick lower and tick upper
+    * @param positionManager_ Uniswap v3 NonfungiblePositionManager contract
+    * @param swapRouter_ Uniswap V3 Swap Router contract
+    * @param uniV3Factory_ Uniswap V3 Factory contract
     */
     function initialize(address tokenX_, address tokenY_, string memory name_, uint24 feeTier_, int24[2] memory deltaIds_, INonfungiblePositionManager positionManager_, ISwapRouter swapRouter_, IUniswapV3Factory uniV3Factory_) external initializer {
         __PendingOwnable_init();
