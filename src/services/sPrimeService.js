@@ -23,7 +23,7 @@ export default class sPrimeService {
 
       sPrimeContract.getUserValueInTokenY(ownerAddress).then(
           value => {
-              this.sPrimeValue$.next(fromWei(value))
+              this.sPrimeValue$.next(formatUnits(value, config.ASSETS_CONFIG[secondAsset].decimals))
           }
       );
 

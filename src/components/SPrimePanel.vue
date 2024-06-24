@@ -17,7 +17,7 @@
       <div class="stats">
         <div class="stat">
           <div class="stat__title">Total value</div>
-          <div class="stat__value">{{ value | usd }}</div>
+          <div class="stat__value">{{ formatTokenBalance(value, 18, true) }}</div>
         </div>
         <div class="stat">
           <div class="stat__title">Revenue received</div>
@@ -88,13 +88,9 @@ export default {
     ]).subscribe(value => {
       this.fetchSPrimeData();
     });
-    combineLatest([
-      this.sPrimeService.observeSPrimeValue(),
-      this.priceService.observeRefreshPrices()
-    ]).subscribe(([value,]) => {
-      console.log('value: ',  value)
-      console.log('config.ASSETS_CONFIG[this.secondAsset].price: ',  config.ASSETS_CONFIG[this.secondAsset].price)
-      this.value = value * config.ASSETS_CONFIG[this.secondAsset].price
+
+    this.sPrimeService.observeSPrimeValue().subscribe(value => {
+      this.value = value
     });
 
     this.accountService.observeAccountLoaded().subscribe(() => {
@@ -111,7 +107,7 @@ export default {
   },
   watch: {},
   computed: {
-    ...mapState('serviceRegistry', ['sPrimeService', 'vPrimeService', 'priceService', 'providerService', 'accountService', 'traderJoeService']),
+    ...mapState('serviceRegistry', ['sPrimeService', 'vPrimeService', 'providerService', 'accountService', 'traderJoeService']),
     ...mapState('network', ['provider', 'account']),
   },
   methods: {
@@ -129,9 +125,9 @@ export default {
       let sPrimeMintRequest = {
         sPrimeAddress: this.sPrimeConfig.sPrimeAddress,
         secondAsset: this.secondAsset,
-        isRebalance: true,
-        amountPrime: 0.0001,
-        amountSecond: 0.0001,
+        isRebalance: false,
+        amountPrime: 0.01,
+        amountSecond: 0.013135,
         idSlippage: 10,
         slippage: 5,
         activeId: activeId
