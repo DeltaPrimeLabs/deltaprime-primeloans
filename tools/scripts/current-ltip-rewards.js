@@ -119,7 +119,9 @@ async function checkCollected() {
 }
 
 
-fetchData("LTIP_EPOCH_2_SAVINGS", 1718039400, Math.ceil(Date.now()/1000), 5000, true)
+//last distribution timestamp: 1718644520
+//current distribution timestamp: 1719234231
+fetchData("LTIP_EPOCH_3", 1718644520, Math.ceil(Date.now()/1000), 5000, false)
 // checkNegativeAccounts()
 // checkCollectedInTimestamp(1715152203)
 // checkCollected();
