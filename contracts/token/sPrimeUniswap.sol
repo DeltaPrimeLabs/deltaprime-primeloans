@@ -103,10 +103,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
         (, int24 tick,,,,,) = pool.slot0();
 
         (,,,,,int24 tickLower, int24 tickUpper,,,,,) = positionManager.positions(tokenId);
-        if (tickLower <= tick && tick <= tickUpper) {
-            return true;
-        }
-        return false;
+        return tickLower <= tick && tick <= tickUpper;
     }
 
     /**
