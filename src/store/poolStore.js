@@ -1,6 +1,5 @@
 import {awaitConfirmation, depositTermsToSign, signMessage, wrapContract} from '../utils/blockchain';
 import DEPOSIT_SWAP from '@artifacts/contracts/DepositSwap.sol/DepositSwap.json';
-import SPRIME from '@artifacts/contracts/token/sPrime.sol/sPrime.json';
 import {formatUnits, fromWei, parseUnits} from '@/utils/calculate';
 import erc20ABI from '../../test/abis/ERC20.json';
 import config from '@/config';

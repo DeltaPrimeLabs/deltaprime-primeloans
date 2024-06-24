@@ -39,7 +39,7 @@
 
       <div class="toggle-container">
         Rebalance
-        <Toggle v-on:change="rebalanceToggleChange" :options="['YES', 'NO']"></Toggle>
+        <Toggle v-on:change="rebalanceToggleChange" :options="['YES', 'NO']" :initial-option="1"></Toggle>
       </div>
 
       <div class="modal-top-info">
@@ -88,6 +88,7 @@ export default {
 
   data() {
     return {
+      rebalance: false,
       primeAmount: null,
       secondAmount: null,
       primeInputValidators: [],
@@ -120,7 +121,8 @@ export default {
       const mintSPrimeEvent = {
         primeAmount: this.primeAmount,
         secondAmount: this.secondAmount,
-        rebalance: this.rebalance
+        rebalance: this.rebalance,
+        slippage: 5
       };
       this.$emit('MINT', mintSPrimeEvent);
     },
@@ -142,7 +144,7 @@ export default {
     },
 
     rebalanceToggleChange(option) {
-      this.rebalance = option = 'YES';
+      this.rebalance = option === 'YES';
     },
 
     setupValidators() {

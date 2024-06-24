@@ -1,9 +1,11 @@
 import {awaitConfirmation, wrapContract} from '../utils/blockchain';
-import SPRIME from '@artifacts/contracts/token/sPrime.sol/sPrime.json';
+import SPRIME from '@artifacts/contracts/interfaces/ISPrime.sol/ISPrime.json';
+import SPRIME_TJV2 from '@artifacts/contracts/interfaces/ISPrimeTraderJoe.sol/ISPrimeTraderJoe.json';
+import SPRIME_UNISWAP from '@artifacts/contracts/interfaces/ISPrimeUniswap.sol/ISPrimeUniswap.json';
 import {parseUnits} from '@/utils/calculate';
 import erc20ABI from '../../test/abis/ERC20.json';
 import config from '@/config';
-import {getTraderJoeV2IdSlippageFromPriceSlippage, toWei} from "../utils/calculate";
+import {fromWei, toWei} from "../utils/calculate";
 
 
 const ethers = require('ethers');
@@ -24,18 +26,16 @@ export default {
       await dispatch('loadDeployments');
     },
 
-    async sPrimeTjV2Mint({state, rootState, dispatch}, {sPrimeMintRequest}) {
+    async sPrimeMint({state, rootState, dispatch}, {sPrimeMintRequest}) {
       const provider = rootState.network.provider;
 
       // let dataFeeds = ['PRIME', sPrimeMintRequest.secondAsset]
       let dataFeeds = [...Object.keys(config.POOLS_CONFIG), sPrimeMintRequest.secondAsset]
-      const sprimeContract = await wrapContract(new ethers.Contract(sPrimeMintRequest.sPrimeAddress, SPRIME.abi, provider.getSigner()), dataFeeds);
+      const sprimeContract = await wrapContract(new ethers.Contract(sPrimeMintRequest.sPrimeAddress, sPrimeMintRequest.dex === 'TRADERJOEV2' ? SPRIME_TJV2.abi : SPRIME_UNISWAP.abi, provider.getSigner()), dataFeeds);
 
       const secondAssetDecimals = config.SPRIME_CONFIG.TRADERJOEV2[sPrimeMintRequest.secondAsset].secondAssetDecimals;
-      let amountPrime = toWei(sPrimeMintRequest.amountPrime.toString())
-      let amountSecond = parseUnits(sPrimeMintRequest.amountSecond.toString(), secondAssetDecimals)
-
-      let idSlippage = getTraderJoeV2IdSlippageFromPriceSlippage(sPrimeMintRequest.slippage / 100, config.SPRIME_CONFIG.TRADERJOEV2[sPrimeMintRequest.secondAsset].binStep);
+      let amountPrime = toWei(sPrimeMintRequest.amountPrime ? sPrimeMintRequest.amountPrime.toString() : '0')
+      let amountSecond = parseUnits(sPrimeMintRequest.amountSecond ? sPrimeMintRequest.amountSecond.toString() : '0', secondAssetDecimals)
 
       //approvals
       await approve(TOKEN_ADDRESSES['PRIME'], amountPrime);
@@ -55,23 +55,20 @@ export default {
         }
       }
 
-      await sprimeContract.deposit(sPrimeMintRequest.activeId, idSlippage, amountPrime, amountSecond, sPrimeMintRequest.isRebalance, sPrimeMintRequest.slippage)
+      await sprimeContract.deposit(sPrimeMintRequest.activeId, sPrimeMintRequest.idSlippage, amountPrime, amountSecond, sPrimeMintRequest.isRebalance, sPrimeMintRequest.slippage)
 
     },
-    async sPrimeTjV2Rebalance({state, rootState, dispatch}, {sPrimeRebalanceRequest: sPrimeRebalanceRequest}) {
+    async sPrimeRebalance({state, rootState, dispatch}, {sPrimeRebalanceRequest: sPrimeRebalanceRequest}) {
       const provider = rootState.network.provider;
 
       // let dataFeeds = ['PRIME', sPrimeMintRequest.secondAsset]
       let dataFeeds = [...Object.keys(config.POOLS_CONFIG), sPrimeRebalanceRequest.secondAsset]
-      const sprimeContract = await wrapContract(new ethers.Contract(sPrimeRebalanceRequest.sPrimeAddress, SPRIME.abi, provider.getSigner()), dataFeeds);
+      const sprimeContract = await wrapContract(new ethers.Contract(sPrimeRebalanceRequest.sPrimeAddress, sPrimeRebalanceRequest.dex === 'TRADERJOEV2' ? SPRIME_TJV2.abi : SPRIME_UNISWAP.abi, provider.getSigner()), dataFeeds);
 
-      let idSlippage = getTraderJoeV2IdSlippageFromPriceSlippage(sPrimeRebalanceRequest.slippage / 100, config.SPRIME_CONFIG.TRADERJOEV2[sPrimeRebalanceRequest.secondAsset].binStep);
-
-      //approvals
-      await sprimeContract.deposit(sPrimeRebalanceRequest.activeId, idSlippage, 0, 0, sPrimeRebalanceRequest.isRebalance, sPrimeRebalanceRequest.slippage)
+      await sprimeContract.deposit(sPrimeRebalanceRequest.activeId, sPrimeRebalanceRequest.idSlippage, 0, 0, sPrimeRebalanceRequest.isRebalance, sPrimeRebalanceRequest.slippage)
 
     },
-    async sPrimeTjV2Redeem({state, rootState, dispatch}, {sPrimeRedeemRequest: sPrimeRedeemRequest}) {
+    async sPrimeRedeem({state, rootState, dispatch}, {sPrimeRedeemRequest: sPrimeRedeemRequest}) {
       const provider = rootState.network.provider;
 
       let share = toWei(sPrimeRedeemRequest.share);

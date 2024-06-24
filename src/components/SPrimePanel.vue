@@ -60,6 +60,7 @@ import config from "../config";
 import {combineLatest} from "rxjs";
 import MintsPrimeModal from "./MintsPrimeModal.vue";
 import erc20ABI from "../../test/abis/ERC20.json";
+import {getTraderJoeV2IdSlippageFromPriceSlippage} from "../utils/calculate";
 const ethers = require('ethers');
 
 let TOKEN_ADDRESSES;
@@ -116,9 +117,9 @@ export default {
   },
   methods: {
     ...mapActions('sPrimeStore', [
-      'sPrimeTjV2Mint',
-      'sPrimeTjV2Rebalance',
-      'sPrimeTjV2Redeem'
+      'sPrimeMint',
+      'sPrimeRebalance',
+      'sPrimeRedeem'
     ]),
     async setupFiles() {
       TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
@@ -138,16 +139,20 @@ export default {
       modalInstance.secondAssetBalance = secondAssetBalance;
       modalInstance.secondAssetSymbol = this.secondAsset;
       modalInstance.$on('MINT', sPrimeMintEvent => {
+        let idSlippage = getTraderJoeV2IdSlippageFromPriceSlippage(sPrimeMintEvent.slippage / 100, config.SPRIME_CONFIG.TRADERJOEV2[this.secondAsset].binStep);
+
         let sPrimeMintRequest = {
           sPrimeAddress: this.sPrimeConfig.sPrimeAddress,
           secondAsset: this.secondAsset,
           isRebalance: sPrimeMintEvent.rebalance,
           amountPrime: sPrimeMintEvent.primeAmount,
           amountSecond: sPrimeMintEvent.secondAmount,
-          slippage: 5,
+          idSlippage: idSlippage,
+          slippage: sPrimeMintEvent.slippage,
+          dex: this.dex,
           activeId: activeId
         };
-        this.handleTransaction(this.sPrimeTjV2Mint, { sPrimeMintRequest: sPrimeMintRequest }, () => {
+        this.handleTransaction(this.sPrimeMint, { sPrimeMintRequest: sPrimeMintRequest }, () => {
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
@@ -167,9 +172,10 @@ export default {
         isRebalance: true,
         idSlippage: 10,
         slippage: 5,
+        dex: this.dex,
         activeId: activeId
       };
-      this.handleTransaction(this.sPrimeTjV2Rebalance, { sPrimeRebalanceRequest: sPrimeRebalanceRequest }, () => {
+      this.handleTransaction(this.sPrimeRebalance, { sPrimeRebalanceRequest: sPrimeRebalanceRequest }, () => {
         this.$forceUpdate();
       }, (error) => {
         this.handleTransactionError(error);
@@ -184,7 +190,7 @@ export default {
         secondAsset: this.secondAsset,
         share: '0.0000000000000001'
       };
-      this.handleTransaction(this.sPrimeTjV2Redeem, { sPrimeRedeemRequest: sPrimeRedeemRequest }, () => {
+      this.handleTransaction(this.sPrimeRedeem, { sPrimeRedeemRequest: sPrimeRedeemRequest }, () => {
         this.$forceUpdate();
       }, (error) => {
         this.handleTransactionError(error);

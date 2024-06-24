@@ -1,6 +1,6 @@
 import {BehaviorSubject} from 'rxjs';
 import {fromWei} from "../utils/calculate";
-import vPRIME from '@artifacts/contracts/token/vPrime.sol/vPrime.json';
+import vPRIME from '@artifacts/contracts/interfaces/IVPrime.sol/IVPrime.json';
 const ethers = require('ethers');
 
 export default class vPrimeService {

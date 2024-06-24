@@ -2,7 +2,7 @@ import {BehaviorSubject, Subject} from 'rxjs';
 import config from '../config';
 import {wrapContract} from "../utils/blockchain";
 import {formatUnits, fromWei} from "../utils/calculate";
-import SPRIME from '@artifacts/contracts/token/sPrime.sol/sPrime.json';
+import SPRIME from '@artifacts/contracts/interfaces/ISPrime.sol/ISPrime.json';
 const ethers = require('ethers');
 
 export default class sPrimeService {
