@@ -152,7 +152,16 @@ describe("SPrime", function () {
             SPrimeArtifact,
             []
         ) as Contract;
-        await sPrime.initialize(prime.address, wavax.address, "PRIME-AVAX", spotUniform.distributionX, spotUniform.distributionY, spotUniform.deltaIds, positionManager.address);
+        const depositForm = [];
+        const TJ_V2_ROUTER_ADDRESS = '0xb4315e873dBcf96Ffd0acd8EA43f689D8c20fB30';
+        for(let i=0; i<spotUniform.distributionX.length; i++) {
+            depositForm.push([
+                spotUniform.deltaIds[i],
+                spotUniform.distributionX[i],
+                spotUniform.distributionY[i]
+            ])
+        }
+        await sPrime.initialize(prime.address, wavax.address, "PRIME-AVAX", depositForm, positionManager.address, TJ_V2_ROUTER_ADDRESS);
 
         sPrime = WrapperBuilder.wrap(
             sPrime.connect(owner)
@@ -181,7 +190,7 @@ describe("SPrime", function () {
             []
         ) as Contract;
 
-        await vPrimeControllerContract.initialize([sPrime.address], tokenManager.address, vPrime.address);
+        await vPrimeControllerContract.initialize([sPrime.address], tokenManager.address, vPrime.address, false);
         vPrimeControllerContract = WrapperBuilder.wrap(
             vPrimeControllerContract
         ).usingSimpleNumericMock({
@@ -191,7 +200,7 @@ describe("SPrime", function () {
 
         await positionManager.setSPrime(sPrime.address);
         // await positionManagerUSDC.setSPrime(sPrimeUSDC.address);
-        
+
         await tokenManager.setVPrimeControllerAddress(vPrimeControllerContract.address);
         await poolContracts.get('AVAX')!.setTokenManager(tokenManager.address);
         await poolContracts.get('USDC')!.setTokenManager(tokenManager.address);
@@ -230,7 +239,7 @@ describe("SPrime", function () {
         });
 
         it("Should deposit two times without rebalance", async function () {
-            
+
             sPrime = WrapperBuilder.wrap(
                 sPrime.connect(addr1)
             ).usingSimpleNumericMock({
@@ -290,7 +299,7 @@ describe("SPrime", function () {
 
         it("Should deposit with token swap to use equal amount", async function () {
             // Already depoisted from the last test cases for user 2
-            
+
             sPrime = WrapperBuilder.wrap(
                 sPrime.connect(addr1)
             ).usingSimpleNumericMock({
@@ -335,7 +344,7 @@ describe("SPrime", function () {
 
     describe("Rebalance", function () {
         it("Rebalance after some token swap without depositing new tokens", async function () {
-            
+
             sPrime = WrapperBuilder.wrap(
                 sPrime.connect(addr1)
             ).usingSimpleNumericMock({
@@ -349,18 +358,18 @@ describe("SPrime", function () {
             let userShare = await positionManager.positions(tokenId);
 
             expect(userShare.totalShare).to.gt(0);
-            
+
             const oldCenterId = userShare.centerId;
-            
+
             await prime.connect(addr2).approve(LBRouter.address, parseEther("0.1"));
             const path = {
                 pairBinSteps: [25],
                 versions: [2],
                 tokenPath: [prime.address, wavax.address]
             }
-            
+
             await LBRouter.connect(addr2).swapExactTokensForTokens(parseEther("0.1"), 0, path, addr2.address, 1880333856);
-            
+
             sPrime = WrapperBuilder.wrap(
                 sPrime.connect(addr2)
             ).usingSimpleNumericMock({
@@ -389,16 +398,16 @@ describe("SPrime", function () {
             let userShare = await positionManager.positions(tokenId);
 
             expect(userShare.totalShare).to.gt(0);
-            
+
             const oldCenterId = userShare.centerId;
-            
+
             await prime.connect(addr2).approve(LBRouter.address, parseEther("0.1"));
             const path = {
                 pairBinSteps: [25],
                 versions: [2],
                 tokenPath: [prime.address, wavax.address]
             }
-            
+
             await LBRouter.connect(addr2).swapExactTokensForTokens(parseEther("0.1"), 0, path, addr2.address, 1880333856);
             sPrime = WrapperBuilder.wrap(
                 sPrime.connect(addr2)
@@ -430,7 +439,7 @@ describe("SPrime", function () {
             });
             await sPrime.deposit(initaialBin, 20, parseEther("1"), parseEther("1"), true, 10);
             // Fetching User 1 Status
-            
+
             let tokenId = await sPrime.getUserTokenId(addr1.address);
             let userShare = await positionManager.positions(tokenId);
             expect(userShare.totalShare).to.gt(0);
@@ -439,14 +448,14 @@ describe("SPrime", function () {
 
             userShare = await positionManager.positions(tokenId);
             expect(userShare.totalShare).to.gt(0);
-            
+
             await prime.connect(addr2).approve(LBRouter.address, parseEther("0.1"));
             const path = {
                 pairBinSteps: [25],
                 versions: [2],
                 tokenPath: [prime.address, wavax.address]
             }
-            
+
             await LBRouter.connect(addr2).swapExactTokensForTokens(parseEther("0.1"), 0, path, addr2.address, 1880333856);
 
             // Rebalancing User 1's position
@@ -480,7 +489,7 @@ describe("SPrime", function () {
             });
 
             await sPrime.deposit(initaialBin, 20, parseEther("1"), parseEther("1"), false, 10);
-            
+
             sPrime = WrapperBuilder.wrap(
                 sPrime.connect(addr2)
             ).usingSimpleNumericMock({
@@ -490,7 +499,7 @@ describe("SPrime", function () {
             await sPrime.deposit(initaialBin, 20, parseEther("1"), parseEther("1"), false, 10);
 
             // Fetching User 1 Status
-            
+
             let tokenId = await sPrime.getUserTokenId(addr1.address);
             let userShare = await positionManager.positions(tokenId);
             expect(userShare.totalShare).to.gt(0);
@@ -499,14 +508,14 @@ describe("SPrime", function () {
 
             userShare = await positionManager.positions(tokenId);
             expect(userShare.totalShare).to.gt(0);
-            
+
             await prime.connect(addr2).approve(LBRouter.address, parseEther("0.1"));
             const path = {
                 pairBinSteps: [25],
                 versions: [2],
                 tokenPath: [prime.address, wavax.address]
             }
-            
+
             await LBRouter.connect(addr2).swapExactTokensForTokens(parseEther("0.1"), 0, path, addr2.address, 1880333856);
 
             // Rebalancing User 1's position
@@ -546,7 +555,7 @@ describe("SPrime", function () {
                 dataPoints: MOCK_PRICES,
             });
             await sPrime.deposit(initaialBin, 20, parseEther("1"), parseEther("1"), false, 10);
-            
+
             const tokenId = await sPrime.getUserTokenId(addr1.address);
             const position = await positionManager.positions(tokenId);
 
@@ -608,7 +617,7 @@ describe("SPrime", function () {
             console.log("Input WAVAX Amount: ", parseEther("0.2"));
             console.log("Received WAVAX After Withdraw: ", afterWEthBalance - initialWEthBalance);
         });
-        
+
         it("Should fail if trys to withdraw more shares than the balance", async function () {
             sPrime = WrapperBuilder.wrap(
                 sPrime.connect(addr1)
@@ -624,7 +633,7 @@ describe("SPrime", function () {
 
     describe("Swap For Equal Values", function () {
         it("PRIME - AVAX (18 - 18 Decimals)", async function () {
-            
+
             sPrime = WrapperBuilder.wrap(
                 sPrime.connect(addr2)
             ).usingSimpleNumericMock({
@@ -633,7 +642,7 @@ describe("SPrime", function () {
             });
 
             await sPrime.deposit(initaialBin, 20, parseEther("10"), parseEther("10"), false, 10);
-            
+
             sPrime = WrapperBuilder.wrap(
                 sPrime.connect(addr1)
             ).usingSimpleNumericMock({
@@ -684,7 +693,7 @@ describe("SPrime", function () {
         //     let tokenId = await sPrimeUSDC.getUserTokenId(addr1.address);
         //     let userShare = await positionManagerUSDC.positions(tokenId);
         //     expect(userShare.totalShare).to.gt(0);
-            
+
         //     const oldShare = userShare.totalShare;
         //     await sPrimeUSDC.deposit(initaialBinUSDC, 10, parseEther("0.0005"), "1000", false, 10);
         //     tokenId = await sPrimeUSDC.getUserTokenId(addr1.address);
@@ -696,7 +705,7 @@ describe("SPrime", function () {
 
     describe("Mint and Lock", function () {
         it("Withdraw old position and process mintForUserAndLock", async function () {
-            
+
             sPrime = WrapperBuilder.wrap(
                 sPrime.connect(addr2)
             ).usingSimpleNumericMock({
@@ -721,7 +730,7 @@ describe("SPrime", function () {
         });
 
         it("Process mintForUserAndLock for another user", async function () {
-            
+
             sPrime = WrapperBuilder.wrap(
                 sPrime.connect(addr2)
             ).usingSimpleNumericMock({
@@ -757,7 +766,7 @@ describe("SPrime", function () {
 
     describe("Migrate Liquidity", function () {
         it("Migrate liquidity from the existing position", async function () {
-            
+
             sPrime = WrapperBuilder.wrap(
                 sPrime.connect(addr3)
             ).usingSimpleNumericMock({
@@ -769,7 +778,7 @@ describe("SPrime", function () {
             let tokenId = await sPrime.getUserTokenId(addr3.address);
             let userShare = await positionManager.positions(tokenId);
             await sPrime.withdraw(userShare.totalShare);
-            
+
             await prime.connect(addr3).approve(LBRouter.address, parseEther("1000000"));
             await wavax.connect(addr3).approve(LBRouter.address, parseEther("1000000"));
             // Added liquidity
