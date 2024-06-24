@@ -44,8 +44,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
 
     address public vPrimeController;
     uint24 public feeTier;
-    uint256 public totalXSupply;
-    uint256 public totalYSupply;
+    uint8 public tokenDecimals;
     bool public tokenSequence;
 
     int24[2] private deltaIds;
@@ -67,8 +66,10 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
         __ERC20_init_unchained(name_, "sPrime");
         __ERC721Holder_init_unchained();
 
+        tokenDecimals = tokenY_.decimals();
+
         tokenSequence = tokenX_ > tokenY_;
-        (tokenX_, tokenY_) = tokenX_ < tokenY_ ? (tokenX_, tokenY_) : (tokenY_, tokenX_);
+        (tokenX_, tokenY_) = tokenSequence ? (tokenY_, tokenX_) : (tokenX_, tokenY_);
         tokenX = tokenX_;
         tokenY = tokenY_;
         feeTier = feeTier_;
@@ -640,5 +641,9 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
                 false
             );
         }
+    }
+
+    function decimals() public view virtual override returns (uint8) {
+        return tokenDecimals;
     }
 }

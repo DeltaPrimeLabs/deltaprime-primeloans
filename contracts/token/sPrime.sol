@@ -41,8 +41,8 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     // Immutable variables for storing token and pair information
     IERC20Metadata public tokenX;
     IERC20Metadata public tokenY;
-    uint256 public tokenXDecimals;
-    uint256 public tokenYDecimals;
+    uint8 public tokenXDecimals;
+    uint8 public tokenYDecimals;
     ILBPair public lbPair;
     IPositionManager public positionManager;
     address public vPrimeController;
@@ -687,5 +687,9 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
                 }));
             }
         }
+    }
+
+    function decimals() public view virtual override returns (uint8) {
+        return tokenYDecimals;
     }
 }
