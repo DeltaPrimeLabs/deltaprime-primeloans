@@ -560,12 +560,13 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
     function _afterTokenTransfer(address from, address to, uint256 amount) internal virtual override {
         if(from != address(0) && to != address(0)) {
             uint256 balance = getLockedBalance(from);
-            require(balanceOf(from) >= amount + balance, "Insufficient Balance");
+            uint256 fromBalance = balanceOf(from);
+            require(fromBalance >= amount + balance, "Insufficient Balance");
             require(userTokenId[to] == 0, "Receiver already has a postion");
             
             uint256 tokenId = userTokenId[from];
 
-            if(balanceOf(from) == amount) {
+            if(fromBalance == amount) {
                 userTokenId[to] = userTokenId[from];
                 delete userTokenId[from];
             } else {
@@ -574,7 +575,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
                 positionManager.decreaseLiquidity(
                     INonfungiblePositionManager.DecreaseLiquidityParams({
                         tokenId: tokenId, 
-                        liquidity: uint128(liquidity * amount / balanceOf(from)),
+                        liquidity: uint128(liquidity * amount / fromBalance),
                         amount0Min:0, 
                         amount1Min:0, 
                         deadline: block.timestamp
