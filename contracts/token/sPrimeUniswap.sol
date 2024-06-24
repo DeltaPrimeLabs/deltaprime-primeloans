@@ -39,6 +39,9 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
     IUniswapV3Pool public pool;
     int24 public tickSpacing;
 
+    INonfungiblePositionManager public positionManager;
+    ISwapRouter public swapRouter;
+
     address public vPrimeController;
     uint24 public feeTier;
     uint256 public totalXSupply;
@@ -55,7 +58,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
     * @param feeTier_ Fee Tier of Uniswap V3 Pool
     * @param deltaIds_ Delta id for tick lower and tick upper
     */
-    function initialize(address tokenX_, address tokenY_, string memory name_, uint24 feeTier_, int24[2] memory deltaIds_) external initializer {
+    function initialize(address tokenX_, address tokenY_, string memory name_, uint24 feeTier_, int24[2] memory deltaIds_, INonfungiblePositionManager positionManager_, ISwapRouter swapRouter_, IUniswapV3Factory uniV3Factory_) external initializer {
         __PendingOwnable_init();
         __ReentrancyGuard_init_unchained();
         __ERC20_init_unchained(name_, "sPrime");
@@ -67,7 +70,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
         tokenY = IERC20Metadata(tokenY_);
         feeTier = feeTier_;
 
-        address poolAddress = IUniswapV3Factory(getUniV3FactoryAddress()).getPool(tokenX_, tokenY_, feeTier_);
+        address poolAddress = uniV3Factory_.getPool(tokenX_, tokenY_, feeTier_);
         require(poolAddress != address(0), "Pool not existing");
         pool = IUniswapV3Pool(poolAddress);
         tickSpacing = pool.tickSpacing();
@@ -76,30 +79,6 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
 
     function setVPrimeControllerAddress(address _vPrimeController) public onlyOwner {
         vPrimeController = _vPrimeController;
-    }
-
-    /**
-     * @dev Returns the address of the Uniswap V3 Factory.
-     * @return The address of the Uniswap V3 Factory.
-     */
-    function getUniV3FactoryAddress() public view virtual returns (address){
-        return 0x740b1c1de25031C31FF4fC9A62f554A55cdC1baD;
-    }
-
-    /**
-     * @dev Returns the address of the Uniswap V3 NonfungiblePositionManager.
-     * @return The address of the Uniswap V3 NonfungiblePositionManager.
-     */
-    function getNonfungiblePositionManagerAddress() public view virtual returns (address){
-        return 0x655C406EBFa14EE2006250925e54ec43AD184f8B;
-    }
-
-    /**
-     * @dev Returns the address of the Uniswap V3 SwapRouter.
-     * @return The address of the Uniswap V3 SwapRouter.
-     */
-    function getSwapRouter() public view virtual returns (address){
-        return 0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45;
     }
 
     function getTokenX() public view returns (IERC20) {
@@ -118,10 +97,9 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
     function tickInRange(address user) public view returns(bool) {
         uint256 tokenId = userTokenId[user];
         require(tokenId > 0, "No position");
-
-        address positionManager = getNonfungiblePositionManagerAddress();
         (, int24 tick,,,,,) = pool.slot0();
-        (,,,,,int24 tickLower, int24 tickUpper,,,,,) = INonfungiblePositionManager(positionManager).positions(tokenId);
+
+        (,,,,,int24 tickLower, int24 tickUpper,,,,,) = positionManager.positions(tokenId);
         if (tickLower <= tick && tick <= tickUpper) {
             return true;
         }
@@ -150,8 +128,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
         price = price * 10**(PRECISION + token1.decimals() - token0.decimals() - 8);
         uint160 sqrtRatioX96 = uint160(UniswapV3IntegrationHelper.sqrt(price) * 2**96 / 10**(PRECISION/2));
 
-        address positionManager = getNonfungiblePositionManagerAddress();
-        (uint256 amountX, uint256 amountY) = INonfungiblePositionManager(positionManager).total(tokenId, sqrtRatioX96);
+        (uint256 amountX, uint256 amountY) = positionManager.total(tokenId, sqrtRatioX96);
         
         (amountX, amountY) = tokenSequence ? (amountY, amountX) : (amountX, amountY);
 
@@ -238,7 +215,6 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
             }
             uint256 amountOut = diff / 2; 
             
-            address swapRouter = getSwapRouter();
             address tokenIn;
             address tokenOut;
 
@@ -247,13 +223,13 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
             if (swapTokenX) {
                 tokenIn = address(tokenX);
                 tokenOut = address(tokenY);
-                tokenX.safeApprove(swapRouter, 0);
-                tokenX.safeApprove(swapRouter, amountIn);
+                tokenX.safeApprove(address(swapRouter), 0);
+                tokenX.safeApprove(address(swapRouter), amountIn);
             } else {
                 tokenIn = address(tokenY);
                 tokenOut = address(tokenX);
-                tokenY.safeApprove(swapRouter, 0);
-                tokenY.safeApprove(swapRouter, amountIn);
+                tokenY.safeApprove(address(swapRouter), 0);
+                tokenY.safeApprove(address(swapRouter), amountIn);
             }
             (amountIn, amountOut) = _processTokenSwap(tokenIn, tokenOut, amountIn, amountOut * (100 - swapSlippage) / 100);
 
@@ -263,9 +239,8 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
     }
 
     function _processTokenSwap(address tokenIn, address tokenOut, uint256 amount, uint256 amountOutMinimum) internal returns (uint256 amountIn, uint256 amountOut){
-        address swapRouter = getSwapRouter();
         uint256 beforeBalance = IERC20(tokenIn).balanceOf(address(this));
-        amountOut = ISwapRouter(swapRouter).exactInputSingle(
+        amountOut = swapRouter.exactInputSingle(
             ISwapRouter.ExactInputSingleParams({
                 tokenIn: tokenIn,
                 tokenOut: tokenOut,
@@ -285,11 +260,10 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
         uint256 tokenId = userTokenId[user];
         uint256 amountXAdded;
         uint256 amountYAdded;
-        address positionManager = getNonfungiblePositionManagerAddress();
-        tokenX.forceApprove(positionManager, amountX);
-        tokenY.forceApprove(positionManager, amountY);
+        tokenX.forceApprove(address(positionManager), amountX);
+        tokenY.forceApprove(address(positionManager), amountY);
         if(tokenId == 0) {
-            (tokenId,,amountXAdded, amountYAdded) = INonfungiblePositionManager(positionManager).mint(INonfungiblePositionManager.MintParams({
+            (tokenId,,amountXAdded, amountYAdded) = positionManager.mint(INonfungiblePositionManager.MintParams({
                 token0: address(tokenX),
                 token1: address(tokenY),
                 fee: feeTier,
@@ -304,7 +278,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
             }));
             userTokenId[user] = tokenId;
         } else  {
-            (, amountXAdded, amountYAdded) = INonfungiblePositionManager(positionManager).increaseLiquidity(INonfungiblePositionManager.IncreaseLiquidityParams({
+            (, amountXAdded, amountYAdded) = positionManager.increaseLiquidity(INonfungiblePositionManager.IncreaseLiquidityParams({
                 tokenId: tokenId,
                 amount0Desired: amountX,
                 amount1Desired: amountY,
@@ -360,12 +334,11 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
 
         uint256 tokenId = userTokenId[_msgSender()];
         if(tokenId > 0) {
-            address positionManager = getNonfungiblePositionManagerAddress();
             uint128 liquidity;
-            (,,,,, tickLower, tickUpper, liquidity,,,,) = INonfungiblePositionManager(positionManager).positions(tokenId);
+            (,,,,, tickLower, tickUpper, liquidity,,,,) = positionManager.positions(tokenId);
 
             if(isRebalance) { // Withdraw Position For Rebalance
-                INonfungiblePositionManager(positionManager).decreaseLiquidity(
+                positionManager.decreaseLiquidity(
                     INonfungiblePositionManager.DecreaseLiquidityParams({
                         tokenId: tokenId, 
                         liquidity: liquidity,
@@ -375,7 +348,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
                     })
                 );
 
-                (uint256 amountXBefore, uint256 amountYBefore) = INonfungiblePositionManager(positionManager).collect(
+                (uint256 amountXBefore, uint256 amountYBefore) = positionManager.collect(
                     INonfungiblePositionManager.CollectParams({
                         tokenId: tokenId,
                         recipient: address(this),
@@ -385,7 +358,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
                 );
 
                 _burn(_msgSender(), balanceOf(_msgSender()));
-                INonfungiblePositionManager(positionManager).burn(tokenId);
+                positionManager.burn(tokenId);
 
                 delete userTokenId[_msgSender()];
 
@@ -416,14 +389,13 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
     function withdraw(uint256 share) external nonReentrant {
         uint256 tokenId = userTokenId[_msgSender()];
         require(tokenId > 0, "No Position to withdraw");
-        address positionManager = getNonfungiblePositionManagerAddress();
 
-        (,,,,,,,uint128 liquidity,,,,) = INonfungiblePositionManager(positionManager).positions(tokenId);
+        (,,,,,,,uint128 liquidity,,,,) = positionManager.positions(tokenId);
 
         uint256 lockedBalance = getLockedBalance(_msgSender());
         require(balanceOf(_msgSender()) >= share + lockedBalance, "Balance is locked");
 
-        INonfungiblePositionManager(positionManager).decreaseLiquidity(
+        positionManager.decreaseLiquidity(
             INonfungiblePositionManager.DecreaseLiquidityParams({
                 tokenId: tokenId, 
                 liquidity: uint128(liquidity * share / balanceOf(_msgSender())),
@@ -434,7 +406,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
         );
 
         // Directly send tokens to the user
-        INonfungiblePositionManager(positionManager).collect(
+        positionManager.collect(
             INonfungiblePositionManager.CollectParams({
                 tokenId: tokenId,
                 recipient: _msgSender(),
@@ -445,7 +417,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
 
         // Burn Position NFT
         if(balanceOf(_msgSender()) == share) {
-            INonfungiblePositionManager(positionManager).burn(tokenId);
+            positionManager.burn(tokenId);
             delete userTokenId[_msgSender()];
         }
 
@@ -516,8 +488,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
     * @param swapSlippage Slippage for the rebalance.
     */
     function migrateLiquidity(uint256 tokenId, uint128 liquidity, int24 tickDesired, int24 tickSlippage, uint256 swapSlippage) public nonReentrant {
-        address positionManager = getNonfungiblePositionManagerAddress();
-        INonfungiblePositionManager(positionManager).decreaseLiquidity(
+        positionManager.decreaseLiquidity(
             INonfungiblePositionManager.DecreaseLiquidityParams({
                 tokenId: tokenId, 
                 liquidity: liquidity,
@@ -527,7 +498,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
             })
         );
 
-        (uint256 amountX, uint256 amountY) = INonfungiblePositionManager(positionManager).collect(
+        (uint256 amountX, uint256 amountY) = positionManager.collect(
             INonfungiblePositionManager.CollectParams({
                 tokenId: tokenId,
                 recipient: address(this),
@@ -536,7 +507,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
             })
         );
 
-        INonfungiblePositionManager(positionManager).burn(tokenId);
+        positionManager.burn(tokenId);
         _deposit(tickDesired, tickSlippage, amountX, amountY, true, swapSlippage);
     }
 
@@ -598,10 +569,9 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
                 userTokenId[to] = userTokenId[from];
                 delete userTokenId[from];
             } else {
-                address positionManager = getNonfungiblePositionManagerAddress();
-                (,,,,,int24 tickLower,int24 tickUpper,uint128 liquidity,,,,) = INonfungiblePositionManager(positionManager).positions(tokenId);
+                (,,,,,int24 tickLower,int24 tickUpper,uint128 liquidity,,,,) = positionManager.positions(tokenId);
 
-                INonfungiblePositionManager(positionManager).decreaseLiquidity(
+                positionManager.decreaseLiquidity(
                     INonfungiblePositionManager.DecreaseLiquidityParams({
                         tokenId: tokenId, 
                         liquidity: uint128(liquidity * amount / balanceOf(from)),
@@ -611,7 +581,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
                     })
                 );
 
-                (uint256 amountX, uint256 amountY) = INonfungiblePositionManager(positionManager).collect(
+                (uint256 amountX, uint256 amountY) = positionManager.collect(
                     INonfungiblePositionManager.CollectParams({
                         tokenId: tokenId,
                         recipient: address(this),
@@ -620,7 +590,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
                     })
                 );
 
-                (uint256 newTokenId,,uint256 amountXAdded, uint256 amountYAdded) = INonfungiblePositionManager(positionManager).mint(INonfungiblePositionManager.MintParams({
+                (uint256 newTokenId,,uint256 amountXAdded, uint256 amountYAdded) = positionManager.mint(INonfungiblePositionManager.MintParams({
                     token0: address(tokenX),
                     token1: address(tokenY),
                     fee: feeTier,
