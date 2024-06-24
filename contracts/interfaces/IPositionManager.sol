@@ -3,6 +3,7 @@
 pragma solidity 0.8.17;
 
 import '@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol';
+import "./ISPrimeTraderJoe.sol";
 
 interface IPositionManager is IERC721Enumerable {
     // details about the position
@@ -64,9 +65,9 @@ interface IPositionManager is IERC721Enumerable {
         external
         view
         returns (
-            address token0,
-            address token1,
-            address pairAddr,
+            IERC20 token0,
+            IERC20 token1,
+            ILBPair pairAddr,
             uint256 totalShare,
             uint256 centerId,
             uint256[] memory liquidityMinted

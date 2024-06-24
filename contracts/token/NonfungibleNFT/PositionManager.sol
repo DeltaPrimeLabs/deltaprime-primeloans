@@ -5,9 +5,7 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import '@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol';
 
-import "../../interfaces/ISPrimeTraderJoe.sol";
 import "../../interfaces/IPositionManager.sol";
-import "../../lib/joe-v2/LiquidityAmounts.sol";
 
 /// @title NFT positions
 contract PositionManager is
@@ -49,9 +47,9 @@ contract PositionManager is
         view
         override
         returns (
-            address token0,
-            address token1,
-            address pairAddr,
+            IERC20 token0,
+            IERC20 token1,
+            ILBPair pairAddr,
             uint256 totalShare,
             uint256 centerId,
             uint256[] memory liquidityMinted
@@ -59,14 +57,10 @@ contract PositionManager is
     {
         Position memory position = _positions[tokenId];
 
-        address lbPair = address(sPrime.getLBPair());
-        address tokenX = address(sPrime.getTokenX());
-        address tokenY = address(sPrime.getTokenY());
-
         return (
-            tokenX,
-            tokenY,
-            lbPair,
+            sPrime.getTokenX(),
+            sPrime.getTokenY(),
+            sPrime.getLBPair(),
             position.totalShare,
             position.centerId,
             position.liquidityMinted
@@ -81,7 +75,7 @@ contract PositionManager is
             uint256 tokenId
         )
     {
-        _mint(params.recipient, (tokenId = _nextId++));
+        _mint(params.recipient, tokenId = _nextId++);
 
         _positions[tokenId] = Position({
             totalShare: params.totalShare,
