@@ -61,7 +61,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
     * @param swapRouter_ Uniswap V3 Swap Router contract
     * @param uniV3Factory_ Uniswap V3 Factory contract
     */
-    function initialize(address tokenX_, address tokenY_, string memory name_, uint24 feeTier_, int24[2] memory deltaIds_, INonfungiblePositionManager positionManager_, ISwapRouter swapRouter_, IUniswapV3Factory uniV3Factory_) external initializer {
+    function initialize(IERC20Metadata tokenX_, IERC20Metadata tokenY_, string memory name_, uint24 feeTier_, int24[2] memory deltaIds_, INonfungiblePositionManager positionManager_, ISwapRouter swapRouter_, IUniswapV3Factory uniV3Factory_) external initializer {
         __PendingOwnable_init();
         __ReentrancyGuard_init_unchained();
         __ERC20_init_unchained(name_, "sPrime");
@@ -69,11 +69,11 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
 
         tokenSequence = tokenX_ > tokenY_;
         (tokenX_, tokenY_) = tokenX_ < tokenY_ ? (tokenX_, tokenY_) : (tokenY_, tokenX_);
-        tokenX = IERC20Metadata(tokenX_);
-        tokenY = IERC20Metadata(tokenY_);
+        tokenX = tokenX_;
+        tokenY = tokenY_;
         feeTier = feeTier_;
 
-        address poolAddress = uniV3Factory_.getPool(tokenX_, tokenY_, feeTier_);
+        address poolAddress = uniV3Factory_.getPool(address(tokenX_), address(tokenY_), feeTier_);
         require(poolAddress != address(0), "Pool not existing");
         pool = IUniswapV3Pool(poolAddress);
         tickSpacing = pool.tickSpacing();
