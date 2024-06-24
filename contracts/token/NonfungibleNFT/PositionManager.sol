@@ -20,16 +20,18 @@ contract PositionManager is
     // bin id => Bin Information
     mapping(uint256 => DepositConfig) private _binInfo;
     uint176 private _nextId = 1;
-    address public sPrime;
+    ISPrimeTraderJoe public sPrime;
 
+    // Nothing to initialize from the constructor. 
+    // Only had to call the contructor for ERC721
     constructor() ERC721('SPrime Position NFT', 'SPRIME-POS') {}
 
     modifier onlySPrime() {
-        require(sPrime == _msgSender(), "Not sPrime");
+        require(address(sPrime) == _msgSender(), "Not sPrime");
         _;
     }
 
-    function setSPrime(address sPrime_) external onlyOwner {
+    function setSPrime(ISPrimeTraderJoe sPrime_) external onlyOwner {
         sPrime = sPrime_;
     }
 
@@ -57,9 +59,9 @@ contract PositionManager is
     {
         Position memory position = _positions[tokenId];
 
-        address lbPair = address(ISPrimeTraderJoe(sPrime).getLBPair());
-        address tokenX = address(ISPrimeTraderJoe(sPrime).getTokenX());
-        address tokenY = address(ISPrimeTraderJoe(sPrime).getTokenY());
+        address lbPair = address(sPrime.getLBPair());
+        address tokenX = address(sPrime.getTokenX());
+        address tokenY = address(sPrime.getTokenY());
 
         return (
             tokenX,
@@ -133,9 +135,7 @@ contract PositionManager is
         address to,
         uint256 firstTokenId,
         uint256 batchSize
-    ) internal virtual override {
-        require(sPrime == _msgSender(), "Only allowed SPrime");
-
+    ) internal virtual override onlySPrime{
         super._beforeTokenTransfer(from, to, firstTokenId, batchSize);
     }
 }
