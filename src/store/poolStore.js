@@ -4,7 +4,6 @@ import SPRIME from '@artifacts/contracts/token/sPrime.sol/sPrime.json';
 import {formatUnits, fromWei, parseUnits} from '@/utils/calculate';
 import erc20ABI from '../../test/abis/ERC20.json';
 import config from '@/config';
-import {getTraderJoeV2IdSlippageFromPriceSlippage, toWei} from "../utils/calculate";
 import {constructSimpleSDK} from "@paraswap/sdk";
 import axios from "axios";
 import {getSwapData} from "../utils/paraSwapUtils";

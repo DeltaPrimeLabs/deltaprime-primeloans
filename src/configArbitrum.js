@@ -24,6 +24,7 @@ export default {
     pendleApiBaseUrl: 'https://api-v2.pendle.finance/sdk/api',
     //update leverage after every change in contracts
     ASSETS_CONFIG: {
+      "PRIME": {hide: true, name: "PRIME", symbol: "PRIME", decimals: 18, address: addresses.PRIME},
       "ETH": {name: "ETH", symbol: "ETH", decimals: 18, address: addresses.ETH, debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:ETHUSDT"},
       "USDC": {name: "USDC", symbol: "USDC", decimals: 6, address: addresses.USDC, isStableCoin: true, debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:USDCUSDT"},
       "ARB": {name: "ARB", symbol: "ARB", logoExt: "png", decimals: 18, address: addresses.ARB, debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:ARBUSDT"},

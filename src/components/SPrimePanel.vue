@@ -2,7 +2,7 @@
   <div class="sprime-panel-component">
     <div class="sprime-panel__actions">
       <div class="sprime">
-        <img src="src/assets/icons/sprime-icon.svg">
+        <img src="src/assets/logo/sprime.svg">
         $sPRIME
       </div>
       <div class="actions">
@@ -58,6 +58,11 @@ import FlatButton from './FlatButton.vue';
 import {mapActions, mapState} from "vuex";
 import config from "../config";
 import {combineLatest} from "rxjs";
+import MintsPrimeModal from "./MintsPrimeModal.vue";
+import erc20ABI from "../../test/abis/ERC20.json";
+const ethers = require('ethers');
+
+let TOKEN_ADDRESSES;
 
 export default {
   name: 'SPrimePanel',
@@ -76,9 +81,16 @@ export default {
     };
   },
   mounted() {
+    this.setupFiles();
+    console.log('mounted')
+    console.log('config: ', config)
     this.dex = config.SPRIME_CONFIG.default;
+    console.log('mounted 2')
+    console.log('dex: ', this.dex)
     this.secondAsset = config.SPRIME_CONFIG[this.dex].default;
+    console.log('secondAsset: ', this.secondAsset)
     this.sPrimeConfig = config.SPRIME_CONFIG[this.dex][this.secondAsset];
+    console.log('sPrimeConfig: ', this.sPrimeConfig)
 
     combineLatest([
       this.accountService.observeAccountLoaded(),
@@ -114,29 +126,43 @@ export default {
       'sPrimeTjV2Rebalance',
       'sPrimeTjV2Redeem'
     ]),
+    async setupFiles() {
+      TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
+    },
     async openMintSPrimeModal() {
       const [, activeId] = await this
           .traderJoeService
           .getLBPairReservesAndActiveBin(this.sPrimeConfig.lbAddress, this.provider);
 
-      // modalInstance.$on('MINT', sPrimeMintEvent => {
-      let sPrimeMintRequest = {
-        sPrimeAddress: this.sPrimeConfig.sPrimeAddress,
-        secondAsset: this.secondAsset,
-        isRebalance: false,
-        amountPrime: 0.01,
-        amountSecond: 0.013135,
-        idSlippage: 10,
-        slippage: 5,
-        activeId: activeId
-      };
-      this.handleTransaction(this.sPrimeTjV2Mint, { sPrimeMintRequest: sPrimeMintRequest }, () => {
-        this.$forceUpdate();
-      }, (error) => {
-        this.handleTransactionError(error);
-      }).then(() => {
+      let [primeBalance, secondAssetBalance] = await Promise.all(
+          [this.fetchUserTokenBalance('PRIME'),
+            this.fetchUserTokenBalance(this.secondAsset)]
+      );
+
+      console.log('prime 2: ', primeBalance)
+      console.log('second 2: ', secondAssetBalance)
+
+      const modalInstance = this.openModal(MintsPrimeModal);
+      modalInstance.primeBalance = primeBalance;
+      modalInstance.secondAssetBalance = secondAssetBalance;
+      modalInstance.secondAssetSymbol = this.secondAsset;
+      modalInstance.$on('MINT', sPrimeMintEvent => {
+        let sPrimeMintRequest = {
+          sPrimeAddress: this.sPrimeConfig.sPrimeAddress,
+          secondAsset: this.secondAsset,
+          isRebalance: sPrimeMintEvent.rebalance,
+          amountPrime: sPrimeMintEvent.primeAmount,
+          amountSecond: sPrimeMintEvent.secondAmount,
+          slippage: 5,
+          activeId: activeId
+        };
+        this.handleTransaction(this.sPrimeTjV2Mint, { sPrimeMintRequest: sPrimeMintRequest }, () => {
+          this.$forceUpdate();
+        }, (error) => {
+          this.handleTransactionError(error);
+        }).then(() => {
+        });
       });
-      // });
     },
     async openRebalanceSPrimeModal() {
       const [, activeId] = await this
@@ -180,6 +206,16 @@ export default {
     },
     fetchVPrimeData() {
       this.vPrimeService.emitRefreshVPrimeData(config.VPRIME_CONFIG.address, this.account);
+    },
+    async fetchUserTokenBalance(tokenSymbol) {
+      const contract = new ethers.Contract(TOKEN_ADDRESSES[tokenSymbol], erc20ABI, this.provider.getSigner());
+
+      return this.getWalletTokenBalance(
+          this.account,
+          tokenSymbol,
+          contract,
+          config.ASSETS_CONFIG[tokenSymbol].decimals
+      );
     }
   },
 };
