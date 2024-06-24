@@ -72,6 +72,9 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
         tokenX = tokenX_;
         tokenY = tokenY_;
         feeTier = feeTier_;
+        
+        positionManager = positionManager_;
+        swapRouter = swapRouter_;
 
         address poolAddress = uniV3Factory_.getPool(address(tokenX_), address(tokenY_), feeTier_);
         require(poolAddress != address(0), "Pool not existing");
