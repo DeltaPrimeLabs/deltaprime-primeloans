@@ -57,9 +57,9 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
     */
     function initialize(address tokenX_, address tokenY_, string memory name_, uint24 feeTier_, int24[2] memory deltaIds_) external initializer {
         __PendingOwnable_init();
-        __ReentrancyGuard_init();
-        __ERC20_init(name_, "sPrime");
-        __ERC721Holder_init();
+        __ReentrancyGuard_init_unchained();
+        __ERC20_init_unchained(name_, "sPrime");
+        __ERC721Holder_init_unchained();
 
         tokenSequence = tokenX_ > tokenY_;
         (tokenX_, tokenY_) = tokenX_ < tokenY_ ? (tokenX_, tokenY_) : (tokenY_, tokenX_);

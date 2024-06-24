@@ -192,7 +192,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     */
     function _getLiquidityTokenAmounts(uint256[] memory depositIds, uint256[] memory liquidityMinted, uint256 poolPrice) internal view returns(uint256 amountX, uint256 amountY) {
         require(depositIds.length == liquidityMinted.length, "Length Dismatch");
-        poolPrice = FullMath.mulDiv(poolPrice, (10 ** tokenYDecimals), 1e8);
+        poolPrice = FullMath.mulDiv(poolPrice, 10 ** tokenYDecimals, 1e8);
         uint24 binId = lbPair.getIdFromPrice(PriceHelper.convertDecimalPriceTo128x128(poolPrice));
 
         for (uint256 i; i < depositIds.length; ++i) {
