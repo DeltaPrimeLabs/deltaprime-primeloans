@@ -31,6 +31,7 @@ contract PositionManager is
 
     function setSPrime(ISPrimeTraderJoe sPrime_) external onlyOwner {
         sPrime = sPrime_;
+        emit SPrimeUpdated(sPrime_);
     }
 
     function getDepositConfig(uint256 centerId) external view returns(DepositConfig memory) {

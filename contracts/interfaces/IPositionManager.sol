@@ -36,6 +36,8 @@ interface IPositionManager is IERC721Enumerable {
         uint256[] depositIds;
     }
 
+    event SPrimeUpdated(ISPrimeTraderJoe prime);
+
     // Mint new position NFT
     function mint(
         MintParams calldata params
