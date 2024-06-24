@@ -26,7 +26,19 @@ abstract contract vPrimeController is PendingOwnableUpgradeable, RedstoneConsume
     uint256 public constant V_PRIME_PAIR_RATIO = 10;
     uint256 public constant RS_PRICE_PRECISION_1e18_COMPLEMENT = 1e10;
 
-    /* ========== INITIALIZER ========== */
+    struct VPrimeCalculationsStruct {
+        int256 vPrimeRate;
+        uint256 vPrimeBalanceLimit;
+        uint256 vPrimeBalanceAlreadyVested;
+        uint256 userSPrimeDollarValueFullyVested;
+        uint256 userSPrimeDollarValueNonVested;
+        uint256 userDepositFullyVestedDollarValue;
+        uint256 userDepositNonVestedDollarValue;
+        uint256 primeAccountBorrowedDollarValue;
+    }
+
+
+/* ========== INITIALIZER ========== */
 
     function initialize(ISPrime[] memory _whitelistedSPrimeContracts, ITokenManager _tokenManager, vPrime _vPrime, bool _useOraclePrimeFeed) external initializer {
         whitelistedSPrimeContracts = _whitelistedSPrimeContracts;
@@ -39,28 +51,15 @@ abstract contract vPrimeController is PendingOwnableUpgradeable, RedstoneConsume
 
     /* ========== MUTATIVE EXTERNAL FUNCTIONS ========== */
 
-    // Depositors and borrowers follow different vPrime accrual rules.
-    // If a given address is a PrimeAccount or a PrimeAccount owner, then his vPrime balance will counted as a borrower.
-    // For depositors (which get a higher vPrime accrual rate) it is advised to use wallets that are not PrimeAccount owners.
+    // Update vPrime snapshot for `userAddress`
     function updateVPrimeSnapshot(address userAddress) public {
-        int256 vPrimeRate;
-        uint256 vPrimeMaxCap;
-        if(borrowersRegistry.canBorrow(userAddress)){   // It's a PrimeAccount
-            (vPrimeRate, vPrimeMaxCap) = getBorrowerVPrimeRateAndMaxCap(userAddress);
-            vPrimeContract.adjustRateAndCap(userAddress, vPrimeRate, vPrimeMaxCap);
-        } else if(borrowersRegistry.getLoanForOwner(userAddress) != address(0)){ // It's a PrimeAccount owner
-            address primeAccountAddress = borrowersRegistry.getLoanForOwner(userAddress);
-            (vPrimeRate, vPrimeMaxCap) = getBorrowerVPrimeRateAndMaxCap(primeAccountAddress);
-            vPrimeContract.adjustRateAndCap(userAddress, vPrimeRate, vPrimeMaxCap);
+        (int256 vPrimeRate, uint256 vPrimeBalanceLimit, uint256 alreadyVestedVPrimeBalance) = getUserVPrimeRateAndMaxCap(userAddress);
+
+        // alreadyVestedVPrimeBalance > 0 mean that the already vested vPrime is higher than the current balance
+        if(alreadyVestedVPrimeBalance > 0){
+            vPrimeContract.adjustRateCapAndBalance(userAddress, vPrimeRate, vPrimeBalanceLimit, alreadyVestedVPrimeBalance);
         } else {
-            uint256 alreadyVestedPrimeBalance;
-            (vPrimeRate, vPrimeMaxCap, alreadyVestedPrimeBalance) = getDepositorVPrimeRateAndMaxCap(userAddress);
-            // alreadyVestedPrimeBalance > 0 mean that the already vested vPrime is higher than the current balance
-            if(alreadyVestedPrimeBalance > 0){
-                vPrimeContract.adjustRateCapAndBalance(userAddress, vPrimeRate, vPrimeMaxCap, alreadyVestedPrimeBalance);
-            } else {
-                vPrimeContract.adjustRateAndCap(userAddress, vPrimeRate, vPrimeMaxCap);
-            }
+            vPrimeContract.adjustRateAndCap(userAddress, vPrimeRate, vPrimeBalanceLimit);
         }
     }
 
@@ -147,20 +146,25 @@ abstract contract vPrimeController is PendingOwnableUpgradeable, RedstoneConsume
         return (fullyVestedDollarValue, nonVestedDollarValue);
     }
 
-    function getPrimeAccountBorrowedDollarValueAcrossWhitelistedPools(address primeAccountAddress) public view returns (uint256) {
+    function getPrimeAccountBorrowedDollarValueAcrossWhitelistedPools(address userAddress) public view returns (uint256) {
         uint256 totalDollarValue = 0;
-        IPool[] memory whitelistedPools = getWhitelistedPools();
-        bytes32[] memory poolsTokenSymbols = new bytes32[](whitelistedPools.length);
-        for (uint i = 0; i < whitelistedPools.length; i++) {
-            poolsTokenSymbols[i] = tokenManager.tokenAddressToSymbol(whitelistedPools[i].tokenAddress());
-        }
-        uint256[] memory prices = getOracleNumericValuesFromTxMsg(poolsTokenSymbols);
 
-        for (uint i = 0; i < whitelistedPools.length; i++) {
-            uint256 poolBorrowedAmount = whitelistedPools[i].getBorrowed(primeAccountAddress);
-            uint256 poolDollarValue = FullMath.mulDiv(poolBorrowedAmount, prices[i] * RS_PRICE_PRECISION_1e18_COMPLEMENT, 10 ** whitelistedPools[i].decimals());
-            totalDollarValue += poolDollarValue;
+        address primeAccountAddress = borrowersRegistry.getLoanForOwner(userAddress);
+        if(primeAccountAddress != address(0)){
+            IPool[] memory whitelistedPools = getWhitelistedPools();
+            bytes32[] memory poolsTokenSymbols = new bytes32[](whitelistedPools.length);
+            for (uint i = 0; i < whitelistedPools.length; i++) {
+                poolsTokenSymbols[i] = tokenManager.tokenAddressToSymbol(whitelistedPools[i].tokenAddress());
+            }
+            uint256[] memory prices = getOracleNumericValuesFromTxMsg(poolsTokenSymbols);
+
+            for (uint i = 0; i < whitelistedPools.length; i++) {
+                uint256 poolBorrowedAmount = whitelistedPools[i].getBorrowed(primeAccountAddress);
+                uint256 poolDollarValue = FullMath.mulDiv(poolBorrowedAmount, prices[i] * RS_PRICE_PRECISION_1e18_COMPLEMENT, 10 ** whitelistedPools[i].decimals());
+                totalDollarValue += poolDollarValue;
+            }
         }
+
         return totalDollarValue;
     }
 
@@ -199,63 +203,84 @@ abstract contract vPrimeController is PendingOwnableUpgradeable, RedstoneConsume
         return (fullyVestedDollarValue, nonVestedDollarValue);
     }
 
-    function getBorrowerVPrimePairsCount(address primeAccountAddress) public view returns (uint256){
-        uint256 primeAccountBorrowedDollarValue = getPrimeAccountBorrowedDollarValueAcrossWhitelistedPools(primeAccountAddress);
-        address primeAccountOwner = IOwnershipFacet(primeAccountAddress).owner();
-        (uint256 userSPrimeDollarValueFullyVested, uint256 userSPrimeDollarValueNonVested) = getUserSPrimeDollarValueVestedAndNonVested(primeAccountOwner);
-        uint256 borrowerVPrimePairsCount = Math.min
-            (primeAccountBorrowedDollarValue / V_PRIME_PAIR_RATIO,
-            (userSPrimeDollarValueFullyVested + userSPrimeDollarValueNonVested)
-        ) / 1e18;
-        return borrowerVPrimePairsCount;
-    }
-
-    function getBorrowerVPrimeRateAndMaxCap(address primeAccountAddress) public view returns (int256, uint256){
-        uint256 vPrimePairsCount = getBorrowerVPrimePairsCount(primeAccountAddress);
-        uint256 vPrimeMaxCap = vPrimePairsCount * BORROWER_YEARLY_V_PRIME_RATE * MAX_V_PRIME_VESTING_YEARS * 1e18;
-        uint256 currentVPrimeBalance = vPrimeContract.balanceOf(primeAccountAddress);
-        int256 vPrimeRate = int256(vPrimeMaxCap) - int256(currentVPrimeBalance);
-        if(vPrimeRate < 0){
-            vPrimeRate = vPrimeRate / int256(V_PRIME_DETERIORATION_DAYS) / 1 days;
-        } else{
-            vPrimeRate = vPrimeRate / int256(MAX_V_PRIME_VESTING_YEARS) / 365 days;
-        }
-        return (vPrimeRate, vPrimeMaxCap);
-    }
-
     /*
-    * For every $10 deposited and $1 $sPRIME staked into one of DeltaPrime’s liquidity pools, your balance increases with 5 $vPRIME per year.
+    * For every $10 deposited and $1 $sPRIME owned, your balance increases with 5 $vPRIME per year.
+    * For every $10 borrowed and $1 $sPRIME owned, your balance increases with 1 $vPRIME per year.
     * Only full ${V_PRIME_PAIR_RATIO}-1 pairs can produce $vPRIME.
     */
-    function getDepositorVPrimePairsCount(address userAddress) public view returns (uint256 depositVestedPairsCount, uint256 depositNonVestedPairsCount){
-        (uint256 userDepositFullyVestedDollarValue, uint256 userDepositNonVestedDollarValue) = getUserDepositDollarValueAcrossWhiteListedPoolsVestedAndNonVested(userAddress);
-        (uint256 userSPrimeDollarValueFullyVested, uint256 userSPrimeDollarValueNonVested) = getUserSPrimeDollarValueVestedAndNonVested(userAddress);
-        uint256 depositVestedPairsCount = Math.min(userDepositFullyVestedDollarValue / V_PRIME_PAIR_RATIO, userSPrimeDollarValueFullyVested) / 1e18;
-        uint256 depositNonVestedPairsCount = Math.min(userDepositNonVestedDollarValue / V_PRIME_PAIR_RATIO, userSPrimeDollarValueNonVested) / 1e18;
-        return (depositVestedPairsCount, depositNonVestedPairsCount);
-    }
+    function getUserVPrimeRateAndMaxCap(address userAddress) public view returns (int256, uint256, uint256){
+        VPrimeCalculationsStruct memory vPrimeCalculations = VPrimeCalculationsStruct({
+            vPrimeRate: 0,
+            vPrimeBalanceLimit: 0,
+            vPrimeBalanceAlreadyVested: 0,
+            userSPrimeDollarValueFullyVested: 0,
+            userSPrimeDollarValueNonVested: 0,
+            userDepositFullyVestedDollarValue: 0,
+            userDepositNonVestedDollarValue: 0,
+            primeAccountBorrowedDollarValue: 0
+        });
 
-    function getDepositorVPrimeRateAndMaxCap(address userAddress) public view returns (int256, uint256, uint256){
-        (uint256 vPrimePairsCountVested, uint256 vPrimePairsCountNonVested) = getDepositorVPrimePairsCount(userAddress);
+        {
+            (uint256 _userSPrimeDollarValueFullyVested, uint256 _userSPrimeDollarValueNonVested) = getUserSPrimeDollarValueVestedAndNonVested(userAddress);
+            (uint256 _userDepositFullyVestedDollarValue, uint256 _userDepositNonVestedDollarValue) = getUserDepositDollarValueAcrossWhiteListedPoolsVestedAndNonVested(userAddress);
+            uint256 _primeAccountBorrowedDollarValue = getPrimeAccountBorrowedDollarValueAcrossWhitelistedPools(userAddress);
+            vPrimeCalculations.userSPrimeDollarValueFullyVested = _userSPrimeDollarValueFullyVested;
+            vPrimeCalculations.userSPrimeDollarValueNonVested = _userSPrimeDollarValueNonVested;
+            vPrimeCalculations.userDepositFullyVestedDollarValue = _userDepositFullyVestedDollarValue;
+            vPrimeCalculations.userDepositNonVestedDollarValue = _userDepositNonVestedDollarValue;
+            vPrimeCalculations.primeAccountBorrowedDollarValue = _primeAccountBorrowedDollarValue;
+        }
 
-        uint256 vPrimeMaxCap = (vPrimePairsCountVested + vPrimePairsCountNonVested) * DEPOSITOR_YEARLY_V_PRIME_RATE * MAX_V_PRIME_VESTING_YEARS * 1e18;
-        uint256 alreadyVestedVPrimeBalance = vPrimePairsCountVested * DEPOSITOR_YEARLY_V_PRIME_RATE * MAX_V_PRIME_VESTING_YEARS * 1e18;
+
+        // How many pairs can be created based on the sPrime
+        uint256 maxSPrimePairsCount = (vPrimeCalculations.userSPrimeDollarValueFullyVested + vPrimeCalculations.userSPrimeDollarValueNonVested) / 1e18;
+        // How many pairs can be created based on the deposits
+        uint256 maxDepositPairsCount = ((vPrimeCalculations.userDepositFullyVestedDollarValue + vPrimeCalculations.userDepositNonVestedDollarValue) / V_PRIME_PAIR_RATIO) / 1e18;
+        // How many pairs can be created based on the borrowings
+        uint256 maxBorrowerPairsCount = vPrimeCalculations.primeAccountBorrowedDollarValue / V_PRIME_PAIR_RATIO / 1e18;
+
+        // How many sPrime-depositor pairs can be created
+        uint256 maxSPrimeDepositorPairsCount = Math.min(maxSPrimePairsCount, maxDepositPairsCount);
+        // How many sPrime-borrower pairs can be created taken into account sPrime used by sPrime-depositor pairs
+        uint256 maxSPrimeBorrowerPairsCount = Math.min(maxSPrimePairsCount - maxSPrimeDepositorPairsCount, maxBorrowerPairsCount);
+
+        // Increase vPrimeCalculations.vPrimeBalanceLimit and vPrimeCalculations.vPrimeBalanceAlreadyVested based on the sPrime-depositor pairs
+        if(maxSPrimeDepositorPairsCount > 0){
+            uint256 balanceLimitIncrease = maxSPrimeDepositorPairsCount * DEPOSITOR_YEARLY_V_PRIME_RATE * MAX_V_PRIME_VESTING_YEARS * 1e18;
+            vPrimeCalculations.vPrimeBalanceLimit += balanceLimitIncrease;
+
+            uint256 depositVestedPairsCount = Math.min(vPrimeCalculations.userDepositFullyVestedDollarValue / V_PRIME_PAIR_RATIO, vPrimeCalculations.userSPrimeDollarValueFullyVested) / 1e18;
+            if(depositVestedPairsCount > 0){
+                vPrimeCalculations.vPrimeBalanceAlreadyVested += balanceLimitIncrease * depositVestedPairsCount / maxSPrimeDepositorPairsCount;
+            }
+        }
+
+        // Increase vPrimeCalculations.vPrimeBalanceLimit based on the sPrime-borrower pairs
+        if(maxSPrimeBorrowerPairsCount > 0){
+            vPrimeCalculations.vPrimeBalanceLimit += maxSPrimeBorrowerPairsCount * BORROWER_YEARLY_V_PRIME_RATE * MAX_V_PRIME_VESTING_YEARS * 1e18;
+        }
+
+        // Check current vPrime balance
         uint256 currentVPrimeBalance = vPrimeContract.balanceOf(userAddress);
+
+        // If already vested vPrime balance is higher than the current balance, then the current balance should be replaced with the already vested balance
         bool balanceShouldBeReplaced = false;
-        if(currentVPrimeBalance < alreadyVestedVPrimeBalance){
-            currentVPrimeBalance = alreadyVestedVPrimeBalance;
+        if(currentVPrimeBalance < vPrimeCalculations.vPrimeBalanceAlreadyVested){
+            currentVPrimeBalance = vPrimeCalculations.vPrimeBalanceAlreadyVested;
             balanceShouldBeReplaced = true;
         }
-        int256 vPrimeRate = int256(vPrimeMaxCap) - int256(currentVPrimeBalance);
-        if(vPrimeRate < 0){
-            vPrimeRate = vPrimeRate / int256(V_PRIME_DETERIORATION_DAYS) / 1 days;
+
+        int256 vPrimeBalanceDelta = int256(vPrimeCalculations.vPrimeBalanceLimit) - int256(currentVPrimeBalance);
+        if(vPrimeBalanceDelta < 0){
+            vPrimeCalculations.vPrimeRate = vPrimeBalanceDelta / int256(V_PRIME_DETERIORATION_DAYS) / 1 days;
         } else {
-            vPrimeRate = vPrimeRate / int256(MAX_V_PRIME_VESTING_YEARS) / 365 days;
+            vPrimeCalculations.vPrimeRate = vPrimeBalanceDelta / int256(MAX_V_PRIME_VESTING_YEARS) / 365 days;
         }
+
         if(balanceShouldBeReplaced){
-            return (vPrimeRate, vPrimeMaxCap, alreadyVestedVPrimeBalance);
+            return (vPrimeCalculations.vPrimeRate, vPrimeCalculations.vPrimeBalanceLimit, vPrimeCalculations.vPrimeBalanceAlreadyVested);
         } else {
-            return (vPrimeRate, vPrimeMaxCap, 0);
+            return (vPrimeCalculations.vPrimeRate, vPrimeCalculations.vPrimeBalanceLimit, 0);
         }
     }
 

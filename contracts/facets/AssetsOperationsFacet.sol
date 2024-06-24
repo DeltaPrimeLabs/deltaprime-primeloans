@@ -160,7 +160,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
         proxyCalldata(
             tokenManager.getVPrimeControllerAddress(),
-            abi.encodeWithSignature("updateVPrimeSnapshot(address)", address(this)),
+            abi.encodeWithSignature("updateVPrimeSnapshot(address)", DiamondStorageLib.contractOwner()),
             false
         );
         emit Borrowed(msg.sender, _asset, _amount, block.timestamp);
@@ -198,7 +198,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
         proxyCalldata(
             tokenManager.getVPrimeControllerAddress(),
-            abi.encodeWithSignature("updateVPrimeSnapshot(address)", address(this)),
+            abi.encodeWithSignature("updateVPrimeSnapshot(address)", DiamondStorageLib.contractOwner()),
             false
         );
     }
