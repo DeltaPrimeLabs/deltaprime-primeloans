@@ -3,7 +3,7 @@
 pragma solidity ^0.8.17;
 
 
-interface IVPRIME {
+interface IVPrime {
     struct Checkpoint {
         uint32 blockTimestamp;
         uint256 balance;

@@ -31,12 +31,14 @@ export default {
       const provider = rootState.network.provider;
 
       // let dataFeeds = ['PRIME', sPrimeMintRequest.secondAsset]
-      let dataFeeds = [...Object.keys(config.POOLS_CONFIG), sPrimeMintRequest.secondAsset]
+      let dataFeeds = [...Object.keys(config.POOLS_CONFIG)]
+      console.log('dataFeeds')
+      console.log(dataFeeds)
       const sprimeContract = await wrapContract(new ethers.Contract(sPrimeMintRequest.sPrimeAddress, sPrimeMintRequest.dex === 'TRADERJOEV2' ? SPRIME_TJV2.abi : SPRIME_UNISWAP.abi, provider.getSigner()), dataFeeds);
 
       const secondAssetDecimals = config.SPRIME_CONFIG.TRADERJOEV2[sPrimeMintRequest.secondAsset].secondAssetDecimals;
-      let amountPrime = toWei(sPrimeMintRequest.amountPrime ? sPrimeMintRequest.amountPrime.toString() : '0')
-      let amountSecond = parseUnits(sPrimeMintRequest.amountSecond ? sPrimeMintRequest.amountSecond.toString() : '0', secondAssetDecimals)
+      let amountPrime = toWei(sPrimeMintRequest.amountPrime ? Number(sPrimeMintRequest.amountPrime).toFixed(18) : '0')
+      let amountSecond = parseUnits(sPrimeMintRequest.amountSecond ? Number(sPrimeMintRequest.amountSecond).toFixed(secondAssetDecimals) : '0', secondAssetDecimals)
 
       //approvals
       await approve(TOKEN_ADDRESSES['PRIME'], amountPrime);
@@ -56,11 +58,19 @@ export default {
         }
       }
 
+      console.log('sPrimeMintRequest.activeId: ', sPrimeMintRequest.activeId)
+      console.log('sPrimeMintRequest.idSlippage: ', sPrimeMintRequest.idSlippage)
+      console.log('amountPrime: ', amountPrime)
+      console.log('amountSecond: ', amountSecond)
+      console.log('sPrimeMintRequest.isRebalance: ', sPrimeMintRequest.isRebalance)
+      console.log('sPrimeMintRequest.slippage: ', sPrimeMintRequest.slippage * 100)
+
+      const transaction = await sprimeContract.deposit(sPrimeMintRequest.activeId, sPrimeMintRequest.idSlippage, amountPrime, amountSecond, sPrimeMintRequest.isRebalance, sPrimeMintRequest.slippage * 100, {gasLimit: 8000000})
+      await awaitConfirmation(transaction, provider, 'mint');
+
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
 
-      const transaction = await sprimeContract.deposit(sPrimeMintRequest.activeId, sPrimeMintRequest.idSlippage, amountPrime, amountSecond, sPrimeMintRequest.isRebalance, sPrimeMintRequest.slippage)
-      await awaitConfirmation(transaction, provider, 'mint');
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {
@@ -77,7 +87,7 @@ export default {
       let dataFeeds = [...Object.keys(config.POOLS_CONFIG), sPrimeRebalanceRequest.secondAsset]
       const sprimeContract = await wrapContract(new ethers.Contract(sPrimeRebalanceRequest.sPrimeAddress, sPrimeRebalanceRequest.dex === 'TRADERJOEV2' ? SPRIME_TJV2.abi : SPRIME_UNISWAP.abi, provider.getSigner()), dataFeeds);
 
-      const transaction = await sprimeContract.deposit(sPrimeRebalanceRequest.activeId, sPrimeRebalanceRequest.idSlippage, 0, 0, sPrimeRebalanceRequest.isRebalance, sPrimeRebalanceRequest.slippage)
+      const transaction = await sprimeContract.deposit(sPrimeRebalanceRequest.activeId, sPrimeRebalanceRequest.idSlippage, 0, 0, sPrimeRebalanceRequest.isRebalance, sPrimeRebalanceRequest.slippage * 100)
       await awaitConfirmation(transaction, provider, 'rebalance');
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();

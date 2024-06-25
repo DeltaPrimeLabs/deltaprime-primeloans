@@ -46,6 +46,22 @@ export default {
       "BAL": {unsupported: true, name: "BAL", symbol: "BAL", logoExt: "png", decimals: 18, address: addresses.BAL, debtCoverage: 0, tradingViewSymbol: "BINANCE:BALUSDT"},
       "GGP": {unsupported: true, name: "GGP", symbol: "GGP", logoExt: "png", decimals: 18, address: addresses.GGP, debtCoverage: 0, tradingViewSymbol: "TRADERJOE:GGPWAVAX_AE671E.USD", fetchPrice: true, priceEndpoint: "https://api.gogopool.com/prices", priceJsonField: "ggpInUSD"},
     },
+    SPRIME_CONFIG: {
+        default: "TRADERJOEV2",
+        TRADERJOEV2: {
+            default: "AVAX",
+            AVAX: {
+                sPrimeAddress: "0xa4306C384Ed015235E2B19ACcd3096045527A36f",
+                positionManagerAddress: "0xa045E421F65eEE1F1c3050f3b0F8497825FbCf99",
+                lbAddress: "0xD41aD255796E97A49dE36b8F38F1f16713F01BC8",
+                binStep: 100,
+                secondAssetDecimals: 18,
+            }
+        }
+    },
+    VPRIME_CONFIG: {
+        address: "0x852894a93c9DA9f42a7e93dc47ef1c9630D58Bab"
+    },
     WOMBAT_REWARDS_TOKENS: {
         "WOM": {name: "WOM", symbol: "WOM", logoExt: "png", decimals: 18, address: addresses.WOM},
     },

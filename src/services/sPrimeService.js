@@ -21,9 +21,14 @@ export default class sPrimeService {
 
       const sPrimeContract = await wrapContract(new ethers.Contract(sPrimeAddress, SPRIME.abi, provider.getSigner()), dataFeeds);
 
+
       sPrimeContract.getUserValueInTokenY(ownerAddress).then(
-          value => {
-              this.sPrimeValue$.next(formatUnits(value, config.ASSETS_CONFIG[secondAsset].decimals))
+          async value => {
+              const redstonePriceDataRequest = await fetch(config.redstoneFeedUrl);
+              const redstonePriceData = await redstonePriceDataRequest.json();
+              // value = formatUnits(value, config.ASSETS_CONFIG[secondAsset].decimals) * redstonePriceData[secondAsset][0].dataPoints[0].value;
+
+              this.sPrimeValue$.next(value)
           }
       );
 

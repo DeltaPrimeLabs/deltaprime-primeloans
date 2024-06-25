@@ -41,7 +41,7 @@
 
       <div class="rebalance-container">
         <div class="rebalance-label">Rebalance:</div>
-        <Toggle v-on:change="rebalanceToggleChange" :options="['YES', 'NO']" :initial-option="1"></Toggle>
+        <Toggle v-on:change="rebalanceToggleChange" :options="['YES', 'NO']" :initial-option="0"></Toggle>
       </div>
 
       <div class="button-wrapper">
@@ -92,7 +92,7 @@ export default {
 
   data() {
     return {
-      rebalance: false,
+      rebalance: true,
       primeAmount: null,
       secondAmount: null,
       primeInputValidators: [],
@@ -199,7 +199,7 @@ export default {
       color: var(--swap-modal__slippage-advanced-color);
       margin-right: 10px;
     }
-    
+
   }
 
   .modal-top-info--reduced-margin {
