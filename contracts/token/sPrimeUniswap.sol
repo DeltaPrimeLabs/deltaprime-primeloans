@@ -78,7 +78,9 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
         swapRouter = swapRouter_;
 
         address poolAddress = uniV3Factory_.getPool(address(tokenX_), address(tokenY_), feeTier_);
-        require(poolAddress != address(0), "Pool not existing");
+        if (poolAddress == address(0)) {
+            revert PoolNotExisting();
+        }
         pool = IUniswapV3Pool(poolAddress);
         tickSpacing = pool.tickSpacing();
         deltaIds = deltaIds_;
@@ -103,7 +105,9 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
      */
     function tickInRange(address user) public view returns(bool) {
         uint256 tokenId = userTokenId[user];
-        require(tokenId > 0, "No position");
+        if (tokenId <= 0) {
+            revert NoPosition();
+        }
         (, int24 tick,,,,,) = pool.slot0();
 
         (,,,,,int24 tickLower, int24 tickUpper,,,,,) = positionManager.positions(tokenId);
@@ -120,7 +124,9 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
         uint256 tokenId = userTokenId[user];
         uint256 PRECISION = 20;
 
-        require(tokenId > 0, "No position");
+        if (tokenId <= 0) {
+            revert NoPosition();
+        }
 
         (IERC20Metadata token0, IERC20Metadata token1) = (tokenX, tokenY);
         uint256 price = poolPrice;
@@ -341,7 +347,9 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
     }
 
     function _deposit(int24 tickDesired, int24 tickSlippage, uint256 amountX, uint256 amountY, bool isRebalance, uint256 swapSlippage) internal {
-        require(swapSlippage <= _MAX_SLIPPAGE, "Slippage too high");
+        if (swapSlippage > _MAX_SLIPPAGE) {
+            revert SlippageTooHigh();
+        }
 
         int24 currenTick;
         int24 tickLower;
@@ -384,7 +392,9 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
 
         if(userTokenId[_msgSender()] == 0) {
             (, currenTick,,,,,) = pool.slot0();
-            require(tickDesired + tickSlippage >= currenTick && currenTick + tickSlippage >= tickDesired, "Slippage High");
+            if (!(tickDesired + tickSlippage >= currenTick && currenTick + tickSlippage >= tickDesired)) {
+                revert SlippageTooHigh();
+            }
             tickLower = currenTick + tickSpacing * deltaIds[0] >= TickMath.MIN_TICK ? currenTick + tickSpacing * deltaIds[0] : TickMath.MIN_TICK;
             tickUpper = currenTick + tickSpacing * deltaIds[1] <= TickMath.MAX_TICK ? currenTick + tickSpacing * deltaIds[1] : TickMath.MAX_TICK;
         }
@@ -403,12 +413,16 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
     */
     function withdraw(uint256 share) external nonReentrant {
         uint256 tokenId = userTokenId[_msgSender()];
-        require(tokenId > 0, "No Position to withdraw");
+        if (tokenId <= 0) {
+            revert NoPositionToWithdraw();
+        }
 
         (,,,,,,,uint128 liquidity,,,,) = positionManager.positions(tokenId);
 
         uint256 lockedBalance = getLockedBalance(_msgSender());
-        require(balanceOf(_msgSender()) >= share + lockedBalance, "Balance is locked");
+        if (balanceOf(_msgSender()) < share + lockedBalance) {
+            revert BalanceLocked();
+        }
 
         positionManager.decreaseLiquidity(
             INonfungiblePositionManager.DecreaseLiquidityParams({
@@ -457,8 +471,12 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
         
         _transferTokens(_msgSender(), address(this), amountX, amountY);
 
-        require(balanceOf(user) == 0, "User already has position");
-        require(percentForLocks.length == lockPeriods.length, "Length dismatch");
+        if (balanceOf(user) != 0) {
+            revert ReceiverAlreadyHasPosition();
+        }
+        if (percentForLocks.length != lockPeriods.length) {
+            revert LengthMismatch();
+        }
 
         (amountX, amountY) = _swapForEqualValues(amountX, amountY, _MAX_SLIPPAGE);
 
@@ -471,12 +489,16 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
         for(uint8 i = 0 ; i < lockPeriods.length ; i ++) {
             totalLock += percentForLocks[i];
         }
-        require(totalLock == 100, "Should lock all");
+        if (totalLock != 100) {
+            revert TotalLockMismatch();
+        }
 
         uint256 balance = balanceOf(user);
         totalLock = 0;
         for(uint8 i = 0 ; i < lockPeriods.length ; i ++) {
-            require(lockPeriods[i] <= MAX_LOCK_TIME, "Cannot lock for more than 3 years");
+            if (lockPeriods[i] > MAX_LOCK_TIME) {
+                revert LockPeriodExceeded();
+            }
             // Should minus from total balance to avoid the round issue
             uint256 amount = i == lockPeriods.length - 1 ? balance - totalLock : balance * percentForLocks[i] / 100;
             locks[user].push(LockDetails({
@@ -533,8 +555,12 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
     */
     function lockBalance(uint256 amount, uint256 lockPeriod) public nonReentrant {
         uint256 lockedBalance = getLockedBalance(_msgSender());
-        require(balanceOf(_msgSender()) >= amount + lockedBalance, "Insufficient balance to lock");
-        require(lockPeriod <= MAX_LOCK_TIME, "Cannot lock for more than 3 years");
+        if (balanceOf(_msgSender()) < amount + lockedBalance) {
+            revert InsufficientBalanceToLock();
+        }
+        if (lockPeriod > MAX_LOCK_TIME) {
+            revert LockPeriodExceeded();
+        }
         locks[_msgSender()].push(LockDetails({
             lockPeriod: lockPeriod,
             amount: amount,
@@ -552,7 +578,9 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
     * @param index The index of the lock to be released.
     */
     function releaseBalance(uint256 index) public nonReentrant {
-        require(locks[_msgSender()][index].unlockTime <= block.timestamp, "Still in the lock period");
+        if (locks[_msgSender()][index].unlockTime > block.timestamp) {
+            revert StillInLockPeriod();
+        }
         uint256 length = locks[_msgSender()].length;
         locks[_msgSender()][index] = locks[_msgSender()][length - 1];
 
@@ -576,8 +604,12 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
         if(from != address(0) && to != address(0)) {
             uint256 balance = getLockedBalance(from);
             uint256 fromBalance = balanceOf(from);
-            require(fromBalance >= amount + balance, "Insufficient Balance");
-            require(userTokenId[to] == 0, "Receiver already has a postion");
+            if (fromBalance < amount + balance) {
+                revert InsufficientBalance();
+            }
+            if (userTokenId[to] != 0) {
+                revert ReceiverAlreadyHasPosition();
+            }
             
             uint256 tokenId = userTokenId[from];
 
@@ -646,4 +678,19 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
     function decimals() public view virtual override returns (uint8) {
         return tokenDecimals;
     }
+
+    // CUSTOM ERROR MESSAGES
+    error PoolNotExisting();
+    error InsufficientBalance();
+    error ReceiverAlreadyHasPosition();
+    error NoPosition();
+    error SlippageTooHigh();
+    error NoPositionToWithdraw();
+    error StillInLockPeriod();
+    error BalanceLocked();
+    error UserAlreadyHasPosition();
+    error LengthMismatch();
+    error TotalLockMismatch();
+    error InsufficientBalanceToLock();
+    error LockPeriodExceeded();
 }
