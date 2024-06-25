@@ -652,4 +652,13 @@
   --wombat-pool-row__header-color: #{$medium-gray};
   --wombat-pool-row__header-border: linear-gradient(to right, #{$delta-pale} 43%, #{$pale-orange} 62%, #{$pale-raspberry} 79%);
   // endregion
+
+  // region DistributionChart
+  --distribution-chart__bar-color--negative: #{$red};
+  --distribution-chart__bar-color--positive: #{$delta-accent};
+  --distribution-chart__line-background--1: #{$delta-pale};
+  --distribution-chart__line-background--2: #{$pale-orange};
+  --distribution-chart__line-background--3: #{$pale-raspberry};
+  --distribution-chart__ticks-color: #{$steel-gray};
+  // endregion
 }
