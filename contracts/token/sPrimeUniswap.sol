@@ -270,7 +270,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
                 sqrtPriceLimitX96: 0
             })
         );
-        amountIn = IERC20(tokenIn).balanceOf(address(this)) - beforeBalance;
+        amountIn = beforeBalance - IERC20(tokenIn).balanceOf(address(this));
     }
 
 
