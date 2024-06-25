@@ -4,6 +4,7 @@ pragma solidity ^0.8.17;
 
 import "@redstone-finance/evm-connector/contracts/core/RedstoneConsumerNumericBase.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../abstract/PendingOwnableUpgradeable.sol";
 import "../interfaces/ITokenManager.sol";
 import "../interfaces/IBorrowersRegistry.sol";
