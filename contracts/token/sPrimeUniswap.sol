@@ -368,14 +368,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
                     })
                 );
 
-                (uint256 amountXBefore, uint256 amountYBefore) = positionManager.collect(
-                    INonfungiblePositionManager.CollectParams({
-                        tokenId: tokenId,
-                        recipient: address(this),
-                        amount0Max:type(uint128).max, 
-                        amount1Max:type(uint128).max
-                    })
-                );
+                (uint256 amountXBefore, uint256 amountYBefore) = positionManagerCollect(tokenId, address(this));
 
                 _burn(_msgSender(), balanceOf(_msgSender()));
                 positionManager.burn(tokenId);
@@ -432,14 +425,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
         );
 
         // Directly send tokens to the user
-        positionManager.collect(
-            INonfungiblePositionManager.CollectParams({
-                tokenId: tokenId,
-                recipient: _msgSender(),
-                amount0Max:type(uint128).max, 
-                amount1Max:type(uint128).max
-            })
-        );
+        positionManagerCollect(tokenId, _msgSender());
 
         // Burn Position NFT
         if(balanceOf(_msgSender()) == share) {
@@ -513,6 +499,17 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
         );
     }
 
+    function positionManagerCollect(uint256 tokenId, address recipient) internal returns (uint256 amount0, uint256 amount1){
+        return positionManager.collect(
+            INonfungiblePositionManager.CollectParams({
+                tokenId: tokenId,
+                recipient: recipient,
+                amount0Max:type(uint128).max,
+                amount1Max:type(uint128).max
+            })
+        );
+    }
+
     /**
     * @dev Users can use deposit function for depositing tokens to the specific bin.
     * @param tokenId Token ID from UniswapPositionManager
@@ -532,14 +529,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
             })
         );
 
-        (uint256 amountX, uint256 amountY) = positionManager.collect(
-            INonfungiblePositionManager.CollectParams({
-                tokenId: tokenId,
-                recipient: address(this),
-                amount0Max:type(uint128).max, 
-                amount1Max:type(uint128).max
-            })
-        );
+        (uint256 amountX, uint256 amountY) = positionManagerCollect(tokenId, address(this));
 
         positionManager.burn(tokenId);
         _deposit(tickDesired, tickSlippage, amountX, amountY, true, swapSlippage);
@@ -626,14 +616,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
                     })
                 );
 
-                (uint256 amountX, uint256 amountY) = positionManager.collect(
-                    INonfungiblePositionManager.CollectParams({
-                        tokenId: tokenId,
-                        recipient: address(this),
-                        amount0Max:type(uint128).max, 
-                        amount1Max:type(uint128).max
-                    })
-                );
+                (uint256 amountX, uint256 amountY) = positionManagerCollect(tokenId, address(this));
 
                 (uint256 newTokenId,,uint256 amountXAdded, uint256 amountYAdded) = positionManager.mint(INonfungiblePositionManager.MintParams({
                     token0: address(tokenX),
