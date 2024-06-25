@@ -3,7 +3,7 @@
     <Modal>
       <div class="modal__title">
         Mint sPRIME
-        <img class="token__logo" src="src/assets/logo/sprime.svg" alt="sPRIME">
+        <DoubleAssetIcon :size="'BIG'" :primary="'sPRIME'" :secondary="secondAssetSymbol"></DoubleAssetIcon>
       </div>
 
       <div class="modal-top-info">
@@ -65,6 +65,7 @@ import Button from './Button';
 import Toggle from './Toggle';
 import BarGaugeBeta from './BarGaugeBeta';
 import config from '../config';
+import DoubleAssetIcon from "./DoubleAssetIcon.vue";
 
 const ethers = require('ethers');
 
@@ -72,6 +73,7 @@ const ethers = require('ethers');
 export default {
   name: 'MintsPrimeModal',
   components: {
+    DoubleAssetIcon,
     Button,
     CurrencyInput,
     TransactionResultSummaryBeta,

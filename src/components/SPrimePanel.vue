@@ -2,7 +2,7 @@
   <div class="sprime-panel-component">
     <div class="sprime-panel__actions">
       <div class="sprime">
-        <img src="src/assets/logo/sprime.svg">
+        <DoubleAssetIcon :size="'BIG'" :primary="'sPRIME'" :secondary="secondAsset"></DoubleAssetIcon>
         $sPRIME
       </div>
       <div class="actions">
@@ -63,6 +63,7 @@ import erc20ABI from '../../test/abis/ERC20.json';
 import {getTraderJoeV2IdSlippageFromPriceSlippage} from '../utils/calculate';
 import RedeemsPrimeModal from './RedeemsPrimeModal.vue';
 import RebalancesPrimeModal from "./RebalancesPrimeModal.vue";
+import DoubleAssetIcon from "./DoubleAssetIcon.vue";
 
 const ethers = require('ethers');
 
@@ -70,7 +71,7 @@ let TOKEN_ADDRESSES;
 
 export default {
   name: 'SPrimePanel',
-  components: {FlatButton},
+  components: {DoubleAssetIcon, FlatButton},
   props: {
     isPrimeAccount: false
   },
@@ -268,6 +269,8 @@ export default {
 
     .sprime {
       margin-right: 30px;
+      display: flex;
+      justify-content: center;
     }
 
     .actions {
