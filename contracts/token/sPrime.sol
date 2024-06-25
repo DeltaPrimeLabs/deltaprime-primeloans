@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: a623e02728121f63e0642bb849c3b76aa4dffa21;
+// Last deployed from commit: bf67070b81266a96f52bf5751e00814e82c6039a;
 
 pragma solidity ^0.8.17;
 
@@ -32,7 +32,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     uint256 private constant _REBALANCE_MARGIN = 500;
     uint256 private constant _DENOMINATOR = 10000;
     uint256 private constant _MAX_SLIPPAGE = 500;
-    uint16 internal constant DEFAULT_BIN_STEP = 25;
+    uint16 internal constant DEFAULT_BIN_STEP = 50;
     uint256 public constant MAX_LOCK_TIME = 3 * 365 days;
 
     // Mapping for storing pair information and user shares
@@ -625,24 +625,6 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
             false
         );
     }
-
-    /**
-    * @dev Releases a locked balance at a specified index.
-    * @param index The index of the lock to be released.
-    */
-    function releaseBalance(uint256 index) public nonReentrant {
-        require(locks[_msgSender()][index].unlockTime <= block.timestamp, "Still in the lock period");
-        uint256 length = locks[_msgSender()].length;
-        locks[_msgSender()][index] = locks[_msgSender()][length - 1];
-
-        locks[_msgSender()].pop();
-        proxyCalldata(
-            vPrimeController,
-            abi.encodeWithSignature("updateVPrimeSnapshot(address)", _msgSender()),
-            false
-        );
-    }
-
 
     /** Overrided Functions */
 
