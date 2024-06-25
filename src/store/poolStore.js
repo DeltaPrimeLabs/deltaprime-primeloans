@@ -83,7 +83,8 @@ export default {
 
       const tokenContract = new ethers.Contract(config.POOLS_CONFIG[depositRequest.assetSymbol].tokenAddress, erc20ABI, provider.getSigner());
       const decimals = config.ASSETS_CONFIG[depositRequest.assetSymbol].decimals;
-      const poolContract = state.pools.find(pool => pool.asset.symbol === depositRequest.assetSymbol).contract;
+      const dataFeeds = [...Object.keys(config.POOLS_CONFIG)];
+      const poolContract = await wrapContract(state.pools.find(pool => pool.asset.symbol === depositRequest.assetSymbol).contract.connect(provider.getSigner()), dataFeeds);
       const wallet = rootState.network.account;
 
       if (fromWei(await poolContract.balanceOf(wallet)) === 0) {
@@ -95,7 +96,6 @@ export default {
       let depositTransaction;
       if (depositRequest.depositNativeToken) {
         depositTransaction = await poolContract
-          .connect(provider.getSigner())
           .depositNativeToken({value: parseUnits(String(depositRequest.amount), decimals)});
 
         rootState.serviceRegistry.progressBarService.requestProgressBar();
@@ -115,7 +115,6 @@ export default {
         }
 
         depositTransaction = await poolContract
-          .connect(provider.getSigner())
           .deposit(parseUnits(String(depositRequest.amount), decimals));
       }
       rootState.serviceRegistry.progressBarService.requestProgressBar();
@@ -140,9 +139,12 @@ export default {
     async withdraw({state, rootState, dispatch}, {withdrawRequest}) {
       const provider = rootState.network.provider;
       let withdrawTransaction;
+      const dataFeeds = [...Object.keys(config.POOLS_CONFIG)];
       const pool = state.pools.find(pool => pool.asset.symbol === withdrawRequest.assetSymbol);
+      let poolContract = await wrapContract(pool.contract.connect(provider.getSigner()), dataFeeds);
+
       if (withdrawRequest.withdrawNativeToken) {
-        withdrawTransaction = await pool.contract.connect(provider.getSigner())
+        withdrawTransaction = await poolContract
           .withdrawNativeToken(
             parseUnits(String(withdrawRequest.amount), config.ASSETS_CONFIG[withdrawRequest.assetSymbol].decimals));
 
@@ -150,7 +152,7 @@ export default {
         rootState.serviceRegistry.modalService.closeModal();
 
       } else {
-        withdrawTransaction = await pool.contract.connect(provider.getSigner())
+        withdrawTransaction = await poolContract
           .withdraw(
             parseUnits(String(withdrawRequest.amount),
               config.ASSETS_CONFIG[withdrawRequest.assetSymbol].decimals));
