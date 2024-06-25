@@ -54,6 +54,7 @@ export default {
             default: "USDC",
             USDC: {
                 sPrimeAddress: "0x83BE7c8768df4600E643d1a05734198709E505da",
+                positionManagerAddress: "0x540e7a7baB681Bd69bC4bf89Bd706F96F9D1dEF8",
                 lbAddress: "0x37b03c3Da5FC76D266693B3bf2f143300FDCb282",
                 binStep: 25,
                 secondAssetDecimals: 6,
