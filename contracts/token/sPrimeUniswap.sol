@@ -390,11 +390,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
         }
         _depositToUniswap(_msgSender(), tickLower, tickUpper, amountX, amountY);
 
-        proxyCalldata(
-            vPrimeController,
-            abi.encodeWithSignature("updateVPrimeSnapshot(address)", _msgSender()),
-            false
-        );
+        updateVPrimeSnapshotFor(_msgSender());
     }
 
     /**
@@ -435,11 +431,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
 
         _burn(_msgSender(), share);
 
-        proxyCalldata(
-            vPrimeController,
-            abi.encodeWithSignature("updateVPrimeSnapshot(address)", _msgSender()),
-            false
-        );
+        updateVPrimeSnapshotFor(_msgSender());
     }
 
     /**
@@ -492,11 +484,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
             totalLock += amount;
         }
 
-        proxyCalldata(
-            vPrimeController,
-            abi.encodeWithSignature("updateVPrimeSnapshot(address)", user),
-            false
-        );
+        updateVPrimeSnapshotFor(user);
     }
 
     function positionManagerCollect(uint256 tokenId, address recipient) internal returns (uint256 amount0, uint256 amount1){
@@ -553,11 +541,8 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
             amount: amount,
             unlockTime: block.timestamp + lockPeriod
         }));
-        proxyCalldata(
-            vPrimeController,
-            abi.encodeWithSignature("updateVPrimeSnapshot(address)", _msgSender()),
-            false
-        );
+
+        updateVPrimeSnapshotFor(_msgSender());
     }
 
     /**
@@ -572,11 +557,7 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
         locks[_msgSender()][index] = locks[_msgSender()][length - 1];
 
         locks[_msgSender()].pop();
-        proxyCalldata(
-            vPrimeController,
-            abi.encodeWithSignature("updateVPrimeSnapshot(address)", _msgSender()),
-            false
-        );
+        updateVPrimeSnapshotFor(_msgSender());
     }
 
     /** Overrided Functions */
@@ -642,17 +623,18 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
 
                 userTokenId[to] = newTokenId;
             }
-            proxyCalldata(
-                vPrimeController,
-                abi.encodeWithSignature("updateVPrimeSnapshot(address)", from),
-                false
-            );
-            proxyCalldata(
-                vPrimeController,
-                abi.encodeWithSignature("updateVPrimeSnapshot(address)", to),
-                false
-            );
+            updateVPrimeSnapshotFor(from);
+            updateVPrimeSnapshotFor(to);
         }
+    }
+
+    function updateVPrimeSnapshotFor(address account) internal {
+        proxyCalldata(
+            vPrimeController,
+            abi.encodeWithSignature
+            ("updateVPrimeSnapshot(address)", account),
+            false
+        );
     }
 
     function decimals() public view virtual override returns (uint8) {
