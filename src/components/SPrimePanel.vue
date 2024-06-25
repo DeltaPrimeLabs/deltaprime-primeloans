@@ -27,7 +27,10 @@
         </div>
       </div>
       <div class="distribution">
-        Distribution
+        <div class="chart-container">
+          <div class="distribution-chart-line"></div>
+          <DistributionChart :data="chartData" :active-index="7"></DistributionChart>
+        </div>
       </div>
       <div class="governance">
         <div class="governance__title">Governance power</div>
@@ -64,6 +67,7 @@ import {getTraderJoeV2IdSlippageFromPriceSlippage} from '../utils/calculate';
 import RedeemsPrimeModal from './RedeemsPrimeModal.vue';
 import RebalancesPrimeModal from './RebalancesPrimeModal.vue';
 import DoubleAssetIcon from './DoubleAssetIcon.vue';
+import DistributionChart from "./DistributionChart.vue";
 
 const ethers = require('ethers');
 
@@ -71,7 +75,7 @@ let TOKEN_ADDRESSES;
 
 export default {
   name: 'SPrimePanel',
-  components: {DoubleAssetIcon, FlatButton},
+  components: {DoubleAssetIcon, DistributionChart, FlatButton},
   props: {
     isPrimeAccount: false
   },
@@ -82,7 +86,24 @@ export default {
       sPrimeConfig: null,
       value: null,
       governancePoints: null,
-      governanceRate: null
+      governanceRate: null,
+      chartData: [
+        {x: 1, y: 1, showTick: true, positive: false},
+        {x: 2, y: 2, showTick: false, positive: false},
+        {x: 3, y: 3, showTick: false, positive: false},
+        {x: 4, y: 4, showTick: false, positive: false},
+        {x: 5, y: 2, showTick: true, positive: false},
+        {x: 6, y: 0, showTick: false, positive: false},
+        {x: 7, y: 0, showTick: false, positive: false},
+        {x: 8, y: 3, showTick: true, positive: true},
+        {x: 9, y: 0, showTick: false, positive: false},
+        {x: 10, y: 0, showTick: false, positive: false},
+        {x: 11, y: 0, showTick: false, positive: false},
+        {x: 12, y: 0, showTick: false, positive: false},
+        {x: 13, y: 0, showTick: false, positive: false},
+        {x: 14, y: 0, showTick: false, positive: false},
+        {x: 15, y: 0, showTick: false, positive: false},
+      ]
     };
   },
   mounted() {
@@ -352,6 +373,29 @@ export default {
       border-width: 0 2px 0 0;
       border-image-source: var(--stats-bar-beta__divider-background);
       border-image-slice: 1;
+
+      .chart-container {
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        margin: 2rem auto;
+        height: 210px;
+        width: 280px;
+        padding: 40px 0 11px 0;
+
+        div {
+          width: 100%;
+          height: 100%;
+        }
+
+        .distribution-chart-line {
+          flex-shrink: 0;
+          width: calc(100% - 6px);
+          margin: 0 auto 14px auto;
+          height: 2px;
+          background: linear-gradient(to right, var(--distribution-chart__line-background--1) 30%, var(--distribution-chart__line-background--2) 60%, var(--distribution-chart__line-background--3) 80%)
+        }
+      }
     }
 
     .governance {
