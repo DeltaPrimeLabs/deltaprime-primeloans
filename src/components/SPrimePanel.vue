@@ -7,8 +7,8 @@
       </div>
       <div class="actions">
         <FlatButton v-on:buttonClick="openMintSPrimeModal()" :active="true">mint</FlatButton>
-        <FlatButton v-on:buttonClick="openRebalanceSPrimeModal()" :active="true">rebalance</FlatButton>
-        <FlatButton v-on:buttonClick="openRedeemSPrimeModal()" :active="true">redeem</FlatButton>
+        <FlatButton v-on:buttonClick="openRebalanceSPrimeModal()" :active="value > 0">rebalance</FlatButton>
+        <FlatButton v-on:buttonClick="openRedeemSPrimeModal()" :active="value > 0">redeem</FlatButton>
       </div>
     </div>
     <div class="sprime-panel__body">
@@ -62,6 +62,7 @@ import MintsPrimeModal from './MintsPrimeModal.vue';
 import erc20ABI from '../../test/abis/ERC20.json';
 import {getTraderJoeV2IdSlippageFromPriceSlippage} from '../utils/calculate';
 import RedeemsPrimeModal from './RedeemsPrimeModal.vue';
+import RebalancesPrimeModal from "./RebalancesPrimeModal.vue";
 
 const ethers = require('ethers');
 
@@ -167,23 +168,29 @@ export default {
         .traderJoeService
         .getLBPairReservesAndActiveBin(this.sPrimeConfig.lbAddress, this.provider);
 
-      // modalInstance.$on('REBALANCE', sPrimeRebalanceEvent => {
-      let sPrimeRebalanceRequest = {
-        sPrimeAddress: this.sPrimeConfig.sPrimeAddress,
-        secondAsset: this.secondAsset,
-        isRebalance: true,
-        idSlippage: 10,
-        slippage: 5,
-        dex: this.dex,
-        activeId: activeId
-      };
-      this.handleTransaction(this.sPrimeRebalance, {sPrimeRebalanceRequest: sPrimeRebalanceRequest}, () => {
-        this.$forceUpdate();
-      }, (error) => {
-        this.handleTransactionError(error);
-      }).then(() => {
+      const modalInstance = this.openModal(RebalancesPrimeModal);
+      modalInstance.secondAssetSymbol = this.secondAsset;
+
+      modalInstance.$on('REBALANCE', event => {
+        let idSlippage = getTraderJoeV2IdSlippageFromPriceSlippage(event.slippage / 100, config.SPRIME_CONFIG.TRADERJOEV2[this.secondAsset].binStep);
+
+        let sPrimeRebalanceRequest = {
+          sPrimeAddress: this.sPrimeConfig.sPrimeAddress,
+          secondAsset: this.secondAsset,
+          isRebalance: true,
+          idSlippage: idSlippage,
+          slippage: event.slippage,
+          dex: this.dex,
+          activeId: activeId
+        };
+        console.log('sPrimeRebalanceRequest: ', sPrimeRebalanceRequest)
+        this.handleTransaction(this.sPrimeRebalance, {sPrimeRebalanceRequest: sPrimeRebalanceRequest}, () => {
+          this.$forceUpdate();
+        }, (error) => {
+          this.handleTransactionError(error);
+        }).then(() => {
+        });
       });
-      // });
     },
     async openRedeemSPrimeModal() {
       console.log(this.sPrimeConfig);
