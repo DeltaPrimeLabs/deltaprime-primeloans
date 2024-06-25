@@ -207,7 +207,7 @@ export default {
         let sPrimeRedeemRequest = {
           sPrimeAddress: this.sPrimeConfig.sPrimeAddress,
           secondAsset: this.secondAsset,
-          share: '0.0000000000000001'
+          share: sPrimeRedeemEvent.sPrimeToRedeem.toFixed(18)
         };
         this.handleTransaction(this.sPrimeRedeem, {sPrimeRedeemRequest: sPrimeRedeemRequest}, () => {
           this.$forceUpdate();

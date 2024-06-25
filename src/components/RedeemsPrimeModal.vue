@@ -63,6 +63,7 @@
 
       <div class="button-wrapper">
         <Button :label="'Redeem'"
+                :disabled="!sPrimeToRedeem"
                 v-on:click="submit()"
                 :waiting="transactionOngoing">
         </Button>

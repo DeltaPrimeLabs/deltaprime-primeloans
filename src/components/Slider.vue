@@ -52,7 +52,7 @@ export default {
   },
   data() {
     return {
-      currentValue: this.value,
+      currentValue: 0,
       error: '',
       value: 0,
     };
