@@ -494,7 +494,8 @@ contract sPrimeUniswap is
         int24 tickLower;
         int24 tickUpper;
 
-        uint256 tokenId = userTokenId[_msgSender()];
+        address msgSender = _msgSender();
+        uint256 tokenId = userTokenId[msgSender];
         if (tokenId > 0) {
             uint128 liquidity;
             (, , , , , tickLower, tickUpper, liquidity, , , , ) = positionManager
@@ -517,17 +518,17 @@ contract sPrimeUniswap is
                     address(this)
                 );
 
-                _burn(_msgSender(), balanceOf(_msgSender()));
+                _burn(msgSender, balanceOf(msgSender));
                 positionManager.burn(tokenId);
 
-                delete userTokenId[_msgSender()];
+                delete userTokenId[msgSender];
 
                 (amountX, amountY) = (amountX + amountXBefore, amountY + amountYBefore);
             }
         }
         (amountX, amountY) = _swapForEqualValues(amountX, amountY, swapSlippage);
 
-        if (userTokenId[_msgSender()] == 0) {
+        if (userTokenId[msgSender] == 0) {
             (, currenTick, , , , , ) = pool.slot0();
             if (
                 !(tickDesired + tickSlippage >= currenTick &&
@@ -544,9 +545,9 @@ contract sPrimeUniswap is
                 tickUpper = TickMath.MAX_TICK;
             }
         }
-        _depositToUniswap(_msgSender(), tickLower, tickUpper, amountX, amountY);
+        _depositToUniswap(msgSender, tickLower, tickUpper, amountX, amountY);
 
-        updateVPrimeSnapshotFor(_msgSender());
+        updateVPrimeSnapshotFor(msgSender);
     }
 
     /**
@@ -554,7 +555,8 @@ contract sPrimeUniswap is
      * @param share Amount to withdraw
      */
     function withdraw(uint256 share) external nonReentrant {
-        uint256 tokenId = userTokenId[_msgSender()];
+        address msgSender = _msgSender();
+        uint256 tokenId = userTokenId[msgSender];
         if (tokenId == 0) {
             revert NoPositionToWithdraw();
         }
@@ -563,8 +565,8 @@ contract sPrimeUniswap is
             tokenId
         );
 
-        uint256 balance = balanceOf(_msgSender());
-        if (balance < share + getLockedBalance(_msgSender())) {
+        uint256 balance = balanceOf(msgSender);
+        if (balance < share + getLockedBalance(msgSender)) {
             revert BalanceLocked();
         }
 
@@ -579,17 +581,17 @@ contract sPrimeUniswap is
         );
 
         // Directly send tokens to the user
-        positionManagerCollect(tokenId, _msgSender());
+        positionManagerCollect(tokenId, msgSender);
 
         // Burn Position NFT
-        if (balanceOf(_msgSender()) == share) {
+        if (balance == share) {
             positionManager.burn(tokenId);
-            delete userTokenId[_msgSender()];
+            delete userTokenId[msgSender];
         }
 
-        _burn(_msgSender(), share);
+        _burn(msgSender, share);
 
-        updateVPrimeSnapshotFor(_msgSender());
+        updateVPrimeSnapshotFor(msgSender);
     }
 
     /**
@@ -607,24 +609,32 @@ contract sPrimeUniswap is
         uint256 amountX,
         uint256 amountY
     ) public nonReentrant {
-        _transferTokens(_msgSender(), address(this), amountX, amountY);
+        address msgSender = _msgSender();
+        _transferTokens(msgSender, address(this), amountX, amountY);
 
         if (balanceOf(user) != 0) {
             revert ReceiverAlreadyHasPosition();
         }
-        if (percentForLocks.length != lockPeriods.length) {
+        uint256 length = lockPeriods.length;
+        if (percentForLocks.length != length) {
             revert LengthMismatch();
         }
 
         (amountX, amountY) = _swapForEqualValues(amountX, amountY, _MAX_SLIPPAGE);
 
-        (, int24 currenTick, , , , , ) = pool.slot0();
-        int24 tickLower = currenTick - tickSpacing * deltaIds[0];
-        int24 tickUpper = currenTick + tickSpacing * deltaIds[1];
-        _depositToUniswap(_msgSender(), tickLower, tickUpper, amountX, amountY);
+        {
+            (, int24 currenTick, , , , , ) = pool.slot0();
+            _depositToUniswap(
+                msgSender,
+                currenTick - tickSpacing * deltaIds[0],
+                currenTick + tickSpacing * deltaIds[1],
+                amountX,
+                amountY
+            );
+        }
 
         uint256 totalLock;
-        for (uint8 i = 0; i < lockPeriods.length; i++) {
+        for (uint8 i; i != length; ++i) {
             totalLock += percentForLocks[i];
         }
         if (totalLock != 100) {
@@ -633,12 +643,12 @@ contract sPrimeUniswap is
 
         uint256 balance = balanceOf(user);
         totalLock = 0;
-        for (uint8 i = 0; i < lockPeriods.length; i++) {
+        for (uint8 i; i != length; ++i) {
             if (lockPeriods[i] > MAX_LOCK_TIME) {
                 revert LockPeriodExceeded();
             }
             // Should minus from total balance to avoid the round issue
-            uint256 amount = i == lockPeriods.length - 1
+            uint256 amount = i == length - 1
                 ? balance - totalLock
                 : (balance * percentForLocks[i]) / 100;
             locks[user].push(
@@ -709,14 +719,15 @@ contract sPrimeUniswap is
      * @param lockPeriod The duration for which the balance will be locked.
      */
     function lockBalance(uint256 amount, uint256 lockPeriod) public nonReentrant {
-        uint256 lockedBalance = getLockedBalance(_msgSender());
-        if (balanceOf(_msgSender()) < amount + lockedBalance) {
+        address msgSender = _msgSender();
+        uint256 lockedBalance = getLockedBalance(msgSender);
+        if (balanceOf(msgSender) < amount + lockedBalance) {
             revert InsufficientBalanceToLock();
         }
         if (lockPeriod > MAX_LOCK_TIME) {
             revert LockPeriodExceeded();
         }
-        locks[_msgSender()].push(
+        locks[msgSender].push(
             LockDetails({
                 lockPeriod: lockPeriod,
                 amount: amount,
@@ -724,7 +735,7 @@ contract sPrimeUniswap is
             })
         );
 
-        updateVPrimeSnapshotFor(_msgSender());
+        updateVPrimeSnapshotFor(msgSender);
     }
 
     /** Overrided Functions */
