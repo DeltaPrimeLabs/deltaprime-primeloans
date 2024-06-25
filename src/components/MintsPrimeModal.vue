@@ -1,5 +1,5 @@
 <template>
-  <div id="modal" class="sprime-modal-component modal-component">
+  <div id="modal" class="mint-sprime-modal-component modal-component">
     <Modal>
       <div class="modal__title">
         Mint sPRIME
@@ -70,7 +70,7 @@ const ethers = require('ethers');
 
 
 export default {
-  name: 'ProvideLiquidityModal',
+  name: 'MintsPrimeModal',
   components: {
     Button,
     CurrencyInput,

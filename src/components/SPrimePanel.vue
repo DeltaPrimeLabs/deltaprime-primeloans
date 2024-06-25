@@ -55,12 +55,14 @@
 <script>
 
 import FlatButton from './FlatButton.vue';
-import {mapActions, mapState} from "vuex";
-import config from "../config";
-import {combineLatest} from "rxjs";
-import MintsPrimeModal from "./MintsPrimeModal.vue";
-import erc20ABI from "../../test/abis/ERC20.json";
-import {getTraderJoeV2IdSlippageFromPriceSlippage} from "../utils/calculate";
+import {mapActions, mapState} from 'vuex';
+import config from '../config';
+import {combineLatest} from 'rxjs';
+import MintsPrimeModal from './MintsPrimeModal.vue';
+import erc20ABI from '../../test/abis/ERC20.json';
+import {getTraderJoeV2IdSlippageFromPriceSlippage} from '../utils/calculate';
+import RedeemsPrimeModal from './RedeemsPrimeModal.vue';
+
 const ethers = require('ethers');
 
 let TOKEN_ADDRESSES;
@@ -126,12 +128,12 @@ export default {
     },
     async openMintSPrimeModal() {
       const [, activeId] = await this
-          .traderJoeService
-          .getLBPairReservesAndActiveBin(this.sPrimeConfig.lbAddress, this.provider);
+        .traderJoeService
+        .getLBPairReservesAndActiveBin(this.sPrimeConfig.lbAddress, this.provider);
 
       let [primeBalance, secondAssetBalance] = await Promise.all(
-          [this.fetchUserTokenBalance('PRIME'),
-            this.fetchUserTokenBalance(this.secondAsset)]
+        [this.fetchUserTokenBalance('PRIME'),
+          this.fetchUserTokenBalance(this.secondAsset)]
       );
 
       const modalInstance = this.openModal(MintsPrimeModal);
@@ -152,7 +154,7 @@ export default {
           dex: this.dex,
           activeId: activeId
         };
-        this.handleTransaction(this.sPrimeMint, { sPrimeMintRequest: sPrimeMintRequest }, () => {
+        this.handleTransaction(this.sPrimeMint, {sPrimeMintRequest: sPrimeMintRequest}, () => {
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);
@@ -162,8 +164,8 @@ export default {
     },
     async openRebalanceSPrimeModal() {
       const [, activeId] = await this
-          .traderJoeService
-          .getLBPairReservesAndActiveBin(this.sPrimeConfig.lbAddress, this.provider);
+        .traderJoeService
+        .getLBPairReservesAndActiveBin(this.sPrimeConfig.lbAddress, this.provider);
 
       // modalInstance.$on('REBALANCE', sPrimeRebalanceEvent => {
       let sPrimeRebalanceRequest = {
@@ -175,7 +177,7 @@ export default {
         dex: this.dex,
         activeId: activeId
       };
-      this.handleTransaction(this.sPrimeRebalance, { sPrimeRebalanceRequest: sPrimeRebalanceRequest }, () => {
+      this.handleTransaction(this.sPrimeRebalance, {sPrimeRebalanceRequest: sPrimeRebalanceRequest}, () => {
         this.$forceUpdate();
       }, (error) => {
         this.handleTransactionError(error);
@@ -184,19 +186,36 @@ export default {
       // });
     },
     async openRedeemSPrimeModal() {
-      // modalInstance.$on('REDEEM', sPrimeRebalanceEvent => {
-      let sPrimeRedeemRequest = {
-        sPrimeAddress: this.sPrimeConfig.sPrimeAddress,
-        secondAsset: this.secondAsset,
-        share: '0.0000000000000001'
-      };
-      this.handleTransaction(this.sPrimeRedeem, { sPrimeRedeemRequest: sPrimeRedeemRequest }, () => {
-        this.$forceUpdate();
-      }, (error) => {
-        this.handleTransactionError(error);
-      }).then(() => {
+      console.log(this.sPrimeConfig);
+
+      let [primeBalance, secondAssetBalance] = await Promise.all(
+        [this.fetchUserTokenBalance('PRIME'),
+          this.fetchUserTokenBalance(this.secondAsset)]
+      );
+
+      const sPrimeTokenContract = new ethers.Contract(this.sPrimeConfig.sPrimeAddress, erc20ABI, this.provider.getSigner());
+      const sPrimeBalance = await this.getWalletTokenBalance(this.account, 'sPRIME', sPrimeTokenContract, 18);
+
+      console.log(sPrimeBalance);
+
+      const modalInstance = this.openModal(RedeemsPrimeModal);
+      modalInstance.primeBalance = primeBalance;
+      modalInstance.secondAssetBalance = secondAssetBalance;
+      modalInstance.secondAssetSymbol = this.secondAsset;
+      modalInstance.sPrimeBalance = sPrimeBalance;
+      modalInstance.$on('REDEEM', sPrimeRedeemEvent => {
+        let sPrimeRedeemRequest = {
+          sPrimeAddress: this.sPrimeConfig.sPrimeAddress,
+          secondAsset: this.secondAsset,
+          share: '0.0000000000000001'
+        };
+        this.handleTransaction(this.sPrimeRedeem, {sPrimeRedeemRequest: sPrimeRedeemRequest}, () => {
+          this.$forceUpdate();
+        }, (error) => {
+          this.handleTransactionError(error);
+        }).then(() => {
+        });
       });
-      // });
     },
     fetchSPrimeData() {
       this.sPrimeService.emitRefreshSPrimeData(this.provider, this.sPrimeConfig.sPrimeAddress, this.dex, this.secondAsset, this.account);
@@ -208,10 +227,10 @@ export default {
       const contract = new ethers.Contract(TOKEN_ADDRESSES[tokenSymbol], erc20ABI, this.provider.getSigner());
 
       return this.getWalletTokenBalance(
-          this.account,
-          tokenSymbol,
-          contract,
-          config.ASSETS_CONFIG[tokenSymbol].decimals
+        this.account,
+        tokenSymbol,
+        contract,
+        config.ASSETS_CONFIG[tokenSymbol].decimals
       );
     }
   },
