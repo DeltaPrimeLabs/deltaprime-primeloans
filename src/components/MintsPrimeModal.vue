@@ -21,7 +21,7 @@
                      :allow-zero-value="true"
                      :validators="primeInputValidators">
       </CurrencyInput>
-      <div class="modal-top-info">
+      <div class="modal-top-info modal-top-info--reduced-margin">
         <div class="top-info__label">Available:</div>
         <div class="top-info__value"> {{secondAssetBalance}}</div>
         <span class="top-info__currency">
@@ -37,13 +37,11 @@
                      :validators="secondInputValidators">
       </CurrencyInput>
 
-      <div class="toggle-container">
-        Rebalance
-        <Toggle v-on:change="rebalanceToggleChange" :options="['YES', 'NO']" :initial-option="1"></Toggle>
-      </div>
+      <SlippageControl :slippage-margin="0.02" v-on:slippageChange="slippageChange"></SlippageControl>
 
-      <div class="modal-top-info">
-        <div class="top-info__label">Max. slippage is 5%.</div>
+      <div class="rebalance-container">
+        <div class="rebalance-label">Rebalance:</div>
+        <Toggle v-on:change="rebalanceToggleChange" :options="['YES', 'NO']" :initial-option="1"></Toggle>
       </div>
 
       <div class="button-wrapper">
@@ -66,6 +64,8 @@ import Toggle from './Toggle';
 import BarGaugeBeta from './BarGaugeBeta';
 import config from '../config';
 import DoubleAssetIcon from "./DoubleAssetIcon.vue";
+import SlippageControl from './SlippageControl.vue';
+import ToggleButton from './notifi/settings/ToggleButton.vue';
 
 const ethers = require('ethers');
 
@@ -73,6 +73,8 @@ const ethers = require('ethers');
 export default {
   name: 'MintsPrimeModal',
   components: {
+    ToggleButton,
+    SlippageControl,
     DoubleAssetIcon,
     Button,
     CurrencyInput,
@@ -99,6 +101,7 @@ export default {
       transactionOngoing: false,
       primeInputError: false,
       secondInputError: false,
+      slippage: 0,
     };
   },
 
@@ -124,7 +127,7 @@ export default {
         primeAmount: this.primeAmount,
         secondAmount: this.secondAmount,
         rebalance: this.rebalance,
-        slippage: 5
+        slippage: this.slippage
       };
       this.$emit('MINT', mintSPrimeEvent);
     },
@@ -171,6 +174,11 @@ export default {
       ];
 
     },
+
+    slippageChange(slippageChangeEvent) {
+      console.log(slippageChangeEvent);
+      this.slippage = slippageChangeEvent;
+    },
   }
 };
 </script>
@@ -179,7 +187,24 @@ export default {
 @import "~@/styles/variables";
 @import "~@/styles/modal";
 
-.sprime-modal-component {
+.mint-sprime-modal-component {
+  .rebalance-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin: 20px;
+
+    .rebalance-label {
+      color: var(--swap-modal__slippage-advanced-color);
+      margin-right: 10px;
+    }
+    
+  }
+
+  .modal-top-info--reduced-margin {
+    margin-top: 10px;
+  }
 
 }
 

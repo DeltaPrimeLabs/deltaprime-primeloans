@@ -143,6 +143,7 @@ export default {
       modalInstance.secondAssetBalance = secondAssetBalance;
       modalInstance.secondAssetSymbol = this.secondAsset;
       modalInstance.$on('MINT', sPrimeMintEvent => {
+        console.log(sPrimeMintEvent);
         let idSlippage = getTraderJoeV2IdSlippageFromPriceSlippage(sPrimeMintEvent.slippage / 100, config.SPRIME_CONFIG.TRADERJOEV2[this.secondAsset].binStep);
 
         let sPrimeMintRequest = {
