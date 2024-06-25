@@ -72,6 +72,7 @@ export default {
 
   mounted() {
     this.setupAdvancedSlippageMode();
+    this.$emit('slippageChange', this.userSlippage);
   },
 
   methods: {
@@ -79,6 +80,12 @@ export default {
     setupAdvancedSlippageMode() {
       this.advancedSlippageMode = localStorage.getItem('ADVANCED_SLIPPAGE_MODE') === 'true';
       this.$refs.advancedModeToggle.setValue(this.advancedSlippageMode);
+      if (this.advancedSlippageMode) {
+        this.userSlippage = this.slippageMargin;
+      } else {
+        this.userSlippage = 1;
+      }
+      this.$emit('slippageChange', this.userSlippage);
     },
 
     async handlePriceImpactClick(key) {

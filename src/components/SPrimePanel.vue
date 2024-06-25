@@ -62,8 +62,8 @@ import MintsPrimeModal from './MintsPrimeModal.vue';
 import erc20ABI from '../../test/abis/ERC20.json';
 import {getTraderJoeV2IdSlippageFromPriceSlippage} from '../utils/calculate';
 import RedeemsPrimeModal from './RedeemsPrimeModal.vue';
-import RebalancesPrimeModal from "./RebalancesPrimeModal.vue";
-import DoubleAssetIcon from "./DoubleAssetIcon.vue";
+import RebalancesPrimeModal from './RebalancesPrimeModal.vue';
+import DoubleAssetIcon from './DoubleAssetIcon.vue';
 
 const ethers = require('ethers');
 
@@ -116,7 +116,14 @@ export default {
   },
   watch: {},
   computed: {
-    ...mapState('serviceRegistry', ['sPrimeService', 'vPrimeService', 'providerService', 'accountService', 'traderJoeService']),
+    ...mapState('serviceRegistry', [
+      'sPrimeService',
+      'vPrimeService',
+      'providerService',
+      'accountService',
+      'traderJoeService',
+      'progressBarService'
+    ]),
     ...mapState('network', ['provider', 'account']),
   },
   methods: {
@@ -241,6 +248,17 @@ export default {
         contract,
         config.ASSETS_CONFIG[tokenSymbol].decimals
       );
+    },
+
+    handleTransactionError(error) {
+      if (String(error) === '[object Object]' || typeof error === 'object') {
+        switch (error.code) {
+          case 4001:
+            this.progressBarService.emitProgressBarCancelledState()
+            this.closeModal();
+            break;
+        }
+      }
     }
   },
 };

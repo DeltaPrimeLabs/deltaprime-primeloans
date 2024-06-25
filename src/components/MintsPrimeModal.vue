@@ -8,7 +8,7 @@
 
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>
-        <div class="top-info__value"> {{ primeBalance }}</div>
+        <div class="top-info__value"> {{ primeBalance | smartRound }}</div>
         <span class="top-info__currency">
           {{prime.symbol}}
         </span>
@@ -23,12 +23,13 @@
       </CurrencyInput>
       <div class="modal-top-info modal-top-info--reduced-margin">
         <div class="top-info__label">Available:</div>
-        <div class="top-info__value"> {{secondAssetBalance}}</div>
-        <span class="top-info__currency">
+        <div class="top-info__value"> {{secondAssetBalance | smartRound }}</div>
+        <span v-if="secondAsset" class="top-info__currency">
           {{secondAsset.symbol}}
         </span>
       </div>
-      <CurrencyInput ref="secondInput"
+      <CurrencyInput v-if="secondAsset"
+                     ref="secondInput"
                      :symbol="secondAsset.symbol"
                      v-on:inputChange="secondInputChange"
                      :defaultValue="secondAmount"
@@ -99,8 +100,8 @@ export default {
       secondInputValidators: [],
       addedLiquidity: 0,
       transactionOngoing: false,
-      primeInputError: false,
-      secondInputError: false,
+      primeInputError: true,
+      secondInputError: true,
       slippage: 0,
     };
   },
@@ -133,6 +134,7 @@ export default {
     },
 
     async primeInputChange(change) {
+      console.log('primeInputChange', change);
       this.primeAmount = change;
       this.primeInputError = await this.$refs.primeInput.forceValidationCheck();
       await this.calculateSPrimeBalance();
@@ -140,6 +142,7 @@ export default {
     },
 
     async secondInputChange(change) {
+      console.log('secondInputChange', change);
       this.secondAmount = change;
       this.secondInputError = await this.$refs.secondInput.forceValidationCheck();
       await this.calculateSPrimeBalance();
@@ -160,6 +163,14 @@ export default {
               return `Exceeds your PRIME balance`;
             }
           }
+        },
+        {
+          validate: (value) => {
+            console.log(value);
+            if ((value === 0 && this.primeAmount !== null) || Number.isNaN(value)) {
+              return `Value must be higher than 0`;
+            }
+          }
         }
       ];
 
@@ -168,6 +179,14 @@ export default {
           validate: (value) => {
             if (value > this.secondAssetBalance) {
               return `Exceeds ${this.secondAsset.symbol} balance`;
+            }
+          }
+        },
+        {
+          validate: (value) => {
+            console.log(value);
+            if ((value === 0 && this.secondAmount !== null) || Number.isNaN(value)) {
+              return `Value must be higher than 0`;
             }
           }
         }
@@ -204,6 +223,12 @@ export default {
 
   .modal-top-info--reduced-margin {
     margin-top: 10px;
+  }
+
+  .modal__title {
+    .double-asset-icon-component {
+      margin-left: 10px;
+    }
   }
 
 }
