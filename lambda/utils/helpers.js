@@ -137,29 +137,89 @@ const getBlockForTimestamp = async (network, timestamp) => {
   );
 }
 
-const fetchAllDataFromDB = async (params, scan = true) => {
-  const items = [];
-  let lastEvaluatedKey = null;
-  let result;
+const parallelScan = async (params, totalSegments) => {
+  const scanSegment = async (segment) => {
+    const segmentParams = {
+      ...params,
+      Segment: segment,
+      TotalSegments: totalSegments
+    };
 
-  while (1) {
-    if (lastEvaluatedKey == null) {
-      result = scan ? await dynamoDb.scan(params).promise() : await dynamoDb.query(params).promise();
-    } else {
-      result = scan ? await dynamoDb.scan({...params, ExclusiveStartKey: lastEvaluatedKey}).promise() : await dynamoDb.query({...params, ExclusiveStartKey: lastEvaluatedKey}).promise();
-    }
+    let items = [];
+    let lastEvaluatedKey = null;
 
-    items.push(...result.Items);
-
-    if (result.LastEvaluatedKey) {
+    do {
+      const result = await dynamoDb.scan({
+        ...segmentParams,
+        ExclusiveStartKey: lastEvaluatedKey
+      }).promise();
+      items = items.concat(result.Items);
       lastEvaluatedKey = result.LastEvaluatedKey;
-    } else {
-      break;
-    }
+    } while (lastEvaluatedKey);
+    return items;
+  };
+
+  // Create an array of promises for each segment
+  const promises = [];
+  for (let segment = 0; segment < totalSegments; segment++) {
+    promises.push(scanSegment(segment));
   }
 
-  return items;
-}
+  // Wait for all promises to complete
+  const results = await Promise.all(promises);
+  // Flatten the results array
+  return results.flat();
+};
+
+const fetchAllDataFromDB = async (params, scan = true, totalSegments = 10) => {
+  if (scan) {
+    return parallelScan(params, totalSegments);
+  } else {
+    const items = [];
+    let lastEvaluatedKey = null;
+    let result;
+    while (1) {
+      if (lastEvaluatedKey == null) {
+        result = await dynamoDb.query(params).promise();
+      } else {
+        result = await dynamoDb.query({ ...params, ExclusiveStartKey: lastEvaluatedKey }).promise();
+      }
+
+      items.push(...result.Items);
+
+      if (result.LastEvaluatedKey) {
+        lastEvaluatedKey = result.LastEvaluatedKey;
+      } else {
+        break;
+      }
+    }
+    return items;
+  }
+};
+
+// const fetchAllDataFromDB = async (params, scan = true) => {
+//   const items = [];
+//   let lastEvaluatedKey = null;
+//   let result;
+
+//   while (1) {
+//     if (lastEvaluatedKey == null) {
+//       result = scan ? await dynamoDb.scan(params).promise() : await dynamoDb.query(params).promise();
+//     } else {
+//       result = scan ? await dynamoDb.scan({...params, ExclusiveStartKey: lastEvaluatedKey}).promise() : await dynamoDb.query({...params, ExclusiveStartKey: lastEvaluatedKey}).promise();
+//     }
+
+//     items.push(...result.Items);
+
+//     if (result.LastEvaluatedKey) {
+//       lastEvaluatedKey = result.LastEvaluatedKey;
+//     } else {
+//       break;
+//     }
+//   }
+
+//   return items;
+// }
 
 module.exports = {
   parseUnits,
