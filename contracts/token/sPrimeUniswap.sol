@@ -545,20 +545,6 @@ contract sPrimeUniswap is ISPrimeUniswap, ReentrancyGuardUpgradeable, PendingOwn
         updateVPrimeSnapshotFor(_msgSender());
     }
 
-    /**
-    * @dev Releases a locked balance at a specified index.
-    * @param index The index of the lock to be released.
-    */
-    function releaseBalance(uint256 index) public nonReentrant {
-        if (locks[_msgSender()][index].unlockTime > block.timestamp) {
-            revert StillInLockPeriod();
-        }
-        uint256 length = locks[_msgSender()].length;
-        locks[_msgSender()][index] = locks[_msgSender()][length - 1];
-
-        locks[_msgSender()].pop();
-        updateVPrimeSnapshotFor(_msgSender());
-    }
 
     /** Overrided Functions */
 
