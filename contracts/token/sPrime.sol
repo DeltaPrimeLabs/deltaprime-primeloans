@@ -31,7 +31,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     // Constants declaration
     uint256 private constant _REBALANCE_MARGIN = 500;
     uint256 private constant _DENOMINATOR = 10000;
-    uint256 private constant _MAX_SLIPPAGE = 10;
+    uint256 private constant _MAX_SLIPPAGE = 500;
     uint16 internal constant DEFAULT_BIN_STEP = 25;
     uint256 public constant MAX_LOCK_TIME = 3 * 365 days;
 
