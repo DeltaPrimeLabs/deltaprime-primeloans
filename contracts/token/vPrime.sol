@@ -92,10 +92,6 @@ contract vPrime is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable {
 
     // Override balanceOf to compute balance dynamically
     function balanceOf(address account) public view returns (uint256) {
-        // If `account` is an owner of a PrimeAccount then let's return the balance for the PrimeAccount
-        address ownerToLoan = borrowersRegistry.getLoanForOwner(account);
-        account = ownerToLoan != address(0) ? ownerToLoan : account;
-
         uint256 userCkpsLen = _checkpoints[account].length;
         if (userCkpsLen == 0) {
             return 0;
