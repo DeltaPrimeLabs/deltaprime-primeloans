@@ -555,7 +555,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
         uint256 balanceXBefore = tokenX.balanceOf(address(this));
         uint256 balanceYBefore = tokenY.balanceOf(address(this));
 
-        lbPair.burn(address(this), address(this), ids, amounts);
+        lbPair.burn(_msgSender(), address(this), ids, amounts);
 
         _deposit(_msgSender(), activeIdDesired, idSlippage, tokenX.balanceOf(address(this)) - balanceXBefore, tokenY.balanceOf(address(this)) - balanceYBefore, true, swapSlippage);
 
