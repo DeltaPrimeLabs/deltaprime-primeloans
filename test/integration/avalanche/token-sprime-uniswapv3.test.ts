@@ -45,7 +45,7 @@ const UniswapV3PoolABI = [
 ];
 
 const SwapRouterABI = [
-    'function exactInputSingle((address tokenIn, address tokenOut, uint24 fee, address recipient, uint256 deadline, uint256 amountIn, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96)) external payable returns (uint256 amountOut)',
+    'function exactInputSingle((address tokenIn, address tokenOut, uint24 fee, address recipient, uint256 amountIn, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96)) external payable returns (uint256 amountOut)',
     'function exactInput((bytes path, address recipient, uint256 deadline, uint256 amountIn, uint256 amountOutMinimum)) external payable returns (uint256 amountOut)',
     'function exactOutputSingle((address tokenIn, address tokenOut, uint24 fee, address recipient, uint256 deadline, uint256 amountOut, uint256 amountInMaximum, uint160 sqrtPriceLimitX96)) external payable returns (uint256 amountIn)',
     'function exactOutput((bytes path, address recipient, uint256 deadline, uint256 amountOut, uint256 amountInMaximum)) external payable returns (uint256 amountIn)'
@@ -143,7 +143,7 @@ describe("SPrimeUniswapV3", function () {
             SPrimeArtifact,
             []
         ) as Contract;
-        await sPrime.initialize(prime.address, wavax.address, "PRIME-WAVAX", 3000, [-30, 30], positionManager.address, uniV3SwapRouterAddr, uniV3FactoryAddr);
+        await sPrime.initialize(prime.address, wavax.address, "PRIME-WAVAX", 3000, 30, positionManager.address, uniV3SwapRouterAddr, uniV3FactoryAddr);
         sPrime = WrapperBuilder.wrap(
             sPrime.connect(owner)
         ).usingSimpleNumericMock({
@@ -258,17 +258,13 @@ describe("SPrimeUniswapV3", function () {
 
             initialTick = (await pool.slot0()).tick;
             await sPrime.deposit(initialTick, 10, parseEther("10"), parseEther("10"), true, 5);
-            const blockNumBefore = await ethers.provider.getBlockNumber();
-            const blockBefore = await ethers.provider.getBlock(blockNumBefore);
-            const timestampBefore = blockBefore.timestamp;
-            
+
             await prime.connect(addr2).approve(swapRouter.address, parseEther("0.1"));
             await swapRouter.connect(addr2).exactInputSingle({
                 tokenIn: prime.address,
                 tokenOut: wavax.address,
                 fee: 3000,
                 recipient: addr2.address, 
-                deadline: timestampBefore + 50,
                 amountIn: parseEther("0.1"),
                 amountOutMinimum: 0,
                 sqrtPriceLimitX96: 0
@@ -278,7 +274,6 @@ describe("SPrimeUniswapV3", function () {
             await sPrime.connect(addr1).deposit(initialTick, 100, 0, 0, true, 5);
             const tokenId = await sPrime.userTokenId(addr1.address);
             expect(tokenId).to.not.equal(0);
-
         });
 
         it("Should receive the position using the balance", async function () {

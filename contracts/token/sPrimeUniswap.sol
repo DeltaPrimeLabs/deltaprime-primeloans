@@ -359,7 +359,6 @@ contract sPrimeUniswap is
                 tokenOut: tokenOut,
                 fee: feeTier,
                 recipient: address(this),
-                deadline: block.timestamp,
                 amountIn: amount,
                 amountOutMinimum: amountOutMinimum,
                 sqrtPriceLimitX96: 0
