@@ -52,7 +52,7 @@ contract sPrimeUniswap is
     uint8 public tokenDecimals;
     bool public tokenSequence;
 
-    int24[2] private deltaIds;
+    int24 private deltaId;
 
     /**
      * @dev Initializer of the contract.
@@ -60,7 +60,7 @@ contract sPrimeUniswap is
      * @param tokenY_ The address of the token Y.
      * @param name_ The name of the SPrime token. ex: PRIME-USDC LP
      * @param feeTier_ Fee Tier of Uniswap V3 Pool
-     * @param deltaIds_ Delta id for tick lower and tick upper
+     * @param deltaId_ Delta id for tick lower and tick upper
      * @param positionManager_ Uniswap v3 NonfungiblePositionManager contract
      * @param swapRouter_ Uniswap V3 Swap Router contract
      * @param uniV3Factory_ Uniswap V3 Factory contract
@@ -70,7 +70,7 @@ contract sPrimeUniswap is
         IERC20Metadata tokenY_,
         string memory name_,
         uint24 feeTier_,
-        int24[2] memory deltaIds_,
+        int24 deltaId_,
         INonfungiblePositionManager positionManager_,
         ISwapRouter swapRouter_,
         IUniswapV3Factory uniV3Factory_
@@ -100,7 +100,7 @@ contract sPrimeUniswap is
         }
         pool = IUniswapV3Pool(poolAddress);
         tickSpacing = pool.tickSpacing();
-        deltaIds = deltaIds_;
+        deltaId = deltaId_;
     }
 
     function setVPrimeControllerAddress(
@@ -272,20 +272,17 @@ contract sPrimeUniswap is
 
     function getPoolPrice() public view returns (uint256) {
         (, int24 tick, , , , , ) = pool.slot0();
-        (address token0, address token1) = tokenSequence
-            ? (address(tokenY), address(tokenX))
-            : (address(tokenX), address(tokenY));
         uint256 price = OracleLibrary.getQuoteAtTick(
             tick,
-            uint128(10 ** IERC20Metadata(address(token0)).decimals()),
-            address(token0),
-            address(token1)
+            uint128(10 ** tokenX.decimals()),
+            address(tokenX),
+            address(tokenY)
         );
         return
             FullMath.mulDiv(
                 price,
                 1e8,
-                10 ** IERC20Metadata(address(token1)).decimals()
+                10 ** tokenY.decimals()
             );
     }
 
@@ -528,11 +525,11 @@ contract sPrimeUniswap is
             if (!(tickDesired + tickSlippage >= currenTick && currenTick + tickSlippage >= tickDesired)) {
                 revert SlippageTooHigh();
             }
-            tickLower = currenTick + tickSpacing * deltaIds[0];
+            tickLower = currenTick - tickSpacing * deltaId;
             if (tickLower < TickMath.MIN_TICK) {
                 tickLower = TickMath.MIN_TICK;
             }
-            tickUpper = currenTick + tickSpacing * deltaIds[1];
+            tickUpper = currenTick + tickSpacing * deltaId;
             if (tickUpper > TickMath.MAX_TICK) {
                 tickUpper = TickMath.MAX_TICK;
             }
@@ -618,8 +615,8 @@ contract sPrimeUniswap is
             (, int24 currenTick, , , , , ) = pool.slot0();
             _depositToUniswap(
                 user,
-                currenTick + tickSpacing * deltaIds[0],
-                currenTick + tickSpacing * deltaIds[1],
+                currenTick - tickSpacing * deltaId,
+                currenTick + tickSpacing * deltaId,
                 amountX,
                 amountY
             );
