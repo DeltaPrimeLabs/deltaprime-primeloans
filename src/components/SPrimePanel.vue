@@ -140,27 +140,37 @@ export default {
         .traderJoeService
         .getLBPairReservesAndActiveBin(this.sPrimeConfig.lbAddress, this.provider);
 
-      let [primeBalance, secondAssetBalance] = await Promise.all(
-        [this.fetchUserTokenBalance('PRIME'),
-          this.fetchUserTokenBalance(this.secondAsset)]
+      const [primeBalance, secondAssetBalance] = await Promise.all(
+        [
+          this.fetchUserTokenBalance('PRIME'),
+          this.fetchUserTokenBalance(this.secondAsset)
+        ]
       );
+
+      const nativeTokenBalance = parseFloat(ethers.utils.formatEther(await this.provider.getBalance(this.account)));
+      console.log(nativeTokenBalance);
+
+      console.log(primeBalance);
+      console.log(secondAssetBalance);
 
       const modalInstance = this.openModal(MintsPrimeModal);
       modalInstance.primeBalance = primeBalance;
       modalInstance.secondAssetBalance = secondAssetBalance;
       modalInstance.secondAssetSymbol = this.secondAsset;
+      modalInstance.nativeTokenBalance = nativeTokenBalance;
+      modalInstance.isSecondAssetNative = this.secondAsset === config.nativeToken;
       modalInstance.$on('MINT', sPrimeMintEvent => {
         console.log(sPrimeMintEvent);
-        let idSlippage = getTraderJoeV2IdSlippageFromPriceSlippage(sPrimeMintEvent.slippage / 100, config.SPRIME_CONFIG.TRADERJOEV2[this.secondAsset].binStep);
+        const idSlippage = getTraderJoeV2IdSlippageFromPriceSlippage(sPrimeMintEvent.slippage / 100, config.SPRIME_CONFIG.TRADERJOEV2[this.secondAsset].binStep);
 
-        let sPrimeMintRequest = {
+        const sPrimeMintRequest = {
           sPrimeAddress: this.sPrimeConfig.sPrimeAddress,
           secondAsset: this.secondAsset,
           isRebalance: sPrimeMintEvent.rebalance,
           amountPrime: sPrimeMintEvent.primeAmount,
           amountSecond: sPrimeMintEvent.secondAmount,
           idSlippage: idSlippage,
-          slippage: sPrimeMintEvent.slippage,
+          slippage: sPrimeMintEvent.slippage / 100,
           dex: this.dex,
           activeId: activeId
         };
@@ -241,6 +251,7 @@ export default {
     },
     async fetchUserTokenBalance(tokenSymbol) {
       const contract = new ethers.Contract(TOKEN_ADDRESSES[tokenSymbol], erc20ABI, this.provider.getSigner());
+      console.log(contract);
 
       return this.getWalletTokenBalance(
         this.account,

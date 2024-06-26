@@ -23,25 +23,30 @@
       </CurrencyInput>
       <div class="modal-top-info modal-top-info--reduced-margin">
         <div class="top-info__label">Available:</div>
-        <div class="top-info__value"> {{secondAssetBalance | smartRound }}</div>
+        <div class="top-info__value"> {{secondAssetAvailableBalance | smartRound }}</div>
         <span v-if="secondAsset" class="top-info__currency">
-          {{secondAsset.symbol}}
+          {{secondAssetSymbol}}
         </span>
       </div>
       <CurrencyInput v-if="secondAsset"
                      ref="secondInput"
-                     :symbol="secondAsset.symbol"
+                     :symbol="secondAssetSymbol"
                      v-on:inputChange="secondInputChange"
                      :defaultValue="secondAmount"
-                     :max="secondAssetBalance"
+                     :max="isSecondAssetNative ? nativeTokenBalance : secondAssetBalance"
                      :allow-zero-value="true"
                      :validators="secondInputValidators">
       </CurrencyInput>
 
+      <div class="toggle-container" v-if="secondAssetSymbol === config.nativeToken">
+        <Toggle v-on:change="wrappedAssetToggleChange" :options="[config.nativeToken, `W${config.nativeToken}`]"></Toggle>
+      </div>
+
+
       <SlippageControl :slippage-margin="0.02" v-on:slippageChange="slippageChange"></SlippageControl>
 
       <div class="rebalance-container">
-        <div class="rebalance-label">Rebalance:</div>
+        <div class="rebalance-label">Rebalance: {{ isSecondAssetNative }}</div>
         <Toggle v-on:change="rebalanceToggleChange" :options="['YES', 'NO']" :initial-option="0"></Toggle>
       </div>
 
@@ -89,6 +94,11 @@ export default {
     secondAssetSymbol: null,
     primeBalance: Number,
     secondAssetBalance: Number,
+    nativeTokenBalance: Number,
+    isSecondAssetNative: {
+      type: Boolean,
+      default: false
+    }
   },
 
   data() {
@@ -109,16 +119,24 @@ export default {
   mounted() {
     setTimeout(() => {
       this.setupValidators();
+      this.$forceUpdate();
     });
   },
 
   computed: {
+    config() {
+      return config
+    },
     prime() {
       return config.ASSETS_CONFIG['PRIME'];
     },
     secondAsset() {
       return config.ASSETS_CONFIG[this.secondAssetSymbol];
-    }
+    },
+
+    secondAssetAvailableBalance() {
+      return this.isSecondAssetNative ? this.nativeTokenBalance : this.secondAssetBalance;
+    },
   },
 
   methods: {
@@ -128,7 +146,8 @@ export default {
         primeAmount: this.primeAmount,
         secondAmount: this.secondAmount,
         rebalance: this.rebalance,
-        slippage: this.slippage
+        slippage: this.slippage,
+        isSecondAssetNative: this.isSecondAssetNative
       };
       this.$emit('MINT', mintSPrimeEvent);
     },
@@ -198,6 +217,10 @@ export default {
       console.log(slippageChangeEvent);
       this.slippage = slippageChangeEvent;
     },
+
+    wrappedAssetToggleChange(asset) {
+      this.isSecondAssetNative = asset === config.nativeToken;
+    },
   }
 };
 </script>
@@ -229,6 +252,11 @@ export default {
     .double-asset-icon-component {
       margin-left: 10px;
     }
+  }
+
+  .toggle-container {
+    margin-top: 0;
+    margin-bottom: 20px;
   }
 
 }

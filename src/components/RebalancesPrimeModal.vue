@@ -1,5 +1,5 @@
 <template>
-  <div id="modal" class="claim-rewards-modal-component modal-component">
+  <div id="modal" class="rebalance-sprime-modal-component modal-component">
     <Modal>
       <div class="modal__title">
         Rebalance $sPRIME
@@ -12,7 +12,7 @@
         </div>
       </div>
 
-      SLIPPAGE CONTROL NEEDED HERE
+      <SlippageControl :slippage-margin="0.02" v-on:slippageChange="slippageChange"></SlippageControl>
 
       <div class="button-wrapper">
         <Button :label="'REBALANCE'" v-on:click="submit()"
@@ -26,10 +26,12 @@
 import Modal from './Modal';
 import Button from './Button';
 import DoubleAssetIcon from "./DoubleAssetIcon.vue";
+import SlippageControl from './SlippageControl.vue';
 
 export default {
   name: 'RebalancesPrimeModal',
   components: {
+    SlippageControl,
     DoubleAssetIcon,
     Button,
     Modal,
@@ -42,6 +44,7 @@ export default {
   data() {
     return {
       transactionOngoing: false,
+      slippage: 0,
     };
   },
 
@@ -49,9 +52,14 @@ export default {
     submit() {
       this.transactionOngoing = true;
       const rebalanceSPrimeEvent = {
-        slippage: 5
+        slippage: this.slippage
       };
       this.$emit('REBALANCE', rebalanceSPrimeEvent);
+    },
+
+    slippageChange(slippageChangeEvent) {
+      console.log(slippageChangeEvent);
+      this.slippage = slippageChangeEvent;
     },
   }
 };
@@ -61,17 +69,18 @@ export default {
 @import "~@/styles/variables";
 @import "~@/styles/modal";
 
-.claim-rewards-modal-component {
+.rebalance-sprime-modal-component {
 
   .modal__title {
-    margin-bottom: 40px;
+    margin-bottom: 0 !important;
   }
 
   .modal-top-desc {
+    margin-top: 25px;
+    margin-bottom: 25px;
     .rewards-info {
       text-align: center;
       line-height: 20px;
-      margin-top: 15px;
     }
   }
 
