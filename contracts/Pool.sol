@@ -81,6 +81,25 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
         }
     }
 
+    function shouldCallVPrimeController(address user) internal view returns (bool) {
+        if (
+            user == 0x68D8108f6FB797e7eb0C8d9524ba08D98BF27Bcb      // avax-usdc
+            || user == 0x701792A64Cea365a2cBd8e3F2e544654dc3307eF   // avax-usdt
+            || user == 0x41968d7d9f6Bf70A614724Fd03DcEDbE070366A5   // avax-wethe
+            || user == 0xb97D7C44cA03abA8d41FDaC81683312e4ACbba00   // avax-wavax
+            || user == 0xFE55D3eF39A25E55818e1A3900D41F561a75f4ea   // avax-btcb
+            || user == 0x5847EB0aC310845510880c6871E0cE6d8b0f57Fc   // arb-usdc
+            || user == 0x2Fc8e171b2688832b41881aAf3Da4D180bDa1F33   // arb-weth
+            || user == 0x3B85d87104091FAC2940C3d5BDA44748c5fEA946   // arb-wbtc
+            || user == 0xf5802415161A7a331e44EB63D52514F365232ed8   // arb-arb
+            || user == 0xf0a020e34F3478F663c8F8fcBDD7f1B5957403EA   // arb-dai
+        ) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
 
     function lockDeposit(uint256 amount, uint256 lockTime) public {
         require(getNotLockedBalance(msg.sender) >= amount, "Insufficient balance to lock");
@@ -89,11 +108,13 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
 
         emit DepositLocked(msg.sender, amount, lockTime, block.timestamp + lockTime);
 
-        proxyCalldata(
-            getVPrimeControllerAddress(),
-            abi.encodeWithSignature("updateVPrimeSnapshot(address)", msg.sender),
-            false
-        );
+        if(shouldCallVPrimeController(msg.sender)) {
+            proxyCalldata(
+                getVPrimeControllerAddress(),
+                abi.encodeWithSignature("updateVPrimeSnapshot(address)", msg.sender),
+                false
+            );
+        }
     }
 
 
@@ -228,17 +249,18 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
 
         emit Transfer(account, recipient, amount);
 
-        proxyCalldata(
-            getVPrimeControllerAddress(),
-            abi.encodeWithSignature("updateVPrimeSnapshot(address)", msg.sender),
-            false
-        );
-
-        proxyCalldata(
-            getVPrimeControllerAddress(),
-            abi.encodeWithSignature("updateVPrimeSnapshot(address)", recipient),
-            false
-        );
+        if(shouldCallVPrimeController(msg.sender)) {
+            proxyCalldata(
+                getVPrimeControllerAddress(),
+                abi.encodeWithSignature("updateVPrimeSnapshot(address)", msg.sender),
+                false
+            );
+            proxyCalldata(
+                getVPrimeControllerAddress(),
+                abi.encodeWithSignature("updateVPrimeSnapshot(address)", recipient),
+                false
+            );
+        }
 
         return true;
     }
@@ -303,17 +325,19 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
 
         emit Transfer(sender, recipient, amount);
 
-        proxyCalldata(
-            getVPrimeControllerAddress(),
-            abi.encodeWithSignature("updateVPrimeSnapshot(address)", sender),
-            false
-        );
+        if(shouldCallVPrimeController(msg.sender)) {
+            proxyCalldata(
+                getVPrimeControllerAddress(),
+                abi.encodeWithSignature("updateVPrimeSnapshot(address)", sender),
+                false
+            );
 
-        proxyCalldata(
-            getVPrimeControllerAddress(),
-            abi.encodeWithSignature("updateVPrimeSnapshot(address)", recipient),
-            false
-        );
+            proxyCalldata(
+                getVPrimeControllerAddress(),
+                abi.encodeWithSignature("updateVPrimeSnapshot(address)", recipient),
+                false
+            );
+        }
 
         return true;
     }
@@ -356,11 +380,13 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
 
         emit DepositOnBehalfOf(msg.sender, _of, _amount, block.timestamp);
 
-        proxyCalldata(
-            getVPrimeControllerAddress(),
-            abi.encodeWithSignature("updateVPrimeSnapshot(address)", _of),
-            false
-        );
+        if(shouldCallVPrimeController(msg.sender)) {
+            proxyCalldata(
+                getVPrimeControllerAddress(),
+                abi.encodeWithSignature("updateVPrimeSnapshot(address)", _of),
+                false
+            );
+        }
     }
 
     function _transferToPool(address from, uint256 amount) internal virtual {
@@ -404,11 +430,13 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
 
         emit Withdrawal(msg.sender, _amount, block.timestamp);
 
-        proxyCalldata(
-            getVPrimeControllerAddress(),
-            abi.encodeWithSignature("updateVPrimeSnapshot(address)", msg.sender),
-            false
-        );
+        if(shouldCallVPrimeController(msg.sender)) {
+            proxyCalldata(
+                getVPrimeControllerAddress(),
+                abi.encodeWithSignature("updateVPrimeSnapshot(address)", msg.sender),
+                false
+            );
+        }
     }
 
     /**
