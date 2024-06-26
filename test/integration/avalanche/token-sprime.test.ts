@@ -1,25 +1,25 @@
 import chai, {expect} from 'chai'
-import SmartLoansFactoryArtifact from '../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
+import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import { formatEther, parseEther } from 'viem';
 import {
     ILBFactory,
     ILBRouter,
     ILBToken,
     MockToken,
-} from "../../typechain";
+} from "../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {SmartLoansFactory, VPrimeMock, MockTokenManager} from "../../typechain";
+import {SmartLoansFactory, VPrimeMock, MockTokenManager} from "../../../typechain";
 import {ethers, waffle, network} from 'hardhat'
 import {Contract} from "ethers";
 import {solidity} from "ethereum-waffle";
-import MockTokenManagerArtifact from '../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json';
-import VPrimeArtifact from '../../artifacts/contracts/token/vPrime.sol/vPrime.json';
-import SPrimeArtifact from '../../artifacts/contracts/token/sPrime.sol/SPrime.json';
-import VPrimeControllerArtifact from '../../artifacts/contracts/token/mock/vPrimeControllerAvalancheMock.sol/vPrimeControllerAvalancheMock.json';
+import MockTokenManagerArtifact from '../../../artifacts/contracts/mock/MockTokenManager.sol/MockTokenManager.json';
+import VPrimeArtifact from '../../../artifacts/contracts/token/vPrime.sol/vPrime.json';
+import SPrimeArtifact from '../../../artifacts/contracts/token/sPrime.sol/SPrime.json';
+import VPrimeControllerArtifact from '../../../artifacts/contracts/token/mock/vPrimeControllerAvalancheMock.sol/vPrimeControllerAvalancheMock.json';
 import {WrapperBuilder} from "@redstone-finance/evm-connector";
-import { Asset, PoolAsset, PoolInitializationObject, convertAssetsListToSupportedAssets, convertTokenPricesMapToMockPrices, deployPools, getFixedGasSigners, getRedstonePrices, getTokensPricesMap } from '../_helpers';
-import { deployDiamond } from '../../tools/diamond/deploy-diamond';
-export const erc20ABI = require('../abis/ERC20.json');
+import { Asset, PoolAsset, PoolInitializationObject, convertAssetsListToSupportedAssets, convertTokenPricesMapToMockPrices, deployPools, getFixedGasSigners, getRedstonePrices, getTokensPricesMap } from '../../_helpers';
+import { deployDiamond } from '../../../tools/diamond/deploy-diamond';
+export const erc20ABI = require('../../abis/ERC20.json');
 
 const {deployContract} = waffle;
 chai.use(solidity);
