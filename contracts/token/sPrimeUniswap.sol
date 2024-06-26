@@ -83,10 +83,8 @@ contract sPrimeUniswap is
         tokenDecimals = tokenY_.decimals();
 
         tokenSequence = tokenX_ > tokenY_;
-        (tokenX_, tokenY_) = tokenSequence
-            ? (tokenY_, tokenX_)
-            : (tokenX_, tokenY_);
-        (tokenX, tokenY) = (tokenX_, tokenY_);
+        tokenX = tokenX_;
+        tokenY = tokenY_;
         feeTier = feeTier_;
 
         positionManager = positionManager_;
@@ -626,7 +624,7 @@ contract sPrimeUniswap is
             (, int24 currenTick, , , , , ) = pool.slot0();
             _depositToUniswap(
                 msgSender,
-                currenTick - tickSpacing * deltaIds[0],
+                currenTick + tickSpacing * deltaIds[0],
                 currenTick + tickSpacing * deltaIds[1],
                 amountX,
                 amountY

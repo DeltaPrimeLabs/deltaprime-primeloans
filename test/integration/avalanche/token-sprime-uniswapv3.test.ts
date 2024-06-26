@@ -2,7 +2,7 @@ import chai, { expect } from 'chai'
 import { ethers, waffle } from 'hardhat'
 import { solidity } from "ethereum-waffle";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { SmartLoansFactory, VPrimeMock, MockTokenManager } from "../../../typechain";
+import { SmartLoansFactory, VPrimeMock, MockTokenManager, ISwapRouter } from "../../../typechain";
 import VPrimeArtifact from '../../../artifacts/contracts/token/vPrime.sol/vPrime.json';
 import VPrimeControllerArtifact from '../../../artifacts/contracts/token/mock/vPrimeControllerAvalancheMock.sol/vPrimeControllerAvalancheMock.json';
 import SmartLoansFactoryArtifact from '../../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
@@ -44,14 +44,21 @@ const UniswapV3PoolABI = [
     'function tickSpacing() view returns (int24)'
 ];
 
+const SwapRouterABI = [
+    'function exactInputSingle((address tokenIn, address tokenOut, uint24 fee, address recipient, uint256 deadline, uint256 amountIn, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96)) external payable returns (uint256 amountOut)',
+    'function exactInput((bytes path, address recipient, uint256 deadline, uint256 amountIn, uint256 amountOutMinimum)) external payable returns (uint256 amountOut)',
+    'function exactOutputSingle((address tokenIn, address tokenOut, uint24 fee, address recipient, uint256 deadline, uint256 amountOut, uint256 amountInMaximum, uint160 sqrtPriceLimitX96)) external payable returns (uint256 amountIn)',
+    'function exactOutput((bytes path, address recipient, uint256 deadline, uint256 amountOut, uint256 amountInMaximum)) external payable returns (uint256 amountIn)'
+];
+
 const uniV3SwapRouterAddr = "0xbb00FF08d01D300023C629E8fFfFcb65A5a578cE";
 const uniV3FactoryAddr = "0x740b1c1de25031C31FF4fC9A62f554A55cdC1baD";
 
 describe("SPrimeUniswapV3", function () {
     // Contract Factory
-    let SPrimeFactory, PrimeFactory, LBRouter, smartLoansFactory, initialTick;
+    let SPrimeFactory, PrimeFactory, swapRouter, smartLoansFactory, initialTick;
     // Contracts
-    let wavax, prime, sPrime, positionManager, pool, vPrime, vPrimeControllerContract, LBFactory;
+    let wavax, prime, sPrime, positionManager, pool, vPrime, vPrimeControllerContract;
 
     let lendingPools: Array<PoolAsset> = [],
         supportedAssets: Array<Asset>,
@@ -115,6 +122,7 @@ describe("SPrimeUniswapV3", function () {
         await prime.transfer(user2, parseEther("100000"));
         await prime.transfer(user3, parseEther("100000"));
         positionManager = new ethers.Contract('0x655C406EBFa14EE2006250925e54ec43AD184f8B', PositionManagerABI, provider);
+        swapRouter = new ethers.Contract(uniV3SwapRouterAddr, SwapRouterABI, provider);
 
         await wavax.connect(owner).deposit({ value: parseEther("100") });
         await wavax.transfer(user1, parseEther("10"));
@@ -135,7 +143,7 @@ describe("SPrimeUniswapV3", function () {
             SPrimeArtifact,
             []
         ) as Contract;
-        await sPrime.initialize(prime.address, wavax.address, "PRIME-WAVAX", 3000, [-100, 100], positionManager.address, uniV3SwapRouterAddr, uniV3FactoryAddr);
+        await sPrime.initialize(prime.address, wavax.address, "PRIME-WAVAX", 3000, [-30, 30], positionManager.address, uniV3SwapRouterAddr, uniV3FactoryAddr);
         sPrime = WrapperBuilder.wrap(
             sPrime.connect(owner)
         ).usingSimpleNumericMock({
@@ -220,9 +228,6 @@ describe("SPrimeUniswapV3", function () {
                 dataPoints: MOCK_PRICES,
             });
 
-            await prime.approve(sPrime.address, parseEther("2"));
-            await wavax.approve(sPrime.address, parseEther("2"));
-
             initialTick = (await pool.slot0()).tick;
             await sPrime.deposit(initialTick, 0, parseEther("0.1"), parseEther("0.1"), false, 5);
             initialTick = (await pool.slot0()).tick;
@@ -230,43 +235,49 @@ describe("SPrimeUniswapV3", function () {
         });
 
         it("Should fail if slippage too high", async function () {
-            await prime.connect(addr1).approve(sPrime.address, parseEther("1"));
-            await wavax.connect(addr1).approve(sPrime.address, parseEther("1"));
+            sPrime = WrapperBuilder.wrap(
+                sPrime.connect(addr1)
+            ).usingSimpleNumericMock({
+                mockSignersCount: 3,
+                dataPoints: MOCK_PRICES,
+            });
+
             initialTick = (await pool.slot0()).tick;
-            await expect(sPrime.connect(addr1).deposit(initialTick, 0, parseEther("1"), parseEther("1"), false, 11)).to.be.revertedWith("SlippageTooHigh");
+            await expect(sPrime.deposit(initialTick, 0, parseEther("1"), parseEther("1"), false, 11)).to.be.revertedWith("SlippageTooHigh");
         });
     });
 
     describe("Rebalance", function () {
         it("Rebalance after some token swap", async function () {
-            await prime.connect(addr1).approve(sPrime.address, parseEther("2"));
-            await wavax.connect(addr1).approve(sPrime.address, parseEther("2"));
+            sPrime = WrapperBuilder.wrap(
+                sPrime.connect(addr1)
+            ).usingSimpleNumericMock({
+                mockSignersCount: 3,
+                dataPoints: MOCK_PRICES,
+            });
 
             initialTick = (await pool.slot0()).tick;
-            await sPrime.connect(addr1).deposit(initialTick, 0, parseEther("1"), parseEther("1"), true, 5);
-            let userBalance = await positionManager.balanceOf(addr1.address);
-            let tokenId = await positionManager.tokenOfOwnerByIndex(addr1.address, userBalance - 1);
-
-            let userShare = await positionManager.positions(tokenId);
-            expect(userShare.totalShare).to.gt(0);
-
-            const oldCenterId = userShare.centerId;
-
-            await prime.connect(addr2).approve(LBRouter.address, parseEther("0.1"));
-            const path = {
-                pairBinSteps: [25],
-                versions: [2],
-                tokenPath: [prime.address, wavax.address]
-            }
-
-            await LBRouter.connect(addr2).swapExactTokensForTokens(parseEther("0.1"), 0, path, addr2.address, 1880333856);
+            await sPrime.deposit(initialTick, 10, parseEther("10"), parseEther("10"), true, 5);
+            const blockNumBefore = await ethers.provider.getBlockNumber();
+            const blockBefore = await ethers.provider.getBlock(blockNumBefore);
+            const timestampBefore = blockBefore.timestamp;
+            
+            await prime.connect(addr2).approve(swapRouter.address, parseEther("0.1"));
+            await swapRouter.connect(addr2).exactInputSingle({
+                tokenIn: prime.address,
+                tokenOut: wavax.address,
+                fee: 3000,
+                recipient: addr2.address, 
+                deadline: timestampBefore + 50,
+                amountIn: parseEther("0.1"),
+                amountOutMinimum: 0,
+                sqrtPriceLimitX96: 0
+            });
 
             initialTick = (await pool.slot0()).tick;
             await sPrime.connect(addr1).deposit(initialTick, 100, 0, 0, true, 5);
-            userBalance = await positionManager.balanceOf(addr1.address);
-            tokenId = await positionManager.tokenOfOwnerByIndex(addr1.address, userBalance - 1);
-            userShare = await positionManager.positions(tokenId);
-            expect(userShare.centerId).to.not.equal(oldCenterId);
+            const tokenId = await sPrime.userTokenId(addr1.address);
+            expect(tokenId).to.not.equal(0);
 
         });
 
@@ -296,14 +307,14 @@ describe("SPrimeUniswapV3", function () {
             userShare = await positionManager.positions(tokenId);
             expect(userShare.totalShare).to.gt(0);
 
-            await prime.connect(addr2).approve(LBRouter.address, parseEther("0.1"));
+            await prime.connect(addr2).approve(swapRouter.address, parseEther("0.1"));
             const path = {
                 pairBinSteps: [25],
                 versions: [2],
                 tokenPath: [prime.address, wavax.address]
             }
 
-            await LBRouter.connect(addr2).swapExactTokensForTokens(parseEther("0.1"), 0, path, addr2.address, 1880333856);
+            await swapRouter.connect(addr2).swapExactTokensForTokens(parseEther("0.1"), 0, path, addr2.address, 1880333856);
 
             // Rebalancing User 1's position
             initialTick = (await pool.slot0()).tick;
@@ -348,14 +359,14 @@ describe("SPrimeUniswapV3", function () {
             userShare = await positionManager.positions(tokenId);
             expect(userShare.totalShare).to.gt(0);
 
-            await prime.connect(addr2).approve(LBRouter.address, parseEther("100"));
+            await prime.connect(addr2).approve(swapRouter.address, parseEther("100"));
             const path = {
                 pairBinSteps: [25],
                 versions: [2],
                 tokenPath: [prime.address, wavax.address]
             }
 
-            await LBRouter.connect(addr2).swapExactTokensForTokens(parseEther("100"), 0, path, addr2.address, 1880333856);
+            await swapRouter.connect(addr2).swapExactTokensForTokens(parseEther("100"), 0, path, addr2.address, 1880333856);
 
             // Rebalancing User 1's position
             initialTick = (await pool.slot0()).tick;
@@ -401,14 +412,14 @@ describe("SPrimeUniswapV3", function () {
             userShare = await positionManager.positions(tokenId);
             expect(userShare.totalShare).to.gt(0);
 
-            await prime.connect(addr2).approve(LBRouter.address, parseEther("100"));
+            await prime.connect(addr2).approve(swapRouter.address, parseEther("100"));
             const path = {
                 pairBinSteps: [25],
                 versions: [2],
                 tokenPath: [prime.address, wavax.address]
             }
 
-            await LBRouter.connect(addr2).swapExactTokensForTokens(parseEther("100"), 0, path, addr2.address, 1880333856);
+            await swapRouter.connect(addr2).swapExactTokensForTokens(parseEther("100"), 0, path, addr2.address, 1880333856);
 
             // Rebalancing User 1's position
             initialTick = (await pool.slot0()).tick;
