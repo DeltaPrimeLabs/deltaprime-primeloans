@@ -161,9 +161,7 @@ contract sPrimeUniswap is
         price =
             price *
             10 ** (PRECISION + token1.decimals() - token0.decimals() - 8);
-        uint160 sqrtRatioX96 = uint160(
-            (UniswapV3IntegrationHelper.sqrt(price) * 2 ** 96) / 10 ** (PRECISION / 2)
-        );
+        uint160 sqrtRatioX96 = uint160((UniswapV3IntegrationHelper.sqrt(price) * 2 ** 96) / 10 ** (PRECISION / 2));
 
         (uint256 amountX, uint256 amountY) = positionManager.total(
             tokenId,
@@ -496,8 +494,7 @@ contract sPrimeUniswap is
         uint256 tokenId = userTokenId[msgSender];
         if (tokenId > 0) {
             uint128 liquidity;
-            (, , , , , tickLower, tickUpper, liquidity, , , , ) = positionManager
-                .positions(tokenId);
+            (, , , , , tickLower, tickUpper, liquidity, , , , ) = positionManager.positions(tokenId);
 
             if (isRebalance) {
                 // Withdraw Position For Rebalance
@@ -528,10 +525,7 @@ contract sPrimeUniswap is
 
         if (userTokenId[msgSender] == 0) {
             (, currenTick, , , , , ) = pool.slot0();
-            if (
-                !(tickDesired + tickSlippage >= currenTick &&
-                    currenTick + tickSlippage >= tickDesired)
-            ) {
+            if (!(tickDesired + tickSlippage >= currenTick && currenTick + tickSlippage >= tickDesired)) {
                 revert SlippageTooHigh();
             }
             tickLower = currenTick + tickSpacing * deltaIds[0];
@@ -623,7 +617,7 @@ contract sPrimeUniswap is
         {
             (, int24 currenTick, , , , , ) = pool.slot0();
             _depositToUniswap(
-                msgSender,
+                user,
                 currenTick + tickSpacing * deltaIds[0],
                 currenTick + tickSpacing * deltaIds[1],
                 amountX,
@@ -680,18 +674,18 @@ contract sPrimeUniswap is
     /**
      * @dev Users can use deposit function for depositing tokens to the specific bin.
      * @param tokenId Token ID from UniswapPositionManager
-     * @param liquidity Liquidity amount for position
      * @param tickDesired The tick that user wants to add liquidity from
      * @param tickSlippage The tick slippage that are allowed to slip
      * @param swapSlippage Slippage for the rebalance.
      */
     function migrateLiquidity(
         uint256 tokenId,
-        uint128 liquidity,
         int24 tickDesired,
         int24 tickSlippage,
         uint256 swapSlippage
     ) public nonReentrant {
+        (, , , , , , , uint128 liquidity , , , ,) = positionManager.positions(tokenId);
+
         positionManager.decreaseLiquidity(
             INonfungiblePositionManager.DecreaseLiquidityParams({
                 tokenId: tokenId,
@@ -761,24 +755,17 @@ contract sPrimeUniswap is
 
             uint256 tokenId = userTokenId[from];
 
+            // Collect the fee before transfer
+            positionManagerCollect(
+                tokenId,
+                from
+            );
+
             if (fromBalance == amount) {
                 userTokenId[to] = userTokenId[from];
                 delete userTokenId[from];
             } else {
-                (
-                    ,
-                    ,
-                    ,
-                    ,
-                    ,
-                    int24 tickLower,
-                    int24 tickUpper,
-                    uint128 liquidity,
-                    ,
-                    ,
-                    ,
-
-                ) = positionManager.positions(tokenId);
+                ( , , , , , int24 tickLower, int24 tickUpper, uint128 liquidity, , , ,) = positionManager.positions(tokenId);
 
                 positionManager.decreaseLiquidity(
                     INonfungiblePositionManager.DecreaseLiquidityParams({
