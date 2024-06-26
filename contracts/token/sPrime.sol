@@ -253,8 +253,8 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
      * @return amountY Token Y Amount to return.
      */
     function _getTokenYFromTokenX(uint256 amountX) internal view returns(uint256 amountY) {
-        (uint128 reserveA, ) = lbPair.getReserves();
-        if(reserveA > 0) {
+        (uint128 reserveA, uint128 reserveB) = lbPair.getReserves();
+        if(reserveA > 0 || reserveB > 0) {
             uint256 price = PriceHelper.convert128x128PriceToDecimal(lbPair.getPriceFromId(lbPair.getActiveId()));
             // Swap For Y : Convert token X to token Y
             amountY = FullMath.mulDiv(amountX, price, 10 ** tokenXDecimals);
@@ -668,6 +668,26 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
                     depositIds: depositConfig.depositIds
                 }));
             }
+        }
+    }
+
+    function _afterTokenTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal virtual override {
+        if(from != address(0) && to != address(0)) {
+            proxyCalldata(
+                vPrimeController,
+                abi.encodeWithSignature("updateVPrimeSnapshot(address)", from),
+                false
+            );
+            
+            proxyCalldata(
+                vPrimeController,
+                abi.encodeWithSignature("updateVPrimeSnapshot(address)", to),
+                false
+            );
         }
     }
 
