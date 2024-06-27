@@ -64,6 +64,10 @@ abstract contract vPrimeController is PendingOwnableUpgradeable, RedstoneConsume
         }
     }
 
+    function setUserNeedsUpdate(address userAddress) public onlyPoolOrSPrime {
+        vPrimeContract.setUserNeedsUpdate(userAddress);
+    }
+
 
     function updateVPrimeSnapshotsForAccounts(address[] memory accounts) public {
         for (uint i = 0; i < accounts.length; i++) {
@@ -81,6 +85,25 @@ abstract contract vPrimeController is PendingOwnableUpgradeable, RedstoneConsume
             whitelistedPools[i] = IPool(tokenManager.getPoolAddress(poolsTokenSymbols[i]));
         }
         return whitelistedPools;
+    }
+
+    modifier onlyPoolOrSPrime() {
+        IPool[] memory whitelistedPools = getWhitelistedPools();
+        bool isPoolOrSPrime = false;
+        for (uint i = 0; i < whitelistedPools.length; i++) {
+            if (address(whitelistedPools[i]) == msg.sender) {
+                isPoolOrSPrime = true;
+                break;
+            }
+        }
+        for(uint i = 0; i < whitelistedSPrimeContracts.length; i++){
+            if (address(whitelistedSPrimeContracts[i]) == msg.sender) {
+                isPoolOrSPrime = true;
+                break;
+            }
+        }
+        require(isPoolOrSPrime, "Only Pool or sPrime can call this function");
+        _;
     }
 
     /**

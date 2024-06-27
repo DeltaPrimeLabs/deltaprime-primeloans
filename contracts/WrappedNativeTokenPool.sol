@@ -38,6 +38,8 @@ contract WrappedNativeTokenPool is Pool {
             poolRewarder.stakeFor(msg.value, msg.sender);
         }
 
+        notifyVPrimeController(msg.sender);
+
         emit Deposit(msg.sender, msg.value, block.timestamp);
     }
 
@@ -65,6 +67,8 @@ contract WrappedNativeTokenPool is Pool {
         if (address(poolRewarder) != address(0)) {
             poolRewarder.withdrawFor(_amount, msg.sender);
         }
+
+        notifyVPrimeController(msg.sender);
 
         emit Withdrawal(msg.sender, _amount, block.timestamp);
     }

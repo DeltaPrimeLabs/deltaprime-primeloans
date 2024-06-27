@@ -8,6 +8,7 @@ import "../lib/joe-v2/math/SafeCast.sol";
 import "../interfaces/ISPrimeTraderJoe.sol";
 import "../interfaces/joe-v2/ILBRouter.sol";
 import "../interfaces/IPositionManager.sol";
+import "../interfaces/IVPrimeController.sol";
 import "../lib/uniswap-v3/FullMath.sol";
 import "../lib/joe-v2/LiquidityAmounts.sol";
 import "../lib/joe-v2/math/Uint256x256Math.sol";
@@ -45,7 +46,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     uint8 public tokenYDecimals;
     ILBPair public lbPair;
     IPositionManager public positionManager;
-    address public vPrimeController;
+    IVPrimeController public vPrimeController;
     address public traderJoeV2Router;
 
     // Arrays for storing deltaIds and distributions
@@ -83,7 +84,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
         positionManager = positionManager_;
     }
 
-    function setVPrimeControllerAddress(address _vPrimeController) public onlyOwner {
+    function setVPrimeControllerAddress(IVPrimeController _vPrimeController) public onlyOwner {
         vPrimeController = _vPrimeController;
     }
 
@@ -463,12 +464,9 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
 
         _deposit(_msgSender(), activeIdDesired, idSlippage, amountX, amountY, isRebalance, swapSlippage);
 
-        proxyCalldata(
-            vPrimeController,
-            abi.encodeWithSignature("updateVPrimeSnapshot(address)", _msgSender()),
-            false
-        );
+        notifyVPrimeController(_msgSender());
     }
+
 
     function _deposit(address user, uint256 activeIdDesired, uint256 idSlippage, uint256 amountX, uint256 amountY, bool isRebalance, uint256 swapSlippage) internal {
         uint256 tokenId = getUserTokenId(user);
@@ -536,11 +534,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
             totalLock += amount;
         }
 
-        proxyCalldata(
-            vPrimeController,
-            abi.encodeWithSignature("updateVPrimeSnapshot(address)", user),
-            false
-        );
+        notifyVPrimeController(user);
     }
 
     /**
@@ -559,11 +553,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
 
         _deposit(_msgSender(), activeIdDesired, idSlippage, tokenX.balanceOf(address(this)) - balanceXBefore, tokenY.balanceOf(address(this)) - balanceYBefore, true, swapSlippage);
 
-        proxyCalldata(
-            vPrimeController,
-            abi.encodeWithSignature("updateVPrimeSnapshot(address)", _msgSender()),
-            false
-        );
+        notifyVPrimeController(_msgSender());
     }
 
     /**
@@ -598,11 +588,8 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
 
         // Send the tokens to the user.
         _transferTokens(address(this), _msgSender(), amountX, amountY);
-        proxyCalldata(
-            vPrimeController,
-            abi.encodeWithSignature("updateVPrimeSnapshot(address)", _msgSender()),
-            false
-        );
+
+        notifyVPrimeController(_msgSender());
     }
 
     /**
@@ -619,11 +606,8 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
             amount: amount,
             unlockTime: block.timestamp + lockPeriod
         }));
-        proxyCalldata(
-            vPrimeController,
-            abi.encodeWithSignature("updateVPrimeSnapshot(address)", _msgSender()),
-            false
-        );
+
+        notifyVPrimeController(_msgSender());
     }
 
     /** Overrided Functions */
@@ -677,17 +661,36 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
         uint256 amount
     ) internal virtual override {
         if(from != address(0) && to != address(0)) {
-            proxyCalldata(
-                vPrimeController,
-                abi.encodeWithSignature("updateVPrimeSnapshot(address)", from),
-                false
-            );
-            
-            proxyCalldata(
-                vPrimeController,
-                abi.encodeWithSignature("updateVPrimeSnapshot(address)", to),
-                false
-            );
+            notifyVPrimeController(from);
+            notifyVPrimeController(to);
+        }
+    }
+
+    function containsOracleCalldata() public view returns (bool) {
+        // Checking if the calldata ends with the RedStone marker
+        bool hasValidRedstoneMarker;
+        assembly {
+            let calldataLast32Bytes := calldataload(sub(calldatasize(), STANDARD_SLOT_BS))
+            hasValidRedstoneMarker := eq(
+                REDSTONE_MARKER_MASK,
+                and(calldataLast32Bytes, REDSTONE_MARKER_MASK)
+            )
+        }
+        return hasValidRedstoneMarker;
+    }
+
+    function notifyVPrimeController(address account) internal {
+        if(address(vPrimeController) != address(0)){
+            if(containsOracleCalldata()) {
+                proxyCalldata(
+                    address(vPrimeController),
+                    abi.encodeWithSignature
+                    ("updateVPrimeSnapshot(address)", account),
+                    false
+                );
+            } else {
+                vPrimeController.setUserNeedsUpdate(account);
+            }
         }
     }
 

@@ -21,6 +21,7 @@ contract vPrime is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable {
     IBorrowersRegistry public borrowersRegistry;
     address public vPrimeControllerAddress;
     mapping(address => Checkpoint[]) private _checkpoints; // _checkpoints[address(this)] serves as a total supply checkpoint
+    mapping(address => bool) public needsUpdate; // Account needs balance recalculating
 
     /* ========== INITIALIZER ========== */
 
@@ -38,6 +39,14 @@ contract vPrime is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable {
 
 
     /* ========== MUTATIVE EXTERNAL FUNCTIONS ========== */
+
+    function setUserNeedsUpdate(address user) external onlyVPrimeController {
+        needsUpdate[user] = true;
+    }
+
+    function clearUserNeedsUpdate(address user) internal {
+        needsUpdate[user] = false;
+    }
 
     /**
     * @notice Sets the address of the vPrimeController contract.
@@ -68,6 +77,7 @@ contract vPrime is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable {
         } else {
             _writeCheckpoint(_checkpoints[user], _add, 0, rate, newBalanceLimit);
         }
+        clearUserNeedsUpdate(user);
     }
 
     // Called by the vPrimeController to adjust the rate, balanceLimit and overwrite the balance of a user
@@ -86,6 +96,7 @@ contract vPrime is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable {
         } else {
             _writeCheckpointOverwriteBalance(_checkpoints[user], lastRecordedVotes, rate, newBalanceLimit);
         }
+        clearUserNeedsUpdate(user);
     }
 
     /* ========== VIEW EXTERNAL FUNCTIONS ========== */
@@ -97,6 +108,11 @@ contract vPrime is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable {
             return 0;
         }
         Checkpoint memory cp = _checkpoints[account][userCkpsLen - 1];
+
+        // If account was updated without recalculations, return the last recorded balance
+        if(needsUpdate[account]) {
+            return cp.balance;
+        }
 
         uint256 elapsedTime = block.timestamp - cp.blockTimestamp;
         uint256 newBalance;

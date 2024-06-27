@@ -4,6 +4,7 @@ pragma solidity ^0.8.17;
 
 // Importing necessary libraries and interfaces
 import "../interfaces/ISPrimeUniswap.sol";
+import "../interfaces/IVPrimeController.sol";
 import "../interfaces/uniswap-v3/IUniswapV3Factory.sol";
 import "../interfaces/uniswap-v3/ISwapRouter.sol";
 import "../lib/uniswap-v3/OracleLibrary.sol";
@@ -47,7 +48,7 @@ contract sPrimeUniswap is
     INonfungiblePositionManager public positionManager;
     ISwapRouter public swapRouter;
 
-    address public vPrimeController;
+    IVPrimeController public vPrimeController;
     uint24 public feeTier;
     uint8 public tokenDecimals;
     bool public tokenSequence;
@@ -104,7 +105,7 @@ contract sPrimeUniswap is
     }
 
     function setVPrimeControllerAddress(
-        address _vPrimeController
+        IVPrimeController _vPrimeController
     ) public onlyOwner {
         vPrimeController = _vPrimeController;
     }
@@ -535,7 +536,7 @@ contract sPrimeUniswap is
         }
         _depositToUniswap(msgSender, tickLower, tickUpper, amountX, amountY);
 
-        updateVPrimeSnapshotFor(msgSender);
+        notifyVPrimeController(msgSender);
     }
 
     /**
@@ -579,7 +580,7 @@ contract sPrimeUniswap is
 
         _burn(msgSender, share);
 
-        updateVPrimeSnapshotFor(msgSender);
+        notifyVPrimeController(msgSender);
     }
 
     /**
@@ -649,7 +650,7 @@ contract sPrimeUniswap is
             totalLock += amount;
         }
 
-        updateVPrimeSnapshotFor(user);
+        notifyVPrimeController(user);
     }
 
     function positionManagerCollect(
@@ -723,7 +724,7 @@ contract sPrimeUniswap is
             })
         );
 
-        updateVPrimeSnapshotFor(msgSender);
+        notifyVPrimeController(msgSender);
     }
 
     /** Overrided Functions */
@@ -814,18 +815,39 @@ contract sPrimeUniswap is
 
                 userTokenId[to] = newTokenId;
             }
-            updateVPrimeSnapshotFor(from);
-            updateVPrimeSnapshotFor(to);
+            notifyVPrimeController(from);
+            notifyVPrimeController(to);
         }
     }
 
-    function updateVPrimeSnapshotFor(address account) internal {
-        proxyCalldata(
-            vPrimeController,
-            abi.encodeWithSignature("updateVPrimeSnapshot(address)", account),
-            false
-        );
+    function containsOracleCalldata() public view returns (bool) {
+        // Checking if the calldata ends with the RedStone marker
+        bool hasValidRedstoneMarker;
+        assembly {
+            let calldataLast32Bytes := calldataload(sub(calldatasize(), STANDARD_SLOT_BS))
+            hasValidRedstoneMarker := eq(
+                REDSTONE_MARKER_MASK,
+                and(calldataLast32Bytes, REDSTONE_MARKER_MASK)
+            )
+        }
+        return hasValidRedstoneMarker;
     }
+
+    function notifyVPrimeController(address account) internal {
+        if(address(vPrimeController) != address(0)){
+            if(containsOracleCalldata()) {
+                proxyCalldata(
+                    address(vPrimeController),
+                    abi.encodeWithSignature
+                    ("updateVPrimeSnapshot(address)", account),
+                    false
+                );
+            } else {
+                vPrimeController.setUserNeedsUpdate(account);
+            }
+        }
+    }
+
 
     function decimals() public view virtual override returns (uint8) {
         return tokenDecimals;
