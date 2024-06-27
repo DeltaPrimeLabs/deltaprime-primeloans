@@ -8,13 +8,13 @@ const redstone = require('redstone-api');
 const subgraphConfig = require('../.secrets/subgraph.json');
 const assetPrices = require('./historicalPrices.json');
 
-let blockTimestampStart = 1711454400;
+let blockTimestampStart = 1670681999;
 let blockTimestampEnd = 1719250276;
 
 // get historical provider
-let provider = new ethers.providers.JsonRpcProvider(extRpc.arbitrum);
+let provider = new ethers.providers.JsonRpcProvider(extRpc.avalanche);
 
-const poolAssets = ['USDC', 'ETH', 'ARB', 'DAI', 'BTC'];
+const poolAssets = ['AVAX', 'USDC', 'USDT', 'BTC', 'ETH'];
 
 // const getPrices = async (timestamp) => {
 //   const assetPrices = {};
@@ -70,15 +70,15 @@ const getBlockForTimestamp = async (timestamp) => {
 
 function getPoolDecimals(pool) {
   switch (pool) {
+    case "AVAX":
+      return 18;
     case "USDC":
       return 6;
-    case "ETH":
-      return 18;
-    case "ARB":
-      return 18;
+    case "USDT":
+      return 6;
     case "BTC":
       return 8;
-    case "DAI":
+    case "ETH":
       return 18;
   }
 }
@@ -86,7 +86,7 @@ function getPoolDecimals(pool) {
 function getSubgraphEndpoint(chain) {
   switch (chain) {
     case "avalanche":
-      return "https://api.thegraph.com/subgraphs/name/mbare0/deltaprime";
+      return "https://api.studio.thegraph.com/query/78666/deltaprime/v0.0.1";
     case "arbitrum":
       return `https://gateway-arbitrum.network.thegraph.com/api/${subgraphConfig.arbitrum}/subgraphs/id/839tNWmeEHHDN41Tq83PAuv7JRw3raUJc6phkcgRAqjR`;
   }
@@ -229,7 +229,7 @@ async function calculateSprimeAirdropPerPool(chain) {
         };
 
         const params = {
-          TableName: "sprime-airdrop-arb",
+          TableName: "sprime-airdrop-ava",
           Item: data
         };
         await dynamoDb.put(params).promise();
@@ -241,4 +241,4 @@ async function calculateSprimeAirdropPerPool(chain) {
   }
 }
 
-calculateSprimeAirdropPerPool("arbitrum")
+calculateSprimeAirdropPerPool("avalanche")
