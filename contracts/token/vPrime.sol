@@ -42,10 +42,12 @@ contract vPrime is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable {
 
     function setUserNeedsUpdate(address user) external onlyVPrimeController {
         needsUpdate[user] = true;
+        emit UserNeedsUpdateSet(user, msg.sender, block.timestamp);
     }
 
     function clearUserNeedsUpdate(address user) internal {
         needsUpdate[user] = false;
+        emit UserNeedsUpdateCleared(user, msg.sender, block.timestamp);
     }
 
     /**
@@ -343,6 +345,18 @@ contract vPrime is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable {
     event NewVPrimeControllerSet(
         address indexed oldVPrimeControllerAddress,
         address indexed newVPrimeControllerAddress,
+        address indexed sender,
+        uint256 timestamp);
+
+    // event for setting user needs update with user address, msg.sender and timestamp
+    event UserNeedsUpdateSet(
+        address indexed user,
+        address indexed sender,
+        uint256 timestamp);
+
+    // event for clearing user needs update with user address, msg.sender and timestamp
+    event UserNeedsUpdateCleared(
+        address indexed user,
         address indexed sender,
         uint256 timestamp);
 }
