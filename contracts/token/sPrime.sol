@@ -132,11 +132,8 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
         IPositionManager.DepositConfig memory depositConfig = positionManager.getDepositConfig(centerId);
         (uint256 amountX, uint256 amountY) = _getLiquidityTokenAmounts(depositConfig.depositIds, liquidityMinted, poolPrice);
 
-        if(tokenYDecimals >= tokenXDecimals + 8) {
-            amountY = amountY + amountX * poolPrice * 10 ** (tokenYDecimals - tokenXDecimals - 8);
-        } else {
-            amountY = amountY + FullMath.mulDiv(amountX, poolPrice, 10 ** (tokenXDecimals + 8 - tokenYDecimals));
-        }
+        amountY = amountY + FullMath.mulDiv(amountX, poolPrice, 1e8);
+
         return amountY;
     }
 
@@ -220,10 +217,10 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
             uint256 xAmount = liquidity.mulDivRoundDown(binReserveX, totalSupply);
             uint256 yAmount = liquidity.mulDivRoundDown(binReserveY, totalSupply);
             if(binId > id) {
-                xAmount = xAmount + FullMath.mulDiv(yAmount, 10 ** tokenXDecimals, currentPrice);
+                xAmount = xAmount + FullMath.mulDiv(yAmount, 10 ** 18, currentPrice);
                 yAmount = 0;
             } else if(binId < id) {
-                yAmount = yAmount + FullMath.mulDiv(xAmount, currentPrice, 10 ** tokenXDecimals);
+                yAmount = yAmount + FullMath.mulDiv(xAmount, currentPrice, 10 ** 18);
                 xAmount = 0;
             } 
 
@@ -245,7 +242,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
 
     function getPoolPrice() public view returns(uint256) {
         uint256 price = PriceHelper.convert128x128PriceToDecimal(lbPair.getPriceFromId(lbPair.getActiveId()));
-        return FullMath.mulDiv(price, 1e8, 10 ** tokenYDecimals);
+        return FullMath.mulDiv(price, 1e8, 1e18);
     }
 
     /**
@@ -258,7 +255,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
         if(reserveA > 0 || reserveB > 0) {
             uint256 price = PriceHelper.convert128x128PriceToDecimal(lbPair.getPriceFromId(lbPair.getActiveId()));
             // Swap For Y : Convert token X to token Y
-            amountY = FullMath.mulDiv(amountX, price, 10 ** tokenXDecimals);
+            amountY = amountX * price / 1e18;
         } else {
             amountY = 0;
         }
@@ -279,7 +276,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
             {
                 uint256 price = PriceHelper.convert128x128PriceToDecimal(lbPair.getPriceFromId(lbPair.getActiveId()));
                 // Swap For X : Convert token Y to token X
-                amountIn = FullMath.mulDiv(diff / 2, 10 ** tokenXDecimals, price);
+                amountIn = FullMath.mulDiv(diff / 2, 1e18, price);
             }
 
             uint256 amountOut = diff / 2; 
