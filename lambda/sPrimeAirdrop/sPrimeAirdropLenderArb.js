@@ -1,37 +1,18 @@
 const ethers = require('ethers');
 const POOL_ARTIFACT = require('../abis/Pool.json');
 const { request, gql } = require('graphql-request');
-const extRpc = require('../.secrets/extRpc.json');
+const airdropRpc = require('../.secrets/airdropRpc.json');
 const { dynamoDb } = require('../utils/helpers');
 const EthDater = require("ethereum-block-by-date");
 const redstone = require('redstone-api');
 const subgraphConfig = require('../.secrets/subgraph.json');
 const assetPrices = require('./historicalPrices.json');
 
-let blockTimestampStart = 1711454400;
-let blockTimestampEnd = 1719250276;
+let blockTimestampStart = 1712059200;
+let blockTimestampEnd = 1712454400;
 
 // get historical provider
-let provider = new ethers.providers.JsonRpcProvider(extRpc.arbitrum);
-
-const poolAssets = ['USDC', 'ETH', 'ARB', 'DAI', 'BTC'];
-
-// const getPrices = async (timestamp) => {
-//   const assetPrices = {};
-
-//   for (let pool of poolAssets) {
-//     const resp = await redstone.getHistoricalPrice(pool, {
-//       startDate: (timestamp - 60 * 60 * 3) * 1000,
-//       interval: 60 * 60 * 1 * 1000,
-//       endDate: (timestamp + 60 * 60 * 3) * 1000,
-//       provider: "redstone"
-//     });
-
-//     assetPrices[pool] = resp;
-//   }
-
-//   return assetPrices;
-// }
+let provider = new ethers.providers.JsonRpcProvider(airdropRpc.arbitrum);
 
 const findClosest = (numbers, pool, target) => {
   let timestamps = Object.keys(numbers);
@@ -86,7 +67,7 @@ function getPoolDecimals(pool) {
 function getSubgraphEndpoint(chain) {
   switch (chain) {
     case "avalanche":
-      return "https://api.thegraph.com/subgraphs/name/mbare0/deltaprime";
+      return "https://api.studio.thegraph.com/query/78666/deltaprime/v0.0.1";
     case "arbitrum":
       return `https://gateway-arbitrum.network.thegraph.com/api/${subgraphConfig.arbitrum}/subgraphs/id/839tNWmeEHHDN41Tq83PAuv7JRw3raUJc6phkcgRAqjR`;
   }
@@ -211,7 +192,6 @@ async function calculateSprimeAirdropPerPool(chain) {
 
   while (timestampInSeconds <= blockTimestampEnd) {
     console.log(`---------------processing at ${timestampInSeconds}-------------------------`)
-    // let assetPrices = await getPrices(timestampInSeconds);
     let blockNumber = (await getBlockForTimestamp(timestampInSeconds * 1000)).block;
     let poolsDepositors = await getDepositorsAddressesFromSubgraph(chain);
     let poolsFirstDeposits = await getPoolsFirstDeposits(pools, chain);
@@ -237,7 +217,7 @@ async function calculateSprimeAirdropPerPool(chain) {
     )
 
     timestampInSeconds += 60 * 60 * 24 * 7;
-    await new Promise((resolve, reject) => setTimeout(resolve, 30000));
+    await new Promise((resolve, reject) => setTimeout(resolve, 3000));
   }
 }
 
