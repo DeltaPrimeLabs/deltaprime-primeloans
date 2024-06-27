@@ -654,11 +654,26 @@
   // endregion
 
   // region DistributionChart
-  --distribution-chart__bar-color--negative: #{$red};
-  --distribution-chart__bar-color--positive: #{$delta-accent};
-  --distribution-chart__line-background--1: #{$delta-pale};
-  --distribution-chart__line-background--2: #{$pale-orange};
-  --distribution-chart__line-background--3: #{$pale-raspberry};
-  --distribution-chart__ticks-color: #{$steel-gray};
+  --distribution-chart__bar-color--negative: #{$pale-red};
+  --distribution-chart__bar-color--positive: #{$pale-lilac};
+  --distribution-chart__line-background--1: #{$dark-fuchsia};
+  --distribution-chart__line-background--2: #{$pale-plum};
+  --distribution-chart__line-background--3: #{$teal};
+  --distribution-chart__ticks-color: #{$washed-blue};
+  // endregion
+
+  // region SPrimePanel
+  --s-prime-panel__sprime-color: #{$mist-blue};
+  --s-prime-panel__panel-background-color: #{$space}80;
+  --s-prime-panel__panel-box-shadow: 7px 7px 30px 0px #{$dark-space}66;
+  --s-prime-panel__divider-background: linear-gradient(to right, #{$dark-fuchsia} 18.79%, #{$pale-plum} 56.56%, #{$teal} 87.71%);
+  --s-prime-panel__chevron-color: #{$pale-lilac};
+  --s-prime-panel__chevron-color--hover: #{$light-purple};
+  --s-prime-panel__main-text-color: #{$storm-blue};
+  --s-prime-panel__secondary-text-color: #{$mist-blue};
+  --s-prime-panel__gauge-border: linear-gradient(to right, #{$dark-fuchsia} 18.79%, #{$pale-plum} 56.56%, #{$teal} 87.71%);
+  --s-prime-panel__gauge-box-shadow: 2px 2px 10px 0px #{$dark-space}CC;
+  --s-prime-panel__gauge-text-color: #{$pale-lilac};
+  --s-prime-panel__actions-info-divider-background: #{$mist-space};
   // endregion
 }

@@ -1,9 +1,45 @@
 <template>
-  <div class="sprime-panel-component">
-    <div class="sprime-panel__actions">
+  <div class="sprime-panel-component" v-bind:class="{'sprime-panel-component--expanded': expanded}">
+    <div class="header-actions">
+      <FlatButton v-on:buttonClick="openRedeemSPrimeModal()" :active="true">buy prime <img class="buy-prime-logo"
+                                                                                           src="src/assets/logo/prime.svg"/>
+      </FlatButton>
+      <div v-on:click="toggleExpand()">
+        <DeltaIcon class="chevron" v-bind:class="{'chevron--expanded': expanded}"
+                   :icon-src="'src/assets/icons/chevron-down.svg'" :size="21"></DeltaIcon>
+      </div>
+    </div>
+    <div class="sprime-panel__actions sprime-panel__actions--collapsed">
+      <div class="sprime">
+        <img class="sprime-logo"
+             src="src/assets/logo/sprime.svg"/>
+        <div class="sprime__text">
+          $sPRIME
+        </div>
+      </div>
+      <div class="actions-info">
+        <div class="actions-info__entry">
+          <div class="actions-info__label">Total value:</div>
+          <div class="actions-info__value">$ {{ formatTokenBalance(value, 18, true) }}</div>
+        </div>
+        <div class="actions-info__divider"></div>
+        <div class="actions-info__entry">
+          <div class="actions-info__label">Distribution:</div>
+          <img :src="getDistributionIcon" class="actions-info__distribution-icon">
+        </div>
+        <div class="actions-info__divider"></div>
+        <div class="actions-info__entry">
+          <div class="actions-info__label">Governance power:</div>
+          <div class="actions-info__value">{{ governancePoints }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="sprime-panel__actions sprime-panel__actions--expanded">
       <div class="sprime">
         <DoubleAssetIcon :size="'BIG'" :primary="'sPRIME'" :secondary="secondAsset"></DoubleAssetIcon>
-        $sPRIME
+        <div>
+          $sPRIME
+        </div>
       </div>
       <div class="actions">
         <FlatButton v-on:buttonClick="openMintSPrimeModal()" :active="true">mint</FlatButton>
@@ -11,6 +47,7 @@
         <FlatButton v-on:buttonClick="openRedeemSPrimeModal()" :active="value > 0">redeem</FlatButton>
       </div>
     </div>
+    <div class="sprime-panel__divider"></div>
     <div class="sprime-panel__body">
       <div class="stats">
         <div class="stat">
@@ -18,15 +55,20 @@
           <div class="stat__value">{{ formatTokenBalance(value, 18, true) }}</div>
         </div>
         <div class="stat">
-          <div class="stat__title">Revenue received</div>
+          <div class="stat__title">Revenue received
+            <InfoIcon class="stat__info-icon" :size="16" :tooltip="{ content: ''}"></InfoIcon>
+          </div>
           <div class="stat__value">{{ 50.31 | usd }}</div>
         </div>
         <div class="stat">
-          <div class="stat__title">YTD APR</div>
+          <div class="stat__title">YTD APR
+            <InfoIcon class="stat__info-icon" :size="16" :tooltip="{ content: ''}"></InfoIcon>
+          </div>
           <div class="stat__value">{{ 0.15512 | percent }}</div>
         </div>
       </div>
       <div class="distribution">
+        <div class="distribution__title">Distribution</div>
         <div class="chart-container">
           <div class="distribution-chart-line"></div>
           <DistributionChart :data="chartData" :active-index="7"></DistributionChart>
@@ -34,7 +76,7 @@
       </div>
       <div class="governance">
         <div class="governance__title">Governance power</div>
-        <div class="power__gauge">
+        <div class="power-gauge">
           <div class="gauge__value">
             {{ governancePoints }}
           </div>
@@ -68,14 +110,32 @@ import RedeemsPrimeModal from './RedeemsPrimeModal.vue';
 import RebalancesPrimeModal from './RebalancesPrimeModal.vue';
 import DoubleAssetIcon from './DoubleAssetIcon.vue';
 import DistributionChart from "./DistributionChart.vue";
+import DeltaIcon from "./DeltaIcon.vue";
+import InfoIcon from "./InfoIcon.vue";
 
 const ethers = require('ethers');
 
 let TOKEN_ADDRESSES;
 
+const DistributionType = {
+  RIGHT_NEUTRAL: 'RIGHT_NEUTRAL',
+  LEFT_NEUTRAL: 'LEFT_NEUTRAL',
+  LEFT_POSITIVE: 'LEFT_POSITIVE',
+  LEFT_NEGATIVE: 'LEFT_NEGATIVE',
+  RIGHT_NEGATIVE: 'RIGHT_NEGATIVE',
+}
+
+const DISTRIBUTION_ICON_DICTIONARY = {
+  [DistributionType.RIGHT_NEUTRAL]: 'right-neutral',
+  [DistributionType.LEFT_NEUTRAL]: 'left-neutral',
+  [DistributionType.LEFT_POSITIVE]: 'left-positive',
+  [DistributionType.LEFT_NEGATIVE]: 'left-negative',
+  [DistributionType.RIGHT_NEGATIVE]: 'right-negative',
+}
+
 export default {
   name: 'SPrimePanel',
-  components: {DoubleAssetIcon, DistributionChart, FlatButton},
+  components: {InfoIcon, DeltaIcon, DoubleAssetIcon, DistributionChart, FlatButton},
   props: {
     isPrimeAccount: false
   },
@@ -87,6 +147,8 @@ export default {
       value: null,
       governancePoints: null,
       governanceRate: null,
+      expanded: false,
+      distributionType: DistributionType.RIGHT_NEGATIVE,
       chartData: [
         {x: 1, y: 1, showTick: true, positive: false},
         {x: 2, y: 2, showTick: false, positive: false},
@@ -143,9 +205,13 @@ export default {
       'providerService',
       'accountService',
       'traderJoeService',
+      'themeService',
       'progressBarService'
     ]),
     ...mapState('network', ['provider', 'account']),
+    getDistributionIcon() {
+      return `src/assets/icons/sprime-distribution/${DISTRIBUTION_ICON_DICTIONARY[this.distributionType]}${this.themeService.themeChange$.value === 'LIGHT' ? '' : '--dark' }.svg`;
+    }
   },
   methods: {
     ...mapActions('sPrimeStore', [
@@ -158,14 +224,14 @@ export default {
     },
     async openMintSPrimeModal() {
       const [, activeId] = await this
-        .traderJoeService
-        .getLBPairReservesAndActiveBin(this.sPrimeConfig.lbAddress, this.provider);
+          .traderJoeService
+          .getLBPairReservesAndActiveBin(this.sPrimeConfig.lbAddress, this.provider);
 
       const [primeBalance, secondAssetBalance] = await Promise.all(
-        [
-          this.fetchUserTokenBalance('PRIME'),
-          this.fetchUserTokenBalance(this.secondAsset)
-        ]
+          [
+            this.fetchUserTokenBalance('PRIME'),
+            this.fetchUserTokenBalance(this.secondAsset)
+          ]
       );
 
       const nativeTokenBalance = parseFloat(ethers.utils.formatEther(await this.provider.getBalance(this.account)));
@@ -205,8 +271,8 @@ export default {
     },
     async openRebalanceSPrimeModal() {
       const [, activeId] = await this
-        .traderJoeService
-        .getLBPairReservesAndActiveBin(this.sPrimeConfig.lbAddress, this.provider);
+          .traderJoeService
+          .getLBPairReservesAndActiveBin(this.sPrimeConfig.lbAddress, this.provider);
 
       const modalInstance = this.openModal(RebalancesPrimeModal);
       modalInstance.secondAssetSymbol = this.secondAsset;
@@ -236,8 +302,8 @@ export default {
       console.log(this.sPrimeConfig);
 
       let [primeBalance, secondAssetBalance] = await Promise.all(
-        [this.fetchUserTokenBalance('PRIME'),
-          this.fetchUserTokenBalance(this.secondAsset)]
+          [this.fetchUserTokenBalance('PRIME'),
+            this.fetchUserTokenBalance(this.secondAsset)]
       );
 
       const sPrimeTokenContract = new ethers.Contract(this.sPrimeConfig.sPrimeAddress, erc20ABI, this.provider.getSigner());
@@ -275,10 +341,10 @@ export default {
       console.log(contract);
 
       return this.getWalletTokenBalance(
-        this.account,
-        tokenSymbol,
-        contract,
-        config.ASSETS_CONFIG[tokenSymbol].decimals
+          this.account,
+          tokenSymbol,
+          contract,
+          config.ASSETS_CONFIG[tokenSymbol].decimals
       );
     },
 
@@ -291,6 +357,10 @@ export default {
             break;
         }
       }
+    },
+
+    toggleExpand() {
+      this.expanded = !this.expanded;
     }
   },
 };
@@ -300,28 +370,149 @@ export default {
 @import "~@/styles/variables";
 
 .sprime-panel-component {
+  position: relative;
+  height: 60px;
+  transition: height 200ms ease-in-out;
   display: flex;
   flex-direction: column;
   border-radius: 35px;
-  background-color: var(--ltip-stats-bar__background);
-  box-shadow: var(--ltip-stats-bar__box-shadow);
+  background-color: var(--s-prime-panel__panel-background-color);
+  box-shadow: var(--s-prime-panel__panel-box-shadow);
   margin-top: 30px;
+  overflow: hidden;
+
+  .header-actions {
+    position: absolute;
+    top: 17px;
+    right: 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    z-index: 1;
+
+    .chevron {
+      cursor: pointer;
+      background: var(--s-prime-panel__chevron-color);
+      transition: transform 200ms ease-in-out;
+
+      &:hover {
+        background: var(--s-prime-panel__chevron-color--hover);
+      }
+
+      &.chevron--expanded {
+        transform: rotate(180deg);
+      }
+    }
+
+    .buy-prime-logo {
+      width: 20px;
+      height: 20px;
+      margin-left: 6px;
+    }
+  }
+
+  &.sprime-panel-component--expanded {
+    height: 330px;
+
+    .sprime-panel__actions--expanded {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .sprime-panel__actions--collapsed {
+      opacity: 0;
+      transform: translateY(100%) !important;
+      pointer-events: none;
+    }
+  }
 
   .sprime-panel__actions {
+    position: relative;
     display: flex;
     flex-direction: row;
     align-items: center;
     justify-content: center;
     padding: 16px 0;
-    border-style: solid;
-    border-width: 0 0 2px 0;
-    border-image-source: var(--asset-table-row__border);
-    border-image-slice: 1;
+    transition: opacity 200ms ease-in-out, transform 200ms ease-in-out;
+    transform: translateY(-100%);
+
+    &--expanded {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    &--collapsed {
+      position: absolute;
+      width: 100%;
+      transform: translateY(0);
+      padding: 20px 0;
+
+      .sprime {
+        position: absolute;
+        left: 24px;
+        top: 19px;
+      }
+
+      .sprime-logo {
+        width: 22px;
+        height: 22px;
+        margin-right: 8px;
+      }
+
+      .sprime__text {
+        color: var(--s-prime-panel__secondary-text-color);
+        font-size: 16px;
+        font-weight: 600;
+      }
+
+      .actions-info {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        .actions-info__entry:not(:last-child) {
+          margin-right: 19px;
+        }
+
+        .actions-info__divider {
+          background: var(--s-prime-panel__actions-info-divider-background);
+          margin-right: 19px;
+          height: 20px;
+          width: 2px;
+          border-radius: 2px;
+        }
+
+        .actions-info__entry {
+          display: flex;
+          font-size: 16px;
+          font-weight: 500;
+        }
+
+        .actions-info__label {
+          margin-right: 8px;
+          color: var(--s-prime-panel__main-text-color);
+        }
+
+        .actions-info__value {
+          color: var(--s-prime-panel__secondary-text-color);
+        }
+
+        .actions-info__distribution-icon {
+          margin-top: -5px;
+        }
+      }
+    }
 
     .sprime {
-      margin-right: 30px;
+      margin-right: 40px;
       display: flex;
       justify-content: center;
+      align-items: center;
+      gap: 8px;
+      color: var(--s-prime-panel__sprime-color);
+      font-size: 16px;
+      font-weight: 600;
     }
 
     .actions {
@@ -331,9 +522,15 @@ export default {
       justify-content: center;
 
       .flat-button-component:not(:last-child) {
-        margin-right: 10px;
+        margin-right: 20px;
       }
     }
+  }
+
+  .sprime-panel__divider {
+    height: 2px;
+    width: 100%;
+    background: var(--s-prime-panel__divider-background);
   }
 
   .sprime-panel__body {
@@ -348,22 +545,30 @@ export default {
       border-width: 0 2px 0 0;
       border-image-source: var(--stats-bar-beta__divider-background);
       border-image-slice: 1;
+      padding-top: 10px;
 
       .stat {
         display: flex;
         flex-direction: column;
         margin-bottom: 24px;
 
+        .stat__info-icon {
+          margin-left: 6px;
+        }
+
         .stat__title {
+          display: flex;
+          align-items: center;
           font-size: 16px;
           font-weight: 500;
-          color: #696969;
+          margin-bottom: 6px;
+          color: var(--s-prime-panel__main-text-color);
         }
 
         .stat__value {
           font-size: 18px;
           font-weight: 500;
-          color: #000;
+          color: var(--s-prime-panel__secondary-text-color);
         }
       }
     }
@@ -373,15 +578,23 @@ export default {
       border-width: 0 2px 0 0;
       border-image-source: var(--stats-bar-beta__divider-background);
       border-image-slice: 1;
+      padding-top: 10px;
+
+      .distribution__title {
+        color: var(--s-prime-panel__main-text-color);
+        font-size: 16px;
+        font-weight: 500;
+        margin-bottom: 10px;
+        text-align: center;
+      }
 
       .chart-container {
         display: flex;
         flex-direction: column;
         position: relative;
-        margin: 2rem auto;
-        height: 210px;
+        margin: 0 auto;
+        height: 160px;
         width: 280px;
-        padding: 40px 0 11px 0;
 
         div {
           width: 100%;
@@ -402,56 +615,72 @@ export default {
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      padding-top: 10px;
 
+      .governance__title {
+        margin-bottom: 20px;
+        color: var(--s-prime-panel__main-text-color);
+        font-size: 16px;
+        font-weight: 500;
+      }
 
-      .power__gauge {
+      .power-gauge {
+        position: relative;
         width: 130px;
         height: 130px;
         display: flex;
         flex-direction: row;
         align-items: center;
         justify-content: center;
-        box-shadow: 2px 2px 10px 0 rgba(191, 188, 255, 0.9);
-        border-radius: 65px;
-        border-style: solid;
-        border-width: 2px;
-        border-image-source: linear-gradient(to right, #dfe0ff, #ffe1c2 48%, #ffd3e0);
-        border-image-slice: 1;
+        border-radius: 50%;
+        box-shadow: var(--s-prime-panel__gauge-box-shadow);
+
+        &:before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: var(--s-prime-panel__gauge-border);
+          border-radius: 50%;
+          mask-image: radial-gradient(closest-side, transparent calc(100% - 2px), black calc(100% - 2px));
+        }
 
         .gauge__value {
           font-size: 44px;
           font-weight: 600;
-          color: #9a97ff;
+          color: var(--s-prime-panel__gauge-text-color);
         }
       }
     }
 
     .rates {
+      padding-top: 10px;
+
       .rate {
         display: flex;
         flex-direction: column;
 
         &:not(:last-child) {
-          margin-bottom: 40px;
+          margin-bottom: 42px;
         }
 
         .rate__title {
           font-size: 16px;
           font-weight: 500;
-          color: #696969;
+          color: var(--s-prime-panel__main-text-color);
+          padding-bottom: 6px;
         }
 
         .rate__value {
           font-size: 18px;
           font-weight: 500;
-          color: #000;
+          color: var(--s-prime-panel__secondary-text-color);
         }
 
         .rate__extra-info {
           font-size: 14px;
           font-weight: 500;
-          color: #696969;
+          color: var(--s-prime-panel__main-text-color);
+          margin-top: 4px;
         }
       }
     }
