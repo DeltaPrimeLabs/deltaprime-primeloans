@@ -1,6 +1,6 @@
 const { request, gql } = require("graphql-request");
 
-const ARWEAVE_GRAPHQL_API_ENDPOINT = "https://arweave.net/graphql";
+const ARWEAVE_GRAPHQL_API_ENDPOINT = "https://arweave-search.goldsky.com/graphql";
 
 const buildGraphQlQuery = (timestamp, nodeAddress, after) => {
   return gql`

@@ -212,4 +212,4 @@ const ggpIncentives = async (network = 'avalanche', rpc = 'first') => {
   }
 }
 
-ggpIncentives('avalanche', 'first');
+ggpIncentives('avalanche', 'second');

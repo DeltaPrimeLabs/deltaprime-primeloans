@@ -15,7 +15,8 @@ const Web3 = require('web3');
 const extRpc = require('../.secrets/extRpc.json');
 const funcRpc = require('../.secrets/funcRpc.json');
 const historicalRpc = require('../.secrets/historicalRpc.json');
-const web = new Web3(new Web3.providers.HttpProvider(historicalRpc));
+const webAva = new Web3(new Web3.providers.HttpProvider(historicalRpc.avalanche));
+const webArb = new Web3(new Web3.providers.HttpProvider(historicalRpc.arbitrum));
 
 // AWS DynamoDB setup
 AWS.config.update({ region: 'us-east-1' });
@@ -90,13 +91,13 @@ const getWrappedContractsHistorical = (addresses, network, packages) => {
 }
 
 // this is being used in retroactiveCalculator in ec2 - uncomment it when you run it on ec2
-async function getArweavePackages(timestamp) {
+async function getArweavePackages(timestamp, chain) {
   const nodeAddress1 = '0x83cbA8c619fb629b81A65C2e67fE15cf3E3C9747';
   const nodeAddress2 = '0x2c59617248994D12816EE1Fa77CE0a64eEB456BF';
   const nodeAddress3 = '0x12470f7aBA85c8b81D63137DD5925D6EE114952b';
   //do dziesietnych
 
-  const dater = new EthDater(web);
+  const dater = new EthDater(chain == 'avalanche' ? webAva : webArb);
 
   let blockData = await dater.getDate(timestamp * 1000);
 
