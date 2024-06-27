@@ -42,19 +42,19 @@ contract sPrimeUniswap is
     // Immutable variables for storing token and pair information
     IERC20Metadata public tokenX;
     IERC20Metadata public tokenY;
-    IUniswapV3Pool public pool;
     int24 public tickSpacing;
+    int24 private deltaId;
+
+    IUniswapV3Pool public pool;
+    uint8 public tokenDecimals;
+    uint24 public feeTier;
 
     INonfungiblePositionManager public positionManager;
     ISwapRouter public swapRouter;
-
     IVPrimeController public vPrimeController;
-    uint24 public feeTier;
-    uint8 public tokenDecimals;
+
     bool public tokenSequence;
-
-    int24 private deltaId;
-
+    
     /**
      * @dev Initializer of the contract.
      * @param tokenX_ The address of the token X.
