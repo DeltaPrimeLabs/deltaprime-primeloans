@@ -80,6 +80,21 @@ describe('Pool with variable utilisation interest rates', () => {
             expect(containsRedstoneCalldata).to.be.true;
         });
 
+        it("should borrow", async () => {
+            await sut.borrow(toWei("1.0"));
+            expect(await mockToken.balanceOf(sut.address)).to.be.equal(toWei("1", "ether"));
+
+            let borrowed = fromWei(await sut.getBorrowed(owner.address));
+            expect(borrowed).to.be.closeTo(1.000000, 0.000001);
+        });
+
+        it("should keep the loan for 1 year", async () => {
+            await time.increase(time.duration.years(1));
+
+            let borrowed = fromWei(await sut.getBorrowed(owner.address));
+            expect(borrowed).to.be.closeTo(1.03, 0.000001);
+        });
+
         it("should repay", async () => {
             await mockToken.connect(owner).approve(sut.address, toWei("1.03"));
             await sut.repay(toWei("1.03"));
@@ -191,10 +206,10 @@ describe('Pool with variable utilisation interest rates', () => {
         });
 
         it("should be able to borrow at threshold", async () => {
-            await sut.connect(borrower).borrow(toWei("0.90"));
+            await sut.connect(borrower).borrow(toWei("0.925"));
 
             let borrowed = fromWei(await sut.getBorrowed(borrower.address));
-            expect(borrowed).to.be.closeTo(0.90, 0.000001);
+            expect(borrowed).to.be.closeTo(0.925, 0.000001);
         });
 
         it("should not be able to borrow above threshold", async () => {
@@ -203,7 +218,7 @@ describe('Pool with variable utilisation interest rates', () => {
             await expect(sut.connect(borrower).borrow(toWei("0.01"))).to.be.reverted;
 
             let borrowed = fromWei(await sut.getBorrowed(borrower.address));
-            expect(borrowed).to.be.closeTo(0.90, 0.000001);
+            expect(borrowed).to.be.closeTo(0.925, 0.000001);
         });
     });
 
@@ -246,18 +261,18 @@ describe('Pool with variable utilisation interest rates', () => {
         });
 
         it("should not allow non registered account to borrow", async () => {
-            await expect(sut.connect(nonRegistered).borrow(toWei("1.0"))).to.be.revertedWith(customError("NotAuthorizedToBorrow"));
+            await expect(sut.connect(nonRegistered).borrow(toWei("1.0"))).to.be.revertedWith("NotAuthorizedToBorrow");
         });
 
         it("should allow registered account to borrow", async () => {
             expect(await mockToken.connect(registered).balanceOf(registered.address)).to.equal("0");
-            await expect(sut.connect(nonRegistered).borrow(toWei("1.0"))).to.be.revertedWith(customError("NotAuthorizedToBorrow"));
-            await expect(sut.connect(registered).borrow(toWei("1.0"))).to.be.revertedWith(customError("NotAuthorizedToBorrow"));
-            await expect(sut.connect(borrower).borrow(toWei("1.0"))).to.be.revertedWith(customError("NotAuthorizedToBorrow"));
+            await expect(sut.connect(nonRegistered).borrow(toWei("1.0"))).to.be.revertedWith("NotAuthorizedToBorrow");
+            await expect(sut.connect(registered).borrow(toWei("1.0"))).to.be.revertedWith("NotAuthorizedToBorrow");
+            await expect(sut.connect(borrower).borrow(toWei("1.0"))).to.be.revertedWith("NotAuthorizedToBorrow");
 
             await borrowersRegistry.connect(owner).updateRegistry(registered.address, borrower.address);
 
-            await expect(sut.connect(borrower).borrow(toWei("1.0"))).to.be.revertedWith(customError("NotAuthorizedToBorrow"));
+            await expect(sut.connect(borrower).borrow(toWei("1.0"))).to.be.revertedWith("NotAuthorizedToBorrow");
             await expect(sut.connect(registered).borrow(toWei("1.0"))).not.to.be.reverted;
 
             expect(fromWei(await mockToken.connect(registered).balanceOf(registered.address))).to.equal(1);

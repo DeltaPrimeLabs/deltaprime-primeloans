@@ -116,7 +116,10 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
     }
 
     function getVPrimeControllerAddress() public view returns (address) {
-        return tokenManager.getVPrimeControllerAddress();
+        if(address(tokenManager) != address(0)) {
+            return tokenManager.getVPrimeControllerAddress();
+        }
+        return address(0);
     }
 
 
