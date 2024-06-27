@@ -146,7 +146,7 @@ describe("SPrime", function () {
         await wavax.transfer(user1, parseEther("10"));
         await wavax.transfer(user2, parseEther("10"));
         await wavax.transfer(user3, parseEther("10"));
-        await LBFactory.connect(owner).createLBPair(prime.address, wavax.address, initaialBin, 25);
+        await LBFactory.connect(owner).createLBPair(prime.address, wavax.address, initaialBin, 50);
         
         sPrime = await deployContract(
             owner,
@@ -170,7 +170,7 @@ describe("SPrime", function () {
             mockSignersCount: 3,
             dataPoints: MOCK_PRICES,
         });
-        // await LBFactory.connect(owner).createLBPair(prime.address, usdc.address, initaialBinUSDC, 25);
+        // await LBFactory.connect(owner).createLBPair(prime.address, usdc.address, initaialBinUSDC, 50);
         // sPrimeUSDC = await deployContract(
         //     owner,
         //     SPrimeArtifact,
@@ -365,7 +365,7 @@ describe("SPrime", function () {
 
             await prime.connect(addr2).approve(LBRouter.address, parseEther("0.1"));
             const path = {
-                pairBinSteps: [25],
+                pairBinSteps: [50],
                 versions: [2],
                 tokenPath: [prime.address, wavax.address]
             }
@@ -405,7 +405,7 @@ describe("SPrime", function () {
 
             await prime.connect(addr2).approve(LBRouter.address, parseEther("0.1"));
             const path = {
-                pairBinSteps: [25],
+                pairBinSteps: [50],
                 versions: [2],
                 tokenPath: [prime.address, wavax.address]
             }
@@ -453,7 +453,7 @@ describe("SPrime", function () {
 
             await prime.connect(addr2).approve(LBRouter.address, parseEther("0.1"));
             const path = {
-                pairBinSteps: [25],
+                pairBinSteps: [50],
                 versions: [2],
                 tokenPath: [prime.address, wavax.address]
             }
@@ -513,7 +513,7 @@ describe("SPrime", function () {
 
             await prime.connect(addr2).approve(LBRouter.address, parseEther("0.1"));
             const path = {
-                pairBinSteps: [25],
+                pairBinSteps: [50],
                 versions: [2],
                 tokenPath: [prime.address, wavax.address]
             }
@@ -788,7 +788,7 @@ describe("SPrime", function () {
                 {
                     tokenX: prime.address,
                     tokenY: wavax.address,
-                    binStep: 25,
+                    binStep: 50,
                     amountX: parseEther("1"),
                     amountY: parseEther("1"),
                     amountXMin: 0, // min PRIME
