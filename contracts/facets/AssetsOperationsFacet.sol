@@ -158,14 +158,9 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         IERC20Metadata token = getERC20TokenInstance(_asset, false);
         _increaseExposure(tokenManager, address(token), _amount);
 
-        proxyCalldata(
-            tokenManager.getVPrimeControllerAddress(),
-            abi.encodeWithSignature("updateVPrimeSnapshot(address)", DiamondStorageLib.contractOwner()),
-            false
-        );
+        notifyVPrimeController(DiamondStorageLib.contractOwner(), tokenManager);
         emit Borrowed(msg.sender, _asset, _amount, block.timestamp);
     }
-
 
     /**
      * Repays funds to the pool
@@ -196,11 +191,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
         emit Repaid(msg.sender, _asset, _amount, block.timestamp);
 
-        proxyCalldata(
-            tokenManager.getVPrimeControllerAddress(),
-            abi.encodeWithSignature("updateVPrimeSnapshot(address)", DiamondStorageLib.contractOwner()),
-            false
-        );
+        notifyVPrimeController(DiamondStorageLib.contractOwner(), tokenManager);
     }
 
     function withdrawUnsupportedToken(address token) external nonReentrant onlyOwner remainsSolvent {
@@ -302,6 +293,18 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         _processRepay(tokenManager, fromAssetPool, address(fromToken), _repayAmount, fromToken.balanceOf(address(this)) - initialRepayTokenAmount);
 
         emit DebtSwap(msg.sender, address(fromToken), address(toToken), _repayAmount, _borrowAmount, block.timestamp);
+    }
+
+    function notifyVPrimeController(address account, ITokenManager tokenManager) internal {
+        address vPrimeControllerAddress = tokenManager.getVPrimeControllerAddress();
+        if(vPrimeControllerAddress != address(0)){
+            proxyCalldata(
+                vPrimeControllerAddress,
+                abi.encodeWithSignature
+                ("updateVPrimeSnapshot(address)", account),
+                false
+            );
+        }
     }
 
     /* ======= VIEW FUNCTIONS ======*/
