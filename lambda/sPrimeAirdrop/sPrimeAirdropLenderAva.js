@@ -26,7 +26,7 @@ const findClosest = (numbers, pool, target) => {
     let current = timestamps[i];
     let currentDiff = Math.abs(target - current);
 
-    if (currentDiff < closestDiff) {
+    if (currentDiff < closestDiff && numbers[current].length > 0) {
       closest = current;
       closestDiff = currentDiff;
     }
@@ -196,8 +196,7 @@ async function calculateSprimeAirdropPerPool(chain) {
     let poolsDepositors = await getDepositorsAddressesFromSubgraph(chain);
     let poolsFirstDeposits = await getPoolsFirstDeposits(pools, chain);
     let poolsDepositorsBalances = await getDepositorsValues(poolsDepositors, pools, poolsFirstDeposits, blockNumber, assetPrices, timestampInSeconds);
-    console.log(poolsDepositorsBalances)
-    console.log(Object.keys(poolsDepositorsBalances).length)
+    console.log(`deposits calculated for ${Object.keys(poolsDepositorsBalances).length} depositors`)
 
     // save deposits to database
     await Promise.all(

@@ -1,21 +1,23 @@
 const ethers = require('ethers');
+const { request, gql } = require('graphql-request');
 const {
   dynamoDb,
-  // avalancheHistoricalProvider,
   formatUnits
 } = require('../utils/helpers');
+const POOL_ARTIFACT = require('../abis/Pool.json');
 const constants = require('../config/constants.json');
 const FACTORY = require('../abis/SmartLoansFactory.json');
 const EthDater = require("ethereum-block-by-date");
+const subgraphConfig = require('../.secrets/subgraph.json');
 const assetsPrices = require('./historicalPrices.json');
 const airdropRpc = require('../.secrets/airdropRpc.json');
 
-const blockTimestampStart = 1696224800;
+const blockTimestampStart = 1705901600;
 const blockTimestampEnd = 1712454400;
 
 const avalancheFactoryAddress = constants.avalanche.factory;
 
-const avalancheHistoricalProvider = new ethers.providers.JsonRpcProvider(airdropRpc.avalanche);
+const provider = new ethers.providers.JsonRpcProvider(airdropRpc.avalanche);
 
 const findClosest = (numbers, pool, target) => {
   let timestamps = Object.keys(numbers);
@@ -29,7 +31,7 @@ const findClosest = (numbers, pool, target) => {
     let current = timestamps[i];
     let currentDiff = Math.abs(target - current);
 
-    if (currentDiff < closestDiff) {
+    if (currentDiff < closestDiff && numbers[current].length > 0) {
       closest = current;
       closestDiff = currentDiff;
     }
@@ -123,7 +125,7 @@ const getPoolsFirstDeposits = async (pools, chain) => {
   return firstDeposits;
 }
 
-async function getBorrowerDebtValues(loanAddresses, pools, poolsFirstDeposits, blockNumber, assetsPrices, timestampInSeconds) {
+async function getBorrowerDebtValues(loans, pools, poolsFirstDeposits, blockNumber, assetsPrices, timestampInSeconds) {
   let loansValues = {};
   const batchSize = 50; // Define your batch size here
 
@@ -134,7 +136,7 @@ async function getBorrowerDebtValues(loanAddresses, pools, poolsFirstDeposits, b
   })
   console.log(poolTokenPrices)
 
-  console.log(`Checking balances of ${loanAddresses.length} loans in batches of ${batchSize}`)
+  console.log(`Checking balances of ${loans.length} loans in batches of ${batchSize}`)
   for (let i = 0; i < loans.length; i += batchSize) {
     let batch = loans.slice(i, i + batchSize);
     let balancePromises = batch.map(loan => Promise.all(Object.entries(pools).map(([pool, poolContract]) => poolsFirstDeposits[pool] <= timestampInSeconds ? poolContract.getBorrowed(loan, { blockTag: blockNumber }) : 0)));
@@ -157,7 +159,7 @@ async function getBorrowerDebtValues(loanAddresses, pools, poolsFirstDeposits, b
   // console log sum of values of all loans
 
   let sum = Object.values(loansValues).reduce((a, b) => a + b, 0);
-  console.log(`Sum of loans values: ${sum}`);
+  console.log(`Sum of loans debt values: ${sum}`);
   return loansValues;
 }
 
@@ -170,13 +172,12 @@ async function sPrimeAirdropBorrowerAva(chain) {
     console.log(`---------------processing at ${timestampInSeconds}-------------------------`)
     let blockNumber = (await getBlockForTimestamp(timestampInSeconds * 1000)).block;
 
-    let factoryContract = new ethers.Contract(avalancheFactoryAddress, FACTORY.abi, avalancheHistoricalProvider);
+    let factoryContract = new ethers.Contract(avalancheFactoryAddress, FACTORY.abi, provider);
     let loanAddresses = await factoryContract.getAllLoans({ blockTag: blockNumber });
 
     let poolsFirstDeposits = await getPoolsFirstDeposits(pools, chain);
-    let borrowerDebtValues = await getBorrowerDebtValues(loanAddresses, pools, poolsFirstDeposits, blockNumber, assetsPrices, timestampInSeconds);
-    console.log(borrowerDebtValues)
-    console.log(Object.keys(borrowerDebtValues).length)
+    let loanDebts = await getBorrowerDebtValues(loanAddresses, pools, poolsFirstDeposits, blockNumber, assetsPrices, timestampInSeconds);
+    console.log(`loan debts calculated for ${Object.keys(loanDebts).length} loans`)
 
     // save/update incentives values to DB
     await Promise.all(
