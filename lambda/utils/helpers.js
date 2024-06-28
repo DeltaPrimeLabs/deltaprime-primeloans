@@ -173,7 +173,7 @@ const parallelScan = async (params, totalSegments) => {
   return results.flat();
 };
 
-const fetchAllDataFromDB = async (params, scan = true, totalSegments = 10) => {
+const fetchAllDataFromDB = async (params, scan = true, totalSegments = 5) => {
   if (scan) {
     return parallelScan(params, totalSegments);
   } else {
