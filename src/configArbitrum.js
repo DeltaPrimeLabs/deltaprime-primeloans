@@ -49,20 +49,18 @@ export default {
       "rsETH": {name: "rsETH", symbol: "rsETH", logoExt: "png", decimals: 18, address: addresses.rsETH, debtCoverage: 0.83333333333},
     },
     SPRIME_CONFIG: {
-        default: "TRADERJOEV2",
-        TRADERJOEV2: {
-            default: "USDC",
-            USDC: {
-                sPrimeAddress: "0x83BE7c8768df4600E643d1a05734198709E505da",
-                positionManagerAddress: "0x540e7a7baB681Bd69bC4bf89Bd706F96F9D1dEF8",
-                lbAddress: "0x37b03c3Da5FC76D266693B3bf2f143300FDCb282",
-                binStep: 25,
-                secondAssetDecimals: 6,
+        default: "UNISWAP",
+        UNISWAP: {
+            default: "ETH",
+            ETH: {
+                sPrimeAddress: "0x04d36A9aAD2072C69E4B0Cb2A403D8a893064945",
+                poolAddress: "0xB31273fD2dfC05e6Fd91A3B8a2a681aeb0FbCF48",
+                secondAssetDecimals: 18,
             }
         }
     },
     VPRIME_CONFIG: {
-        address: VPRIME_TUP.address
+        address: "0x88fBaEa44b85fcC505c1aB1fD884c877A3b3dD42"
     },
     PENPIE_REWARDS_TOKENS: {
         "PENDLE": {name: "PENDLE", symbol: "PENDLE", logoExt: "png", decimals: 18, address: addresses.PENDLE},

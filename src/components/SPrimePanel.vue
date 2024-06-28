@@ -58,13 +58,13 @@
           <div class="stat__title">Revenue received
             <InfoIcon class="stat__info-icon" :size="16" :tooltip="{ content: ''}"></InfoIcon>
           </div>
-          <div class="stat__value">{{ 50.31 | usd }}</div>
+          <div class="stat__value revenue"><FlatButton :active="false">soon</FlatButton></div>
         </div>
         <div class="stat">
           <div class="stat__title">YTD APR
             <InfoIcon class="stat__info-icon" :size="16" :tooltip="{ content: ''}"></InfoIcon>
           </div>
-          <div class="stat__value">{{ 0.15512 | percent }}</div>
+          <div class="stat__value">TO DO {{ 0.15512 | percent }}</div>
         </div>
       </div>
       <div class="distribution">
@@ -105,7 +105,7 @@ import config from '../config';
 import {combineLatest} from 'rxjs';
 import MintsPrimeModal from './MintsPrimeModal.vue';
 import erc20ABI from '../../test/abis/ERC20.json';
-import {getTraderJoeV2IdSlippageFromPriceSlippage} from '../utils/calculate';
+import {getTraderJoeV2IdSlippageFromPriceSlippage, getUniswapV3SlippageFromPriceSlippage} from '../utils/calculate';
 import RedeemsPrimeModal from './RedeemsPrimeModal.vue';
 import RebalancesPrimeModal from './RebalancesPrimeModal.vue';
 import DoubleAssetIcon from './DoubleAssetIcon.vue';
@@ -190,11 +190,11 @@ export default {
     });
 
     this.vPrimeService.observeVPrimePoints().subscribe(points => {
-      this.governancePoints = points;
+      this.governancePoints = points.toExponential(1);
     });
 
     this.vPrimeService.observeVPrimeRate().subscribe(rate => {
-      this.governanceRate = rate;
+      this.governanceRate = rate.toExponential(2);
     });
   },
   watch: {},
@@ -205,6 +205,7 @@ export default {
       'providerService',
       'accountService',
       'traderJoeService',
+      'uniswapV3Service',
       'themeService',
       'progressBarService'
     ]),
@@ -223,9 +224,18 @@ export default {
       TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
     },
     async openMintSPrimeModal() {
-      const [, activeId] = await this
-          .traderJoeService
-          .getLBPairReservesAndActiveBin(this.sPrimeConfig.lbAddress, this.provider);
+      console.log('openMintSPrimeModal')
+      let activeId, currentPrice;
+      if (this.dex === 'TRADERJOEV2') {
+        [, activeId] = await this
+            .traderJoeService
+            .getLBPairReservesAndActiveBin(this.sPrimeConfig.lbAddress, this.provider)
+      } else {
+        [currentPrice, activeId] = await this
+            .uniswapV3Service
+            .getPriceAndActiveId(this.sPrimeConfig.poolAddress, this.provider)
+      }
+      console.log('activeId: ', activeId)
 
       const [primeBalance, secondAssetBalance] = await Promise.all(
           [
@@ -248,7 +258,9 @@ export default {
       modalInstance.isSecondAssetNative = this.secondAsset === config.nativeToken;
       modalInstance.$on('MINT', sPrimeMintEvent => {
         console.log(sPrimeMintEvent);
-        const idSlippage = getTraderJoeV2IdSlippageFromPriceSlippage(sPrimeMintEvent.slippage / 100, config.SPRIME_CONFIG.TRADERJOEV2[this.secondAsset].binStep);
+        const idSlippage = this.dex === 'TRADERJOEV2' ?
+            getTraderJoeV2IdSlippageFromPriceSlippage(sPrimeMintEvent.slippage / 100, config.SPRIME_CONFIG.TRADERJOEV2[this.secondAsset].binStep)
+            : getUniswapV3SlippageFromPriceSlippage(currentPrice, sPrimeMintEvent.slippage / 100);
 
         const sPrimeMintRequest = {
           sPrimeAddress: this.sPrimeConfig.sPrimeAddress,
@@ -270,22 +282,30 @@ export default {
       });
     },
     async openRebalanceSPrimeModal() {
-      const [, activeId] = await this
-          .traderJoeService
-          .getLBPairReservesAndActiveBin(this.sPrimeConfig.lbAddress, this.provider);
-
+      let activeId, currentPrice;
+      if (this.dex === 'TRADERJOEV2') {
+        [, activeId] = await this
+            .traderJoeService
+            .getLBPairReservesAndActiveBin(this.sPrimeConfig.lbAddress, this.provider)
+      } else {
+        [currentPrice, activeId] = await this
+            .uniswapV3Service
+            .getPriceAndActiveId(this.sPrimeConfig.poolAddress, this.provider)
+      }
       const modalInstance = this.openModal(RebalancesPrimeModal);
       modalInstance.secondAssetSymbol = this.secondAsset;
 
       modalInstance.$on('REBALANCE', event => {
-        let idSlippage = getTraderJoeV2IdSlippageFromPriceSlippage(event.slippage / 100, config.SPRIME_CONFIG.TRADERJOEV2[this.secondAsset].binStep);
+        const idSlippage = this.dex === 'TRADERJOEV2' ?
+            getTraderJoeV2IdSlippageFromPriceSlippage(event.slippage / 100, config.SPRIME_CONFIG.TRADERJOEV2[this.secondAsset].binStep)
+            : getUniswapV3SlippageFromPriceSlippage(currentPrice, event.slippage / 100);
 
         let sPrimeRebalanceRequest = {
           sPrimeAddress: this.sPrimeConfig.sPrimeAddress,
           secondAsset: this.secondAsset,
           isRebalance: true,
           idSlippage: idSlippage,
-          slippage: event.slippage,
+          slippage: event.slippage / 100,
           dex: this.dex,
           activeId: activeId
         };
@@ -554,6 +574,10 @@ export default {
 
         .stat__info-icon {
           margin-left: 6px;
+
+          &.revenue {
+            width: 50px;
+          }
         }
 
         .stat__title {
@@ -626,8 +650,8 @@ export default {
 
       .power-gauge {
         position: relative;
-        width: 130px;
-        height: 130px;
+        width: 160px;
+        height: 160px;
         display: flex;
         flex-direction: row;
         align-items: center;
@@ -645,7 +669,7 @@ export default {
         }
 
         .gauge__value {
-          font-size: 44px;
+          font-size: 40px;
           font-weight: 600;
           color: var(--s-prime-panel__gauge-text-color);
         }

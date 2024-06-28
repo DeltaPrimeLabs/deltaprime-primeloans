@@ -46,7 +46,7 @@
       <SlippageControl :slippage-margin="0.02" v-on:slippageChange="slippageChange"></SlippageControl>
 
       <div class="rebalance-container">
-        <div class="rebalance-label">Rebalance: {{ isSecondAssetNative }}</div>
+        <div class="rebalance-label">Rebalance:</div>
         <Toggle v-on:change="rebalanceToggleChange" :options="['YES', 'NO']" :initial-option="0"></Toggle>
       </div>
 
@@ -54,7 +54,7 @@
         <Button :label="'Mint'"
                 v-on:click="submit()"
                 :waiting="transactionOngoing"
-                :disabled="primeInputError || secondInputError">
+                :disabled="primeInputError || secondInputError || (!primeAmount && !secondAmount)">
         </Button>
       </div>
     </Modal>
@@ -110,8 +110,8 @@ export default {
       secondInputValidators: [],
       addedLiquidity: 0,
       transactionOngoing: false,
-      primeInputError: true,
-      secondInputError: true,
+      primeInputError: false,
+      secondInputError: false,
       slippage: 0,
     };
   },
@@ -182,30 +182,15 @@ export default {
               return `Exceeds your PRIME balance`;
             }
           }
-        },
-        {
-          validate: (value) => {
-            console.log(value);
-            if ((value === 0 && this.primeAmount !== null) || Number.isNaN(value)) {
-              return `Value must be higher than 0`;
-            }
-          }
         }
       ];
 
       this.secondInputValidators = [
         {
           validate: (value) => {
-            if (value > this.secondAssetBalance) {
+            let balance = this.isSecondAssetNative ? this.nativeTokenBalance : this.secondAssetBalance;
+            if (value > balance) {
               return `Exceeds ${this.secondAsset.symbol} balance`;
-            }
-          }
-        },
-        {
-          validate: (value) => {
-            console.log(value);
-            if ((value === 0 && this.secondAmount !== null) || Number.isNaN(value)) {
-              return `Value must be higher than 0`;
             }
           }
         }

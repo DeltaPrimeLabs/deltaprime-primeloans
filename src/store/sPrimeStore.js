@@ -36,7 +36,7 @@ export default {
       console.log(dataFeeds)
       const sprimeContract = await wrapContract(new ethers.Contract(sPrimeMintRequest.sPrimeAddress, sPrimeMintRequest.dex === 'TRADERJOEV2' ? SPRIME_TJV2.abi : SPRIME_UNISWAP.abi, provider.getSigner()), dataFeeds);
 
-      const secondAssetDecimals = config.SPRIME_CONFIG.TRADERJOEV2[sPrimeMintRequest.secondAsset].secondAssetDecimals;
+      const secondAssetDecimals = config.SPRIME_CONFIG[sPrimeMintRequest.dex][sPrimeMintRequest.secondAsset].secondAssetDecimals;
       let amountPrime = toWei(sPrimeMintRequest.amountPrime ? Number(sPrimeMintRequest.amountPrime).toFixed(18) : '0')
       let amountSecond = parseUnits(sPrimeMintRequest.amountSecond ? Number(sPrimeMintRequest.amountSecond).toFixed(secondAssetDecimals) : '0', secondAssetDecimals)
 
@@ -85,9 +85,15 @@ export default {
 
       // let dataFeeds = ['PRIME', sPrimeMintRequest.secondAsset]
       let dataFeeds = [...Object.keys(config.POOLS_CONFIG), sPrimeRebalanceRequest.secondAsset]
+      console.log('sPrimeRebalanceRequest.sPrimeAddress: ', sPrimeRebalanceRequest.sPrimeAddress)
       const sprimeContract = await wrapContract(new ethers.Contract(sPrimeRebalanceRequest.sPrimeAddress, sPrimeRebalanceRequest.dex === 'TRADERJOEV2' ? SPRIME_TJV2.abi : SPRIME_UNISWAP.abi, provider.getSigner()), dataFeeds);
 
-      const transaction = await sprimeContract.deposit(sPrimeRebalanceRequest.activeId, sPrimeRebalanceRequest.idSlippage, 0, 0, sPrimeRebalanceRequest.isRebalance, sPrimeRebalanceRequest.slippage * 100)
+      console.log('sPrimeRebalanceRequest.activeId: ', sPrimeRebalanceRequest.activeId)
+      console.log('sPrimeRebalanceRequest.idSlippage: ', sPrimeRebalanceRequest.idSlippage)
+      console.log('sPrimeRebalanceRequest.isRebalance: ', sPrimeRebalanceRequest.isRebalance)
+      console.log('sPrimeRebalanceRequest.slippage * 100: ', sPrimeRebalanceRequest.slippage * 100)
+
+      const transaction = await sprimeContract.deposit(sPrimeRebalanceRequest.activeId, sPrimeRebalanceRequest.idSlippage, 0, 0, sPrimeRebalanceRequest.isRebalance, sPrimeRebalanceRequest.slippage * 100, { gasLimit: 8000000 })
       await awaitConfirmation(transaction, provider, 'rebalance');
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();

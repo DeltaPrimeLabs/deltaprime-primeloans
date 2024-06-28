@@ -21,6 +21,7 @@ import WalletAssetBalancesService from '../services/walletAssetBalancesService';
 import LifiService from '../services/lifiService';
 import NotifiService from '../services/notifiService';
 import TraderJoeService from '../services/traderJoeService';
+import UniswapV3Service from '../services/uniswapV3Service';
 import TermsService from '../services/termsService';
 import DeprecatedAssetsService from '../services/deprecatedAssetsService';
 import LtipService from "../services/ltipService";
@@ -54,6 +55,7 @@ export default {
     lifiService: new LifiService(),
     notifiService: new NotifiService(),
     traderJoeService: new TraderJoeService(),
+    uniswapV3Service: new UniswapV3Service(),
     termsService: new TermsService(),
     deprecatedAssetsService: new DeprecatedAssetsService(),
     ltipService: new LtipService(),

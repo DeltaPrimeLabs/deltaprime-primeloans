@@ -548,3 +548,29 @@ export  function getTraderJoeV2IdSlippageFromPriceSlippage(priceSlippage, binSte
       Math.log(1 + priceSlippage) / Math.log(1 + binStep / 1e4)
   );
 }
+
+// Function to convert price to tick
+export function uniswapV3PriceToTick(price) {
+  return Math.log(price) / Math.log(1.0001);
+}
+
+export function uniswapV3TickToPrice(tick) {
+  return Math.pow(1.0001, tick);
+}
+
+// Function to calculate tick slippage
+export function getUniswapV3SlippageFromPriceSlippage(currentPrice, slippage) {
+  // Calculate the price range after slippage
+  const lowerPrice = currentPrice * (1 - slippage);
+  const upperPrice = currentPrice * (1 + slippage);
+
+  // Convert prices to ticks
+  const tickLower = uniswapV3PriceToTick(lowerPrice);
+  const tickUpper = uniswapV3PriceToTick(upperPrice);
+
+  // Calculate tick slippage
+  const tickSlippage = tickUpper - tickLower;
+
+  return parseInt((tickSlippage / 2).toString());
+}
+
