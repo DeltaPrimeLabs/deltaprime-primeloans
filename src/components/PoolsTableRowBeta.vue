@@ -94,6 +94,7 @@ import config from '../config';
 import YAK_ROUTER_ABI from '../../test/abis/YakRouter.json';
 import BarGaugeBeta from './BarGaugeBeta.vue';
 import InfoIcon from './InfoIcon.vue';
+import {ActionSection} from "../services/globalActionsDisableService";
 
 let TOKEN_ADDRESSES;
 
@@ -110,6 +111,10 @@ export default {
     this.setupWalletAssetBalances();
     this.setupPoolsAssetsData();
     this.watchLifi();
+    this.watchActionDisabling();
+    setTimeout(() => {
+      console.log(this.isActionDisabledRecord);
+    }, 4000)
   },
 
   data() {
@@ -121,7 +126,8 @@ export default {
       poolContracts: {},
       lifiData: {},
       miningApy: 0,
-      poolsUnlocking: config.poolsUnlocking
+      poolsUnlocking: config.poolsUnlocking,
+      isActionDisabledRecord: {},
     };
   },
 
@@ -142,7 +148,8 @@ export default {
       'walletAssetBalancesService',
       'lifiService',
       'progressBarService',
-      'providerService'
+      'providerService',
+      'globalActionsDisableService'
     ]),
   },
 
@@ -154,6 +161,7 @@ export default {
     },
 
     setupActionsConfiguration() {
+      console.warn('WITHDRAW', this.isActionDisabledRecord['WITHDRAW']);
       this.actionsConfig = [
         {
           iconSrc: 'src/assets/icons/plus.svg',
@@ -161,16 +169,18 @@ export default {
           menuOptions: [
             {
               key: 'DEPOSIT',
-              name: 'Deposit'
+              name: 'Deposit',
+              disabled: this.isActionDisabledRecord['DEPOSIT'],
             },
             ...(this.pool.asset.symbol === 'AVAX' ? [{
               key: 'BRIDGE',
-              name: 'Bridge'
+              name: 'Bridge',
+              disabled: this.isActionDisabledRecord['BRIDGE'],
             }] : []),
             {
               key: 'BRIDGE_DEPOSIT',
               name: 'Bridge and deposit',
-              disabled: true,
+              disabled: this.isActionDisabledRecord['BRIDGE_DEPOSIT'] || true,
               disabledInfo: 'Available soon'
             },
           ]
@@ -178,12 +188,14 @@ export default {
         {
           iconSrc: 'src/assets/icons/minus.svg',
           tooltip: 'Withdraw',
-          iconButtonActionKey: 'WITHDRAW'
+          iconButtonActionKey: 'WITHDRAW',
+          disabled: this.isActionDisabledRecord['WITHDRAW'],
         },
         {
           iconSrc: 'src/assets/icons/swap.svg',
           tooltip: 'Swap',
-          iconButtonActionKey: 'SWAP_DEPOSIT'
+          iconButtonActionKey: 'SWAP_DEPOSIT',
+          disabled: this.isActionDisabledRecord['SWAP_DEPOSIT'],
         },
       ];
     },
@@ -217,34 +229,44 @@ export default {
       });
     },
 
-    actionClick(key) {
-      const history = JSON.parse(localStorage.getItem('active-bridge-deposit'));
-      const activeTransfer = history ? history[this.account.toLowerCase()] : null;
+    watchActionDisabling() {
+      this.globalActionsDisableService.getSectionActions$(ActionSection.POOLS)
+          .subscribe(isActionDisabledRecord => {
+            this.isActionDisabledRecord = isActionDisabledRecord;
+            this.setupActionsConfiguration();
+          })
+    },
 
-      switch (key) {
-        case 'DEPOSIT':
-          this.openDepositModal();
-          break;
-        case 'BRIDGE':
-          if (activeTransfer) {
-            this.$emit('openResumeBridge', activeTransfer);
-          } else {
-            this.openBridgeModal(true);
-          }
-          break;
-        case 'BRIDGE_DEPOSIT':
-          if (activeTransfer) {
-            this.$emit('openResumeBridge', activeTransfer);
-          } else {
-            this.openBridgeModal(false);
-          }
-          break;
-        case 'WITHDRAW':
-          this.openWithdrawModal();
-          break;
-        case 'SWAP_DEPOSIT':
-          this.openSwapDepositModal();
-          break;
+    actionClick(key) {
+      if (!this.isActionDisabledRecord[key]) {
+        const history = JSON.parse(localStorage.getItem('active-bridge-deposit'));
+        const activeTransfer = history ? history[this.account.toLowerCase()] : null;
+
+        switch (key) {
+          case 'DEPOSIT':
+            this.openDepositModal();
+            break;
+          case 'BRIDGE':
+            if (activeTransfer) {
+              this.$emit('openResumeBridge', activeTransfer);
+            } else {
+              this.openBridgeModal(true);
+            }
+            break;
+          case 'BRIDGE_DEPOSIT':
+            if (activeTransfer) {
+              this.$emit('openResumeBridge', activeTransfer);
+            } else {
+              this.openBridgeModal(false);
+            }
+            break;
+          case 'WITHDRAW':
+            this.openWithdrawModal();
+            break;
+          case 'SWAP_DEPOSIT':
+            this.openSwapDepositModal();
+            break;
+        }
       }
     },
 

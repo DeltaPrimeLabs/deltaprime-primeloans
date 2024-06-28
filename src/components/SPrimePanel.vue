@@ -1,7 +1,7 @@
 <template>
   <div class="sprime-panel-component" v-bind:class="{'sprime-panel-component--expanded': expanded}">
     <div class="header-actions">
-      <FlatButton v-on:buttonClick="openRedeemSPrimeModal()" :active="true">buy prime <img class="buy-prime-logo"
+      <FlatButton v-on:buttonClick="openRedeemSPrimeModal()" :active="!this.isActionDisabledRecord['BUY']">buy prime <img class="buy-prime-logo"
                                                                                            src="src/assets/logo/prime.svg"/>
       </FlatButton>
       <div v-on:click="toggleExpand()">
@@ -42,9 +42,9 @@
         </div>
       </div>
       <div class="actions">
-        <FlatButton v-on:buttonClick="openMintSPrimeModal()" :active="true">mint</FlatButton>
-        <FlatButton v-on:buttonClick="openRebalanceSPrimeModal()" :active="value > 0">rebalance</FlatButton>
-        <FlatButton v-on:buttonClick="openRedeemSPrimeModal()" :active="value > 0">redeem</FlatButton>
+        <FlatButton v-on:buttonClick="openMintSPrimeModal()" :active="!this.isActionDisabledRecord['MINT']">mint</FlatButton>
+        <FlatButton v-on:buttonClick="openRebalanceSPrimeModal()" :active="!this.isActionDisabledRecord['REBALANCE'] && value > 0">rebalance</FlatButton>
+        <FlatButton v-on:buttonClick="openRedeemSPrimeModal()" :active="!this.isActionDisabledRecord['REDEEM'] && value > 0">redeem</FlatButton>
       </div>
     </div>
     <div class="sprime-panel__divider"></div>
@@ -112,6 +112,7 @@ import DoubleAssetIcon from './DoubleAssetIcon.vue';
 import DistributionChart from "./DistributionChart.vue";
 import DeltaIcon from "./DeltaIcon.vue";
 import InfoIcon from "./InfoIcon.vue";
+import {ActionSection} from '../services/globalActionsDisableService';
 
 const ethers = require('ethers');
 
@@ -148,6 +149,7 @@ export default {
       governancePoints: null,
       governanceRate: null,
       expanded: false,
+      isActionDisabledRecord: {},
       distributionType: DistributionType.RIGHT_NEGATIVE,
       chartData: [
         {x: 1, y: 1, showTick: true, positive: false},
@@ -196,6 +198,8 @@ export default {
     this.vPrimeService.observeVPrimeRate().subscribe(rate => {
       this.governanceRate = rate.toExponential(2);
     });
+
+    this.watchActionDisabling();
   },
   watch: {},
   computed: {
@@ -207,7 +211,8 @@ export default {
       'traderJoeService',
       'uniswapV3Service',
       'themeService',
-      'progressBarService'
+      'progressBarService',
+      'globalActionsDisableService'
     ]),
     ...mapState('network', ['provider', 'account']),
     getDistributionIcon() {
@@ -382,7 +387,14 @@ export default {
 
     toggleExpand() {
       this.expanded = !this.expanded;
-    }
+    },
+
+    watchActionDisabling() {
+      this.globalActionsDisableService.getSectionActions$(ActionSection.SPRIME)
+        .subscribe(isActionDisabledRecord => {
+          this.isActionDisabledRecord = isActionDisabledRecord;
+        })
+    },
   },
 };
 </script>

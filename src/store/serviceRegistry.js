@@ -28,6 +28,7 @@ import LtipService from "../services/ltipService";
 import GgpIncentivesService from "../services/ggpIncentivesService";
 import sPrimeService from "../services/sPrimeService";
 import vPrimeService from "../services/vPrimeService";
+import GlobalActionsDisableService from "../services/globalActionsDisableService";
 
 export default {
   namespaced: true,
@@ -61,6 +62,7 @@ export default {
     ltipService: new LtipService(),
     ggpIncentivesService: new GgpIncentivesService(),
     sPrimeService: new sPrimeService(),
-    vPrimeService: new vPrimeService()
+    vPrimeService: new vPrimeService(),
+    globalActionsDisableService: new GlobalActionsDisableService(),
   },
 };

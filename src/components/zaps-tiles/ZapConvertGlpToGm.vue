@@ -1,6 +1,6 @@
 <template>
   <ZapTile v-on:tileClick="onTileClick()"
-           :disabled="!hasSmartLoanContract"
+           :disabled="disabled || !hasSmartLoanContract"
            :img-src="'src/assets/icons/glp_to_gm_zap_icon.png'"
            :dark-img-src="'src/assets/icons/glp_to_gm_zap_icon--dark.png'"
            :img-class="'glp-to-gm-img'"
@@ -31,6 +31,9 @@ const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 export default {
   name: 'ZapConvertGlpToGm',
   components: {ZapTile},
+  props: {
+    disabled: null,
+  },
   data() {
     return {
     };
@@ -65,6 +68,9 @@ export default {
 
     async onTileClick() {
       if (!this.hasSmartLoanContract) return;
+      if (this.disabled) {
+        return;
+      }
 
       const modalInstance = this.openModal(ConvertGlpToGmModal);
       const tokenContract = new ethers.Contract(this.assets['GLP'].address, erc20ABI, this.provider.getSigner());

@@ -91,7 +91,7 @@
 
       <div class="table__cell actions">
         <IconButton class="action-button"
-                    :disabled="((disableAllButtons) && (!(asset.debtCoverage > 0 && noSmartLoan)) || asset.inactive || asset.unsupported || asset.droppingSupport)"
+                    :disabled="isActionDisabledRecord['ADD_FROM_WALLET'] || ((disableAllButtons) && (!(asset.debtCoverage > 0 && noSmartLoan)) || asset.inactive || asset.unsupported || asset.droppingSupport)"
                     :icon-src="'src/assets/icons/plus.svg'" :size="26"
                     v-tooltip="{content: 'Deposit collateral', classes: 'button-tooltip'}"
                     v-on:click="actionClick('ADD_FROM_WALLET')">
@@ -103,7 +103,7 @@
             buttons and deposit collateral.
           </template>
         </IconButton>
-        <IconButton :disabled="disableAllButtons || asset.inactive || asset.unsupported || noSmartLoan"
+        <IconButton :disabled="isActionDisabledRecord['SWAP'] || disableAllButtons || asset.inactive || asset.unsupported || noSmartLoan"
                     class="action-button"
                     :icon-src="'src/assets/icons/swap.svg'" :size="26"
                     v-tooltip="{content: 'Swap', classes: 'button-tooltip'}"
@@ -176,6 +176,7 @@ import Toggle from './Toggle.vue';
 import {BigNumber} from 'ethers';
 import SwapDebtModal from './SwapDebtModal.vue';
 import MintCAIModal from './MintCAIModal.vue';
+import {ActionSection} from "../services/globalActionsDisableService";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -212,6 +213,7 @@ export default {
     this.watchExternalTotalStakedUpdate();
     this.watchFarmRefreshEvent();
     this.watchLtipMaxBoostUpdate();
+    this.watchActionDisabling();
   },
   data() {
     return {
@@ -231,7 +233,8 @@ export default {
       showTradingViewChart: false,
       avalancheChain: window.avalancheChain,
       currentlyOpenModalInstance: null,
-      boostApy: 0
+      boostApy: 0,
+      isActionDisabledRecord: {},
     };
   },
   computed: {
@@ -273,7 +276,8 @@ export default {
       'healthService',
       'stakedExternalUpdateService',
       'farmService',
-      'ltipService'
+      'ltipService',
+      'globalActionsDisableService',
     ]),
 
     loanValue() {
@@ -339,16 +343,18 @@ export default {
               {
                 key: 'BORROW',
                 name: 'Borrow',
-                disabled: this.borrowDisabled(),
+                disabled: this.isActionDisabledRecord['BORROW'] || this.borrowDisabled(),
                 disabledInfo: 'To borrow, you need to add some funds from you wallet first'
               },
               {
                 key: 'REPAY',
                 name: 'Repay',
+                disabled: this.isActionDisabledRecord['REPAY'],
               },
               {
                 key: 'SWAP_DEBT',
                 name: 'Swap debt',
+                disabled: this.isActionDisabledRecord['SWAP_DEBT'],
               }
             ]
             : []),
@@ -356,9 +362,10 @@ export default {
             key: 'WRAP',
             name: `Wrap native ${this.nativeAssetOptions[0]}`,
             hidden: true,
+            disabled: this.isActionDisabledRecord['WRAP'],
           } : null,
           this.asset.symbol === 'GLP' ? {
-            disabled: !this.hasSmartLoanContract,
+            disabled: this.isActionDisabledRecord['CLAIM_GLP_REWARDS'] || !this.hasSmartLoanContract,
             key: 'CLAIM_GLP_REWARDS',
             name: 'Claim GLP rewards',
           } : null,
@@ -376,6 +383,7 @@ export default {
           {
             key: 'WITHDRAW',
             name: 'Withdraw collateral',
+            disabled: this.isActionDisabledRecord['WITHDRAW'],
           },
         ]
       };
@@ -518,7 +526,7 @@ export default {
     },
 
     actionClick(key) {
-      if (!this.disableAllButtons || (this.noSmartLoan && this.asset.debtCoverage > 0 && key === 'ADD_FROM_WALLET')) {
+      if (!this.isActionDisabledRecord[key] && !this.disableAllButtons || (this.noSmartLoan && this.asset.debtCoverage > 0 && key === 'ADD_FROM_WALLET')) {
         switch (key) {
           case 'BORROW':
             this.openBorrowModal();
@@ -1168,6 +1176,14 @@ export default {
       this.ltipService.observeLtipMaxBoostApy().subscribe((boostApy) => {
         this.boostApy = boostApy;
       });
+    },
+
+    watchActionDisabling() {
+      this.globalActionsDisableService.getSectionActions$(ActionSection.ASSETS)
+          .subscribe(isActionDisabledRecord => {
+            this.isActionDisabledRecord = isActionDisabledRecord;
+            this.setupActionsConfiguration();
+          })
     },
 
     setupAvailableFarms() {

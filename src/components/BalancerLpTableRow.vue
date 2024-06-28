@@ -122,6 +122,7 @@ import {formatUnits} from "ethers/lib/utils";
 import config from "../config";
 import BalancerUnwindLpModal from "./BalancerUnwindLpModal.vue";
 import ClaimBalancerRewardsModal from "./ClaimBalancerRewardsModal.vue";
+import {ActionSection} from "../services/globalActionsDisableService";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -154,6 +155,7 @@ export default {
       this.watchExternalAssetBalanceUpdate();
       this.watchRefreshLP();
       this.setupApr();
+      this.watchActionDisabling();
     })
   },
 
@@ -161,6 +163,7 @@ export default {
     return {
       addActionsConfig: null,
       removeActionsConfig: null,
+      moreActionsConfig: null,
       showChart: false,
       rowExpanded: false,
       poolBalance: 0,
@@ -175,6 +178,7 @@ export default {
       availableFarms: [],
       nonStakedLpBalance: 0,
       rewardsReset: false,
+      isActionDisabledRecord: {},
     };
   },
 
@@ -209,7 +213,8 @@ export default {
       'stakedExternalUpdateService',
       'farmService',
       'providerService',
-      'accountService'
+      'accountService',
+      'globalActionsDisableService',
     ]),
 
     hasSmartLoanContract() {
@@ -269,11 +274,13 @@ export default {
           menuOptions: [
             {
               key: 'FUND_AND_STAKE',
-              name: 'Import existing LP position'
+              name: 'Import existing LP position',
+              disabled: this.isActionDisabledRecord['FUND_AND_STAKE'],
             },
             {
               key: 'PROVIDE_LIQUIDITY',
               name: 'Create LP position',
+            disabled: this.isActionDisabledRecord['PROVIDE_LIQUIDITY'],
               // disabled: !this.hasSmartLoanContract,
               // disabledInfo: 'To create LP token, you need to add some funds from you wallet first'
             }
@@ -282,7 +289,8 @@ export default {
       if (hasNonStakedLP) {
         this.addActionsConfig.menuOptions.push({
           key: 'STAKE',
-          name: 'Stake LP tokens'
+          name: 'Stake LP tokens',
+          disabled: this.isActionDisabledRecord['STAKE'],
         })
       }
     },
@@ -296,19 +304,22 @@ export default {
             {
               key: 'UNSTAKE_AND_WITHDRAW',
               name: 'Export LP position',
-              // disabled: !this.hasSmartLoanContract,
+              // disabled: !this.hasSmartLoanContract,,
+              disabled: this.isActionDisabledRecord['UNSTAKE_AND_WITHDRAW'],
             },
             {
               key: 'REMOVE_LIQUIDITY',
               name: 'Unwind LP position',
-              // disabled: !this.hasSmartLoanContract,
+              // disabled: !this.hasSmartLoanContract,,
+              disabled: this.isActionDisabledRecord['REMOVE_LIQUIDITY'],
             }
           ]
         }
       if (hasNonStakedLP) {
         this.addActionsConfig.menuOptions.push({
           key: 'WITHDRAW',
-          name: 'Withdraw unstaked LP tokens'
+          name: 'Withdraw unstaked LP tokens',
+          disabled: this.isActionDisabledRecord['WITHDRAW'],
         })
       }
     },
@@ -320,7 +331,8 @@ export default {
         menuOptions: [
           {
             key: 'CLAIM_REWARDS',
-            name: 'Claim rewards'
+            name: 'Claim rewards',
+            disabled: this.isActionDisabledRecord['CLAIM_REWARDS'],
           }
         ]
       };
@@ -344,7 +356,7 @@ export default {
     },
 
     actionClick(key) {
-      if (!this.disableAllButtons) {
+      if (this.isActionDisabledRecord[key] && !this.disableAllButtons) {
         switch (key) {
           case 'FUND_AND_STAKE':
             this.openImportModal();
@@ -663,6 +675,16 @@ export default {
       this.closeModal();
       this.disableAllButtons = false;
       this.isBalanceEstimated = false;
+    },
+
+    watchActionDisabling() {
+      this.globalActionsDisableService.getSectionActions$(ActionSection.BALANCER_LP)
+          .subscribe(isActionDisabledRecord => {
+            this.isActionDisabledRecord = isActionDisabledRecord;
+            this.setupAddActionsConfiguration();
+            this.setupRemoveActionsConfiguration();
+            this.setupMoreActionsConfiguration();
+          })
     },
   },
 };
