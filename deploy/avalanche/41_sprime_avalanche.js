@@ -29,7 +29,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deploy } = deployments;
     const { deployer, admin } = await getNamedAccounts();
 
-    const TJ_V2_ROUTER_ADDRESS = '0xb4315e873dBcf96Ffd0acd8EA43f689D8c20fB30';
+    const TJ_V2_ROUTER_ADDRESS = '0x18556DA13313f3532c54711497A8FedAC273220E';
     const PRIME_ADDRESS = "0x8B1e2420e0d453a718d4b70e3a043263Eab77851";
     const WAVAX_ADDRESS = "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7";
 
