@@ -392,6 +392,7 @@ export default {
     watchActionDisabling() {
       this.globalActionsDisableService.getSectionActions$(ActionSection.SPRIME)
         .subscribe(isActionDisabledRecord => {
+          console.log(isActionDisabledRecord);
           this.isActionDisabledRecord = isActionDisabledRecord;
         })
     },

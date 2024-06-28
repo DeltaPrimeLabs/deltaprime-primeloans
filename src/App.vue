@@ -515,7 +515,7 @@ export default {
         this.globalActionsDisableService.disableActionGlobally('REDEEM');
         this.globalActionsDisableService.disableActionGlobally('BUY');
       } else {
-        this.globalActionsDisableService.disableAllActions();
+        this.globalActionsDisableService.enableReadonlyMode();
       }
       if (!this.restrictModalOpen) {
         this.openModal(RestrictedCountryModal);
