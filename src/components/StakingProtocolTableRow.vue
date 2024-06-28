@@ -102,6 +102,7 @@ import InfoIcon from "./InfoIcon.vue";
 import AddFromWalletModal from "./AddFromWalletModal.vue";
 import erc20ABI from "../../test/abis/ERC20.json";
 import WithdrawModal from "./WithdrawModal.vue";
+import {ActionSection} from "../services/globalActionsDisableService";
 
 const ethers = require('ethers');
 
@@ -128,6 +129,7 @@ export default {
     this.watchProgressBarState();
     this.watchFarmRefreshEvent();
     this.watchExternalStakedPerFarm();
+    this.watchActionDisabling();
     this.watchLtipMaxBoostUpdate();
     this.platypusAffected = this.farm.strategy === 'Platypus' && ['AVAX', 'sAVAX'].includes(this.asset.symbol);
     this.platypusAffectedDisableDeposit = this.farm.strategy === 'Platypus' && ['USDC', 'USDT'].includes(this.asset.symbol)
@@ -149,7 +151,8 @@ export default {
       removeActionsConfig: null,
       healthLoaded: false,
       platypusAffected: false,
-      platypusAffectedDisableDeposit: false
+      platypusAffectedDisableDeposit: false,
+      isActionDisabledRecord: {},
     };
   },
   watch: {
@@ -196,7 +199,8 @@ export default {
       'farmService',
       'healthService',
       'deprecatedAssetsService',
-      'ltipService'
+      'ltipService',
+      'globalActionsDisableService',
     ]),
     protocol() {
       return config.PROTOCOLS_CONFIG[this.farm.protocol];
@@ -212,19 +216,23 @@ export default {
     ...mapActions('stakeStore', ['fund','withdraw', 'stake', 'unstake', 'migrateToAutoCompoundingPool']),
 
     actionClick(key) {
-      switch (key) {
-        case 'ADD_FROM_WALLET':
-          this.openAddFromWalletModal();
-          break;
-        case 'STAKE':
-          this.openStakeModal();
-          break;
-        case 'WITHDRAW':
-          this.openWithdrawModal();
-          break;
-        case 'UNSTAKE':
-          this.openUnstakeModal();
-          break;
+      console.log(key);
+      console.log(this.isActionDisabledRecord[key]);
+      if (!this.isActionDisabledRecord[key]) {
+        switch (key) {
+          case 'ADD_FROM_WALLET':
+            this.openAddFromWalletModal();
+            break;
+          case 'STAKE':
+            this.openStakeModal();
+            break;
+          case 'WITHDRAW':
+            this.openWithdrawModal();
+            break;
+          case 'UNSTAKE':
+            this.openUnstakeModal();
+            break;
+        }
       }
     },
 
@@ -512,10 +520,12 @@ export default {
           {
             key: 'ADD_FROM_WALLET',
             name: 'Add from wallet',
+            disabled: this.isActionDisabledRecord['ADD_FROM_WALLET']
           },
           {
             key: 'STAKE',
             name: 'Deposit into vault',
+            disabled: this.isActionDisabledRecord['STAKE']
           },
         ]
       }
@@ -528,13 +538,13 @@ export default {
           {
             key: 'WITHDRAW',
             name: 'Withdraw to wallet',
-            disabled: !this.farm.feedSymbol,
+            disabled: this.isActionDisabledRecord['WITHDRAW'] || !this.farm.feedSymbol,
             disabledInfo: 'Coming soon'
           },
           {
             key: 'UNSTAKE',
             name: 'Withdraw to assets',
-            disabled: this.farm.inactive
+            disabled: this.isActionDisabledRecord['UNSTAKE'] || this.farm.inactive
           },
         ]
       }
@@ -567,7 +577,16 @@ export default {
           this.handleTransactionError(error);
         });
       });
-    }
+    },
+
+    watchActionDisabling() {
+      this.globalActionsDisableService.getSectionActions$(ActionSection.STAKING_PROTOCOL)
+          .subscribe(isActionDisabledRecord => {
+            this.isActionDisabledRecord = isActionDisabledRecord;
+            this.setupAddActionsConfiguration();
+            this.setupRemoveActionsConfiguration();
+          })
+    },
   }
 };
 </script>

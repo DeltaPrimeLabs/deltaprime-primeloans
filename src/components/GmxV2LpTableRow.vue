@@ -180,6 +180,7 @@ import {
 import zapLong from "./zaps-tiles/ZapLong.vue";
 import {calculateGmxV2ExecutionFee, capitalize, hashData} from "../utils/blockchain";
 import Dropdown from "./notifi/settings/Dropdown.vue";
+import {ActionSection} from "../services/globalActionsDisableService";
 
 export default {
   name: 'GmxV2LpTableRow',
@@ -215,6 +216,7 @@ export default {
     this.watchAssetPricesUpdate();
     this.watchLtipMaxBoostUpdate();
     this.fetchHistoricalPrices();
+    this.watchActionDisabling();
   },
 
   data() {
@@ -248,6 +250,7 @@ export default {
       boostApy: 0,
       selectedChart: 'PRICE',
       chain: null,
+      isActionDisabledRecord: {},
     };
   },
 
@@ -285,7 +288,8 @@ export default {
       'priceService',
       'lpService',
       'healthService',
-      'ltipService'
+      'ltipService',
+      'globalActionsDisableService',
     ]),
     ...mapState('stakeStore', ['farms']),
 
@@ -341,14 +345,14 @@ export default {
               {
                 key: 'ADD_FROM_WALLET',
                 name: 'Import existing GM token',
-                disabled: !this.hasSmartLoanContract,
-                disabledInfo: 'To import GM token, you need to add some funds from you wallet first'
+                disabled: this.isActionDisabledRecord['ADD_FROM_WALLET'] || !this.hasSmartLoanContract,
+                disabledInfo: this.isActionDisabledRecord['ADD_FROM_WALLET'] ? '' : 'To import GM token, you need to add some funds from you wallet first'
               },
               {
                 key: 'PROVIDE_LIQUIDITY',
                 name: 'Create GM position',
-                disabled: !this.hasSmartLoanContract,
-                disabledInfo: 'To create GM token, you need to add some funds from you wallet first'
+                disabled: this.isActionDisabledRecord['PROVIDE_LIQUIDITY'] || !this.hasSmartLoanContract,
+                disabledInfo: this.isActionDisabledRecord['PROVIDE_LIQUIDITY'] ? '' : 'To create GM token, you need to add some funds from you wallet first'
               }
             ]
           }
@@ -366,13 +370,13 @@ export default {
               {
                 key: 'WITHDRAW',
                 name: 'Export GM position',
-                disabled: !this.hasSmartLoanContract
+                disabled: this.isActionDisabledRecord['WITHDRAW'] || !this.hasSmartLoanContract
               },
               {
                 key: 'REMOVE_LIQUIDITY',
                 name: 'Remove GM position',
-                disabled: !this.hasSmartLoanContract,
-                disabledInfo: 'You need to add some funds from you wallet first'
+                disabled: this.isActionDisabledRecord['REMOVE_LIQUIDITY'] || !this.hasSmartLoanContract,
+                disabledInfo: this.isActionDisabledRecord['REMOVE_LIQUIDITY'] ? '' : 'You need to add some funds from you wallet first'
               }
             ]
           }
@@ -386,6 +390,7 @@ export default {
           {
             key: 'PARTNER_PROFILE',
             name: 'Show profile',
+            disabled: this.isActionDisabledRecord['PARTNER_PROFILE'],
           }
         ]
       };
@@ -457,7 +462,7 @@ export default {
     },
 
     actionClick(key) {
-      if (!this.disableAllButtons && this.healthLoaded) {
+      if (!this.isActionDisabledRecord[key] && !this.disableAllButtons && this.healthLoaded) {
         switch (key) {
           case 'ADD_FROM_WALLET':
             this.openAddFromWalletModal();
@@ -1033,7 +1038,17 @@ export default {
 
     depositGasLimitKey(singleToken) {
       return hashData(["bytes32", "bool"], [DEPOSIT_GAS_LIMIT_KEY, singleToken]);
-    }
+    },
+
+    watchActionDisabling() {
+      this.globalActionsDisableService.getSectionActions$(ActionSection.GMXV2)
+          .subscribe(isActionDisabledRecord => {
+            this.isActionDisabledRecord = isActionDisabledRecord;
+            this.setupAddActionsConfiguration();
+            this.setupRemoveActionsConfiguration();
+            this.setupMoreActionsConfiguration();
+          })
+    },
   },
 };
 </script>

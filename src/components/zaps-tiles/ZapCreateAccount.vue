@@ -1,5 +1,6 @@
 <template>
   <ZapTile v-on:tileClick="onTileClick()"
+           :disabled="disabled"
            :img-src="'src/assets/icons/zap-create-account--light.svg'"
            :dark-img-src="'src/assets/icons/zap-create-account--dark.svg'"
            :header="'Create a new Prime Account'"
@@ -27,6 +28,9 @@ const ethers = require('ethers');
 export default {
   name: 'ZapCreateAccount',
   components: {ZapTile},
+  props: {
+    disabled: null,
+  },
   data() {
     return {};
   },
@@ -53,6 +57,9 @@ export default {
     ...mapActions('network', ['updateBalance']),
 
     async onTileClick() {
+      if (this.disabled) {
+        return;
+      }
       const modalInstance = this.openModal(CreateAccountModal);
 
       this.getWalletBalances().subscribe(balances => {

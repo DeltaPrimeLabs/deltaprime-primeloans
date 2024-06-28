@@ -131,6 +131,7 @@ import {wrapContract} from "../utils/blockchain";
 import ClaimRewardsModal from "./ClaimRewardsModal.vue";
 import BarGaugeBeta from './BarGaugeBeta.vue';
 import InfoIcon from './InfoIcon.vue';
+import {ActionSection} from '../services/globalActionsDisableService';
 
 export default {
   name: 'PenpieLpTableRow',
@@ -152,7 +153,8 @@ export default {
       tvl: 0,
       boostApy: 0,
       rewards: null,
-      rewardsTokens: {...config.ASSETS_CONFIG, ...config.PENPIE_REWARDS_TOKENS}
+      rewardsTokens: {...config.ASSETS_CONFIG, ...config.PENPIE_REWARDS_TOKENS},
+      isActionDisabledRecord: {},
     }
   },
   computed: {
@@ -191,7 +193,8 @@ export default {
       'lpService',
       'healthService',
       'providerService',
-      'ltipService'
+      'ltipService',
+      'globalActionsDisableService'
     ]),
     maxApr() {
       return calculateMaxApy(this.pools, this.apr / 100);
@@ -215,6 +218,7 @@ export default {
       this.watchLtipMaxBoostUpdate();
       this.setupMaturityInDays();
     })
+    this.watchActionDisabling();
   },
 
   methods: {
@@ -237,17 +241,17 @@ export default {
           {
             key: 'ADD_FROM_WALLET',
             name: 'Import Penpie LP from wallet',
-            disabled: this.disableAllButtons,
+            disabled: this.isActionDisabledRecord['ADD_FROM_WALLET'] || this.disableAllButtons,
           },
           {
             key: 'IMPORT_AND_STAKE',
             name: 'Import & stake Pendle LP',
-            disabled: this.disableAllButtons,
+            disabled: this.isActionDisabledRecord['IMPORT_AND_STAKE'] || this.disableAllButtons,
           },
           {
             key: 'CREATE_LP',
             name: 'Create LP from LRT',
-            disabled: this.disableAllButtons,
+            disabled: this.isActionDisabledRecord['CREATE_LP'] || this.disableAllButtons,
           },
         ]
       }
@@ -261,17 +265,17 @@ export default {
           {
             key: 'EXPORT_LP',
             name: 'Export Penpie LP',
-            disabled: this.disableAllButtons,
+            disabled: this.isActionDisabledRecord['EXPORT_LP'] || this.disableAllButtons,
           },
           {
             key: 'UNSTAKE_AND_EXPORT',
             name: 'Unstake & export Pendle LP',
-            disabled: this.disableAllButtons,
+            disabled: this.isActionDisabledRecord['UNSTAKE_AND_EXPORT'] || this.disableAllButtons,
           },
           {
             key: 'UNWIND',
             name: 'Unwind LP to LRT',
-            disabled: this.disableAllButtons,
+            disabled: this.isActionDisabledRecord['UNWIND'] || this.disableAllButtons,
           },
         ]
       }
@@ -285,7 +289,7 @@ export default {
           {
             key: 'CLAIM_REWARDS',
             name: 'Claim rewards',
-            disabled: !this.lpToken.rewards || this.lpToken.rewards.length === 0,
+            disabled: this.isActionDisabledRecord['CLAIM_REWARDS'] || !this.lpToken.rewards || this.lpToken.rewards.length === 0,
             disabledInfo: 'You don\'t have any claimable rewards yet.',
           }
         ]
@@ -849,6 +853,16 @@ export default {
       const diffTime = Math.abs(date - now);
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       this.lpToken.maturityInDays = diffDays;
+    },
+
+    watchActionDisabling() {
+      this.globalActionsDisableService.getSectionActions$(ActionSection.PENPIE)
+        .subscribe(isActionDisabledRecord => {
+          this.isActionDisabledRecord = isActionDisabledRecord;
+          this.setupAddActionsConfiguration();
+          this.setupRemoveActionsConfiguration();
+          this.setupMoreActionsConfiguration();
+        })
     },
   }
 }
