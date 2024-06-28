@@ -268,6 +268,7 @@ export default {
           isRebalance: sPrimeMintEvent.rebalance,
           amountPrime: sPrimeMintEvent.primeAmount,
           amountSecond: sPrimeMintEvent.secondAmount,
+          isSecondAssetNative: sPrimeMintEvent.isSecondAssetNative,
           idSlippage: idSlippage,
           slippage: sPrimeMintEvent.slippage / 100,
           dex: this.dex,

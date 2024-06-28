@@ -60,7 +60,7 @@ export default {
         }
     },
     VPRIME_CONFIG: {
-        address: "0x852894a93c9DA9f42a7e93dc47ef1c9630D58Bab"
+        address: "0x228a19fC13932C67D538fEba858359E369e5a197"
     },
     WOMBAT_REWARDS_TOKENS: {
         "WOM": {name: "WOM", symbol: "WOM", logoExt: "png", decimals: 18, address: addresses.WOM},

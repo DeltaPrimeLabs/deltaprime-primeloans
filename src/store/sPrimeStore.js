@@ -6,6 +6,7 @@ import {parseUnits} from '@/utils/calculate';
 import erc20ABI from '../../test/abis/ERC20.json';
 import config from '@/config';
 import {fromWei, toWei} from "../utils/calculate";
+import WAVAX from '../../test/abis/WAVAX.json';
 
 
 const ethers = require('ethers');
@@ -39,6 +40,11 @@ export default {
       const secondAssetDecimals = config.SPRIME_CONFIG[sPrimeMintRequest.dex][sPrimeMintRequest.secondAsset].secondAssetDecimals;
       let amountPrime = toWei(sPrimeMintRequest.amountPrime ? Number(sPrimeMintRequest.amountPrime).toFixed(18) : '0')
       let amountSecond = parseUnits(sPrimeMintRequest.amountSecond ? Number(sPrimeMintRequest.amountSecond).toFixed(secondAssetDecimals) : '0', secondAssetDecimals)
+
+      if (sPrimeMintRequest.isSecondAssetNative && sPrimeMintRequest.amountSecond > 0) {
+        let wrapTx = await new ethers.Contract(TOKEN_ADDRESSES[sPrimeMintRequest.secondAsset], WAVAX, provider.getSigner()).deposit({value: amountSecond});
+        await awaitConfirmation(wrapTx, provider, 'wrap');
+      }
 
       //approvals
       await approve(TOKEN_ADDRESSES['PRIME'], amountPrime);
