@@ -676,4 +676,11 @@
   --s-prime-panel__gauge-text-color: #{$pale-lilac};
   --s-prime-panel__actions-info-divider-background: #{$mist-space};
   // endregion
+
+  // region PriceRangeChart
+  --price-range-chart__border: linear-gradient(to right, #{$dark-fuchsia} 19%, #{$pale-plum} 57%, #{$teal} 88%);
+  --price-range-chart__range-background: #{$pale-lilac};
+  --price-range-chart__tick-color: #{$washed-blue};
+  --price-range-chart__active-line-color: #{$light-navy};
+  // endregion
 }
