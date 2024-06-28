@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: ;
+// Last deployed from commit: 2bd6f88e45deabab308fc38a4802134764767eef;
 pragma solidity ^0.8.17;
 
 // Importing necessary libraries and interfaces
@@ -139,57 +139,56 @@ contract sPrimeUniswap is
      * @dev Returns the estimated USD value of the user position
      * @param user User Address
      * @param poolPrice Pool Price or oracle price for calculating proper token amount
-     * @return Total Value in tokenY amount for the user's position.
+     * @return amountY Total Value in tokenY amount for the user's position.
      */
     function getUserValueInTokenY(
         address user,
         uint256 poolPrice
-    ) public view returns (uint256) {
+    ) public view returns (uint256 amountY) {
         uint256 tokenId = userTokenId[user];
 
-        if (tokenId <= 0) {
-            revert NoPosition();
+        if(tokenId > 0) {
+            (IERC20Metadata token0, IERC20Metadata token1) = (tokenX, tokenY);
+            uint256 price = poolPrice;
+            if (tokenSequence) {
+                (token0, token1) = (tokenY, tokenX);
+            } else {
+                price = 1e16 / price;
+            }
+
+            price =
+                price *
+                10 ** (PRECISION + token1.decimals() - token0.decimals() - 8);
+            uint160 sqrtRatioX96 = uint160((UniswapV3IntegrationHelper.sqrt(price) * 2 ** 96) / 10 ** (PRECISION / 2));
+            uint256 amountX;
+            (amountX, amountY) = positionManager.total(
+                tokenId,
+                sqrtRatioX96
+            );
+
+            (amountX, amountY) = tokenSequence
+                ? (amountY, amountX)
+                : (amountX, amountY);
+
+            uint8 tokenXDecimals = tokenX.decimals();
+            uint8 tokenYDecimals = tokenY.decimals();
+            if (tokenYDecimals >= tokenXDecimals + 8) {
+                amountY =
+                    amountY +
+                    amountX *
+                    poolPrice *
+                    10 ** (tokenYDecimals - tokenXDecimals - 8);
+            } else {
+                amountY =
+                    amountY +
+                    FullMath.mulDiv(
+                        amountX,
+                        poolPrice,
+                        10 ** (tokenXDecimals + 8 - tokenYDecimals)
+                    );
+            }
         }
 
-        (IERC20Metadata token0, IERC20Metadata token1) = (tokenX, tokenY);
-        uint256 price = poolPrice;
-        if (tokenSequence) {
-            (token0, token1) = (tokenY, tokenX);
-        } else {
-            price = 1e16 / price;
-        }
-
-        price =
-            price *
-            10 ** (PRECISION + token1.decimals() - token0.decimals() - 8);
-        uint160 sqrtRatioX96 = uint160((UniswapV3IntegrationHelper.sqrt(price) * 2 ** 96) / 10 ** (PRECISION / 2));
-
-        (uint256 amountX, uint256 amountY) = positionManager.total(
-            tokenId,
-            sqrtRatioX96
-        );
-
-        (amountX, amountY) = tokenSequence
-            ? (amountY, amountX)
-            : (amountX, amountY);
-
-        uint8 tokenXDecimals = tokenX.decimals();
-        uint8 tokenYDecimals = tokenY.decimals();
-        if (tokenYDecimals >= tokenXDecimals + 8) {
-            amountY =
-                amountY +
-                amountX *
-                poolPrice *
-                10 ** (tokenYDecimals - tokenXDecimals - 8);
-        } else {
-            amountY =
-                amountY +
-                FullMath.mulDiv(
-                    amountX,
-                    poolPrice,
-                    10 ** (tokenXDecimals + 8 - tokenYDecimals)
-                );
-        }
         return amountY;
     }
 
