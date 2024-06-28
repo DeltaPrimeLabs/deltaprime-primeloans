@@ -32,7 +32,8 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
     const calldata = web3Abi.encodeFunctionCall(
         vPrimeControllerArtifact.abi.find((method) => method.name === "initialize"),
-        [["0xa4306C384Ed015235E2B19ACcd3096045527A36f"], "0xF3978209B7cfF2b90100C6F87CEC77dE928Ed58e", "0x852894a93c9DA9f42a7e93dc47ef1c9630D58Bab", false]
+        [["0xd38C5cEca20Fb43503E108ed8d4CaCA5B57E730E"], "0xF3978209B7cfF2b90100C6F87CEC77dE928Ed58e", "0x228a19fC13932C67D538fEba858359E369e5a197", false]
+        // [sPrimeContracts], tokenManager, vPrime, useOracleFeed
     );
 
     let deployedvPrimeControllerTUP = await deploy("vPrimeControllerUP", {
