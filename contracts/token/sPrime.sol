@@ -4,15 +4,15 @@
 pragma solidity ^0.8.17;
 
 // Importing necessary libraries and interfaces
-import "../lib/joe-v2/math/SafeCast.sol";
-import "../interfaces/ISPrimeTraderJoe.sol";
 import "../interfaces/joe-v2/ILBRouter.sol";
+import "../interfaces/ISPrimeTraderJoe.sol";
 import "../interfaces/IPositionManager.sol";
 import "../interfaces/IVPrimeController.sol";
+import "../lib/joe-v2/math/SafeCast.sol";
 import "../lib/uniswap-v3/FullMath.sol";
-import "../lib/joe-v2/LiquidityAmounts.sol";
 import "../lib/joe-v2/math/Uint256x256Math.sol";
 import "../lib/joe-v2/math/LiquidityConfigurations.sol";
+import "../lib/joe-v2/PriceHelper.sol";
 import "../abstract/PendingOwnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
@@ -24,7 +24,6 @@ import "@redstone-finance/evm-connector/contracts/core/ProxyConnector.sol";
 // SPrime contract declaration
 contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableUpgradeable, ERC20Upgradeable, ProxyConnector {
     using SafeERC20 for IERC20Metadata; // Using SafeERC20 for IERC20Metadata for safe token transfers
-    using LiquidityAmounts for address; // Using LiquidityAmounts for address for getting amounts of liquidity
     using SafeCast for uint256; // Using SafeCast for uint256 for safe type casting
     using Uint256x256Math for uint256;
     using PackedUint128Math for bytes32;
@@ -296,7 +295,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
             }
 
             ILBRouter.Version[] memory versionsDynamic = new ILBRouter.Version[](1);
-            versionsDynamic[0] = ILBRouter.Version.V2_1;
+            versionsDynamic[0] = ILBRouter.Version.V2_2;
 
             uint256[] memory binStepsDynamic = new uint256[](1);
             binStepsDynamic[0] = DEFAULT_BIN_STEP;

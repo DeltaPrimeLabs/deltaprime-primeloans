@@ -139,9 +139,10 @@ describe("SPrime", function () {
         await usdc.connect(whale).transfer(user2, "10000000000");
         await usdc.connect(whale).transfer(user1, "10000000000");
         await usdc.connect(whale).transfer(user3, "10000000000");
+        const TJ_V2_ROUTER_ADDRESS = '0x18556DA13313f3532c54711497A8FedAC273220E';
 
-        LBFactory = new ethers.Contract('0x8e42f2F4101563bF679975178e880FD87d3eFd4e', LBFactoryAbi) as ILBFactory;
-        LBRouter = new ethers.Contract('0xb4315e873dBcf96Ffd0acd8EA43f689D8c20fB30', LBRouterAbi) as ILBRouter;
+        LBFactory = new ethers.Contract('0xb43120c4745967fa9b93E79C149E66B0f2D6Fe0c', LBFactoryAbi) as ILBFactory;
+        LBRouter = new ethers.Contract(TJ_V2_ROUTER_ADDRESS, LBRouterAbi) as ILBRouter;
         await wavax.connect(owner).deposit({value: parseEther("100")});
         await wavax.transfer(user1, parseEther("10"));
         await wavax.transfer(user2, parseEther("10"));
@@ -154,7 +155,6 @@ describe("SPrime", function () {
             []
         ) as Contract;
         const depositForm = [];
-        const TJ_V2_ROUTER_ADDRESS = '0xb4315e873dBcf96Ffd0acd8EA43f689D8c20fB30';
         for(let i=0; i<spotUniform.distributionX.length; i++) {
             depositForm.push([
                 spotUniform.deltaIds[i],
@@ -273,7 +273,7 @@ describe("SPrime", function () {
                 dataPoints: MOCK_PRICES,
             });
             
-            await sPrime.deposit(initaialBin, 1000, parseEther("1"), parseEther("1"), false, swapSlippage);
+            await sPrime.deposit(initaialBin, 1000, parseEther("10"), parseEther("10"), false, swapSlippage);
             
             sPrime = WrapperBuilder.wrap(
                 sPrime.connect(addr1)
@@ -366,7 +366,7 @@ describe("SPrime", function () {
             await prime.connect(addr2).approve(LBRouter.address, parseEther("0.1"));
             const path = {
                 pairBinSteps: [50],
-                versions: [2],
+                versions: [3],
                 tokenPath: [prime.address, wavax.address]
             }
 
@@ -406,7 +406,7 @@ describe("SPrime", function () {
             await prime.connect(addr2).approve(LBRouter.address, parseEther("0.1"));
             const path = {
                 pairBinSteps: [50],
-                versions: [2],
+                versions: [3],
                 tokenPath: [prime.address, wavax.address]
             }
 
@@ -454,7 +454,7 @@ describe("SPrime", function () {
             await prime.connect(addr2).approve(LBRouter.address, parseEther("0.1"));
             const path = {
                 pairBinSteps: [50],
-                versions: [2],
+                versions: [3],
                 tokenPath: [prime.address, wavax.address]
             }
 
@@ -514,7 +514,7 @@ describe("SPrime", function () {
             await prime.connect(addr2).approve(LBRouter.address, parseEther("0.1"));
             const path = {
                 pairBinSteps: [50],
-                versions: [2],
+                versions: [3],
                 tokenPath: [prime.address, wavax.address]
             }
 
@@ -811,7 +811,7 @@ describe("SPrime", function () {
             const lbToken = await ethers.getContractAt(LBTokenAbi, pairAddr, addr3);
             const balances = await lbToken.balanceOfBatch(addressList, depositIds);
             await lbToken.approveForAll(sPrime.address, true);
-            await sPrime.migrateLiquidity(depositIds, balances, initaialBin, 100, 5);
+            await sPrime.migrateLiquidity(depositIds, balances, initaialBin, 100, swapSlippage);
             tokenId = await sPrime.getUserTokenId(addr3.address);
             userShare = await positionManager.positions(tokenId);
             expect(userShare.totalShare).to.gt(0);

@@ -47,12 +47,14 @@ interface ILBRouter {
      * @dev This enum represents the version of the pair requested
      * - V1: Joe V1 pair
      * - V2: LB pair V2. Also called legacyPair
-     * - V2_1: LB pair V2.1 (current version)
+     * - V2_1: LB pair V2.1
+     * - V2_2: LB pair V2.2 (current version)
      */
     enum Version {
         V1,
         V2,
-        V2_1
+        V2_1,
+        V2_2
     }
 
     /**
@@ -67,8 +69,8 @@ interface ILBRouter {
      * - activeIdDesired: The active id that user wants to add liquidity from
      * - idSlippage: The number of id that are allowed to slip
      * - deltaIds: The list of delta ids to add liquidity (`deltaId = activeId - desiredId`)
-     * - distributionX: The distribution of tokenX with sum(distributionX) = 100e18 (100%) or 0 (0%)
-     * - distributionY: The distribution of tokenY with sum(distributionY) = 100e18 (100%) or 0 (0%)
+     * - distributionX: The distribution of tokenX with sum(distributionX) = 1e18 (100%) or 0 (0%)
+     * - distributionY: The distribution of tokenY with sum(distributionY) = 1e18 (100%) or 0 (0%)
      * - to: The address of the recipient
      * - refundTo: The address of the recipient of the refunded tokens if too much tokens are sent
      * - deadline: The deadline of the transaction
@@ -104,6 +106,8 @@ interface ILBRouter {
     }
 
     function getFactory() external view returns (ILBFactory);
+
+    function getFactoryV2_1() external view returns (ILBFactory);
 
     function getLegacyFactory() external view returns (ILBLegacyFactory);
 
