@@ -67,7 +67,7 @@ const getLoanArbitrumIncentivesLeaderboardApi = async (event, context, callback)
       TableName: process.env.LOAN_ARB_TABLE
     };
 
-    const arbLoans = await fetchAllDataFromDB(params, true);
+    const arbLoans = await fetchAllDataFromDB(params, true, 50);
 
     params = {
       TableName: process.env.ARBITRUM_INCENTIVES_ARB_TABLE,
@@ -81,7 +81,7 @@ const getLoanArbitrumIncentivesLeaderboardApi = async (event, context, callback)
       }
     };
 
-    const incentives = await fetchAllDataFromDB(params, true);
+    const incentives = await fetchAllDataFromDB(params, true, 1000);
 
     const incentivesOfLoans = [];
 
