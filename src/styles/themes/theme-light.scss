@@ -676,4 +676,11 @@
   --s-prime-panel__gauge-text-color: #{$delta-accent};
   --s-prime-panel__actions-info-divider-background: #{$smoke-gray};
   // endregion
+
+  // region PriceRangeChart
+  --price-range-chart__border: linear-gradient(to right, #{$delta-pale} 43%, #{$pale-orange} 62%, #{$pale-raspberry} 79%);
+  --price-range-chart__range-background: #{$delta-accent};
+  --price-range-chart__tick-color: #{$steel-gray};
+  --price-range-chart__active-line-color: #{$delta-primary};
+  // endregion
 }
