@@ -11,7 +11,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     let Prime = await deploy("Prime_L2", {
         from: deployer,
         gasLimit: 100000000,
-        args: ["DeltaPrime", "PRIME-MOCK", 6, LZ_ENDPOINT],
+        args: ["DeltaPrime", "PRIME", 6, LZ_ENDPOINT],
     });
 
     
@@ -23,7 +23,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         {
             address: Prime.address,
             contract: `contracts/token/Prime_L2.sol:Prime_L2`,
-            constructorArguments: ["DeltaPrime", "PRIME-MOCK", 6, LZ_ENDPOINT]
+            constructorArguments: ["DeltaPrime", "PRIME", 6, LZ_ENDPOINT]
         });
     console.log(`Verified Prime_L2`);
 };
