@@ -51,9 +51,9 @@ export default {
         TRADERJOEV2: {
             default: "AVAX",
             AVAX: {
-                sPrimeAddress: "0xa4306C384Ed015235E2B19ACcd3096045527A36f",
-                positionManagerAddress: "0xa045E421F65eEE1F1c3050f3b0F8497825FbCf99",
-                lbAddress: "0xD41aD255796E97A49dE36b8F38F1f16713F01BC8",
+                sPrimeAddress: "0xd38C5cEca20Fb43503E108ed8d4CaCA5B57E730E",
+                positionManagerAddress: "0x13652F4a37235293a90a1dE5B878c9435EAf4c58",
+                lbAddress: "0x8db6684838dBdA65952ae4bC576503f6eCC03864",
                 binStep: 100,
                 secondAssetDecimals: 18,
             }
