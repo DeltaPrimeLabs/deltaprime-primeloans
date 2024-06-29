@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 275407aef057be0afb61a31db8dbea12b77e108b;
+// Last deployed from commit: 48846cb0c3c35b638a7d43e4941f88f0aabd256e;
 pragma solidity ^0.8.17;
 
 // Importing necessary libraries and interfaces
@@ -31,7 +31,7 @@ contract sPrimeUniswap is
     using PositionValue for INonfungiblePositionManager;
     // Constants declaration
     uint256 private constant _REBALANCE_MARGIN = 5; // Rebalance Limit - If token diff is smaller than this percent, it will skip the token swap part
-    uint256 private constant _MAX_SLIPPAGE = 5000; // Max slippage at the time of token swap for equal values
+    uint256 private constant _MAX_SLIPPAGE = 500; // Max slippage at the time of token swap for equal values
     uint256 public constant MAX_LOCK_TIME = 3 * 365 days;
     uint256 public constant PRECISION = 20;
     uint256 private constant _DENOMINATOR = 10000;
