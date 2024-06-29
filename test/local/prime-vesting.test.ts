@@ -68,7 +68,10 @@ describe("Prime Vesting", () => {
             ]
         )) as PrimeVesting;
 
-        await mockToken.connect(owner).transfer(vesting.address, toWei("10000"));
+        await mockToken.connect(owner).approve(vesting.address, toWei("10000"));
+        await vesting.connect(owner).initializeVestingWithTokens();
+        expect(await vesting.totalAmount()).to.be.eq(toWei("4500"));
+        expect(await mockToken.balanceOf(vesting.address)).to.be.eq(toWei("4500"));
     });
 
     it("should not be able to claim during cliff period", async () => {
@@ -82,7 +85,7 @@ describe("Prime Vesting", () => {
         expect(fromWei(claimable2)).to.be.eq(0);
         expect(fromWei(claimable3)).to.be.eq(0);
 
-        await expect(vesting.connect(user1).claim(toWei("9999"))).to.be.revertedWith("NothingToClaim");
+        await expect(vesting.connect(user1).claimWithAmount(toWei("9999"))).to.be.revertedWith("NothingToClaim");
     });
 
     it("should be able to claim after cliff period", async () => {
@@ -101,8 +104,8 @@ describe("Prime Vesting", () => {
         const beforeBalance1 = await mockToken.balanceOf(user1.address);
         const beforeBalance2 = await mockToken.balanceOf(user2.address);
 
-        await vesting.connect(user1).claim(claimable1.div(2));
-        await vesting.connect(user2).claim(toWei("9999"));
+        await vesting.connect(user1).claimWithAmount(claimable1.div(2));
+        await vesting.connect(user2).claimWithAmount(toWei("9999"));
 
         const afterBalance1 = await mockToken.balanceOf(user1.address);
         const afterBalance2 = await mockToken.balanceOf(user2.address);
@@ -124,11 +127,11 @@ describe("Prime Vesting", () => {
         expect(fromWei(claimable2)).to.be.gt(0);
         expect(fromWei(claimable3)).to.be.gt(0);
 
-        await expect(vesting.connect(user2).claimFor(user3.address, toWei("9999"))).to.be.revertedWith("Unauthorized");
+        await expect(vesting.connect(user2).claimForWithAmount(user3.address, toWei("9999"))).to.be.revertedWith("Unauthorized");
 
         const beforeBalance = await mockToken.balanceOf(user3.address);
 
-        await vesting.connect(user1).claimFor(user3.address, toWei("9999"));
+        await vesting.connect(user1).claimForWithAmount(user3.address, toWei("9999"));
 
         const afterBalance = await mockToken.balanceOf(user3.address);
 
@@ -138,9 +141,9 @@ describe("Prime Vesting", () => {
     it("should not claim more than allocated", async () => {
         await time.increase(time.duration.days(40));
 
-        await vesting.connect(user1).claim(toWei("9999"));
-        await vesting.connect(user2).claim(toWei("9999"));
-        await vesting.connect(user3).claim(toWei("9999"));
+        await vesting.connect(user1).claim();
+        await vesting.connect(user2).claim();
+        await vesting.connect(user3).claim();
 
         const afterBalance1 = await mockToken.balanceOf(user1.address);
         const afterBalance2 = await mockToken.balanceOf(user2.address);

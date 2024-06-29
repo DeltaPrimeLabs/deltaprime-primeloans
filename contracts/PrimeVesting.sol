@@ -30,6 +30,8 @@ contract PrimeVesting is Ownable {
 
     uint256 public immutable startTime;
 
+    uint256 public immutable totalAmount;
+
     mapping(address => UserInfo) public userInfos;
 
     /// Errors
@@ -79,6 +81,7 @@ contract PrimeVesting is Ownable {
             revert InvalidAddress();
         }
 
+        uint256 _totalAmount;
         primeToken = IERC20(primeToken_);
         startTime = startTime_;
         uint256 len = users_.length;
@@ -90,21 +93,39 @@ contract PrimeVesting is Ownable {
 
             UserInfo storage userInfo = userInfos[user];
             userInfo.info = vestingInfos_[i];
+            _totalAmount += userInfo.info.totalAmount;
         }
+        totalAmount = _totalAmount;
     }
 
     /// Public functions
 
-    function claim(uint256 amount) external {
+    function claim() external {
+        _claimFor(msg.sender, msg.sender, _claimable(msg.sender));
+    }
+
+    function claimWithAmount(uint256 amount) external {
         _claimFor(msg.sender, msg.sender, amount);
     }
 
     function claimFor(address user, uint256 amount) external {
+        _claimFor(user, msg.sender, _claimable(user));
+    }
+
+    function claimForWithAmount(address user, uint256 amount) external {
         _claimFor(user, msg.sender, amount);
     }
 
     function claimable(address user) public view returns (uint256) {
         return _claimable(user);
+    }
+
+    function initializeVestingWithTokens() external onlyOwner {
+        require(primeToken.allowance(owner(), address(this)) >= totalAmount, "Not enough allowance");
+        require(primeToken.balanceOf(owner()) >= totalAmount, "Not enough balance");
+        require(block.timestamp < startTime, "Vesting already started");
+
+        primeToken.safeTransferFrom(owner(), address(this), totalAmount);
     }
 
     /// Internal functions
