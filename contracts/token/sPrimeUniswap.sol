@@ -31,9 +31,10 @@ contract sPrimeUniswap is
     using PositionValue for INonfungiblePositionManager;
     // Constants declaration
     uint256 private constant _REBALANCE_MARGIN = 5; // Rebalance Limit - If token diff is smaller than this percent, it will skip the token swap part
-    uint256 private constant _MAX_SLIPPAGE = 10; // Max slippage percent at the time of token swap for equal values
+    uint256 private constant _MAX_SLIPPAGE = 5000; // Max slippage at the time of token swap for equal values
     uint256 public constant MAX_LOCK_TIME = 3 * 365 days;
     uint256 public constant PRECISION = 20;
+    uint256 private constant _DENOMINATOR = 10000;
 
     // Mapping for storing pair information and user shares
     mapping(address => LockDetails[]) public locks;
@@ -336,7 +337,7 @@ contract sPrimeUniswap is
                 tokenIn,
                 tokenOut,
                 amountIn,
-                (amountOut * (100 - swapSlippage)) / 100
+                amountOut * (_DENOMINATOR - swapSlippage) / _DENOMINATOR
             );
 
             (amountX, amountY) = swapTokenX
@@ -526,13 +527,7 @@ contract sPrimeUniswap is
                 revert SlippageTooHigh();
             }
             tickLower = currenTick - tickSpacing * deltaId;
-//            if (tickLower < TickMath.MIN_TICK) {
-//                tickLower = TickMath.MIN_TICK;
-//            }
             tickUpper = currenTick + tickSpacing * deltaId;
-//            if (tickUpper > TickMath.MAX_TICK) {
-//                tickUpper = TickMath.MAX_TICK;
-//            }
         }
         _depositToUniswap(msgSender, tickLower, tickUpper, amountX, amountY);
 

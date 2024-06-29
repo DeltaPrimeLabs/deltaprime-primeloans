@@ -231,7 +231,7 @@ describe("SPrimeUniswapV3", function () {
             initialTick = (await pool.slot0()).tick;
             await sPrime.deposit(initialTick, 0, parseEther("0.1"), parseEther("0.1"), false, 5);
             initialTick = (await pool.slot0()).tick;
-            await sPrime.deposit(initialTick, 10, parseEther("0.1"), parseEther("0.005"), true, 10);
+            await sPrime.deposit(initialTick, 100, parseEther("1"), parseEther("0.005"), true, 100);
         });
 
         it("Should fail if slippage too high", async function () {
@@ -243,7 +243,7 @@ describe("SPrimeUniswapV3", function () {
             });
 
             initialTick = (await pool.slot0()).tick;
-            await expect(sPrime.deposit(initialTick, 0, parseEther("1"), parseEther("1"), false, 11)).to.be.revertedWith("SlippageTooHigh");
+            await expect(sPrime.deposit(initialTick, 0, parseEther("1"), parseEther("1"), false, 5001)).to.be.revertedWith("SlippageTooHigh");
         });
     });
 
@@ -264,7 +264,7 @@ describe("SPrimeUniswapV3", function () {
                 tokenIn: prime.address,
                 tokenOut: wavax.address,
                 fee: 3000,
-                recipient: addr2.address, 
+                recipient: addr2.address,
                 amountIn: parseEther("0.1"),
                 amountOutMinimum: 0,
                 sqrtPriceLimitX96: 0
