@@ -2,8 +2,8 @@
   <div class="price-range-chart__wrapper">
     <div class="price-range-chart">
       <div class="price-range-chart__range" v-bind:style="`left: ${rangeLeft}%; right: ${rangeRight}%`">
-        <div class="price-range-chart__range-tick price-range-chart__range-tick--start">{{ rangeStart }}</div>
-        <div class="price-range-chart__range-tick price-range-chart__range-tick--end">{{ rangeEnd }}</div>
+        <div class="price-range-chart__range-tick price-range-chart__range-tick--start">{{ rangeStart.toFixed(2) }}</div>
+        <div class="price-range-chart__range-tick price-range-chart__range-tick--end">{{ rangeEnd.toFixed(2) }}</div>
       </div>
       <div class="price-range-chart__active-label" v-bind:style="`left: ${activeLeft}%`">
         Active<br>${{ activeValue ? activeValue.toFixed(2) : 0 }}

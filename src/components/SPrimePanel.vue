@@ -1,6 +1,7 @@
 <template>
   <div class="sprime-panel-component" v-bind:class="{'sprime-panel-component--expanded': expanded}">
     <div class="header-actions">
+      <FlatButton v-on:buttonClick="openMintSPrimeModal()" :active="!this.isActionDisabledRecord['MINT']">mint</FlatButton>
       <FlatButton v-on:buttonClick="openRedeemSPrimeModal()" :active="!this.isActionDisabledRecord['BUY']">buy prime <img class="buy-prime-logo"
                                                                                            src="src/assets/logo/prime.svg"/>
       </FlatButton>
@@ -179,8 +180,11 @@ export default {
       this.value = value
     });
 
-    this.sPrimeService.observeSPrimeUnderlyingPool().subscribe(value => {
-      this.poolPrice = value
+    combineLatest([
+        this.sPrimeService.observeSPrimeUnderlyingPool(),
+        this.sPrimeService.observeSPrimePositionInfo()])
+        .subscribe(([poolPrice, positionInfo]) => {
+      this.poolPrice = poolPrice;
       if (this.dex === 'TRADERJOEV2') {
         this.chartData = [
           {x: 1, y: 1, showTick: true, positive: false},
@@ -201,8 +205,8 @@ export default {
         ]
       }
       if (this.dex === 'UNISWAP') {
-        let rangeStart = 0.1;
-        let rangeEnd = 0.8;
+        let rangeStart = positionInfo.priceMin;
+        let rangeEnd = positionInfo.priceMax;
         let minValue = Math.min(this.poolPrice, rangeStart);
         let maxValue = Math.max(this.poolPrice, rangeEnd);
         let axisStart = minValue - 0.05 * minValue;
@@ -215,6 +219,8 @@ export default {
           axisStart: axisStart,
           axisEnd: axisEnd
         }
+        console.log('this.chartData: ', this.chartData)
+
         if (rangeStart <= this.poolPrice && rangeEnd >= this.poolPrice) this.distributionType = DistributionType.LEFT_POSITIVE;
         if (rangeStart > this.poolPrice) this.distributionType = DistributionType.LEFT_NEGATIVE;
         if (rangeEnd < this.poolPrice) this.distributionType = DistributionType.RIGHT_NEGATIVE;
@@ -267,7 +273,7 @@ export default {
       if (this.dex === 'TRADERJOEV2') {
         [, activeId] = await this
             .traderJoeService
-            .getLBPairReservesAndActiveBin(this.sPrimeConfig.lbAddress, this.provider)
+            .getLBPairReservesAndActiveBin(this.sPrimeConfig.poolAddress, this.provider)
       } else {
         [currentPrice, activeId] = await this
             .uniswapV3Service
@@ -321,7 +327,7 @@ export default {
       if (this.dex === 'TRADERJOEV2') {
         [, activeId] = await this
             .traderJoeService
-            .getLBPairReservesAndActiveBin(this.sPrimeConfig.lbAddress, this.provider)
+            .getLBPairReservesAndActiveBin(this.sPrimeConfig.poolAddress, this.provider)
       } else {
         [currentPrice, activeId] = await this
             .uniswapV3Service
@@ -381,7 +387,7 @@ export default {
       });
     },
     fetchSPrimeData() {
-      this.sPrimeService.emitRefreshSPrimeData(this.provider, this.sPrimeConfig.sPrimeAddress, this.dex, this.secondAsset, this.account);
+      this.sPrimeService.emitRefreshSPrimeData(this.provider, this.sPrimeConfig.sPrimeAddress, this.sPrimeConfig.poolAddress, this.dex, this.secondAsset, this.account);
     },
     fetchVPrimeData() {
       this.vPrimeService.emitRefreshVPrimeData(config.VPRIME_CONFIG.address, this.account);
