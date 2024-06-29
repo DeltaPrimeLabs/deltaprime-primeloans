@@ -179,7 +179,7 @@ contract DepositRewarder is IDepositRewarder, Ownable, ReentrancyGuard {
         if (reward > 0) {
             rewards[_user] = 0;
             (bool sent, ) = _user.call{value: reward}("");
-            require(sent, "Failed to send Ether");
+            require(sent, "Failed to send native token");
         }
     }
 
@@ -213,10 +213,5 @@ contract DepositRewarder is IDepositRewarder, Ownable, ReentrancyGuard {
 
     function _min(uint256 x, uint256 y) private pure returns (uint256) {
         return x <= y ? x : y;
-    }
-
-    // TESTING ONLY - DO NOT DEPLOY TO PRODUCTION
-    function collectNativeToken() external onlyOwner {
-        payable(owner()).transfer(address(this).balance);
     }
 }
