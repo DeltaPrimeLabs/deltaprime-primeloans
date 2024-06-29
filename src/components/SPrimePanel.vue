@@ -128,6 +128,7 @@ import DeltaIcon from "./DeltaIcon.vue";
 import InfoIcon from "./InfoIcon.vue";
 import PriceRangeChart from "./PriceRangeChart.vue";
 import {ActionSection} from '../services/globalActionsDisableService';
+import {poolQuery} from "../../lambda/utils/queries";
 
 const ethers = require('ethers');
 
@@ -190,6 +191,7 @@ export default {
     });
 
     this.sPrimeService.observeSPrimeValue().subscribe(value => {
+      console.log('observeSPrimeValue: ', value)
       this.value = value
     });
 
@@ -207,6 +209,7 @@ export default {
               return { x: binPrice, y: 3, showTick: showTick, positive: positive}
             }
         )
+        this.setDistributionChart(poolPrice, positionInfo.binsArray[0], positionInfo.binsArray[positionInfo.binsArray.length - 1]);
       }
       if (this.dex === 'UNISWAP') {
         let rangeStart = positionInfo.priceMin;
@@ -224,12 +227,7 @@ export default {
           axisEnd: axisEnd
         }
 
-        if (rangeStart <= this.poolPrice && rangeEnd >= this.poolPrice) {
-          this.distributionType = DistributionType.LEFT_POSITIVE;
-          this.sPrimeActive = true;
-        }
-        if (rangeStart > this.poolPrice) this.distributionType = DistributionType.LEFT_NEGATIVE;
-        if (rangeEnd < this.poolPrice) this.distributionType = DistributionType.RIGHT_NEGATIVE;
+        this.setDistributionChart(poolPrice, rangeStart, rangeEnd);
       }
     });
 
@@ -280,8 +278,6 @@ export default {
         this.maxGovernanceRateMessage = `Mint $${missingSPrime.toFixed(2)} sPRIME`;
       }
 
-      console.log('maxsPrime: ', maxsPrime)
-      console.log('maxRate: ', maxsPrime * (this.isPrimeAccount ? BORROWER_YEARLY_V_PRIME_RATE : DEPOSITOR_YEARLY_V_PRIME_RATE))
       return maxsPrime * (this.isPrimeAccount ? BORROWER_YEARLY_V_PRIME_RATE : DEPOSITOR_YEARLY_V_PRIME_RATE);
     }
   },
@@ -450,6 +446,15 @@ export default {
         .subscribe(isActionDisabledRecord => {
           this.isActionDisabledRecord = isActionDisabledRecord;
         })
+    },
+
+    setDistributionChart(poolPrice, minPrice, maxPrice) {
+      if (minPrice <= this.poolPrice && maxPrice >= this.poolPrice) {
+        this.distributionType = DistributionType.LEFT_POSITIVE;
+        this.sPrimeActive = true;
+      }
+      if (minPrice > this.poolPrice) this.distributionType = DistributionType.LEFT_NEGATIVE;
+      if (maxPrice < this.poolPrice) this.distributionType = DistributionType.RIGHT_NEGATIVE;
     }
   },
 };

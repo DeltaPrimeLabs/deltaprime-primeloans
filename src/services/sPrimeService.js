@@ -33,45 +33,30 @@ export default class sPrimeService {
 
       const sPrimeContract = await wrapContract(new ethers.Contract(sPrimeAddress, SPRIME.abi, provider.getSigner()), dataFeeds);
 
-
-      const poolContract =
-          dex === 'TRADERJOEV2'
-          ?
-          new ethers.Contract(sPrimeAddress, SPRIME.abi, provider.getSigner())
-          :
-          new ethers.Contract(sPrimeAddress, SPRIME.abi, provider.getSigner());
-
-      if (dex === 'TRADERJOEV2') {
-
-      }
-
-
-
-
       fetch(config.redstoneFeedUrl).then(
           res => {
               res.json().then(
                   redstonePriceData => {
                       let secondAssetPrice = redstonePriceData[secondAsset][0].dataPoints[0].value;
-                      sPrimeContract.getUserValueInTokenY(ownerAddress).then(
-                          async value => {
-                              value = formatUnits(value, config.ASSETS_CONFIG[secondAsset].decimals) * secondAssetPrice;
 
-                              this.sPrimeValue$.next(value)
-                          }
-                      );
+                      if (dex === 'UNISWAP') {
+                          sPrimeContract['getUserValueInTokenY(address)'](ownerAddress).then(
+                              async value => {
+                                  value = formatUnits(value, config.ASSETS_CONFIG[secondAsset].decimals) * secondAssetPrice;
 
-                      sPrimeContract.getPoolPrice().then(
-                          poolPrice => {
-                              this.poolPrice$.next(poolPrice * secondAssetPrice / 1e8)
-                          }
-                      );
+                                  this.sPrimeValue$.next(value)
+                              }
+                          );
 
+                          sPrimeContract.getPoolPrice().then(
+                              poolPrice => {
+                                  this.poolPrice$.next(poolPrice * secondAssetPrice / 1e8)
+                              }
+                          );
 
-                      if(dex === 'UNISWAP') {
                           sPrimeContract.userTokenId(ownerAddress).then(
                               tokenId => {
-                                  let positionManager =  new ethers.Contract(config.SPRIME_CONFIG[dex][secondAsset].positionManagerAddress, UNI_V3_POSITION_MANAGER.abi, provider.getSigner());
+                                  let positionManager = new ethers.Contract(config.SPRIME_CONFIG[dex][secondAsset].positionManagerAddress, UNI_V3_POSITION_MANAGER.abi, provider.getSigner());
 
                                   positionManager.positions(tokenId).then(
                                       res => {
@@ -86,24 +71,33 @@ export default class sPrimeService {
                           )
                       }
 
-                      if(dex === 'TRADERJOEV2') {
-                          console.log('TRADERJOEV2')
+                      if (dex === 'TRADERJOEV2') {
+                          sPrimeContract.getPoolPrice().then(
+                              poolPrice => {
+                                  sPrimeContract['getUserValueInTokenY(address,uint256)'](ownerAddress, poolPrice).then(
+                                      async value => {
+                                          value = formatUnits(value, config.ASSETS_CONFIG[secondAsset].decimals) * secondAssetPrice;
+
+                                          this.sPrimeValue$.next(value)
+                                      }
+                                  );
+
+                                  this.poolPrice$.next(poolPrice * secondAssetPrice / 1e8)
+                              }
+                          );
+
                           sPrimeContract.getUserTokenId(ownerAddress).then(
                               tokenId => {
-                                  console.log('tokenId: ', tokenId)
-                                  let positionManager =  new ethers.Contract(config.SPRIME_CONFIG[dex][secondAsset].positionManagerAddress, TRADERJOE_V2_POSITION_MANAGER.abi, provider.getSigner());
+                                  let positionManager = new ethers.Contract(config.SPRIME_CONFIG[dex][secondAsset].positionManagerAddress, TRADERJOE_V2_POSITION_MANAGER.abi, provider.getSigner());
 
                                   positionManager.positions(tokenId).then(
                                       res => {
-                                          console.log('res: ', res)
                                           let centerId = res.centerId;
                                           let numberOfBins = res.liquidityMinted.length;
                                           let binsArray = fillBinsArray(centerId, numberOfBins);
                                           binsArray = binsArray.map(
                                               binId => secondAssetPrice * getBinPrice(binId, config.SPRIME_CONFIG[dex][secondAsset].binStep, 18, config.SPRIME_CONFIG[dex][secondAsset].secondAssetDecimals)
                                           )
-
-                                          console.log('binsArray: ', binsArray)
 
                                           this.sPrimePositionInfo$.next(
                                               {
@@ -119,14 +113,5 @@ export default class sPrimeService {
               )
           }
       )
-
   }
-    async updatePoolData(poolAddress, dex, provider) {
-        if (dex === 'TRADERJOEV2') {
-
-        } else {
-            const pool = new ethers.Contract(poolAddress, SPRIME.abi, provider.getSigner());
-        }
-
-    }
 };
