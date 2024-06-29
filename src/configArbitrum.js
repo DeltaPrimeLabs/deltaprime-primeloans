@@ -57,6 +57,7 @@ export default {
                 poolAddress: "0xB31273fD2dfC05e6Fd91A3B8a2a681aeb0FbCF48",
                 positionManagerAddress: "0xC36442b4a4522E871399CD717aBDD847Ab11FE88",
                 secondAssetDecimals: 18,
+                dexWebsite: "https://app.uniswap.org/"
             }
         }
     },

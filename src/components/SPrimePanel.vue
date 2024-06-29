@@ -1,10 +1,10 @@
 <template>
   <div class="sprime-panel-component" v-bind:class="{'sprime-panel-component--expanded': expanded}">
     <div class="header-actions">
-      <FlatButton v-on:buttonClick="openMintSPrimeModal()" :active="!this.isActionDisabledRecord['MINT']">mint</FlatButton>
-      <FlatButton v-on:buttonClick="openRedeemSPrimeModal()" :active="!this.isActionDisabledRecord['BUY']">buy prime <img class="buy-prime-logo"
-                                                                                           src="src/assets/logo/prime.svg"/>
-      </FlatButton>
+      <a :href="sPrimeConfig.dexWebsite" target="_blank">
+        <FlatButton  :active="!this.isActionDisabledRecord['BUY']">buy prime <img class="buy-prime-logo" src="src/assets/logo/prime.svg"/>
+        </FlatButton>
+      </a>
       <div v-on:click="toggleExpand()">
         <DeltaIcon class="chevron" v-bind:class="{'chevron--expanded': expanded}"
                    :icon-src="'src/assets/icons/chevron-down.svg'" :size="21"></DeltaIcon>
@@ -13,7 +13,8 @@
     <div class="sprime-panel__actions sprime-panel__actions--collapsed">
       <div class="sprime">
         <img class="sprime-logo"
-             src="src/assets/logo/sprime.svg"/>
+             v-if="secondAsset"
+             :src="`src/assets/logo/sprime-${secondAsset.toLowerCase()}.svg`"/>
         <div class="sprime__text">
           $sPRIME
         </div>
@@ -33,11 +34,17 @@
           <div class="actions-info__label">Governance power:</div>
           <div class="actions-info__value">{{ governancePoints }}</div>
         </div>
+        <div class="actions-info__divider"></div>
+        <div class="actions-info__entry">
+          <FlatButton v-on:buttonClick="openMintSPrimeModal()" :active="!this.isActionDisabledRecord['MINT']">mint</FlatButton>
+        </div>
       </div>
     </div>
     <div class="sprime-panel__actions sprime-panel__actions--expanded">
       <div class="sprime">
-        <DoubleAssetIcon :size="'BIG'" :primary="'sPRIME'" :secondary="secondAsset"></DoubleAssetIcon>
+        <img class="sprime-logo"
+             v-if="secondAsset"
+             :src="`src/assets/logo/sprime-${secondAsset.toLowerCase()}.svg`"/>
         <div>
           $sPRIME
         </div>
@@ -116,7 +123,6 @@ import erc20ABI from '../../test/abis/ERC20.json';
 import {getTraderJoeV2IdSlippageFromPriceSlippage, getUniswapV3SlippageFromPriceSlippage} from '../utils/calculate';
 import RedeemsPrimeModal from './RedeemsPrimeModal.vue';
 import RebalancesPrimeModal from './RebalancesPrimeModal.vue';
-import DoubleAssetIcon from './DoubleAssetIcon.vue';
 import DistributionChart from "./DistributionChart.vue";
 import DeltaIcon from "./DeltaIcon.vue";
 import InfoIcon from "./InfoIcon.vue";
@@ -145,7 +151,7 @@ const DISTRIBUTION_ICON_DICTIONARY = {
 
 export default {
   name: 'SPrimePanel',
-  components: {PriceRangeChart, InfoIcon, DeltaIcon, DoubleAssetIcon, DistributionChart, FlatButton},
+  components: {PriceRangeChart, InfoIcon, DeltaIcon, DistributionChart, FlatButton},
   props: {
     isPrimeAccount: false
   },
@@ -224,11 +230,11 @@ export default {
     });
 
     this.vPrimeService.observeVPrimePoints().subscribe(points => {
-      this.governancePoints = points.toExponential(1);
+      this.governancePoints = points ? points.toExponential(1) : 0;
     });
 
     this.vPrimeService.observeVPrimeRate().subscribe(rate => {
-      this.governanceRate = rate.toExponential(2);
+      this.governanceRate = rate ? rate.toExponential(2) : 0;
     });
 
     this.watchActionDisabling();
@@ -494,6 +500,10 @@ export default {
     &--expanded {
       opacity: 0;
       pointer-events: none;
+
+      .sprime-logo {
+        width: 26px;
+      }
     }
 
     &--collapsed {
@@ -509,9 +519,9 @@ export default {
       }
 
       .sprime-logo {
-        width: 22px;
-        height: 22px;
-        margin-right: 8px;
+        width: 26px;
+        height: 26px;
+        margin-right: 5px;
       }
 
       .sprime__text {
@@ -608,10 +618,6 @@ export default {
 
         .stat__info-icon {
           margin-left: 6px;
-
-          &.revenue {
-            width: 50px;
-          }
         }
 
         .stat__title {
@@ -627,6 +633,10 @@ export default {
           font-size: 18px;
           font-weight: 500;
           color: var(--s-prime-panel__secondary-text-color);
+
+          &.revenue {
+            width: 60px;
+          }
         }
       }
     }
