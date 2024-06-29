@@ -17,8 +17,10 @@ interface ISPrime {
         uint256 unlockTime;
     }
 
-    //only sPrimeUniswap
+    //Uniswap V3
     function userTokenId(address user) external view returns (uint256);
+    //TraderJoe V2
+    function getUserTokenId(address user) external view returns (uint256);
 
 
     /**

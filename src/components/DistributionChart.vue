@@ -113,7 +113,7 @@ export default {
           xAxes: [{
             categoryPercentage: 1.0,
             barPercentage: 0.7,
-            barThickness: 14,
+            barThickness: 2,
             ticks: {
               fontColor: getThemeVariable('--chart__scales-ticks-color'),
               fontFamily: 'Montserrat',

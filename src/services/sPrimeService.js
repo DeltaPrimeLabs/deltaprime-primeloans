@@ -1,9 +1,10 @@
 import {BehaviorSubject, Subject} from 'rxjs';
 import config from '../config';
 import {wrapContract} from "../utils/blockchain";
-import {formatUnits, fromWei, uniswapV3TickToPrice} from "../utils/calculate";
+import {fillBinsArray, formatUnits, fromWei, getBinPrice, uniswapV3TickToPrice} from "../utils/calculate";
 import SPRIME from '@artifacts/contracts/interfaces/ISPrime.sol/ISPrime.json';
 import UNI_V3_POSITION_MANAGER from '@artifacts/contracts/interfaces/uniswap-v3-periphery/INonFungiblePositionManager.sol/INonFungiblePositionManager.json';
+import TRADERJOE_V2_POSITION_MANAGER from '@artifacts/contracts/interfaces/IPositionManager.sol/IPositionManager.json';
 const ethers = require('ethers');
 
 export default class sPrimeService {
@@ -78,6 +79,35 @@ export default class sPrimeService {
                                               {
                                                   priceMin: uniswapV3TickToPrice(res.tickLower) * secondAssetPrice,
                                                   priceMax: uniswapV3TickToPrice(res.tickUpper) * secondAssetPrice
+                                              });
+                                      }
+                                  )
+                              }
+                          )
+                      }
+
+                      if(dex === 'TRADERJOEV2') {
+                          console.log('TRADERJOEV2')
+                          sPrimeContract.getUserTokenId(ownerAddress).then(
+                              tokenId => {
+                                  console.log('tokenId: ', tokenId)
+                                  let positionManager =  new ethers.Contract(config.SPRIME_CONFIG[dex][secondAsset].positionManagerAddress, TRADERJOE_V2_POSITION_MANAGER.abi, provider.getSigner());
+
+                                  positionManager.positions(tokenId).then(
+                                      res => {
+                                          console.log('res: ', res)
+                                          let centerId = res.centerId;
+                                          let numberOfBins = res.liquidityMinted.length;
+                                          let binsArray = fillBinsArray(centerId, numberOfBins);
+                                          binsArray = binsArray.map(
+                                              binId => secondAssetPrice * getBinPrice(binId, config.SPRIME_CONFIG[dex][secondAsset].binStep, 18, config.SPRIME_CONFIG[dex][secondAsset].secondAssetDecimals)
+                                          )
+
+                                          console.log('binsArray: ', binsArray)
+
+                                          this.sPrimePositionInfo$.next(
+                                              {
+                                                  binsArray: binsArray
                                               });
                                       }
                                   )

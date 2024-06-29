@@ -186,23 +186,15 @@ export default {
         .subscribe(([poolPrice, positionInfo]) => {
       this.poolPrice = poolPrice;
       if (this.dex === 'TRADERJOEV2') {
-        this.chartData = [
-          {x: 1, y: 1, showTick: true, positive: false},
-          {x: 2, y: 2, showTick: false, positive: false},
-          {x: 3, y: 3, showTick: false, positive: false},
-          {x: 4, y: 4, showTick: false, positive: false},
-          {x: 5, y: 2, showTick: true, positive: false},
-          {x: 6, y: 0, showTick: false, positive: false},
-          {x: 7, y: 0, showTick: false, positive: false},
-          {x: 8, y: 3, showTick: true, positive: true},
-          {x: 9, y: 0, showTick: false, positive: false},
-          {x: 10, y: 0, showTick: false, positive: false},
-          {x: 11, y: 0, showTick: false, positive: false},
-          {x: 12, y: 0, showTick: false, positive: false},
-          {x: 13, y: 0, showTick: false, positive: false},
-          {x: 14, y: 0, showTick: false, positive: false},
-          {x: 15, y: 0, showTick: false, positive: false},
-        ]
+        let positive = true;
+        this.chartData = positionInfo.binsArray.map(
+            (binPrice, i) => {
+              let showTick = (i === 0) || (i === (positionInfo.binsArray.length - 1));
+
+              return { x: binPrice, y: 3, showTick: showTick, positive: positive}
+            }
+        )
+        console.log('this.chartData: ', this.chartData)
       }
       if (this.dex === 'UNISWAP') {
         let rangeStart = positionInfo.priceMin;

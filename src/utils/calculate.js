@@ -549,6 +549,22 @@ export  function getTraderJoeV2IdSlippageFromPriceSlippage(priceSlippage, binSte
   );
 }
 
+export function fillBinsArray(centerId, numberOfBins) {
+  if (numberOfBins % 2 === 0) {
+    throw new Error('numberOfBins must be an odd number.');
+  }
+
+  const bins = [];
+  const halfBins = Math.floor(numberOfBins / 2);
+  const lowestBin = centerId - halfBins;
+
+  for (let i = 0; i < numberOfBins; i++) {
+    bins.push(lowestBin + i);
+  }
+
+  return bins;
+}
+
 // Function to convert price to tick
 export function uniswapV3PriceToTick(price) {
   return Math.log(price) / Math.log(1.0001);
@@ -573,4 +589,6 @@ export function getUniswapV3SlippageFromPriceSlippage(currentPrice, slippage) {
 
   return parseInt((tickSlippage / 2).toString());
 }
+
+
 
