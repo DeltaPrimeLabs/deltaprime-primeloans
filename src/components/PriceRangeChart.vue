@@ -43,7 +43,7 @@ export default {
       return (this.rangeStart - this.axisStart) / (this.axisEnd - this.axisStart) * 100;
     },
     rangeRight() {
-      return (this.rangeEnd - this.axisStart) / (this.axisEnd - this.axisStart) * 100;
+      return 100 - (this.rangeEnd - this.axisStart) / (this.axisEnd - this.axisStart) * 100;
     },
     activeLeft() {
       return (this.activeValue - this.axisStart) / (this.axisEnd - this.axisStart) * 100;
