@@ -99,7 +99,7 @@
       </div>
       <div class="rates">
         <div class="rate">
-          <div class="rate__title">Accrual rate (yearly)</div>
+          <div class="rate__title">Accrual rate (daily)</div>
           <div class="rate__value governance-rate"  :class="{'negative': governanceRate && governanceRate < 0}">{{ governanceRate ? governanceRate.toFixed(2) : 0 }}</div>
         </div>
         <div class="rate">
@@ -283,7 +283,7 @@ export default {
         this.maxGovernanceRateMessage = `Mint $${missingSPrime.toFixed(2)} sPRIME`;
       }
 
-      return Math.max(maxRate, this.governanceRate);
+      return Math.max(maxRate, this.governanceRate) / 365;
     }
   },
   methods: {
