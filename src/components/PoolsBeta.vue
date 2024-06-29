@@ -2,10 +2,10 @@
   <div class="pools-beta-component">
     <div class="container">
       <div class="main-content">
+        <SPrimePanel class="sprime-panel" :is-prime-account="false" :user-address="account" :total-deposits-or-borrows="totalDeposit"></SPrimePanel>
         <Block :bordered="true">
           <div class="title">Savings</div>
           <NameValueBadgeBeta :name="'Your deposits'">{{ totalDeposit | usd }}</NameValueBadgeBeta>
-          <SPrimePanel :is-prime-account="false" :user-address="account" :total-deposits-or-borrows="totalDeposit"></SPrimePanel>
           <div class="pools">
             <div class="pools-table">
               <TableHeader :config="poolsTableHeaderConfig"></TableHeader>
@@ -325,6 +325,10 @@ export default {
 
   .main-content {
     margin-top: 30px;
+
+    .sprime-panel {
+      margin-bottom: 30px;
+    }
 
     .title {
       margin-top: 55px;

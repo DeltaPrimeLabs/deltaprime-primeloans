@@ -56,7 +56,7 @@ export default {
                 poolAddress: "0x8db6684838dBdA65952ae4bC576503f6eCC03864",
                 binStep: 50,
                 secondAssetDecimals: 18,
-                dexWebsite: "https://traderjoexyz.com/avalanche/trade"
+                dexWebsite: "https://traderjoexyz.com/avalanche/trade?chain=avalanche&outputCurrency=0x33C8036E99082B0C395374832FECF70c42C7F298"
             }
         }
     },

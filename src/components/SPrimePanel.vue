@@ -103,7 +103,7 @@
           <div class="rate__value">{{ governanceRate ? governanceRate.toFixed(2) : 0 }}</div>
         </div>
         <div class="rate">
-          <div class="rate__title">Max. accrual rate</div>
+          <div class="rate__title">Next accrual rate</div>
           <div class="rate__value">{{maxGovernanceRate ? maxGovernanceRate.toFixed(2) : 0}}</div>
           <div class="rate__extra-info">({{ maxGovernanceRateMessage }})</div>
         </div>
@@ -265,19 +265,24 @@ export default {
       return `src/assets/icons/sprime-distribution/${DISTRIBUTION_ICON_DICTIONARY[this.distributionType]}${this.themeService.themeChange$.value === 'LIGHT' ? '' : '--dark' }.svg`;
     },
     maxGovernanceRate() {
-      let isSPrimeValueUsed = this.value > (this.totalDepositsOrBorrows / 10);
-      let valueUsed = Math.max(this.value, this.totalDepositsOrBorrows / 10);
+      let maxsPrimeFromCeil = Math.ceil(this.value);
+      let maxsPrimeFromDeposit = Math.floor(this.totalDepositsOrBorrows / 10);
+      let maxsPrime = Math.max(maxsPrimeFromCeil, maxsPrimeFromDeposit);
+      let depositFromMaxsPrime = maxsPrime * 10;
 
-      if (isSPrimeValueUsed) {
-        let valueMissing = this.value * 10 - this.totalDepositsOrBorrows;
+      let missingDeposit = Math.max(depositFromMaxsPrime - this.totalDepositsOrBorrows, 0);
+      let missingSPrime = maxsPrime - this.value;
+
+      if (missingDeposit) {
         let action = this.isPrimeAccount ? `Borrow` : `Deposit`;
-        this.maxGovernanceRateMessage = `${action} ${valueMissing.toFixed(2)} more`;
+        this.maxGovernanceRateMessage = `${action} $${missingDeposit.toFixed(2)} and mint $${missingSPrime.toFixed(2)} sPRIME`;
       } else {
-        let valueMissing = this.totalDepositsOrBorrows / 10 - this.value;
-        this.maxGovernanceRateMessage = `Mint ${valueMissing.toFixed(2)} more`;
+        this.maxGovernanceRateMessage = `Mint $${missingSPrime.toFixed(2)} sPRIME`;
       }
 
-      return valueUsed * (this.isPrimeAccount ? BORROWER_YEARLY_V_PRIME_RATE : DEPOSITOR_YEARLY_V_PRIME_RATE);
+      console.log('maxsPrime: ', maxsPrime)
+      console.log('maxRate: ', maxsPrime * (this.isPrimeAccount ? BORROWER_YEARLY_V_PRIME_RATE : DEPOSITOR_YEARLY_V_PRIME_RATE))
+      return maxsPrime * (this.isPrimeAccount ? BORROWER_YEARLY_V_PRIME_RATE : DEPOSITOR_YEARLY_V_PRIME_RATE);
     }
   },
   methods: {

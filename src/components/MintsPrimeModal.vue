@@ -8,6 +8,12 @@
              :src="`src/assets/logo/sprime-${secondAssetSymbol.toLowerCase()}.svg`"/>
       </div>
 
+      <div class="modal-top-info-bar">
+        <div>
+          Use any token or both tokens from your <b>wallet</b> to mint sPRIME.
+        </div>
+      </div>
+
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>
         <div class="top-info__value"> {{ primeBalance | smartRound }}</div>
@@ -45,17 +51,17 @@
       </div>
 
 
-      <SlippageControl :slippage-margin="0.02" v-on:slippageChange="slippageChange"></SlippageControl>
+      <SlippageControl :slippage-margin="0.02"  v-on:slippageChange="slippageChange"></SlippageControl>
 
-      <div class="rebalance-container">
-        <div class="rebalance-label">Rebalance:</div>
-        <Toggle v-if="showRebalanceToggle" v-on:change="rebalanceToggleChange" :options="['YES', 'NO']" :initial-option="sPrimeActive ? 1 : 0"></Toggle>
-        <div class="modal-top-info-bar">
-          <div>
-            Rebalancing will center your sPRIME around the current price.
-          </div>
-        </div>
-      </div>
+<!--      <div class="rebalance-container">-->
+<!--        <div class="rebalance-label">Rebalance:</div>-->
+<!--        <Toggle v-if="showRebalanceToggle" v-on:change="rebalanceToggleChange" :options="['YES', 'NO']" :initial-option="sPrimeActive ? 1 : 0"></Toggle>-->
+<!--        <div class="modal-top-info-bar">-->
+<!--          <div>-->
+<!--            Rebalancing will center your sPRIME around the current price.-->
+<!--          </div>-->
+<!--        </div>-->
+<!--      </div>-->
 
       <div class="button-wrapper">
         <Button :label="'Mint'"

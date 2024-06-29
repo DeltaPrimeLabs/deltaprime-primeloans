@@ -8,6 +8,12 @@
              :src="`src/assets/logo/sprime-${secondAssetSymbol.toLowerCase()}.svg`"/>
       </div>
 
+      <div class="modal-top-info-bar">
+        <div>
+          Redeeming will unwind your sPRIME to underlying tokens.
+        </div>
+      </div>
+
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>
         <div class="top-info__value"> {{ sPrimeBalance }}</div>

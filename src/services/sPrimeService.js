@@ -3,7 +3,7 @@ import config from '../config';
 import {wrapContract} from "../utils/blockchain";
 import {fillBinsArray, formatUnits, fromWei, getBinPrice, uniswapV3TickToPrice} from "../utils/calculate";
 import SPRIME from '@artifacts/contracts/interfaces/ISPrime.sol/ISPrime.json';
-import UNI_V3_POSITION_MANAGER from '@artifacts/contracts/interfaces/uniswap-v3-periphery/INonFungiblePositionManager.sol/INonFungiblePositionManager.json';
+import UNI_V3_POSITION_MANAGER from '@artifacts/contracts/interfaces/uniswap-v3-periphery/INonfungiblePositionManager.sol/INonfungiblePositionManager.json';
 import TRADERJOE_V2_POSITION_MANAGER from '@artifacts/contracts/interfaces/IPositionManager.sol/IPositionManager.json';
 const ethers = require('ethers');
 
