@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 2bd6f88e45deabab308fc38a4802134764767eef;
+// Last deployed from commit: 95c9c92d34b9e921c2ae8838562dec9f9dc9396d;
 pragma solidity ^0.8.17;
 
 // Importing necessary libraries and interfaces
@@ -521,21 +521,26 @@ contract sPrimeUniswap is
 
         if (userTokenId[msgSender] == 0) {
             (, currenTick, , , , , ) = pool.slot0();
+            currenTick = convertToNearestTickSpacingMultiple(currenTick);
             if (!(tickDesired + tickSlippage >= currenTick && currenTick + tickSlippage >= tickDesired)) {
                 revert SlippageTooHigh();
             }
             tickLower = currenTick - tickSpacing * deltaId;
-            if (tickLower < TickMath.MIN_TICK) {
-                tickLower = TickMath.MIN_TICK;
-            }
+//            if (tickLower < TickMath.MIN_TICK) {
+//                tickLower = TickMath.MIN_TICK;
+//            }
             tickUpper = currenTick + tickSpacing * deltaId;
-            if (tickUpper > TickMath.MAX_TICK) {
-                tickUpper = TickMath.MAX_TICK;
-            }
+//            if (tickUpper > TickMath.MAX_TICK) {
+//                tickUpper = TickMath.MAX_TICK;
+//            }
         }
         _depositToUniswap(msgSender, tickLower, tickUpper, amountX, amountY);
 
         notifyVPrimeController(msgSender);
+    }
+
+    function convertToNearestTickSpacingMultiple(int24 tick) internal view returns (int24) {
+        return (tick / tickSpacing) * tickSpacing;
     }
 
     /**
@@ -612,6 +617,7 @@ contract sPrimeUniswap is
 
         {
             (, int24 currenTick, , , , , ) = pool.slot0();
+            currenTick = convertToNearestTickSpacingMultiple(currenTick);
             _depositToUniswap(
                 user,
                 currenTick - tickSpacing * deltaId,
