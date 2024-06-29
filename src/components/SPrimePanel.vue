@@ -20,12 +20,12 @@
       <div class="actions-info">
         <div class="actions-info__entry">
           <div class="actions-info__label">Total value:</div>
-          <div class="actions-info__value">$ {{ formatTokenBalance(value, 18, true) }}</div>
+          <div class="actions-info__value">{{ value | usd }}</div>
         </div>
         <div class="actions-info__divider"></div>
         <div class="actions-info__entry">
           <div class="actions-info__label">Distribution:</div>
-          <img :src="getDistributionIcon" class="actions-info__distribution-icon">
+          <img v-if="distributionType" :src="getDistributionIcon" class="actions-info__distribution-icon">
         </div>
         <div class="actions-info__divider"></div>
         <div class="actions-info__entry">
@@ -52,7 +52,7 @@
       <div class="stats">
         <div class="stat">
           <div class="stat__title">Total value</div>
-          <div class="stat__value">{{ formatTokenBalance(value, 18, true) }}</div>
+          <div class="stat__value">{{ value | usd }}</div>
         </div>
         <div class="stat">
           <div class="stat__title">Revenue received
@@ -71,7 +71,14 @@
         <div class="distribution__title">Distribution</div>
         <div class="chart-container">
           <div class="distribution-chart-line"></div>
-          <DistributionChart :data="chartData" :active-index="7"></DistributionChart>
+          <DistributionChart v-if="dex === 'TRADERJOEV2' && chartData" :data="chartData" :active-index="7"></DistributionChart>
+          <PriceRangeChart v-if="dex === 'UNISWAP' && chartData"
+                           :active-value="chartData.activeValue"
+                           :axis-start="chartData.axisStart"
+                           :axis-end="chartData.axisEnd"
+                           :range-start="chartData.rangeStart"
+                           :range-end="chartData.rangeEnd"
+          ></PriceRangeChart>
         </div>
       </div>
       <div class="governance">
@@ -112,6 +119,7 @@ import DoubleAssetIcon from './DoubleAssetIcon.vue';
 import DistributionChart from "./DistributionChart.vue";
 import DeltaIcon from "./DeltaIcon.vue";
 import InfoIcon from "./InfoIcon.vue";
+import PriceRangeChart from "./PriceRangeChart.vue";
 import {ActionSection} from '../services/globalActionsDisableService';
 
 const ethers = require('ethers');
@@ -136,7 +144,7 @@ const DISTRIBUTION_ICON_DICTIONARY = {
 
 export default {
   name: 'SPrimePanel',
-  components: {InfoIcon, DeltaIcon, DoubleAssetIcon, DistributionChart, FlatButton},
+  components: {PriceRangeChart, InfoIcon, DeltaIcon, DoubleAssetIcon, DistributionChart, FlatButton},
   props: {
     isPrimeAccount: false
   },
@@ -150,24 +158,8 @@ export default {
       governanceRate: null,
       expanded: false,
       isActionDisabledRecord: {},
-      distributionType: DistributionType.RIGHT_NEGATIVE,
-      chartData: [
-        {x: 1, y: 1, showTick: true, positive: false},
-        {x: 2, y: 2, showTick: false, positive: false},
-        {x: 3, y: 3, showTick: false, positive: false},
-        {x: 4, y: 4, showTick: false, positive: false},
-        {x: 5, y: 2, showTick: true, positive: false},
-        {x: 6, y: 0, showTick: false, positive: false},
-        {x: 7, y: 0, showTick: false, positive: false},
-        {x: 8, y: 3, showTick: true, positive: true},
-        {x: 9, y: 0, showTick: false, positive: false},
-        {x: 10, y: 0, showTick: false, positive: false},
-        {x: 11, y: 0, showTick: false, positive: false},
-        {x: 12, y: 0, showTick: false, positive: false},
-        {x: 13, y: 0, showTick: false, positive: false},
-        {x: 14, y: 0, showTick: false, positive: false},
-        {x: 15, y: 0, showTick: false, positive: false},
-      ]
+      distributionType: null,
+      chartData: null
     };
   },
   mounted() {
@@ -185,6 +177,48 @@ export default {
 
     this.sPrimeService.observeSPrimeValue().subscribe(value => {
       this.value = value
+    });
+
+    this.sPrimeService.observeSPrimeUnderlyingPool().subscribe(value => {
+      this.poolPrice = value
+      if (this.dex === 'TRADERJOEV2') {
+        this.chartData = [
+          {x: 1, y: 1, showTick: true, positive: false},
+          {x: 2, y: 2, showTick: false, positive: false},
+          {x: 3, y: 3, showTick: false, positive: false},
+          {x: 4, y: 4, showTick: false, positive: false},
+          {x: 5, y: 2, showTick: true, positive: false},
+          {x: 6, y: 0, showTick: false, positive: false},
+          {x: 7, y: 0, showTick: false, positive: false},
+          {x: 8, y: 3, showTick: true, positive: true},
+          {x: 9, y: 0, showTick: false, positive: false},
+          {x: 10, y: 0, showTick: false, positive: false},
+          {x: 11, y: 0, showTick: false, positive: false},
+          {x: 12, y: 0, showTick: false, positive: false},
+          {x: 13, y: 0, showTick: false, positive: false},
+          {x: 14, y: 0, showTick: false, positive: false},
+          {x: 15, y: 0, showTick: false, positive: false},
+        ]
+      }
+      if (this.dex === 'UNISWAP') {
+        let rangeStart = 0.1;
+        let rangeEnd = 0.8;
+        let minValue = Math.min(this.poolPrice, rangeStart);
+        let maxValue = Math.max(this.poolPrice, rangeEnd);
+        let axisStart = minValue - 0.05 * minValue;
+        let axisEnd = maxValue + 0.05 * maxValue;
+
+        this.chartData = {
+          activeValue: this.poolPrice,
+          rangeStart: rangeStart,
+          rangeEnd: rangeEnd,
+          axisStart: axisStart,
+          axisEnd: axisEnd
+        }
+        if (rangeStart <= this.poolPrice && rangeEnd >= this.poolPrice) this.distributionType = DistributionType.LEFT_POSITIVE;
+        if (rangeStart > this.poolPrice) this.distributionType = DistributionType.LEFT_NEGATIVE;
+        if (rangeEnd < this.poolPrice) this.distributionType = DistributionType.RIGHT_NEGATIVE;
+      }
     });
 
     this.accountService.observeAccountLoaded().subscribe(() => {
@@ -229,7 +263,6 @@ export default {
       TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
     },
     async openMintSPrimeModal() {
-      console.log('openMintSPrimeModal')
       let activeId, currentPrice;
       if (this.dex === 'TRADERJOEV2') {
         [, activeId] = await this
@@ -240,7 +273,6 @@ export default {
             .uniswapV3Service
             .getPriceAndActiveId(this.sPrimeConfig.poolAddress, this.provider)
       }
-      console.log('activeId: ', activeId)
 
       const [primeBalance, secondAssetBalance] = await Promise.all(
           [
@@ -250,10 +282,6 @@ export default {
       );
 
       const nativeTokenBalance = parseFloat(ethers.utils.formatEther(await this.provider.getBalance(this.account)));
-      console.log(nativeTokenBalance);
-
-      console.log(primeBalance);
-      console.log(secondAssetBalance);
 
       const modalInstance = this.openModal(MintsPrimeModal);
       modalInstance.primeBalance = primeBalance;
@@ -262,7 +290,7 @@ export default {
       modalInstance.nativeTokenBalance = nativeTokenBalance;
       modalInstance.isSecondAssetNative = this.secondAsset === config.nativeToken;
       modalInstance.$on('MINT', sPrimeMintEvent => {
-        console.log(sPrimeMintEvent);
+
         const idSlippage = this.dex === 'TRADERJOEV2' ?
             getTraderJoeV2IdSlippageFromPriceSlippage(sPrimeMintEvent.slippage / 100, config.SPRIME_CONFIG.TRADERJOEV2[this.secondAsset].binStep)
             : getUniswapV3SlippageFromPriceSlippage(currentPrice, sPrimeMintEvent.slippage / 100);
@@ -275,10 +303,11 @@ export default {
           amountSecond: sPrimeMintEvent.secondAmount,
           isSecondAssetNative: sPrimeMintEvent.isSecondAssetNative,
           idSlippage: idSlippage,
-          slippage: sPrimeMintEvent.slippage / 100,
+          slippage: sPrimeMintEvent.slippage,
           dex: this.dex,
           activeId: activeId
         };
+
         this.handleTransaction(this.sPrimeMint, {sPrimeMintRequest: sPrimeMintRequest}, () => {
           this.$forceUpdate();
         }, (error) => {
@@ -315,7 +344,6 @@ export default {
           dex: this.dex,
           activeId: activeId
         };
-        console.log('sPrimeRebalanceRequest: ', sPrimeRebalanceRequest)
         this.handleTransaction(this.sPrimeRebalance, {sPrimeRebalanceRequest: sPrimeRebalanceRequest}, () => {
           this.$forceUpdate();
         }, (error) => {
@@ -325,8 +353,6 @@ export default {
       });
     },
     async openRedeemSPrimeModal() {
-      console.log(this.sPrimeConfig);
-
       let [primeBalance, secondAssetBalance] = await Promise.all(
           [this.fetchUserTokenBalance('PRIME'),
             this.fetchUserTokenBalance(this.secondAsset)]
@@ -334,8 +360,6 @@ export default {
 
       const sPrimeTokenContract = new ethers.Contract(this.sPrimeConfig.sPrimeAddress, erc20ABI, this.provider.getSigner());
       const sPrimeBalance = await this.getWalletTokenBalance(this.account, 'sPRIME', sPrimeTokenContract, 18);
-
-      console.log(sPrimeBalance);
 
       const modalInstance = this.openModal(RedeemsPrimeModal);
       modalInstance.primeBalance = primeBalance;
@@ -364,7 +388,6 @@ export default {
     },
     async fetchUserTokenBalance(tokenSymbol) {
       const contract = new ethers.Contract(TOKEN_ADDRESSES[tokenSymbol], erc20ABI, this.provider.getSigner());
-      console.log(contract);
 
       return this.getWalletTokenBalance(
           this.account,
@@ -392,7 +415,6 @@ export default {
     watchActionDisabling() {
       this.globalActionsDisableService.getSectionActions$(ActionSection.SPRIME)
         .subscribe(isActionDisabledRecord => {
-          console.log(isActionDisabledRecord);
           this.isActionDisabledRecord = isActionDisabledRecord;
         })
     },

@@ -33,8 +33,6 @@ export default {
 
       // let dataFeeds = ['PRIME', sPrimeMintRequest.secondAsset]
       let dataFeeds = [...Object.keys(config.POOLS_CONFIG)]
-      console.log('dataFeeds')
-      console.log(dataFeeds)
       const sprimeContract = await wrapContract(new ethers.Contract(sPrimeMintRequest.sPrimeAddress, sPrimeMintRequest.dex === 'TRADERJOEV2' ? SPRIME_TJV2.abi : SPRIME_UNISWAP.abi, provider.getSigner()), dataFeeds);
 
       const secondAssetDecimals = config.SPRIME_CONFIG[sPrimeMintRequest.dex][sPrimeMintRequest.secondAsset].secondAssetDecimals;
@@ -64,14 +62,7 @@ export default {
         }
       }
 
-      console.log('sPrimeMintRequest.activeId: ', sPrimeMintRequest.activeId)
-      console.log('sPrimeMintRequest.idSlippage: ', sPrimeMintRequest.idSlippage)
-      console.log('amountPrime: ', amountPrime)
-      console.log('amountSecond: ', amountSecond)
-      console.log('sPrimeMintRequest.isRebalance: ', sPrimeMintRequest.isRebalance)
-      console.log('sPrimeMintRequest.slippage: ', sPrimeMintRequest.slippage * 100)
-
-      const transaction = await sprimeContract.deposit(sPrimeMintRequest.activeId, sPrimeMintRequest.idSlippage, amountPrime, amountSecond, sPrimeMintRequest.isRebalance, sPrimeMintRequest.slippage * 100, {gasLimit: 8000000})
+      const transaction = await sprimeContract.deposit(sPrimeMintRequest.activeId, sPrimeMintRequest.idSlippage, amountPrime, amountSecond, sPrimeMintRequest.isRebalance, sPrimeMintRequest.slippage * (sPrimeMintRequest.dex === 'TRADERJOEV2' ? 100 : 1), {gasLimit: 8000000})
       await awaitConfirmation(transaction, provider, 'mint');
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
@@ -91,13 +82,7 @@ export default {
 
       // let dataFeeds = ['PRIME', sPrimeMintRequest.secondAsset]
       let dataFeeds = [...Object.keys(config.POOLS_CONFIG), sPrimeRebalanceRequest.secondAsset]
-      console.log('sPrimeRebalanceRequest.sPrimeAddress: ', sPrimeRebalanceRequest.sPrimeAddress)
       const sprimeContract = await wrapContract(new ethers.Contract(sPrimeRebalanceRequest.sPrimeAddress, sPrimeRebalanceRequest.dex === 'TRADERJOEV2' ? SPRIME_TJV2.abi : SPRIME_UNISWAP.abi, provider.getSigner()), dataFeeds);
-
-      console.log('sPrimeRebalanceRequest.activeId: ', sPrimeRebalanceRequest.activeId)
-      console.log('sPrimeRebalanceRequest.idSlippage: ', sPrimeRebalanceRequest.idSlippage)
-      console.log('sPrimeRebalanceRequest.isRebalance: ', sPrimeRebalanceRequest.isRebalance)
-      console.log('sPrimeRebalanceRequest.slippage * 100: ', sPrimeRebalanceRequest.slippage * 100)
 
       const transaction = await sprimeContract.deposit(sPrimeRebalanceRequest.activeId, sPrimeRebalanceRequest.idSlippage, 0, 0, sPrimeRebalanceRequest.isRebalance, sPrimeRebalanceRequest.slippage * 100, { gasLimit: 8000000 })
       await awaitConfirmation(transaction, provider, 'rebalance');

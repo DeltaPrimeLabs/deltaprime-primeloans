@@ -54,7 +54,7 @@ export default {
                 sPrimeAddress: "0xd38C5cEca20Fb43503E108ed8d4CaCA5B57E730E",
                 positionManagerAddress: "0x13652F4a37235293a90a1dE5B878c9435EAf4c58",
                 lbAddress: "0x8db6684838dBdA65952ae4bC576503f6eCC03864",
-                binStep: 100,
+                binStep: 50,
                 secondAssetDecimals: 18,
             }
         }
