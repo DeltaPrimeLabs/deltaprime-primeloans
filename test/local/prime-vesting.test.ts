@@ -40,36 +40,63 @@ describe("Prime Vesting", () => {
             [
                 mockToken.address,
                 startTime,
-                [
-                    user1.address,
-                    user2.address,
-                    user3.address
-                ],
-                [
-                    {
-                        cliffPeriod: time.duration.days(10),
-                        vestingPeriod: time.duration.days(10),
-                        grantClaimRightTo: ZERO,
-                        totalAmount: toWei("1000"),
-                    },
-                    {
-                        cliffPeriod: time.duration.days(10),
-                        vestingPeriod: time.duration.days(20),
-                        grantClaimRightTo: ZERO,
-                        totalAmount: toWei("1500"),
-                    },
-                    {
-                        cliffPeriod: time.duration.days(15),
-                        vestingPeriod: time.duration.days(10),
-                        grantClaimRightTo: user1.address,
-                        totalAmount: toWei("2000"),
-                    }
-                ]
             ]
         )) as PrimeVesting;
+    });
+
+    it("should initialize the vesting contract", async () => {
+        await vesting.initializeVesting(
+            [
+                user1.address,
+                user2.address
+            ],
+            [
+                {
+                    cliffPeriod: time.duration.days(10),
+                    vestingPeriod: time.duration.days(10),
+                    grantClaimRightTo: ZERO,
+                    totalAmount: toWei("1000"),
+                },
+                {
+                    cliffPeriod: time.duration.days(10),
+                    vestingPeriod: time.duration.days(20),
+                    grantClaimRightTo: ZERO,
+                    totalAmount: toWei("1500"),
+                }
+            ],
+            false
+        );
+
+        expect(await vesting.totalAmount()).to.be.eq(toWei("2500"));
+        expect(await vesting.vestingInitialized()).to.be.eq(false);
+        await expect(vesting.connect(owner).sendTokensToVesting()).to.be.revertedWith("NotInitialized");
+
+        await vesting.initializeVesting(
+            [
+                user3.address
+            ],
+            [
+                {
+                    cliffPeriod: time.duration.days(15),
+                    vestingPeriod: time.duration.days(10),
+                    grantClaimRightTo: user1.address,
+                    totalAmount: toWei("2000"),
+                }
+            ],
+            true
+        );
+
+        expect(await vesting.totalAmount()).to.be.eq(toWei("4500"));
+        expect(await vesting.vestingInitialized()).to.be.eq(true);
+
+        await expect(vesting.initializeVesting(
+            [user3.address], [{cliffPeriod: time.duration.days(15), vestingPeriod: time.duration.days(10), grantClaimRightTo: user1.address,totalAmount: toWei("2000"),}],true
+        )).to.be.revertedWith("AlreadyInitialized");
+
+        await expect(vesting.connect(owner).sendTokensToVesting()).to.be.revertedWith("InsufficientAllowance");
 
         await mockToken.connect(owner).approve(vesting.address, toWei("10000"));
-        await vesting.connect(owner).initializeVestingWithTokens();
+        await vesting.connect(owner).sendTokensToVesting();
         expect(await vesting.totalAmount()).to.be.eq(toWei("4500"));
         expect(await mockToken.balanceOf(vesting.address)).to.be.eq(toWei("4500"));
     });

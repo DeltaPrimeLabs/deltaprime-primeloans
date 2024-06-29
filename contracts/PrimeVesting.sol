@@ -30,7 +30,9 @@ contract PrimeVesting is Ownable {
 
     uint256 public immutable startTime;
 
-    uint256 public immutable totalAmount;
+    uint256 public totalAmount;
+
+    bool public vestingInitialized;
 
     mapping(address => UserInfo) public userInfos;
 
@@ -54,6 +56,21 @@ contract PrimeVesting is Ownable {
     /// @dev Trying to claim 0 amount
     error ZeroClaimAmount();
 
+    /// @dev Vesting already initialized
+    error AlreadyInitialized();
+
+    /// @dev Vesting not initialized
+    error NotInitialized();
+
+    /// @dev Vesting already started
+    error VestingAlreadyStarted();
+
+    /// @dev Insufficient allowance
+    error InsufficientAllowance();
+
+    /// @dev Insufficient balance
+    error InsufficientBalance();
+
     /// Events
 
     event Claimed(
@@ -67,13 +84,8 @@ contract PrimeVesting is Ownable {
 
     constructor(
         address primeToken_,
-        uint256 startTime_,
-        address[] memory users_,
-        VestingInfo[] memory vestingInfos_
+        uint256 startTime_
     ) {
-        if (users_.length != vestingInfos_.length) {
-            revert InputLengthMismatch();
-        }
         if (startTime_ < block.timestamp) {
             revert InvalidStartTime();
         }
@@ -81,9 +93,23 @@ contract PrimeVesting is Ownable {
             revert InvalidAddress();
         }
 
-        uint256 _totalAmount;
         primeToken = IERC20(primeToken_);
         startTime = startTime_;
+    }
+
+    function initializeVesting(
+        address[] memory users_,
+        VestingInfo[] memory vestingInfos_,
+        bool isLastBatch
+    ) external onlyOwner {
+        if(vestingInitialized){
+            revert AlreadyInitialized();
+        }
+        if (users_.length != vestingInfos_.length) {
+            revert InputLengthMismatch();
+        }
+        uint256 _totalAmount;
+
         uint256 len = users_.length;
         for (uint256 i; i != len; ++i) {
             address user = users_[i];
@@ -95,7 +121,11 @@ contract PrimeVesting is Ownable {
             userInfo.info = vestingInfos_[i];
             _totalAmount += userInfo.info.totalAmount;
         }
-        totalAmount = _totalAmount;
+        totalAmount += _totalAmount;
+
+        if (isLastBatch) {
+            vestingInitialized = true;
+        }
     }
 
     /// Public functions
@@ -120,10 +150,19 @@ contract PrimeVesting is Ownable {
         return _claimable(user);
     }
 
-    function initializeVestingWithTokens() external onlyOwner {
-        require(primeToken.allowance(owner(), address(this)) >= totalAmount, "Not enough allowance");
-        require(primeToken.balanceOf(owner()) >= totalAmount, "Not enough balance");
-        require(block.timestamp < startTime, "Vesting already started");
+    function sendTokensToVesting() external onlyOwner {
+        if(!vestingInitialized){
+            revert NotInitialized();
+        }
+        if(primeToken.balanceOf(owner()) < totalAmount){
+            revert InsufficientBalance();
+        }
+        if(primeToken.allowance(owner(), address(this)) < totalAmount){
+            revert InsufficientAllowance();
+        }
+        if(block.timestamp >= startTime){
+            revert VestingAlreadyStarted();
+        }
 
         primeToken.safeTransferFrom(owner(), address(this), totalAmount);
     }
