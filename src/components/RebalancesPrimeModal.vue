@@ -2,13 +2,15 @@
   <div id="modal" class="rebalance-sprime-modal-component modal-component">
     <Modal>
       <div class="modal__title">
-        Rebalance $sPRIME
-        <DoubleAssetIcon :size="'BIG'" :primary="'sPRIME'" :secondary="secondAssetSymbol"></DoubleAssetIcon>
+        Rebalance sPRIME
+        <img class="sprime-logo"
+             v-if="secondAssetSymbol"
+             :src="`src/assets/logo/sprime-${secondAssetSymbol.toLowerCase()}.svg`"/>
       </div>
 
-      <div class="modal-top-desc">
-        <div class="rewards-info">
-          Rebalance your $sPRIME to the active price.
+      <div class="modal-top-info-bar">
+        <div>
+          Rebalancing will center your sPRIME around the current price.
         </div>
       </div>
 
@@ -73,6 +75,11 @@ export default {
 
   .modal__title {
     margin-bottom: 0 !important;
+
+    .sprime-logo {
+      margin-left: 10px;
+      width: 40px;
+    }
   }
 
   .modal-top-desc {
@@ -115,6 +122,11 @@ export default {
         }
       }
     }
+  }
+
+  .modal-top-info-bar {
+    margin-top: 50px;
+    margin-bottom: 50px;
   }
 }
 

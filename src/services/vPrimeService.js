@@ -34,7 +34,8 @@ export default class vPrimeService {
               } else {
                   vPrimeContract.checkpoints(ownerAddress, num - 1).then(
                       checkpoint => {
-                          this.vPrimeRate$.next(fromWei(checkpoint.rate));
+                          let yearlyRate = checkpoint.rate.toNumber() * 3600 * 24 * 365 / 1e18;
+                          this.vPrimeRate$.next(yearlyRate);
                       });
               }
           });

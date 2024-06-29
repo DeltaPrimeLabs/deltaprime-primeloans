@@ -12,7 +12,7 @@
           :healthLoading="healthLoading">
       </StatsBarBeta>
 
-      <SPrimePanel></SPrimePanel>
+      <SPrimePanel :is-prime-account="true" :user-address="account" :total-deposits-or-borrows="noSmartLoanInternal ? 0 : debt"></SPrimePanel>
       <LTIPStatsBar v-if="isArbitrum"></LTIPStatsBar>
 
       <InfoBubble v-if="noSmartLoanInternal === false" cacheKey="ACCOUNT-READY">

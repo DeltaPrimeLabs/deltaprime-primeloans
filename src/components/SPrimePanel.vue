@@ -16,7 +16,7 @@
              v-if="secondAsset"
              :src="`src/assets/logo/sprime-${secondAsset.toLowerCase()}.svg`"/>
         <div class="sprime__text">
-          $sPRIME
+          sPRIME
         </div>
       </div>
       <div class="actions-info">
@@ -46,7 +46,7 @@
              v-if="secondAsset"
              :src="`src/assets/logo/sprime-${secondAsset.toLowerCase()}.svg`"/>
         <div>
-          $sPRIME
+          sPRIME
         </div>
       </div>
       <div class="actions">
@@ -100,12 +100,12 @@
       <div class="rates">
         <div class="rate">
           <div class="rate__title">Accrual rate (yearly)</div>
-          <div class="rate__value">{{ governanceRate }}</div>
+          <div class="rate__value">{{ governanceRate ? governanceRate.toFixed(2) : 0 }}</div>
         </div>
         <div class="rate">
           <div class="rate__title">Max. accrual rate</div>
-          <div class="rate__value">58</div>
-          <div class="rate__extra-info">(Borrow 10$ more)</div>
+          <div class="rate__value">{{maxGovernanceRate ? maxGovernanceRate.toFixed(2) : 0}}</div>
+          <div class="rate__extra-info">({{ maxGovernanceRateMessage }})</div>
         </div>
       </div>
     </div>
@@ -133,6 +133,10 @@ const ethers = require('ethers');
 
 let TOKEN_ADDRESSES;
 
+const V_PRIME_PAIR_RATIO = 10;
+const BORROWER_YEARLY_V_PRIME_RATE = 1;
+const DEPOSITOR_YEARLY_V_PRIME_RATE = 5;
+
 const DistributionType = {
   RIGHT_NEUTRAL: 'RIGHT_NEUTRAL',
   LEFT_NEUTRAL: 'LEFT_NEUTRAL',
@@ -153,16 +157,19 @@ export default {
   name: 'SPrimePanel',
   components: {PriceRangeChart, InfoIcon, DeltaIcon, DistributionChart, FlatButton},
   props: {
-    isPrimeAccount: false
+    isPrimeAccount: false,
+    totalDepositsOrBorrows: null
   },
   data() {
     return {
       dex: null,
       secondAsset: null,
       sPrimeConfig: null,
+      sPrimeActive: true,
       value: null,
       governancePoints: null,
       governanceRate: null,
+      maxGovernanceRateMessage: null,
       expanded: false,
       isActionDisabledRecord: {},
       distributionType: null,
@@ -200,7 +207,6 @@ export default {
               return { x: binPrice, y: 3, showTick: showTick, positive: positive}
             }
         )
-        console.log('this.chartData: ', this.chartData)
       }
       if (this.dex === 'UNISWAP') {
         let rangeStart = positionInfo.priceMin;
@@ -217,9 +223,11 @@ export default {
           axisStart: axisStart,
           axisEnd: axisEnd
         }
-        console.log('this.chartData: ', this.chartData)
 
-        if (rangeStart <= this.poolPrice && rangeEnd >= this.poolPrice) this.distributionType = DistributionType.LEFT_POSITIVE;
+        if (rangeStart <= this.poolPrice && rangeEnd >= this.poolPrice) {
+          this.distributionType = DistributionType.LEFT_POSITIVE;
+          this.sPrimeActive = true;
+        }
         if (rangeStart > this.poolPrice) this.distributionType = DistributionType.LEFT_NEGATIVE;
         if (rangeEnd < this.poolPrice) this.distributionType = DistributionType.RIGHT_NEGATIVE;
       }
@@ -234,7 +242,7 @@ export default {
     });
 
     this.vPrimeService.observeVPrimeRate().subscribe(rate => {
-      this.governanceRate = rate ? rate.toExponential(2) : 0;
+      this.governanceRate = rate;
     });
 
     this.watchActionDisabling();
@@ -255,6 +263,21 @@ export default {
     ...mapState('network', ['provider', 'account']),
     getDistributionIcon() {
       return `src/assets/icons/sprime-distribution/${DISTRIBUTION_ICON_DICTIONARY[this.distributionType]}${this.themeService.themeChange$.value === 'LIGHT' ? '' : '--dark' }.svg`;
+    },
+    maxGovernanceRate() {
+      let isSPrimeValueUsed = this.value > (this.totalDepositsOrBorrows / 10);
+      let valueUsed = Math.max(this.value, this.totalDepositsOrBorrows / 10);
+
+      if (isSPrimeValueUsed) {
+        let valueMissing = this.value * 10 - this.totalDepositsOrBorrows;
+        let action = this.isPrimeAccount ? `Borrow` : `Deposit`;
+        this.maxGovernanceRateMessage = `${action} ${valueMissing.toFixed(2)} more`;
+      } else {
+        let valueMissing = this.totalDepositsOrBorrows / 10 - this.value;
+        this.maxGovernanceRateMessage = `Mint ${valueMissing.toFixed(2)} more`;
+      }
+
+      return valueUsed * (this.isPrimeAccount ? BORROWER_YEARLY_V_PRIME_RATE : DEPOSITOR_YEARLY_V_PRIME_RATE);
     }
   },
   methods: {
@@ -293,6 +316,7 @@ export default {
       modalInstance.secondAssetSymbol = this.secondAsset;
       modalInstance.nativeTokenBalance = nativeTokenBalance;
       modalInstance.isSecondAssetNative = this.secondAsset === config.nativeToken;
+      modalInstance.sPrimeActive = this.sPrimeActive;
       modalInstance.$on('MINT', sPrimeMintEvent => {
 
         const idSlippage = this.dex === 'TRADERJOEV2' ?
@@ -421,7 +445,7 @@ export default {
         .subscribe(isActionDisabledRecord => {
           this.isActionDisabledRecord = isActionDisabledRecord;
         })
-    },
+    }
   },
 };
 </script>

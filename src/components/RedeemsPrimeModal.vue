@@ -2,15 +2,17 @@
   <div id="modal" class="redeem-sprime-modal-component modal-component">
     <Modal>
       <div class="modal__title">
-        Redeem sPRIME - {{ secondAsset.symbol}}
-        <DoubleAssetIcon :size="'BIG'" :primary="'sPRIME'" :secondary="secondAsset.symbol"></DoubleAssetIcon>
+        Redeem sPRIME
+        <img class="sprime-logo"
+             v-if="secondAssetSymbol"
+             :src="`src/assets/logo/sprime-${secondAssetSymbol.toLowerCase()}.svg`"/>
       </div>
 
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>
         <div class="top-info__value"> {{ sPrimeBalance }}</div>
         <span class="top-info__currency">
-          sPRIME - {{secondAsset.symbol}}
+          sPRIME
         </span>
       </div>
 
@@ -32,33 +34,29 @@
 <!--                {{sPrimeBalance - sPrimeToRedeem | smartRound}} sPRIME-->
               </div>
             </div>
-            <div class="summary__divider divider--long light"></div>
+<!--            <div class="summary__divider divider&#45;&#45;long light"></div>-->
 
-            <div class="summary__value__pair">
-              <div class="summary__label">
-                PRIME balance:
-              </div>
-              <div class="summary__value">
-                124 PRIME
-              </div>
-            </div>
+<!--            <div class="summary__value__pair">-->
+<!--              <div class="summary__label">-->
+<!--                PRIME balance:-->
+<!--              </div>-->
+<!--              <div class="summary__value">-->
+<!--                124 PRIME-->
+<!--              </div>-->
+<!--            </div>-->
 
-            <div class="summary__divider divider--long light"></div>
+<!--            <div class="summary__divider divider&#45;&#45;long light"></div>-->
 
-            <div class="summary__value__pair">
-              <div class="summary__label">
-                {{ secondAsset.symbol }} borrowed:
-              </div>
-              <div class="summary__value">
-                154 {{ secondAsset.symbol}}
-              </div>
-            </div>
+<!--            <div class="summary__value__pair">-->
+<!--              <div class="summary__label">-->
+<!--                {{ secondAsset.symbol }} borrowed:-->
+<!--              </div>-->
+<!--              <div class="summary__value">-->
+<!--                154 {{ secondAsset.symbol}}-->
+<!--              </div>-->
+<!--            </div>-->
           </div>
         </TransactionResultSummaryBeta>
-      </div>
-
-      <div class="modal-top-info">
-        <div class="top-info__label">Max. slippage is 5%.</div>
       </div>
 
       <div class="button-wrapper">
@@ -147,6 +145,13 @@ export default {
   .double-asset-icon-component {
     margin-left: 10px;
     height: 40px;
+  }
+
+  .modal__title {
+    .sprime-logo {
+      margin-left: 10px;
+      width: 40px;
+    }
   }
 }
 

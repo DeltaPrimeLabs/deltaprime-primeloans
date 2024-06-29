@@ -3,7 +3,9 @@
     <Modal>
       <div class="modal__title">
         Mint sPRIME
-        <DoubleAssetIcon :size="'BIG'" :primary="'sPRIME'" :secondary="secondAssetSymbol"></DoubleAssetIcon>
+        <img class="sprime-logo"
+             v-if="secondAssetSymbol"
+             :src="`src/assets/logo/sprime-${secondAssetSymbol.toLowerCase()}.svg`"/>
       </div>
 
       <div class="modal-top-info">
@@ -47,7 +49,12 @@
 
       <div class="rebalance-container">
         <div class="rebalance-label">Rebalance:</div>
-        <Toggle v-on:change="rebalanceToggleChange" :options="['YES', 'NO']" :initial-option="0"></Toggle>
+        <Toggle v-if="showRebalanceToggle" v-on:change="rebalanceToggleChange" :options="['YES', 'NO']" :initial-option="sPrimeActive ? 1 : 0"></Toggle>
+        <div class="modal-top-info-bar">
+          <div>
+            Rebalancing will center your sPRIME around the current price.
+          </div>
+        </div>
       </div>
 
       <div class="button-wrapper">
@@ -93,6 +100,7 @@ export default {
   props: {
     secondAssetSymbol: null,
     primeBalance: Number,
+    sPrimeActive: false,
     secondAssetBalance: Number,
     nativeTokenBalance: Number,
     isSecondAssetNative: {
@@ -112,6 +120,7 @@ export default {
       transactionOngoing: false,
       primeInputError: false,
       secondInputError: false,
+      showRebalanceToggle: false,
       slippage: 0,
     };
   },
@@ -120,6 +129,8 @@ export default {
     setTimeout(() => {
       this.setupValidators();
       this.$forceUpdate();
+      this.rebalance = this.sPrimeActive;
+      this.showRebalanceToggle = true;
     });
   },
 
@@ -217,14 +228,16 @@ export default {
 .mint-sprime-modal-component {
   .rebalance-container {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
+    height: 140px;
     margin: 20px;
 
     .rebalance-label {
       color: var(--swap-modal__slippage-advanced-color);
       margin-right: 10px;
+      font-weight: 500;
     }
 
   }
@@ -234,8 +247,9 @@ export default {
   }
 
   .modal__title {
-    .double-asset-icon-component {
+    .sprime-logo {
       margin-left: 10px;
+      width: 40px;
     }
   }
 

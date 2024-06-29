@@ -5,7 +5,7 @@
         <Block :bordered="true">
           <div class="title">Savings</div>
           <NameValueBadgeBeta :name="'Your deposits'">{{ totalDeposit | usd }}</NameValueBadgeBeta>
-          <SPrimePanel :user-address="account"></SPrimePanel>
+          <SPrimePanel :is-prime-account="false" :user-address="account" :total-deposits-or-borrows="totalDeposit"></SPrimePanel>
           <div class="pools">
             <div class="pools-table">
               <TableHeader :config="poolsTableHeaderConfig"></TableHeader>
@@ -209,7 +209,7 @@ export default {
                 id: 'DEPOSIT',
               },
               {
-                label: '$sPRIME',
+                label: 'sPRIME',
                 sortable: false,
                 class: 'sprime',
                 id: 'SPRIME',
@@ -274,7 +274,7 @@ export default {
                 id: 'DEPOSIT',
               },
               {
-                label: '$sPRIME',
+                label: 'sPRIME',
                 sortable: false,
                 class: 'sprime',
                 id: 'SPRIME',
