@@ -12,6 +12,13 @@ export default class sPrimeService {
   sPrimePositionInfo$ = new BehaviorSubject(null);
   poolPrice$  = new BehaviorSubject(null);
 
+  emitRefreshSPrimeDataWithDefault(provider, ownerAddress) {
+      //needs to be updated when more than one sPRIME per chain
+      let defaultDex = config.SPRIME_CONFIG.default;
+      let defaultSecondAsset = config.SPRIME_CONFIG[config.SPRIME_CONFIG.default].default;
+      let defaultConfig = config.SPRIME_CONFIG[defaultDex][defaultSecondAsset];
+      this.emitRefreshSPrimeData(provider, defaultConfig.sPrimeAddress, defaultConfig.poolAddress, defaultDex, defaultSecondAsset, ownerAddress);
+  }
   emitRefreshSPrimeData(provider, sPrimeAddress, poolAddress, dex, secondAsset, ownerAddress) {
     this.updateSPrimeData(provider, sPrimeAddress, poolAddress, dex, secondAsset, ownerAddress);
   }
@@ -33,10 +40,14 @@ export default class sPrimeService {
 
       const sPrimeContract = await wrapContract(new ethers.Contract(sPrimeAddress, SPRIME.abi, provider.getSigner()), dataFeeds);
 
+      console.log('updateSPrimeData')
+
       fetch(config.redstoneFeedUrl).then(
           res => {
               res.json().then(
                   redstonePriceData => {
+                      console.log('redstonePriceData: ', redstonePriceData)
+                      console.log('redstonePriceData: ', redstonePriceData)
                       let secondAssetPrice = redstonePriceData[secondAsset][0].dataPoints[0].value;
 
                       if (dex === 'UNISWAP') {

@@ -14,7 +14,7 @@
         </div>
       </div>
 
-      <SlippageControl :slippage-margin="0.02" v-on:slippageChange="slippageChange"></SlippageControl>
+      <SlippageControl :slippage-margin="0.5" v-on:slippageChange="slippageChange"></SlippageControl>
 
       <div class="button-wrapper">
         <Button :label="'REBALANCE'" v-on:click="submit()"

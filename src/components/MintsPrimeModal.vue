@@ -50,8 +50,7 @@
         <Toggle v-on:change="wrappedAssetToggleChange" :options="[config.nativeToken, `W${config.nativeToken}`]"></Toggle>
       </div>
 
-
-      <SlippageControl :slippage-margin="0.02"  v-on:slippageChange="slippageChange"></SlippageControl>
+      <SlippageControl :slippage-margin="0.5"  v-on:slippageChange="slippageChange"></SlippageControl>
 
 <!--      <div class="rebalance-container">-->
 <!--        <div class="rebalance-label">Rebalance:</div>-->

@@ -32,7 +32,7 @@
         <div class="actions-info__divider"></div>
         <div class="actions-info__entry">
           <div class="actions-info__label">Governance power:</div>
-          <div class="actions-info__value">{{ governancePoints }}</div>
+          <div class="actions-info__value"  :class="{'negative': governancePoints && governancePoints < 0}">{{ governancePoints }}</div>
         </div>
         <div class="actions-info__divider"></div>
         <div class="actions-info__entry">
@@ -100,7 +100,7 @@
       <div class="rates">
         <div class="rate">
           <div class="rate__title">Accrual rate (yearly)</div>
-          <div class="rate__value">{{ governanceRate ? governanceRate.toFixed(2) : 0 }}</div>
+          <div class="rate__value governance-rate"  :class="{'negative': governanceRate && governanceRate < 0}">{{ governanceRate ? governanceRate.toFixed(2) : 0 }}</div>
         </div>
         <div class="rate">
           <div class="rate__title">Next accrual rate</div>
@@ -191,7 +191,7 @@ export default {
     });
 
     this.sPrimeService.observeSPrimeValue().subscribe(value => {
-      console.log('observeSPrimeValue: ', value)
+      console.log('observeSPrimeValue')
       this.value = value
     });
 
@@ -199,7 +199,8 @@ export default {
         this.sPrimeService.observeSPrimeUnderlyingPool(),
         this.sPrimeService.observeSPrimePositionInfo()])
         .subscribe(([poolPrice, positionInfo]) => {
-      this.poolPrice = poolPrice;
+          console.log('observeSPrimeUnderlyingPool && observeSPrimePositionInfo')
+        this.poolPrice = poolPrice;
       if (this.dex === 'TRADERJOEV2') {
         let positive = true;
         this.chartData = positionInfo.binsArray.map(
@@ -271,14 +272,18 @@ export default {
       let missingDeposit = Math.max(depositFromMaxsPrime - this.totalDepositsOrBorrows, 0);
       let missingSPrime = maxsPrime - this.value;
 
-      if (missingDeposit) {
+      let maxRate = maxsPrime * (this.isPrimeAccount ? BORROWER_YEARLY_V_PRIME_RATE : DEPOSITOR_YEARLY_V_PRIME_RATE);
+
+      if (this.isPrimeAccount && maxRate <= this.governanceRate) {
+        this.maxGovernanceRateMessage = `Based on your Savings`
+      } else if (missingDeposit) {
         let action = this.isPrimeAccount ? `Borrow` : `Deposit`;
         this.maxGovernanceRateMessage = `${action} $${missingDeposit.toFixed(2)} and mint $${missingSPrime.toFixed(2)} sPRIME`;
       } else {
         this.maxGovernanceRateMessage = `Mint $${missingSPrime.toFixed(2)} sPRIME`;
       }
 
-      return maxsPrime * (this.isPrimeAccount ? BORROWER_YEARLY_V_PRIME_RATE : DEPOSITOR_YEARLY_V_PRIME_RATE);
+      return Math.max(maxRate, this.governanceRate);
     }
   },
   methods: {
@@ -776,6 +781,12 @@ export default {
           font-size: 18px;
           font-weight: 500;
           color: var(--s-prime-panel__secondary-text-color);
+
+          &.governance-rate {
+            &.negative {
+              color: var(--currency-input__error-color);
+            }
+          }
         }
 
         .rate__extra-info {

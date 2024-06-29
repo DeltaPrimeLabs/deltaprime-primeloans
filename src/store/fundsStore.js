@@ -3429,6 +3429,9 @@ export default {
       setTimeout(async () => {
         await dispatch('updateFunds');
       }, config.refreshDelay);
+
+      rootState.serviceRegistry.sPrimeService.emitRefreshSPrimeDataWithDefault(provider, rootState.network.account);
+      rootState.serviceRegistry.vPrimeService.emitRefreshVPrimeDataWithDefault(rootState.network.account);
     },
 
     async repay({state, rootState, commit, dispatch}, {repayRequest}) {
@@ -3477,6 +3480,9 @@ export default {
       setTimeout(async () => {
         await dispatch('updateFunds');
       }, config.refreshDelay);
+
+      rootState.serviceRegistry.sPrimeService.emitRefreshSPrimeDataWithDefault(provider, rootState.network.account);
+      rootState.serviceRegistry.vPrimeService.emitRefreshVPrimeDataWithDefault(rootState.network.account);
     },
 
     async swap({state, rootState, commit, dispatch}, {swapRequest}) {

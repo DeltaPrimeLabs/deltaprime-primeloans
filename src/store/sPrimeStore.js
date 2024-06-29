@@ -55,24 +55,26 @@ export default {
         if (allowance.lt(amount)) {
           let approveTransaction = await tokenContract.connect(provider.getSigner())
             .approve(sPrimeMintRequest.sPrimeAddress, amount);
-          rootState.serviceRegistry.progressBarService.requestProgressBar();
-          rootState.serviceRegistry.modalService.closeModal();
 
           await awaitConfirmation(approveTransaction, provider, 'approve');
         }
       }
 
       const transaction = await sprimeContract.deposit(sPrimeMintRequest.activeId, sPrimeMintRequest.idSlippage, amountPrime, amountSecond, sPrimeMintRequest.isRebalance, sPrimeMintRequest.slippage * (sPrimeMintRequest.dex === 'TRADERJOEV2' ? 100 : 1), {gasLimit: 8000000})
-      await awaitConfirmation(transaction, provider, 'mint');
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
+
+      await awaitConfirmation(transaction, provider, 'mint');
 
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {
         rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
       }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      rootState.serviceRegistry.sPrimeService.emitRefreshSPrimeDataWithDefault(provider, rootState.network.account);
+      rootState.serviceRegistry.vPrimeService.emitRefreshVPrimeDataWithDefault(rootState.network.account);
     },
     async sPrimeRebalance({state, rootState, dispatch}, {sPrimeRebalanceRequest: sPrimeRebalanceRequest}) {
       const provider = rootState.network.provider;
@@ -91,6 +93,9 @@ export default {
       setTimeout(() => {
         rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
       }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      rootState.serviceRegistry.sPrimeService.emitRefreshSPrimeDataWithDefault(provider, rootState.network.account);
+      rootState.serviceRegistry.vPrimeService.emitRefreshVPrimeDataWithDefault(rootState.network.account);
     },
     async sPrimeRedeem({state, rootState, dispatch}, {sPrimeRedeemRequest: sPrimeRedeemRequest}) {
       const provider = rootState.network.provider;
@@ -110,6 +115,9 @@ export default {
       setTimeout(() => {
         rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
       }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      rootState.serviceRegistry.sPrimeService.emitRefreshSPrimeDataWithDefault(provider, rootState.network.account);
+      rootState.serviceRegistry.vPrimeService.emitRefreshVPrimeDataWithDefault(rootState.network.account);
     }
   }
 };

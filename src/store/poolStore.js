@@ -133,6 +133,9 @@ export default {
       setTimeout(() => {
         dispatch('setupPools');
       }, 30000);
+
+      rootState.serviceRegistry.sPrimeService.emitRefreshSPrimeDataWithDefault(provider, rootState.network.account);
+      rootState.serviceRegistry.vPrimeService.emitRefreshVPrimeDataWithDefault(rootState.network.account);
     },
 
     async withdraw({state, rootState, dispatch}, {withdrawRequest}) {
@@ -174,6 +177,9 @@ export default {
       setTimeout(() => {
         dispatch('setupPools');
       }, 30000);
+
+      rootState.serviceRegistry.sPrimeService.emitRefreshSPrimeDataWithDefault(provider, rootState.network.account);
+      rootState.serviceRegistry.vPrimeService.emitRefreshVPrimeDataWithDefault(rootState.network.account);
     },
 
     async swapDeposit({state, rootState, dispatch}, {swapDepositRequest}) {

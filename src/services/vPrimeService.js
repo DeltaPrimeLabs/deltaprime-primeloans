@@ -1,4 +1,5 @@
 import {BehaviorSubject} from 'rxjs';
+import config from '../config';
 import {fromWei} from "../utils/calculate";
 import vPRIME from '@artifacts/contracts/interfaces/IVPrime.sol/IVPrime.json';
 const ethers = require('ethers');
@@ -7,7 +8,11 @@ export default class vPrimeService {
   vPrimePoints$ = new BehaviorSubject(null);
   vPrimeRate$ = new BehaviorSubject(null);
 
-  emitRefreshVPrimeData(vPrimeAddress, ownerAddress) {
+    emitRefreshVPrimeDataWithDefault(ownerAddress) {
+        this.updateVPrimeData(config.VPRIME_CONFIG.address, ownerAddress);
+    }
+
+    emitRefreshVPrimeData(vPrimeAddress, ownerAddress) {
     this.updateVPrimeData(vPrimeAddress, ownerAddress);
   }
 
