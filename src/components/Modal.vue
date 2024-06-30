@@ -3,7 +3,7 @@
     <div class="modal-container">
       <div class="backdrop">
         <div class="modal">
-          <div class="close-button-container">
+          <div v-if="closable" class="close-button-container">
             <DeltaIcon class="close-button-container__icon" :icon-src="'src/assets/icons/cross.svg'" :size="21" v-on:click.native="close()"></DeltaIcon>
           </div>
           <div class="modal-scroll">
@@ -27,6 +27,10 @@ export default {
     }
   },
   props: {
+    closable: {
+      type: Boolean,
+      default: true
+    },
   }
 };
 </script>
