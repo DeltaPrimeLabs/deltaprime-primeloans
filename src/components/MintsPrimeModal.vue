@@ -25,7 +25,6 @@
                      :symbol="prime.symbol"
                      v-on:inputChange="primeInputChange"
                      :defaultValue="primeAmount"
-                     :max="primeBalance"
                      :allow-zero-value="true"
                      :validators="primeInputValidators">
       </CurrencyInput>
@@ -41,7 +40,6 @@
                      :symbol="secondAssetSymbol"
                      v-on:inputChange="secondInputChange"
                      :defaultValue="secondAmount"
-                     :max="isSecondAssetNative ? nativeTokenBalance : secondAssetBalance"
                      :allow-zero-value="true"
                      :validators="secondInputValidators">
       </CurrencyInput>
