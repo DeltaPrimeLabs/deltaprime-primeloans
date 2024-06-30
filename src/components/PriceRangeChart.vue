@@ -1,7 +1,8 @@
 <template>
   <div class="price-range-chart__wrapper">
     <div class="price-range-chart">
-      <div class="price-range-chart__range" v-bind:style="`left: ${rangeLeft}%; right: ${rangeRight}%`">
+      <div class="price-range-chart__range" v-bind:style="`left: ${rangeLeft}%; right: ${rangeRight}%`"
+           v-bind:class="rangeColorClass">
         <div class="price-range-chart__range-tick price-range-chart__range-tick--start">{{ rangeStart.toFixed(2) }}</div>
         <div class="price-range-chart__range-tick price-range-chart__range-tick--end">{{ rangeEnd.toFixed(2) }}</div>
       </div>
@@ -47,6 +48,14 @@ export default {
     },
     activeLeft() {
       return (this.activeValue - this.axisStart) / (this.axisEnd - this.axisStart) * 100;
+    },
+    rangeColorClass() {
+      if (this.rangeStart <= this.activeValue && this.rangeEnd >= this.activeValue) {
+        const rangeLength = this.rangeEnd - this.rangeStart
+        return this.activeValue - this.rangeStart < rangeLength * 0.1 || this.activeValue - this.rangeStart > rangeLength * 0.9 ? 'price-range-chart__range--neutral' : 'price-range-chart__range--positive'
+      } else {
+        return 'price-range-chart__range--negative'
+      }
     }
   },
   mounted() {
@@ -82,7 +91,18 @@ export default {
     position: absolute;
     top: 50%;
     bottom: 0;
-    background: var(--price-range-chart__range-background);
+
+    &--neutral {
+      background: var(--price-range-chart__range-background--neutral);
+    }
+
+    &--positive {
+      background: var(--price-range-chart__range-background);
+    }
+
+    &--negative {
+      background: var(--price-range-chart__range-background--negative);
+    }
   }
 
   &__range-tick {

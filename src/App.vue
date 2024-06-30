@@ -93,8 +93,8 @@
           <a href="https://deltaprime.io/">
             <img src="src/assets/icons/deltaprime.svg" class="logo">
           </a>
-          <AppToggle class="top-bar__app-toggle"></AppToggle>
-          <ThemeToggle class="top-bar__theme-toggle"></ThemeToggle>
+          <AppToggle v-if="!isClaimPage" class="top-bar__app-toggle"></AppToggle>
+          <ThemeToggle v-if="!isClaimPage" class="top-bar__theme-toggle"></ThemeToggle>
           <div v-if="isSavingsPage" class="protocol-insurance">
             <span>Reserve Fund:</span>
             <span class="insurance-value">$2,340,000</span>
@@ -104,7 +104,7 @@
           </div>
         </div>
         <!--      <div class="connect" v-if="!account" v-on:click="initNetwork()">Connect to wallet</div>-->
-        <Wallet class="wallet"/>
+        <Wallet :is-claim-page="isClaimPage" class="wallet"/>
       </div>
       <router-view></router-view>
       <ProgressBar></ProgressBar>
@@ -170,6 +170,7 @@ export default {
       darkMode: false,
       showNoWalletBanner: window.noWalletInstalled,
       isSavingsPage: false,
+      isClaimPage: false,
       signingTermsInProgress: false,
       showDeprecatedAssetsBanner: false,
       restrictModalOpen: false,
@@ -206,6 +207,10 @@ export default {
       this.isSavingsPage = true;
     }
 
+    if (window.location.href.includes('claim')) {
+      this.isClaimPage = true;
+    }
+
     if (window.location.href.includes('prime-account')) {
       this.showPrimeAccountBanner = true;
     }
@@ -237,6 +242,9 @@ export default {
         this.closeModal();
       }
     });
+    const url = document.location.href;
+    const lastUrlPart = url.split('/').reverse()[0];
+    this.checkClaimTheme(`/${lastUrlPart}`)
     this.watchCloseModal();
     this.checkTerms();
     this.watchHasDeprecatedAssets();
@@ -523,6 +531,23 @@ export default {
       }
     },
 
+    checkClaimTheme(path) {
+      this.isClaimPage = path === '/claim'
+      if (this.isClaimPage) {
+        document.documentElement.classList.remove('theme--dark')
+        document.documentElement.classList.add('theme--light')
+      } else {
+        const wasDark = localStorage.getItem('PA_VIEW_THEME') === 'DARK'
+        document.documentElement.classList.remove(wasDark ? 'theme--light' : 'theme--dark')
+        document.documentElement.classList.add(wasDark ? 'theme--dark' : 'theme--light')
+      }
+    }
+
+  },
+  watch:{
+    $route (to){
+      this.checkClaimTheme(to.fullPath)
+    }
   },
   destroyed() {
     clearInterval(this.gasPriceIntervalId);

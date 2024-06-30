@@ -3,6 +3,7 @@ import Router from 'vue-router'
 import PrimeAccount from '../pages/PrimeAccount';
 import PoolsBeta from '../components/PoolsBeta';
 import ProtocolStats from '../components/ProtocolStats';
+import ClaimPrime from "../components/ClaimPrime.vue";
 
 
 Vue.use(Router)
@@ -14,6 +15,11 @@ export default new Router({
       path: '/pools',
       name: 'Pools',
       component: PoolsBeta
+    },
+    {
+      path: '/claim',
+      name: 'Claim',
+      component: ClaimPrime
     },
     {
       path: '/prime-account',

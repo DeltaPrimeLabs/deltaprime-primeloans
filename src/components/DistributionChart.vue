@@ -99,6 +99,8 @@ export default {
         layout: {
           padding: {
             top: 18,
+            left: 16,
+            right: 16,
           }
         },
         activeIndex: this.activeIndex,
@@ -122,7 +124,7 @@ export default {
               userCallback: (item, index) => {
                 const barData = this.data[index]
                 if (barData.showTick) {
-                  return barData.x
+                  return barData.x.toFixed(2)
                 }
               }
             },

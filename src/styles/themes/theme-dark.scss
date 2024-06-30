@@ -679,8 +679,18 @@
 
   // region PriceRangeChart
   --price-range-chart__border: linear-gradient(to right, #{$dark-fuchsia} 19%, #{$pale-plum} 57%, #{$teal} 88%);
-  --price-range-chart__range-background: #{$pale-lilac};
+  --price-range-chart__range-background: #{$pale-green};
+  --price-range-chart__range-background--neutral: #{$mist-orange};
+  --price-range-chart__range-background--negative: #{$pale-red};
   --price-range-chart__tick-color: #{$washed-blue};
   --price-range-chart__active-line-color: #{$light-navy};
+  // endregion
+
+  // region ClaimPage
+  --claim-page__content-background: #{$white};
+  --claim-page__content-box-shadow: 7px 17px 55px 0 #{$pale-raspberry}91;
+  --claim-page__logo-box-shadow: drop-shadow(7px 17px 55px rgba(255, 211, 224, 0.57));
+  --claim-page__label-color: #{$dark-gray};
+  --claim-page__amount-text-color: #{$black};
   // endregion
 }
