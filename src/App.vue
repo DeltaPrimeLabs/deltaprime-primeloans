@@ -136,6 +136,9 @@ import TermsModal from './components/TermsModal.vue';
 import {combineLatest, forkJoin, map} from 'rxjs';
 import fetch from 'node-fetch';
 import RestrictedCountryModal from './components/RestrictedCountryModal.vue';
+import SPrimeModal from './components/SPrimeModal.vue';
+
+const BUY_SPRIME_MODAL_CLOSED = 'BUY_SPRIME_MODAL_CLOSED';
 
 export default {
   components: {
@@ -174,6 +177,7 @@ export default {
       signingTermsInProgress: false,
       showDeprecatedAssetsBanner: false,
       restrictModalOpen: false,
+      buySPrimeModalOpened: false,
     };
   },
   async created() {
@@ -397,6 +401,8 @@ export default {
                   console.log('SAVINGS PAGE - no deposits - terms not required');
                   if (isCountryRestricted) {
                     this.restrictApp(false);
+                  } else {
+                    this.openBuySPrimeModal();
                   }
                 } else {
                   console.log('SAVINGS PAGE - some deposit - checking terms');
@@ -411,6 +417,8 @@ export default {
                         if (!this.signingTermsInProgress) {
                           this.handleTermsSign(walletAddress, true);
                         }
+                      } else {
+                        this.openBuySPrimeModal();
                       }
                     })
                   }
@@ -423,6 +431,8 @@ export default {
               console.log('PA PAGE - no account - terms not required');
               if (isCountryRestricted) {
                 this.restrictApp(false);
+              } else {
+                this.openBuySPrimeModal();
               }
             } else {
               console.log('PA PAGE - account created - checking terms');
@@ -439,6 +449,7 @@ export default {
                     }
                   } else {
                     console.log('PA PAGE - account created - terms signed');
+                    this.openBuySPrimeModal();
                   }
                 });
               }
@@ -545,7 +556,19 @@ export default {
         document.documentElement.classList.remove(wasDark ? 'theme--light' : 'theme--dark')
         document.documentElement.classList.add(wasDark ? 'theme--dark' : 'theme--light')
       }
-    }
+    },
+
+    openBuySPrimeModal() {
+      const buySPrimeModalClosedOnce = localStorage.getItem(BUY_SPRIME_MODAL_CLOSED);
+      if (!this.buySPrimeModalOpened && !buySPrimeModalClosedOnce) {
+        const sprimeModalInstance = this.openModal(SPrimeModal);
+        this.buySPrimeModalOpened = true;
+        sprimeModalInstance.$on('CLOSE', () => {
+          console.log('modal closed');
+          localStorage.setItem(BUY_SPRIME_MODAL_CLOSED, 'true');
+        })
+      }
+    },
 
   },
   watch:{

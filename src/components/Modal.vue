@@ -23,6 +23,7 @@ export default {
   components: {DeltaIcon},
   methods: {
     close() {
+      this.$emit('close');
       this.closeModal();
     }
   },
