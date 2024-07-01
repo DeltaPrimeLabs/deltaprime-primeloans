@@ -7,7 +7,7 @@
         <div class="price-range-chart__range-tick price-range-chart__range-tick--end">{{ rangeEnd.toFixed(2) }}</div>
       </div>
       <div class="price-range-chart__active-label" v-bind:style="`left: ${activeLeft}%`">
-        Active<br>${{ activeValue ? activeValue.toFixed(2) : 0 }}
+        Price<br>${{ activeValue ? activeValue.toFixed(4) : 0 }}
       </div>
       <div class="price-range-chart__active-line" v-bind:style="`left: ${activeLeft}%`"></div>
     </div>

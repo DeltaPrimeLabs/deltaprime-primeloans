@@ -8,16 +8,16 @@ Chart.defaults.DistributionBarChart = Chart.defaults.bar;
 Chart.controllers.DistributionBarChart = Chart.controllers.bar.extend({
   draw: function (ease) {
     Chart.controllers.bar.prototype.draw.call(this, ease);
-    if (this.chart.config.options.activeIndex) {
+    if (this.chart.config.options.activeIndex > -1) {
       const activeLineX = this.chart.scales['x-axis-0'].getPixelForTick(this.chart.config.options.activeIndex)
-
+      const LINE_HEIGHT = 18
       const ctx = this.chart.ctx;
       const topY = this.chart.scales['y-axis-0'].top;
       const bottomY = this.chart.scales['y-axis-0'].bottom;
 
       ctx.save();
       ctx.beginPath();
-      ctx.moveTo(activeLineX, topY + 4);
+      ctx.moveTo(activeLineX, topY + 4 + LINE_HEIGHT);
       ctx.lineTo(activeLineX, bottomY);
       ctx.lineWidth = 1.5;
       ctx.strokeStyle = getThemeVariable('--chart__active-point-line-color');
@@ -26,7 +26,8 @@ Chart.controllers.DistributionBarChart = Chart.controllers.bar.extend({
       ctx.font = '14px Montserrat'
       ctx.textAlign = "center";
       ctx.fillStyle = getThemeVariable('--distribution-chart__ticks-color');
-      ctx.fillText('Active', activeLineX, topY - 4)
+      ctx.fillText('Price', activeLineX, topY - 4)
+      ctx.fillText(`$${this.chart.config.options.activePrice.toFixed(4)}`, activeLineX, topY - 4 + LINE_HEIGHT)
     } else {
       const ctx = this.chart.ctx;
       ctx.save();
@@ -42,6 +43,7 @@ export default {
   props: {
     data: null,
     activeIndex: null,
+    activePrice: null,
   },
   mounted() {
     this.rerender();
@@ -99,11 +101,13 @@ export default {
         layout: {
           padding: {
             top: 18,
-            left: 16,
-            right: 16,
+            left: 24,
+            right: 24,
+            bottom: 8,
           }
         },
         activeIndex: this.activeIndex,
+        activePrice: this.activePrice,
         height: 256,
         width: 960,
         responsive: true,
@@ -117,6 +121,9 @@ export default {
             barPercentage: 0.7,
             barThickness: 2,
             ticks: {
+              sampleSize: 2,
+              maxTicksLimit: 99999,
+              autoSkipPadding: 8,
               fontColor: getThemeVariable('--chart__scales-ticks-color'),
               fontFamily: 'Montserrat',
               maxRotation: 0,
@@ -124,7 +131,7 @@ export default {
               userCallback: (item, index) => {
                 const barData = this.data[index]
                 if (barData.showTick) {
-                  return barData.x.toFixed(2)
+                  return barData.x.toFixed(4)
                 }
               }
             },

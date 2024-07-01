@@ -1,8 +1,9 @@
 <template>
   <div class="sprime-panel-component" v-bind:class="{'sprime-panel-component--expanded': expanded}">
     <div class="header-actions">
-      <a :href="sPrimeConfig.dexWebsite" target="_blank">
-        <FlatButton  :active="!this.isActionDisabledRecord['BUY']">buy prime <img class="buy-prime-logo" src="src/assets/logo/prime.svg"/>
+      <a v-if="sPrimeConfig" :href="sPrimeConfig.dexWebsite" target="_blank">
+        <FlatButton :active="!this.isActionDisabledRecord['BUY']">buy prime <img class="buy-prime-logo"
+                                                                                 src="src/assets/logo/prime.svg"/>
         </FlatButton>
       </a>
       <div v-on:click="toggleExpand()">
@@ -32,11 +33,14 @@
         <div class="actions-info__divider"></div>
         <div class="actions-info__entry">
           <div class="actions-info__label">Governance power:</div>
-          <div class="actions-info__value"  :class="{'negative': governancePoints && governancePoints < 0}">{{ governancePoints }}</div>
+          <div class="actions-info__value" :class="{'negative': governancePoints && governancePoints < 0}">
+            {{ governancePoints }}
+          </div>
         </div>
         <div class="actions-info__divider"></div>
         <div class="actions-info__entry">
-          <FlatButton v-on:buttonClick="openMintSPrimeModal()" :active="!this.isActionDisabledRecord['MINT']">mint</FlatButton>
+          <FlatButton v-on:buttonClick="openMintSPrimeModal()" :active="!this.isActionDisabledRecord['MINT']">mint
+          </FlatButton>
         </div>
       </div>
     </div>
@@ -50,12 +54,17 @@
         </div>
       </div>
       <div class="actions">
-        <FlatButton v-on:buttonClick="openMintSPrimeModal()" :active="!this.isActionDisabledRecord['MINT']">mint</FlatButton>
-        <FlatButton v-on:buttonClick="openRebalanceSPrimeModal()" :active="!this.isActionDisabledRecord['REBALANCE'] && value > 0">rebalance</FlatButton>
-        <FlatButton v-on:buttonClick="openRedeemSPrimeModal()" :active="!this.isActionDisabledRecord['REDEEM'] && value > 0">redeem</FlatButton>
+        <FlatButton v-on:buttonClick="openMintSPrimeModal()" :active="!this.isActionDisabledRecord['MINT']">mint
+        </FlatButton>
+        <FlatButton v-on:buttonClick="openRebalanceSPrimeModal()"
+                    :active="!this.isActionDisabledRecord['REBALANCE'] && value > 0">rebalance
+        </FlatButton>
+        <FlatButton v-on:buttonClick="openRedeemSPrimeModal()"
+                    :active="!this.isActionDisabledRecord['REDEEM'] && value > 0">redeem
+        </FlatButton>
       </div>
+      <div class="sprime-panel__divider"></div>
     </div>
-    <div class="sprime-panel__divider"></div>
     <div class="sprime-panel__body">
       <div class="stats">
         <div class="stat">
@@ -68,7 +77,9 @@
           <div class="stat__title">Revenue received
             <InfoIcon class="stat__info-icon" :size="16" :tooltip="{ content: 'DeltaPrime fees distributed to your sPRIME. You are eligible for fees only when your sPRIME is active.'}"></InfoIcon>
           </div>
-          <div class="stat__value revenue"><FlatButton :active="false">soon</FlatButton></div>
+          <div class="stat__value revenue">
+            <FlatButton :active="false">soon</FlatButton>
+          </div>
         </div>
         <div class="stat">
           <div class="stat__title">YTD APR
@@ -81,7 +92,8 @@
         <div class="distribution__title">Distribution</div>
         <div class="chart-container">
           <div class="distribution-chart-line"></div>
-          <DistributionChart v-if="dex === 'TRADERJOEV2' && chartData" :data="chartData" :active-index="7"></DistributionChart>
+          <DistributionChart v-if="dex === 'TRADERJOEV2' && chartData" :data="chartData" :active-price="poolPrice"
+                             :active-index="activeBinIndex"></DistributionChart>
           <PriceRangeChart v-if="dex === 'UNISWAP' && chartData"
                            :active-value="chartData.activeValue"
                            :axis-start="chartData.axisStart"
@@ -102,11 +114,13 @@
       <div class="rates">
         <div class="rate">
           <div class="rate__title">Accrual rate (daily)</div>
-          <div class="rate__value governance-rate"  :class="{'negative': governanceRate && governanceRate < 0}">{{ governanceRate ? governanceRate.toFixed(2) : 0 }}</div>
+          <div class="rate__value governance-rate" :class="{'negative': governanceRate && governanceRate < 0}">
+            {{ governanceRate ? governanceRate.toFixed(2) : 0 }}
+          </div>
         </div>
         <div class="rate">
           <div class="rate__title">Next accrual rate</div>
-          <div class="rate__value">{{maxGovernanceRate ? maxGovernanceRate.toFixed(2) : 0}}</div>
+          <div class="rate__value">{{ maxGovernanceRate ? maxGovernanceRate.toFixed(2) : 0 }}</div>
           <div class="rate__extra-info">({{ maxGovernanceRateMessage }})</div>
         </div>
       </div>
@@ -177,7 +191,9 @@ export default {
       expanded: false,
       isActionDisabledRecord: {},
       distributionType: null,
-      chartData: null
+      chartData: null,
+      activeBinIndex: null,
+      poolPrice: null,
     };
   },
   mounted() {
@@ -202,41 +218,76 @@ export default {
     });
 
     combineLatest([
-        this.sPrimeService.observeSPrimeUnderlyingPool(),
-        this.sPrimeService.observeSPrimePositionInfo()])
+      this.sPrimeService.observeSPrimeUnderlyingPool(),
+      this.sPrimeService.observeSPrimePositionInfo()
+    ])
         .subscribe(([poolPrice, positionInfo]) => {
-          console.log('observeSPrimeUnderlyingPool && observeSPrimePositionInfo')
-        this.poolPrice = poolPrice;
-      if (this.dex === 'TRADERJOEV2') {
-        let positive = true;
-        this.chartData = positionInfo.binsArray.map(
-            (binPrice, i) => {
-              let showTick = (i === 0) || (i === (positionInfo.binsArray.length - 1));
+          this.poolPrice = poolPrice;
+          if (this.dex === 'TRADERJOEV2') {
+            let positive = true;
+            this.chartData = positionInfo.binsArray.map(
+                (binPrice, i) => {
+                  let showTick = (i === 0) || (i === (positionInfo.binsArray.length - 1));
+                  if (this.poolPrice <= binPrice && this.poolPrice > positionInfo.binsArray[i - 1]) {
+                    const toPrevious = this.poolPrice - positionInfo.binsArray[i - 1];
+                    const toCurrent = this.poolPrice - binPrice;
 
-              return { x: binPrice, y: 3, showTick: showTick, positive: positive}
+                    this.activeBinIndex = toPrevious >= toCurrent ? i : i - 1
+                  }
+                  return {x: binPrice, y: 3, showTick: showTick, positive: positive}
+                }
+            )
+            const stepLength = positionInfo.binsArray[1] - positionInfo.binsArray[0]
+            if (this.poolPrice < positionInfo.binsArray[0]) {
+              const emptyStepsCount = Math.abs((this.poolPrice - positionInfo.binsArray[0]) / stepLength)
+              const emptySteps = []
+              for (let i = 0; i < Math.floor(emptyStepsCount); i++) {
+                const lastStep = i === 0 ? positionInfo.binsArray[0] : emptySteps[0].x
+                emptySteps.unshift({x: lastStep - stepLength, y: 0, showTick: false, positive: false})
+              }
+              this.chartData = [{
+                x: this.poolPrice,
+                y: 0,
+                showTick: false,
+                positive: false
+              }, ...emptySteps, ...this.chartData]
+              this.activeBinIndex = 0;
+            } else if (this.poolPrice > positionInfo.binsArray[positionInfo.binsArray.length - 1]) {
+              const emptyStepsCount = Math.abs((this.poolPrice - positionInfo.binsArray[positionInfo.binsArray.length - 1]) / stepLength)
+              const emptySteps = []
+              for (let i = 0; i < Math.floor(emptyStepsCount); i++) {
+                const lastStep = i === 0 ? positionInfo.binsArray[positionInfo.binsArray.length - 1] : emptySteps[emptySteps.length - 1].x
+                emptySteps.push({x: lastStep + stepLength, y: 0, showTick: false, positive: false})
+              }
+              this.chartData = [...this.chartData, ...emptySteps, {
+                x: this.poolPrice,
+                y: 0,
+                showTick: false,
+                positive: false
+              }]
+              this.activeBinIndex = this.chartData.length - 1
             }
-        )
-        this.setDistributionChart(poolPrice, positionInfo.binsArray[0], positionInfo.binsArray[positionInfo.binsArray.length - 1]);
-      }
-      if (this.dex === 'UNISWAP') {
-        let rangeStart = positionInfo.priceMin;
-        let rangeEnd = positionInfo.priceMax;
-        let minValue = Math.min(this.poolPrice, rangeStart);
-        let maxValue = Math.max(this.poolPrice, rangeEnd);
-        let axisStart = minValue - 0.05 * minValue;
-        let axisEnd = maxValue + 0.05 * maxValue;
+            this.setDistributionChart(this.poolPrice, positionInfo.binsArray[0], positionInfo.binsArray[positionInfo.binsArray.length - 1]);
+          }
+          if (this.dex === 'UNISWAP') {
+            let rangeStart = positionInfo.priceMin;
+            let rangeEnd = positionInfo.priceMax;
+            let minValue = Math.min(this.poolPrice, rangeStart);
+            let maxValue = Math.max(this.poolPrice, rangeEnd);
+            let axisStart = minValue - 0.05 * minValue;
+            let axisEnd = maxValue + 0.05 * maxValue;
 
-        this.chartData = {
-          activeValue: this.poolPrice,
-          rangeStart: rangeStart,
-          rangeEnd: rangeEnd,
-          axisStart: axisStart,
-          axisEnd: axisEnd
-        }
+            this.chartData = {
+              activeValue: this.poolPrice,
+              rangeStart: rangeStart,
+              rangeEnd: rangeEnd,
+              axisStart: axisStart,
+              axisEnd: axisEnd
+            }
 
-        this.setDistributionChart(poolPrice, rangeStart, rangeEnd);
-      }
-    });
+            this.setDistributionChart(poolPrice, rangeStart, rangeEnd);
+          }
+        });
 
     this.accountService.observeAccountLoaded().subscribe(() => {
       this.fetchVPrimeData();
@@ -267,7 +318,7 @@ export default {
     ]),
     ...mapState('network', ['provider', 'account']),
     getDistributionIcon() {
-      return `src/assets/icons/sprime-distribution/${DISTRIBUTION_ICON_DICTIONARY[this.distributionType]}${this.themeService.themeChange$.value === 'LIGHT' ? '' : '--dark' }.svg`;
+      return `src/assets/icons/sprime-distribution/${DISTRIBUTION_ICON_DICTIONARY[this.distributionType]}${this.themeService.themeChange$.value === 'LIGHT' ? '' : '--dark'}.svg`;
     },
     maxGovernanceRate() {
       let maxsPrimeFromCeil = Math.ceil(this.value);
@@ -455,9 +506,9 @@ export default {
 
     watchActionDisabling() {
       this.globalActionsDisableService.getSectionActions$(ActionSection.SPRIME)
-        .subscribe(isActionDisabledRecord => {
-          this.isActionDisabledRecord = isActionDisabledRecord;
-        })
+          .subscribe(isActionDisabledRecord => {
+            this.isActionDisabledRecord = isActionDisabledRecord;
+          })
     },
 
     setDistributionChart(poolPrice, minPrice, maxPrice) {
@@ -526,6 +577,10 @@ export default {
       pointer-events: auto;
     }
 
+    .sprime-panel__divider {
+      width: 100%;
+    }
+
     .sprime-panel__actions--collapsed {
       opacity: 0;
       transform: translateY(100%) !important;
@@ -556,7 +611,7 @@ export default {
       position: absolute;
       width: 100%;
       transform: translateY(0);
-      padding: 20px 0;
+      padding: 17px 0;
 
       .sprime {
         position: absolute;
@@ -638,9 +693,17 @@ export default {
   }
 
   .sprime-panel__divider {
+    transition: width 250ms ease-in-out;
+    transition-delay: 200ms;
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
     height: 2px;
-    width: 100%;
+    width: 0;
     background: var(--s-prime-panel__divider-background);
+    flex-shrink: 0;
+
   }
 
   .sprime-panel__body {
