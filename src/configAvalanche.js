@@ -63,7 +63,7 @@ export default {
         address: "0x228a19fC13932C67D538fEba858359E369e5a197"
     },
     VESTING_CONTRACT_CONFIG: {
-        address: "0x1f6798f8A9554cEb3155e184F07B7E01a9912538"
+        address: "0x881fa171A7b5bf5c84d213043037ab867ce4688c"
     },
     WOMBAT_REWARDS_TOKENS: {
         "WOM": {name: "WOM", symbol: "WOM", logoExt: "png", decimals: 18, address: addresses.WOM},
