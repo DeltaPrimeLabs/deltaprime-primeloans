@@ -1,14 +1,18 @@
 <template>
-  <div class="claim-page__content">
-    <img class="claim-page__logo" src="src/assets/logo/claim-logo.svg" alt="">
-    <div class="claim-page__label">
-      Here you can claim your PRIME
-    </div>
-    <div class="claim-page__amount-text">
-      Claimable amount: <span class="claim-page__amount">{{ claimableAmount }}</span>
-    </div>
-    <div class="claim-page__button">
-      <BorderedButton :action="onClick"><span class="claim-page__button-text">Claim</span></BorderedButton>
+  <div class="claim-page">
+    <div class="claim-page__content">
+      <img class="claim-page__logo" src="src/assets/logo/claim-logo.svg" alt="">
+      <div class="claim-page__label">
+        {{ description }}
+      </div>
+      <div class="claim-page__amount-text">
+        <div v-if="chain === 'avalanche'">
+          Claimable amount: <span class="claim-page__amount" >{{ claimableAmount }}</span>
+        </div>
+      </div>
+      <div class="claim-page__button" v-if="claimableAmount && claimableAmount > 0 && chain === 'avalanche'">
+        <BorderedButton :action="onClick" ><span class="claim-page__button-text">Claim</span></BorderedButton>
+      </div>
     </div>
   </div>
 </template>
@@ -16,23 +20,60 @@
 <script>
 
 import BorderedButton from "./BorderedButton.vue";
+import config from "../config";
+import {mapActions, mapState} from "vuex";
+const ethers = require('ethers');
+import VESTING_CONTRACT
+  from '../../artifacts/contracts/interfaces/IPrimeVesting.sol/IPrimeVesting.json';
+import {fromWei} from "../utils/calculate";
 
 export default {
   name: 'ClaimPrime',
   components: {BorderedButton},
   async mounted() {
-    this.initStoresWhenProviderAndAccountCreated();
-    this.watchPools();
+    this.initNetwork();
+    this.accountService.observeAccountLoaded().subscribe(() => {
+      this.chain = window.chain;
+      this.fetchClaimable();
+    });
   },
+  computed: {
+    ...mapState('network', ['provider', 'account']),
+    ...mapState('serviceRegistry', ['providerService', 'accountService']),
+    description() {
+      if (!window.chain) {
+        return ''
+      }
+      if (window.chain === 'avalanche') {
+        return 'Here you can claim your PRIME'
+      }
+      if (window.chain !== 'avalanche') {
+        return 'Claiming available only on Avalanche'
+      }
+    }
+  },
+
 
   data() {
     return {
-      claimableAmount: 10
+      claimableAmount: 0,
+      vestingContract: null,
+      chain: null
     };
   },
   methods: {
-    onClick() {
-      console.log('click');
+    ...mapActions('network', ['initNetwork']),
+    async onClick() {
+      if (chain === 'avalanche' && this.vestingContract && this.claimableAmount) {
+        await this.vestingContract.claim({gasLimit: 8000000});
+      }
+    },
+    async fetchClaimable() {
+      if (chain === 'avalanche') {
+        this.vestingContract = new ethers.Contract(config.VESTING_CONTRACT_CONFIG.address, VESTING_CONTRACT.abi, this.provider.getSigner());
+
+        this.claimableAmount = fromWei(await this.vestingContract.claimable(this.account))
+      }
     }
   }
 };
@@ -86,6 +127,18 @@ export default {
     color: #fff;
     font-weight: 800;
     text-transform: uppercase;
+  }
+
+  .claim-page__label {
+    margin-bottom: 20px;
+  }
+
+  .claim-page__button {
+    cursor: pointer;
+    &.disabled {
+      opacity: 30%;
+      cursor: initial;
+    }
   }
 }
 </style>
