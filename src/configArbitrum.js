@@ -24,8 +24,6 @@ export default {
     pendleApiBaseUrl: 'https://api-v2.pendle.finance/sdk/api',
     //update leverage after every change in contracts
     ASSETS_CONFIG: {
-      "PRIME": {hide: true, name: "PRIME", symbol: "PRIME", decimals: 18, address: addresses.PRIME},
-      "sPRIME": {hide: true, name: "sPRIME", symbol: "sPRIME", decimals: 18, address: null},
       "ETH": {name: "ETH", symbol: "ETH", decimals: 18, address: addresses.ETH, debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:ETHUSDT"},
       "USDC": {name: "USDC", symbol: "USDC", decimals: 6, address: addresses.USDC, isStableCoin: true, debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:USDCUSDT"},
       "ARB": {name: "ARB", symbol: "ARB", logoExt: "png", decimals: 18, address: addresses.ARB, debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:ARBUSDT"},
@@ -48,6 +46,7 @@ export default {
       "weETH": {name: "weETH", symbol: "weETH", logoExt: "png", decimals: 18, address: addresses.weETH, debtCoverage: 0.83333333333, tradingViewSymbol: "CRYPTO:WEETHUSD"},
       "rsETH": {name: "rsETH", symbol: "rsETH", logoExt: "png", decimals: 18, address: addresses.rsETH, debtCoverage: 0.83333333333},
     },
+    PRIME: {hide: true, name: "PRIME", symbol: "PRIME", decimals: 18, address: addresses.PRIME},
     SPRIME_CONFIG: {
         default: "UNISWAP",
         UNISWAP: {

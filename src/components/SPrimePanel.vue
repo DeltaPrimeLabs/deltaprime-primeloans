@@ -427,7 +427,7 @@ export default {
           this.account,
           tokenSymbol,
           contract,
-          config.ASSETS_CONFIG[tokenSymbol].decimals
+          tokenSymbol === 'PRIME' ? config.PRIME.decimals : config.ASSETS_CONFIG[tokenSymbol].decimals
       );
     },
 

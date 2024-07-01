@@ -263,6 +263,9 @@ export default {
 
       let lbTokens = Object.values(this.traderJoeV2LpAssets);
 
+      console.log('tokens: ', tokens)
+      console.log('lbTokens: ', tokens)
+
       this.healthAfterTransaction = calculateHealth(tokens, lbTokens);
     },
 

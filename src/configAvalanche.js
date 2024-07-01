@@ -24,8 +24,6 @@ export default {
     // chainId: 1337,
     //update leverage after every change in contracts
     ASSETS_CONFIG: {
-      "PRIME": {hide: true, name: "PRIME", symbol: "PRIME", decimals: 18, address: addresses.PRIME},
-      "sPRIME": {hide: true, name: "sPRIME", symbol: "sPRIME", decimals: 18, address: null},
       "AVAX": {name: "AVAX", symbol: "AVAX", decimals: 18, address: addresses.AVAX, debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:AVAXUSDT"},
       "USDC": {name: "USDC", symbol: "USDC", decimals: 6, address: addresses.USDC, isStableCoin: true, debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:USDCUSDT"},
       "BTC": {name: "BTC", symbol: "BTC", logoExt: "png", decimals: 8, address: addresses.BTC, debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:BTCUSDT"},
@@ -46,6 +44,7 @@ export default {
       "BAL": {unsupported: true, name: "BAL", symbol: "BAL", logoExt: "png", decimals: 18, address: addresses.BAL, debtCoverage: 0, tradingViewSymbol: "BINANCE:BALUSDT"},
       "GGP": {unsupported: true, name: "GGP", symbol: "GGP", logoExt: "png", decimals: 18, address: addresses.GGP, debtCoverage: 0, tradingViewSymbol: "TRADERJOE:GGPWAVAX_AE671E.USD", fetchPrice: true, priceEndpoint: "https://api.gogopool.com/prices", priceJsonField: "ggpInUSD"},
     },
+    PRIME: {hide: true, name: "PRIME", symbol: "PRIME", decimals: 18, address: addresses.PRIME},
     SPRIME_CONFIG: {
         default: "TRADERJOEV2",
         TRADERJOEV2: {

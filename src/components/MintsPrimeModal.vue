@@ -23,6 +23,7 @@
       </div>
       <CurrencyInput ref="primeInput"
                      :symbol="prime.symbol"
+                     logo="prime.svg"
                      v-on:inputChange="primeInputChange"
                      :defaultValue="primeAmount"
                      :allow-zero-value="true"
@@ -142,7 +143,7 @@ export default {
       return config
     },
     prime() {
-      return config.ASSETS_CONFIG['PRIME'];
+      return config.PRIME;
     },
     secondAsset() {
       return config.ASSETS_CONFIG[this.secondAssetSymbol];
