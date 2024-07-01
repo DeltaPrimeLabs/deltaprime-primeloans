@@ -107,7 +107,7 @@
         <div class="governance__title">Governance power</div>
         <div class="power-gauge">
           <div class="gauge__value">
-            {{ formatTokenBalanceWithLessThan(governancePoints, 4, true) }}
+            {{ formatTokenBalanceWithLessThan(governancePoints, 3, true) }}
           </div>
         </div>
       </div>
@@ -117,6 +117,7 @@
           <div class="rate__value governance-rate" :class="{'negative': governanceRate && governanceRate < 0}">
             {{ governanceRate ? governanceRate.toFixed(2) : 0 }}
           </div>
+          <div class="rate__extra-info">Max governance power: {{balanceLimit}}</div>
         </div>
         <div class="rate">
           <div class="rate__title">Next accrual rate</div>
@@ -194,6 +195,7 @@ export default {
       chartData: null,
       activeBinIndex: null,
       poolPrice: null,
+      balanceLimit: null,
     };
   },
   mounted() {
@@ -299,6 +301,10 @@ export default {
 
     this.vPrimeService.observeVPrimeRate().subscribe(rate => {
       this.governanceRate = rate;
+    });
+
+    this.vPrimeService.observeVPrimeBalanceLimit().subscribe(balanceLimit => {
+      this.balanceLimit = balanceLimit;
     });
 
     this.watchActionDisabling();
@@ -830,7 +836,7 @@ export default {
         flex-direction: column;
 
         &:not(:last-child) {
-          margin-bottom: 42px;
+          margin-bottom: 30px;
         }
 
         .rate__title {
