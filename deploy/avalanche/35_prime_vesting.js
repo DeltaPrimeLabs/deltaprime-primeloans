@@ -21,18 +21,18 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deployer, admin } = await getNamedAccounts();
 
     embedCommitHash("PrimeVesting", "./contracts");
-
-    let participants = await readJsonFile('deploy/avalanche/data/primeVestingData.json');
-
-    const participantsAddresses = participants.map(participant => participant.walletAddress);
-    const vestingInfos = participants.map(participant => {
-        return {
-            cliffPeriod: participant.cliffInSeconds,
-            vestingPeriod: participant.vestingInSeconds,
-            grantClaimRightTo: participant.grantClaimRightTo === null ? ethers.constants.AddressZero : participant.grantClaimRightTo,
-            totalAmount: ethers.utils.parseEther(participant.primeAmount.toString())
-        };
-    });
+    //
+    // let participants = await readJsonFile('deploy/avalanche/data/primeVestingData.json');
+    //
+    // const participantsAddresses = participants.map(participant => participant.walletAddress);
+    // const vestingInfos = participants.map(participant => {
+    //     return {
+    //         cliffPeriod: participant.cliffInSeconds,
+    //         vestingPeriod: participant.vestingInSeconds,
+    //         grantClaimRightTo: participant.grantClaimRightTo === null ? ethers.constants.AddressZero : participant.grantClaimRightTo,
+    //         totalAmount: ethers.utils.parseEther(participant.primeAmount.toString())
+    //     };
+    // });
 
     const PRIME_TOKEN_ADDRESS_AVALANCHE = "0x33C8036E99082B0C395374832FECF70c42C7F298";
     const START_TIME = 1719853200; // 2024-07-01 19:00:00 CET
@@ -52,6 +52,9 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         `PrimeVesting implementation deployed at address: ${PrimeVesting.address}`
     );
 
+    // sleep 10 seconds
+    await new Promise(r => setTimeout(r, 10000));
+
     await verifyContract(hre,
         {
             address: PrimeVesting.address,
@@ -61,26 +64,26 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     console.log(`Verified PrimeVesting`);
 
 
-    let primeVestingContract = new ethers.Contract(PrimeVesting.address, (await hre.artifacts.readArtifact("PrimeVesting")).abi, hre.ethers.provider.getSigner(deployer));
-
-    const batchSize = 100;
-    const useBatch = false;
-
-    if(useBatch) {
-        for (let i = 0; i < vestingInfos.length; i += batchSize) {
-            const batch = vestingInfos.slice(i, i + batchSize);
-            const isLastBatch = i + batchSize >= vestingInfos.length;
-            console.log(`Initializing vesting contract with participants from ${i} to ${i + batch.length - 1}`);
-            await primeVestingContract.initializeVesting(participantsAddresses.slice(i, i + batchSize), batch, isLastBatch);
-            // sleep 10 seconds
-            await new Promise(r => setTimeout(r, 10000));
-        }
-        console.log(`Vesting contract initialized`);
-    } else {
-        console.log(`Initializing vesting contract with all participants`);
-        await primeVestingContract.initializeVesting(participantsAddresses, vestingInfos, true);
-        console.log(`Vesting contract initialized`);
-    }
+    // let primeVestingContract = new ethers.Contract(PrimeVesting.address, (await hre.artifacts.readArtifact("PrimeVesting")).abi, hre.ethers.provider.getSigner(deployer));
+    //
+    // const batchSize = 100;
+    // const useBatch = false;
+    //
+    // if(useBatch) {
+    //     for (let i = 0; i < vestingInfos.length; i += batchSize) {
+    //         const batch = vestingInfos.slice(i, i + batchSize);
+    //         const isLastBatch = i + batchSize >= vestingInfos.length;
+    //         console.log(`Initializing vesting contract with participants from ${i} to ${i + batch.length - 1}`);
+    //         await primeVestingContract.initializeVesting(participantsAddresses.slice(i, i + batchSize), batch, isLastBatch);
+    //         // sleep 10 seconds
+    //         await new Promise(r => setTimeout(r, 10000));
+    //     }
+    //     console.log(`Vesting contract initialized`);
+    // } else {
+    //     console.log(`Initializing vesting contract with all participants`);
+    //     await primeVestingContract.initializeVesting(participantsAddresses, vestingInfos, true);
+    //     console.log(`Vesting contract initialized`);
+    // }
 
 };
 

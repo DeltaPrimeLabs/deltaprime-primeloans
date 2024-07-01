@@ -2,7 +2,7 @@ const fs = require('fs');
 const { argv } = require('process');
 
 // Read the JSON file
-fs.readFile('primeVestingData.json', 'utf8', (err, data) => {
+fs.readFile('sourceExcelConverted.json', 'utf8', (err, data) => {
     if (err) {
         console.error('Error reading file:', err);
         return;
@@ -92,13 +92,13 @@ fs.readFile('primeVestingData.json', 'utf8', (err, data) => {
         if (argv.includes('--detailed')) {
             console.log('Detailed cliff durations:');
             cliffDurationsMap.forEach((data, duration) => {
-                console.log(`- Duration ${duration} seconds: ${data.count} participant(s), Sum of tokens: ${data.sumPrimeAmount}`);
+                console.log(`- Duration ${duration} seconds (${duration/(60*60*24*30)} months): ${data.count} participant(s), Sum of tokens: ${data.sumPrimeAmount}`);
                 console.log(`  Addresses: ${data.addresses.map(addr => `${addr.walletAddress} (${addr.primeAmount} tokens)`).join(', ')}`);
             });
         } else {
             console.log('Unique cliff durations:');
             cliffDurationsMap.forEach((data, duration) => {
-                console.log(`- Duration ${duration} seconds: ${data.count} participant(s), Sum of tokens: ${data.sumPrimeAmount}`);
+                console.log(`- Duration ${duration} seconds (${duration/(60*60*24*30)} months): ${data.count} participant(s), Sum of tokens: ${data.sumPrimeAmount}`);
             });
         }
 
@@ -106,13 +106,13 @@ fs.readFile('primeVestingData.json', 'utf8', (err, data) => {
         if (argv.includes('--detailed')) {
             console.log('Detailed vesting durations:');
             vestingDurationsMap.forEach((data, duration) => {
-                console.log(`- Duration ${duration} seconds: ${data.count} participant(s), Sum of tokens: ${data.sumPrimeAmount}`);
+                console.log(`- Duration ${duration} seconds (${duration/(60*60*24*30)} months): ${data.count} participant(s), Sum of tokens: ${data.sumPrimeAmount}`);
                 console.log(`  Addresses: ${data.addresses.map(addr => `${addr.walletAddress} (${addr.primeAmount} tokens)`).join(', ')}`);
             });
         } else {
             console.log('Unique vesting durations:');
             vestingDurationsMap.forEach((data, duration) => {
-                console.log(`- Duration ${duration} seconds: ${data.count} participant(s), Sum of tokens: ${data.sumPrimeAmount}`);
+                console.log(`- Duration ${duration} seconds (${duration/(60*60*24*30)} months): ${data.count} participant(s), Sum of tokens: ${data.sumPrimeAmount}`);
             });
         }
 

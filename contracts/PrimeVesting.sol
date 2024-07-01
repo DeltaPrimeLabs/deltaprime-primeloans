@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: c1df31cf08aef1c6412d5815b3db5aadd415da5e;
+// Last deployed from commit: 8ce7ef7b775c75f60e36d4d66915788221e9e8c4;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -138,7 +138,7 @@ contract PrimeVesting is Ownable {
         _claimFor(msg.sender, msg.sender, amount);
     }
 
-    function claimFor(address user, uint256 amount) external {
+    function claimFor(address user) external {
         _claimFor(user, msg.sender, _claimable(user));
     }
 
@@ -194,6 +194,10 @@ contract PrimeVesting is Ownable {
 
     function _claimable(address user) internal view returns (uint256) {
         UserInfo storage userInfo = userInfos[user];
+
+        if(userInfo.info.totalAmount == 0){
+            return 0;
+        }
 
         uint256 cliffEnd = startTime + userInfo.info.cliffPeriod;
         if (cliffEnd >= block.timestamp) {
