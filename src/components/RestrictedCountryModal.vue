@@ -6,15 +6,17 @@
       </div>
 
       <div class="modal__content">
-        <div class="content__part content__part--first" v-bind:class="{'content__part--alone-content': !allowWithdrawals}">
-          We have detected that your current location is within a restricted area where our services are not available.
-          Unfortunately, access to our platform is limited to authorized regions only to comply with local regulations and operational policies.
+        <div class="content__part content__part--first">
+          We have detected that you are currently located in an area where our services are unavailable due to regulatory restrictions on blockchain and cryptocurrency activities.
         </div>
       </div>
 
       <div v-if="allowWithdrawals" class="content__part">
-        You can withdraw your funds by clicking the button below. If you have any questions or need assistance, please contact our support team at contact@deltaprime.com.
-        {{allowWithdrawals}}
+        You can withdraw your funds by clicking the button below.
+      </div>
+
+      <div class="content__part">
+        If you have any questions or need assistance, please contact our support team at contact@deltaprime.com.
       </div>
 
       <div v-if="allowWithdrawals" class="button-wrapper">
@@ -101,10 +103,6 @@ export default {
     &.content__part--first {
       font-weight: 600;
       line-height: 1.4;
-    }
-
-    &.content__part--alone-content {
-      text-align: center;
     }
 
     &.content__part--last {
