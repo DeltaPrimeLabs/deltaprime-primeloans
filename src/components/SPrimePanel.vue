@@ -353,6 +353,7 @@ export default {
       TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
     },
     async openMintSPrimeModal() {
+      const modalInstance = this.openModal(MintsPrimeModal);
       let activeId, currentPrice;
       if (this.dex === 'TRADERJOEV2') {
         [, activeId] = await this
@@ -373,7 +374,6 @@ export default {
 
       const nativeTokenBalance = parseFloat(ethers.utils.formatEther(await this.provider.getBalance(this.account)));
 
-      const modalInstance = this.openModal(MintsPrimeModal);
       modalInstance.primeBalance = primeBalance;
       modalInstance.secondAssetBalance = secondAssetBalance;
       modalInstance.secondAssetSymbol = this.secondAsset;
@@ -408,6 +408,7 @@ export default {
       });
     },
     async openRebalanceSPrimeModal() {
+      const modalInstance = this.openModal(RebalancesPrimeModal);
       let activeId, currentPrice;
       if (this.dex === 'TRADERJOEV2') {
         [, activeId] = await this
@@ -418,7 +419,6 @@ export default {
             .uniswapV3Service
             .getPriceAndActiveId(this.sPrimeConfig.poolAddress, this.provider)
       }
-      const modalInstance = this.openModal(RebalancesPrimeModal);
       modalInstance.secondAssetSymbol = this.secondAsset;
 
       modalInstance.$on('REBALANCE', event => {
@@ -444,6 +444,7 @@ export default {
       });
     },
     async openRedeemSPrimeModal() {
+      const modalInstance = this.openModal(RedeemsPrimeModal);
       let [primeBalance, secondAssetBalance] = await Promise.all(
           [this.fetchUserTokenBalance('PRIME'),
             this.fetchUserTokenBalance(this.secondAsset)]
@@ -452,7 +453,6 @@ export default {
       const sPrimeTokenContract = new ethers.Contract(this.sPrimeConfig.sPrimeAddress, erc20ABI, this.provider.getSigner());
       const sPrimeBalance = await this.getWalletTokenBalance(this.account, 'sPRIME', sPrimeTokenContract, 18);
 
-      const modalInstance = this.openModal(RedeemsPrimeModal);
       modalInstance.primeBalance = primeBalance;
       modalInstance.secondAssetBalance = secondAssetBalance;
       modalInstance.secondAssetSymbol = this.secondAsset;
