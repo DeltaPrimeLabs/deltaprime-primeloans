@@ -400,6 +400,7 @@ export default {
       modalInstance.secondAssetBalance = secondAssetBalance;
       modalInstance.secondAssetSymbol = this.secondAsset;
       modalInstance.sPrimeBalance = sPrimeBalance;
+      modalInstance.sPrimeValue = this.value;
       modalInstance.$on('REDEEM', sPrimeRedeemEvent => {
         let sPrimeRedeemRequest = {
           sPrimeAddress: this.sPrimeConfig.sPrimeAddress,

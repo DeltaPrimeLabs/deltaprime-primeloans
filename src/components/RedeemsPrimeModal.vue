@@ -10,16 +10,13 @@
 
       <div class="modal-top-info-bar">
         <div>
-          Redeeming will unwind your sPRIME to underlying tokens.
+          Redeeming will unwind your sPRIME to <b>PRIME</b> and <b>wrapped {{secondAssetSymbol}}</b>.
         </div>
       </div>
 
       <div class="modal-top-info">
         <div class="top-info__label">Available:</div>
-        <div class="top-info__value"> {{ sPrimeBalance }}</div>
-        <span class="top-info__currency">
-          sPRIME
-        </span>
+        <div class="top-info__value"> {{ sPrimeValue | usd }}</div>
       </div>
 
       <Slider :step="1" :min="0" :max="100" v-on:newValue="sliderChange"></Slider>
@@ -36,7 +33,7 @@
                 sPRIME balance:
               </div>
               <div class="summary__value">
-                {{sPrimeBalance - sPrimeToRedeem}} sPRIME
+                {{(sPrimeBalance - sPrimeToRedeem) / sPrimeBalance * sPrimeValue | usd}}
 <!--                {{sPrimeBalance - sPrimeToRedeem | smartRound}} sPRIME-->
               </div>
             </div>
@@ -108,6 +105,7 @@ export default {
     primeBalance: Number,
     secondAssetBalance: Number,
     sPrimeBalance: Number,
+    sPrimeValue: Number
   },
 
   data() {
