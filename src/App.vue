@@ -137,6 +137,7 @@ import {combineLatest, forkJoin, map} from 'rxjs';
 import fetch from 'node-fetch';
 import RestrictedCountryModal from './components/RestrictedCountryModal.vue';
 import SPrimeModal from './components/SPrimeModal.vue';
+import TermsService from "./services/termsService";
 
 const BUY_SPRIME_MODAL_CLOSED = 'BUY_SPRIME_MODAL_CLOSED';
 
@@ -412,7 +413,7 @@ export default {
                     this.termsService.checkTerms(walletAddress).then(signedTerms => {
                       const termsForCurrentPage = signedTerms.find(terms => terms.type === 'SAVINGS');
                       console.log(termsForCurrentPage);
-                      if (termsForCurrentPage === undefined) {
+                      if (termsForCurrentPage === undefined || termsForCurrentPage.termsVersion !== TermsService.CURRENT_TERMS_VERSION) {
                         console.log('SAVINGS PAGE - some deposit - terms not signed');
                         if (!this.signingTermsInProgress) {
                           this.handleTermsSign(walletAddress, true);
@@ -442,7 +443,7 @@ export default {
                 this.termsService.checkTerms(walletAddress).then(signedTerms => {
                   console.log(signedTerms);
                   const termsForCurrentPage = signedTerms.find(terms => terms.type === 'PRIME_ACCOUNT');
-                  if (termsForCurrentPage === undefined) {
+                  if (termsForCurrentPage === undefined || termsForCurrentPage.termsVersion !== TermsService.CURRENT_TERMS_VERSION) {
                     console.log('PA PAGE - account created - terms not signed');
                     if (!this.signingTermsInProgress) {
                       this.handleTermsSign(walletAddress, false, smartLoanContract.address);

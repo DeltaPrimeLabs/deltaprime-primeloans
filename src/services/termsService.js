@@ -2,6 +2,8 @@ import {depositTermsToSign, loanTermsToSign, signMessage} from '../utils/blockch
 
 export default class TermsService {
 
+  static CURRENT_TERMS_VERSION = 'V4'
+
   async checkTerms(walletAddress) {
     const rawResponse = await fetch(`https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/terms-version/${walletAddress}`, {
       method: 'GET',
@@ -14,7 +16,7 @@ export default class TermsService {
       paAddress: paAddress,
       walletAddress: walletAddress,
       signResult: signResult,
-      termsVersion: 'V3',
+      termsVersion: TermsService.CURRENT_TERMS_VERSION,
       type: type
     }
 
