@@ -93,6 +93,8 @@ export default class sPrimeService {
                                       }
                                   );
 
+                                  console.log('poolPrice: ', poolPrice * secondAssetPrice / 1e8)
+
                                   this.poolPrice$.next(poolPrice * secondAssetPrice / 1e8)
                               }
                           );
