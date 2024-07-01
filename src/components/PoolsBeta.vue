@@ -2,7 +2,7 @@
   <div class="pools-beta-component">
     <div class="container">
       <div class="main-content">
-        <SPrimePanel class="sprime-panel" :is-prime-account="false" :user-address="account" :total-deposits-or-borrows="totalDeposit"></SPrimePanel>
+        <SPrimePanel v-if="afterLaunchTime" class="sprime-panel" :is-prime-account="false" :user-address="account" :total-deposits-or-borrows="totalDeposit"></SPrimePanel>
         <Block :bordered="true">
           <div class="title">Savings</div>
           <NameValueBadgeBeta :name="'Your deposits'">{{ totalDeposit | usd }}</NameValueBadgeBeta>
@@ -41,6 +41,7 @@ import SPrimePanel from "./SPrimePanel.vue";
 const ethers = require('ethers');
 
 let TOKEN_ADDRESSES;
+const LAUNCH_TIME = 1719853200000;
 
 export default {
   name: 'PoolsBeta',
@@ -73,6 +74,10 @@ export default {
   computed: {
     ...mapState('serviceRegistry', ['providerService', 'accountService', 'poolService', 'walletAssetBalancesService', 'lifiService', 'progressBarService']),
     ...mapState('network', ['account', 'accountBalance', 'provider']),
+    afterLaunchTime() {
+      const now = new Date().getTime();
+      return now > LAUNCH_TIME;
+    },
   },
 
   methods: {

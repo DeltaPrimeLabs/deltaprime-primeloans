@@ -12,7 +12,7 @@
           :healthLoading="healthLoading">
       </StatsBarBeta>
 
-      <SPrimePanel :is-prime-account="true" :user-address="account" :total-deposits-or-borrows="noSmartLoanInternal ? 0 : debt"></SPrimePanel>
+      <SPrimePanel v-if="afterLaunchTime" :is-prime-account="true" :user-address="account" :total-deposits-or-borrows="noSmartLoanInternal ? 0 : debt"></SPrimePanel>
       <LTIPStatsBar v-if="isArbitrum"></LTIPStatsBar>
 
       <InfoBubble v-if="noSmartLoanInternal === false" cacheKey="ACCOUNT-READY">
@@ -129,6 +129,7 @@ const TABS = [
 ];
 
 const TUTORIAL_VIDEO_CLOSED_LOCALSTORAGE_KEY = 'TUTORIAL_VIDEO_CLOSED';
+const LAUNCH_TIME = 1719853200000;
 
 export default {
   name: 'SmartLoanBeta',
@@ -192,7 +193,11 @@ export default {
     ...mapState('network', ['account']),
     primeAccountsBlocked() {
       return config.primeAccountsBlocked;
-    }
+    },
+    afterLaunchTime() {
+      const now = new Date().getTime();
+      return now > LAUNCH_TIME;
+    },
   },
   watch: {
     assetBalances: {
