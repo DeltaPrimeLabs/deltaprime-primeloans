@@ -1,28 +1,26 @@
 <template>
   <div id="modal" class="restricted-country-modal-component modal-component">
-    <Modal>
+    <Modal :closable="allowWithdrawals">
       <div class="modal__title">
-        App is not available in your country
+        Attention
       </div>
 
       <div class="modal__content">
         <div class="content__part content__part--first">
-          Gm fren! In order to stay fully compliant, we had to update our terms and conditions.
-          Please give it a read below and sign the new T&C with your wallet. Apologies for any inconvenience!
+          We have detected that you are currently located in an area where our services are unavailable due to regulatory restrictions on blockchain and cryptocurrency activities.
         </div>
-
-        <div class="content__part">
-          If you don’t accept the changes, you should discontinue using our services and withdraw your funds within 14 days.
-        </div>
-
-        <div class="content__part">
-          Good to know: while DeltaPrime charges a small liquidation bonus, there are no additional fees for trading or borrowing.
-        </div>
-        <div class="content__part content__part--last">Stay safe Degen!</div>
       </div>
 
-      <div class="button-wrapper">
-        <Button :label="'Understand'" :waiting="buttonWaiting"></Button>
+      <div v-if="allowWithdrawals" class="content__part">
+        You can withdraw your funds by clicking the button below.
+      </div>
+
+      <div class="content__part">
+        If you have any questions or need assistance, please contact our support team at contact@deltaprime.com.
+      </div>
+
+      <div v-if="allowWithdrawals" class="button-wrapper">
+        <Button :label="'Withdraw'" :waiting="buttonWaiting" v-on:click="close()"></Button>
       </div>
     </Modal>
   </div>
@@ -40,7 +38,10 @@ export default {
   },
 
   props: {
-
+    allowWithdrawals: {
+      type: Boolean,
+      default: null
+    }
   },
 
   data() {
@@ -53,10 +54,12 @@ export default {
 
   },
 
-  computed: {},
+  computed: {
+  },
 
   methods: {
-    submit() {
+    close() {
+      this.closeModal();
     }
   }
 };
@@ -67,6 +70,10 @@ export default {
 @import "~@/styles/modal";
 
 .restricted-country-modal-component {
+
+  .modal__title {
+    margin-bottom: 40px;
+  }
 
   .modal__content {
     text-align: justify;
@@ -95,6 +102,7 @@ export default {
 
     &.content__part--first {
       font-weight: 600;
+      line-height: 1.4;
     }
 
     &.content__part--last {

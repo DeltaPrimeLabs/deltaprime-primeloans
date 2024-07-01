@@ -526,7 +526,11 @@ export default {
         this.globalActionsDisableService.enableReadonlyMode();
       }
       if (!this.restrictModalOpen) {
-        this.openModal(RestrictedCountryModal);
+        const modal = this.openModal(RestrictedCountryModal);
+        modal.allowWithdrawals = allowWithdrawals;
+        setTimeout(() => {
+          this.$forceUpdate();
+        })
         this.restrictModalOpen = true;
       }
     },
