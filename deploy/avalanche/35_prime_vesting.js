@@ -30,7 +30,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     //         cliffPeriod: participant.cliffInSeconds,
     //         vestingPeriod: participant.vestingInSeconds,
     //         grantClaimRightTo: participant.grantClaimRightTo === null ? ethers.constants.AddressZero : participant.grantClaimRightTo,
-    //         totalAmount: ethers.utils.parseEther(participant.primeAmount.toString())
+    //         totalAmount: ethers.utils.parseEther(participant.primeAmount.toFixed(18).toString())
     //     };
     // });
 
