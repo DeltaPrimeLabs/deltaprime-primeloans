@@ -6,12 +6,13 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 /**
  * @title PRIME vesting contract
  * @dev Contract distributing PRIME among vesting participants.
  */
-contract PrimeVesting is Ownable {
+contract PrimeVesting is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     struct VestingInfo {
@@ -130,19 +131,19 @@ contract PrimeVesting is Ownable {
 
     /// Public functions
 
-    function claim() external {
+    function claim() external nonReentrant {
         _claimFor(msg.sender, msg.sender, _claimable(msg.sender));
     }
 
-    function claimWithAmount(uint256 amount) external {
+    function claimWithAmount(uint256 amount) nonReentrant external {
         _claimFor(msg.sender, msg.sender, amount);
     }
 
-    function claimFor(address user) external {
+    function claimFor(address user) nonReentrant external {
         _claimFor(user, msg.sender, _claimable(user));
     }
 
-    function claimForWithAmount(address user, uint256 amount) external {
+    function claimForWithAmount(address user, uint256 amount) nonReentrant external {
         _claimFor(user, msg.sender, amount);
     }
 
@@ -150,7 +151,7 @@ contract PrimeVesting is Ownable {
         return _claimable(user);
     }
 
-    function sendTokensToVesting() external onlyOwner {
+    function sendTokensToVesting() external nonReentrant onlyOwner {
         if(!vestingInitialized){
             revert NotInitialized();
         }
