@@ -646,6 +646,8 @@
   --bar__logo--hover-hexagate: url("/src/assets/icons/securityLogos/hexagate--light--hover.png");
   --bar__logo--hover-atomica: url("/src/assets/icons/securityLogos/atomica--light--hover.svg");
   --bar__logo--hover-salus: url("/src/assets/icons/securityLogos/salus--light--hover.svg");
+  --bar__link-color: #{$delta-gray};
+  --bar__link-color--hover: #{$dimmed-fuchsia};
   // endregion
 
   // region ProtocolInsurance
