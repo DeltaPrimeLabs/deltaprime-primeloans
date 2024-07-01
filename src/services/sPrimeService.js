@@ -9,6 +9,7 @@ const ethers = require('ethers');
 
 export default class sPrimeService {
   sPrimeValue$ = new BehaviorSubject(null);
+  sPrimeTotalValue$ = new BehaviorSubject(null);
   sPrimePositionInfo$ = new BehaviorSubject(null);
   poolPrice$  = new BehaviorSubject(null);
 
@@ -27,6 +28,10 @@ export default class sPrimeService {
     return this.sPrimeValue$.asObservable();
   }
 
+    observeSPrimeTotalValue() {
+        return this.sPrimeTotalValue$.asObservable();
+    }
+
     observeSPrimeUnderlyingPool() {
         return this.poolPrice$.asObservable();
     }
@@ -40,15 +45,19 @@ export default class sPrimeService {
 
       const sPrimeContract = await wrapContract(new ethers.Contract(sPrimeAddress, SPRIME.abi, provider.getSigner()), dataFeeds);
 
-      console.log('updateSPrimeData')
-
       fetch(config.redstoneFeedUrl).then(
           res => {
               res.json().then(
                   redstonePriceData => {
-                      console.log('redstonePriceData: ', redstonePriceData)
-                      console.log('redstonePriceData: ', redstonePriceData)
                       let secondAssetPrice = redstonePriceData[secondAsset][0].dataPoints[0].value;
+
+                      sPrimeContract.totalSupply().then(
+                          async value => {
+                              value = formatUnits(value) * secondAssetPrice;
+
+                              this.sPrimeTotalValue$.next(value)
+                          }
+                      );
 
                       if (dex === 'UNISWAP') {
                           sPrimeContract['getUserValueInTokenY(address)'](ownerAddress).then(

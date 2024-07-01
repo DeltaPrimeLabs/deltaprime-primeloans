@@ -59,20 +59,22 @@
     <div class="sprime-panel__body">
       <div class="stats">
         <div class="stat">
-          <div class="stat__title">Total value</div>
+          <div class="stat__title">Total value
+            <InfoIcon class="stat__info-icon" :size="16" :tooltip="{ content: 'Total $ value of your sPRIME.'}"></InfoIcon>
+          </div>
           <div class="stat__value">{{ value | usd }}</div>
         </div>
         <div class="stat">
           <div class="stat__title">Revenue received
-            <InfoIcon class="stat__info-icon" :size="16" :tooltip="{ content: ''}"></InfoIcon>
+            <InfoIcon class="stat__info-icon" :size="16" :tooltip="{ content: 'DeltaPrime fees distributed to your sPRIME. You are eligible for fees only when your sPRIME is active.'}"></InfoIcon>
           </div>
           <div class="stat__value revenue"><FlatButton :active="false">soon</FlatButton></div>
         </div>
         <div class="stat">
           <div class="stat__title">YTD APR
-            <InfoIcon class="stat__info-icon" :size="16" :tooltip="{ content: ''}"></InfoIcon>
+            <InfoIcon class="stat__info-icon" :size="16" :tooltip="{ content: 'Based on YTD performance of DeltaPrime fees.'}"></InfoIcon>
           </div>
-          <div class="stat__value">TO DO {{ 0.15512 | percent }}</div>
+          <div class="stat__value"> {{ ytdApr | percent }}</div>
         </div>
       </div>
       <div class="distribution">
@@ -168,6 +170,7 @@ export default {
       sPrimeConfig: null,
       sPrimeActive: true,
       value: null,
+      ytdApr: null,
       governancePoints: null,
       governanceRate: null,
       maxGovernanceRateMessage: null,
@@ -191,8 +194,11 @@ export default {
     });
 
     this.sPrimeService.observeSPrimeValue().subscribe(value => {
-      console.log('observeSPrimeValue')
       this.value = value
+    });
+
+    this.sPrimeService.observeSPrimeTotalValue().subscribe(value => {
+      this.ytdApr = 1650000 / 3 / 30 / 6 * 365 / value;
     });
 
     combineLatest([
