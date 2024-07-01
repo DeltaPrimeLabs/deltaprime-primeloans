@@ -730,6 +730,22 @@ contract sPrimeUniswap is
     /** Overrided Functions */
 
     /**
+    * @dev The hook that happens before token transfer.
+    * @param from The address to transfer from.
+    * @param to The address to transfer to.
+    * @param amount The amount to transfer.
+    */
+    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override {
+        if (from != address(0) && to != address(0)) {
+            uint256 lockedBalance = getLockedBalance(from);
+            uint256 fromBalance = balanceOf(from);
+            if (fromBalance < amount + lockedBalance) {
+                revert InsufficientBalance();
+            }
+        }
+    }
+
+    /**
      * @dev The hook that happens after token transfer.
      * @param from The address to transfer from.
      * @param to The address to transfer to.
@@ -741,11 +757,7 @@ contract sPrimeUniswap is
         uint256 amount
     ) internal virtual override {
         if (from != address(0) && to != address(0)) {
-            uint256 balance = getLockedBalance(from);
             uint256 fromBalance = balanceOf(from);
-            if (fromBalance < amount + balance) {
-                revert InsufficientBalance();
-            }
             if (userTokenId[to] != 0) {
                 revert ReceiverAlreadyHasPosition();
             }
@@ -799,12 +811,11 @@ contract sPrimeUniswap is
                             deadline: block.timestamp
                         })
                     );
-                // Reusing balance to avoid stack too deep
-                balance = _getTotalInTokenY(amountXAdded, amountYAdded);
-                if (amount > balance) {
-                    _burn(to, amount - balance);
+                uint256 total = _getTotalInTokenY(amountXAdded, amountYAdded);
+                if (amount > total) {
+                    _burn(to, amount - total);
                 } else {
-                    _mint(to, balance - amount);
+                    _mint(to, total - amount);
                 }
                 _transferTokens(
                     address(this),
