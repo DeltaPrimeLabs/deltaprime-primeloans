@@ -34,7 +34,7 @@
         <div class="actions-info__entry">
           <div class="actions-info__label">Governance power:</div>
           <div class="actions-info__value" :class="{'negative': governancePoints && governancePoints < 0}">
-            {{ governancePoints }}
+            {{ formatTokenBalanceWithLessThan(governancePoints, 4, true) }}
           </div>
         </div>
         <div class="actions-info__divider"></div>
