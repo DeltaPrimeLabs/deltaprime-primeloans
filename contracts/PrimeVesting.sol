@@ -51,6 +51,9 @@ contract PrimeVesting is Ownable, ReentrancyGuard {
     /// @dev Invalid address
     error InvalidAddress();
 
+    /// @dev Invalid vesting period
+    error InvalidVestingPeriod();
+
     /// @dev No claim available
     error NothingToClaim();
 
@@ -59,6 +62,9 @@ contract PrimeVesting is Ownable, ReentrancyGuard {
 
     /// @dev Vesting already initialized
     error AlreadyInitialized();
+
+    /// @dev User already exists
+    error UserExists();
 
     /// @dev Vesting not initialized
     error NotInitialized();
@@ -78,6 +84,14 @@ contract PrimeVesting is Ownable, ReentrancyGuard {
         address indexed user,
         address indexed claimant,
         uint256 indexed amount,
+        uint256 timestamp
+    );
+
+    event VestingUserAdded(
+        address indexed user,
+        uint256 indexed totalAmount,
+        uint256 cliffPeriod,
+        uint256 vestingPeriod,
         uint256 timestamp
     );
 
@@ -117,10 +131,26 @@ contract PrimeVesting is Ownable, ReentrancyGuard {
             if (user == address(0)) {
                 revert InvalidAddress();
             }
+            if(vestingInfos_[i].vestingPeriod == 0){
+                revert InvalidVestingPeriod();
+            }
 
             UserInfo storage userInfo = userInfos[user];
+
+            if(userInfo.info.totalAmount != 0){
+                revert UserExists();
+            }
+
             userInfo.info = vestingInfos_[i];
             _totalAmount += userInfo.info.totalAmount;
+
+            emit VestingUserAdded(
+                user,
+                userInfo.info.totalAmount,
+                userInfo.info.cliffPeriod,
+                userInfo.info.vestingPeriod,
+                block.timestamp
+            );
         }
         totalAmount += _totalAmount;
 
