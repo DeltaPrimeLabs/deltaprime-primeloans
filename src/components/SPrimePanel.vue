@@ -107,7 +107,7 @@
         <div class="governance__title">Governance power</div>
         <div class="power-gauge">
           <div class="gauge__value">
-            {{ governancePoints }}
+            {{ formatTokenBalanceWithLessThan(governancePoints, 4, true) }}
           </div>
         </div>
       </div>
