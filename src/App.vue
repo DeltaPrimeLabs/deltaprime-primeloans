@@ -124,6 +124,7 @@ import config from '@/config';
 
 const ethereum = window.ethereum;
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
+const LAUNCH_TIME = 1719853200000;
 import Vue from 'vue';
 import Button from './components/Button';
 import ProgressBar from './components/ProgressBar';
@@ -560,14 +561,17 @@ export default {
     },
 
     openBuySPrimeModal() {
-      const buySPrimeModalClosedOnce = localStorage.getItem(BUY_SPRIME_MODAL_CLOSED);
-      if (!this.buySPrimeModalOpened && !buySPrimeModalClosedOnce) {
-        const sprimeModalInstance = this.openModal(SPrimeModal);
-        this.buySPrimeModalOpened = true;
-        sprimeModalInstance.$on('CLOSE', () => {
-          console.log('modal closed');
-          localStorage.setItem(BUY_SPRIME_MODAL_CLOSED, 'true');
-        })
+      const now = new Date().getTime();
+      if (now > LAUNCH_TIME) {
+        const buySPrimeModalClosedOnce = localStorage.getItem(BUY_SPRIME_MODAL_CLOSED);
+        if (!this.buySPrimeModalOpened && !buySPrimeModalClosedOnce) {
+          const sprimeModalInstance = this.openModal(SPrimeModal);
+          this.buySPrimeModalOpened = true;
+          sprimeModalInstance.$on('CLOSE', () => {
+            console.log('modal closed');
+            localStorage.setItem(BUY_SPRIME_MODAL_CLOSED, 'true');
+          })
+        }
       }
     },
 
