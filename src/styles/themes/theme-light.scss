@@ -562,6 +562,18 @@
   --range-slider__indicator-background: #{$deeper-gray};
   // endregion
 
+  // region Slider
+  --slider__box-shadow: inset 0 1px 3px 0 #{$delta-steel}B2;
+  --slider__slider-background-color: #{$delta-steel}33;
+  --slider__slider-background-gradient: linear-gradient(to right, #{$delta-cloudy} 17%, #{$washed-lilac} 91%);
+  --slider__slider-background--error: #{$red};
+  --slider__slider-thumb-background: #{$white};
+  --slider__slider-thumb-border: solid 3px #{$washed-lilac};
+  --slider__slider-thumb-border--error: #{$red};
+  --slider__labels-color: #{$steel-gray};
+  --slider__color--error: #{$red};
+  // endregion
+
   // region Zaps
   --zaps__header-color: #{$dark-gray};
   // endregion

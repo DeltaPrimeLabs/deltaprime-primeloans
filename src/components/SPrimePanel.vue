@@ -577,10 +577,6 @@ export default {
       pointer-events: auto;
     }
 
-    .sprime-panel__divider {
-      width: 100%;
-    }
-
     .sprime-panel__actions--collapsed {
       opacity: 0;
       transform: translateY(100%) !important;
@@ -693,17 +689,14 @@ export default {
   }
 
   .sprime-panel__divider {
-    transition: width 250ms ease-in-out;
-    transition-delay: 200ms;
     position: absolute;
     bottom: 0;
     left: 50%;
     transform: translateX(-50%);
     height: 2px;
-    width: 0;
+    width: 100%;
     background: var(--s-prime-panel__divider-background);
     flex-shrink: 0;
-
   }
 
   .sprime-panel__body {
