@@ -8,7 +8,7 @@ const redstone = require('redstone-api');
 const subgraphConfig = require('../.secrets/subgraph.json');
 const assetPrices = require('./historicalPrices.json');
 
-let blockTimestampStart = 1673705999;
+let blockTimestampStart = 1685801999;
 let blockTimestampEnd = 1712454400;
 
 // get historical provider
@@ -185,38 +185,42 @@ async function getDepositorsValues(depositors, pools, poolsFirstDeposits, blockN
   return depositorsValues;
 }
 
+let timestampInSeconds = blockTimestampStart;
+
 async function calculateSprimeAirdropPerPool(chain) {
   let pools = await getPoolContracts(chain);
+  try {
+    while (timestampInSeconds <= blockTimestampEnd) {
+      console.log(`---------------processing at ${timestampInSeconds}-------------------------`)
+      let blockNumber = (await getBlockForTimestamp(timestampInSeconds * 1000)).block;
+      let poolsDepositors = await getDepositorsAddressesFromSubgraph(chain);
+      let poolsFirstDeposits = await getPoolsFirstDeposits(pools, chain);
+      let poolsDepositorsBalances = await getDepositorsValues(poolsDepositors, pools, poolsFirstDeposits, blockNumber, assetPrices, timestampInSeconds);
+      console.log(`deposits calculated for ${Object.keys(poolsDepositorsBalances).length} depositors`)
 
-  let timestampInSeconds = blockTimestampStart;
+      // save deposits to database
+      await Promise.all(
+        Object.entries(poolsDepositorsBalances).map(async ([depositor, deposits]) => {
+          const data = {
+            id: depositor,
+            timestamp: timestampInSeconds,
+            deposits: deposits
+          };
 
-  while (timestampInSeconds <= blockTimestampEnd) {
-    console.log(`---------------processing at ${timestampInSeconds}-------------------------`)
-    let blockNumber = (await getBlockForTimestamp(timestampInSeconds * 1000)).block;
-    let poolsDepositors = await getDepositorsAddressesFromSubgraph(chain);
-    let poolsFirstDeposits = await getPoolsFirstDeposits(pools, chain);
-    let poolsDepositorsBalances = await getDepositorsValues(poolsDepositors, pools, poolsFirstDeposits, blockNumber, assetPrices, timestampInSeconds);
-    console.log(`deposits calculated for ${Object.keys(poolsDepositorsBalances).length} depositors`)
+          const params = {
+            TableName: "sprime-airdrop-ava",
+            Item: data
+          };
+          await dynamoDb.put(params).promise();
+        })
+      )
 
-    // save deposits to database
-    await Promise.all(
-      Object.entries(poolsDepositorsBalances).map(async ([depositor, deposits]) => {
-        const data = {
-          id: depositor,
-          timestamp: timestampInSeconds,
-          deposits: deposits
-        };
-
-        const params = {
-          TableName: "sprime-airdrop-ava",
-          Item: data
-        };
-        await dynamoDb.put(params).promise();
-      })
-    )
-
-    timestampInSeconds += 60 * 60 * 24 * 7;
-    await new Promise((resolve, reject) => setTimeout(resolve, 3000));
+      timestampInSeconds += 60 * 60 * 24 * 7;
+      await new Promise((resolve, reject) => setTimeout(resolve, 3000));
+    }
+  } catch (error) {
+    await new Promise((resolve, reject) => setTimeout(resolve, 30000));
+    calculateSprimeAirdropPerPool("avalanche");
   }
 }
 

@@ -12,7 +12,7 @@ const subgraphConfig = require('../.secrets/subgraph.json');
 const assetsPrices = require('./historicalPrices.json');
 const airdropRpc = require('../.secrets/airdropRpc.json');
 
-const blockTimestampStart = 1705901600;
+const blockTimestampStart = 1711949600;
 const blockTimestampEnd = 1712454400;
 
 const avalancheFactoryAddress = constants.avalanche.factory;
