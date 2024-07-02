@@ -13,7 +13,7 @@
     <div class="divider"></div>
     <a class="logo salus" href="https://salusec.io/" target="_blank"></a>
     <a href="https://deltaprime.io/documents/DeltaPrime_Terms_of_Use.pdf" class="terms-link" target="_blank">
-      Terms
+      Terms of Use
     </a>
   </div>
 </template>
