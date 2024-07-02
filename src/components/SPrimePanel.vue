@@ -395,7 +395,7 @@ export default {
         const sPrimeMintRequest = {
           sPrimeAddress: this.sPrimeConfig.sPrimeAddress,
           secondAsset: this.secondAsset,
-          isRebalance: sPrimeMintEvent.rebalance,
+          isRebalance: true,
           amountPrime: sPrimeMintEvent.primeAmount,
           amountSecond: sPrimeMintEvent.secondAmount,
           isSecondAssetNative: sPrimeMintEvent.isSecondAssetNative,
