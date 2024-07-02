@@ -437,7 +437,7 @@ export default {
           secondAsset: this.secondAsset,
           isRebalance: true,
           idSlippage: idSlippage,
-          slippage: event.slippage / 100,
+          slippage: event.slippage,
           dex: this.dex,
           activeId: activeId
         };

@@ -60,7 +60,7 @@ export default {
         }
       }
 
-      const transaction = await sprimeContract.deposit(sPrimeMintRequest.activeId, sPrimeMintRequest.idSlippage, amountPrime, amountSecond, sPrimeMintRequest.isRebalance, sPrimeMintRequest.slippage * 100, {gasLimit: 8000000})
+      const transaction = await sprimeContract.deposit(sPrimeMintRequest.activeId, sPrimeMintRequest.idSlippage, amountPrime, amountSecond, sPrimeMintRequest.isRebalance, sPrimeMintRequest.slippage * 100)
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
@@ -77,6 +77,7 @@ export default {
       rootState.serviceRegistry.vPrimeService.emitRefreshVPrimeDataWithDefault(rootState.network.account);
     },
     async sPrimeRebalance({state, rootState, dispatch}, {sPrimeRebalanceRequest: sPrimeRebalanceRequest}) {
+      console.log('sPrimeRebalance: ', sPrimeRebalanceRequest)
       const provider = rootState.network.provider;
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
@@ -86,7 +87,7 @@ export default {
       let dataFeeds = [...Object.keys(config.POOLS_CONFIG), sPrimeRebalanceRequest.secondAsset]
       const sprimeContract = await wrapContract(new ethers.Contract(sPrimeRebalanceRequest.sPrimeAddress, sPrimeRebalanceRequest.dex === 'TRADERJOEV2' ? SPRIME_TJV2.abi : SPRIME_UNISWAP.abi, provider.getSigner()), dataFeeds);
 
-      const transaction = await sprimeContract.deposit(sPrimeRebalanceRequest.activeId, sPrimeRebalanceRequest.idSlippage, 0, 0, sPrimeRebalanceRequest.isRebalance, sPrimeRebalanceRequest.slippage * 100, { gasLimit: 8000000 })
+      const transaction = await sprimeContract.deposit(sPrimeRebalanceRequest.activeId, sPrimeRebalanceRequest.idSlippage, 0, 0, sPrimeRebalanceRequest.isRebalance, sPrimeRebalanceRequest.slippage * 100)
       await awaitConfirmation(transaction, provider, 'rebalance');
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
