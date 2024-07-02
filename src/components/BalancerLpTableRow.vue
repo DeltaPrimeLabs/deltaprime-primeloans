@@ -356,7 +356,7 @@ export default {
     },
 
     actionClick(key) {
-      if (this.isActionDisabledRecord[key] && !this.disableAllButtons) {
+      if (!this.isActionDisabledRecord[key] && !this.disableAllButtons) {
         switch (key) {
           case 'FUND_AND_STAKE':
             this.openImportModal();
