@@ -2,7 +2,7 @@
 // const { argv } = require('process');
 //
 // // Read the JSON file
-// fs.readFile('sourceExcelConverted.json', 'utf8', (err, data) => {
+// fs.readFile('primeVesting2.json', 'utf8', (err, data) => {
 //     if (err) {
 //         console.error('Error reading file:', err);
 //         return;

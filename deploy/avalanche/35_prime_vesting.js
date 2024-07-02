@@ -22,7 +22,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
     embedCommitHash("PrimeVesting", "./contracts");
 
-    let participants = await readJsonFile('deploy/avalanche/data/sourceExcelConverted.json');
+    let participants = await readJsonFile('deploy/avalanche/data/primeVesting2.json');
 
     const participantsAddresses = participants.map(participant => participant.walletAddress);
     const vestingInfos = participants.map(participant => {
@@ -35,7 +35,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     });
 
     const PRIME_TOKEN_ADDRESS_AVALANCHE = "0x33C8036E99082B0C395374832FECF70c42C7F298";
-    const START_TIME = 1719853200; // 2024-07-01 19:00:00 CET
+    const START_TIME = 1719946800; // 2024-07-02 21:00:00 CET
     const _args = [
         PRIME_TOKEN_ADDRESS_AVALANCHE,
         START_TIME
