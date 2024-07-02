@@ -15,8 +15,12 @@
       </div>
 
       <div class="modal-top-info">
-        <div class="top-info__label">Available:</div>
-        <div class="top-info__value"> {{ sPrimeValue | usd }}</div>
+        <div class="top-info__label">Available to redeem:
+          <InfoIcon class="info__icon"
+                    :tooltip="{content: 'Only unlocked sPRIME is available to redeem..', classes: 'info-tooltip'}"
+                    :classes="'info-tooltip'"></InfoIcon>
+        </div>
+        <div class="top-info__value"> {{ unlockedInUsd | usd }} </div>
       </div>
 
       <Slider :step="1" :min="0" :max="100" v-on:newValue="sliderChange"></Slider>
@@ -83,6 +87,7 @@ import BarGaugeBeta from './BarGaugeBeta';
 import config from '../config';
 import DoubleAssetIcon from './DoubleAssetIcon.vue';
 import Slider from './Slider.vue';
+import InfoIcon from "./InfoIcon.vue";
 
 const ethers = require('ethers');
 
@@ -90,6 +95,7 @@ const ethers = require('ethers');
 export default {
   name: 'RedeemsPrimeModal',
   components: {
+    InfoIcon,
     Slider,
     DoubleAssetIcon,
     Button,
@@ -105,7 +111,9 @@ export default {
     primeBalance: Number,
     secondAssetBalance: Number,
     sPrimeBalance: Number,
-    sPrimeValue: Number
+    sPrimeValue: Number,
+    sPrimeLockedBalance: Number,
+    sPrimeLockedValue: Number,
   },
 
   data() {
@@ -121,6 +129,12 @@ export default {
   computed: {
     secondAsset() {
       return config.ASSETS_CONFIG[this.secondAssetSymbol];
+    },
+    unlockedInUsd() {
+      return this.sPrimeValue - this.sPrimeLockedValue;
+    },
+    unlockedInBalance() {
+      return this.sPrimeBalance - this.sPrimeLockedBalance;
     }
   },
 
@@ -134,7 +148,7 @@ export default {
     },
 
     sliderChange(change) {
-      this.sPrimeToRedeem = Number(this.sPrimeBalance) * change.value / 100;
+      this.sPrimeToRedeem = Number(this.unlockedInBalance) * change.value / 100;
     },
   }
 };

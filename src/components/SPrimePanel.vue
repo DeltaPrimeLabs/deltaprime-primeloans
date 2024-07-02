@@ -72,6 +72,7 @@
             <InfoIcon class="stat__info-icon" :size="16" :tooltip="{ content: 'Total $ value of your sPRIME.'}"></InfoIcon>
           </div>
           <div class="stat__value">{{ value | usd }}</div>
+          <div class="stat__extra-info">Locked: {{ lockedInUd | usd }}</div>
         </div>
         <div class="stat">
           <div class="stat__title">Revenue received
@@ -185,6 +186,8 @@ export default {
       sPrimeConfig: null,
       sPrimeActive: true,
       value: null,
+      locked: null,
+      lockedInUd: null,
       ytdApr: null,
       governancePoints: null,
       governanceRate: null,
@@ -213,6 +216,11 @@ export default {
 
     this.sPrimeService.observeSPrimeValue().subscribe(value => {
       this.value = value
+    });
+
+    this.sPrimeService.observeSPrimeLockedBalance().subscribe(([locked, lockedInUd]) => {
+      this.locked = locked;
+      this.lockedInUd = lockedInUd;
     });
 
     this.sPrimeService.observeSPrimeTotalValue().subscribe(value => {
@@ -320,7 +328,8 @@ export default {
       'uniswapV3Service',
       'themeService',
       'progressBarService',
-      'globalActionsDisableService'
+      'globalActionsDisableService',
+      'priceService'
     ]),
     ...mapState('network', ['provider', 'account']),
     getDistributionIcon() {
@@ -464,6 +473,8 @@ export default {
       modalInstance.secondAssetSymbol = this.secondAsset;
       modalInstance.sPrimeBalance = sPrimeBalance;
       modalInstance.sPrimeValue = this.value;
+      modalInstance.sPrimeLockedBalance = this.locked;
+      modalInstance.sPrimeLockedValue = this.lockedInUd;
       modalInstance.$on('REDEEM', sPrimeRedeemEvent => {
         let sPrimeRedeemRequest = {
           sPrimeAddress: this.sPrimeConfig.sPrimeAddress,
@@ -722,7 +733,7 @@ export default {
       .stat {
         display: flex;
         flex-direction: column;
-        margin-bottom: 24px;
+        margin-bottom: 18px;
 
         .stat__info-icon {
           margin-left: 6px;
@@ -745,6 +756,13 @@ export default {
           &.revenue {
             width: 60px;
           }
+        }
+
+        .stat__extra-info {
+          font-size: 14px;
+          font-weight: 500;
+          color: var(--s-prime-panel__main-text-color);
+          margin-top: 4px;
         }
       }
     }
