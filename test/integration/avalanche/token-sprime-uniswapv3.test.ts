@@ -77,6 +77,7 @@ describe("SPrimeUniswapV3", function () {
         [owner, addr1, addr2, addr3, addr4, addr5] = await getFixedGasSigners(10000000);
 
         SPrimeFactory = await ethers.getContractFactory("sPrimeUniswap");
+        const SPrimeImplFactory = await ethers.getContractFactory("sPrimeUniswapImpl");
         let user1 = await addr1.getAddress();
         let user2 = await addr2.getAddress();
         let user3 = await addr3.getAddress();
@@ -169,11 +170,14 @@ describe("SPrimeUniswapV3", function () {
             dataPoints: MOCK_PRICES,
         });
 
+        const implementation = await SPrimeImplFactory.deploy(sPrime.address);
+
         await tokenManager.setVPrimeControllerAddress(vPrimeControllerContract.address);
         await poolContracts.get('AVAX')!.setTokenManager(tokenManager.address);
         await poolContracts.get('USDC')!.setTokenManager(tokenManager.address);
         await vPrime.connect(owner).setVPrimeControllerAddress(vPrimeControllerContract.address);
         await sPrime.setVPrimeControllerAddress(vPrimeControllerContract.address);
+        await sPrime.setImplementation(implementation.address);
         await vPrimeControllerContract.connect(owner).updateBorrowersRegistry(smartLoansFactory.address);
 
         // Approve at the starting point
