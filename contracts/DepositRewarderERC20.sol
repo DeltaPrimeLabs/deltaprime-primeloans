@@ -28,6 +28,32 @@ contract DepositRewarderERC20 is DepositRewarderAbstract {
         if (reward > 0) {
             rewards[_user] = 0;
             rewardToken.safeTransfer(_user, reward);
+            emit RewardPaid(_user, reward);
         }
+    }
+
+    function notifyRewardAmount(uint256 reward)
+        external
+        onlyOwner
+        updateReward(address(0))
+    {
+        rewardToken.safeTransferFrom(msg.sender, address(this), reward);
+        if (block.timestamp >= finishAt) {
+            rewardRate = reward / duration;
+        } else {
+            uint256 remainingRewards = (finishAt - block.timestamp) * rewardRate;
+            rewardRate = (reward + remainingRewards) / duration;
+        }
+
+        require(rewardRate > 0, "reward rate = 0");
+        require(
+            rewardRate * duration <= address(this).balance,
+            "reward amount > balance"
+        );
+
+        finishAt = block.timestamp + duration;
+        updatedAt = block.timestamp;
+
+        emit RewardAdded(reward);
     }
 }

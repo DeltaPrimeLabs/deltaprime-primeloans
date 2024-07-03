@@ -14,8 +14,33 @@ contract DepositRewarderNative is DepositRewarderAbstract {
         uint256 reward = rewards[_user];
         if (reward > 0) {
             rewards[_user] = 0;
-            (bool sent, ) = _user.call{value: reward}("");
+            bool sent = _user.send(reward);
             require(sent, "Failed to send native token");
         }
+    }
+
+    function notifyRewardAmount()
+        external
+        payable
+        onlyOwner
+        updateReward(address(0))
+    {
+        if (block.timestamp >= finishAt) {
+            rewardRate = msg.value / duration;
+        } else {
+            uint256 remainingRewards = (finishAt - block.timestamp) * rewardRate;
+            rewardRate = (msg.value + remainingRewards) / duration;
+        }
+
+        require(rewardRate > 0, "reward rate = 0");
+        require(
+            rewardRate * duration <= address(this).balance,
+            "reward amount > balance"
+        );
+
+        finishAt = block.timestamp + duration;
+        updatedAt = block.timestamp;
+
+        emit RewardAdded(msg.value);
     }
 }

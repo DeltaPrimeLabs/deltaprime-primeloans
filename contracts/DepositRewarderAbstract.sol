@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./interfaces/IDepositRewarder.sol";
 
 abstract contract DepositRewarderAbstract is IDepositRewarder, Ownable, ReentrancyGuard {
@@ -17,7 +16,7 @@ abstract contract DepositRewarderAbstract is IDepositRewarder, Ownable, Reentran
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     /// @notice Pool address
-    address public pool;
+    address public immutable pool;
 
     /// @notice Duration of rewards to be paid out (in seconds)
     uint256 public duration;
@@ -77,6 +76,12 @@ abstract contract DepositRewarderAbstract is IDepositRewarder, Ownable, Reentran
         uint256 timestamp
     );
 
+    event RewardsDurationUpdated(uint256 duration);
+
+    event RewardAdded(uint256 reward);
+
+    event RewardPaid(address indexed account, uint256 reward);
+
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                       MODIFIERS                                           //
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -131,6 +136,7 @@ abstract contract DepositRewarderAbstract is IDepositRewarder, Ownable, Reentran
         uint256 length = accounts.length;
         for (uint256 i; i != length; ++i) {
             address account = accounts[i];
+            rewards[account] = earned(account);
             uint256 balance = IERC20(pool).balanceOf(account);
             uint256 oldBalance = balanceOf[account];
             balanceOf[account] = balance;
@@ -144,7 +150,7 @@ abstract contract DepositRewarderAbstract is IDepositRewarder, Ownable, Reentran
     function stakeFor(
         uint256 amount,
         address account
-    ) external onlyPool updateReward(account) {
+    ) external nonReentrant onlyPool updateReward(account) {
         balanceOf[account] += amount;
         totalSupply += amount;
 
@@ -154,8 +160,8 @@ abstract contract DepositRewarderAbstract is IDepositRewarder, Ownable, Reentran
     function withdrawFor(
         uint256 amount,
         address account
-    ) external onlyPool updateReward(account) returns (uint256) {
-        amount = Math.min(balanceOf[account], amount);
+    ) external nonReentrant onlyPool updateReward(account) returns (uint256) {
+        amount = balanceOf[account] < amount ? balanceOf[account] : amount;
 
         balanceOf[account] -= amount;
         totalSupply -= amount;
@@ -179,29 +185,8 @@ abstract contract DepositRewarderAbstract is IDepositRewarder, Ownable, Reentran
     function setRewardsDuration(uint256 _duration) external onlyOwner {
         require(finishAt < block.timestamp, "reward duration not finished");
         duration = _duration;
-    }
 
-    function notifyRewardAmount()
-        external
-        payable
-        onlyOwner
-        updateReward(address(0))
-    {
-        if (block.timestamp >= finishAt) {
-            rewardRate = msg.value / duration;
-        } else {
-            uint256 remainingRewards = (finishAt - block.timestamp) * rewardRate;
-            rewardRate = (msg.value + remainingRewards) / duration;
-        }
-
-        require(rewardRate > 0, "reward rate = 0");
-        require(
-            rewardRate * duration <= address(this).balance,
-            "reward amount > balance"
-        );
-
-        finishAt = block.timestamp + duration;
-        updatedAt = block.timestamp;
+        emit RewardsDurationUpdated(_duration);
     }
 
     function _min(uint256 x, uint256 y) private pure returns (uint256) {
