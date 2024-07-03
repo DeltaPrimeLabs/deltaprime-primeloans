@@ -8,7 +8,11 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./interfaces/IDepositRewarder.sol";
 
-abstract contract DepositRewarderAbstract is IDepositRewarder, Ownable, ReentrancyGuard {
+abstract contract DepositRewarderAbstract is
+    IDepositRewarder,
+    Ownable,
+    ReentrancyGuard
+{
     using SafeERC20 for IERC20;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -71,10 +75,7 @@ abstract contract DepositRewarderAbstract is IDepositRewarder, Ownable, Reentran
         uint256 timestamp
     );
 
-    event BatchDeposited(
-        address[] accounts,
-        uint256 timestamp
-    );
+    event BatchDeposited(address[] accounts, uint256 timestamp);
 
     event RewardsDurationUpdated(uint256 duration);
 
@@ -178,9 +179,7 @@ abstract contract DepositRewarderAbstract is IDepositRewarder, Ownable, Reentran
             rewards[_account];
     }
 
-    function getRewardsFor(
-        address payable _user
-    ) external virtual;
+    function getRewardsFor(address payable _user) external virtual;
 
     function setRewardsDuration(uint256 _duration) external onlyOwner {
         require(finishAt < block.timestamp, "reward duration not finished");

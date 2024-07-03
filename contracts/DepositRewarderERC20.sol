@@ -32,12 +32,9 @@ contract DepositRewarderERC20 is DepositRewarderAbstract {
         }
     }
 
-    function notifyRewardAmount(uint256 reward)
-        external
-        onlyOwner
-        updateReward(address(0))
-    {
-        rewardToken.safeTransferFrom(msg.sender, address(this), reward);
+    function notifyRewardAmount(
+        uint256 reward
+    ) external onlyOwner updateReward(address(0)) {
         if (block.timestamp >= finishAt) {
             rewardRate = reward / duration;
         } else {
@@ -47,7 +44,7 @@ contract DepositRewarderERC20 is DepositRewarderAbstract {
 
         require(rewardRate > 0, "reward rate = 0");
         require(
-            rewardRate * duration <= address(this).balance,
+            rewardRate * duration <= rewardToken.balanceOf(address(this)),
             "reward amount > balance"
         );
 

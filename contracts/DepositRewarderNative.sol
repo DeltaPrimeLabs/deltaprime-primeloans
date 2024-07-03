@@ -5,8 +5,7 @@ pragma solidity ^0.8.17;
 import "./DepositRewarderAbstract.sol";
 
 contract DepositRewarderNative is DepositRewarderAbstract {
-    constructor(address pool_) DepositRewarderAbstract(pool_) {
-    }
+    constructor(address pool_) DepositRewarderAbstract(pool_) {}
 
     function getRewardsFor(
         address payable _user
