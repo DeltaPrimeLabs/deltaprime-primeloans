@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: ;
+// Last deployed from commit: 3e7bd72eae0a505b665f7751ef9c2cef805871e8;
 pragma solidity ^0.8.17;
 
 import "./DepositRewarderAbstract.sol";
@@ -8,7 +8,7 @@ contract DepositRewarderERC20 is DepositRewarderAbstract {
     using SafeERC20 for IERC20;
 
     /// @notice Reward token
-    IERC20 immutable rewardToken;
+    IERC20 public immutable rewardToken;
 
     constructor(
         IERC20 rewardToken_,
