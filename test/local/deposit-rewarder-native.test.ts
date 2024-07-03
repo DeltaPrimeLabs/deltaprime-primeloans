@@ -3,7 +3,7 @@ import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
-import DepositRewarderArtifact from '../../artifacts/contracts/DepositRewarder.sol/DepositRewarder.json';
+import DepositRewarderNativeArtifact from '../../artifacts/contracts/DepositRewarderNative.sol/DepositRewarderNative.json';
 import MockTokenArtifact from "../../artifacts/contracts/mock/MockToken.sol/MockToken.json";
 import VariableUtilisationRatesCalculatorArtifact
     from '../../artifacts/contracts/mock/MockVariableUtilisationRatesCalculator.sol/MockVariableUtilisationRatesCalculator.json';
@@ -17,7 +17,7 @@ import {
     MockToken,
     OpenBorrowersRegistry,
     Pool,
-    DepositRewarder,
+    DepositRewarderNative,
     MockVariableUtilisationRatesCalculator
 } from "../../typechain";
 import {Contract} from "ethers";
@@ -30,7 +30,7 @@ const {deployContract, provider} = waffle;
 describe('Pool with variable utilisation interest rates and rewards', () => {
     describe('Depositing only (multiple depositors)', () => {
         let pool: Pool,
-            rewarder: DepositRewarder,
+            rewarder: DepositRewarderNative,
             owner: SignerWithAddress,
             depositor: SignerWithAddress,
             depositor1: SignerWithAddress,
@@ -39,7 +39,7 @@ describe('Pool with variable utilisation interest rates and rewards', () => {
             poolToken: Contract,
             MockVariableUtilisationRatesCalculator: MockVariableUtilisationRatesCalculator;
 
-        before("Deploy Pool & DepositRewarder contracts", async () => {
+        before("Deploy Pool & DepositRewarderNative contracts", async () => {
             [owner, depositor, depositor1, depositor2, depositor3] = await getFixedGasSigners(10000000);
             // Deploy Pool
             pool = (await deployContract(owner, PoolArtifact)) as Pool;
@@ -48,7 +48,7 @@ describe('Pool with variable utilisation interest rates and rewards', () => {
             poolToken = (await deployContract(owner, MockTokenArtifact, [[depositor1.address, depositor2.address, depositor3.address]])) as MockToken;
 
             // Deploy and initialize rewarder
-            rewarder = (await deployContract(owner, DepositRewarderArtifact, [pool.address])) as DepositRewarder;
+            rewarder = (await deployContract(owner, DepositRewarderNativeArtifact, [pool.address])) as DepositRewarderNative;
 
             MockVariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as MockVariableUtilisationRatesCalculator;
             const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
@@ -220,7 +220,7 @@ describe('Pool with variable utilisation interest rates and rewards', () => {
 
     describe('Depositing and withdrawing (multiple depositors)', () => {
         let pool: Pool,
-            rewarder: DepositRewarder,
+            rewarder: DepositRewarderNative,
             owner: SignerWithAddress,
             depositor: SignerWithAddress,
             depositor1: SignerWithAddress,
@@ -229,7 +229,7 @@ describe('Pool with variable utilisation interest rates and rewards', () => {
             poolToken: Contract,
             MockVariableUtilisationRatesCalculator: MockVariableUtilisationRatesCalculator;
 
-        before("Deploy Pool & DepositRewarder contracts", async () => {
+        before("Deploy Pool & DepositRewarderNative contracts", async () => {
             [owner, depositor, depositor1, depositor2, depositor3] = await getFixedGasSigners(10000000);
             // Deploy Pool
             pool = (await deployContract(owner, PoolArtifact)) as Pool;
@@ -238,7 +238,7 @@ describe('Pool with variable utilisation interest rates and rewards', () => {
             poolToken = (await deployContract(owner, MockTokenArtifact, [[depositor1.address, depositor2.address, depositor3.address]])) as MockToken;
 
             // Deploy and initialize rewarder
-            rewarder = (await deployContract(owner, DepositRewarderArtifact, [pool.address])) as DepositRewarder;
+            rewarder = (await deployContract(owner, DepositRewarderNativeArtifact, [pool.address])) as DepositRewarderNative;
 
             MockVariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as MockVariableUtilisationRatesCalculator;
             const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
@@ -374,7 +374,7 @@ describe('Pool with variable utilisation interest rates and rewards', () => {
 
     describe('Depositing and withdrawing (multiple depositors)', () => {
         let pool: Pool,
-            rewarder: DepositRewarder,
+            rewarder: DepositRewarderNative,
             owner: SignerWithAddress,
             depositor: SignerWithAddress,
             depositor1: SignerWithAddress,
@@ -383,7 +383,7 @@ describe('Pool with variable utilisation interest rates and rewards', () => {
             poolToken: Contract,
             MockVariableUtilisationRatesCalculator: MockVariableUtilisationRatesCalculator;
 
-        before("Deploy Pool & DepositRewarder contracts", async () => {
+        before("Deploy Pool & DepositRewarderNative contracts", async () => {
             [owner, depositor, depositor1, depositor2, depositor3] = await getFixedGasSigners(10000000);
             // Deploy Pool
             pool = (await deployContract(owner, PoolArtifact)) as Pool;
@@ -392,7 +392,7 @@ describe('Pool with variable utilisation interest rates and rewards', () => {
             poolToken = (await deployContract(owner, MockTokenArtifact, [[depositor1.address, depositor2.address, depositor3.address]])) as MockToken;
 
             // Deploy and initialize rewarder
-            rewarder = (await deployContract(owner, DepositRewarderArtifact, [pool.address])) as DepositRewarder;
+            rewarder = (await deployContract(owner, DepositRewarderNativeArtifact, [pool.address])) as DepositRewarderNative;
 
             MockVariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as MockVariableUtilisationRatesCalculator;
             const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
