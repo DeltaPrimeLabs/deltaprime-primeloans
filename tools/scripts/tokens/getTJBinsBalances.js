@@ -27,27 +27,47 @@ async function checkBinsBalances(data) {
     let tjPoolAddress = '0x8db6684838dBdA65952ae4bC576503f6eCC03864';
     const tjPoolContract = new ethers.Contract(tjPoolAddress, LBPairAbi, wallet);
 
-    let numberOfBinsToCheck = 100;
+    let fromBin = 8387987;
+    let toBin = 8388305;
+
+    console.log(`Checking bins balances from ${fromBin} to ${toBin} for address ${currentOwnerAddress} on LBPair contract ${tjPoolAddress}`)
+
     let activeBinId = await tjPoolContract.getActiveId();
     console.log('activeBinId', activeBinId);
+    if(fromBin >= activeBinId){
+        throw new Error('fromBin is greater than activeBinId');
+    }
 
     let binIds = [];
     let binsBalances = [];
-    for (let i = 1; i <= numberOfBinsToCheck; i++) {
-        let leftBinBalance = await tjPoolContract.balanceOf(currentOwnerAddress, activeBinId - i);
-        binIds.push(activeBinId + i);
-        binsBalances.push(leftBinBalance.toString());
+    let totalBalance = 0;
+
+    while(fromBin <= toBin){
+        let binBalance = await tjPoolContract.balanceOf(currentOwnerAddress, fromBin);
+        binIds.push(fromBin);
+        binsBalances.push(binBalance.toString());
+        totalBalance += parseFloat(ethers.utils.formatUnits(binBalance, 'ether'));
+        fromBin++;
     }
 
-    for (let i = 1; i <= numberOfBinsToCheck; i++) {
-        let rightBinBalance = await tjPoolContract.balanceOf(currentOwnerAddress, activeBinId + i);
-        binIds.push(activeBinId + i);
-        binsBalances.push(rightBinBalance.toString());
-    }
+    // for (let i = 0; i < numberOfBinsToCheck; i++) {
+    //     let leftBinBalance = await tjPoolContract.balanceOf(currentOwnerAddress, activeBinId - (numberOfBinsToCheck - i));
+    //     binIds.push(activeBinId - (numberOfBinsToCheck - i));
+    //     binsBalances.push(leftBinBalance.toString());
+    // }
+    //
+    // for (let i = 0; i < numberOfBinsToCheck; i++) {
+    //     let rightBinBalance = await tjPoolContract.balanceOf(currentOwnerAddress, activeBinId + i + 1);
+    //     binIds.push(activeBinId + i + 1);
+    //     binsBalances.push(rightBinBalance.toString());
+    // }
 
     for(let i = 0; i < binIds.length; i++){
         console.log(`Bin ${binIds[i]} balance: ${binsBalances[i]}`);
     }
+    console.log(`Total balance: ${totalBalance}`);
+    console.log(JSON.stringify(binIds));
+    console.log(JSON.stringify(binsBalances));
 
 }
 
