@@ -524,6 +524,18 @@ contract sPrimeUniswap is
         return (tick / tickSpacing) * tickSpacing;
     }
 
+    function collect() external nonReentrant() {
+        uint256 tokenId = userTokenId[_msgSender()];
+        if (tokenId == 0) {
+            revert NoPosition();
+        }
+
+        positionManagerCollect(
+            tokenId,
+            _msgSender()
+        );
+    }
+
     /**
      * @dev Users can use withdraw function for withdrawing their share.
      * @param share Amount to withdraw
