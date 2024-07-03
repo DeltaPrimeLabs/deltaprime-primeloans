@@ -4,11 +4,12 @@ pragma abicoder v2;
 
 import '../../lib/uniswap-v3/PoolAddress.sol';
 import './IPeripheryImmutableState.sol';
+import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 
 /// @title Non-fungible token for positions
 /// @notice Wraps Uniswap V3 positions in a non-fungible token interface which allows for them to be transferred
 /// and authorized.
-interface INonfungiblePositionManager is IPeripheryImmutableState
+interface INonfungiblePositionManager is IPeripheryImmutableState, IERC721
 {
     /// @notice Emitted when liquidity is increased for a position NFT
     /// @dev Also emitted when a token is minted
