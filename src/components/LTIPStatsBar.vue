@@ -93,7 +93,10 @@
 
 import BarGaugeBeta from './BarGaugeBeta.vue';
 import InfoIcon from './InfoIcon.vue';
-import LTIP_DISTRIBUTED_ARBITRUM from "../data/arbitrum/ltip/LTIP_EPOCH_3.json";
+import LTIP_EPOCH_1 from "../data/arbitrum/ltip/LTIP_EPOCH_1.json";
+import LTIP_EPOCH_2 from "../data/arbitrum/ltip/LTIP_EPOCH_2.json";
+import LTIP_EPOCH_3 from "../data/arbitrum/ltip/LTIP_EPOCH_3.json";
+import LTIP_EPOCH_4 from "../data/arbitrum/ltip/LTIP_EPOCH_4.json";
 import {fromWei} from "../utils/calculate";
 import {mapState} from "vuex";
 import {wrapContract} from "../utils/blockchain";
@@ -161,9 +164,19 @@ export default {
         if (tvl) this.yourEligibleTVL = tvl;
       });
       this.ltipService.observeLtipPrimeAccountArbCollected().subscribe((arbCollected) => {
-        let alreadyCollectedRecord = Object.entries(LTIP_DISTRIBUTED_ARBITRUM).find(([k,v]) => k.toLowerCase() === this.smartLoanContract.address.toLowerCase());
-        alreadyCollectedRecord = alreadyCollectedRecord ? alreadyCollectedRecord[1] : 0;
-        if (arbCollected) this.collectedBonus = Math.max(arbCollected - alreadyCollectedRecord, 0);
+        function getRecord(json, address) {
+          let record = Object.entries(json).find(([k,v]) => k.toLowerCase() === address.toLowerCase());
+          return record ? record[1] : 0;
+        }
+
+        let alreadyCollected = 0;
+        alreadyCollected += getRecord(LTIP_EPOCH_1, this.smartLoanContract.address);
+        alreadyCollected += getRecord(LTIP_EPOCH_2, this.smartLoanContract.address);
+        alreadyCollected += getRecord(LTIP_EPOCH_3, this.smartLoanContract.address);
+        alreadyCollected += getRecord(LTIP_EPOCH_4, this.smartLoanContract.address);
+
+
+        if (arbCollected) this.collectedBonus = Math.max(arbCollected - alreadyCollected, 0);
       });
       this.ltipService.observeLtipMaxBoostApy().subscribe((apy) => {
         if (apy) {
