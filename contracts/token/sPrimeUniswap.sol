@@ -30,8 +30,8 @@ contract sPrimeUniswap is
     using SafeERC20 for IERC20Metadata; // Using SafeERC20 for IERC20 for safe token transfers
     using PositionValue for INonfungiblePositionManager;
     // Constants declaration
-    uint256 private constant _REBALANCE_MARGIN = 5; // Rebalance Limit - If token diff is smaller than this percent, it will skip the token swap part
-    uint256 private constant _MAX_SLIPPAGE = 500; // Max slippage at the time of token swap for equal values
+    uint256 private constant _REBALANCE_MARGIN = 5; // 5% Rebalance Limit - If token diff is smaller than this percent, it will skip the token swap part
+    uint256 private constant _MAX_SLIPPAGE = 500; // 5% Max slippage at the time of token swap for equal values
     uint256 public constant MAX_LOCK_TIME = 3 * 365 days;
     uint256 public constant PRECISION = 20;
     uint256 private constant _DENOMINATOR = 10000;
@@ -56,6 +56,7 @@ contract sPrimeUniswap is
 
     bool public tokenSequence;
     
+    address private implementation;
     /**
      * @dev Initializer of the contract.
      * @param tokenX_ The address of the token X.
@@ -111,12 +112,26 @@ contract sPrimeUniswap is
         vPrimeController = _vPrimeController;
     }
 
+    function setImplementation(
+        address _implementation
+    ) public onlyOwner {
+        implementation = _implementation;
+    }
+
     function getTokenX() public view returns (IERC20) {
         return IERC20(tokenX);
     }
 
     function getTokenY() public view returns (IERC20) {
         return IERC20(tokenY);
+    }
+
+    function getToken0() internal view returns (IERC20Metadata) {
+        return IERC20Metadata(pool.token0());
+    }
+
+    function getToken1() internal view returns (IERC20Metadata) {
+        return IERC20Metadata(pool.token1());
     }
 
     /**
@@ -129,11 +144,11 @@ contract sPrimeUniswap is
         if (tokenId == 0) {
             revert NoPosition();
         }
-        (, int24 tick, , , , , ) = pool.slot0();
-
-        (, , , , , int24 tickLower, int24 tickUpper, , , , , ) = positionManager
-            .positions(tokenId);
-        return tickLower <= tick && tick <= tickUpper;
+        return abi.decode(proxyCalldataView(
+            implementation,
+            abi.encodeWithSignature
+            ("tickInRange(address,uint256)", user, tokenId)
+        ), (bool));
     }
 
     /**
@@ -146,51 +161,11 @@ contract sPrimeUniswap is
         address user,
         uint256 poolPrice
     ) public view returns (uint256 amountY) {
-        uint256 tokenId = userTokenId[user];
-
-        if(tokenId > 0) {
-            (IERC20Metadata token0, IERC20Metadata token1) = (tokenX, tokenY);
-            uint256 price = poolPrice;
-            if (tokenSequence) {
-                (token0, token1) = (tokenY, tokenX);
-            } else {
-                price = 1e16 / price;
-            }
-
-            price =
-                price *
-                10 ** (PRECISION + token1.decimals() - token0.decimals() - 8);
-            uint160 sqrtRatioX96 = uint160((UniswapV3IntegrationHelper.sqrt(price) * 2 ** 96) / 10 ** (PRECISION / 2));
-            uint256 amountX;
-            (amountX, amountY) = positionManager.total(
-                tokenId,
-                sqrtRatioX96
-            );
-
-            (amountX, amountY) = tokenSequence
-                ? (amountY, amountX)
-                : (amountX, amountY);
-
-            uint8 tokenXDecimals = tokenX.decimals();
-            uint8 tokenYDecimals = tokenY.decimals();
-            if (tokenYDecimals >= tokenXDecimals + 8) {
-                amountY =
-                    amountY +
-                    amountX *
-                    poolPrice *
-                    10 ** (tokenYDecimals - tokenXDecimals - 8);
-            } else {
-                amountY =
-                    amountY +
-                    FullMath.mulDiv(
-                        amountX,
-                        poolPrice,
-                        10 ** (tokenXDecimals + 8 - tokenYDecimals)
-                    );
-            }
-        }
-
-        return amountY;
+        return abi.decode(proxyCalldataView(
+            implementation,
+            abi.encodeWithSignature
+            ("getUserValueInTokenY(address,uint256)", user, poolPrice)
+        ), (uint256));
     }
 
     /**
@@ -331,8 +306,10 @@ contract sPrimeUniswap is
                 tokenIn = address(tokenY);
                 tokenOut = address(tokenX);
             }
-            (swapTokenX ? tokenX : tokenY).safeApprove(address(swapRouter), 0);
-            (swapTokenX ? tokenX : tokenY).safeApprove(address(swapRouter), amountIn);
+            
+            IERC20Metadata(tokenIn).safeApprove(address(swapRouter), 0);
+            IERC20Metadata(tokenIn).safeApprove(address(swapRouter), amountIn);
+            
             (amountIn, amountOut) = _processTokenSwap(
                 tokenIn,
                 tokenOut,
@@ -376,20 +353,23 @@ contract sPrimeUniswap is
         uint256 amountY
     ) internal {
         uint256 tokenId = userTokenId[user];
+        bool sequence = getToken0() != tokenX;
         uint256 amountXAdded;
         uint256 amountYAdded;
         tokenX.forceApprove(address(positionManager), amountX);
         tokenY.forceApprove(address(positionManager), amountY);
+        (uint256 amount0, uint256 amount1) = sequence ? (amountY, amountX) : (amountX, amountY);
+
         if (tokenId == 0) {
             (tokenId, , amountXAdded, amountYAdded) = positionManager.mint(
                 INonfungiblePositionManager.MintParams({
-                    token0: address(tokenX),
-                    token1: address(tokenY),
+                    token0: address(getToken0()),
+                    token1: address(getToken1()),
                     fee: feeTier,
                     tickLower: tickLower,
                     tickUpper: tickUpper,
-                    amount0Desired: amountX,
-                    amount1Desired: amountY,
+                    amount0Desired: amount0,
+                    amount1Desired: amount1,
                     amount0Min: 0,
                     amount1Min: 0,
                     recipient: address(this),
@@ -401,14 +381,18 @@ contract sPrimeUniswap is
             (, amountXAdded, amountYAdded) = positionManager.increaseLiquidity(
                 INonfungiblePositionManager.IncreaseLiquidityParams({
                     tokenId: tokenId,
-                    amount0Desired: amountX,
-                    amount1Desired: amountY,
+                    amount0Desired: amount0,
+                    amount1Desired: amount1,
                     amount0Min: 0,
                     amount1Min: 0,
                     deadline: block.timestamp
                 })
             );
         }
+        if(sequence) {
+            (amountXAdded, amountYAdded) = (amountYAdded, amountXAdded);
+        }
+
         uint256 share = _getTotalInTokenY(amountXAdded, amountYAdded);
         _transferTokens(
             address(this),
@@ -509,7 +493,9 @@ contract sPrimeUniswap is
                     tokenId,
                     address(this)
                 );
-
+                if(getToken0() != tokenX) {
+                    (amountXBefore, amountYBefore) = (amountYBefore, amountXBefore);
+                }
                 _burn(msgSender, balanceOf(msgSender));
                 positionManager.burn(tokenId);
 
@@ -701,7 +687,9 @@ contract sPrimeUniswap is
             tokenId,
             address(this)
         );
-
+        if(getToken0() != tokenX) {
+            (amountX, amountY) = (amountY, amountX);
+        }
         positionManager.burn(tokenId);
         _deposit(tickDesired, tickSlippage, amountX, amountY, true, swapSlippage);
     }
@@ -802,8 +790,8 @@ contract sPrimeUniswap is
                     uint256 amountYAdded
                 ) = positionManager.mint(
                         INonfungiblePositionManager.MintParams({
-                            token0: address(tokenX),
-                            token1: address(tokenY),
+                            token0: address(getToken0()),
+                            token1: address(getToken1()),
                             fee: feeTier,
                             tickLower: tickLower,
                             tickUpper: tickUpper,
@@ -815,6 +803,14 @@ contract sPrimeUniswap is
                             deadline: block.timestamp
                         })
                     );
+                amountX -= amountXAdded;
+                amountY -= amountYAdded;
+
+                if(getToken0() != tokenX) { 
+                    (amountXAdded, amountYAdded) = (amountYAdded, amountXAdded);
+                    (amountX, amountY) = (amountY, amountX);
+                }
+
                 uint256 total = _getTotalInTokenY(amountXAdded, amountYAdded);
                 if (amount > total) {
                     _burn(to, amount - total);
