@@ -3,7 +3,7 @@ const ethers = require("ethers");
 const {getUrlForNetwork} = require("../helpers");
 
 // Read the output JSON data from a file
-const rawData = fs.readFileSync('sPrimeSumResultArb.json');
+const rawData = fs.readFileSync('sPrimeSumResultAva16Spreadsheet.json');
 const outputJsonData = JSON.parse(rawData);
 
 const sPrimeAirdropABI = [
@@ -61,24 +61,12 @@ const sPrimeAirdropABI = [
     }
 ]
 
-const percentForLocks = [
-    4, 4, 4, 4, 4,
-    4, 4, 4, 4, 4,
-    4, 4, 4, 4, 4,
-    4, 4, 4, 4, 4,
-    4, 4, 4, 4, 4
-]
+const percentForLocks = [100]
 
-let lockPeriods = [
-    622080, 1244160, 1866240, 2488320, 3110400,
-    3732480, 4354560, 4976640, 5598720, 6220800,
-    6842880, 7464960, 8087040, 8709120, 9331200,
-    9953280, 10575360, 11197440, 11819520, 12441600,
-    13063680, 13685760, 14307840, 14929920, 15552000
-]
+let lockPeriods = [1]
 
 function getProvider(){
-    return new ethers.providers.JsonRpcProvider("https://nd-762-566-527.p2pify.com/4514bd12de6723b94346752e90e95cf4");
+    return new ethers.providers.JsonRpcProvider("https://avax.nirvanalabs.xyz/avalanche_aws/ext/bc/C/rpc?apikey=284d7cde-5c20-46a9-abee-2e3932cdb771");
 }
 
 function initWallet(networkName) {
@@ -99,30 +87,26 @@ function readJSON(filename) {
 }
 
 async function performAirdrop(data) {
-    let wallet = initWallet('arbitrum');
+    let wallet = initWallet('avalanche');
     let provider = getProvider();
 
-    let sPrimeContractAddress = '0x04d36A9aAD2072C69E4B0Cb2A403D8a893064945';
+    let sPrimeContractAddress = '0xd38C5cEca20Fb43503E108ed8d4CaCA5B57E730E';
     const sPrimeContract = new ethers.Contract(sPrimeContractAddress, sPrimeAirdropABI, wallet);
 
-    let distributionHistoryFileName = 'sPrimeAirdropDistributionHistoryArb.json';
+    let distributionHistoryFileName = 'sPrimeAirdropDistributionHistoryAva.json';
     let distributionHistory = readJSON(distributionHistoryFileName);
     let alreadyAirdroppedUsers = distributionHistory.map(entry => entry.address);
 
-    let skippedUsersFileName = 'sPrimeAirdropSkippedUsersArb.json';
+    let skippedUsersFileName = 'sPrimeAirdropSkippedUsersAva.json';
     let skippedUsers = readJSON(skippedUsersFileName);
     let alreadySkippedUsers = skippedUsers.map(entry => entry.address);
 
-    let failedUsersFileName = 'sPrimeAirdropFailedUsersArb.json';
+    let failedUsersFileName = 'sPrimeAirdropFailedUsersAva.json';
     let failedUsers = readJSON(failedUsersFileName);
 
-    let sumOfSPrime = data.reduce((acc, entry) => acc + entry.sPrimeSum, 0);
-    console.log(`Sum of sPrime dollar value from all users: ${sumOfSPrime}`)
-
-    // TODO: REPLACE THESE VALUES WITH THE ACTUAL AMOUNTS
-    let totalWethAmount = 16.14010987178152631;
-    let totalPrimeAmount = 42473.97368;
-    console.log(`Total weth amount: ${totalWethAmount}, total prime amount: ${totalPrimeAmount}`);
+    let totalAvaxAmount = data.reduce((acc, entry) => acc + entry.avaxAmount, 0);
+    let totalPrimeAmount = data.reduce((acc, entry) => acc + entry.primeAmount, 0);
+    console.log(`Total avax amount: ${totalAvaxAmount}, total prime amount: ${totalPrimeAmount}`);
 
     for(let i = 0; i < data.length; i++) {
         console.log(`Processing entry ${i+1} of ${data.length}`);
@@ -139,8 +123,6 @@ async function performAirdrop(data) {
         }
 
         let airdropAddress = entry.address;
-        let sPrimeDollarValue = entry.sPrimeSum;
-        let userFraction = sPrimeDollarValue / sumOfSPrime;
 
         let userBalance = 0;
         try {
@@ -157,16 +139,15 @@ async function performAirdrop(data) {
             skippedUsers.push({"address": airdropAddress, "balance": userBalance});
             writeJSON(skippedUsersFileName, skippedUsers);
         } else {
-            let primeAmount = (totalPrimeAmount * userFraction).toFixed(18);
-            let wethAmount = (totalWethAmount * userFraction).toFixed(18);
+            let primeAmount = (entry.primeAmount).toFixed(18);
+            let avaxAmount = (entry.avaxAmount).toFixed(18);
 
-            console.log(`Minting sPrime with ${primeAmount} Prime and ${wethAmount} WETH for ${airdropAddress}`);
+            console.log(`Minting sPrime with ${primeAmount} Prime and ${avaxAmount} AVAX for ${airdropAddress}`);
             try {
                 let primeInWei = ethers.utils.parseUnits(primeAmount, 18);
-                let wethInWei = ethers.utils.parseUnits(wethAmount, 18);
+                let avaxInWei = ethers.utils.parseUnits(avaxAmount, 18);
 
-                // TODO: Check USED gas limit
-                let txHash = (await sPrimeContract.mintForUserAndLock(airdropAddress, percentForLocks, lockPeriods, primeInWei, wethInWei, {gasLimit: 6_000_000})).hash;
+                let txHash = (await sPrimeContract.mintForUserAndLock(airdropAddress, percentForLocks, lockPeriods, primeInWei, avaxInWei, {gasLimit: 6000000})).hash;
                 const transaction = await provider.waitForTransaction(txHash, 1, 120_000);
                 if (transaction.status === 0) {
                     failedUsers.push({"address": airdropAddress, "sPrimeSum": sPrimeDollarValue, "primeAmount": primeAmount, "wethAmount": wethAmount, "txHash": txHash});
@@ -174,7 +155,7 @@ async function performAirdrop(data) {
                     throw new Error(`mintForUserAndLock failed for ${airdropAddress} (tx hash: ${txHash})`);
                 } else {
                     console.log(`Transaction ${txHash} success`);
-                    distributionHistory.push({"address": airdropAddress, "sPrimeSum": sPrimeDollarValue, "primeAmount": primeAmount, "wethAmount": wethAmount, "txHash": txHash});
+                    distributionHistory.push({"address": airdropAddress, "primeAmount": primeAmount, "avaxAmount": avaxAmount, "txHash": txHash});
                     writeJSON(distributionHistoryFileName, distributionHistory);
                 }
             } catch (error) {
@@ -187,4 +168,5 @@ async function performAirdrop(data) {
     }
 }
 
+// TODO: Approve the sPrime to use AVAX and PRIME before running the script
 const result = performAirdrop(outputJsonData);

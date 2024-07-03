@@ -1,0 +1,30 @@
+[
+    {
+        "address": "0x9E7c746f3D731Be251986A305aA8D1206ca6Ac69",
+        "balance": {
+            "type": "BigNumber",
+            "hex": "0x088c88f6f5bff0"
+        }
+    },
+    {
+        "address": "0xfF08F103A63A653D518bD9f8A837b795c6f110c3",
+        "balance": {
+            "type": "BigNumber",
+            "hex": "0x146ac67adfe95a2d"
+        }
+    },
+    {
+        "address": "0x2C00637a8CF228B8e882aB0BDfCDA22c159E1E6C",
+        "balance": {
+            "type": "BigNumber",
+            "hex": "0x260c82d6b7"
+        }
+    },
+    {
+        "address": "0xcfed01b111deaca96d9595f9530fff2722e77e43",
+        "balance": {
+            "type": "BigNumber",
+            "hex": "0x052a0cc399c4b795"
+        }
+    }
+]

@@ -1,0 +1,52 @@
+[
+  {
+    "address": "0x9E7c746f3D731Be251986A305aA8D1206ca6Ac69",
+    "avaxAmount": 0.08414675194,
+    "primeAmount": 1.904761905
+  },
+  {
+    "address": "0xfF08F103A63A653D518bD9f8A837b795c6f110c3",
+    "avaxAmount": 0.1682935039,
+    "primeAmount": 3.80952381
+  },
+  {
+    "address": "0x416834D1d9131766c3836A8BDf3C22856F793D01",
+    "avaxAmount": 1.363177381,
+    "primeAmount": 30.85714286
+  },
+  {
+    "address": "0x2C00637a8CF228B8e882aB0BDfCDA22c159E1E6C",
+    "avaxAmount": 0.08414675194,
+    "primeAmount": 1.904761905
+  },
+  {
+    "address": "0xd144d53288709fe3f793028A6cB5AE3bE5e4b017",
+    "avaxAmount": 0.1682935039,
+    "primeAmount": 3.80952381
+  },
+  {
+    "address": "0xcfed01b111deaca96d9595f9530fff2722e77e43",
+    "avaxAmount": 1.178054527,
+    "primeAmount": 26.66666667
+  },
+  {
+    "address": "0x604f91D90800d36CB244d836DAA79128dD3A59bA",
+    "avaxAmount": 0.08414675194,
+    "primeAmount": 1.904761905
+  },
+  {
+    "address": "0x9EC3b7BA844490EFC78Cbc686877Bd8B671191f2",
+    "avaxAmount": 1.480982834,
+    "primeAmount": 33.52380952
+  },
+  {
+    "address": "0x0843b362575D73C7863e53076EA60A6d901eeD85",
+    "avaxAmount": 1.346348031,
+    "primeAmount": 30.47619048
+  },
+  {
+    "address": "0xB80e46B86350f19944371b9F60C5F98f29680269",
+    "avaxAmount": 4.123190845,
+    "primeAmount": 93.33333333
+  }
+]

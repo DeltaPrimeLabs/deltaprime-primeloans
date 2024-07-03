@@ -30,7 +30,7 @@ const IERC20ApproveAbi = [
 ];
 
 function initWallet(networkName) {
-    const key = fs.readFileSync(`./.secrets/${networkName}/admin`).toString().trim();
+    const key = fs.readFileSync(`./.secrets/${networkName}/deployer`).toString().trim();
     console.log(getUrlForNetwork(networkName));
     const provider = new ethers.providers.JsonRpcProvider(getUrlForNetwork(networkName));
 
@@ -40,7 +40,7 @@ function initWallet(networkName) {
 async function bridgeTokens(networkName) {
     const wallet = initWallet(networkName);
 
-    const recipientAddress = '0x15066d6c882e63b33e12179DE4FceCdfCa93De1d'
+    const recipientAddress = '0xbAc44698844f13cF0AF423b19040659b688ef036'
     const primeTokenAddress = '0x33C8036E99082B0C395374832FECF70c42C7F298'
     const avalancheChainId = 106;
     const arbitrumChainId = 110;
@@ -49,7 +49,7 @@ async function bridgeTokens(networkName) {
     let defaultAdapterParams = ethers.utils.solidityPack(["uint16", "uint256"], [1, 200000])
 
     const receiverBytes32 = ethers.utils.defaultAbiCoder.encode(["address"], [recipientAddress])
-    const amountToSend =  toWei("10");
+    const amountToSend =  toWei("42463.97368");
     const destinationChain = arbitrumChainId;  // In case of Avalanche it should be 110
     const bridgeContract = new ethers.Contract(bridgeContractAddress, PrimeBridgeArtifact.abi, wallet);
     const primeTokenContract = new ethers.Contract(primeTokenAddress, IERC20ApproveAbi, wallet);
@@ -59,7 +59,7 @@ async function bridgeTokens(networkName) {
 
     let nativeFee = (await bridgeContract.estimateSendFee(destinationChain, receiverBytes32, amountToSend, false, defaultAdapterParams)).nativeFee;
 
-    console.log(`Briding ${amountToSend} from Avalanche to Arbitrum to ${naokiAddress} with fee ${nativeFee}`);
+    console.log(`Briding ${amountToSend} from Avalanche to Arbitrum to ${recipientAddress} with fee ${nativeFee}`);
     await bridgeContract
         .sendFrom(
             wallet.address,

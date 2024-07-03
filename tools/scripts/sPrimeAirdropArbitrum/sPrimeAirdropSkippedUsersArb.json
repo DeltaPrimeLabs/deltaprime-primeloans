@@ -1,1 +1,30 @@
-[]
+[
+    {
+        "address": "0x5c23bd1bd272d22766eb3708b8f874cb93b75248",
+        "balance": {
+            "type": "BigNumber",
+            "hex": "0x27f1fc03de33a1"
+        }
+    },
+    {
+        "address": "0xdf4e06a49a4df04606935723113150276360b443",
+        "balance": {
+            "type": "BigNumber",
+            "hex": "0x98714bde00195e"
+        }
+    },
+    {
+        "address": "0xec5a44cee773d04d0eff4092b86838d5cd77ec4e",
+        "balance": {
+            "type": "BigNumber",
+            "hex": "0xe682dc1c2b"
+        }
+    },
+    {
+        "address": "0xdd70995447f309ef03c52aee6721063aa72b500e",
+        "balance": {
+            "type": "BigNumber",
+            "hex": "0xf6dc8ff24da9ab"
+        }
+    }
+]
