@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 227c8d64bf72d43dcc66ab215e3d28968f36f4f1;
+// Last deployed from commit: ;
 pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./interfaces/IDepositRewarder.sol";
 
-contract DepositRewarder is IDepositRewarder, Ownable, ReentrancyGuard {
+abstract contract DepositRewarderAbstract is IDepositRewarder, Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -174,14 +174,7 @@ contract DepositRewarder is IDepositRewarder, Ownable, ReentrancyGuard {
 
     function getRewardsFor(
         address payable _user
-    ) external nonReentrant updateReward(_user) {
-        uint256 reward = rewards[_user];
-        if (reward > 0) {
-            rewards[_user] = 0;
-            (bool sent, ) = _user.call{value: reward}("");
-            require(sent, "Failed to send native token");
-        }
-    }
+    ) external virtual;
 
     function setRewardsDuration(uint256 _duration) external onlyOwner {
         require(finishAt < block.timestamp, "reward duration not finished");
