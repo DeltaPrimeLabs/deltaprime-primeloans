@@ -288,21 +288,30 @@ export default {
         }
       }
 
-      for (const [symbol, data] of Object.entries(this.balancerLpAssets)) {
-        if (this.balancerLpBalances) {
-          let balance = parseFloat(this.balancerLpBalances[symbol]);
+      if (this.balancerLpAssets) {
+        for (const [symbol, data] of Object.entries(this.balancerLpAssets)) {
+          if (this.balancerLpBalances) {
+            let balance = parseFloat(this.balancerLpBalances[symbol]);
 
-          tokens.push({price: data.price, balance: balance ? balance : 0, borrowed: 0, debtCoverage: data.debtCoverage});
+            tokens.push({
+              price: data.price,
+              balance: balance ? balance : 0,
+              borrowed: 0,
+              debtCoverage: data.debtCoverage
+            });
+          }
         }
       }
 
-      for (const [symbol, data] of Object.entries(this.gmxV2Assets)) {
-        tokens.push({
-          price: data.price,
-          balance: parseFloat(this.gmxV2Balances[symbol]),
-          borrowed: 0,
-          debtCoverage: data.debtCoverage
-        });
+      if (this.gmxV2Assets) {
+        for (const [symbol, data] of Object.entries(this.gmxV2Assets)) {
+          tokens.push({
+            price: data.price,
+            balance: parseFloat(this.gmxV2Balances[symbol]),
+            borrowed: 0,
+            debtCoverage: data.debtCoverage
+          });
+        }
       }
 
       for (const [, farms] of Object.entries(this.farms)) {
