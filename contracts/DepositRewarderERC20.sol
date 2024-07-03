@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 3e7bd72eae0a505b665f7751ef9c2cef805871e8;
+// Last deployed from commit: 2ede0bbde1c468465ae647d5f989635d6090bcba;
 pragma solidity ^0.8.17;
 
 import "./DepositRewarderAbstract.sol";
