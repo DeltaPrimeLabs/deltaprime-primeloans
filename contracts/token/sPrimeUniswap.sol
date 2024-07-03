@@ -681,6 +681,10 @@ contract sPrimeUniswap is
         int24 tickSlippage,
         uint256 swapSlippage
     ) public nonReentrant {
+        if(positionManager.ownerOf(tokenId) != _msgSender()) {
+            revert NoPosition();
+        }
+
         (, , , , , , , uint128 liquidity , , , ,) = positionManager.positions(tokenId);
 
         positionManager.decreaseLiquidity(
