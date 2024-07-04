@@ -24,10 +24,10 @@ function timeout(ms) {
 }
 
 
-async function fetchData(file, from, to, top, pool = false) {
+async function fetchData(epochName, from, to, top, pool = false) {
     let type = pool ? 'pool' : 'loan';
     let resp = await fetch(`https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/ltip-${type}-leaderboard?top=${top}&from=${from}&to=${to}`)
-
+    let fileName = epochName + (pool ? '_SAVINGS' : '');
     console.log(`https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/ltip-${type}-leaderboard?from=${from}&to=${to}`)
 
     let list = (await resp.json()).list;
@@ -36,11 +36,11 @@ async function fetchData(file, from, to, top, pool = false) {
     let json = {};
     list.forEach(el => json[el.id] = el.arbCollected)
 
-    fs.writeFileSync(`src/data/arbitrum/ltip/${file}.json`, JSON.stringify(json))
+    fs.writeFileSync(`src/data/arbitrum/ltip/${fileName}.json`, JSON.stringify(json))
 
     let collectedArb = 0;
 
-    let json1 = JSON.parse(fs.readFileSync(`src/data/arbitrum/ltip/${file}.json`))
+    let json1 = JSON.parse(fs.readFileSync(`src/data/arbitrum/ltip/${fileName}.json`))
 
 
     Object.values(json1).forEach(
@@ -73,7 +73,7 @@ function createDiffJson(file1, file2, location = 'avalanche') {
 }
 
 function analyzeJson(filename) {
-    let json1 = JSON.parse(fs.readFileSync(`src/data/avalanche/${filename}.json`))
+    let json1 = JSON.parse(fs.readFileSync(`src/data/arbitrum/ltip/${filename}.json`))
 
     let collectedAvax = 0;
     Object.entries(json1).forEach(
@@ -119,12 +119,13 @@ async function checkCollected() {
 }
 
 
-//last distribution timestamp: 1718644520
-//current distribution timestamp: 1719234231
-fetchData("LTIP_EPOCH_3", 1718644520, Math.ceil(Date.now()/1000), 5000, false)
+//last distribution timestamp: 1719234231
+//current distribution timestamp: 1720013265
+// fetchData("LTIP_EPOCH-test", 1719234231, Math.ceil(Date.now()/1000), 10000, true)
+// fetchData("LTIP_EPOCH-test", 1719234231, 1720013265, 10000, true)
 // checkNegativeAccounts()
 // checkCollectedInTimestamp(1715152203)
 // checkCollected();
-// createDiffJson( "LTIP_EPOCH_1", "LTIP_EPOCH_2", "arbitrum/ltip")
+// createDiffJson( "LTIP_EPOCH_3", "LTIP_EPOCH_4", "arbitrum/ltip")
 // createAddJson( "GM_EPOCH_8", "GM_EPOCH_9_diff", "GM_EPOCH_9")
-// analyzeJson("GM_EPOCH_9")
+// analyzeJson("LTIP_EPOCH_4")
