@@ -68,19 +68,28 @@ export default {
     AVALANCHE_BOOST_CONFIG: {
         AVAX: {
             depositRewarderAddress: "0x6d149Fcc150A3B097D7647408345898fe9db1ded",
-            rewardToken: "sAVAX"
+            rewardToken: "sAVAX",
+            duration: 1209600
         },
         USDC: {
             depositRewarderAddress: "0xB913aC229910d705297DEB1c168af3dA1416B227",
-            rewardToken: "ggAVAX"
+            rewardToken: "ggAVAX",
+            duration: 1209600
         },
         USDT: {
             depositRewarderAddress: "0x3750F8d6Df82699ada6bBd1463C4E91fCf37005D",
-            rewardToken: "sAVAX"
+            rewardToken: "sAVAX",
+            duration: 1209600
         },
         BTC: {
             depositRewarderAddress: "0x50b0b59f14bA882BD511Fe08d1cdc975807a94A4",
-            rewardToken: "ggAVAX"
+            rewardToken: "ggAVAX",
+            duration: 1209600
+        },
+        ETH: {
+            depositRewarderAddress: "0x23aE8AD5209f0be8e26F78Bd0577bf62aC7B23a0",
+            rewardToken: "USDC",
+            duration: 7200
         }
     },
     WOMBAT_REWARDS_TOKENS: {
@@ -146,7 +155,8 @@ export default {
         },
         ETH: {
             address: ETH_POOL_TUP.address,
-            tokenAddress: addresses.ETH
+            tokenAddress: addresses.ETH,
+            hasAvalancheBoost: true
         }
     },
     LP_ASSETS_CONFIG: {

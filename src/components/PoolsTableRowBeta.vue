@@ -113,12 +113,6 @@ import YAK_ROUTER_ABI from '../../test/abis/YakRouter.json';
 import BarGaugeBeta from './BarGaugeBeta.vue';
 import InfoIcon from './InfoIcon.vue';
 import {ActionSection} from "../services/globalActionsDisableService";
-import GLP_REWARD_ROUTER
-  from "../../artifacts/contracts/interfaces/facets/avalanche/IRewardRouterV2.sol/IRewardRouterV2.json";
-import GLP_REWARD_TRACKER
-  from "../../artifacts/contracts/interfaces/facets/avalanche/IRewardTracker.sol/IRewardTracker.json";
-import {formatUnits} from "../utils/calculate";
-import ClaimGLPRewardsModal from "./ClaimGLPRewardsModal.vue";
 import ClaimRewardsModal from "./ClaimRewardsModal.vue";
 
 let TOKEN_ADDRESSES;
@@ -481,7 +475,7 @@ export default {
           depositRewarderAddress: config.AVALANCHE_BOOST_CONFIG[this.pool.asset.symbol].depositRewarderAddress
         };
 
-        this.handleTransaction(this.claimAvalancheBoost(claimBoostRequest), () => {
+        this.handleTransaction(this.claimAvalancheBoost({claimBoostRequest: claimBoostRequest}), () => {
           this.$forceUpdate();
         }, (error) => {
           this.handleTransactionError(error);

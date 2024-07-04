@@ -140,14 +140,15 @@ export default {
     },
 
     watchAvalancheBoostData() {
-      this.avalancheBoostService.observeAvalancheBoostAprs().subscribe(aprs => {
-        const incentivizedPools = Object.keys(aprs);
+      this.avalancheBoostService.observeAvalancheBoostRates().subscribe(rates => {
+        const incentivizedPools = Object.keys(rates);
         incentivizedPools.forEach(
             poolAsset => {
               const poolIndex = this.poolsList.findIndex(pool => pool.asset.symbol === poolAsset);
               this.poolsList[poolIndex].hasAvalancheBoost =true;
               this.poolsList[poolIndex].avalancheBoostRewardToken = config.AVALANCHE_BOOST_CONFIG[poolAsset].rewardToken;
-              this.poolsList[poolIndex].miningApy = aprs[poolAsset];
+              let secondsInYear = 3600 * 24 * 365;
+              this.poolsList[poolIndex].miningApy = rates[poolAsset] * secondsInYear / (this.poolsList[poolIndex].tvl * this.poolsList[poolIndex].assetPrice);
             }
         );
       });
@@ -365,6 +366,7 @@ export default {
 
   .main-content {
     margin-top: 30px;
+    margin-bottom: 100px;
 
     .sprime-panel {
       margin-bottom: 30px;

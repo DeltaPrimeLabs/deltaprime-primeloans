@@ -254,10 +254,10 @@ export default {
       rootState.serviceRegistry.poolService.emitPoolDepositChange(swapDepositRequest.targetAmount, swapDepositRequest.targetAsset, 'DEPOSIT');
     },
 
-    async claimAvalancheBoost({state, rootState, commit, dispatch}, {claimRequest}) {
+    async claimAvalancheBoost({state, rootState, commit, dispatch}, {claimBoostRequest}) {
       const provider = rootState.network.provider;
 
-      const rewarderContract = new ethers.Contract(claimRequest.depositRewarderAddress, DEPOSIT_REWARDER.abi, provider.getSigner());
+      const rewarderContract = new ethers.Contract(claimBoostRequest.depositRewarderAddress, DEPOSIT_REWARDER.abi, provider.getSigner());
 
       const transaction = await rewarderContract.getRewardsFor(rootState.network.account);
 

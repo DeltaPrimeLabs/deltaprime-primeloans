@@ -17,16 +17,13 @@ export default class AvalancheBoostService {
         return this.avalancheBoostUnclaimedAmounts$.asObservable();
     }
 
-    observeAvalancheBoostAprs() {
+    observeAvalancheBoostRates() {
         return this.avalancheBoostAprs$.asObservable();
     }
 
     async updateAvalancheBoostData(provider, walletAddress) {
-        console.log('updateAvalancheBoostData')
         const rewardsConfig = config.AVALANCHE_BOOST_CONFIG;
         const poolsAssets = Object.keys(rewardsConfig);
-
-        console.log('poolsAssets', poolsAssets)
 
         let poolRates = {};
         const unclaimed = {};
@@ -41,12 +38,10 @@ export default class AvalancheBoostService {
                             (rates) => {
                                 poolsAssets.forEach(
                                     (asset, i) => {
-                                        const price = redstonePriceData[asset] ? redstonePriceData[asset][0].dataPoints[0].value : 0;
-                                            //TODO: add RedStone price
-                                        poolRates[asset] = rates[i];
+                                        const price = redstonePriceData[rewardsConfig[asset].rewardToken] ? redstonePriceData[rewardsConfig[asset].rewardToken][0].dataPoints[0].value : 0;
+                                        poolRates[asset] = price * formatUnits(rates[i], config.ASSETS_CONFIG[rewardsConfig[asset].rewardToken].decimals);
                                     }
                                 );
-                                console.log('poolRates: ', poolRates)
                                 this.avalancheBoostAprs$.next(poolRates);
                             }
                         );
@@ -64,6 +59,7 @@ export default class AvalancheBoostService {
                         unclaimed[asset] = formatUnits(earned[i], config.ASSETS_CONFIG[rewardsConfig[asset].rewardToken].decimals);
                     }
                 );
+
                 console.log('unclaimed: ', unclaimed)
 
                 this.avalancheBoostUnclaimedAmounts$.next(unclaimed);
@@ -71,17 +67,14 @@ export default class AvalancheBoostService {
         );
 
         async function fetchRate(poolAsset) {
-            console.log('fetchRate rewardsConfig[poolAsset].depositRewarderAddress: ', rewardsConfig[poolAsset].depositRewarderAddress)
             const rewarderContract = new ethers.Contract(rewardsConfig[poolAsset].depositRewarderAddress, DEPOSIT_REWARDER.abi, provider.getSigner());
 
-            console.log('fetchRate result: ', await rewarderContract.rewardRate())
             return rewarderContract.rewardRate();
         }
 
         async function fetchEarned(poolAsset) {
             const rewarderContract = new ethers.Contract(rewardsConfig[poolAsset].depositRewarderAddress, DEPOSIT_REWARDER.abi, provider.getSigner());
 
-            console.log('fetchEarned result: ', await rewarderContract.earned(walletAddress))
             return rewarderContract.earned(walletAddress);
         }
     }
