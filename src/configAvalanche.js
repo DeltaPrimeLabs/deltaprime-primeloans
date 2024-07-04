@@ -85,11 +85,6 @@ export default {
             depositRewarderAddress: "0x50b0b59f14bA882BD511Fe08d1cdc975807a94A4",
             rewardToken: "ggAVAX",
             duration: 1209600
-        },
-        ETH: {
-            depositRewarderAddress: "0x23aE8AD5209f0be8e26F78Bd0577bf62aC7B23a0",
-            rewardToken: "USDC",
-            duration: 7200
         }
     },
     WOMBAT_REWARDS_TOKENS: {
@@ -155,8 +150,7 @@ export default {
         },
         ETH: {
             address: ETH_POOL_TUP.address,
-            tokenAddress: addresses.ETH,
-            hasAvalancheBoost: true
+            tokenAddress: addresses.ETH
         }
     },
     LP_ASSETS_CONFIG: {
