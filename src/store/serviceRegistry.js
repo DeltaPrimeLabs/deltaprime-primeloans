@@ -25,7 +25,6 @@ import UniswapV3Service from '../services/uniswapV3Service';
 import TermsService from '../services/termsService';
 import DeprecatedAssetsService from '../services/deprecatedAssetsService';
 import LtipService from "../services/ltipService";
-import AvalancheBoostService from "../services/avalancheBoostService";
 import GgpIncentivesService from "../services/ggpIncentivesService";
 import sPrimeService from "../services/sPrimeService";
 import vPrimeService from "../services/vPrimeService";
@@ -61,7 +60,6 @@ export default {
     termsService: new TermsService(),
     deprecatedAssetsService: new DeprecatedAssetsService(),
     ltipService: new LtipService(),
-    avalancheBoostService: new AvalancheBoostService(),
     ggpIncentivesService: new GgpIncentivesService(),
     sPrimeService: new sPrimeService(),
     vPrimeService: new vPrimeService(),
