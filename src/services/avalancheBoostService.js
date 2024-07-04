@@ -25,7 +25,7 @@ export default class AvalancheBoostService {
 
     Object.keys(rewardsConfig).forEach(
         poolAsset => {
-            const rewarderContract = new ethers.Contract(rewardsConfig[poolAsset].depositRewarderAddress, DEPOSIT_REWARDER.abi, provider.getSigner();
+            const rewarderContract = new ethers.Contract(rewardsConfig[poolAsset].depositRewarderAddress, DEPOSIT_REWARDER.abi, provider.getSigner());
 
             rewarderContract.rewardRate(address).then(
                 (rewardRate) => {
