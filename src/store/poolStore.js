@@ -56,6 +56,11 @@ export default {
       if (window.chain === 'arbitrum') {
         rootState.serviceRegistry.ltipService.emitRefreshPoolLtipData();
       }
+
+      // Avalanche-specific methods
+      if (window.chain === 'avalanche') {
+        rootState.serviceRegistry.avalancheBoostService.emitRefreshAvalancheBoostData();
+      }
     },
 
     async setupsPrime({rootState, commit, state}) {

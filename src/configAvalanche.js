@@ -65,6 +65,24 @@ export default {
     VESTING_CONTRACT_CONFIG: {
         address: "0x881fa171A7b5bf5c84d213043037ab867ce4688c"
     },
+    AVALANCHE_BOOST_CONFIG: {
+        AVAX: {
+            depositRewarderAddress: "0x6d149Fcc150A3B097D7647408345898fe9db1ded",
+            rewardToken: "sAVAX"
+        },
+        USDC: {
+            depositRewarderAddress: "0xB913aC229910d705297DEB1c168af3dA1416B227",
+            rewardToken: "ggAVAX"
+        },
+        USDT: {
+            depositRewarderAddress: "0x3750F8d6Df82699ada6bBd1463C4E91fCf37005D",
+            rewardToken: "sAVAX"
+        },
+        BTC: {
+            depositRewarderAddress: "0xA25EaF2906FA1a3a13EdAc9B9657108Af7B703e3",
+            rewardToken: "ggAVAX"
+        }
+    },
     WOMBAT_REWARDS_TOKENS: {
         "WOM": {name: "WOM", symbol: "WOM", logoExt: "png", decimals: 18, address: addresses.WOM},
     },
