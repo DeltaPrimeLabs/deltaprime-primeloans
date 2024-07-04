@@ -145,6 +145,7 @@ export default {
         incentivizedPools.forEach(
             poolAsset => {
               const poolIndex = this.poolsList.findIndex(pool => pool.asset.symbol === poolAsset);
+              this.poolsList[poolIndex].hasAvalancheBoost =true;
               this.poolsList[poolIndex].avalancheBoostRewardToken = config.AVALANCHE_BOOST_CONFIG[poolAsset].rewardToken;
               this.poolsList[poolIndex].miningApy = aprs[poolAsset];
             }

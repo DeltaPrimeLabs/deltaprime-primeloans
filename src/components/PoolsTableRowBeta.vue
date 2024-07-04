@@ -12,7 +12,6 @@
               src="src/assets/icons/stars.png" class="stars-icon">
         </div>
       </div>
-
       <div class="table__cell table__cell--double-value deposit">
         <template>
           <div class="double-value__pieces">
