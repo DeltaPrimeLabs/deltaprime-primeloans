@@ -89,6 +89,7 @@
             class="actions__icon-button"
             v-if="moreActionsConfig"
             :config="moreActionsConfig"
+            v-on:iconButtonClick="actionClick"
             :disabled="!pool">
         </IconButtonMenuBeta>
       </div>
@@ -118,6 +119,7 @@ import GLP_REWARD_TRACKER
   from "../../artifacts/contracts/interfaces/facets/avalanche/IRewardTracker.sol/IRewardTracker.json";
 import {formatUnits} from "../utils/calculate";
 import ClaimGLPRewardsModal from "./ClaimGLPRewardsModal.vue";
+import ClaimRewardsModal from "./ClaimRewardsModal.vue";
 
 let TOKEN_ADDRESSES;
 
@@ -463,9 +465,16 @@ export default {
     },
 
     async openClaimAvalancheBoost() {
-      const modalInstance = this.openModal(ClaimGLPRewardsModal);
-      modalInstance.toClaim = this.pool.unclaimed;
-      modalInstance.rewardToken = this.pool.avalancheBoostRewardToken;
+      const modalInstance = this.openModal(ClaimRewardsModal);
+      let totalRewards = [];
+      totalRewards.push({
+        symbol: this.pool.avalancheBoostRewardToken,
+        amount: this.pool.unclaimed,
+      })
+
+      modalInstance.tokensConfig = config.ASSETS_CONFIG;
+      modalInstance.totalRewards = totalRewards;
+      modalInstance.header = 'Claim Boost rewards'
 
       modalInstance.$on('CLAIM', () => {
         const claimBoostRequest = {
