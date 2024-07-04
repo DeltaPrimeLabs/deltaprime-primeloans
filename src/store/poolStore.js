@@ -1,5 +1,6 @@
 import {awaitConfirmation, depositTermsToSign, signMessage, wrapContract} from '../utils/blockchain';
 import DEPOSIT_SWAP from '@artifacts/contracts/DepositSwap.sol/DepositSwap.json';
+import DEPOSIT_REWARDER from '/artifacts/contracts/interfaces/IDepositRewarder.sol/IDepositRewarder.json'
 import {formatUnits, fromWei, parseUnits} from '@/utils/calculate';
 import erc20ABI from '../../test/abis/ERC20.json';
 import config from '@/config';
@@ -59,7 +60,7 @@ export default {
 
       // Avalanche-specific methods
       if (window.chain === 'avalanche') {
-        rootState.serviceRegistry.avalancheBoostService.emitRefreshAvalancheBoostData();
+        rootState.serviceRegistry.avalancheBoostService.emitRefreshAvalancheBoostData(rootState.network.provider, rootState.network.account);
       }
     },
 
@@ -251,6 +252,27 @@ export default {
 
       rootState.serviceRegistry.poolService.emitPoolDepositChange(swapDepositRequest.sourceAmount, swapDepositRequest.sourceAsset, 'WITHDRAW');
       rootState.serviceRegistry.poolService.emitPoolDepositChange(swapDepositRequest.targetAmount, swapDepositRequest.targetAsset, 'DEPOSIT');
+    },
+
+    async claimAvalancheBoost({state, rootState, commit, dispatch}, {claimRequest}) {
+      const provider = rootState.network.provider;
+
+      const rewarderContract = new ethers.Contract(claimRequest.depositRewarderAddress, DEPOSIT_REWARDER.abi, provider.getSigner());
+
+      const transaction = await rewarderContract.getRewardsFor(rootState.network.account);
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      let tx = await awaitConfirmation(transaction, provider, 'Claim Avalanche Boost rewards');
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+      }, config.refreshDelay);
     },
   }
 };

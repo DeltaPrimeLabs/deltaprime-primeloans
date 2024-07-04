@@ -79,7 +79,7 @@ export default {
             rewardToken: "sAVAX"
         },
         BTC: {
-            depositRewarderAddress: "0xA25EaF2906FA1a3a13EdAc9B9657108Af7B703e3",
+            depositRewarderAddress: "0x50b0b59f14bA882BD511Fe08d1cdc975807a94A4",
             rewardToken: "ggAVAX"
         }
     },
@@ -126,19 +126,23 @@ export default {
     POOLS_CONFIG: {
         AVAX: {
             address: WAVAX_POOL_TUP.address,
-            tokenAddress: addresses.AVAX
+            tokenAddress: addresses.AVAX,
+            hasAvalancheBoost: true
         },
         USDC: {
             address: USDC_POOL_TUP.address,
-            tokenAddress: addresses.USDC
+            tokenAddress: addresses.USDC,
+            hasAvalancheBoost: true
         },
         USDT: {
             address: USDT_POOL_TUP.address,
-            tokenAddress: addresses.USDT
+            tokenAddress: addresses.USDT,
+            hasAvalancheBoost: true
         },
         BTC: {
             address: BTC_POOL_TUP.address,
-            tokenAddress: addresses.BTC
+            tokenAddress: addresses.BTC,
+            hasAvalancheBoost: true
         },
         ETH: {
             address: ETH_POOL_TUP.address,
