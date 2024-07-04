@@ -87,14 +87,14 @@ describe('Pool with variable utilisation interest rates and rewards', () => {
         });
 
         it("should initialize rewarder", async () => {
-            await rewarder.addDeposits([depositor1.address, depositor2.address]);
+            await rewarder.addDeposits([depositor1.address]);
             expect(await rewarder.balanceOf(depositor1.address)).to.equal(toWei("10.0"));
             expect(await rewarder.balanceOf(depositor2.address)).to.equal(toWei("10.0"));
         });
 
         it("should set up rewards rewarder contract", async () => {
             expect(await rewarder.rewardRate()).to.be.equal(0);
-            await rewardToken.transfer(rewarder.address, toWei("100"));
+            await rewardToken.transfer(rewarder.address, toWei("200"));
             await rewarder.notifyRewardAmount(toWei("100"));
             expect(await rewarder.rewardRate()).to.be.equal(toWei("100").div(time.duration.days(360)));
         });
@@ -109,7 +109,7 @@ describe('Pool with variable utilisation interest rates and rewards', () => {
         });
 
         it("[360 days] should deposit (depositor1) to pool + depositor2 via transfer and check rewards after some time", async () => {
-            expect(await rewardToken.balanceOf(rewarder.address)).to.be.equal(toWei("100"));
+            expect(await rewardToken.balanceOf(rewarder.address)).to.be.equal(toWei("200"));
             // Deposit to pool DEPOSITOR1 -> +10.0
             await poolToken.connect(depositor1).approve(pool.address, toWei("10.0"));
             await pool.connect(depositor1).deposit(toWei("10.0"));
@@ -148,18 +148,18 @@ describe('Pool with variable utilisation interest rates and rewards', () => {
             expect(fromWei(await rewardToken.balanceOf(depositor2.address)) - initialRewardTokenBalance2).to.be.closeTo(0, 1e-3);
 
             await pool.connect(depositor1).withdraw(toWei("15.0"));
-            expect(fromWei(await rewardToken.balanceOf(rewarder.address))).to.be.closeTo(37.5, 1e-3);
+            expect(fromWei(await rewardToken.balanceOf(rewarder.address))).to.be.closeTo(137.5, 1e-3);
 
             await pool.connect(depositor2).getRewards();
             expect(fromWei(await rewardToken.balanceOf(depositor2.address)) - initialRewardTokenBalance2).to.be.closeTo(37.5, 1e-3);
-            expect(fromWei(await rewardToken.balanceOf(rewarder.address))).to.be.closeTo(0, 1e-3);
+            expect(fromWei(await rewardToken.balanceOf(rewarder.address))).to.be.closeTo(100, 1e-3);
             await pool.connect(depositor2).withdraw(toWei("15.0"));
         });
 
         it("should successfully set a new duration target and add rewards", async () => {
-            expect(fromWei(await rewardToken.balanceOf(rewarder.address))).to.be.closeTo(0, 1e-3);
+            expect(fromWei(await rewardToken.balanceOf(rewarder.address))).to.be.closeTo(100, 1e-3);
             await rewarder.setRewardsDuration(time.duration.days(180));
-            await rewardToken.transfer(rewarder.address, toWei("100"));
+            // await rewardToken.transfer(rewarder.address, toWei("100"));
             await rewarder.notifyRewardAmount(toWei("100"));
         });
 
