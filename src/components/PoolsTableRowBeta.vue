@@ -29,7 +29,7 @@
 
       <div class="table__cell avalanche-boost" v-if="isAvalanche">
         <div class="avalanche-boost-unclaimed" v-if="pool.hasAvalancheBoost">
-          <LoadedValue :check="() => pool.unclaimed !== null" :value="(pool.hasAvalancheBoost ? pool.unclaimed: 0)"></LoadedValue>
+          <LoadedValue :check="() => pool.unclaimed !== null" :value="(pool.hasAvalancheBoost ? pool.unclaimed : 0) | smartRound(5, false)"></LoadedValue>
           <img class="asset__icon" v-if="pool.avalancheBoostRewardToken" :src="getAssetIcon(pool.avalancheBoostRewardToken)">
         </div>
       </div>
