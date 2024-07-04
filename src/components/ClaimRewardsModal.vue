@@ -15,7 +15,7 @@
         <span class="rewards__label">Rewards to claim:</span>
         <span class="rewards__value">
           <div class="rewards__reward-token" v-for="reward in totalRewards">
-            <img class="asset__icon" :src="getIcon(reward.symbol, tokensConfig[reward.symbol].logoExt)">
+            <img class="asset__icon" :src="getIcon(reward.symbol, tokensConfig[reward.symbol].logoExt ? tokensConfig[reward.symbol].logoExt : 'svg')">
             {{ formatTokenBalanceWithLessThan(reward.amount, 8, true) }} {{ reward.symbol }}
           </div>
         </span>
