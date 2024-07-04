@@ -78,7 +78,6 @@
       <div></div>
 
       <div class="table__cell actions">
-        here: {{pool.hasAvalancheBoost}}
         <IconButtonMenuBeta
           class="actions__icon-button"
           v-for="(actionConfig, index) of actionsConfig"
