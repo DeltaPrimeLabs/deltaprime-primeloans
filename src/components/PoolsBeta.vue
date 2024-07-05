@@ -54,7 +54,6 @@ export default {
   },
   async mounted() {
     await this.setupFiles();
-    this.setupPoolsTableHeaderConfig();
     this.initPools();
     this.watchPools();
     this.initStoresWhenProviderAndAccountCreated();
@@ -72,7 +71,7 @@ export default {
     };
   },
   computed: {
-    ...mapState('serviceRegistry', ['providerService', 'accountService', 'poolService', 'walletAssetBalancesService', 'lifiService', 'progressBarService']),
+    ...mapState('serviceRegistry', ['providerService', 'accountService', 'poolService', 'walletAssetBalancesService', 'lifiService', 'progressBarService', 'avalancheBoostService']),
     ...mapState('network', ['account', 'accountBalance', 'provider']),
     afterLaunchTime() {
       const now = new Date().getTime();
@@ -93,6 +92,7 @@ export default {
         .subscribe(async ([provider, account]) => {
           this.poolStoreSetup();
           this.sPrimeStoreSetup();
+          this.setupPoolsTableHeaderConfig();
         });
     },
 
@@ -118,8 +118,9 @@ export default {
       Object.entries(config.POOLS_CONFIG).forEach(([symbol, pool]) => {
         pools.push({
           asset: {
-            symbol: symbol
-          }
+            symbol: symbol,
+          },
+          hasAvalancheBoost: pool.hasAvalancheBoost
         });
       });
       this.poolsList = pools;
@@ -132,6 +133,34 @@ export default {
         this.setupTotalDeposit();
         this.$forceUpdate();
         this.setupWalletDepositAssetBalances(pools);
+        if (window.chain === 'avalanche') {
+          this.watchAvalancheBoostData();
+        }
+      });
+    },
+
+    watchAvalancheBoostData() {
+      this.avalancheBoostService.observeAvalancheBoostRates().subscribe(rates => {
+        const incentivizedPools = Object.keys(rates);
+        incentivizedPools.forEach(
+            poolAsset => {
+              const poolIndex = this.poolsList.findIndex(pool => pool.asset.symbol === poolAsset);
+              this.poolsList[poolIndex].hasAvalancheBoost =true;
+              this.poolsList[poolIndex].avalancheBoostRewardToken = config.AVALANCHE_BOOST_CONFIG[poolAsset].rewardToken;
+              let secondsInYear = 3600 * 24 * 365;
+              this.poolsList[poolIndex].miningApy = rates[poolAsset] * secondsInYear / (this.poolsList[poolIndex].tvl * this.poolsList[poolIndex].assetPrice);
+            }
+        );
+      });
+
+      this.avalancheBoostService.observeAvalancheBoostUnclaimed().subscribe(unclaimed => {
+        const incentivizedPools = Object.keys(unclaimed);
+        incentivizedPools.forEach(
+            poolAsset => {
+              const poolIndex = this.poolsList.findIndex(pool => pool.asset.symbol === poolAsset);
+              this.poolsList[poolIndex].unclaimed = unclaimed[poolAsset];
+            }
+        );
       });
     },
 
@@ -195,7 +224,7 @@ export default {
 
     setupPoolsTableHeaderConfig() {
       this.poolsTableHeaderConfig =
-        config.poolsUnlocking ?
+        window.chain === 'arbitrum' ?
           {
             gridTemplateColumns: 'repeat(3, 1fr) 140px 140px 140px 140px 90px 90px 22px',
             cells: [
@@ -262,7 +291,7 @@ export default {
           }
           :
           {
-            gridTemplateColumns: 'repeat(3, 1fr) 175px 150px 150px 90px 110px 22px',
+            gridTemplateColumns: 'repeat(3, 1fr) 135px 135px 135px 135px 70px 110px 22px',
             cells: [
               {
                 label: 'Asset',
@@ -277,6 +306,13 @@ export default {
                 sortable: false,
                 class: 'deposit',
                 id: 'DEPOSIT',
+              },
+              {
+                label: 'Rewards',
+                sortable: false,
+                class: 'deposit',
+                id: 'BOOST',
+                tooltip: `Your unclaimed rewards from the Boost Program`
               },
               {
                 label: 'sPRIME',
@@ -330,6 +366,7 @@ export default {
 
   .main-content {
     margin-top: 30px;
+    margin-bottom: 100px;
 
     .sprime-panel {
       margin-bottom: 30px;

@@ -65,6 +65,28 @@ export default {
     VESTING_CONTRACT_CONFIG: {
         address: "0x881fa171A7b5bf5c84d213043037ab867ce4688c"
     },
+    AVALANCHE_BOOST_CONFIG: {
+        AVAX: {
+            depositRewarderAddress: "0x6d149Fcc150A3B097D7647408345898fe9db1ded",
+            rewardToken: "sAVAX",
+            duration: 1209600
+        },
+        USDC: {
+            depositRewarderAddress: "0xB913aC229910d705297DEB1c168af3dA1416B227",
+            rewardToken: "ggAVAX",
+            duration: 1209600
+        },
+        USDT: {
+            depositRewarderAddress: "0x3750F8d6Df82699ada6bBd1463C4E91fCf37005D",
+            rewardToken: "sAVAX",
+            duration: 1209600
+        },
+        BTC: {
+            depositRewarderAddress: "0x50b0b59f14bA882BD511Fe08d1cdc975807a94A4",
+            rewardToken: "ggAVAX",
+            duration: 1209600
+        }
+    },
     WOMBAT_REWARDS_TOKENS: {
         "WOM": {name: "WOM", symbol: "WOM", logoExt: "png", decimals: 18, address: addresses.WOM},
     },
@@ -108,19 +130,23 @@ export default {
     POOLS_CONFIG: {
         AVAX: {
             address: WAVAX_POOL_TUP.address,
-            tokenAddress: addresses.AVAX
+            tokenAddress: addresses.AVAX,
+            hasAvalancheBoost: true
         },
         USDC: {
             address: USDC_POOL_TUP.address,
-            tokenAddress: addresses.USDC
+            tokenAddress: addresses.USDC,
+            hasAvalancheBoost: true
         },
         USDT: {
             address: USDT_POOL_TUP.address,
-            tokenAddress: addresses.USDT
+            tokenAddress: addresses.USDT,
+            hasAvalancheBoost: true
         },
         BTC: {
             address: BTC_POOL_TUP.address,
-            tokenAddress: addresses.BTC
+            tokenAddress: addresses.BTC,
+            hasAvalancheBoost: true
         },
         ETH: {
             address: ETH_POOL_TUP.address,

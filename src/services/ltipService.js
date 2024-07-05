@@ -68,7 +68,6 @@ export default class LtipService {
   }
 
   async updateLtipData(primeAccountAddress, arbPrice, dataRefreshEventService) {
-    console.log('updateLtipData');
     fetch(`${config.ltipAccountsLeaderboardEndpoint}?top=200&from=${config.ltipProgramStart}&to=${Math.floor(Date.now() / 1000)}`).then(
         res => res.json().then(
             json => {
