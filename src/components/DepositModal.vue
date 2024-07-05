@@ -55,9 +55,11 @@
                   <span class="currency">{{ assetSymbol }}</span>
                 </div>
                 +
-                <div class="summary__value">
-                  ≈ {{ calculateDailyMiningInterestInSPrime | smartRound(8, true) }}$
-                  <span class="currency">sPRIME</span>
+                <div class="summary__value" v-if="miningApy">
+                  ≈ ${{ calculateDailyMiningInterest | smartRound(8, true) }} in
+                  <span class="currency">{{ rewardToken }}
+                    <img class="asset__icon" :src="getAssetIcon(rewardToken)">
+                  </span>
                 </div>
               </div>
             </div>
@@ -108,6 +110,8 @@ export default {
     accountBalance: null,
     deposit: 0,
     assetSymbol: null,
+    miningApy: null,
+    rewardToken: null
   },
 
   data() {
@@ -131,16 +135,9 @@ export default {
     calculateDailyInterest() {
       return (this.apy) / 365 * (Number(this.deposit) + this.depositValue);
     },
-    calculateDailyMiningInterestInSPrime() {
-      console.log(this.pool);
+    calculateDailyMiningInterest() {
       return (this.miningApy) / 365 * (Number(this.deposit) + this.depositValue) * this.pool.assetPrice;
     },
-
-    miningApy() {
-      if (!this.pool || this.pool.tvl === 0) return 0;
-      return (config.chainId === 42161) ?  0 * 1000 * 365 / 4 / (this.pool.tvl * this.pool.assetPrice)
-          : 0 * Math.max((1 - this.pool.tvl * this.pool.assetPrice / 4000000) * 0.1, 0);
-      },
 
     getModalHeight() {
       return this.assetSymbol === config.nativeToken ? '561px' : null;
@@ -199,6 +196,13 @@ export default {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
+
+  .asset__icon {
+    cursor: pointer;
+    width: 20px;
+    height: 20px;
+    opacity: var(--asset-table-row__icon-opacity);
+  }
 
   .summary__value:last-child {
     margin-left: 5px;

@@ -51,8 +51,10 @@
                 </div>
                 +
                 <div class="summary__value">
-                  ≈ {{ calculateDailyMiningInterestInSPrime | smartRound(8, true) }}$
-                  <span class="currency">sPRIME</span>
+                  ≈ ${{ calculateDailyMiningInterest | smartRound(8, true) }} in
+                  <span class="currency">{{ rewardToken }}
+                    <img class="asset__icon" :src="getAssetIcon(rewardToken)">
+                  </span>
                 </div>
               </div>
             </div>
@@ -100,6 +102,8 @@ export default {
     available: null,
     deposit: null,
     assetSymbol: null,
+    miningApy: null,
+    rewardToken: null
   },
 
   data() {
@@ -125,7 +129,7 @@ export default {
         return 0;
       }
     },
-    calculateDailyMiningInterestInSPrime() {
+    calculateDailyMiningInterest() {
       if (this.withdrawValue <= Number(this.deposit)) {
         return (this.miningApy) / 365 * (Number(this.deposit) - this.withdrawValue) * this.pool.assetPrice;
       } else {
@@ -135,12 +139,6 @@ export default {
 
     getModalHeight() {
       return this.assetSymbol === 'AVAX' ? '561px' : null;
-    },
-
-    miningApy() {
-      if (!this.pool || this.pool.tvl === 0) return 0;
-      return (config.chainId === 42161) ?  0 * 1000 * 365 / 4 / (this.pool.tvl * this.pool.assetPrice)
-          : 0 * Math.max((1 - this.pool.tvl * this.pool.assetPrice / 4000000) * 0.1, 0);
     },
   },
 

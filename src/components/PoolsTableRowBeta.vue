@@ -320,6 +320,14 @@ export default {
       modalInstance.accountBalance = this.accountBalance;
       modalInstance.deposit = this.pool.deposit;
       modalInstance.assetSymbol = this.pool.asset.symbol;
+      modalInstance.miningApy = this.pool.miningApy;
+      modalInstance.rewardToken = this.pool.avalancheBoostRewardToken;
+
+      console.log('pool: ', this.pool)
+      console.log('this.pool.miningApy: ', this.pool.miningApy)
+      console.log('modalInstance.miningApy: ', modalInstance.miningApy)
+      console.log('modalInstance.rewardToken: ', modalInstance.rewardToken)
+
       modalInstance.$on('DEPOSIT', depositEvent => {
         const depositRequest = {
           assetSymbol: this.pool.asset.symbol,
