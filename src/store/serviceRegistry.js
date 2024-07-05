@@ -29,6 +29,7 @@ import GgpIncentivesService from "../services/ggpIncentivesService";
 import sPrimeService from "../services/sPrimeService";
 import vPrimeService from "../services/vPrimeService";
 import GlobalActionsDisableService from "../services/globalActionsDisableService";
+import AvalancheBoostService from '../services/avalancheBoostService';
 
 export default {
   namespaced: true,
@@ -64,5 +65,6 @@ export default {
     sPrimeService: new sPrimeService(),
     vPrimeService: new vPrimeService(),
     globalActionsDisableService: new GlobalActionsDisableService(),
+    avalancheBoostService: new AvalancheBoostService(),
   },
 };
