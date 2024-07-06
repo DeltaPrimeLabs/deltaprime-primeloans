@@ -20,6 +20,9 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         `AssetsOperationsAvalancheFacet implementation deployed at address: ${AssetsOperationsAvalancheFacet.address}`
     );
 
+    // sleep 5 seconds
+    await new Promise(r => setTimeout(r, 5000));
+
     await verifyContract(hre,
         {
             address: AssetsOperationsAvalancheFacet.address,
