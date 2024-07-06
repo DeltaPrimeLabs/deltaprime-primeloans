@@ -57,7 +57,7 @@
                 +
                 <div class="summary__value" v-if="miningApy">
                   ≈ ${{ calculateDailyMiningInterest | smartRound(8, true) }} in
-                  <span class="currency">{{ rewardToken }}
+                  <span class="currency" v-if="rewardToken">{{ rewardToken }}
                     <img class="asset__icon" :src="getAssetIcon(rewardToken)">
                   </span>
                 </div>

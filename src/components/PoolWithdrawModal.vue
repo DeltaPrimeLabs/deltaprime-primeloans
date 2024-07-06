@@ -7,7 +7,7 @@
 
       <div class="modal-top-info">
         <div class="top-info__label">APY:</div>
-        <div class="top-info__value">{{ apy + miningApy | percent }}</div>
+        <div class="top-info__value">{{ apy + (miningApy ? miningApy : 0) | percent }}</div>
         <div class="top-info__divider"></div>
         <div class="top-info__label">Deposit:</div>
         <div class="top-info__value">{{ deposit | smartRound }}<span class="top-info__currency">{{ assetSymbol }}</span></div>
@@ -52,7 +52,7 @@
                 +
                 <div class="summary__value">
                   ≈ ${{ calculateDailyMiningInterest | smartRound(8, true) }} in
-                  <span class="currency">{{ rewardToken }}
+                  <span class="currency" v-if="rewardToken">{{ rewardToken }}
                     <img class="asset__icon" :src="getAssetIcon(rewardToken)">
                   </span>
                 </div>
