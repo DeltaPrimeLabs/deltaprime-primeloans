@@ -79,6 +79,10 @@ contract TokenListOwnableUpgreadable is OwnableUpgradeable {
         // Move last address token to the `tokenToRemoveIndex` position (index of an asset that is being removed) in the address[] whitelistedTokensList
         // and update map(address=>uint256) tokenPostitionInList if the token is not already the last element
         uint256 tokenToRemoveIndex = tokenPositionInList[tokenToRemove];
+        require(tokenToRemoveIndex < whitelistedTokensList.length, "Index out of range");
+        if (tokenToRemoveIndex == 0 && whitelistedTokensList[0] != tokenToRemove) {
+            revert("Token does not exist");
+        }
         if (tokenToRemoveIndex != (whitelistedTokensList.length - 1)) {
             address currentLastToken = whitelistedTokensList[whitelistedTokensList.length - 1];
             tokenPositionInList[currentLastToken] = tokenToRemoveIndex;

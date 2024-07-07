@@ -174,8 +174,8 @@ contract ParaSwapFacet is ReentrancyGuardKeccak, SolvencyMethods {
                 swapTokensDetails.soldToken.balanceOf(address(this));
 
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        _decreaseExposure(tokenManager, fromToken, soldTokenFinalAmount);
-        _increaseExposure(tokenManager, toToken, boughtTokenFinalAmount);
+        _decreaseExposure(tokenManager, address(swapTokensDetails.soldToken), soldTokenFinalAmount);
+        _increaseExposure(tokenManager, address(swapTokensDetails.boughtToken), boughtTokenFinalAmount);
 
         emit Swap(
             msg.sender,

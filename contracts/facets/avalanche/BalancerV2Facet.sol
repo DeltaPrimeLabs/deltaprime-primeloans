@@ -58,6 +58,7 @@ contract BalancerV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent, IBalanc
                 if (request.stakedAmounts[i] > 0) {
                     IERC20 depositToken = IERC20Metadata(request.stakedTokens[i]);
                     initialDepositTokenBalances[i] = depositToken.balanceOf(address(this));
+                    request.stakedAmounts[i] = Math.min(request.stakedAmounts[i], initialDepositTokenBalances[i]);
                 }
             }
 

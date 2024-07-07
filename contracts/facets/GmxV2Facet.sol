@@ -77,7 +77,8 @@ abstract contract GmxV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             })
         );
 
-        IERC20(depositedToken).approve(getGmxV2Router(), tokenAmount);
+        depositedToken.safeApprove(getGmxV2Router(), 0);
+        depositedToken.safeApprove(getGmxV2Router(), tokenAmount);
         BasicMulticall(getGmxV2ExchangeRouter()).multicall{ value: msg.value }(data);
 
         // Simulate solvency check
@@ -93,7 +94,7 @@ abstract contract GmxV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
                 minGmAmount * gmTokenUsdPrice / 10**IERC20Metadata(gmToken).decimals())                                                // Output Amount In USD
             , "Invalid min output value");
 
-            uint256 gmTokensWeightedUsdValue = gmTokenUsdPrice * minGmAmount * tokenManager.debtCoverage(gmToken) / 1e26;
+            uint256 gmTokensWeightedUsdValue = gmTokenUsdPrice * minGmAmount * tokenManager.debtCoverage(gmToken) / (10**IERC20Metadata(gmToken).decimals() * 1e8);
             require((_getThresholdWeightedValuePayable() + gmTokensWeightedUsdValue) > _getDebtPayable(), "The action may cause the account to become insolvent");
         }
 
@@ -159,7 +160,7 @@ abstract contract GmxV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
         // Simulate solvency check
         if(msg.sender == DiamondStorageLib.contractOwner()){    // Only owner can call this method or else it's liquidator when the account is already insolvent
-            uint256[] memory tokenPrices = new uint256[](2);
+            uint256[] memory tokenPrices;
 
             {
                 bytes32[] memory tokenSymbols = new bytes32[](3);
@@ -175,10 +176,10 @@ abstract contract GmxV2Facet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             , "Invalid min output value");
             
             uint256 receivedTokensWeightedUsdValue = (
-                (tokenPrices[0] * minLongTokenAmount * tokenManager.debtCoverage(longToken) * 1e18 / 10**IERC20Metadata(longToken).decimals()) +
-                (tokenPrices[1] * minShortTokenAmount * tokenManager.debtCoverage(shortToken) * 1e18 / 10**IERC20Metadata(shortToken).decimals())
+                (tokenPrices[0] * minLongTokenAmount * tokenManager.debtCoverage(longToken) / 10**IERC20Metadata(longToken).decimals()) +
+                (tokenPrices[1] * minShortTokenAmount * tokenManager.debtCoverage(shortToken) / 10**IERC20Metadata(shortToken).decimals())
             )
-            / 1e26;
+            / 1e8;
             require((_getThresholdWeightedValuePayable() + receivedTokensWeightedUsdValue) > _getDebtPayable(), "The action may cause the account to become insolvent");
         }
 

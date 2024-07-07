@@ -32,6 +32,8 @@ library DeploymentConstants {
 
     address private constant _STABILITY_POOL_ADDREESS = 0x6B9836D18978a2e865A935F12F4f958317DA4619;
 
+    address private constant _FEES_REDISTRIBUTION_ADDREESS = 0x5e7d3d4F744378C2259bb6C52fbF247be473860D;
+
     //implementation-specific
 
     function getPercentagePrecision() internal pure returns (uint256) {
@@ -72,6 +74,10 @@ library DeploymentConstants {
 
     function getStabilityPoolAddress() internal pure returns (address) {
         return _STABILITY_POOL_ADDREESS;
+    }
+
+    function getFeesRedistributionAddress() internal pure returns (address) {
+        return _FEES_REDISTRIBUTION_ADDREESS;
     }
 
     /**
