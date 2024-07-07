@@ -1,15 +1,18 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 227c8d64bf72d43dcc66ab215e3d28968f36f4f1;
+// Last deployed from commit: ;
 pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./interfaces/IDepositRewarder.sol";
 
-contract DepositRewarder is IDepositRewarder, Ownable, ReentrancyGuard {
+abstract contract DepositRewarderAbstract is
+    IDepositRewarder,
+    Ownable,
+    ReentrancyGuard
+{
     using SafeERC20 for IERC20;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -17,7 +20,7 @@ contract DepositRewarder is IDepositRewarder, Ownable, ReentrancyGuard {
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     /// @notice Pool address
-    address public pool;
+    address public immutable pool;
 
     /// @notice Duration of rewards to be paid out (in seconds)
     uint256 public duration;
@@ -72,10 +75,13 @@ contract DepositRewarder is IDepositRewarder, Ownable, ReentrancyGuard {
         uint256 timestamp
     );
 
-    event BatchDeposited(
-        address[] accounts,
-        uint256 timestamp
-    );
+    event BatchDeposited(address[] accounts, uint256 timestamp);
+
+    event RewardsDurationUpdated(uint256 duration);
+
+    event RewardAdded(uint256 reward);
+
+    event RewardPaid(address indexed account, uint256 reward);
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                       MODIFIERS                                           //
@@ -131,6 +137,7 @@ contract DepositRewarder is IDepositRewarder, Ownable, ReentrancyGuard {
         uint256 length = accounts.length;
         for (uint256 i; i != length; ++i) {
             address account = accounts[i];
+            rewards[account] = earned(account);
             uint256 balance = IERC20(pool).balanceOf(account);
             uint256 oldBalance = balanceOf[account];
             balanceOf[account] = balance;
@@ -144,7 +151,7 @@ contract DepositRewarder is IDepositRewarder, Ownable, ReentrancyGuard {
     function stakeFor(
         uint256 amount,
         address account
-    ) external onlyPool updateReward(account) {
+    ) external nonReentrant onlyPool updateReward(account) {
         balanceOf[account] += amount;
         totalSupply += amount;
 
@@ -154,8 +161,8 @@ contract DepositRewarder is IDepositRewarder, Ownable, ReentrancyGuard {
     function withdrawFor(
         uint256 amount,
         address account
-    ) external onlyPool updateReward(account) returns (uint256) {
-        amount = Math.min(balanceOf[account], amount);
+    ) external nonReentrant onlyPool updateReward(account) returns (uint256) {
+        amount = balanceOf[account] < amount ? balanceOf[account] : amount;
 
         balanceOf[account] -= amount;
         totalSupply -= amount;
@@ -172,43 +179,13 @@ contract DepositRewarder is IDepositRewarder, Ownable, ReentrancyGuard {
             rewards[_account];
     }
 
-    function getRewardsFor(
-        address payable _user
-    ) external nonReentrant updateReward(_user) {
-        uint256 reward = rewards[_user];
-        if (reward > 0) {
-            rewards[_user] = 0;
-            (bool sent, ) = _user.call{value: reward}("");
-            require(sent, "Failed to send native token");
-        }
-    }
+    function getRewardsFor(address payable _user) external virtual;
 
     function setRewardsDuration(uint256 _duration) external onlyOwner {
         require(finishAt < block.timestamp, "reward duration not finished");
         duration = _duration;
-    }
 
-    function notifyRewardAmount()
-        external
-        payable
-        onlyOwner
-        updateReward(address(0))
-    {
-        if (block.timestamp >= finishAt) {
-            rewardRate = msg.value / duration;
-        } else {
-            uint256 remainingRewards = (finishAt - block.timestamp) * rewardRate;
-            rewardRate = (msg.value + remainingRewards) / duration;
-        }
-
-        require(rewardRate > 0, "reward rate = 0");
-        require(
-            rewardRate * duration <= address(this).balance,
-            "reward amount > balance"
-        );
-
-        finishAt = block.timestamp + duration;
-        updatedAt = block.timestamp;
+        emit RewardsDurationUpdated(_duration);
     }
 
     function _min(uint256 x, uint256 y) private pure returns (uint256) {
