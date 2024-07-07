@@ -9,14 +9,15 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deployer, admin } = await getNamedAccounts();
 
     const ARBITRUM_OWNER_MULTISIG = "0xDfA6706FC583b635CD6daF0E3915901A2fBaBAaD";
-    const MINIMUM_DELAY = 24 * 60 * 60; // 1 day
+    const ARBITRUM_COL_MULTISIG = "<PENDING>";
+    const INITIAL_DELAY = 60 * 5; // 5 minutes
 
     let TimeLock = await deploy("Timelock", {
         from: deployer,
         gasLimit: 100000000,
         args: [
             ARBITRUM_OWNER_MULTISIG,
-            MINIMUM_DELAY,
+            INITIAL_DELAY,
         ],
     });
 
@@ -31,7 +32,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
             contract: `contracts/TimeLock.sol:Timelock`,
             constructorArguments: [
                 ARBITRUM_OWNER_MULTISIG,
-                MINIMUM_DELAY,
+                INITIAL_DELAY,
             ]
         });
     console.log(`Verified TimeLock`);

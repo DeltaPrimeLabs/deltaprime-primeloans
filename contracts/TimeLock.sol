@@ -14,7 +14,7 @@ contract Timelock {
     event QueueTransaction(bytes32 indexed txHash, address indexed target, uint value, string signature, bytes data, uint eta);
 
     uint public constant GRACE_PERIOD = 7 days;
-    uint public constant MINIMUM_DELAY = 1 days;
+    uint public constant MINIMUM_DELAY = 5 minutes;
     uint public constant MAXIMUM_DELAY = 30 days;
 
     address public admin;
@@ -36,6 +36,7 @@ contract Timelock {
 
     function setDelay(uint delay_) public {
         require(msg.sender == address(this), "Timelock::setDelay: Call must come from Timelock.");
+        require(delay_ >= delay, "Timelock::setDelay: New Delay must be higher than current delay.");
         require(delay_ >= MINIMUM_DELAY, "Timelock::setDelay: Delay must exceed minimum delay.");
         require(delay_ <= MAXIMUM_DELAY, "Timelock::setDelay: Delay must not exceed maximum delay.");
         delay = delay_;
