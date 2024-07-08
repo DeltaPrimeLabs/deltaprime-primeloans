@@ -500,34 +500,37 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     * @param lockPeriods Lock period to Lock for each amount
     * @param amountX The amount of token X to deposit.
     * @param amountY The amount of token Y to deposit.
+    * @param idSlippage Bin id slippage from the active id.
     */
-    function mintForUserAndLock(address user, uint256[] calldata percentForLocks, uint256[] calldata lockPeriods, uint256 amountX, uint256 amountY) public nonReentrant {
+    function mintForUserAndLock(address user, uint256[] calldata percentForLocks, uint256[] calldata lockPeriods, uint256 amountX, uint256 amountY, uint256 idSlippage) public onlyOwner nonReentrant {
         uint256 activeId = lbPair.getActiveId();
 
-        require(balanceOf(user) == 0, "User already has position");
         require(percentForLocks.length == lockPeriods.length, "Length dismatch");
-
-        _transferTokens(_msgSender(), address(this), amountX, amountY);
-        _deposit(user, activeId, 0, amountX, amountY, false, _MAX_SLIPPAGE);
         
-        uint256 totalLock;
-        for(uint8 i = 0 ; i < lockPeriods.length ; i ++) {
-            totalLock += percentForLocks[i];
-        }
-        require(totalLock == 100, "Should lock all");
-
-        uint256 balance = balanceOf(user);
-        totalLock = 0;
-        for(uint8 i = 0 ; i < lockPeriods.length ; i ++) {
-            require(lockPeriods[i] <= MAX_LOCK_TIME, "Cannot lock for more than 3 years");
-            // Should minus from total balance to avoid the round issue
-            uint256 amount = i == lockPeriods.length - 1 ? balance - totalLock : balance * percentForLocks[i] / 100;
-            locks[user].push(LockDetails({
-                lockPeriod: lockPeriods[i],
-                amount: amount,
-                unlockTime: block.timestamp + lockPeriods[i]
-            }));
-            totalLock += amount;
+        uint256 oldBalance = balanceOf(user);
+        _transferTokens(_msgSender(), address(this), amountX, amountY);
+        _deposit(user, activeId, idSlippage, amountX, amountY, true, _MAX_SLIPPAGE);
+        
+        if(balanceOf(user) > oldBalance) {
+            uint256 totalLock;
+            for(uint8 i = 0 ; i < lockPeriods.length ; i ++) {
+                totalLock += percentForLocks[i];
+            }
+            require(totalLock == 100, "Should lock all");
+            
+            uint256 balance = balanceOf(user) - oldBalance;
+            totalLock = 0;
+            for(uint8 i = 0 ; i < lockPeriods.length ; i ++) {
+                require(lockPeriods[i] <= MAX_LOCK_TIME, "Cannot lock for more than 3 years");
+                // Should minus from total balance to avoid the round issue
+                uint256 amount = i == lockPeriods.length - 1 ? balance - totalLock : balance * percentForLocks[i] / 100;
+                locks[user].push(LockDetails({
+                    lockPeriod: lockPeriods[i],
+                    amount: amount,
+                    unlockTime: block.timestamp + lockPeriods[i]
+                }));
+                totalLock += amount;
+            }
         }
 
         notifyVPrimeController(user);

@@ -446,6 +446,7 @@ contract sPrimeUniswap is
         _transferTokens(_msgSender(), address(this), amountX, amountY);
 
         _deposit(
+            _msgSender(),
             tickDesired,
             tickSlippage,
             amountX,
@@ -456,6 +457,7 @@ contract sPrimeUniswap is
     }
 
     function _deposit(
+        address user,
         int24 tickDesired,
         int24 tickSlippage,
         uint256 amountX,
@@ -471,8 +473,7 @@ contract sPrimeUniswap is
         int24 tickLower;
         int24 tickUpper;
 
-        address msgSender = _msgSender();
-        uint256 tokenId = userTokenId[msgSender];
+        uint256 tokenId = userTokenId[user];
         if (tokenId > 0) {
             uint128 liquidity;
             (, , , , , tickLower, tickUpper, liquidity, , , , ) = positionManager.positions(tokenId);
@@ -496,17 +497,17 @@ contract sPrimeUniswap is
                 if(getToken0() != tokenX) {
                     (amountXBefore, amountYBefore) = (amountYBefore, amountXBefore);
                 }
-                _burn(msgSender, balanceOf(msgSender));
+                _burn(user, balanceOf(user));
                 positionManager.burn(tokenId);
 
-                delete userTokenId[msgSender];
+                delete userTokenId[user];
 
                 (amountX, amountY) = (amountX + amountXBefore, amountY + amountYBefore);
             }
         }
         (amountX, amountY) = _swapForEqualValues(amountX, amountY, swapSlippage);
 
-        if (userTokenId[msgSender] == 0) {
+        if (userTokenId[user] == 0) {
             (, currenTick, , , , , ) = pool.slot0();
             currenTick = convertToNearestTickSpacingMultiple(currenTick);
             if (!(tickDesired + tickSlippage >= currenTick && currenTick + tickSlippage >= tickDesired)) {
@@ -515,9 +516,9 @@ contract sPrimeUniswap is
             tickLower = currenTick - tickSpacing * deltaId;
             tickUpper = currenTick + tickSpacing * deltaId;
         }
-        _depositToUniswap(msgSender, tickLower, tickUpper, amountX, amountY);
+        _depositToUniswap(user, tickLower, tickUpper, amountX, amountY);
 
-        notifyVPrimeController(msgSender);
+        notifyVPrimeController(user);
     }
 
     function convertToNearestTickSpacingMultiple(int24 tick) internal view returns (int24) {
@@ -587,48 +588,45 @@ contract sPrimeUniswap is
      * @param lockPeriods Lock period to Lock for each amount
      * @param amountX The amount of token X to deposit.
      * @param amountY The amount of token Y to deposit.
+     * @param tickSlippage Tick slippage from the current tick.
      */
     function mintForUserAndLock(
         address user,
         uint256[] calldata percentForLocks,
         uint256[] calldata lockPeriods,
         uint256 amountX,
-        uint256 amountY
-    ) public nonReentrant {
+        uint256 amountY,
+        int24 tickSlippage
+    ) public onlyOwner nonReentrant {
         address msgSender = _msgSender();
         _transferTokens(msgSender, address(this), amountX, amountY);
 
-        if (balanceOf(user) != 0) {
-            revert ReceiverAlreadyHasPosition();
-        }
-        uint256 length = lockPeriods.length;
-        if (percentForLocks.length != length) {
+        if (percentForLocks.length != lockPeriods.length) {
             revert LengthMismatch();
         }
 
-        (amountX, amountY) = _swapForEqualValues(amountX, amountY, _MAX_SLIPPAGE);
-
+        uint256 oldBalance = balanceOf(user);
         {
             (, int24 currenTick, , , , , ) = pool.slot0();
-            currenTick = convertToNearestTickSpacingMultiple(currenTick);
-            _depositToUniswap(
-                user,
-                currenTick - tickSpacing * deltaId,
-                currenTick + tickSpacing * deltaId,
-                amountX,
-                amountY
-            );
+            _deposit(user, currenTick, tickSlippage, amountX, amountY, true, _MAX_SLIPPAGE);
+        }
+        
+        if(balanceOf(user) > oldBalance) {
+            lockForUser(user, balanceOf(user) - oldBalance, percentForLocks, lockPeriods);
         }
 
+        notifyVPrimeController(user);
+    }
+
+    function lockForUser(address user, uint256 balance, uint256[] calldata percentForLocks, uint256[] calldata lockPeriods) internal {
         uint256 totalLock;
+        uint256 length = lockPeriods.length;
         for (uint8 i; i != length; ++i) {
             totalLock += percentForLocks[i];
         }
         if (totalLock != 100) {
             revert TotalLockMismatch();
         }
-
-        uint256 balance = balanceOf(user);
         totalLock = 0;
         for (uint8 i; i != length; ++i) {
             if (lockPeriods[i] > MAX_LOCK_TIME) {
@@ -647,8 +645,6 @@ contract sPrimeUniswap is
             );
             totalLock += amount;
         }
-
-        notifyVPrimeController(user);
     }
 
     function positionManagerCollect(
@@ -703,7 +699,7 @@ contract sPrimeUniswap is
             (amountX, amountY) = (amountY, amountX);
         }
         positionManager.burn(tokenId);
-        _deposit(tickDesired, tickSlippage, amountX, amountY, true, swapSlippage);
+        _deposit(_msgSender(), tickDesired, tickSlippage, amountX, amountY, true, swapSlippage);
     }
 
     /**
