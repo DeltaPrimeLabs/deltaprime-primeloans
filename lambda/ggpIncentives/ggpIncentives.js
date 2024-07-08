@@ -108,8 +108,7 @@ const getEligibleTvl = async (batchLoanAddresses, network, provider) => {
 const ggpIncentives = async (network = 'avalanche', rpc = 'first') => {
   const now = Math.floor(Date.now() / 1000);
   const incentivesPerWeek = 125;
-  // const incentivesMultiplier = await getIncentivesMultiplier(now);
-  const incentivesMultiplier = 1;
+  const incentivesMultiplier = await getIncentivesMultiplier(now);
 
   if (incentivesMultiplier == 0) return;
 
