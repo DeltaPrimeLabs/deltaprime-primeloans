@@ -458,21 +458,19 @@ const traderJoeApyAggregator = async (event) => {
         const apy = (await (await stats[3].getProperty('textContent')).jsonValue()).replace('%', '');
         console.log(pool, apy);
 
-        if (Number(apy)) {
-          const params = {
-            TableName: process.env.APY_TABLE,
-            Key: {
-              id: pool
-            },
-            AttributeUpdates: {
-              lp_apy: {
-                Value: apy / 100,
-                Action: "PUT"
-              }
+        const params = {
+          TableName: process.env.APY_TABLE,
+          Key: {
+            id: pool
+          },
+          AttributeUpdates: {
+            lp_apy: {
+              Value: apy == 'NaN' ? 0 : apy / 100,
+              Action: "PUT"
             }
-          };
-          await dynamoDb.update(params).promise();
-        }
+          }
+        };
+        await dynamoDb.update(params).promise();
 
         await new Promise((resolve, reject) => setTimeout(resolve, 15000));
       } catch (error) {
