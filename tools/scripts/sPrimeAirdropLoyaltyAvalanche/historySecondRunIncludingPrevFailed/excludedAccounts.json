@@ -1,0 +1,26 @@
+{
+  "0x024b14d4054988600e0c1a35e46b5df40157fd59": {
+    "amount": 10184.920724920768,
+    "isExcluded": true
+  },
+  "0x41968d7d9f6bf70a614724fd03dcedbe070366a5": {
+    "amount": 381.0148482509537,
+    "isExcluded": true
+  },
+  "0x68d8108f6fb797e7eb0c8d9524ba08d98bf27bcb": {
+    "amount": 1392.5934901710148,
+    "isExcluded": true
+  },
+  "0xb97d7c44ca03aba8d41fdac81683312e4acbba00": {
+    "amount": 278.64456657052,
+    "isExcluded": true
+  },
+  "0xfe55d3ef39a25e55818e1a3900d41f561a75f4ea": {
+    "amount": 2600.569287033142,
+    "isExcluded": true
+  },
+  "0x701792a64cea365a2cbd8e3f2e544654dc3307ef": {
+    "amount": 498.06059190236704,
+    "isExcluded": true
+  }
+}

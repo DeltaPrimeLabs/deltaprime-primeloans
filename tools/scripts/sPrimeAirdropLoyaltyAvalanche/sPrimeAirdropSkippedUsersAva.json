@@ -1,0 +1,51 @@
+[
+    {
+        "address": "0xf7a126836b6bce497ba482590ccab5f960ae5cec",
+        "balance": {
+            "type": "BigNumber",
+            "hex": "0x056822f03ac1"
+        }
+    },
+    {
+        "address": "0xf5839106297527be62d88d6b4252692eaeb46e9d",
+        "balance": {
+            "type": "BigNumber",
+            "hex": "0xd548f5fb1bc7d3c7"
+        }
+    },
+    {
+        "address": "0x7ac6df8264dc34aae8c7f7f856b931b6310ad2cb",
+        "balance": {
+            "type": "BigNumber",
+            "hex": "0x6c2668fe03"
+        }
+    },
+    {
+        "address": "0x003e3336764de10a898916b84c626b69d7294339",
+        "balance": {
+            "type": "BigNumber",
+            "hex": "0x038bacfb7c5fff"
+        }
+    },
+    {
+        "address": "0x21b5a65bd089ecd956bc6e282ebac365ea263443",
+        "balance": {
+            "type": "BigNumber",
+            "hex": "0x0df33f789e521938"
+        }
+    },
+    {
+        "address": "0x984e9bdb460ab87d0b3dddfa00ca83955c5d4fa0",
+        "balance": {
+            "type": "BigNumber",
+            "hex": "0x106324c6cef2ba73"
+        }
+    },
+    {
+        "address": "0x0bf23d8837de5e8f4535aeccfc4c9c82d76b1441",
+        "balance": {
+            "type": "BigNumber",
+            "hex": "0xceeb631ac1e652b6"
+        }
+    }
+]

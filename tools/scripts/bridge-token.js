@@ -49,7 +49,7 @@ async function bridgeTokens(networkName) {
     let defaultAdapterParams = ethers.utils.solidityPack(["uint16", "uint256"], [1, 200000])
 
     const receiverBytes32 = ethers.utils.defaultAbiCoder.encode(["address"], [recipientAddress])
-    const amountToSend =  toWei("42463.97368");
+    const amountToSend =  toWei("39426");
     const destinationChain = arbitrumChainId;  // In case of Avalanche it should be 110
     const bridgeContract = new ethers.Contract(bridgeContractAddress, PrimeBridgeArtifact.abi, wallet);
     const primeTokenContract = new ethers.Contract(primeTokenAddress, IERC20ApproveAbi, wallet);
