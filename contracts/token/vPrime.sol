@@ -23,6 +23,10 @@ contract vPrime is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable {
     mapping(address => Checkpoint[]) private _checkpoints; // _checkpoints[address(this)] serves as a total supply checkpoint
     mapping(address => bool) public needsUpdate; // Account needs balance recalculating
 
+    constructor() {
+        _disableInitializers();
+    }
+
     /* ========== INITIALIZER ========== */
 
     function initialize(IBorrowersRegistry _borrowersRegistry) external initializer {

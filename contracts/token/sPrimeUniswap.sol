@@ -58,6 +58,11 @@ contract sPrimeUniswap is
     
     address private implementation;
     address public operator;
+
+    constructor() {
+        _disableInitializers();
+    }
+
     /**
      * @dev Initializer of the contract.
      * @param tokenX_ The address of the token X.

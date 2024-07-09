@@ -53,6 +53,10 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
 
     address public operator;
 
+    constructor() {
+        _disableInitializers();
+    }
+
     /**
     * @dev initialize of the contract.
     * @param tokenX_ The address of the token X.
