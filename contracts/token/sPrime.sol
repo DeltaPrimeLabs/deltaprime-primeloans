@@ -595,10 +595,10 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
             positionManager.burn(tokenId);
         }
 
-        _burn(_msgSender(), share);
-
         // Send the tokens to the user.
         _transferTokens(address(this), _msgSender(), amountX, amountY);
+
+        _burn(_msgSender(), share);
 
         notifyVPrimeController(_msgSender());
     }
