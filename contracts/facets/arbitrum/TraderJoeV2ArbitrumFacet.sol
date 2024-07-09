@@ -5,7 +5,7 @@ import "../TraderJoeV2Facet.sol";
 
 contract TraderJoeV2ArbitrumFacet is TraderJoeV2Facet {
     function maxBinsPerPrimeAccount() public pure override returns (uint256) {
-        return 200;
+        return 300;
     }
 
     function getWhitelistedTraderJoeV2Pairs() internal pure override returns (ILBPair[] memory pools) {
