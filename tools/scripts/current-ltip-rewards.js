@@ -118,14 +118,39 @@ async function checkCollected() {
     console.log(`Number of loans: ${res.length}. Total ARB collected in: ${sum}`)
 }
 
+function createAddJson(files, output) {
+    let outputJson = {};
 
-//last distribution timestamp: 1719234231
-//current distribution timestamp: 1720013265
-// fetchData("LTIP_EPOCH-test", 1719234231, Math.ceil(Date.now()/1000), 10000, true)
+    let collectedArb = 0;
+
+    files.forEach(
+        file => {
+            let json = JSON.parse(fs.readFileSync(`src/data/arbitrum/ltip/${file}.json`));
+
+            Object.entries(json).forEach(
+                ([k,v]) => {
+                    outputJson[k] = (json[k] ? json[k] : 0) + (outputJson[k] ? outputJson[k] : 0)
+                    collectedArb += outputJson[k];
+                }
+            )
+        }
+    )
+
+    fs.writeFileSync(`src/data/arbitrum/ltip/${output}.json`, JSON.stringify(outputJson))
+
+    console.log('distributed ARB in in these jsons: ', collectedArb)
+
+}
+
+
+//last distribution timestamp: 1720013265
+//current distribution timestamp: 1720517683
+fetchData("LTIP_EPOCH_5", 1720013265, 1720517683, 10000, false)
+// fetchData("LTIP_EPOCH_5_TOTAL_4", 1720013265, 1720521317, 10000, false)
 // fetchData("LTIP_EPOCH-test", 1719234231, 1720013265, 10000, true)
 // checkNegativeAccounts()
 // checkCollectedInTimestamp(1715152203)
 // checkCollected();
-// createDiffJson( "LTIP_EPOCH_3", "LTIP_EPOCH_4", "arbitrum/ltip")
-// createAddJson( "GM_EPOCH_8", "GM_EPOCH_9_diff", "GM_EPOCH_9")
-// analyzeJson("LTIP_EPOCH_4")
+// createDiffJson( "LTIP_EPOCH_4_TOTAL", "LTIP_EPOCH_5_TOTAL", "arbitrum/ltip")
+// createAddJson( ["LTIP_EPOCH_0", "LTIP_EPOCH_1", "LTIP_EPOCH_2", "LTIP_EPOCH_3", "LTIP_EPOCH_4"], "LTIP_EPOCH_4_TOTAL")
+// analyzeJson("LTIP_EPOCH_4_TOTAL")
