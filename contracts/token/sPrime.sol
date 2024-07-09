@@ -51,6 +51,8 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     // Arrays for storing deltaIds and distributions
     DepositForm[] private depositForm;
 
+    address public operator;
+
     /**
     * @dev initialize of the contract.
     * @param tokenX_ The address of the token X.
@@ -83,8 +85,19 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
         positionManager = positionManager_;
     }
 
+    modifier onlyOperator() {
+        require(_msgSender() == operator, "Access Denied");
+        _;
+    }
+
     function setVPrimeControllerAddress(IVPrimeController _vPrimeController) public onlyOwner {
         vPrimeController = _vPrimeController;
+    }
+
+    function setOperator(
+        address _operator
+    ) public onlyOwner {
+        operator = _operator;
     }
 
     /** Public View Functions */
@@ -502,7 +515,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     * @param amountY The amount of token Y to deposit.
     * @param idSlippage Bin id slippage from the active id.
     */
-    function mintForUserAndLock(address user, uint256[] calldata percentForLocks, uint256[] calldata lockPeriods, uint256 amountX, uint256 amountY, uint256 idSlippage) public onlyOwner nonReentrant {
+    function mintForUserAndLock(address user, uint256[] calldata percentForLocks, uint256[] calldata lockPeriods, uint256 amountX, uint256 amountY, uint256 idSlippage) public onlyOperator nonReentrant {
         uint256 activeId = lbPair.getActiveId();
 
         require(percentForLocks.length == lockPeriods.length, "Length dismatch");
@@ -664,7 +677,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
         }
     }
 
-    function containsOracleCalldata() public view returns (bool) {
+    function containsOracleCalldata() public pure returns (bool) {
         // Checking if the calldata ends with the RedStone marker
         bool hasValidRedstoneMarker;
         assembly {

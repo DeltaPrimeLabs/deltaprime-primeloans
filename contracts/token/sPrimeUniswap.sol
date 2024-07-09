@@ -57,6 +57,7 @@ contract sPrimeUniswap is
     bool public tokenSequence;
     
     address private implementation;
+    address public operator;
     /**
      * @dev Initializer of the contract.
      * @param tokenX_ The address of the token X.
@@ -106,10 +107,23 @@ contract sPrimeUniswap is
         deltaId = deltaId_;
     }
 
+    modifier onlyOperator() {
+        if(_msgSender() != operator) {
+            revert AccessDenied();
+        }
+        _;
+    }
+
     function setVPrimeControllerAddress(
         IVPrimeController _vPrimeController
     ) public onlyOwner {
         vPrimeController = _vPrimeController;
+    }
+
+    function setOperator(
+        address _operator
+    ) public onlyOwner {
+        operator = _operator;
     }
 
     function setImplementation(
@@ -572,7 +586,7 @@ contract sPrimeUniswap is
         uint256 amountX,
         uint256 amountY,
         int24 tickSlippage
-    ) public onlyOwner nonReentrant {
+    ) public onlyOperator nonReentrant {
         address msgSender = _msgSender();
         _transferTokens(msgSender, address(this), amountX, amountY);
 
@@ -866,4 +880,5 @@ contract sPrimeUniswap is
     error TotalLockMismatch();
     error InsufficientBalanceToLock();
     error LockPeriodExceeded();
+    error AccessDenied();
 }
