@@ -17,8 +17,8 @@ contract TraderJoeV2AvalancheFacet is TraderJoeV2Facet {
         // TJLB_BTCb_WAVAX
         pools[2] = ILBPair(0xD9fa522F5BC6cfa40211944F2C8DA785773Ad99D);
         // TJLB_USDt_USDC
-        pools[3] = ILBPair(0x2823299af89285ff1a1abf58db37ce57006fef5d);
+        pools[3] = ILBPair(0x2823299af89285fF1a1abF58DB37cE57006FEf5D);
         // TJLB_JOE_WAVAX
-        pools[4] = ILBPair(0xea7309636e7025fda0ee2282733ea248c3898495);
+        pools[4] = ILBPair(0xEA7309636E7025Fda0Ee2282733Ea248c3898495);
     }
 }
