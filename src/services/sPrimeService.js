@@ -9,6 +9,7 @@ const ethers = require('ethers');
 
 export default class sPrimeService {
   sPrimeValue$ = new BehaviorSubject(null);
+  sPrimeBalance$ = new BehaviorSubject(null);
   sPrimeLockedBalance$ = new BehaviorSubject(null);
   sPrimeTotalValue$ = new BehaviorSubject(null);
   sPrimePositionInfo$ = new BehaviorSubject(null);
@@ -28,6 +29,9 @@ export default class sPrimeService {
   observeSPrimeValue() {
     return this.sPrimeValue$.asObservable();
   }
+    observeSPrimeBalance() {
+        return this.sPrimeBalance$.asObservable();
+    }
     observeSPrimeLockedBalance() {
         return this.sPrimeLockedBalance$.asObservable();
     }
@@ -63,9 +67,15 @@ export default class sPrimeService {
                           }
                       );
 
+                      sPrimeContract.balanceOf(ownerAddress).then(
+                          async value => {
+                              this.sPrimeBalance$.next(formatUnits(value))
+                          }
+                      );
+
                       sPrimeContract.getLockedBalance(ownerAddress).then(
                           async value => {
-                              this.sPrimeLockedBalance$.next([formatUnits(value), formatUnits(value) * secondAssetPrice])
+                              this.sPrimeLockedBalance$.next(formatUnits(value))
                           }
                       );
 
