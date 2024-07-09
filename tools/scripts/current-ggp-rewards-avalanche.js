@@ -65,13 +65,13 @@ async function promiseAllInBatches(task, items, batchSize) {
     return results;
 }
 
-async function fetchData(maxTimestamp, file) {
+async function fetchData(file) {
     let loans = await factory.getAllLoans();
 
     const task = (loan) => fetch(` https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/ggp-incentives-for?addresses=${loan}`)
 
     console.log(`LONS: ${loans.length}`)
-    loans = loans.slice(0, 4200);
+    loans = loans.slice(0, 4800);
 
     let resps = await promiseAllInBatches(task, loans, 100);
 
@@ -223,10 +223,10 @@ async function checkCollected() {
 }
 
 
-fetchData(Date.now(), "GGP_EPOCH_2")
+// fetchData("GGP_EPOCH_3")
 // checkNegativeAccounts()
 // checkCollectedInTimestamp(1715152203)
 // checkCollected();
-// createDiffJson( "GGP_EPOCH_1", "GGP_EPOCH_2")
+// createDiffJson( "GGP_EPOCH_2", "GGP_EPOCH_3")
 // createAddJson( "GM_EPOCH_8", "GM_EPOCH_9_diff", "GM_EPOCH_9")
-// analyzeJson("GGP_EPOCH_2")
+analyzeJson("GGP_EPOCH_3_diff")
