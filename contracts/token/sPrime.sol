@@ -510,27 +510,26 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
         uint256 oldBalance = balanceOf(user);
         _transferTokens(_msgSender(), address(this), amountX, amountY);
         _deposit(user, activeId, idSlippage, amountX, amountY, true, _MAX_SLIPPAGE);
+        require(balanceOf(user) > oldBalance, "Negative mint");
+
+        uint256 totalLock;
+        for(uint8 i = 0 ; i < lockPeriods.length ; i ++) {
+            totalLock += percentForLocks[i];
+        }
+        require(totalLock == 100, "Should lock all");
         
-        if(balanceOf(user) > oldBalance) {
-            uint256 totalLock;
-            for(uint8 i = 0 ; i < lockPeriods.length ; i ++) {
-                totalLock += percentForLocks[i];
-            }
-            require(totalLock == 100, "Should lock all");
-            
-            uint256 balance = balanceOf(user) - oldBalance;
-            totalLock = 0;
-            for(uint8 i = 0 ; i < lockPeriods.length ; i ++) {
-                require(lockPeriods[i] <= MAX_LOCK_TIME, "Cannot lock for more than 3 years");
-                // Should minus from total balance to avoid the round issue
-                uint256 amount = i == lockPeriods.length - 1 ? balance - totalLock : balance * percentForLocks[i] / 100;
-                locks[user].push(LockDetails({
-                    lockPeriod: lockPeriods[i],
-                    amount: amount,
-                    unlockTime: block.timestamp + lockPeriods[i]
-                }));
-                totalLock += amount;
-            }
+        uint256 balance = balanceOf(user) - oldBalance;
+        totalLock = 0;
+        for(uint8 i = 0 ; i < lockPeriods.length ; i ++) {
+            require(lockPeriods[i] <= MAX_LOCK_TIME, "Cannot lock for more than 3 years");
+            // Should minus from total balance to avoid the round issue
+            uint256 amount = i == lockPeriods.length - 1 ? balance - totalLock : balance * percentForLocks[i] / 100;
+            locks[user].push(LockDetails({
+                lockPeriod: lockPeriods[i],
+                amount: amount,
+                unlockTime: block.timestamp + lockPeriods[i]
+            }));
+            totalLock += amount;
         }
 
         notifyVPrimeController(user);

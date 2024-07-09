@@ -147,7 +147,7 @@ contract sPrimeUniswap is
         return abi.decode(proxyCalldataView(
             implementation,
             abi.encodeWithSignature
-            ("tickInRange(address,uint256)", user, tokenId)
+            ("tickInRange(uint256)", tokenId)
         ), (bool));
     }
 
@@ -480,27 +480,13 @@ contract sPrimeUniswap is
 
             if (isRebalance) {
                 // Withdraw Position For Rebalance
-                positionManager.decreaseLiquidity(
-                    INonfungiblePositionManager.DecreaseLiquidityParams({
-                        tokenId: tokenId,
-                        liquidity: liquidity,
-                        amount0Min: 0,
-                        amount1Min: 0,
-                        deadline: block.timestamp
-                    })
-                );
-
-                (uint256 amountXBefore, uint256 amountYBefore) = positionManagerCollect(
-                    tokenId,
-                    address(this)
-                );
+                (uint256 amountXBefore, uint256 amountYBefore) = positionManagerRemove(tokenId, liquidity, address(this));
+                
                 if(getToken0() != tokenX) {
                     (amountXBefore, amountYBefore) = (amountYBefore, amountXBefore);
                 }
-                _burn(user, balanceOf(user));
-                positionManager.burn(tokenId);
 
-                delete userTokenId[user];
+                burnUserPosition(user, tokenId);
 
                 (amountX, amountY) = (amountX + amountXBefore, amountY + amountYBefore);
             }
@@ -557,18 +543,7 @@ contract sPrimeUniswap is
             revert BalanceLocked();
         }
 
-        positionManager.decreaseLiquidity(
-            INonfungiblePositionManager.DecreaseLiquidityParams({
-                tokenId: tokenId,
-                liquidity: uint128((liquidity * share) / balance),
-                amount0Min: 0,
-                amount1Min: 0,
-                deadline: block.timestamp
-            })
-        );
-
-        // Directly send tokens to the user
-        positionManagerCollect(tokenId, msgSender);
+        positionManagerRemove(tokenId, uint128((liquidity * share) / balance), msgSender);
 
         // Burn Position NFT
         if (balance == share) {
@@ -613,6 +588,8 @@ contract sPrimeUniswap is
         
         if(balanceOf(user) > oldBalance) {
             lockForUser(user, balanceOf(user) - oldBalance, percentForLocks, lockPeriods);
+        } else {
+            revert InsufficientBalanceToLock();
         }
 
         notifyVPrimeController(user);
@@ -662,6 +639,34 @@ contract sPrimeUniswap is
             );
     }
 
+    function positionManagerRemove(
+        uint256 tokenId,
+        uint128 liquidity,
+        address recipient
+    ) internal returns (uint256, uint256) {
+        positionManager.decreaseLiquidity(
+            INonfungiblePositionManager.DecreaseLiquidityParams({
+                tokenId: tokenId,
+                liquidity: liquidity,
+                amount0Min: 0,
+                amount1Min: 0,
+                deadline: block.timestamp
+            })
+        );
+
+        return positionManagerCollect(
+            tokenId,
+            recipient
+        );
+    }
+
+    function burnUserPosition(address user, uint256 tokenId) internal {
+        _burn(user, balanceOf(user));
+        positionManager.burn(tokenId);
+
+        delete userTokenId[user];
+    }
+
     /**
      * @dev Users can use deposit function for depositing tokens to the specific bin.
      * @param tokenId Token ID from UniswapPositionManager
@@ -681,20 +686,8 @@ contract sPrimeUniswap is
 
         (, , , , , , , uint128 liquidity , , , ,) = positionManager.positions(tokenId);
 
-        positionManager.decreaseLiquidity(
-            INonfungiblePositionManager.DecreaseLiquidityParams({
-                tokenId: tokenId,
-                liquidity: liquidity,
-                amount0Min: 0,
-                amount1Min: 0,
-                deadline: block.timestamp
-            })
-        );
+        (uint256 amountX, uint256 amountY) = positionManagerRemove(tokenId, liquidity, address(this));
 
-        (uint256 amountX, uint256 amountY) = positionManagerCollect(
-            tokenId,
-            address(this)
-        );
         if(getToken0() != tokenX) {
             (amountX, amountY) = (amountY, amountX);
         }
@@ -776,20 +769,7 @@ contract sPrimeUniswap is
             } else {
                 ( , , , , , int24 tickLower, int24 tickUpper, uint128 liquidity, , , ,) = positionManager.positions(tokenId);
 
-                positionManager.decreaseLiquidity(
-                    INonfungiblePositionManager.DecreaseLiquidityParams({
-                        tokenId: tokenId,
-                        liquidity: uint128((liquidity * amount) / fromBalance),
-                        amount0Min: 0,
-                        amount1Min: 0,
-                        deadline: block.timestamp
-                    })
-                );
-
-                (uint256 amountX, uint256 amountY) = positionManagerCollect(
-                    tokenId,
-                    address(this)
-                );
+                (uint256 amountX, uint256 amountY) = positionManagerRemove(tokenId, uint128((liquidity * amount) / fromBalance), address(this));
 
                 (
                     uint256 newTokenId,
@@ -839,7 +819,7 @@ contract sPrimeUniswap is
         }
     }
 
-    function containsOracleCalldata() public view returns (bool) {
+    function containsOracleCalldata() public pure returns (bool) {
         // Checking if the calldata ends with the RedStone marker
         bool hasValidRedstoneMarker;
         assembly {

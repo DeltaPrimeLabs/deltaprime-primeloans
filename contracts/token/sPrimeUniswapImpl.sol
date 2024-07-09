@@ -33,7 +33,7 @@ contract sPrimeUniswapImpl
         return INonfungiblePositionManager(sPrimeUniswap(sPrime).positionManager());
     }
 
-    function tickInRange(address user, uint256 tokenId) public view returns (bool) {
+    function tickInRange(uint256 tokenId) public view returns (bool) {
         IUniswapV3Pool pool = getV3Pool();
         INonfungiblePositionManager positionManager = getPositionManager();
 
