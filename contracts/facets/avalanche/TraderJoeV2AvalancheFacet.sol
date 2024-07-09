@@ -9,12 +9,16 @@ contract TraderJoeV2AvalancheFacet is TraderJoeV2Facet {
     }
 
     function getWhitelistedTraderJoeV2Pairs() internal pure override returns (ILBPair[] memory pools) {
-        pools = new ILBPair[](3);
+        pools = new ILBPair[](5);
         // TJLB_WAVAX_USDC
         pools[0] = ILBPair(0xD446eb1660F766d533BeCeEf890Df7A69d26f7d1);
         // TJLB_WETH.e_WAVAX
         pools[1] = ILBPair(0x1901011a39B11271578a1283D620373aBeD66faA);
         // TJLB_BTCb_WAVAX
         pools[2] = ILBPair(0xD9fa522F5BC6cfa40211944F2C8DA785773Ad99D);
+        // TJLB_USDt_USDC
+        pools[3] = ILBPair(0x2823299af89285ff1a1abf58db37ce57006fef5d);
+        // TJLB_JOE_WAVAX
+        pools[4] = ILBPair(0xea7309636e7025fda0ee2282733ea248c3898495);
     }
 }
