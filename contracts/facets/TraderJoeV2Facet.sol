@@ -5,7 +5,9 @@ import "../ReentrancyGuardKeccak.sol";
 import "../OnlyOwnerOrInsolvent.sol";
 import "../interfaces/joe-v2/ILBRouter.sol";
 import "../interfaces/joe-v2/ILBFactory.sol";
+import "../interfaces/joe-v2/ILBHookLens.sol";
 import "../interfaces/joe-v2/IRewarder.sol";
+import "../interfaces/joe-v2/ILBHooksBaseRewarder.sol";
 import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 
 //This path is updated during deployment
@@ -21,6 +23,10 @@ abstract contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, 
 
     function getJoeV2RouterAddress() public view virtual returns (address){
         return 0xb4315e873dBcf96Ffd0acd8EA43f689D8c20fB30;
+    }
+
+    function getJoeV2LBHookLens() public view virtual returns (address){
+        return 0x6124086B90AB910038E607aa1BDD67b284C31c98;
     }
 
     function getOwnedTraderJoeV2Bins() public view returns (TraderJoeV2Bin[] memory result){
@@ -66,6 +72,22 @@ abstract contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, 
             if (newBalance > beforeBalances[i]) {
                 address(tokens[i]).safeTransfer(msg.sender, newBalance - beforeBalances[i]);
             }
+        }
+    }
+
+    function claimReward(ILBPair pair, uint256[] calldata ids) external nonReentrant onlyOwner {
+        ILBHookLens lbHookLens = ILBHookLens(getJoeV2LBHookLens());
+        ILBHookLens.Parameters memory hookLens = lbHookLens.getHooks(address(pair));
+        address baseRewarder = hookLens.hooks;
+
+        if(baseRewarder == address(0)) revert TraderJoeV2NoRewardHook();
+
+        IERC20 rewardToken = ILBHooksBaseRewarder(baseRewarder).getRewardToken();
+        uint256 beforeBalance = rewardToken.balanceOf(address(this));
+        ILBHooksBaseRewarder(baseRewarder).claim(address(this), ids);
+        uint256 reward = rewardToken.balanceOf(address(this)) - beforeBalance;
+        if(reward > 0) {
+            address(rewardToken).safeTransfer(msg.sender, reward);
         }
     }
 
@@ -256,4 +278,6 @@ abstract contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, 
     error TraderJoeV2PoolNotWhitelisted();
 
     error TooManyBins();
+
+    error TraderJoeV2NoRewardHook();
 }
