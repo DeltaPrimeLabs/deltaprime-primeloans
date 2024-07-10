@@ -7,23 +7,26 @@ import hre from "hardhat";
 module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deploy } = deployments;
     const { deployer, admin } = await getNamedAccounts();
-    //
-    // embedCommitHash("YieldYakWombatFacet", "./contracts/facets/avalanche");
-    //
-    // let YieldYakWombatFacet = await deploy("YieldYakWombatFacet", {
-    //     from: deployer,
-    //     gasLimit: 8000000,
-    //     args: [],
-    // });
-    //
-    //
-    // console.log(
-    //     `YieldYakWombatFacet implementation deployed at address: ${YieldYakWombatFacet.address}`
-    // );
+
+    embedCommitHash("YieldYakWombatFacet", "./contracts/facets/avalanche");
+
+    let YieldYakWombatFacet = await deploy("YieldYakWombatFacet", {
+        from: deployer,
+        gasLimit: 8000000,
+        args: [],
+    });
+
+
+    console.log(
+        `YieldYakWombatFacet implementation deployed at address: ${YieldYakWombatFacet.address}`
+    );
+
+    // Wait 10 seconds for the transaction to be mined
+    await new Promise((r) => setTimeout(r, 10000));
 
     await verifyContract(hre,
         {
-            address: "0xf469C49b16C0BbCef6bA12cA6B31543D833640A7",
+            address: YieldYakWombatFacet.address,
             contract: `contracts/facets/avalanche/YieldYakWombatFacet.sol:YieldYakWombatFacet`,
             constructorArguments: []
         });

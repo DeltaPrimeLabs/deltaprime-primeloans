@@ -43,26 +43,6 @@ contract YieldYakWombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     bytes32 public constant YY_sAVAX_AVAX_LP_AVAX = "YY_sAVAX_AVAX_LP_AVAX";
     bytes32 public constant YY_sAVAX_AVAX_LP_sAVAX = "YY_sAVAX_AVAX_LP_sAVAX";
 
-    modifier whitelistedOnly() {
-        require(
-            msg.sender == 0x0E5Bad4108a6A5a8b06820f98026a7f3A77466b2 ||
-            msg.sender == 0xC29ee4509F01e3534307645Fc62F30Da3Ec65751 ||
-            msg.sender == 0x7E2C435B8319213555598274FAc603c4020B94CB ||
-            msg.sender == 0x413324ff183be1b94D09f6E1c1339E1abC09537A ||
-            msg.sender == 0xC6ba6BB819f1Be84EFeB2E3f2697AD9818151e5D ||
-            msg.sender == 0xec5A44cEe773D04D0EFF4092B86838d5Cd77eC4E ||
-            msg.sender == 0x12DaADd9064e441C36149eC8ba160439A62b05Ee ||
-            msg.sender == 0x973Ba299DF591044bf6Adc0Ca04AfBf77D9F9414 ||
-            msg.sender == 0xbc809291C200dF7Cb81D3B9bA34DB4327446A832 ||
-            msg.sender == 0xE1804DF460cBeb866e90424eDA5c50c41488Ffd0 ||
-            msg.sender == 0x413324ff183be1b94D09f6E1c1339E1abC09537A ||
-            msg.sender == 0xec5A44cEe773D04D0EFF4092B86838d5Cd77eC4E ||
-            msg.sender == 0x7E2C435B8319213555598274FAc603c4020B94CB,
-            "!whitelisted"
-        );
-        _;
-    }
-
     function depositSavaxToAvaxSavaxYY(
         uint256 amount,
         uint256 minLpOut
@@ -407,7 +387,7 @@ contract YieldYakWombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         uint256 minLpOut,
         bytes4 balanceSelector,
         bytes4 unstakeSelector
-    ) internal whitelistedOnly onlyOwner nonReentrant remainsSolvent {
+    ) internal onlyOwner nonReentrant remainsSolvent {
         IERC20Metadata stakeToken = getERC20TokenInstance(stakeAsset, false);
         IERC20Metadata wombatLpToken = getERC20TokenInstance(wombatLpAsset, false);
         address yyLpToken = _getYRT(yyLpAsset);
@@ -456,7 +436,7 @@ contract YieldYakWombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         address pool,
         uint256 amount,
         uint256 minOut
-    ) internal whitelistedOnly onlyOwnerOrInsolvent nonReentrant returns (uint256 amountOut) {
+    ) internal onlyOwnerOrInsolvent nonReentrant returns (uint256 amountOut) {
         IERC20Metadata fromToken = getERC20TokenInstance(fromAsset, false);
         IERC20Metadata toToken = getERC20TokenInstance(toAsset, false);
         IERC20Metadata wombatLpToken = getERC20TokenInstance(wombatLpAsset, false);
@@ -507,7 +487,7 @@ contract YieldYakWombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         uint256 minLpOut,
         bytes4 balanceSelector,
         bytes4 unstakeSelector
-    ) internal whitelistedOnly onlyOwner nonReentrant remainsSolvent {
+    ) internal onlyOwner nonReentrant remainsSolvent {
         IWrappedNativeToken wrapped = IWrappedNativeToken(
             DeploymentConstants.getNativeToken()
         );
@@ -555,7 +535,7 @@ contract YieldYakWombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         address pool,
         uint256 amount,
         uint256 minOut
-    ) internal whitelistedOnly onlyOwnerOrInsolvent nonReentrant returns (uint256 amountOut) {
+    ) internal onlyOwnerOrInsolvent nonReentrant returns (uint256 amountOut) {
         IERC20Metadata fromToken = getERC20TokenInstance(fromAsset, false);
         IWrappedNativeToken wrapped = IWrappedNativeToken(
             DeploymentConstants.getNativeToken()
@@ -609,7 +589,7 @@ contract YieldYakWombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         uint256 amount,
         bytes4 balanceSelector,
         bytes4 unstakeSelector
-    ) internal whitelistedOnly onlyOwner nonReentrant remainsSolvent {
+    ) internal onlyOwner nonReentrant remainsSolvent {
         IERC20Metadata wombatLpToken = getERC20TokenInstance(wombatLpAsset, false);
         address yyLpToken = _getYRT(yyLpAsset);
 
@@ -640,7 +620,6 @@ contract YieldYakWombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         uint256 amount
     )
         internal
-        whitelistedOnly
         onlyOwner
         nonReentrant
         remainsSolvent
@@ -672,7 +651,7 @@ contract YieldYakWombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         bytes32 yyLpAsset,
         bytes4 balanceSelector,
         bytes4 unstakeSelector
-    ) internal whitelistedOnly onlyOwner nonReentrant remainsSolvent {
+    ) internal onlyOwner nonReentrant remainsSolvent {
         IERC20Metadata wombatLpToken = getERC20TokenInstance(wombatLpAsset, false);
         address yyLpToken = _getYRT(yyLpAsset);
         uint256 pid = IWombatMaster(WOMBAT_MASTER).getAssetPid(
