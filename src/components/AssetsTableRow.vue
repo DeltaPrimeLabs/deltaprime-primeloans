@@ -113,7 +113,7 @@
           class="actions__icon-button"
           :config="moreActionsConfig"
           v-on:iconButtonClick="actionClick"
-          :disabled="disableAllButtons || asset.inactive || asset.unsupported || noSmartLoan">
+          :disabled="disableAllButtons || asset.inactive || noSmartLoan">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -877,9 +877,11 @@ export default {
         } else {
           const withdrawRequest = {
             asset: this.asset.symbol,
+            assetAddress: this.asset.address,
             value: value,
             assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals,
             type: 'ASSET',
+            assetInactive: this.asset.unsupported || this.asset.inactive
           };
           this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
             this.$forceUpdate();

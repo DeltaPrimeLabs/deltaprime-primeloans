@@ -1083,17 +1083,18 @@ export default {
       }
 
       // TODO remove after removing deprecated assets
-      console.warn('TODO remove after removing deprecated assets')
-      console.log(state.assets);
-      Object.values(state.assets).forEach(asset => {
-        if (asset.droppingSupport) {
+      for (let asset of Object.values(state.assets)) {
+        if (asset.droppingSupport || asset.unsupported) {
           console.log('droppingSupport', asset.symbol, balances[asset.symbol]);
+          let tokenContract = new ethers.Contract(asset.address, erc20ABI, provider.getSigner());
+          balances[asset.symbol] = formatUnits(await tokenContract.balanceOf(state.smartLoanContract.address), asset.decimals);
           if (balances[asset.symbol] === undefined || Number(balances[asset.symbol]) === 0) {
             console.warn('deleting', asset.symbol);
             delete state.assets[asset.symbol];
           }
         }
-      })
+      }
+
       await commit('setAssets', state.assets);
       await commit('setAssetBalances', balances);
       await commit('setLpBalances', lpBalances);
@@ -1839,6 +1840,7 @@ export default {
 
       const amountInWei = parseUnits(parseFloat(withdrawRequest.value).toFixed(withdrawRequest.assetDecimals), withdrawRequest.assetDecimals);
 
+      console.log(withdrawRequest)
       const transaction =
         withdrawRequest.assetInactive ?
           await (await wrapContract(state.smartLoanContract, loanAssets)).withdrawUnsupportedToken(withdrawRequest.assetAddress)
@@ -1860,7 +1862,7 @@ export default {
       let tx = await awaitConfirmation(transaction, provider, 'withdraw');
 
 
-      const withdrawAmount = formatUnits(getLog(tx, SMART_LOAN.abi, withdrawRequest.assetInactive ? 'WithdrawUnsupportedToken' : isLevel ? 'WithdrewLLP' : 'Withdrawn').args[isLevel ? 'depositAmount' : 'amount'], withdrawRequest.assetDecimals);
+      const withdrawAmount = formatUnits(getLog(tx, SMART_LOAN.abi, (withdrawRequest.assetInactive || withdrawRequest.assetInactive) ? 'WithdrawUnsupportedToken' : isLevel ? 'WithdrewLLP' : 'Withdrawn').args[isLevel ? 'depositAmount' : 'amount'], withdrawRequest.assetDecimals);
 
       let price;
       switch (withdrawRequest.type) {
