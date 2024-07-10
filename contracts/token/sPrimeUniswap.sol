@@ -58,6 +58,11 @@ contract sPrimeUniswap is
     
     address private implementation;
     address public operator;
+
+    constructor() {
+        _disableInitializers();
+    }
+
     /**
      * @dev Initializer of the contract.
      * @param tokenX_ The address of the token X.
@@ -408,14 +413,15 @@ contract sPrimeUniswap is
         }
 
         uint256 share = _getTotalInTokenY(amountXAdded, amountYAdded);
+
+        _mint(user, share);
+
         _transferTokens(
             address(this),
             user,
             amountX - amountXAdded,
             amountY - amountYAdded
         );
-
-        _mint(user, share);
     }
 
     /**
@@ -814,17 +820,19 @@ contract sPrimeUniswap is
                 }
 
                 uint256 total = _getTotalInTokenY(amountXAdded, amountYAdded);
-                if (amount > total) {
-                    _burn(to, amount - total);
-                } else {
-                    _mint(to, total - amount);
-                }
+
                 _transferTokens(
                     address(this),
                     to,
                     amountX - amountXAdded,
                     amountY - amountYAdded
                 );
+
+                if (amount > total) {
+                    _burn(to, amount - total);
+                } else {
+                    _mint(to, total - amount);
+                }
 
                 userTokenId[to] = newTokenId;
             }

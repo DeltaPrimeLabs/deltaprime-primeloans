@@ -38,8 +38,12 @@ abstract contract vPrimeController is PendingOwnableUpgradeable, RedstoneConsume
         uint256 primeAccountBorrowedDollarValue;
     }
 
+    constructor() {
+        _disableInitializers();
+    }
 
-/* ========== INITIALIZER ========== */
+
+    /* ========== INITIALIZER ========== */
 
     function initialize(ISPrime[] memory _whitelistedSPrimeContracts, ITokenManager _tokenManager, vPrime _vPrime, bool _useOraclePrimeFeed) external initializer {
         whitelistedSPrimeContracts = _whitelistedSPrimeContracts;

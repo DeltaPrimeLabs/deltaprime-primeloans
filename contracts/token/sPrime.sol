@@ -55,6 +55,10 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     address public operator;
     ILBHooksBaseRewarder public baseRewarder;
 
+    constructor() {
+        _disableInitializers();
+    }
+
     /**
     * @dev initialize of the contract.
     * @param tokenX_ The address of the token X.
@@ -603,10 +607,10 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
             positionManager.burn(tokenId);
         }
 
-        _burn(_msgSender(), share);
-
         // Send the tokens to the user.
         _transferTokens(address(this), _msgSender(), amountX, amountY);
+
+        _burn(_msgSender(), share);
 
         notifyVPrimeController(_msgSender());
     }
