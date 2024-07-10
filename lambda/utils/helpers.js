@@ -8,10 +8,10 @@ const networkInfo = require('./constants.json');
 const CACHE_LAYER_URLS = require('../config/redstone-cache-layer-urls.json');
 
 const LOAN = require(`../abis/SmartLoanGigaChadInterface.json`);
-const { queryHistoricalFeeds } = require("./query-arweave");
-const fetch = require("node-fetch");
-const { SignedDataPackage } = require("redstone-protocol");
-const Web3 = require('web3');
+// const { queryHistoricalFeeds } = require("./query-arweave");
+// const fetch = require("node-fetch");
+// const { SignedDataPackage } = require("redstone-protocol");
+// const Web3 = require('web3');
 const extRpc = require('../.secrets/extRpc.json');
 const funcRpc = require('../.secrets/funcRpc.json');
 // const webAva = new Web3(new Web3.providers.HttpProvider(extRpc.avalanche));

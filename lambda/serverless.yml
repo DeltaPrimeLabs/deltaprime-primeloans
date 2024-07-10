@@ -264,7 +264,7 @@ functions:
   getLoanArbitrumIncentivesLeaderboardApi:
     handler: apis/arbitrumIncentives.getLoanArbitrumIncentivesLeaderboardApi
     memorySize: 2048
-    timeout: 20
+    timeout: 29
     description: Fetch LTIP PA top loans for leaderboard on Arbitrum
     events:
       - httpApi:
@@ -645,5 +645,4 @@ plugins:
 package:
   individually: true
   exclude:
-    - .secrets/**
     - .serverless/**
