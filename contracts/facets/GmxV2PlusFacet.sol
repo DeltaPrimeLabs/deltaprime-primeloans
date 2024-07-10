@@ -7,6 +7,26 @@ import "./GmxV2FacetCommon.sol";
 abstract contract GmxV2PlusFacet is GmxV2FacetCommon {
     using TransferHelper for address;
 
+    modifier whitelistedOnly() {
+        require(
+            msg.sender == 0x0E5Bad4108a6A5a8b06820f98026a7f3A77466b2 ||
+            msg.sender == 0xC29ee4509F01e3534307645Fc62F30Da3Ec65751 ||
+            msg.sender == 0x7E2C435B8319213555598274FAc603c4020B94CB ||
+            msg.sender == 0x413324ff183be1b94D09f6E1c1339E1abC09537A ||
+            msg.sender == 0xC6ba6BB819f1Be84EFeB2E3f2697AD9818151e5D ||
+            msg.sender == 0xec5A44cEe773D04D0EFF4092B86838d5Cd77eC4E ||
+            msg.sender == 0x12DaADd9064e441C36149eC8ba160439A62b05Ee ||
+            msg.sender == 0x973Ba299DF591044bf6Adc0Ca04AfBf77D9F9414 ||
+            msg.sender == 0xbc809291C200dF7Cb81D3B9bA34DB4327446A832 ||
+            msg.sender == 0xE1804DF460cBeb866e90424eDA5c50c41488Ffd0 ||
+            msg.sender == 0x413324ff183be1b94D09f6E1c1339E1abC09537A ||
+            msg.sender == 0xec5A44cEe773D04D0EFF4092B86838d5Cd77eC4E ||
+            msg.sender == 0x7E2C435B8319213555598274FAc603c4020B94CB,
+            "!whitelisted"
+        );
+        _;
+    }
+
     // Mappings
     function marketToToken(
         address market
@@ -17,7 +37,7 @@ abstract contract GmxV2PlusFacet is GmxV2FacetCommon {
         uint256 tokenAmount,
         uint256 minGmAmount,
         uint256 executionFee
-    ) internal nonReentrant noBorrowInTheSameBlock onlyOwner {
+    ) internal whitelistedOnly nonReentrant noBorrowInTheSameBlock onlyOwner {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
         address depositedToken = marketToToken(gmToken);
@@ -119,6 +139,7 @@ abstract contract GmxV2PlusFacet is GmxV2FacetCommon {
         uint256 executionFee
     )
         internal
+        whitelistedOnly
         nonReentrant
         noBorrowInTheSameBlock
         onlyOwnerNoStaySolventOrInsolventPayable

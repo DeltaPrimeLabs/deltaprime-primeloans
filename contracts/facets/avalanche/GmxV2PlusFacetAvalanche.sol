@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 2c04f8bbc145fcb8a91c9e51438a65729a4a81fc;
+// Last deployed from commit: ee13db198757586947e5712bf806b1c1701a0534;
 pragma solidity 0.8.17;
 
 //This path is updated during deployment
 import "../GmxV2PlusFacet.sol";
 
-contract GmxV2FaceGmxV2PlusFacetAvalanchetAvalanche2 is GmxV2PlusFacet {
+contract GmxV2PlusFacetAvalanche is GmxV2PlusFacet {
     using TransferHelper for address;
 
     // https://github.com/gmx-io/gmx-synthetics/blob/main/deployments/avalanche/
