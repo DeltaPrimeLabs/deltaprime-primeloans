@@ -4,27 +4,23 @@ pragma solidity 0.8.17;
 
 import "./GmxV2FacetCommon.sol";
 
-abstract contract GmxV2Facet is GmxV2FacetCommon {
+abstract contract GmxV2PlusFacet is GmxV2FacetCommon {
     using TransferHelper for address;
 
     // Mappings
-    function marketToLongToken(
-        address market
-    ) internal pure virtual returns (address);
-
-    function marketToShortToken(
+    function marketToToken(
         address market
     ) internal pure virtual returns (address);
 
     function _deposit(
         address gmToken,
-        address depositedToken,
         uint256 tokenAmount,
         uint256 minGmAmount,
         uint256 executionFee
     ) internal nonReentrant noBorrowInTheSameBlock onlyOwner {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
+        address depositedToken = marketToToken(gmToken);
         tokenAmount = IERC20(depositedToken).balanceOf(address(this)) < tokenAmount
             ? IERC20(depositedToken).balanceOf(address(this))
             : tokenAmount;
@@ -48,8 +44,8 @@ abstract contract GmxV2Facet is GmxV2FacetCommon {
                 callbackContract: address(this), //callbackContract
                 uiFeeReceiver: address(0), //uiFeeReceiver
                 market: gmToken, //market
-                initialLongToken: marketToLongToken(gmToken), //initialLongToken
-                initialShortToken: marketToShortToken(gmToken), //initialShortToken
+                initialLongToken: depositedToken, //initialLongToken
+                initialShortToken: depositedToken, //initialShortToken
                 longTokenSwapPath: new address[](0), //longTokenSwapPath
                 shortTokenSwapPath: new address[](0), //shortTokenSwapPath
                 minMarketTokens: minGmAmount, //minMarketTokens
@@ -167,8 +163,8 @@ abstract contract GmxV2Facet is GmxV2FacetCommon {
         IERC20(gmToken).approve(getGmxV2Router(), gmAmount);
         BasicMulticall(getGmxV2ExchangeRouter()).multicall{value: msg.value}(data);
 
-        address longToken = marketToLongToken(gmToken);
-        address shortToken = marketToShortToken(gmToken);
+        address longToken = marketToToken(gmToken);
+        address shortToken = marketToToken(gmToken);
 
         // Simulate solvency check
         if (msg.sender == DiamondStorageLib.contractOwner()) {

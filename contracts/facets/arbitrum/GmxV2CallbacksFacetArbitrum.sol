@@ -11,7 +11,7 @@ contract GmxV2CallbacksFacetArbitrum is GmxV2CallbacksFacet {
     // https://github.com/gmx-io/gmx-synthetics/blob/main/deployments/arbitrum/
     // GMX contracts
 
-    function getGmxV2RoleStore() internal pure virtual override returns (address){
+    function getGmxV2RoleStore() internal pure override returns (address) {
         return 0x3c3d99FD298f679DBC2CEcd132b4eC4d0F5e6e72;
     }
 
@@ -21,6 +21,8 @@ contract GmxV2CallbacksFacetArbitrum is GmxV2CallbacksFacet {
     address constant GM_LINK_LINK_USDC = 0x7f1fa204bb700853D36994DA19F830b6Ad18455C;
     address constant GM_UNI_UNI_USDC = 0xc7Abb2C5f3BF3CEB389dF0Eecd6120D451170B50;
     address constant GM_BTC_WBTC_USDC = 0x47c031236e19d024b42f8AE6780E44A573170703;
+    address constant GM_ETH_WETH = 0x450bb6774Dd8a756274E0ab4107953259d2ac541;
+    address constant GM_BTC_WBTC = 0x7C11F78Ce78768518D743E81Fdfa2F860C6b9A77;
 
     // Tokens
     address constant WETH = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
@@ -31,33 +33,41 @@ contract GmxV2CallbacksFacetArbitrum is GmxV2CallbacksFacet {
     address constant WBTC = 0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f;
 
     // Mappings
-    function marketToLongToken(address market) internal override pure returns (address){
-        if(market == GM_ETH_WETH_USDC){
+    function marketToLongToken(
+        address market
+    ) internal pure override returns (address) {
+        if (market == GM_ETH_WETH_USDC || market == GM_ETH_WETH) {
             return WETH;
-        } else if (market == GM_ARB_ARB_USDC){
+        } else if (market == GM_ARB_ARB_USDC) {
             return ARB;
-        } else if (market == GM_LINK_LINK_USDC){
+        } else if (market == GM_LINK_LINK_USDC) {
             return LINK;
-        } else if (market == GM_UNI_UNI_USDC){
+        } else if (market == GM_UNI_UNI_USDC) {
             return UNI;
-        } else if (market == GM_BTC_WBTC_USDC){
+        } else if (market == GM_BTC_WBTC_USDC || market == GM_BTC_WBTC) {
             return WBTC;
-        }else {
+        } else {
             revert("Market not supported");
         }
     }
 
-    function marketToShortToken(address market) internal override pure returns (address){
-        if(market == GM_ETH_WETH_USDC){
+    function marketToShortToken(
+        address market
+    ) internal pure override returns (address) {
+        if (market == GM_ETH_WETH_USDC) {
             return USDC;
-        } else if (market == GM_ARB_ARB_USDC){
+        } else if (market == GM_ARB_ARB_USDC) {
             return USDC;
-        } else if (market == GM_LINK_LINK_USDC){
+        } else if (market == GM_LINK_LINK_USDC) {
             return USDC;
-        } else if (market == GM_UNI_UNI_USDC){
+        } else if (market == GM_UNI_UNI_USDC) {
             return USDC;
-        } else if (market == GM_BTC_WBTC_USDC){
+        } else if (market == GM_BTC_WBTC_USDC) {
             return USDC;
+        } else if (market == GM_ETH_WETH) {
+            return WETH;
+        } else if (market == GM_BTC_WBTC) {
+            return WBTC;
         } else {
             revert("Market not supported");
         }

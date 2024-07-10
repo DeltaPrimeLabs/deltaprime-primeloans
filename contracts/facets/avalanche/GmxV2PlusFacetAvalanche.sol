@@ -3,9 +3,9 @@
 pragma solidity 0.8.17;
 
 //This path is updated during deployment
-import "../GmxV2Facet.sol";
+import "../GmxV2PlusFacet.sol";
 
-contract GmxV2FacetAvalanche is GmxV2Facet {
+contract GmxV2FaceGmxV2PlusFacetAvalanchetAvalanche2 is GmxV2PlusFacet {
     using TransferHelper for address;
 
     // https://github.com/gmx-io/gmx-synthetics/blob/main/deployments/avalanche/
@@ -15,7 +15,7 @@ contract GmxV2FacetAvalanche is GmxV2Facet {
     }
 
     function getGmxV2ExchangeRouter() internal pure override returns (address) {
-        return 0x11E590f6092D557bF71BaDEd50D81521674F8275;
+        return 0x3BE24AED1a4CcaDebF2956e02C27a00726D4327d;
     }
 
     function getGmxV2DepositVault() internal pure override returns (address) {
@@ -27,106 +27,64 @@ contract GmxV2FacetAvalanche is GmxV2Facet {
     }
 
     // Markets
-    address constant GM_BTC_BTCb_USDC = 0xFb02132333A79C8B5Bd0b64E3AbccA5f7fAf2937;
-    address constant GM_ETH_WETHe_USDC = 0xB7e69749E3d2EDd90ea59A4932EFEa2D41E245d7;
-    address constant GM_AVAX_WAVAX_USDC = 0x913C1F46b48b3eD35E7dc3Cf754d4ae8499F31CF;
+    address constant GM_BTC_BTCb = 0x3ce7BCDB37Bf587d1C17B930Fa0A7000A0648D12;
+    address constant GM_ETH_WETHe = 0x2A3Cf4ad7db715DF994393e4482D6f1e58a1b533;
+    address constant GM_AVAX_WAVAX = 0x08b25A2a89036d298D6dB8A74ace9d1ce6Db15E5;
 
     // Tokens
-    address constant USDC = 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E;
     address constant BTCb = 0x152b9d0FdC40C096757F570A51E494bd4b943E50;
     address constant WETHe = 0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB;
     address constant WAVAX = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
 
     // Mappings
-    function marketToLongToken(
+    function marketToToken(
         address market
     ) internal pure override returns (address) {
-        if (market == GM_BTC_BTCb_USDC) {
+        if (market == GM_BTC_BTCb) {
             return BTCb;
-        } else if (market == GM_ETH_WETHe_USDC) {
+        } else if (market == GM_ETH_WETHe) {
             return WETHe;
-        } else if (market == GM_AVAX_WAVAX_USDC) {
+        } else if (market == GM_AVAX_WAVAX) {
             return WAVAX;
         } else {
             revert("Market not supported");
         }
     }
 
-    function marketToShortToken(
-        address market
-    ) internal pure override returns (address) {
-        if (market == GM_BTC_BTCb_USDC) {
-            return USDC;
-        } else if (market == GM_ETH_WETHe_USDC) {
-            return USDC;
-        } else if (market == GM_AVAX_WAVAX_USDC) {
-            return USDC;
-        } else {
-            revert("Market not supported");
-        }
-    }
-
     // DEPOSIT
-    function depositBtcUsdcGmxV2(
-        bool isLongToken,
+    function depositBtcGmxV2Plus(
         uint256 tokenAmount,
         uint256 minGmAmount,
         uint256 executionFee
     ) external payable {
-        address _depositedToken = isLongToken ? BTCb : USDC;
-
-        _deposit(
-            GM_BTC_BTCb_USDC,
-            _depositedToken,
-            tokenAmount,
-            minGmAmount,
-            executionFee
-        );
+        _deposit(GM_BTC_BTCb, tokenAmount, minGmAmount, executionFee);
     }
 
-    function depositEthUsdcGmxV2(
-        bool isLongToken,
+    function depositEthGmxV2Plus(
         uint256 tokenAmount,
         uint256 minGmAmount,
         uint256 executionFee
     ) external payable {
-        address _depositedToken = isLongToken ? WETHe : USDC;
-
-        _deposit(
-            GM_ETH_WETHe_USDC,
-            _depositedToken,
-            tokenAmount,
-            minGmAmount,
-            executionFee
-        );
+        _deposit(GM_ETH_WETHe, tokenAmount, minGmAmount, executionFee);
     }
 
-    function depositAvaxUsdcGmxV2(
-        bool isLongToken,
+    function depositAvaxGmxV2Plus(
         uint256 tokenAmount,
         uint256 minGmAmount,
         uint256 executionFee
     ) external payable {
-        address _depositedToken = isLongToken ? WAVAX : USDC;
-
-        _deposit(
-            GM_AVAX_WAVAX_USDC,
-            _depositedToken,
-            tokenAmount,
-            minGmAmount,
-            executionFee
-        );
+        _deposit(GM_AVAX_WAVAX, tokenAmount, minGmAmount, executionFee);
     }
 
     // WITHDRAW
-    function withdrawBtcUsdcGmxV2(
+    function withdrawBtcGmxV2Plus(
         uint256 gmAmount,
         uint256 minLongTokenAmount,
         uint256 minShortTokenAmount,
         uint256 executionFee
     ) external payable {
         _withdraw(
-            GM_BTC_BTCb_USDC,
+            GM_BTC_BTCb,
             gmAmount,
             minLongTokenAmount,
             minShortTokenAmount,
@@ -134,14 +92,14 @@ contract GmxV2FacetAvalanche is GmxV2Facet {
         );
     }
 
-    function withdrawEthUsdcGmxV2(
+    function withdrawEthGmxV2Plus(
         uint256 gmAmount,
         uint256 minLongTokenAmount,
         uint256 minShortTokenAmount,
         uint256 executionFee
     ) external payable {
         _withdraw(
-            GM_ETH_WETHe_USDC,
+            GM_ETH_WETHe,
             gmAmount,
             minLongTokenAmount,
             minShortTokenAmount,
@@ -149,14 +107,14 @@ contract GmxV2FacetAvalanche is GmxV2Facet {
         );
     }
 
-    function withdrawAvaxUsdcGmxV2(
+    function withdrawAvaxGmxV2Plus(
         uint256 gmAmount,
         uint256 minLongTokenAmount,
         uint256 minShortTokenAmount,
         uint256 executionFee
     ) external payable {
         _withdraw(
-            GM_AVAX_WAVAX_USDC,
+            GM_AVAX_WAVAX,
             gmAmount,
             minLongTokenAmount,
             minShortTokenAmount,
