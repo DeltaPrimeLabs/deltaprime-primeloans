@@ -5,6 +5,7 @@ pragma solidity ^0.8.17;
 
 // Importing necessary libraries and interfaces
 import "../interfaces/joe-v2/ILBRouter.sol";
+import "../interfaces/joe-v2/ILBHooksBaseRewarder.sol";
 import "../interfaces/ISPrimeTraderJoe.sol";
 import "../interfaces/IPositionManager.sol";
 import "../interfaces/IVPrimeController.sol";
@@ -52,6 +53,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     DepositForm[] private depositForm;
 
     address public operator;
+    ILBHooksBaseRewarder public baseRewarder;
 
     /**
     * @dev initialize of the contract.
@@ -98,6 +100,12 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
         address _operator
     ) public onlyOwner {
         operator = _operator;
+    }
+
+    function setBaseRewarder(
+        ILBHooksBaseRewarder _baseRewarder
+    ) public onlyOwner {
+        baseRewarder = _baseRewarder;
     }
 
     /** Public View Functions */
@@ -619,6 +627,20 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
         }));
 
         notifyVPrimeController(_msgSender());
+    }
+
+    /**
+    * @dev Claims the reward from TraderJoe v2.2 Base Reward Pool
+    * @param receiver User address that will receive the collected reward.
+    * @param ids Bin Id list to claim.
+    */
+    function claim(address receiver, uint256[] calldata ids) public onlyOwner nonReentrant {
+        baseRewarder.claim(address(this), ids);
+        IERC20Metadata rewardToken = IERC20Metadata(address(baseRewarder.getRewardToken()));
+        uint256 reward = rewardToken.balanceOf(address(this));
+        if(reward > 0) {
+            rewardToken.safeTransfer(receiver, reward);
+        }
     }
 
     /** Overrided Functions */
