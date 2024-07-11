@@ -28,7 +28,7 @@ import {expect} from 'chai';
 import YAK_ROUTER_ABI from '../../test/abis/YakRouter.json';
 import {getSwapData} from '../utils/paraSwapUtils';
 import {getBurnData} from '../utils/caiUtils';
-import {combineLatest, from, map, tap} from "rxjs";
+import {combineLatest, from, map, tap} from 'rxjs';
 
 const toBytes32 = require('ethers').utils.formatBytes32String;
 const fromBytes32 = require('ethers').utils.parseBytes32String;
@@ -284,7 +284,7 @@ export default {
 
       // Arbitrum-specific methods
       if (window.chain === 'arbitrum') {
-        rootState.serviceRegistry.ltipService.emitRefreshPrimeAccountsLtipData(state.smartLoanContract.address, state.assets['ARB'].price,  rootState.serviceRegistry.dataRefreshEventService);
+        rootState.serviceRegistry.ltipService.emitRefreshPrimeAccountsLtipData(state.smartLoanContract.address, state.assets['ARB'].price, rootState.serviceRegistry.dataRefreshEventService);
         rootState.serviceRegistry.ltipService.emitRefreshPrimeAccountEligibleTvl(wrapContract(state.smartLoanContract));
       }
     },
@@ -411,12 +411,12 @@ export default {
       Object.keys(assets).forEach(assetSymbol => {
         if (assets[assetSymbol].fetchPrice) {
           fetch(assets[assetSymbol].priceEndpoint).then(
-              async resp => {
-                let json = await resp.json();
-                assets[assetSymbol].price = json[assets[assetSymbol].priceJsonField];
-                commit('setAssets', assets);
-                rootState.serviceRegistry.priceService.emitRefreshPrices();
-              }
+            async resp => {
+              let json = await resp.json();
+              assets[assetSymbol].price = json[assets[assetSymbol].priceJsonField];
+              commit('setAssets', assets);
+              rootState.serviceRegistry.priceService.emitRefreshPrices();
+            }
           )
         }
       });
@@ -1074,11 +1074,12 @@ export default {
             lpToken.rewardBalances = {};
 
             lpToken.rewardTokens.forEach(
-            (symbol, index) => {
-              lpToken.rewardBalances[symbol] = formatUnits(result.returnData[index], config.ASSETS_CONFIG[symbol].decimals);
-            }
+              (symbol, index) => {
+                lpToken.rewardBalances[symbol] = formatUnits(result.returnData[index], config.ASSETS_CONFIG[symbol].decimals);
+              }
             )
-          } catch (e) { }
+          } catch (e) {
+          }
         }
       }
 
@@ -1633,7 +1634,13 @@ export default {
         }
 
         if (window.chain === 'avalanche') {
-          yearlyGrantInterest += Math.max(Number(state.wombatLpBalances['WOMBAT_ggAVAX_AVAX_LP_ggAVAX']) * state.wombatLpAssets['WOMBAT_ggAVAX_AVAX_LP_ggAVAX'].price - collateral, 0) * rootState.serviceRegistry.ggpIncentivesService.boostGGPApy$.value.boostApy * state.assets['GGP'].price
+
+          fetch(config.ASSETS_CONFIG['GGP'].priceEndpoint).then(async resp => {
+            let json = await resp.json();
+            const ggpPrice = json[config.ASSETS_CONFIG['GGP'].priceJsonField];
+
+            yearlyGrantInterest += Math.max(Number(state.wombatLpBalances['WOMBAT_ggAVAX_AVAX_LP_ggAVAX']) * state.wombatLpAssets['WOMBAT_ggAVAX_AVAX_LP_ggAVAX'].price - collateral, 0) * rootState.serviceRegistry.ggpIncentivesService.boostGGPApy$.value.boostApy * ggpPrice
+          })
         }
 
         if (collateral) {
