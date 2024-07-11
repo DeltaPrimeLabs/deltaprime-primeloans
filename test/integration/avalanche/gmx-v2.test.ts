@@ -111,7 +111,7 @@ describe('Smart loan', () => {
             paraSwapMin = constructSimpleSDK({ chainId: 42161, axios });
 
             [owner, nonOwner, depositor] = await getFixedGasSigners(10000000);
-            let assetsList = ['AVAX', 'BTC', 'USDT', 'USDC', 'GM_AVAX_WAVAX_USDC'];
+            let assetsList = ['AVAX', 'BTC', 'USDT', 'USDC', 'GM_BTC_BTCb_USDC', 'GM_ETH_WETHe_USDC', 'GM_AVAX_WAVAX_USDC'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'AVAX', airdropList: [depositor]}
             ];
@@ -193,9 +193,9 @@ describe('Smart loan', () => {
 
 
         it("should swap and fund", async () => {
-            await tokenContracts.get('AVAX')!.connect(owner).deposit({value: toWei("10")});
-            await tokenContracts.get('AVAX')!.connect(owner).approve(wrappedLoan.address, toWei("10"));
-            await wrappedLoan.fund(toBytes32("AVAX"), toWei("10"));
+            await tokenContracts.get('AVAX')!.connect(owner).deposit({value: toWei("100")});
+            await tokenContracts.get('AVAX')!.connect(owner).approve(wrappedLoan.address, toWei("100"));
+            await wrappedLoan.fund(toBytes32("AVAX"), toWei("100"));
 
             let initialTotalValue = await wrappedLoan.getTotalValue();
             let initialHR = await wrappedLoan.getHealthRatio();
@@ -216,12 +216,14 @@ describe('Smart loan', () => {
         });
 
         it("should deposit to GMX V2", async () => {
-            const tokenAmount = toWei('1');
-            const maxFee = toWei('0.5');
+            const tokenAmount = toWei('10');
+            const maxFee = toWei('1');
 
             console.log(`WAVAX PA balance: ${fromWei(await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address))}`);
 
-            await wrappedLoan.depositAvaxUsdcGmxV2(true, tokenAmount, 0, maxFee, { value: maxFee });
+            const minAmount = fromWei(tokenAmount) * tokensPrices.get('AVAX')! / tokensPrices.get('GM_AVAX_WAVAX_USDC')! * 0.98;
+
+            await wrappedLoan.depositAvaxUsdcGmxV2(true, tokenAmount, toWei(minAmount.toFixed(18)), maxFee, { value: maxFee });
         });
 
         // it("should withdraw from to GMX V2", async () => {

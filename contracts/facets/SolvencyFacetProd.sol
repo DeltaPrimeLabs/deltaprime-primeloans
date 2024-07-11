@@ -17,6 +17,7 @@ import {PriceHelper} from "../lib/joe-v2/PriceHelper.sol";
 import {Uint256x256Math} from "../lib/joe-v2/math/Uint256x256Math.sol";
 import {TickMath} from "../lib/uniswap-v3/TickMath.sol";
 import {FullMath} from "../lib/uniswap-v3/FullMath.sol";
+import "hardhat/console.sol";
 
 //This path is updated during deployment
 import "../lib/local/DeploymentConstants.sol";
@@ -108,17 +109,22 @@ abstract contract SolvencyFacetProd is RedstoneConsumerNumericBase, DiamondHelpe
       * @dev This function uses the redstone-evm-connector
     **/
     function getDebtAssetsPrices() public view returns(AssetPrice[] memory result) {
+        console.log("===> aaa");
         bytes32[] memory debtAssets = getDebtAssets();
+        console.log("===> bbb");
 
         uint256[] memory debtAssetsPrices = getOracleNumericValuesFromTxMsg(debtAssets);
+        console.log("===> ccc");
         result = new AssetPrice[](debtAssetsPrices.length);
 
+        console.log("===> ddd");
         for(uint i; i<debtAssetsPrices.length; i++){
             result[i] = AssetPrice({
                 asset: debtAssets[i],
                 price: debtAssetsPrices[i]
             });
         }
+        console.log("===> eee");
     }
 
     /**
@@ -338,8 +344,11 @@ abstract contract SolvencyFacetProd is RedstoneConsumerNumericBase, DiamondHelpe
       * @dev This function uses the redstone-evm-connector
     **/
     function getThresholdWeightedValue() public view virtual returns (uint256) {
+        console.log("===> 1");
         AssetPrice[] memory ownedAssetsPrices = getOwnedAssetsWithNativePrices();
+        console.log("===> 2");
         AssetPrice[] memory stakedPositionsPrices = getStakedPositionsPrices();
+        console.log("===> 3");
         return _getThresholdWeightedValueBase(ownedAssetsPrices, stakedPositionsPrices);
     }
 
@@ -381,7 +390,9 @@ abstract contract SolvencyFacetProd is RedstoneConsumerNumericBase, DiamondHelpe
      * @dev This function uses the redstone-evm-connector
     **/
     function getDebt() public view virtual returns (uint256) {
+        console.log("===> 11");
         AssetPrice[] memory debtAssetsPrices = getDebtAssetsPrices();
+        console.log("===> 22");
         return getDebtBase(debtAssetsPrices);
     }
 
