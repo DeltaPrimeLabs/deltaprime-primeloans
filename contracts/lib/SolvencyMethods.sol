@@ -6,13 +6,11 @@ import "@redstone-finance/evm-connector/contracts/core/ProxyConnector.sol";
 import "../facets/SolvencyFacetProd.sol";
 import "../facets/AssetsExposureController.sol";
 import "../DiamondHelper.sol";
-import "hardhat/console.sol";
 
 // TODO Rename to contract instead of lib
 contract SolvencyMethods is DiamondHelper, ProxyConnector {
     // This function executes SolvencyFacetProd.getDebt()
     function _getDebt() internal virtual returns (uint256 debt) {
-        console.log("===> facet 2", DiamondHelper._getFacetAddress(SolvencyFacetProd.getDebt.selector));
         debt = abi.decode(
             proxyDelegateCalldata(
                 DiamondHelper._getFacetAddress(SolvencyFacetProd.getDebt.selector),
@@ -123,7 +121,6 @@ contract SolvencyMethods is DiamondHelper, ProxyConnector {
 
     // This function executes SolvencyFacetProd.getThresholdWeightedValuePayable()
     function _getThresholdWeightedValue() public virtual returns (uint256 twv) {
-        console.log("===> facet 1", DiamondHelper._getFacetAddress(SolvencyFacetProd.getThresholdWeightedValue.selector));
         twv = abi.decode(
             proxyDelegateCalldata(
                 DiamondHelper._getFacetAddress(SolvencyFacetProd.getThresholdWeightedValue.selector),
