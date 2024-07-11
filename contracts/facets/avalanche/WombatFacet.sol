@@ -299,7 +299,6 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         nonReentrant
         remainsSolvent
     {
-        uint256[] memory pids = new uint256[](4);
         bytes32[4] memory lpAssets = [
             WOMBAT_ggAVAX_AVAX_LP_AVAX,
             WOMBAT_ggAVAX_AVAX_LP_ggAVAX,
@@ -308,16 +307,11 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         ];
         for (uint256 i; i != 4; ++i) {
             IERC20Metadata lpToken = getERC20TokenInstance(lpAssets[i], false);
-            pids[i] = IWombatMaster(WOMBAT_MASTER).getAssetPid(address(lpToken));
-        }
-        (
-            ,
-            uint256[] memory amounts,
-            uint256[][] memory additionalRewards
-        ) = IWombatMaster(WOMBAT_MASTER).multiClaim(pids);
-
-        for (uint256 i; i != 4; ++i) {
-            handleRewards(pids[i], amounts[i], additionalRewards[i]);
+            uint256 pid = IWombatMaster(WOMBAT_MASTER).getAssetPid(address(lpToken));
+            (uint256 reward, uint256[] memory additionalRewards) = IWombatMaster(
+                WOMBAT_MASTER
+            ).withdraw(pid, 0);
+            handleRewards(pid, reward, additionalRewards);
         }
     }
 
@@ -443,7 +437,7 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         address pool,
         uint256 amount,
         uint256 minOut
-    ) internal onlyOwner nonReentrant remainsSolvent returns (uint256 amountOut) {
+    ) internal onlyOwnerOrInsolvent nonReentrant returns (uint256 amountOut) {
         IERC20Metadata fromToken = getERC20TokenInstance(fromAsset, false);
         IERC20Metadata toToken = getERC20TokenInstance(toAsset, false);
         IERC20Metadata lpToken = getERC20TokenInstance(lpAsset, false);
@@ -505,9 +499,13 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
         wrapped.withdraw(amount);
 
-        IWombatRouter(WOMBAT_ROUTER).addLiquidityNative{
-            value: amount
-        }(pool, minLpOut, address(this), block.timestamp, true);
+        IWombatRouter(WOMBAT_ROUTER).addLiquidityNative{value: amount}(
+            pool,
+            minLpOut,
+            address(this),
+            block.timestamp,
+            true
+        );
 
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         _decreaseExposure(tokenManager, address(wrapped), amount);
@@ -529,7 +527,7 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         address pool,
         uint256 amount,
         uint256 minOut
-    ) internal onlyOwner nonReentrant remainsSolvent returns (uint256 amountOut) {
+    ) internal onlyOwnerOrInsolvent nonReentrant returns (uint256 amountOut) {
         IERC20Metadata fromToken = getERC20TokenInstance(fromAsset, false);
         IWrappedNativeToken wrapped = IWrappedNativeToken(
             DeploymentConstants.getNativeToken()
@@ -556,14 +554,15 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
                 block.timestamp
             );
         } else {
-            amountOut = IWombatRouter(WOMBAT_ROUTER).removeLiquidityFromOtherAssetAsNative(
-                pool,
-                address(fromToken),
-                amount,
-                minOut,
-                address(this),
-                block.timestamp
-            );
+            amountOut = IWombatRouter(WOMBAT_ROUTER)
+                .removeLiquidityFromOtherAssetAsNative(
+                    pool,
+                    address(fromToken),
+                    amount,
+                    minOut,
+                    address(this),
+                    block.timestamp
+                );
         }
 
         wrapped.deposit{value: amountOut}();
@@ -649,26 +648,48 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         address boostedRewarder = IWombatMaster(WOMBAT_MASTER).boostedRewarders(
             pid
         );
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         address owner = DiamondStorageLib.contractOwner();
-        address(WOM_TOKEN).safeTransfer(owner, reward);
+
+        if (reward > 0 && tokenManager.isTokenAssetActive(WOM_TOKEN)) {
+            _increaseExposure(tokenManager, WOM_TOKEN, reward);
+        } else if (reward > 0) {
+            WOM_TOKEN.safeTransfer(owner, reward);
+        }
+
         uint256 baseIdx;
         if (rewarder != address(0)) {
             address[] memory rewardTokens = IMultiRewarder(rewarder).rewardTokens();
             baseIdx = rewardTokens.length;
             for (uint256 i; i != baseIdx; ++i) {
-                if (additionalRewards[i] > 0) {
-                    address(rewardTokens[i]).safeTransfer(owner, additionalRewards[i]);
+                address rewardToken = rewardTokens[i];
+                uint256 pendingReward = additionalRewards[i];
+
+                if (pendingReward == 0) {
+                    continue;
+                }
+
+                if (tokenManager.isTokenAssetActive(rewardToken)) {
+                    _increaseExposure(tokenManager, rewardToken, pendingReward);
+                } else {
+                    rewardToken.safeTransfer(owner, pendingReward);
                 }
             }
         }
         if (boostedRewarder != address(0)) {
             address[] memory rewardTokens = IMultiRewarder(boostedRewarder).rewardTokens();
             for (uint256 i; i != rewardTokens.length; ++i) {
-                if (additionalRewards[baseIdx + i] > 0) {
-                    address(rewardTokens[i]).safeTransfer(
-                        owner,
-                        additionalRewards[baseIdx + i]
-                    );
+                address rewardToken = rewardTokens[i];
+                uint256 pendingReward = additionalRewards[baseIdx + i];
+
+                if (pendingReward == 0) {
+                    continue;
+                }
+
+                if (tokenManager.isTokenAssetActive(rewardToken)) {
+                    _increaseExposure(tokenManager, rewardToken, pendingReward);
+                } else {
+                    rewardToken.safeTransfer(owner, pendingReward);
                 }
             }
         }

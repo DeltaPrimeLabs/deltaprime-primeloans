@@ -5,3 +5,4 @@ Here you can find the audits of our code:
 4) Peckshield audit done in December 2022
 5) Peckshield audit done in May 2023
 6) Peckshield audit done in September 2023
+7) AstraSec audit done in June 2024
