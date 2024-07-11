@@ -716,6 +716,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             await deployFacet("SolvencyFacetMockAvalanche", diamondAddress, [
                     'canRepayDebtFully',
                     'isSolvent',
+                    'isSolventPayable',
                     'isSolventWithPrices',
                     'getOwnedAssetsWithNativePrices',
                     'getTotalValueWithPrices',
@@ -732,6 +733,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                     'getPrices',
                     'getTotalAssetsValue',
                     'getThresholdWeightedValue',
+                    'getThresholdWeightedValuePayable',
                     'getStakedValue',
                     'getTotalValue',
                     'getFullLoanStatus',

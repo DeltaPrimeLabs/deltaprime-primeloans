@@ -86,8 +86,8 @@ abstract contract GmxV2Facet is GmxV2FacetCommon {
                 tokenManager.debtCoverage(gmToken)) /
                 (10 ** IERC20Metadata(gmToken).decimals() * 1e8);
             require(
-                (_getThresholdWeightedValuePayable() + gmTokensWeightedUsdValue) >
-                    _getDebtPayable(),
+                (_getThresholdWeightedValue() + gmTokensWeightedUsdValue) >
+                    _getDebt(),
                 "The action may cause the account to become insolvent"
             );
         }
@@ -203,8 +203,8 @@ abstract contract GmxV2Facet is GmxV2FacetCommon {
                     tokenManager.debtCoverage(shortToken)) /
                     10 ** IERC20Metadata(shortToken).decimals())) / 1e8;
             require(
-                (_getThresholdWeightedValuePayable() + receivedTokensWeightedUsdValue) >
-                    _getDebtPayable(),
+                (_getThresholdWeightedValue() + receivedTokensWeightedUsdValue) >
+                    _getDebt(),
                 "The action may cause the account to become insolvent"
             );
         }

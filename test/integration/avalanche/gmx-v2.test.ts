@@ -216,8 +216,8 @@ describe('Smart loan', () => {
         });
 
         it("should deposit to GMX V2", async () => {
-            const tokenAmount = toWei('0.0005');
-            const maxFee = toWei('0.01');
+            const tokenAmount = toWei('1');
+            const maxFee = toWei('0.5');
 
             console.log(`WAVAX PA balance: ${fromWei(await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address))}`);
 
