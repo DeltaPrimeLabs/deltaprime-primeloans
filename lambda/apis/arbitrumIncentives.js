@@ -1,4 +1,3 @@
-const { request, gql } = require('graphql-request');
 const {
   dynamoDb,
   fetchAllDataFromDB
@@ -60,51 +59,16 @@ const getLoanArbitrumIncentivesForApi = async (event, context, callback) => {
 const getLoanArbitrumIncentivesLeaderboardApi = async (event, context, callback) => {
   try {
     const top = Number(event.queryStringParameters.top) || null;
-    const from = Number(event.queryStringParameters.from);
-    const to = Number(event.queryStringParameters.to) || Math.floor(Date.now() / 1000);
+    // const from = Number(event.queryStringParameters.from);
+    // const to = Number(event.queryStringParameters.to) || Math.floor(Date.now() / 1000);
 
     let params = {
-      TableName: process.env.LOAN_ARB_TABLE
+      TableName: top == 200 ? process.env.LTIP_LOAN_LEADERBOARD_ARB_TABLE : process.env.LTIP_LOAN_LEADERBOARD_LASTDIST_ARB_TABLE
     };
 
-    const arbLoans = await fetchAllDataFromDB(params, true, 50);
-
-    params = {
-      TableName: process.env.ARBITRUM_INCENTIVES_ARB_TABLE,
-      FilterExpression: '#timestamp >= :from AND #timestamp <= :to',
-      ExpressionAttributeNames: {
-        '#timestamp': 'timestamp'
-      },
-      ExpressionAttributeValues: {
-        ':from': from,
-        ':to': to
-      }
-    };
-
-    const incentives = await fetchAllDataFromDB(params, true, 1000);
-
-    const incentivesOfLoans = [];
-
-    arbLoans.map(loan => {
-      const loanIncentives = incentives.filter((item) => item.id == loan.id)
-
-      if (loanIncentives.length > 0) {
-        let loanAccumulatedIncentives = 0;
-
-        loanIncentives.map((item) => {
-          loanAccumulatedIncentives += item.arbCollected ? Number(item.arbCollected) : 0;
-        });
-
-        incentivesOfLoans.push({
-          'id': loan.id,
-          'arbCollected': loanAccumulatedIncentives,
-          'eligibleTvl': loan.eligibleTvl
-        })
-      }
-    })
+    const incentivesOfLoans = await fetchAllDataFromDB(params, true, 50);
 
     const sortedIncentives = top ? incentivesOfLoans.sort((a, b) => b.arbCollected - a.arbCollected).slice(0, top) : incentivesOfLoans;
-    console.log(sortedIncentives);
 
     const response = {
       statusCode: 200,

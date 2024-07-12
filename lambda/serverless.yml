@@ -37,6 +37,8 @@ provider:
     GGP_INCENTIVES_AVA_TABLE: ggp-incentives-ava-${opt:stage, "dev"}
     ARBITRUM_INCENTIVES_ARB_TABLE: arbitrum-incentives-arb-${opt:stage, "dev"}
     POOL_ARBITRUM_INCENTIVES_ARB_TABLE: pool-arbitrum-incentives-arb-${opt:stage, "dev"}
+    LTIP_LOAN_LEADERBOARD_ARB_TABLE: ltip-loan-leaderboard-arb-${opt:stage, "dev"}
+    LTIP_LOAN_LEADERBOARD_LASTDIST_ARB_TABLE: ltip-loan-leaderboard-lastdist-arb-${opt:stage, "dev"}
     GM_OPEN_INTEREST_TABLE: gm-open-interest-${opt:stage, "dev"}
     REFERRAL_TABLE: referral-${opt:stage, "dev"}
     TERMS_VERSION_TABLE: terms-version-${opt:stage, "dev"}
@@ -582,6 +584,38 @@ resources:
     #     StreamSpecification:
     #       StreamViewType: "NEW_AND_OLD_IMAGES"
     #     TableName: ${self:provider.environment.POOL_ARBITRUM_INCENTIVES_ARB_TABLE}
+    ltipLoanLeaderboardArbTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: "id"
+            AttributeType: "S"
+        KeySchema:
+          -
+            AttributeName: "id"
+            KeyType: "HASH"
+        BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: "NEW_AND_OLD_IMAGES"
+        TableName: ${self:provider.environment.LTIP_LOAN_LEADERBOARD_ARB_TABLE}
+    ltipLoanLeaderboardLastdistArbTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: "id"
+            AttributeType: "S"
+        KeySchema:
+          -
+            AttributeName: "id"
+            KeyType: "HASH"
+        BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: "NEW_AND_OLD_IMAGES"
+        TableName: ${self:provider.environment.LTIP_LOAN_LEADERBOARD_LASTDIST_ARB_TABLE}
     ggpIncentivesAvaTable:
       Type: AWS::DynamoDB::Table
       DeletionPolicy: Retain

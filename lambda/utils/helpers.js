@@ -179,21 +179,17 @@ const fetchAllDataFromDB = async (params, scan = true, totalSegments = 5) => {
   } else {
     const items = [];
     let lastEvaluatedKey = null;
-    let result;
-    while (1) {
-      if (lastEvaluatedKey == null) {
-        result = await dynamoDb.query(params).promise();
-      } else {
-        result = await dynamoDb.query({ ...params, ExclusiveStartKey: lastEvaluatedKey }).promise();
-      }
+
+    while (true) {
+      const result = await dynamoDb.query({
+        ...params,
+        ExclusiveStartKey: lastEvaluatedKey
+      }).promise();
 
       items.push(...result.Items);
 
-      if (result.LastEvaluatedKey) {
-        lastEvaluatedKey = result.LastEvaluatedKey;
-      } else {
-        break;
-      }
+      if (!result.LastEvaluatedKey) break;
+      lastEvaluatedKey = result.LastEvaluatedKey;
     }
     return items;
   }
