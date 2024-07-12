@@ -46,6 +46,7 @@ import * as traderJoeSdk from "@traderjoe-xyz/sdk-v2";
 import {TokenAmount} from "@traderjoe-xyz/sdk-core";
 import {JSBI} from "@traderjoe-xyz/sdk";
 import { Token } from '@traderjoe-xyz/sdk-core';
+import { parseEther } from 'viem';
 
 chai.use(solidity);
 
@@ -278,8 +279,8 @@ describe('Smart loan', () => {
                     activeIdDesired: 8376120,
                     idSlippage: 16777215, //max uint24 - means that we accept every distance ("slippage") from the active bin
                     deltaIds: [0], //just one bin
-                    distributionX: [addedAvax],
-                    distributionY: [addedUsdc],
+                    distributionX: [parseEther("1")],
+                    distributionY: [parseEther("1")],
                     to: owner.address,
                     refundTo: owner.address,
                     deadline: Math.ceil((new Date().getTime() / 1000) + 10000)
@@ -842,8 +843,8 @@ describe('Smart loan', () => {
                     activeIdDesired: 8386837,
                     idSlippage: 16777215, //max uint24 - means that we accept every distance ("slippage") from the active bin
                     deltaIds: [0], //just one bin
-                    distributionX: [1],
-                    distributionY: [1],
+                    distributionX: [parseEther("1")],
+                    distributionY: [parseEther("1")],
                     to: owner.address,
                     refundTo: owner.address,
                     deadline: Math.ceil((new Date().getTime() / 1000) + 10000)
@@ -858,7 +859,6 @@ describe('Smart loan', () => {
             let ownerBalance = await lbToken.balanceOf(owner.address, fundDepositId);
             expect(ownerBalance).to.be.gt(0);
             await lbToken.connect(owner).approveForAll(wrappedLoan.address, true);
-
            await wrappedLoan.fundLiquidityTraderJoeV2(
               "0xEA7309636E7025Fda0Ee2282733Ea248c3898495",
                 [fundDepositId],
@@ -914,8 +914,8 @@ describe('Smart loan', () => {
 
             const bins = await wrappedLoan.getOwnedTraderJoeV2Bins();
 
-            const lbToken = await ethers.getContractAt(LBTokenAbi, bins[0].pair, owner);
-            const binBalance = await lbToken.balanceOf(wrappedLoan.address, bins[0].id);
+            const lbToken = await ethers.getContractAt(LBTokenAbi, bins[63].pair, owner);
+            const binBalance = await lbToken.balanceOf(wrappedLoan.address, bins[63].id);
 
             await expect(wrappedLoan.removeLiquidityTraderJoeV2(
                 tjv22RouterAddress,
@@ -925,7 +925,7 @@ describe('Smart loan', () => {
                     25,
                     0, // min JOE
                     0, // min AVAX
-                    [bins[0].id], //just one bin
+                    [bins[63].id], //just one bin
                     [binBalance.div(2)],
                     Math.ceil((new Date().getTime() / 1000) + 100)]
             )).not.to.be.reverted;
