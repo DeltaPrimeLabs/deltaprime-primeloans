@@ -127,8 +127,8 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
       );
     }
 
-    const totalValueBefore = fromWei(await runMethod(wrappedContract, 'getTotalValue', blockNumber - 1));
-    const totalValueAfter = fromWei(await runMethod(wrappedContract, 'getTotalValue', blockNumber + 10));
+    const totalValueBefore = fromWei((await runMethod(wrappedContract, 'getTotalValue', blockNumber - 1)).toString());
+    const totalValueAfter = fromWei((await runMethod(wrappedContract, 'getTotalValue', blockNumber + 10)).toString());
     console.log(`Checking block: ${blockNumber}`);
     console.log(`before: ${totalValueBefore}, after: ${totalValueAfter}, diff: ${totalValueAfter - totalValueBefore}`);
 
