@@ -819,7 +819,7 @@ describe('Smart loan', () => {
 
             let bins = await wrappedLoan.getOwnedTraderJoeV2Bins();
 
-            expect(bins.length).to.be.equal(0);
+            expect(bins.length).to.be.equal(63);
 
             const addedAvax = toWei('1');
             const addedJoe = parseUnits("10", BigNumber.from(18));
@@ -829,23 +829,21 @@ describe('Smart loan', () => {
 
             await tokenContracts.get('AVAX')!.connect(owner).deposit({value: addedAvax});
             await tokenContracts.get('AVAX')!.connect(owner).approve(LBRouter.address, addedAvax);
-
             await tokenContracts.get('JOE')!.connect(owner).approve(LBRouter.address, addedJoe);
-
-           let tx = await LBRouter.connect(owner).addLiquidity(
+            let tx = await LBRouter.connect(owner).addLiquidity(
                 {
                     tokenX: "0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd",
                     tokenY: "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
                     binStep: 25,
-                    amountX: addedAvax,
-                    amountY: addedJoe,
+                    amountX: addedJoe,
+                    amountY: addedAvax,
                     amountXMin: 0, // min AVAX
                     amountYMin: 0, // min USDC
-                    activeIdDesired: 8386841,
+                    activeIdDesired: 8386837,
                     idSlippage: 16777215, //max uint24 - means that we accept every distance ("slippage") from the active bin
                     deltaIds: [0], //just one bin
-                    distributionX: [addedAvax],
-                    distributionY: [addedJoe],
+                    distributionX: [1],
+                    distributionY: [1],
                     to: owner.address,
                     refundTo: owner.address,
                     deadline: Math.ceil((new Date().getTime() / 1000) + 10000)
@@ -858,9 +856,7 @@ describe('Smart loan', () => {
             fundDepositId = getLog(result, LBRouterAbi, 'DepositedToBins').args.ids[0];
 
             let ownerBalance = await lbToken.balanceOf(owner.address, fundDepositId);
-
             expect(ownerBalance).to.be.gt(0);
-
             await lbToken.connect(owner).approveForAll(wrappedLoan.address, true);
 
            await wrappedLoan.fundLiquidityTraderJoeV2(
@@ -873,7 +869,6 @@ describe('Smart loan', () => {
             expect(newOwnerBalance).to.be.equal(0);
 
             let loanBalance = await lbToken.balanceOf(wrappedLoan.address, fundDepositId);
-
             expect(loanBalance).to.be.equal(ownerBalance);
 
             bins = await wrappedLoan.getOwnedTraderJoeV2Bins();
@@ -883,7 +878,7 @@ describe('Smart loan', () => {
 
             expect(tvAfter).to.be.gt(tvBefore);
             expect(hrAfter).to.be.gt(hrBefore);
-            expect(bins.length).to.be.equal(1);
+            expect(bins.length).to.be.equal(64);
         });
 
         it("should withdraw LB tokens of JOE/AVAX pair", async () => {
@@ -910,7 +905,7 @@ describe('Smart loan', () => {
 
             expect(tvAfter).to.be.lt(tvBefore);
             expect(hrAfter).to.be.lt(hrBefore);
-            expect(bins.length).to.be.equal(1);
+            expect(bins.length).to.be.equal(64);
         });
 
         it("should remove a part of liquidity from JOE/AVAX pair", async () => {
@@ -928,8 +923,8 @@ describe('Smart loan', () => {
                     "0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd",
                     "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
                     25,
+                    0, // min JOE
                     0, // min AVAX
-                    0, // min USDC
                     [bins[0].id], //just one bin
                     [binBalance.div(2)],
                     Math.ceil((new Date().getTime() / 1000) + 100)]
