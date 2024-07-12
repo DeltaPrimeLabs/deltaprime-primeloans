@@ -75,7 +75,7 @@
       </div>
 
       <div class="table__cell table__cell--double-value max-apr">
-        <span>{{ (maxApr + gmBoost) | percent }}<img v-if="hasGmIncentives" v-tooltip="{content: `This pool is incentivized!<br>⁃ up to ${maxApr ? (maxApr * 100).toFixed(2) : 0}% Pool APR<br>⁃ up to ${gmBoost ? (gmBoost * 100).toFixed(2) : 0}% ${chain === 'arbitrum' ? 'ARB' : 'AVAX'} incentives`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span>
+        <span>{{ (maxApr + boostApy) | percent }}<img v-if="boostApy" v-tooltip="{content: `This pool is incentivized!<br>⁃ up to ${maxApr ? (maxApr * 100).toFixed(2) : 0}% Pool APR<br>⁃ up to ${boostApy ? (boostApy * 100).toFixed(2) : 0}% ${chain === 'arbitrum' ? 'ARB' : 'AVAX'} incentives`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span>
       </div>
 
       <div class="table__cell"></div>
@@ -180,6 +180,7 @@ import {
 import zapLong from "./zaps-tiles/ZapLong.vue";
 import {calculateGmxV2ExecutionFee, capitalize, hashData} from "../utils/blockchain";
 import Dropdown from "./notifi/settings/Dropdown.vue";
+import {ActionSection} from "../services/globalActionsDisableService";
 
 export default {
   name: 'GmxV2LpTableRow',
@@ -213,7 +214,9 @@ export default {
     this.watchExternalAssetBalanceUpdate();
     this.watchAsset();
     this.watchAssetPricesUpdate();
+    this.watchLtipMaxBoostUpdate();
     this.fetchHistoricalPrices();
+    this.watchActionDisabling();
   },
 
   data() {
@@ -244,8 +247,10 @@ export default {
       showChart: false,
       longTokenAmount: 0,
       shortTokenAmount: 0,
+      boostApy: 0,
       selectedChart: 'PRICE',
       chain: null,
+      isActionDisabledRecord: {},
     };
   },
 
@@ -270,6 +275,8 @@ export default {
       'balancerLpBalances',
       'penpieLpBalances',
       'penpieLpAssets',
+      'wombatLpAssets',
+      'wombatLpBalances',
       'apys',
     ]),
     ...mapState('poolStore', ['pools']),
@@ -280,7 +287,9 @@ export default {
       'progressBarService',
       'priceService',
       'lpService',
-      'healthService'
+      'healthService',
+      'ltipService',
+      'globalActionsDisableService',
     ]),
     ...mapState('stakeStore', ['farms']),
 
@@ -292,37 +301,6 @@ export default {
       if (!this.apys) return;
       return calculateMaxApy(this.pools, this.apr / 100);
     },
-
-    gmBoostOld() {
-      if (!this.apys || !this.assets || !this.assets['ARB'] || !this.assets['ARB'].price) return 0;
-      let apy = this.apys['GM_BOOST'].arbApy * (this.assets['ARB'].price || 0);
-      return this.hasGmIncentives ? 4.5 * apy : 0;
-    },
-
-    gmBoost() {
-      let apy;
-      if (!this.apys || !this.assets) return 0;
-      if (window.chain === 'arbitrum') {
-        if (!this.assets['ARB'] || !this.assets['ARB'].price) {
-          return 0;
-        } else {
-          apy = 0;
-        }
-      } else {
-        console.log('avalanche gm boost');
-        if (!this.assets['AVAX'] || !this.assets['AVAX'].price) {
-          return 0
-        } else {
-          apy = this.apys['GM_BOOST'].avaxApy * (this.assets['AVAX'].price || 0);
-          console.log(apy);
-        }
-      }
-      return this.hasGmIncentives ? 4.5 * apy : 0;
-    },
-
-    hasGmIncentives() {
-      return window.chain === 'avalanche';
-    }
   },
 
   watch: {
@@ -367,14 +345,14 @@ export default {
               {
                 key: 'ADD_FROM_WALLET',
                 name: 'Import existing GM token',
-                disabled: !this.hasSmartLoanContract,
-                disabledInfo: 'To import GM token, you need to add some funds from you wallet first'
+                disabled: this.isActionDisabledRecord['ADD_FROM_WALLET'] || !this.hasSmartLoanContract,
+                disabledInfo: this.isActionDisabledRecord['ADD_FROM_WALLET'] ? '' : 'To import GM token, you need to add some funds from you wallet first'
               },
               {
                 key: 'PROVIDE_LIQUIDITY',
                 name: 'Create GM position',
-                disabled: !this.hasSmartLoanContract,
-                disabledInfo: 'To create GM token, you need to add some funds from you wallet first'
+                disabled: this.isActionDisabledRecord['PROVIDE_LIQUIDITY'] || !this.hasSmartLoanContract,
+                disabledInfo: this.isActionDisabledRecord['PROVIDE_LIQUIDITY'] ? '' : 'To create GM token, you need to add some funds from you wallet first'
               }
             ]
           }
@@ -392,13 +370,13 @@ export default {
               {
                 key: 'WITHDRAW',
                 name: 'Export GM position',
-                disabled: !this.hasSmartLoanContract
+                disabled: this.isActionDisabledRecord['WITHDRAW'] || !this.hasSmartLoanContract
               },
               {
                 key: 'REMOVE_LIQUIDITY',
                 name: 'Remove GM position',
-                disabled: !this.hasSmartLoanContract,
-                disabledInfo: 'You need to add some funds from you wallet first'
+                disabled: this.isActionDisabledRecord['REMOVE_LIQUIDITY'] || !this.hasSmartLoanContract,
+                disabledInfo: this.isActionDisabledRecord['REMOVE_LIQUIDITY'] ? '' : 'You need to add some funds from you wallet first'
               }
             ]
           }
@@ -412,6 +390,7 @@ export default {
           {
             key: 'PARTNER_PROFILE',
             name: 'Show profile',
+            disabled: this.isActionDisabledRecord['PARTNER_PROFILE'],
           }
         ]
       };
@@ -483,7 +462,7 @@ export default {
     },
 
     actionClick(key) {
-      if (!this.disableAllButtons && this.healthLoaded) {
+      if (!this.isActionDisabledRecord[key] && !this.disableAllButtons && this.healthLoaded) {
         switch (key) {
           case 'ADD_FROM_WALLET':
             this.openAddFromWalletModal();
@@ -597,6 +576,8 @@ export default {
       modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
@@ -649,6 +630,8 @@ export default {
       modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.farms = this.farms;
       modalInstance.health = this.health;
@@ -695,6 +678,8 @@ export default {
       modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
@@ -792,6 +777,8 @@ export default {
       modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.targetAsset = this.lpToken.longToken;
       modalInstance.debt = this.fullLoanStatus.debt;
@@ -966,6 +953,12 @@ export default {
       });
     },
 
+    watchLtipMaxBoostUpdate() {
+      this.ltipService.observeLtipMaxBoostApy().subscribe((boostApy) => {
+        this.boostApy = boostApy;
+      });
+    },
+
     scheduleHardRefresh() {
       setTimeout(() => {
         this.progressBarService.emitProgressBarInProgressState();
@@ -1045,7 +1038,17 @@ export default {
 
     depositGasLimitKey(singleToken) {
       return hashData(["bytes32", "bool"], [DEPOSIT_GAS_LIMIT_KEY, singleToken]);
-    }
+    },
+
+    watchActionDisabling() {
+      this.globalActionsDisableService.getSectionActions$(ActionSection.GMXV2)
+          .subscribe(isActionDisabledRecord => {
+            this.isActionDisabledRecord = isActionDisabledRecord;
+            this.setupAddActionsConfiguration();
+            this.setupRemoveActionsConfiguration();
+            this.setupMoreActionsConfiguration();
+          })
+    },
   },
 };
 </script>

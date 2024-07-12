@@ -28,7 +28,7 @@
                      :validators="validators"
                      :info="() => sourceAssetValue">
       </CurrencyInput>
-      <CurrencyInput v-else
+      <CurrencyInput v-else-if="!(asset.inactive || asset.unsupported)"
                      :symbol="asset.short ? asset.short : asset.symbol"
                      :asset="asset"
                      v-on:newValue="withdrawValueChange"
@@ -36,6 +36,12 @@
                      :validators="validators"
                      :info="() => sourceAssetValue">
       </CurrencyInput>
+
+      <div class="modal-top-info-bar" v-if="asset.inactive || asset.unsupported">
+        <div>
+          Your full balance of {{asset.symbol}} will be withdrawn to your wallet.
+        </div>
+      </div>
 
       <div class="transaction-summary-wrapper">
         <TransactionResultSummaryBeta>
@@ -75,14 +81,14 @@
         </TransactionResultSummaryBeta>
       </div>
 
-      <div class="toggle-container" v-if="asset.name === toggleOptions[0]">
+      <div class="toggle-container" v-if="asset.name === toggleOptions[0] && !hideToggle">
         <Toggle v-on:change="assetToggleChange" :options="toggleOptions"></Toggle>
       </div>
 
       <div class="button-wrapper">
         <Button :label="'Withdraw'"
                 v-on:click="submit()"
-                :disabled="currencyInputError"
+                :disabled="currencyInputError && !(asset.inactive || asset.unsupported)"
                 :waiting="transactionOngoing">
         </Button>
       </div>
@@ -117,6 +123,7 @@ export default {
     asset: {},
     health: {},
     assetBalances: {},
+    assetBalance: null,
     assets: {},
     logo: null,
     farms: {},
@@ -129,6 +136,8 @@ export default {
     levelLpBalances: {},
     penpieLpAssets: {},
     penpieLpBalances: {},
+    wombatLpAssets: {},
+    wombatLpBalances: {},
     traderJoeV2LpAssets: {},
     balancerLpAssets: {},
     balancerLpBalances: {},
@@ -153,6 +162,7 @@ export default {
       thresholdWeightedValue: 0,
       maxWithdraw: 0,
       valueAsset: "USDC",
+      hideToggle: true,
     };
   },
 
@@ -268,21 +278,47 @@ export default {
         }
       }
 
-      for (const [symbol, data] of Object.entries(this.balancerLpAssets)) {
-        if (this.balancerLpBalances) {
-          let balance = parseFloat(this.balancerLpBalances[symbol]);
-
-          tokens.push({price: data.price, balance: balance ? balance : 0, borrowed: 0, debtCoverage: data.debtCoverage});
+      if (this.wombatLpAssets) {
+        for (const [symbol, data] of Object.entries(this.wombatLpAssets)) {
+          if (this.wombatLpBalances) {
+            let balance = parseFloat(this.wombatLpBalances[symbol]);
+            if (symbol === this.asset.symbol) {
+              balance -= withdrawn;
+            }
+            tokens.push({
+              price: data.price,
+              balance: balance ? balance : 0,
+              borrowed: 0,
+              debtCoverage: data.debtCoverage
+            });
+          }
         }
       }
 
-      for (const [symbol, data] of Object.entries(this.gmxV2Assets)) {
-        tokens.push({
-          price: data.price,
-          balance: parseFloat(this.gmxV2Balances[symbol]),
-          borrowed: 0,
-          debtCoverage: data.debtCoverage
-        });
+      if (this.balancerLpAssets) {
+        for (const [symbol, data] of Object.entries(this.balancerLpAssets)) {
+          if (this.balancerLpBalances) {
+            let balance = parseFloat(this.balancerLpBalances[symbol]);
+
+            tokens.push({
+              price: data.price,
+              balance: balance ? balance : 0,
+              borrowed: 0,
+              debtCoverage: data.debtCoverage
+            });
+          }
+        }
+      }
+
+      if (this.gmxV2Assets) {
+        for (const [symbol, data] of Object.entries(this.gmxV2Assets)) {
+          tokens.push({
+            price: data.price,
+            balance: parseFloat(this.gmxV2Balances[symbol]),
+            borrowed: 0,
+            debtCoverage: data.debtCoverage
+          });
+        }
       }
 
       for (const [, farms] of Object.entries(this.farms)) {

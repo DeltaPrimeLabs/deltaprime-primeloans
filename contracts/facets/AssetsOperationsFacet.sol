@@ -7,7 +7,7 @@ import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "../ReentrancyGuardKeccak.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
-import "../lib/SolvencyMethods.sol";
+import "../OnlyOwnerOrInsolvent.sol";
 import "../interfaces/ITokenManager.sol";
 import "./SmartLoanLiquidationFacet.sol";
 import "../interfaces/facets/IYieldYakRouter.sol";
@@ -15,7 +15,7 @@ import "../interfaces/facets/IYieldYakRouter.sol";
 //this path is updated during deployment
 import "../lib/local/DeploymentConstants.sol";
 
-contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
+contract AssetsOperationsFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     using TransferHelper for address payable;
     using TransferHelper for address;
 
@@ -25,6 +25,31 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57;
 
     /* ========== PUBLIC AND EXTERNAL MUTATIVE FUNCTIONS ========== */
+
+    /**
+    * Removes an asset from the ownedAssets array
+    * @param _asset asset to be removed
+    * @param _address address of the asset
+    **/
+    function removeUnsupportedOwnedAsset(bytes32 _asset, address _address) external onlyWhitelistedLiquidators nonReentrant {
+    ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+
+    // Check if the asset exists in the TokenManager
+    require(tokenManager.tokenToStatus(_address) == 0, "Asset is still supported");
+    require(tokenManager.tokenAddressToSymbol(_address) == bytes32(0), "Asset address to symbol not empty");
+    require(tokenManager.debtCoverage(_address) == 0, "Asset still has debt coverage");
+    require(tokenManager.identifierToExposureGroup(_asset) == bytes32(0), "Asset still has exposure group");
+
+    bytes32[] memory allAssets = tokenManager.getAllTokenAssets();
+    // Loop through all assets and check if the asset exists
+    for (uint i = 0; i < allAssets.length; i++) {
+        require(allAssets[i] != _asset, "Asset exists in TokenManager");
+    }
+
+
+    // Remove the asset from the ownedAssets array
+    DiamondStorageLib.removeOwnedAsset(_asset);
+}
 
     /**
     * Funds the loan with a specified amount of a defined token
@@ -238,7 +263,7 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, SolvencyMethods {
         emit DebtSwap(msg.sender, address(fromToken), address(toToken), _repayAmount, _borrowAmount, block.timestamp);
     }
 
-    function swapDebtParaSwap(bytes32 _fromAsset, bytes32 _toAsset, uint256 _repayAmount, uint256 _borrowAmount, bytes4 selector, bytes memory data) external onlyOwner remainsSolvent nonReentrant {
+    function swapDebtParaSwap(bytes32 _fromAsset, bytes32 _toAsset, uint256 _repayAmount, uint256 _borrowAmount, bytes4 selector, bytes memory data) external onlyOwnerOrInsolvent remainsSolvent nonReentrant {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         Pool fromAssetPool = Pool(tokenManager.getPoolAddress(_fromAsset));
         _repayAmount = Math.min(_repayAmount, fromAssetPool.getBorrowed(address(this)));

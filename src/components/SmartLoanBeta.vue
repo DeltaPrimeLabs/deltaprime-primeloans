@@ -11,6 +11,10 @@
           :noSmartLoan="noSmartLoanInternal"
           :healthLoading="healthLoading">
       </StatsBarBeta>
+
+      <SPrimePanel v-if="afterLaunchTime" :is-prime-account="true" :user-address="account" :total-deposits-or-borrows="noSmartLoanInternal ? 0 : debt"></SPrimePanel>
+      <LTIPStatsBar v-if="isArbitrum"></LTIPStatsBar>
+
       <InfoBubble v-if="noSmartLoanInternal === false" cacheKey="ACCOUNT-READY">
         Your Prime Account is ready! Now you can borrow,<br>
         provide liquidity and farm on the <b v-on:click="tabChange(1); selectedTabIndex = 1" style="cursor: pointer;">Farms</b>
@@ -98,6 +102,8 @@ import TransactionHistory from './TransactionHistory';
 import Stats from './stats/Stats.vue';
 import LPTab from "./LPTab.vue";
 import Zaps from "./Zaps.vue";
+import LTIPStatsBar from './LTIPStatsBar.vue';
+import SPrimePanel from './SPrimePanel.vue';
 
 const TABS = [
   {
@@ -123,10 +129,13 @@ const TABS = [
 ];
 
 const TUTORIAL_VIDEO_CLOSED_LOCALSTORAGE_KEY = 'TUTORIAL_VIDEO_CLOSED';
+const LAUNCH_TIME = 1719853200000;
 
 export default {
   name: 'SmartLoanBeta',
   components: {
+    SPrimePanel,
+    LTIPStatsBar,
     Zaps,
     LPTab,
     TransactionHistory,
@@ -158,6 +167,8 @@ export default {
       'balancerLpBalances',
       'penpieLpAssets',
       'penpieLpBalances',
+      'wombatLpAssets',
+      'wombatLpBalances',
       'traderJoeV2LpAssets',
       'fullLoanStatus',
       'noSmartLoan',
@@ -175,12 +186,18 @@ export default {
       'dataRefreshEventService',
       'farmService',
       'collateralService',
-      'debtService'
+      'debtService',
+      'ggpIncentivesService',
+      'ltipService'
     ]),
     ...mapState('network', ['account']),
     primeAccountsBlocked() {
       return config.primeAccountsBlocked;
-    }
+    },
+    afterLaunchTime() {
+      const now = new Date().getTime();
+      return now > LAUNCH_TIME;
+    },
   },
   watch: {
     assetBalances: {
@@ -229,10 +246,12 @@ export default {
       showLPTab: Object.keys(config.TRADERJOEV2_LP_ASSETS_CONFIG).length || Object.keys(config.CONCENTRATED_LP_ASSETS_CONFIG).length || Object.keys(config.LP_ASSETS_CONFIG).length,
       showFarmsTab: Object.keys(config.FARMED_TOKENS_CONFIG).length,
       tabsRefs: [],
+      isArbitrum: false
     };
   },
 
   async mounted() {
+    this.isArbitrum = window.chain === 'arbitrum';
     this.setupSelectedTab();
     this.watchHealthRefresh();
     this.watchAprRefresh();
@@ -246,10 +265,12 @@ export default {
     ...mapActions('fundsStore', ['fundsStoreSetup', 'getAccountApr']),
     ...mapActions('stakeStore', ['stakeStoreSetup']),
     ...mapActions('poolStore', ['poolStoreSetup']),
+    ...mapActions('sPrimeStore', ['sPrimeStoreSetup']),
 
     initStoresWhenProviderAndAccountCreated() {
       combineLatest([this.providerService.observeProviderCreated(), this.accountService.observeAccountLoaded()])
           .subscribe(async ([provider, account]) => {
+            this.sPrimeStoreSetup();
             await this.poolStoreSetup();
             await this.fundsStoreSetup();
             await this.stakeStoreSetup();
@@ -264,9 +285,12 @@ export default {
         this.dataRefreshEventService.observeDebtsPerAssetDataRefresh(),
         this.dataRefreshEventService.observeFullLoanStatusRefresh(),
         this.dataRefreshEventService.observeAssetApysDataRefresh(),
+        this.ltipService.observeLtipPrimeAccountEligibleTvl(),
+        this.ltipService.observeLtipMaxBoostApy(),
+        this.ggpIncentivesService.observeBoostGGPApy$(),
       ])
-          .subscribe(async ([provider, account]) => {
-            await this.getAccountApr();
+          .subscribe(async ([,,,,,,eligibleTvl, maxBoostApy]) => {
+            await this.getAccountApr({eligibleTvl, maxBoostApy});
           });
     },
 
@@ -360,6 +384,8 @@ export default {
             this.gmxV2Balances,
             this.penpieLpAssets,
             this.penpieLpBalances,
+            this.wombatLpAssets,
+            this.wombatLpBalances,
             this.traderJoeV2LpAssets,
             this.farms,
         );

@@ -12,6 +12,9 @@
     <a class="logo atomica" href="https://www.atomica.org/" target="_blank"></a>
     <div class="divider"></div>
     <a class="logo salus" href="https://salusec.io/" target="_blank"></a>
+    <a href="https://deltaprime.io/documents/DeltaPrime_Terms_of_Use.pdf" class="terms-link" target="_blank">
+      Terms of Use
+    </a>
   </div>
 </template>
 
@@ -46,6 +49,20 @@ export default {
   align-items: center;
   justify-content: center;
   background-color: var(--bar__background);
+
+  .terms-link {
+    position: absolute;
+    top: 50%;
+    right: 16px;
+    transform: translateY(-50%);
+    font-weight: 500;
+    color: var(--bar__link-color);
+    letter-spacing: 0.5px;
+
+    &:hover {
+      color: var(--bar__link-color--hover);
+    }
+  }
 
   .text {
     color: var(--bar__text-color);

@@ -22,7 +22,7 @@
         </div>
         <div class="option__info__wrapper">
           <InfoIcon
-              v-if="option.disabled"
+              v-if="option.disabled && option.disabledInfo"
               class="option__info-icon"
               :tooltip="{content: option.disabledInfo}"
               :classes="'info-tooltip'"

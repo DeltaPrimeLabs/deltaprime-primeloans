@@ -70,7 +70,7 @@ export default {
     &.asset {
     }
 
-    &.balance, &.composition, &.staked, &.lp-balance{
+    &.balance, &.composition, &.staked, &.lp-balance, &.ggp-collected {
       justify-content: flex-end;
     }
 
@@ -154,6 +154,11 @@ export default {
     }
 
     &.amount {
+      justify-content: flex-end;
+      padding-right: 22px;
+    }
+
+    &.incentives-earned {
       justify-content: flex-end;
       padding-right: 22px;
     }

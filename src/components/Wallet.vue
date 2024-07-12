@@ -1,22 +1,23 @@
 <template>
   <div class="wallet">
-    <NetworkSelect></NetworkSelect>
-    <div class="prime-account" v-if="hasSmartLoanContract">
+    <NetworkSelect v-if="!isClaimPage"></NetworkSelect>
+    <div class="prime-account" v-if="hasSmartLoanContract && !isClaimPage">
       <div class="separator"></div>
       <img class="logo" src="src/assets/logo/deltaprime.svg"/>
       <div class="account" v-tooltip="{content: 'Your Prime Account address', classes: 'info-tooltip long'}">
-        <a :href="getPrimeAccountExplorerUrl" target="_blank">{{smartLoanContract.address | tx(true)}}</a>
+        <a :href="getPrimeAccountExplorerUrl" target="_blank">{{ smartLoanContract.address | tx(true) }}</a>
       </div>
     </div>
-    <div class="separator"></div>
+    <div v-if="!isClaimPage" class="separator"></div>
     <img class="logo" :src="getWalletIcon"/>
     <div class="account" v-tooltip="{content: 'Your wallet address', classes: 'info-tooltip long'}">
-      <a :href='getWalletExplorerUrl' target="_blank">{{account | tx(true)}}</a>
+      <a :href='getWalletExplorerUrl' target="_blank">{{ account | tx(true) }}</a>
     </div>
-    <div class="balance">{{accountBalance | avax}}</div>
+    <div class="balance">{{ accountBalance | avax(3) }}</div>
     <img class="logo" :src="tokenLogos[nativeToken]"/>
-    <div class="separator"></div>
-    <IconButton :disabled="!account || !notifiScreenLoaded || !isNotifiEnabled"
+    <div v-if="!isClaimPage" class="separator"></div>
+    <IconButton v-if="!isClaimPage"
+                :disabled="!account || !notifiScreenLoaded || !isNotifiEnabled"
                 ref="notifiBtn"
                 class="alert-icon"
                 :icon-src="'src/assets/icons/alert_icon.svg'" :size="20"
@@ -55,6 +56,9 @@ export default {
     IconButton,
     NotifiModal,
     NetworkSelect,
+  },
+  props: {
+    isClaimPage: null,
   },
   computed: {
     ...mapState('network', ['provider', 'account', 'accountBalance']),
@@ -139,15 +143,15 @@ export default {
 
     notificationTooltip() {
       return this.isNotifiEnabled ?
-        `
+          `
           <span>Notifications</span>
           <div class='tooltip-extra'>
             <img class="tooltip-extra__icon" src="src/assets/icons/rating.png"/>
             <span>This is a Prime feature</span>
           </div>
         `
-        :
-        `<span>Coming soon!</span>`;
+          :
+          `<span>Coming soon!</span>`;
     }
   }
 };

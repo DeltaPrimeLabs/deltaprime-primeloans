@@ -21,8 +21,15 @@ import WalletAssetBalancesService from '../services/walletAssetBalancesService';
 import LifiService from '../services/lifiService';
 import NotifiService from '../services/notifiService';
 import TraderJoeService from '../services/traderJoeService';
+import UniswapV3Service from '../services/uniswapV3Service';
 import TermsService from '../services/termsService';
 import DeprecatedAssetsService from '../services/deprecatedAssetsService';
+import LtipService from "../services/ltipService";
+import GgpIncentivesService from "../services/ggpIncentivesService";
+import sPrimeService from "../services/sPrimeService";
+import vPrimeService from "../services/vPrimeService";
+import GlobalActionsDisableService from "../services/globalActionsDisableService";
+import AvalancheBoostService from '../services/avalancheBoostService';
 
 export default {
   namespaced: true,
@@ -50,7 +57,14 @@ export default {
     lifiService: new LifiService(),
     notifiService: new NotifiService(),
     traderJoeService: new TraderJoeService(),
+    uniswapV3Service: new UniswapV3Service(),
     termsService: new TermsService(),
     deprecatedAssetsService: new DeprecatedAssetsService(),
+    ltipService: new LtipService(),
+    ggpIncentivesService: new GgpIncentivesService(),
+    sPrimeService: new sPrimeService(),
+    vPrimeService: new vPrimeService(),
+    globalActionsDisableService: new GlobalActionsDisableService(),
+    avalancheBoostService: new AvalancheBoostService(),
   },
 };

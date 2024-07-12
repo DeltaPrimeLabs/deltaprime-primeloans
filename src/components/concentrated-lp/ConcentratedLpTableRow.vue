@@ -53,7 +53,7 @@
 
       <div class="table__cell actions">
         <DeltaIcon class="action-button"
-                   v-bind:class="{'action-button--disabled': disableAllButtons || !lpTokenBalances || lpToken.inactive || noSmartLoan}"
+                   v-bind:class="{'action-button--disabled': isActionDisabledRecord['ADD_FROM_WALLET'] || disableAllButtons || !lpTokenBalances || lpToken.inactive || noSmartLoan}"
                    :icon-src="'src/assets/icons/plus.svg'" :size="26"
                    v-tooltip="{content: 'Add LP from wallet', classes: 'button-tooltip'}"
                    v-on:click.native="actionClick('ADD_FROM_WALLET')"></DeltaIcon>
@@ -102,6 +102,7 @@ import {formatUnits, parseUnits} from 'ethers/lib/utils';
 import ApolloClient from "apollo-boost";
 import gql from "graphql-tag";
 import DeltaIcon from '../DeltaIcon.vue';
+import {ActionSection} from "../../services/globalActionsDisableService";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -132,6 +133,7 @@ export default {
     this.setupApr();
     this.setupPoolData();
     this.setupTvl();
+    this.watchActionDisabling();
   },
 
   data() {
@@ -151,6 +153,7 @@ export default {
       totalSecondAmount: 0,
       firstPrice: 0,
       secondPrice: 0,
+      isActionDisabledRecord: {},
     };
   },
 
@@ -175,6 +178,8 @@ export default {
       'gmxV2Balances',
       'penpieLpBalances',
       'penpieLpAssets',
+      'wombatLpAssets',
+      'wombatLpBalances',
       'noSmartLoan'
     ]),
     ...mapState('stakeStore', ['farms']),
@@ -187,7 +192,8 @@ export default {
       'lpService',
       'healthService',
       'stakedExternalUpdateService',
-      'farmService'
+      'farmService',
+      'globalActionsDisableService',
     ]),
 
     hasSmartLoanContract() {
@@ -243,18 +249,18 @@ export default {
             {
               key: 'PROVIDE_LIQUIDITY',
               name: 'Create Concentrated LP token',
-              disabled: this.noSmartLoan || !this.lpTokenBalances || this.lpToken.inactive,
-              disabledInfo: 'To create LP token, you need to add some funds from you wallet first'
+              disabled: this.isActionDisabledRecord['PROVIDE_LIQUIDITY'] || this.noSmartLoan || !this.lpTokenBalances || this.lpToken.inactive,
+              disabledInfo: this.isActionDisabledRecord['PROVIDE_LIQUIDITY'] ? '' : 'To create LP token, you need to add some funds from you wallet first'
             },
             {
               key: 'REMOVE_LIQUIDITY',
               name: 'Unwind Concentrated LP token',
-              disabled: this.noSmartLoan || !this.lpTokenBalances || this.lpToken.inactive,
+              disabled: this.isActionDisabledRecord['REMOVE_LIQUIDITY'] || this.noSmartLoan || !this.lpTokenBalances || this.lpToken.inactive,
             },
             {
               key: 'WITHDRAW',
               name: 'Withdraw LP to wallet',
-              disabled: this.noSmartLoan || !this.lpTokenBalances
+              disabled: this.isActionDisabledRecord['WITHDRAW'] || this.noSmartLoan || !this.lpTokenBalances
             }
           ]
         }
@@ -322,7 +328,7 @@ export default {
     },
 
     actionClick(key) {
-      if (!this.disableAllButtons) {
+      if (!this.isActionDisabledRecord[key] && !this.disableAllButtons) {
         switch (key) {
           case 'ADD_FROM_WALLET':
             this.openAddFromWalletModal();
@@ -354,6 +360,8 @@ export default {
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.gmxV2Assets = this.gmxV2Assets;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
@@ -401,6 +409,8 @@ export default {
       modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.farms = this.farms;
       modalInstance.health = this.health;
@@ -569,6 +579,14 @@ export default {
       this.closeModal();
       this.disableAllButtons = false;
       this.isBalanceEstimated = false;
+    },
+
+    watchActionDisabling() {
+      this.globalActionsDisableService.getSectionActions$(ActionSection.CONCENTRATED_LP)
+          .subscribe(isActionDisabledRecord => {
+            this.isActionDisabledRecord = isActionDisabledRecord;
+            this.setupActionsConfiguration();
+          })
     },
   },
 };

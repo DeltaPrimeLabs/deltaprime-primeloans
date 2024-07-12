@@ -36,6 +36,15 @@
   --stats-bar-beta__divider-background: linear-gradient(to bottom, #{$delta-pale} 41%, #{$pale-orange} 58%, #{$pale-raspberry} 77%);
   // endregion
 
+  // region LTIPStatsBar
+  --ltip-stats-bar__background: #{$white}4c;
+  --ltip-stats-bar__box-shadow: 7px 7px 30px 0 #{$delta-steel}80;
+  --ltip-stats-bar__divider-background: linear-gradient(to bottom, #{$delta-pale} 41%, #{$pale-orange} 58%, #{$pale-raspberry} 77%);
+  --ltip-stats-bar-text__color: #{$dark-gray};
+  --ltip-stats-bar-value__color: #{$black};
+  --ltip-stats-bar-value-icon: url("/src/assets/icons/shine_light.svg");
+  // endregion
+
   // region StatsBarElementBeta
   --stats-bar-element-beta__stat-label-color: #{$dark-gray};
   // endregion
@@ -50,6 +59,8 @@
   --bar__background-color: #{$delta-steel}33;
   --bar__box-shadow: inset 0 1px 3px 0 #{$delta-steel}B2;
   --bar__value-background-image: linear-gradient(to right, #{$delta-cloudy} 17%, #{$washed-lilac} 91%);
+  --bar__value-background-image--completion: linear-gradient(120deg, #{$lime-green} 0%, #{$pale-green} 100%);
+  --bar__value-background-image--error: #{$red};
   // endregion
 
   // region NameValueBadgeBeta
@@ -551,6 +562,18 @@
   --range-slider__indicator-background: #{$deeper-gray};
   // endregion
 
+  // region Slider
+  --slider__box-shadow: inset 0 1px 3px 0 #{$delta-steel}B2;
+  --slider__slider-background-color: #{$delta-steel}33;
+  --slider__slider-background-gradient: linear-gradient(to right, #{$delta-cloudy} 17%, #{$washed-lilac} 91%);
+  --slider__slider-background--error: #{$red};
+  --slider__slider-thumb-background: #{$white};
+  --slider__slider-thumb-border: solid 3px #{$washed-lilac};
+  --slider__slider-thumb-border--error: #{$red};
+  --slider__labels-color: #{$steel-gray};
+  --slider__color--error: #{$red};
+  // endregion
+
   // region Zaps
   --zaps__header-color: #{$dark-gray};
   // endregion
@@ -623,6 +646,8 @@
   --bar__logo--hover-hexagate: url("/src/assets/icons/securityLogos/hexagate--light--hover.png");
   --bar__logo--hover-atomica: url("/src/assets/icons/securityLogos/atomica--light--hover.svg");
   --bar__logo--hover-salus: url("/src/assets/icons/securityLogos/salus--light--hover.svg");
+  --bar__link-color: #{$delta-gray};
+  --bar__link-color--hover: #{$dimmed-fuchsia};
   // endregion
 
   // region ProtocolInsurance
@@ -630,5 +655,60 @@
   --protocol-insurance-value: #{$black};
   --protocol-insurance-border: #{$delta-light};
   --protocol-insurance-background: #{$violet-mist};
+  // endregion
+
+  // region ClaimGLPModal
+  --claim-glp-modal__rewards-label-color: #{$steel-gray};
+  // endregion
+
+
+  // region WombatPoolRow
+  --wombat-pool-row__header-color: #{$medium-gray};
+  --wombat-pool-row__header-border: linear-gradient(to right, #{$delta-pale} 43%, #{$pale-orange} 62%, #{$pale-raspberry} 79%);
+  // endregion
+
+  // region DistributionChart
+  --distribution-chart__bar-color--negative: #{$red};
+  --distribution-chart__bar-color--positive: #{$delta-accent};
+  --distribution-chart__line-background--1: #{$delta-pale};
+  --distribution-chart__line-background--2: #{$pale-orange};
+  --distribution-chart__line-background--3: #{$pale-raspberry};
+  --distribution-chart__ticks-color: #{$steel-gray};
+  // endregion
+
+  // region SPrimePanel
+  --s-prime-panel__sprime-color: #{$black};
+  --s-prime-panel__panel-background-color: #{$white}4c;
+  --s-prime-panel__panel-box-shadow: 7px 7px 30px 0 #{$delta-steel}7f;
+  --s-prime-panel__divider-background: linear-gradient(to right, #{$delta-pale}, #{$pale-orange} 48%, #{$pale-raspberry});
+  --s-prime-panel__chevron-color: #{$delta-accent};
+  --s-prime-panel__chevron-color--hover: #{$persian-blue};
+  --s-prime-panel__main-text-color: #{$dark-gray};
+  --s-prime-panel__secondary-text-color: #{$black};
+  --s-prime-panel__gauge-border: linear-gradient(to right, #{$delta-pale}, #{$pale-orange} 48%, #{$pale-raspberry});
+  --s-prime-panel__gauge-box-shadow: 2px 2px 10px 0 #{$delta-steel}e5;
+  --s-prime-panel__gauge-text-color: #{$delta-accent};
+  --s-prime-panel__actions-info-divider-background: #{$smoke-gray};
+  // endregion
+
+  // region PriceRangeChart
+  --price-range-chart__border: linear-gradient(to right, #{$delta-pale} 43%, #{$pale-orange} 62%, #{$pale-raspberry} 79%);
+  --price-range-chart__range-background: #{$lime-green};
+  --price-range-chart__range-background--neutral: #{$orange};
+  --price-range-chart__range-background--negative: #{$red};
+  --price-range-chart__tick-color: #{$steel-gray};
+  --price-range-chart__active-line-color: #{$delta-primary};
+  // endregion
+
+  // region ClaimPage
+  --claim-page__content-background: #{$white};
+  --claim-page__content-box-shadow: 7px 17px 55px 0 #{$pale-raspberry}91;
+  --claim-page__logo-box-shadow: 7px 17px 55px rgba(255, 211, 224, 0.57);
+  --claim-page__label-color: #{$dark-gray};
+  --claim-page__amount-text-color: #{$black};
+  // endregion
+
+  // region SprimeModal
+  --sprime-modal__text-color: #{$persian-blue};
   // endregion
 }

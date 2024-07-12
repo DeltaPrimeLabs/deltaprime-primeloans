@@ -101,6 +101,8 @@ export default {
     balancerLpBalances: {},
     penpieLpAssets: {},
     penpieLpBalances: {},
+    wombatLpAssets: {},
+    wombatLpBalances: {},
     farms: {},
     debtsPerAsset: {},
     assetBalance: Number,
@@ -225,6 +227,20 @@ export default {
         }
       }
 
+      if (this.wombatLpAssets) {
+        for (const [symbol, data] of Object.entries(this.wombatLpAssets)) {
+          if (this.wombatLpBalances) {
+            let balance = parseFloat(this.wombatLpBalances[symbol]);
+            tokens.push({
+              price: data.price,
+              balance: balance ? balance : 0,
+              borrowed: 0,
+              debtCoverage: data.debtCoverage
+            });
+          }
+        }
+      }
+
       for (const [symbol, data] of Object.entries(this.gmxV2Assets)) {
         tokens.push({
           price: data.price,
@@ -246,6 +262,9 @@ export default {
       }
 
       let lbTokens = Object.values(this.traderJoeV2LpAssets);
+
+      console.log('tokens: ', tokens)
+      console.log('lbTokens: ', tokens)
 
       this.healthAfterTransaction = calculateHealth(tokens, lbTokens);
     },

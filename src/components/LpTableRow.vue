@@ -119,6 +119,7 @@ import {calculateMaxApy, fromWei} from '../utils/calculate';
 import addresses from '../../common/addresses/avalanche/token_addresses.json';
 import {formatUnits, parseUnits} from 'ethers/lib/utils';
 import DeltaIcon from "./DeltaIcon.vue";
+import {ActionSection} from "../services/globalActionsDisableService";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -150,6 +151,7 @@ export default {
     this.watchExternalAssetBalanceUpdate();
     this.watchExternalTotalStakedUpdate();
     this.watchFarmRefreshEvent();
+    this.watchActionDisabling();
     await this.setupApr();
   },
 
@@ -168,6 +170,7 @@ export default {
       healthLoaded: false,
       totalStaked: null,
       availableFarms: [],
+      isActionDisabledRecord: {},
     };
   },
 
@@ -192,6 +195,8 @@ export default {
       'gmxV2Balances',
       'penpieLpBalances',
       'penpieLpAssets',
+      'wombatLpAssets',
+      'wombatLpBalances',
       'noSmartLoan'
     ]),
     ...mapState('stakeStore', ['farms']),
@@ -204,7 +209,8 @@ export default {
       'lpService',
       'healthService',
       'stakedExternalUpdateService',
-      'farmService'
+      'farmService',
+      'globalActionsDisableService',
     ]),
 
     hasSmartLoanContract() {
@@ -262,13 +268,13 @@ export default {
               {
                 key: 'ADD_FROM_WALLET',
                 name: 'Import existing LP position',
-                disabled: this.lpToken.inactive,
+                disabled: this.isActionDisabledRecord['ADD_FROM_WALLET'] || this.lpToken.inactive,
               },
               {
                 key: 'PROVIDE_LIQUIDITY',
                 name: 'Create LP position',
-                disabled: !this.hasSmartLoanContract || !this.lpTokenBalances || this.lpToken.inactive,
-                disabledInfo: 'To create LP token, you need to add some funds from you wallet first'
+                disabled: this.isActionDisabledRecord['PROVIDE_LIQUIDITY'] || !this.hasSmartLoanContract || !this.lpTokenBalances || this.lpToken.inactive,
+                disabledInfo: this.isActionDisabledRecord['PROVIDE_LIQUIDITY'] ? '' : 'To create LP token, you need to add some funds from you wallet first'
               }
             ]
           }
@@ -283,12 +289,12 @@ export default {
               {
                 key: 'WITHDRAW',
                 name: 'Export LP position',
-                disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
+                disabled: this.isActionDisabledRecord['WITHDRAW'] || !this.hasSmartLoanContract || !this.lpTokenBalances,
               },
               {
                 key: 'REMOVE_LIQUIDITY',
                 name: 'Remove LP position',
-                disabled: !this.hasSmartLoanContract || !this.lpTokenBalances || this.lpToken.inactive,
+                disabled: this.isActionDisabledRecord['PROVIDE_LIQUIDITY'] || !this.hasSmartLoanContract || !this.lpTokenBalances || this.lpToken.inactive,
               }
             ]
           }
@@ -312,7 +318,7 @@ export default {
     },
 
     actionClick(key) {
-      if (!this.disableAllButtons) {
+      if (!this.disableAllButtons && !this.isActionDisabledRecord[key]) {
         switch (key) {
           case 'ADD_FROM_WALLET':
             this.openAddFromWalletModal();
@@ -346,6 +352,8 @@ export default {
       modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.loan = this.debt;
@@ -390,6 +398,8 @@ export default {
       modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.farms = this.farms;
       modalInstance.health = this.health;
@@ -597,6 +607,15 @@ export default {
 
     setupAvailableFarms() {
       this.availableFarms = config.FARMED_TOKENS_CONFIG[this.lpToken.symbol];
+    },
+
+    watchActionDisabling() {
+      this.globalActionsDisableService.getSectionActions$(ActionSection.LP)
+          .subscribe(isActionDisabledRecord => {
+            this.isActionDisabledRecord = isActionDisabledRecord;
+            this.setupAddActionsConfiguration();
+            this.setupRemoveActionsConfiguration();
+          })
     },
   },
 };

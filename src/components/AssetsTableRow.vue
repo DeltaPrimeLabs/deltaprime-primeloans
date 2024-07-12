@@ -10,12 +10,15 @@
             <img v-if="asset.droppingSupport && assetBalances[asset.symbol] > 0"
                  src="src/assets/icons/warning.svg"
                  v-tooltip="{content: `We will drop support to this asset on ${ asset.debtCoverage > 0.1 ? '26.04.2024 12:00 CET' : 'Monday 22.04.2024 16:00 CET'}. Please withdraw or swap to another token.`, classes: 'info-tooltip long'}">
+            <img v-if="asset.warning"
+                 src="src/assets/icons/warning.svg"
+                 v-tooltip="{content: `${asset.warning}`, classes: 'info-tooltip long'}">
           </div>
           <div class="asset__loan" v-if="borrowApyPerPool && borrowApyPerPool[asset.symbol] !== undefined">
             Borrow&nbsp;APY:&nbsp;{{ borrowApyPerPool[asset.symbol] | percent }}
           </div>
           <div class="asset__loan" v-if="asset.apy">
-            Profit APY:&nbsp;{{ asset.apy / 100 | percent }}
+            APY:&nbsp;{{ asset.apy / 100 | percent }}<span v-if="asset.hasIncentives + boostApy"><br>up to {{4.5 * asset.apy / 100 + boostApy | percent}}<img v-if="boostApy" v-tooltip="{content: `This pool is incentivized!<br>⁃ up to ${asset.apy ? (4.5 * asset.apy).toFixed(2) : 0}% Pool APR<br>⁃ up to ${boostApy ? (boostApy * 100).toFixed(2) : 0}% ${chain === 'arbitrum' ? 'ARB' : 'AVAX'} incentives`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span>
           </div>
         </div>
       </div>
@@ -88,11 +91,11 @@
 
       <div class="table__cell actions">
         <IconButton class="action-button"
-                    :disabled="((disableAllButtons) && (!(asset.debtCoverage > 0 && noSmartLoan)) || asset.inactive || asset.unsupported || asset.droppingSupport)"
+                    :disabled="isActionDisabledRecord['ADD_FROM_WALLET'] || ((disableAllButtons) && (!(asset.debtCoverage > 0 && noSmartLoan)) || asset.inactive || asset.unsupported || asset.droppingSupport)"
                     :icon-src="'src/assets/icons/plus.svg'" :size="26"
                     v-tooltip="{content: 'Deposit collateral', classes: 'button-tooltip'}"
                     v-on:click="actionClick('ADD_FROM_WALLET')">
-          <template v-if="(asset.symbol === nativeAssetOptions[0] && noSmartLoan)" v-slot:bubble>
+          <template v-if="(asset.symbol === nativeAssetOptions[0] && noSmartLoan && !isActionDisabledRecord['ADD_FROM_WALLET'])" v-slot:bubble>
             To create your Prime Account, click one of the
             <DeltaIcon class="icon-button__icon" :icon-src="'src/assets/icons/plus-white.svg'"
                        :size="26"
@@ -100,7 +103,7 @@
             buttons and deposit collateral.
           </template>
         </IconButton>
-        <IconButton :disabled="disableAllButtons || asset.inactive || asset.unsupported || noSmartLoan"
+        <IconButton :disabled="isActionDisabledRecord['SWAP'] || disableAllButtons || asset.inactive || asset.unsupported || noSmartLoan"
                     class="action-button"
                     :icon-src="'src/assets/icons/swap.svg'" :size="26"
                     v-tooltip="{content: 'Swap', classes: 'button-tooltip'}"
@@ -110,7 +113,7 @@
           class="actions__icon-button"
           :config="moreActionsConfig"
           v-on:iconButtonClick="actionClick"
-          :disabled="disableAllButtons || asset.inactive || asset.unsupported || noSmartLoan">
+          :disabled="disableAllButtons || asset.inactive || noSmartLoan">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -173,6 +176,7 @@ import Toggle from './Toggle.vue';
 import {BigNumber} from 'ethers';
 import SwapDebtModal from './SwapDebtModal.vue';
 import MintCAIModal from './MintCAIModal.vue';
+import {ActionSection} from "../services/globalActionsDisableService";
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -192,6 +196,7 @@ export default {
     index: null,
   },
   async mounted() {
+    this.chain = window.chain;
     await this.setupFiles();
     this.setupBorrowable();
     this.setupAvailableFarms();
@@ -207,9 +212,12 @@ export default {
     this.setupPoolsApy();
     this.watchExternalTotalStakedUpdate();
     this.watchFarmRefreshEvent();
+    this.watchLtipMaxBoostUpdate();
+    this.watchActionDisabling();
   },
   data() {
     return {
+      chain: null,
       borrowable: [],
       moreActionsConfig: null,
       rowExpanded: false,
@@ -225,6 +233,8 @@ export default {
       showTradingViewChart: false,
       avalancheChain: window.avalancheChain,
       currentlyOpenModalInstance: null,
+      boostApy: 0,
+      isActionDisabledRecord: {},
     };
   },
   computed: {
@@ -250,6 +260,8 @@ export default {
       'gmxV2Balances',
       'penpieLpBalances',
       'penpieLpAssets',
+      'wombatLpAssets',
+      'wombatLpBalances',
       'noSmartLoan'
     ]),
     ...mapState('stakeStore', ['farms']),
@@ -264,6 +276,8 @@ export default {
       'healthService',
       'stakedExternalUpdateService',
       'farmService',
+      'ltipService',
+      'globalActionsDisableService',
     ]),
 
     loanValue() {
@@ -329,16 +343,18 @@ export default {
               {
                 key: 'BORROW',
                 name: 'Borrow',
-                disabled: this.borrowDisabled(),
+                disabled: this.isActionDisabledRecord['BORROW'] || this.borrowDisabled(),
                 disabledInfo: 'To borrow, you need to add some funds from you wallet first'
               },
               {
                 key: 'REPAY',
                 name: 'Repay',
+                disabled: this.isActionDisabledRecord['REPAY'],
               },
               {
                 key: 'SWAP_DEBT',
                 name: 'Swap debt',
+                disabled: this.isActionDisabledRecord['SWAP_DEBT'],
               }
             ]
             : []),
@@ -346,9 +362,10 @@ export default {
             key: 'WRAP',
             name: `Wrap native ${this.nativeAssetOptions[0]}`,
             hidden: true,
+            disabled: this.isActionDisabledRecord['WRAP'],
           } : null,
           this.asset.symbol === 'GLP' ? {
-            disabled: !this.hasSmartLoanContract,
+            disabled: this.isActionDisabledRecord['CLAIM_GLP_REWARDS'] || !this.hasSmartLoanContract,
             key: 'CLAIM_GLP_REWARDS',
             name: 'Claim GLP rewards',
           } : null,
@@ -366,6 +383,7 @@ export default {
           {
             key: 'WITHDRAW',
             name: 'Withdraw collateral',
+            disabled: this.isActionDisabledRecord['WITHDRAW'],
           },
         ]
       };
@@ -508,7 +526,7 @@ export default {
     },
 
     actionClick(key) {
-      if (!this.disableAllButtons || (this.noSmartLoan && this.asset.debtCoverage > 0 && key === 'ADD_FROM_WALLET')) {
+      if (!this.isActionDisabledRecord[key] && !this.disableAllButtons || (this.noSmartLoan && this.asset.debtCoverage > 0 && key === 'ADD_FROM_WALLET')) {
         switch (key) {
           case 'BORROW':
             this.openBorrowModal();
@@ -575,6 +593,8 @@ export default {
       modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.farms = this.farms;
@@ -633,6 +653,8 @@ export default {
       modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.targetAsset = Object.keys(config.ASSETS_CONFIG).filter(asset => asset !== this.asset.symbol)[0];
       modalInstance.debt = this.fullLoanStatus.debt;
@@ -691,6 +713,8 @@ export default {
       modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.balancerLpBalances = this.balancerLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
@@ -738,6 +762,8 @@ export default {
       modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.balancerLpBalances = this.balancerLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
@@ -823,6 +849,8 @@ export default {
       modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.balancerLpBalances = this.balancerLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
@@ -849,9 +877,11 @@ export default {
         } else {
           const withdrawRequest = {
             asset: this.asset.symbol,
+            assetAddress: this.asset.address,
             value: value,
             assetDecimals: config.ASSETS_CONFIG[this.asset.symbol].decimals,
             type: 'ASSET',
+            assetInactive: this.asset.unsupported || this.asset.inactive
           };
           this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
             this.$forceUpdate();
@@ -891,6 +921,8 @@ export default {
       modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.balancerLpBalances = this.balancerLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.farms = this.farms;
@@ -939,7 +971,8 @@ export default {
     },
 
     async claimGLPRewardsAction() {
-      const rewardsDecimals = this.avalancheChain ? config.ASSETS_CONFIG.AVAX.decimals : config.ASSETS_CONFIG.ETH.decimals;
+      const avalancheChain = config.chainSlug === 'avalanche';
+      const rewardsDecimals = avalancheChain ? config.ASSETS_CONFIG.AVAX.decimals : config.ASSETS_CONFIG.ETH.decimals;
       const glpRewardRouterContract = new ethers.Contract(config.glpRewardsRouterAddress, GLP_REWARD_ROUTER.abi, this.provider.getSigner());
       const feeGLPTrackerAddress = await glpRewardRouterContract.feeGlpTracker();
       const feeGLPTrackedContract = new ethers.Contract(feeGLPTrackerAddress, GLP_REWARD_TRACKER.abi, this.provider.getSigner());
@@ -947,7 +980,7 @@ export default {
       const modalInstance = this.openModal(ClaimGLPRewardsModal);
       modalInstance.assetBalances = this.assetBalances;
       modalInstance.glpRewardsToClaim = rewards;
-      modalInstance.glpRewardsAsset = this.avalancheChain ? 'AVAX' : 'ETH';
+      modalInstance.glpRewardsAsset = avalancheChain ? 'AVAX' : 'ETH';
 
       modalInstance.$on('CLAIM', () => {
         this.handleTransaction(this.claimGLPRewards, () => {
@@ -975,6 +1008,8 @@ export default {
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
@@ -1020,6 +1055,8 @@ export default {
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.balancerLpAssets = this.balancerLpAssets;
@@ -1137,6 +1174,20 @@ export default {
       });
     },
 
+    watchLtipMaxBoostUpdate() {
+      this.ltipService.observeLtipMaxBoostApy().subscribe((boostApy) => {
+        this.boostApy = boostApy;
+      });
+    },
+
+    watchActionDisabling() {
+      this.globalActionsDisableService.getSectionActions$(ActionSection.ASSETS)
+          .subscribe(isActionDisabledRecord => {
+            this.isActionDisabledRecord = isActionDisabledRecord;
+            this.setupActionsConfiguration();
+          })
+    },
+
     setupAvailableFarms() {
       this.availableFarms = config.FARMED_TOKENS_CONFIG[this.asset.symbol];
     },
@@ -1242,6 +1293,7 @@ export default {
       }
       if (this.currentlyOpenModalInstance) {
         this.currentlyOpenModalInstance.calculatingSwapRoute = false;
+        this.currentlyOpenModalInstance.transactionOngoing = false;
         this.currentlyOpenModalInstance.blockSubmitButton = true;
       }
       this.disableAllButtons = false;
@@ -1338,6 +1390,12 @@ export default {
         .asset__loan {
           font-size: $font-size-xxs;
           color: var(--asset-table-row__asset-loan-color);
+
+          .stars-icon {
+            width: 20px;
+            margin-right: 10px;
+            transform: translateY(-2px);
+          }
         }
       }
 

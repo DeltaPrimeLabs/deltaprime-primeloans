@@ -42,9 +42,17 @@
       Data feeds error. Some functions might be not available.
     </Banner>
 
-<!--    <Banner v-if="showPrimeAccountBanner" :closable="true">
-      GM positions temporarily illiquid. Please see Discord before redeeming GM
-    </Banner>-->
+    <Banner v-if="showRestrictedCountryBanner">
+      Important: users connecting from your country will not be able to access our services starting June 28th.
+      <a class="banner-link"
+         href="https://discord.com/channels/889510301421166643/912702114252329060/1251122070172205067"
+         target="_blank"><b>Read more.</b>
+      </a>
+    </Banner>
+
+    <!--    <Banner v-if="showPrimeAccountBanner" :closable="true">
+          GM positions temporarily illiquid. Please see Discord before redeeming GM
+        </Banner>-->
 
     <Banner v-if="showArbitrumDepositorBanner" background="green-accent" :closable="true">
       Liquidity mining event is updated! Shortly after a pool hits $1M the next pool opens up.
@@ -75,8 +83,9 @@
         </b>
       </a>
     </Banner>
-     <Banner v-if="showAvalanchePrimeAccountBanner" :closable="true">
-       Missing GM incentives from the last week are currently being recalculated and will be included in Wednesday's distribution.
+    <Banner v-if="showAvalanchePrimeAccountBanner" :closable="true">
+      Missing GM incentives from the last week are currently being recalculated and will be included in Wednesday's
+      distribution.
     </Banner>
     <div class="content">
       <div class="top-bar">
@@ -84,8 +93,8 @@
           <a href="https://deltaprime.io/">
             <img src="src/assets/icons/deltaprime.svg" class="logo">
           </a>
-          <AppToggle class="top-bar__app-toggle"></AppToggle>
-          <ThemeToggle class="top-bar__theme-toggle"></ThemeToggle>
+          <AppToggle v-if="!isClaimPage" class="top-bar__app-toggle"></AppToggle>
+          <ThemeToggle v-if="!isClaimPage" class="top-bar__theme-toggle"></ThemeToggle>
           <div v-if="isSavingsPage" class="protocol-insurance">
             <span>Reserve Fund:</span>
             <span class="insurance-value">$2,340,000</span>
@@ -95,7 +104,7 @@
           </div>
         </div>
         <!--      <div class="connect" v-if="!account" v-on:click="initNetwork()">Connect to wallet</div>-->
-        <Wallet class="wallet"/>
+        <Wallet :is-claim-page="isClaimPage" class="wallet"/>
       </div>
       <router-view></router-view>
       <ProgressBar></ProgressBar>
@@ -115,6 +124,7 @@ import config from '@/config';
 
 const ethereum = window.ethereum;
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
+const LAUNCH_TIME = 1719853200000;
 import Vue from 'vue';
 import Button from './components/Button';
 import ProgressBar from './components/ProgressBar';
@@ -125,6 +135,12 @@ import ProtectedByBar from './components/ProtectedByBar.vue';
 import InfoIcon from './components/InfoIcon.vue';
 import TermsModal from './components/TermsModal.vue';
 import {combineLatest, forkJoin, map} from 'rxjs';
+import fetch from 'node-fetch';
+import RestrictedCountryModal from './components/RestrictedCountryModal.vue';
+import SPrimeModal from './components/SPrimeModal.vue';
+import TermsService from "./services/termsService";
+
+const BUY_SPRIME_MODAL_CLOSED = 'BUY_SPRIME_MODAL_CLOSED';
 
 export default {
   components: {
@@ -154,12 +170,16 @@ export default {
       showAvalancheDepositorBanner: false,
       showAvalanchePrimeAccountBanner: false,
       showArbitrumCongestionBanner: false,
+      showRestrictedCountryBanner: false,
       remainingTime: '',
       darkMode: false,
       showNoWalletBanner: window.noWalletInstalled,
       isSavingsPage: false,
+      isClaimPage: false,
       signingTermsInProgress: false,
       showDeprecatedAssetsBanner: false,
+      restrictModalOpen: false,
+      buySPrimeModalOpened: false,
     };
   },
   async created() {
@@ -193,6 +213,10 @@ export default {
       this.isSavingsPage = true;
     }
 
+    if (window.location.href.includes('claim')) {
+      this.isClaimPage = true;
+    }
+
     if (window.location.href.includes('prime-account')) {
       this.showPrimeAccountBanner = true;
     }
@@ -224,17 +248,28 @@ export default {
         this.closeModal();
       }
     });
+    const url = document.location.href;
+    const lastUrlPart = url.split('/').reverse()[0];
+    this.checkClaimTheme(`/${lastUrlPart}`)
     this.watchCloseModal();
     this.checkTerms();
     this.watchHasDeprecatedAssets();
     setTimeout(() => {
       this.checkWallet();
     }, 500)
+    this.getCountry();
   },
   computed: {
     ...mapState('network', ['account', 'provider']),
     ...mapState('fundsStore', ['protocolPaused', 'oracleError', 'smartLoanContract']),
-    ...mapState('serviceRegistry', ['modalService', 'termsService', 'accountService', 'poolService', 'deprecatedAssetsService']),
+    ...mapState('serviceRegistry', [
+      'modalService',
+      'termsService',
+      'accountService',
+      'poolService',
+      'deprecatedAssetsService',
+      'globalActionsDisableService'
+    ]),
     ...mapState('poolStore', ['pools'])
   },
   methods: {
@@ -348,14 +383,16 @@ export default {
       combineLatest([
         this.accountService.observeAccountLoaded(),
         this.accountService.observeSmartLoanContract$(),
-        this.poolService.observePools()
+        this.poolService.observePools(),
+        this.getCountry()
       ])
-        .subscribe(([walletAddress, smartLoanContract, pools]) => {
+        .subscribe(([walletAddress, smartLoanContract, pools, country]) => {
           console.warn('-_---__---__---__---___--__CHECK TERMS--___--___--__---__---___---');
           console.log('account', walletAddress);
           console.log('smartLoanContract', smartLoanContract);
           console.log('pools', pools);
           const isSavingsPage = window.location.href.includes('pools');
+          const isCountryRestricted = config.restrictedCountries.includes(country.country);
 
           if (isSavingsPage) {
             forkJoin(pools.map(pool => pool.contract.balanceOf(walletAddress)))
@@ -364,18 +401,29 @@ export default {
                 console.log(balances);
                 if (balances.every(balance => balance === 0)) {
                   console.log('SAVINGS PAGE - no deposits - terms not required');
+                  if (isCountryRestricted) {
+                    this.restrictApp(false);
+                  } else {
+                    this.openBuySPrimeModal();
+                  }
                 } else {
                   console.log('SAVINGS PAGE - some deposit - checking terms');
-                  this.termsService.checkTerms(walletAddress).then(signedTerms => {
-                    const termsForCurrentPage = signedTerms.find(terms => terms.type === 'SAVINGS');
-                    console.log(termsForCurrentPage);
-                    if (termsForCurrentPage === undefined) {
-                      console.log('SAVINGS PAGE - some deposit - terms not signed');
-                      if (!this.signingTermsInProgress) {
-                        this.handleTermsSign(walletAddress, true);
+                  if (isCountryRestricted) {
+                    this.restrictApp(true);
+                  } else {
+                    this.termsService.checkTerms(walletAddress).then(signedTerms => {
+                      const termsForCurrentPage = signedTerms.find(terms => terms.type === 'SAVINGS');
+                      console.log(termsForCurrentPage);
+                      if (termsForCurrentPage === undefined || termsForCurrentPage.termsVersion !== TermsService.CURRENT_TERMS_VERSION) {
+                        console.log('SAVINGS PAGE - some deposit - terms not signed');
+                        if (!this.signingTermsInProgress) {
+                          this.handleTermsSign(walletAddress, true);
+                        }
+                      } else {
+                        this.openBuySPrimeModal();
                       }
-                    }
-                  })
+                    })
+                  }
                 }
               });
           } else {
@@ -383,20 +431,30 @@ export default {
             console.log(smartLoanContract);
             if (smartLoanContract.address === NULL_ADDRESS) {
               console.log('PA PAGE - no account - terms not required');
+              if (isCountryRestricted) {
+                this.restrictApp(false);
+              } else {
+                this.openBuySPrimeModal();
+              }
             } else {
               console.log('PA PAGE - account created - checking terms');
-              this.termsService.checkTerms(walletAddress).then(signedTerms => {
-                console.log(signedTerms);
-                const termsForCurrentPage = signedTerms.find(terms => terms.type === 'PRIME_ACCOUNT');
-                if (termsForCurrentPage === undefined) {
-                  console.log('PA PAGE - account created - terms not signed');
-                  if (!this.signingTermsInProgress) {
-                    this.handleTermsSign(walletAddress, false, smartLoanContract.address);
+              if (isCountryRestricted) {
+                this.restrictApp(true);
+              } else {
+                this.termsService.checkTerms(walletAddress).then(signedTerms => {
+                  console.log(signedTerms);
+                  const termsForCurrentPage = signedTerms.find(terms => terms.type === 'PRIME_ACCOUNT');
+                  if (termsForCurrentPage === undefined || termsForCurrentPage.termsVersion !== TermsService.CURRENT_TERMS_VERSION) {
+                    console.log('PA PAGE - account created - terms not signed');
+                    if (!this.signingTermsInProgress) {
+                      this.handleTermsSign(walletAddress, false, smartLoanContract.address);
+                    }
+                  } else {
+                    console.log('PA PAGE - account created - terms signed');
+                    this.openBuySPrimeModal();
                   }
-                } else {
-                  console.log('PA PAGE - account created - terms signed');
-                }
-              });
+                });
+              }
             }
           }
         })
@@ -424,6 +482,7 @@ export default {
 
     checkWallet() {
       console.warn('--------__---__------___--___--__---___checking wallet--------___---___-___--___---__--___--__');
+      console.log('this.provider', this.provider);
       if (this.provider && this.provider.provider) {
         console.log('provider', this.provider.provider)
         if (this.provider.provider.isRabby) {
@@ -433,7 +492,7 @@ export default {
           return;
         }
 
-        if (this.provider.provider.isMetaMask) {
+        if (this.provider.provider.isMetaMask && !this.provider.provider.isRabby) {
           console.warn('METAMASK');
           window.isMetaMask = true;
           window.isRabby = false;
@@ -441,6 +500,86 @@ export default {
         }
       }
     },
+
+    async getCountry() {
+      console.warn('get country');
+      const countryRequest = await fetch('https://geo-service-frtt8nrlk-deltaprimelabs.vercel.app/api/hello');
+      const countryResponse = await countryRequest.json();
+      console.warn('----___---___--__---___--___countryResponse-_--___---___--___---__--____-----');
+      console.warn(countryResponse);
+      return countryResponse;
+    },
+
+    restrictApp(allowWithdrawals) {
+      if (allowWithdrawals) {
+        this.globalActionsDisableService.disableActionGlobally('ADD_FROM_WALLET');
+        this.globalActionsDisableService.disableActionGlobally('BORROW');
+        this.globalActionsDisableService.disableActionGlobally('WRAP');
+        this.globalActionsDisableService.disableActionGlobally('BRIDGE_COLLATERAL');
+        this.globalActionsDisableService.disableActionGlobally('DEPOSIT');
+        this.globalActionsDisableService.disableActionGlobally('BRIDGE');
+        this.globalActionsDisableService.disableActionGlobally('BRIDGE_DEPOSIT');
+        this.globalActionsDisableService.disableActionGlobally('SWAP_DEPOSIT');
+        this.globalActionsDisableService.disableActionGlobally('STAKE');
+        this.globalActionsDisableService.disableActionGlobally('PROVIDE_LIQUIDITY');
+        this.globalActionsDisableService.disableActionGlobally('PARTNER_PROFILE');
+        this.globalActionsDisableService.disableActionGlobally('ADD_LIQUIDITY');
+        this.globalActionsDisableService.disableActionGlobally('FUND_AND_STAKE');
+        this.globalActionsDisableService.disableActionGlobally('LONG');
+        this.globalActionsDisableService.disableActionGlobally('SHORT');
+        this.globalActionsDisableService.disableActionGlobally('CONVERT_GLP_TO_GM');
+        this.globalActionsDisableService.disableActionGlobally('CREATE_ACCOUNT');
+        this.globalActionsDisableService.disableActionGlobally('IMPORT_AND_STAKE');
+        this.globalActionsDisableService.disableActionGlobally('CREATE_LP');
+        this.globalActionsDisableService.disableActionGlobally('MINT');
+        this.globalActionsDisableService.disableActionGlobally('REBALANCE');
+        this.globalActionsDisableService.disableActionGlobally('REDEEM');
+        this.globalActionsDisableService.disableActionGlobally('BUY');
+      } else {
+        this.globalActionsDisableService.enableReadonlyMode();
+      }
+      if (!this.restrictModalOpen) {
+        const modal = this.openModal(RestrictedCountryModal);
+        modal.allowWithdrawals = allowWithdrawals;
+        setTimeout(() => {
+          this.$forceUpdate();
+        })
+        this.restrictModalOpen = true;
+      }
+    },
+
+    checkClaimTheme(path) {
+      this.isClaimPage = path === '/claim'
+      if (this.isClaimPage) {
+        document.documentElement.classList.remove('theme--dark')
+        document.documentElement.classList.add('theme--light')
+      } else {
+        const wasDark = localStorage.getItem('PA_VIEW_THEME') === 'DARK'
+        document.documentElement.classList.remove(wasDark ? 'theme--light' : 'theme--dark')
+        document.documentElement.classList.add(wasDark ? 'theme--dark' : 'theme--light')
+      }
+    },
+
+    openBuySPrimeModal() {
+      const now = new Date().getTime();
+      if (now > LAUNCH_TIME) {
+        const buySPrimeModalClosedOnce = localStorage.getItem(BUY_SPRIME_MODAL_CLOSED);
+        if (!this.buySPrimeModalOpened && !buySPrimeModalClosedOnce) {
+          const sprimeModalInstance = this.openModal(SPrimeModal);
+          this.buySPrimeModalOpened = true;
+          sprimeModalInstance.$on('CLOSE', () => {
+            console.log('modal closed');
+            localStorage.setItem(BUY_SPRIME_MODAL_CLOSED, 'true');
+          })
+        }
+      }
+    },
+
+  },
+  watch:{
+    $route (to){
+      this.checkClaimTheme(to.fullPath)
+    }
   },
   destroyed() {
     clearInterval(this.gasPriceIntervalId);
@@ -582,4 +721,3 @@ a {
 }
 
 </style>
-

@@ -43,9 +43,9 @@
           </div>
         </div>
 
-        <div class="header__cell cell__max-apy">
+        <div class="header__cell cell__max-apy max-apr">
           <div class="header__cell__label">Max APY:</div>
-          <div class="header__cell__value">{{ maxLeveragedApy | percent }}</div>
+          <div class="header__cell__value"><span>{{ (maxLeveragedApy + boostApy) | percent }}<img v-if="boostApy" v-tooltip="{content: `This pool is incentivized!<br>⁃ up to ${maxLeveragedApy ? (maxLeveragedApy * 100).toFixed(2) : 0}% Pool APR<br>⁃ up to ${boostApy ? (boostApy * 100).toFixed(2) : 0}% ${chain === 'arbitrum' ? 'ARB' : 'AVAX'} incentives`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span></div>
         </div>
 
         <div class="header__cell cell__protocols">
@@ -167,12 +167,14 @@ export default {
   },
   data() {
     return {
+      chain: null,
       tableBodyExpanded: false,
       bodyHasCollapsed: true,
       stakingHeaderRoundBottom: false,
       maxLeveragedApy: 0,
       totalStaked: 0,
       available: 0,
+      boostApy: 0,
       availableFarms: [],
       protocolConfig: null,
       isTotalStakedEstimated: false,
@@ -184,16 +186,18 @@ export default {
     };
   },
   mounted() {
+    this.chain = window.chain;
     this.setupAvailableProtocols();
     this.watchExternalAssetBalanceUpdate();
     this.watchExternalTotalStakedUpdate();
     this.watchAssetBalancesDataRefreshEvent();
     this.watchFarmRefreshEvent();
+    this.watchLtipMaxBoostUpdate();
   },
   computed: {
     ...mapState('fundsStore', ['smartLoanContract', 'noSmartLoan']),
     ...mapState('poolStore', ['pools']),
-    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'stakedExternalUpdateService', 'dataRefreshEventService', 'farmService']),
+    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'stakedExternalUpdateService', 'dataRefreshEventService', 'farmService', 'ltipService']),
     asset() {
       return config.ASSETS_CONFIG[this.assetSymbol] ? config.ASSETS_CONFIG[this.assetSymbol] : config.LP_ASSETS_CONFIG[this.assetSymbol];
     },
@@ -336,6 +340,11 @@ export default {
         await this.setupMaxStakingApy();
       });
     },
+    watchLtipMaxBoostUpdate() {
+      this.ltipService.observeLtipMaxBoostApy().subscribe((boostApy) => {
+        this.boostApy = boostApy;
+      });
+    },
   },
   watch: {
     noSmartLoan: {
@@ -394,6 +403,14 @@ export default {
 
         &.cell__asset {
           justify-content: flex-start;
+        }
+
+        &.max-apr {
+          .stars-icon {
+            width: 20px;
+            margin-right: 10px;
+            transform: translateY(-2px);
+          }
         }
 
         .header__cell__label {

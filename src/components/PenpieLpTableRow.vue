@@ -6,13 +6,13 @@
         <div class="asset__info">
           <a class="asset__name" :href="lpToken.link" target="_blank">{{ lpToken.assetNameToDisplay }}
           </a>
-          <InfoIcon class="info__icon"
-                    :tooltip="{content: `Maturity ${lpToken.maturity} - ${lpToken.maturityInDays} days`, classes: 'info-tooltip'}"
-                    :classes="'info-tooltip'"></InfoIcon>
           <div class="asset__dex">
             by {{ lpToken.dex }}
           </div>
         </div>
+        <InfoIcon class="info__icon"
+                  :tooltip="{content: `Maturity ${lpToken.maturity} - ${lpToken.maturityInDays} days`, classes: 'info-tooltip'}"
+                  :classes="'info-tooltip'"></InfoIcon>
       </div>
 
       <div class="table__cell table__cell--double-value lp-balance">
@@ -77,7 +77,7 @@
       </div>
 
       <div class="table__cell table__cell--double-value max-apr">
-        {{ maxApr() | percent }}
+        <span>{{ (maxApr + boostApy) | percent }}<img v-if="boostApy" v-tooltip="{content: `This pool is incentivized!<br>⁃ up to ${maxApr ? (maxApr * 100).toFixed(2) : 0}% Pool APR<br>⁃ up to ${boostApy ? (boostApy * 100).toFixed(2) : 0}% ${chain === 'arbitrum' ? 'ARB' : 'AVAX'} incentives`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span>
       </div>
 
       <div class="table__cell"></div>
@@ -131,6 +131,7 @@ import {wrapContract} from "../utils/blockchain";
 import ClaimRewardsModal from "./ClaimRewardsModal.vue";
 import BarGaugeBeta from './BarGaugeBeta.vue';
 import InfoIcon from './InfoIcon.vue';
+import {ActionSection} from '../services/globalActionsDisableService';
 
 export default {
   name: 'PenpieLpTableRow',
@@ -140,6 +141,7 @@ export default {
   },
   data() {
     return {
+      chain: null,
       addActionsConfig: null,
       removeActionsConfig: null,
       moreActionsConfig: null,
@@ -149,8 +151,10 @@ export default {
       totalStaked: null,
       apr: 0,
       tvl: 0,
+      boostApy: 0,
       rewards: null,
-      rewardsTokens: {...config.ASSETS_CONFIG, ...config.PENPIE_REWARDS_TOKENS}
+      rewardsTokens: {...config.ASSETS_CONFIG, ...config.PENPIE_REWARDS_TOKENS},
+      isActionDisabledRecord: {},
     }
   },
   computed: {
@@ -164,6 +168,8 @@ export default {
       'debtsPerAsset',
       'penpieLpBalances',
       'penpieLpAssets',
+      'wombatLpAssets',
+      'wombatLpBalances',
       'noSmartLoan',
       'concentratedLpAssets',
       'concentratedLpBalances',
@@ -187,11 +193,17 @@ export default {
       'lpService',
       'healthService',
       'providerService',
+      'ltipService',
+      'globalActionsDisableService'
     ]),
+    maxApr() {
+      return calculateMaxApy(this.pools, this.apr / 100);
+    },
   },
 
   async mounted() {
     this.providerService.observeProviderCreated().subscribe(() => {
+      this.chain = window.chain;
       this.setupAddActionsConfiguration();
       this.setupRemoveActionsConfiguration();
       this.setupMoreActionsConfiguration();
@@ -203,8 +215,10 @@ export default {
       this.watchExternalAssetBalanceUpdate();
       this.watchRefreshLP();
       this.watchAssetBalancesDataRefresh();
+      this.watchLtipMaxBoostUpdate();
       this.setupMaturityInDays();
     })
+    this.watchActionDisabling();
   },
 
   methods: {
@@ -227,17 +241,17 @@ export default {
           {
             key: 'ADD_FROM_WALLET',
             name: 'Import Penpie LP from wallet',
-            disabled: this.disableAllButtons,
+            disabled: this.isActionDisabledRecord['ADD_FROM_WALLET'] || this.disableAllButtons,
           },
           {
             key: 'IMPORT_AND_STAKE',
             name: 'Import & stake Pendle LP',
-            disabled: this.disableAllButtons,
+            disabled: this.isActionDisabledRecord['IMPORT_AND_STAKE'] || this.disableAllButtons,
           },
           {
             key: 'CREATE_LP',
             name: 'Create LP from LRT',
-            disabled: this.disableAllButtons,
+            disabled: this.isActionDisabledRecord['CREATE_LP'] || this.disableAllButtons,
           },
         ]
       }
@@ -251,17 +265,17 @@ export default {
           {
             key: 'EXPORT_LP',
             name: 'Export Penpie LP',
-            disabled: this.disableAllButtons,
+            disabled: this.isActionDisabledRecord['EXPORT_LP'] || this.disableAllButtons,
           },
           {
             key: 'UNSTAKE_AND_EXPORT',
             name: 'Unstake & export Pendle LP',
-            disabled: this.disableAllButtons,
+            disabled: this.isActionDisabledRecord['UNSTAKE_AND_EXPORT'] || this.disableAllButtons,
           },
           {
             key: 'UNWIND',
             name: 'Unwind LP to LRT',
-            disabled: this.disableAllButtons,
+            disabled: this.isActionDisabledRecord['UNWIND'] || this.disableAllButtons,
           },
         ]
       }
@@ -275,7 +289,7 @@ export default {
           {
             key: 'CLAIM_REWARDS',
             name: 'Claim rewards',
-            disabled: !this.lpToken.rewards || this.lpToken.rewards.length === 0,
+            disabled: this.isActionDisabledRecord['CLAIM_REWARDS'] || !this.lpToken.rewards || this.lpToken.rewards.length === 0,
             disabledInfo: 'You don\'t have any claimable rewards yet.',
           }
         ]
@@ -329,6 +343,8 @@ export default {
       modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.loan = this.debt;
@@ -374,6 +390,8 @@ export default {
       modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.loan = this.debt;
@@ -384,7 +402,7 @@ export default {
       modalInstance.$on('ADD_FROM_WALLET', addFromWalletEvent => {
         if (this.smartLoanContract) {
           const depositAndStakeRequest = {
-            market: this.lpToken.stakingContractAddress,
+            market: this.lpToken.pendleLpAddress,
             amount: addFromWalletEvent.value,
             targetAsset: this.lpToken.symbol,
             sourceAsset: this.lpToken.pendleLpSymbol,
@@ -426,6 +444,8 @@ export default {
       modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
@@ -448,7 +468,7 @@ export default {
           const queryParams = new URLSearchParams({
             chainId: "42161",
             receiverAddr: this.smartLoanContract.address,
-            marketAddr: this.lpToken.stakingContractAddress,
+            marketAddr: this.lpToken.pendleLpAddress,
             tokenInAddr: TOKEN_ADDRESSES[this.lpToken.asset],
             amountTokenIn: amountIn,
             slippage: '0.0001',
@@ -484,7 +504,7 @@ export default {
           sourceAsset: swapEvent.sourceAsset,
           targetAsset: swapEvent.targetAsset,
           amount: swapEvent.sourceAmount,
-          market: this.lpToken.stakingContractAddress,
+          market: this.lpToken.pendleLpAddress,
           minLpOut: swapEvent.targetAmount,
           guessPtReceivedFromSy: responseGuessPtReceivedFromSy,
           input: responseInput,
@@ -527,6 +547,8 @@ export default {
       modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
@@ -548,7 +570,7 @@ export default {
           const queryParams = new URLSearchParams({
             chainId: "42161",
             receiverAddr: this.smartLoanContract.address,
-            marketAddr: this.lpToken.stakingContractAddress,
+            marketAddr: this.lpToken.pendleLpAddress,
             tokenOutAddr: TOKEN_ADDRESSES[this.lpToken.asset],
             amountLpToRemove: amountIn,
             slippage: '0.0001'
@@ -581,7 +603,7 @@ export default {
           sourceAsset: swapEvent.sourceAsset,
           targetAsset: swapEvent.targetAsset,
           amount: swapEvent.sourceAmount,
-          market: this.lpToken.stakingContractAddress,
+          market: this.lpToken.pendleLpAddress,
           minOut: swapEvent.targetAmount,
           output: responseOutput,
           limit: responseLimit,
@@ -616,6 +638,8 @@ export default {
       modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.debt = this.fullLoanStatus.debt;
@@ -625,7 +649,7 @@ export default {
       modalInstance.$on('WITHDRAW', withdrawEvent => {
         const value = Number(withdrawEvent.value).toFixed(config.DECIMALS_PRECISION);
         const unstakeRequest = {
-          market: this.lpToken.stakingContractAddress,
+          market: this.lpToken.pendleLpAddress,
           asset: this.lpToken.symbol,
           value: value,
           assetDecimals: this.lpToken.decimals,
@@ -660,6 +684,8 @@ export default {
       modalInstance.balancerLpAssets = this.balancerLpAssets;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.debt = this.fullLoanStatus.debt;
@@ -695,7 +721,7 @@ export default {
 
       modalInstance.$on('CLAIM', () => {
         if (this.smartLoanContract) {
-          this.handleTransaction(this.claimPenpieRewards, {market: this.lpToken.stakingContractAddress}, () => {
+          this.handleTransaction(this.claimPenpieRewards, {market: this.lpToken.pendleLpAddress}, () => {
             this.$forceUpdate();
           }, (error) => {
             this.handleTransactionError(error);
@@ -715,12 +741,8 @@ export default {
     },
 
     async getWalletPendleLpBalance() {
-      const tokenContract = new ethers.Contract(this.lpToken.stakingContractAddress ? this.lpToken.stakingContractAddress : this.lpToken.address, erc20ABI, this.provider.getSigner());
+      const tokenContract = new ethers.Contract(this.lpToken.pendleLpAddress ? this.lpToken.pendleLpAddress : this.lpToken.address, erc20ABI, this.provider.getSigner());
       return await this.getWalletTokenBalance(this.account, this.lpToken.symbol, tokenContract, this.lpToken.decimals);
-    },
-
-    maxApr() {
-      return calculateMaxApy(this.pools, this.apr / 100);
     },
 
     async setupApr() {
@@ -805,7 +827,11 @@ export default {
       })
     },
 
-
+    watchLtipMaxBoostUpdate() {
+      this.ltipService.observeLtipMaxBoostApy().subscribe((boostApy) => {
+        this.boostApy = boostApy;
+      });
+    },
 
     handleTransactionError(error) {
       if (error.code === 4001 || error.code === -32603) {
@@ -828,6 +854,16 @@ export default {
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       this.lpToken.maturityInDays = diffDays;
     },
+
+    watchActionDisabling() {
+      this.globalActionsDisableService.getSectionActions$(ActionSection.PENPIE)
+        .subscribe(isActionDisabledRecord => {
+          this.isActionDisabledRecord = isActionDisabledRecord;
+          this.setupAddActionsConfiguration();
+          this.setupRemoveActionsConfiguration();
+          this.setupMoreActionsConfiguration();
+        })
+    },
   }
 }
 </script>
@@ -845,7 +881,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: 100px 130px 130px 1fr 80px 120px 110px 100px 40px 80px 22px;
+    grid-template-columns: 105px 130px 130px 1fr 80px 120px 110px 100px 40px 80px 22px;
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;
@@ -919,7 +955,7 @@ export default {
 
         .apr-warning {
           position: absolute;
-          right: -25px;
+          right: 52px;
         }
       }
 

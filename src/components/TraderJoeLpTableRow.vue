@@ -79,7 +79,7 @@
       </div>
 
       <div class="table__cell table__cell--double-value max-apr">
-        {{ maxApr | percent }}
+        <span>{{ (maxApr + boostApy) | percent }}<img v-if="boostApy" v-tooltip="{content: `This pool is incentivized!<br>⁃ up to ${maxApr ? (maxApr * 100).toFixed(2) : 0}% Pool APR<br>⁃ up to ${boostApy ? (boostApy * 100).toFixed(2) : 0}% ${chain === 'arbitrum' ? 'ARB' : 'AVAX'} incentives`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span>
       </div>
       <div class="table__cell"></div>
 
@@ -148,6 +148,7 @@ import LiquidityChart from "./LiquidityChart.vue";
 import FlatButton from "./FlatButton.vue";
 import SmallBlock from "./SmallBlock.vue";
 import LB_TOKEN from '/artifacts/contracts/interfaces/joe-v2/ILBToken.sol/ILBToken.json'
+import {ActionSection} from "../services/globalActionsDisableService";
 
 const toBytes32 = require('ethers').utils.formatBytes32String;
 
@@ -171,6 +172,7 @@ export default {
   },
 
   async mounted() {
+    this.chain = window.chain;
     this.setupAddActionsConfiguration();
     this.setupRemoveActionsConfiguration();
     this.setupMoreActionsConfiguration();
@@ -181,11 +183,14 @@ export default {
     this.watchHardRefreshScheduledEvent();
     this.watchAssetPricesUpdate();
     this.watchDebtsPerAssetDataRefreshEvent();
+    this.watchLtipMaxBoostUpdate();
     this.initAccount();
+    this.watchActionDisabling();
   },
 
   data() {
     return {
+      chain: null,
       tokenX: null,
       tokenY: null,
       addActionsConfig: null,
@@ -208,7 +213,9 @@ export default {
       userValue: 0,
       currentPriceIndex: 0,
       currentPrice: 0,
-      totalRewards: []
+      boostApy: 0,
+      totalRewards: [],
+      isActionDisabledRecord: {},
     };
   },
 
@@ -233,6 +240,8 @@ export default {
       'traderJoeService',
       'accountService',
       'priceService',
+      'ltipService',
+      'globalActionsDisableService'
     ]),
 
     hasSmartLoanContract() {
@@ -279,13 +288,14 @@ export default {
         menuOptions: [
           {
             key: 'ADD_FROM_WALLET',
-            name: 'Import existing LB position'
+            name: 'Import existing LB position',
+            disabled: this.isActionDisabledRecord['ADD_FROM_WALLET'],
           },
           {
             key: 'ADD_LIQUIDITY',
             name: 'Create LB position',
-            disabled: !this.hasSmartLoanContract || this.inProcess,
-            disabledInfo: 'To create LP token, you need to add some funds from you wallet first'
+            disabled: this.isActionDisabledRecord['ADD_LIQUIDITY'] || !this.hasSmartLoanContract || this.inProcess,
+            disabledInfo: this.isActionDisabledRecord['ADD_LIQUIDITY'] ? '' : 'To create LP token, you need to add some funds from you wallet first'
           },
         ]
       }
@@ -304,8 +314,8 @@ export default {
           {
             key: 'REMOVE_LIQUIDITY',
             name: 'Remove LB position',
-            disabled: !this.hasSmartLoanContract || this.inProcess || !this.hasBinsInPool,
-            disabledInfo: 'No LB tokens in Prime Account'
+            disabled: this.isActionDisabledRecord['REMOVE_LIQUIDITY'] || !this.hasSmartLoanContract || this.inProcess || !this.hasBinsInPool,
+            disabledInfo: this.isActionDisabledRecord['REMOVE_LIQUIDITY'] ? '' : 'No LB tokens in Prime Account'
           },
         ]
       }
@@ -319,8 +329,8 @@ export default {
           {
             key: 'CLAIM_TRADERJOE_REWARDS',
             name: 'Claim TraderJoe rewards',
-            disabled: !this.hasSmartLoanContract || this.totalRewards.length == 0,
-            disabledInfo: 'You don\'t have any claimable rewards yet.'
+            disabled: this.isActionDisabledRecord['CLAIM_TRADERJOE_REWARDS'] || !this.hasSmartLoanContract || this.totalRewards.length == 0,
+            disabledInfo: this.isActionDisabledRecord['CLAIM_TRADERJOE_REWARDS'] ? '' : 'You don\'t have any claimable rewards yet.'
           }
         ]
       };
@@ -411,7 +421,7 @@ export default {
     },
 
     actionClick(key) {
-      if (!this.inProcess) {
+      if (!this.isActionDisabledRecord[key] && !this.inProcess) {
         switch (key) {
           case 'ADD_FROM_WALLET':
             this.openAddTraderJoeV2FromWalletModal();
@@ -658,6 +668,12 @@ export default {
       });
     },
 
+    watchLtipMaxBoostUpdate() {
+      this.ltipService.observeLtipMaxBoostApy().subscribe((boostApy) => {
+        this.boostApy = boostApy;
+      });
+    },
+
     async setupPool() {
       const tokenX = this.traderJoeService.initializeToken(this.firstAsset);
       const tokenY = this.traderJoeService.initializeToken(this.secondAsset);
@@ -744,7 +760,17 @@ export default {
     },
     getPriceOfBin(binId) {
       return ((1 + this.lpToken.binStep / 10000) ** (binId - 8388608) * 10 ** (this.firstAsset.decimals - this.secondAsset.decimals))
-    }
+    },
+
+    watchActionDisabling() {
+      this.globalActionsDisableService.getSectionActions$(ActionSection.TRADER_JOE_LP)
+          .subscribe(isActionDisabledRecord => {
+            this.isActionDisabledRecord = isActionDisabledRecord;
+            this.setupAddActionsConfiguration();
+            this.setupRemoveActionsConfiguration();
+            this.setupMoreActionsConfiguration();
+          })
+    },
   },
 };
 </script>
@@ -878,6 +904,11 @@ export default {
 
       &.max-apr {
         font-weight: 600;
+        .stars-icon {
+          width: 20px;
+          margin-left: 2px;
+          transform: translateY(-2px);
+        }
       }
 
       &.trend {

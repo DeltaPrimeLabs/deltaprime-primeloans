@@ -61,7 +61,7 @@
       </div>
 
       <div class="table__cell max-apy">
-        {{ maxApy | percent }}
+        <span>{{ (maxApy + boostApy) | percent }}<img v-if="boostApy" v-tooltip="{content: `This pool is incentivized!<br>⁃ up to ${maxApy ? (maxApy * 100).toFixed(2) : 0}% Pool APR<br>⁃ up to ${boostApy ? (boostApy * 100).toFixed(2) : 0}% ${chain === 'arbitrum' ? 'ARB' : 'AVAX'} incentives`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span>
       </div>
 
       <div class="table__cell">
@@ -102,6 +102,7 @@ import InfoIcon from "./InfoIcon.vue";
 import AddFromWalletModal from "./AddFromWalletModal.vue";
 import erc20ABI from "../../test/abis/ERC20.json";
 import WithdrawModal from "./WithdrawModal.vue";
+import {ActionSection} from "../services/globalActionsDisableService";
 
 const ethers = require('ethers');
 
@@ -119,6 +120,7 @@ export default {
     }
   },
   async mounted() {
+    this.chain = window.chain;
     this.setupAddActionsConfiguration();
     this.setupRemoveActionsConfiguration();
     this.watchHardRefreshScheduledEvent();
@@ -127,15 +129,19 @@ export default {
     this.watchProgressBarState();
     this.watchFarmRefreshEvent();
     this.watchExternalStakedPerFarm();
+    this.watchActionDisabling();
+    this.watchLtipMaxBoostUpdate();
     this.platypusAffected = this.farm.strategy === 'Platypus' && ['AVAX', 'sAVAX'].includes(this.asset.symbol);
     this.platypusAffectedDisableDeposit = this.farm.strategy === 'Platypus' && ['USDC', 'USDT'].includes(this.asset.symbol)
   },
   data() {
     return {
+      chain: null,
       receiptTokenBalance: 0,
       underlyingTokenStaked: 0,
       apy: 0,
       maxApy: 0,
+      boostApy: 0,
       rewards: 0,
       isStakedBalanceEstimated: false,
       disableAllButtons: false,
@@ -145,7 +151,8 @@ export default {
       removeActionsConfig: null,
       healthLoaded: false,
       platypusAffected: false,
-      platypusAffectedDisableDeposit: false
+      platypusAffectedDisableDeposit: false,
+      isActionDisabledRecord: {},
     };
   },
   watch: {
@@ -180,6 +187,8 @@ export default {
       'levelLpBalances',
       'penpieLpBalances',
       'penpieLpAssets',
+      'wombatLpAssets',
+      'wombatLpBalances',
       'noSmartLoan'
     ]),
     ...mapState('serviceRegistry', [
@@ -189,7 +198,9 @@ export default {
       'progressBarService',
       'farmService',
       'healthService',
-      'deprecatedAssetsService'
+      'deprecatedAssetsService',
+      'ltipService',
+      'globalActionsDisableService',
     ]),
     protocol() {
       return config.PROTOCOLS_CONFIG[this.farm.protocol];
@@ -205,19 +216,23 @@ export default {
     ...mapActions('stakeStore', ['fund','withdraw', 'stake', 'unstake', 'migrateToAutoCompoundingPool']),
 
     actionClick(key) {
-      switch (key) {
-        case 'ADD_FROM_WALLET':
-          this.openAddFromWalletModal();
-          break;
-        case 'STAKE':
-          this.openStakeModal();
-          break;
-        case 'WITHDRAW':
-          this.openWithdrawModal();
-          break;
-        case 'UNSTAKE':
-          this.openUnstakeModal();
-          break;
+      console.log(key);
+      console.log(this.isActionDisabledRecord[key]);
+      if (!this.isActionDisabledRecord[key]) {
+        switch (key) {
+          case 'ADD_FROM_WALLET':
+            this.openAddFromWalletModal();
+            break;
+          case 'STAKE':
+            this.openStakeModal();
+            break;
+          case 'WITHDRAW':
+            this.openWithdrawModal();
+            break;
+          case 'UNSTAKE':
+            this.openUnstakeModal();
+            break;
+        }
       }
     },
 
@@ -234,6 +249,8 @@ export default {
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
@@ -282,6 +299,8 @@ export default {
       modalInstance.levelLpBalances = this.levelLpBalances;
       modalInstance.penpieLpAssets = this.penpieLpAssets;
       modalInstance.penpieLpBalances = this.penpieLpBalances;
+      modalInstance.wombatLpAssets = this.wombatLpAssets;
+      modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.farms = this.farms;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.loan = this.debt;
@@ -433,6 +452,12 @@ export default {
       });
     },
 
+    watchLtipMaxBoostUpdate() {
+      this.ltipService.observeLtipMaxBoostApy().subscribe((boostApy) => {
+        this.boostApy = boostApy;
+      });
+    },
+
     setApy() {
       if (!this.farm.currentApy) return 0;
 
@@ -495,10 +520,12 @@ export default {
           {
             key: 'ADD_FROM_WALLET',
             name: 'Add from wallet',
+            disabled: this.isActionDisabledRecord['ADD_FROM_WALLET']
           },
           {
             key: 'STAKE',
             name: 'Deposit into vault',
+            disabled: this.isActionDisabledRecord['STAKE']
           },
         ]
       }
@@ -511,13 +538,13 @@ export default {
           {
             key: 'WITHDRAW',
             name: 'Withdraw to wallet',
-            disabled: !this.farm.feedSymbol,
+            disabled: this.isActionDisabledRecord['WITHDRAW'] || !this.farm.feedSymbol,
             disabledInfo: 'Coming soon'
           },
           {
             key: 'UNSTAKE',
             name: 'Withdraw to assets',
-            disabled: this.farm.inactive
+            disabled: this.isActionDisabledRecord['UNSTAKE'] || this.farm.inactive
           },
         ]
       }
@@ -550,7 +577,16 @@ export default {
           this.handleTransactionError(error);
         });
       });
-    }
+    },
+
+    watchActionDisabling() {
+      this.globalActionsDisableService.getSectionActions$(ActionSection.STAKING_PROTOCOL)
+          .subscribe(isActionDisabledRecord => {
+            this.isActionDisabledRecord = isActionDisabledRecord;
+            this.setupAddActionsConfiguration();
+            this.setupRemoveActionsConfiguration();
+          })
+    },
   }
 };
 </script>
@@ -672,6 +708,12 @@ export default {
 
       &.max-apy {
         font-weight: 600;
+
+        .stars-icon {
+          width: 20px;
+          margin-right: 10px;
+          transform: translateY(-2px);
+        }
       }
 
       .reward__icons {
