@@ -8,14 +8,14 @@ const networkInfo = require('./constants.json');
 const CACHE_LAYER_URLS = require('../config/redstone-cache-layer-urls.json');
 
 const LOAN = require(`../abis/SmartLoanGigaChadInterface.json`);
-const { queryHistoricalFeeds } = require("./query-arweave");
-const fetch = require("node-fetch");
-const { SignedDataPackage } = require("redstone-protocol");
-const Web3 = require('web3');
+// const { queryHistoricalFeeds } = require("./query-arweave");
+// const fetch = require("node-fetch");
+// const { SignedDataPackage } = require("redstone-protocol");
+// const Web3 = require('web3');
 const extRpc = require('../.secrets/extRpc.json');
 const funcRpc = require('../.secrets/funcRpc.json');
-const webAva = new Web3(new Web3.providers.HttpProvider(extRpc.avalanche));
-const webArb = new Web3(new Web3.providers.HttpProvider(extRpc.arbitrum));
+// const webAva = new Web3(new Web3.providers.HttpProvider(extRpc.avalanche));
+// const webArb = new Web3(new Web3.providers.HttpProvider(extRpc.arbitrum));
 
 // AWS DynamoDB setup
 AWS.config.update({ region: 'us-east-1' });
@@ -90,39 +90,39 @@ const getWrappedContractsHistorical = (addresses, network, packages) => {
 }
 
 // this is being used in retroactiveCalculator in ec2 - uncomment it when you run it on ec2
-async function getArweavePackages(timestamp, chain) {
-  const nodeAddress1 = '0x83cbA8c619fb629b81A65C2e67fE15cf3E3C9747';
-  const nodeAddress2 = '0x2c59617248994D12816EE1Fa77CE0a64eEB456BF';
-  const nodeAddress3 = '0x12470f7aBA85c8b81D63137DD5925D6EE114952b';
-  //do dziesietnych
+// async function getArweavePackages(timestamp, chain) {
+//   const nodeAddress1 = '0x83cbA8c619fb629b81A65C2e67fE15cf3E3C9747';
+//   const nodeAddress2 = '0x2c59617248994D12816EE1Fa77CE0a64eEB456BF';
+//   const nodeAddress3 = '0x12470f7aBA85c8b81D63137DD5925D6EE114952b';
+//   //do dziesietnych
 
-  const dater = new EthDater(chain == 'avalanche' ? webAva : webArb);
+//   const dater = new EthDater(chain == 'avalanche' ? webAva : webArb);
 
-  let blockData = await dater.getDate(timestamp * 1000);
+//   let blockData = await dater.getDate(timestamp * 1000);
 
-  let approxTimestamp = parseInt((blockData.timestamp / 10).toString()) * 10; //requirement for Redstone
+//   let approxTimestamp = parseInt((blockData.timestamp / 10).toString()) * 10; //requirement for Redstone
 
-  const feeds = await queryHistoricalFeeds(approxTimestamp, [nodeAddress1, nodeAddress2, nodeAddress3]);
+//   const feeds = await queryHistoricalFeeds(approxTimestamp, [nodeAddress1, nodeAddress2, nodeAddress3]);
 
-  let packages = [];
+//   let packages = [];
 
 
-  for (let obj of feeds) {
+//   for (let obj of feeds) {
 
-    let txId = obj.node.id;
-    let url = `https://arweave.net/${txId}`;
+//     let txId = obj.node.id;
+//     let url = `https://arweave.net/${txId}`;
 
-    const response = await fetch(url);
+//     const response = await fetch(url);
 
-    const json = await response.json();
+//     const json = await response.json();
 
-    const dataPackage = SignedDataPackage.fromObj(json)
+//     const dataPackage = SignedDataPackage.fromObj(json)
 
-    packages.push(dataPackage);
-  }
+//     packages.push(dataPackage);
+//   }
 
-  return packages;
-}
+//   return packages;
+// }
 
 const fromBytes32 = ethers.utils.parseBytes32String;
 const toBytes32 = ethers.utils.formatBytes32String;
@@ -215,6 +215,6 @@ module.exports = {
   getWrappedContracts,
   getWrappedContractsHistorical,
   getBlockForTimestamp,
-  getArweavePackages,
+  // getArweavePackages,
   fetchAllDataFromDB
 }
