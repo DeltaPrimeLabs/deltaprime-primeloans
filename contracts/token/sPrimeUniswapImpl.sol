@@ -66,12 +66,12 @@ contract sPrimeUniswapImpl
             uint256 price = poolPrice;
             
             if (token0 == tokenX) {
-                price = 1e16 / price;
+                price = 1 ** (8 + PRECISION) / price; // 16 - 8 + PRECISION
+            } else {
+                price = price * 10 ** (PRECISION - 8);
             }
 
-            price =
-                price *
-                10 ** (PRECISION + token1.decimals() - token0.decimals() - 8);
+            price = FullMath.mulDiv(price, 10 ** token1.decimals(), 10 ** token0.decimals());
             uint160 sqrtRatioX96 = uint160((UniswapV3IntegrationHelper.sqrt(price) * 2 ** 96) / 10 ** (PRECISION / 2));
             uint256 amountX;
             (amountX, amountY) = positionManager.total(
