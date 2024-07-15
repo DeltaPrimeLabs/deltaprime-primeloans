@@ -52,6 +52,88 @@ async function fetchData(epochName, from, to, top, pool = false) {
     console.log('collected ARB: ', collectedArb)
 }
 
+async function fetchLoansDataInBatches(epochName) {
+    let pool = false;
+    let type = 'loan';
+    let fileName = epochName + (pool ? '_SAVINGS' : '');
+    let loans = await factory.getAllLoans();
+
+    const task = (address) => fetch(`https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/ltip-${type}-for?addresses=${address}`)
+
+    console.log(`LONS: ${loans.length}`)
+    loans = loans.slice(0, 1600);
+
+    let resps = await promiseAllInBatches(task, loans, 100);
+
+    let jsons = await Promise.all(resps.map(json => json.json()))
+
+
+    let json = {};
+    console.log(jsons)
+    jsons.forEach((j, i) => {
+        json[loans[i].toLowerCase()] = j.data[loans[i]].arbCollected
+    })
+    fs.writeFileSync(`src/data/arbitrum/ltip/${fileName}.json`, JSON.stringify(json))
+
+    let collectedArb = 0;
+
+    let json1 = JSON.parse(fs.readFileSync(`src/data/arbitrum/ltip/${fileName}.json`))
+
+
+    Object.values(json1).forEach(
+        v => {
+            collectedArb += v;
+        }
+    )
+
+    console.log('collected ARB: ', collectedArb)
+}
+
+async function fetchPoolsDataInBatches(epochName, previousFiles) {
+    let pool = true;
+    let type = 'pool';
+    let fileName = epochName + (pool ? '_SAVINGS' : '') + "_TOTAL";
+    let pools = [];
+
+    for (let file of previousFiles) {
+        let json = JSON.parse(fs.readFileSync(`src/data/arbitrum/ltip/${file}.json`));
+        for (let [pool, value] of Object.entries(json)) {
+            if (pools.indexOf(pool) === -1) {
+                pools.push(pool);
+            }
+        }
+    }
+
+    const task = (address) => fetch(`https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/ltip-${type}-for?addresses=${address}`)
+
+    console.log(`POOLS: ${pools.length}`)
+    pools = pools.slice(0, 3000);
+
+    let resps = await promiseAllInBatches(task, pools, 100);
+
+    let jsons = await Promise.all(resps.map(json => json.json()))
+
+
+    let json = {};
+    console.log(jsons)
+    jsons.forEach((j, i) => {
+        json[pools[i].toLowerCase()] = j.data[pools[i]].arbCollected
+    })
+    fs.writeFileSync(`src/data/arbitrum/ltip/${fileName}.json`, JSON.stringify(json))
+
+    let collectedArb = 0;
+
+    let json1 = JSON.parse(fs.readFileSync(`src/data/arbitrum/ltip/${fileName}.json`))
+
+
+    Object.values(json1).forEach(
+        v => {
+            collectedArb += v;
+        }
+    )
+
+    console.log('collected ARB: ', collectedArb)
+}
 
 function createDiffJson(file1, file2, location = 'avalanche') {
     let json0 = JSON.parse(fs.readFileSync(`src/data/${location}/${file1}.json`))
@@ -71,6 +153,47 @@ function createDiffJson(file1, file2, location = 'avalanche') {
     console.log('distributed Avax in this epoch: ', collectedAvax)
 
 }
+
+let currentSleepTimeMs = 0;
+async function promiseAllInBatches(task, items, batchSize) {
+    let position = 0;
+    let results = [];
+    while (position < items.length) {
+
+        console.log(`Processing from position ${position} to ${batchSize}`)
+        const itemsForBatch = items.slice(position, position + batchSize);
+        currentSleepTimeMs = 0;
+        results = [...results, ...await runWithTimeout(itemsForBatch.map(item => task(item)), 2000)];
+
+
+        position += batchSize;
+        // await sleep(1000); // Sleep for 5000 milliseconds (5 seconds)
+    }
+    return results;
+}
+
+async function runWithTimeout(promises, timeoutMs) {
+    try {
+        // Race the promises against a timeout
+        return await Promise.race([
+            Promise.all(promises),
+            timeout(timeoutMs)
+        ]);
+    } catch (error) {
+        if (error.message === 'Timeout') {
+            if(currentSleepTimeMs < 15000){
+                currentSleepTimeMs += 5000;
+            } else {
+                currentSleepTimeMs = 0;
+            }
+            console.log(`Operation timed out, retrying after ${currentSleepTimeMs/1000}seconds...`);
+            await sleep(currentSleepTimeMs); // Sleep for 5000 milliseconds (5 seconds)
+            return await runWithTimeout(promises, timeoutMs); // For automatic retry
+        }
+        throw error; // For other errors
+    }
+}
+
 
 function analyzeJson(filename) {
     let json1 = JSON.parse(fs.readFileSync(`src/data/arbitrum/ltip/${filename}.json`))
@@ -143,14 +266,17 @@ function createAddJson(files, output) {
 }
 
 
-//last distribution timestamp: 1720013265
-//current distribution timestamp: 1720517683
-fetchData("LTIP_EPOCH_5", 1720013265, 1720517683, 10000, false)
+//last distribution timestamp: 1720517683
+//current distribution timestamp: 1721050801
+// fetchData("LTIP_EPOCH_6", 1720517683, 1721048971, 10000, true)
+// fetchLoansDataInBatches("LTIP_EPOCH_6")
+//no need to use this one for pools
+// fetchPoolsDataInBatches("LTIP_EPOCH_6", ["LTIP_SAVINGS_EPOCH_1", "LTIP_EPOCH_2_SAVINGS", "LTIP_EPOCH_3_SAVINGS", "LTIP_EPOCH_4_SAVINGS", "LTIP_EPOCH_5_SAVINGS"])
 // fetchData("LTIP_EPOCH_5_TOTAL_4", 1720013265, 1720521317, 10000, false)
 // fetchData("LTIP_EPOCH-test", 1719234231, 1720013265, 10000, true)
 // checkNegativeAccounts()
 // checkCollectedInTimestamp(1715152203)
 // checkCollected();
-// createDiffJson( "LTIP_EPOCH_4_TOTAL", "LTIP_EPOCH_5_TOTAL", "arbitrum/ltip")
-// createAddJson( ["LTIP_EPOCH_0", "LTIP_EPOCH_1", "LTIP_EPOCH_2", "LTIP_EPOCH_3", "LTIP_EPOCH_4"], "LTIP_EPOCH_4_TOTAL")
-// analyzeJson("LTIP_EPOCH_4_TOTAL")
+// createDiffJson( "LTIP_EPOCH_5_SAVINGS_TOTAL", "LTIP_EPOCH_6_SAVINGS_TOTAL", "arbitrum/ltip")
+// createAddJson( ["LTIP_SAVINGS_EPOCH_1", "LTIP_EPOCH_2_SAVINGS", "LTIP_EPOCH_3_SAVINGS", "LTIP_EPOCH_4_SAVINGS", "LTIP_EPOCH_5_SAVINGS"], "LTIP_EPOCH_5_SAVINGS_TOTAL")
+// analyzeJson("LTIP_EPOCH_5_SAVINGS_TOTAL")
