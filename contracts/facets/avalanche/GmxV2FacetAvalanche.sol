@@ -15,7 +15,7 @@ contract GmxV2FacetAvalanche is GmxV2Facet {
     }
 
     function getGmxV2ExchangeRouter() internal pure override returns (address) {
-        return 0x11E590f6092D557bF71BaDEd50D81521674F8275;
+        return 0x3BE24AED1a4CcaDebF2956e02C27a00726D4327d;
     }
 
     function getGmxV2DepositVault() internal pure override returns (address) {
