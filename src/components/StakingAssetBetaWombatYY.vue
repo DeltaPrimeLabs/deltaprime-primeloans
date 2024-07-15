@@ -8,7 +8,7 @@
           <div class="asset">
             <div class="asset__icon asset__icon--double">
               <DoubleAssetIcon :primary="farm.assetToken"
-                               :secondary="farm.lpAssetToken">
+                               :force-secondary="`src/assets/logo/${farm.lpTokenLogo}`">
               </DoubleAssetIcon>
             </div>
             <div class="asset__info">
@@ -40,6 +40,7 @@
 <!--                <span>{{ formatTokenBalanceWithLessThan(available.lpAssetToken) }}</span>-->
 <!--            </span>-->
             </template>
+            <template v-else>0</template>
           </div>
         </div>
 

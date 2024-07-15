@@ -68,7 +68,7 @@ export default {
       this.assetFilterGroups = [
         {
           label: 'Filter by assets',
-          options: Object.entries(config.FARMED_TOKENS_CONFIG).filter(([,value]) => !value[0].isTokenLp).map(el => el[0]),
+          options: [...Object.entries(config.FARMED_TOKENS_CONFIG).filter(([,value]) => !value[0].isTokenLp).map(el => el[0]), 'ggAVAX'],
           key: 'asset'
         },
       ];
