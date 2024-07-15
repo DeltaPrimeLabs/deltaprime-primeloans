@@ -5,6 +5,16 @@
         Unstake
       </div>
 
+      <template v-if="targetAssetsOptions">
+        <div class="modal-top-info modal-top-info--toggle-info">
+          <div class="top-info__label">Unstake to:</div>
+        </div>
+
+        <div>
+          <Toggle v-on:change="assetToggleChange" :options="targetAssetsOptions"></Toggle>
+        </div>
+      </template>
+
       <div class="modal-top-info">
         <div class="top-info__label">APY:</div>
         <div class="top-info__value">{{ apy | percent }}</div>
@@ -24,6 +34,8 @@
       <CurrencyInput ref="currencyInput"
                      v-else
                      :symbol="asset.symbol"
+                     :logo="assetLogo"
+                     :force-asset-name="forceAssetName"
                      v-on:newValue="unstakeValueChange"
                      :validators="validators"
                      :max="staked"
@@ -72,10 +84,12 @@ import TransactionResultSummaryBeta from './TransactionResultSummaryBeta';
 import CurrencyInput from './CurrencyInput';
 import Button from './Button';
 import config from '../config';
+import Toggle from "./Toggle.vue";
 
 export default {
   name: 'StakeModal',
   components: {
+    Toggle,
     Button,
     CurrencyInput,
     TransactionResultSummaryBeta,
@@ -89,7 +103,10 @@ export default {
     receiptTokenBalance: {},
     asset: {},
     isLp: false,
-    protocol: null
+    protocol: null,
+    assetLogo: null,
+    forceAssetName: null,
+    targetAssetsOptions: null,
   },
 
   data() {
@@ -99,6 +116,7 @@ export default {
       transactionOngoing: false,
       currencyInputError: true,
       valueAsset: "USDC",
+      selectedTargetAsset: null,
     }
   },
 
@@ -136,7 +154,8 @@ export default {
       const unstakeEvent = {
         receiptTokenUnstaked: unstakedReceiptToken,
         underlyingTokenUnstaked: this.unstakeValue,
-        isMax: this.maxButtonUsed
+        isMax: this.maxButtonUsed,
+        selectedTargetAsset: this.selectedTargetAsset,
       };
 
       this.$emit('UNSTAKE', unstakeEvent);
@@ -148,6 +167,10 @@ export default {
       this.maxButtonUsed = event.maxButtonUsed;
     },
 
+    async assetToggleChange(asset) {
+      this.selectedTargetAsset = asset;
+    },
+
     setupValidators() {
     },
   }
@@ -157,4 +180,12 @@ export default {
 <style lang="scss" scoped>
 @import "~@/styles/variables";
 @import "~@/styles/modal";
+
+.modal-top-info--toggle-info {
+  margin-top: 8px;
+}
+
+.modal__title {
+  margin-bottom: 30px;
+}
 </style>

@@ -4,6 +4,7 @@ export const ActionSection = {
   'ASSETS': 'ASSETS',
   'POOLS': 'POOLS',
   'STAKING_PROTOCOL': 'STAKING_PROTOCOL',
+  'STAKING_PROTOCOL_WOMBAT': 'STAKING_PROTOCOL_WOMBAT',
   'LP': 'LP',
   'GMXV2': 'GMXV2',
   'PENPIE': 'PENPIE',
@@ -41,6 +42,13 @@ export default class GlobalActionsDisableService {
     STAKE: false,
     WITHDRAW: false,
     UNSTAKE: false,
+  });
+  stakingProtocolWombatActions$ = new BehaviorSubject({
+    DEPOSIT: false,
+    DEPOSIT_AND_STAKE: false,
+    MIGRATE: false,
+    WITHDRAW: false,
+    UNSTAKE_AND_WITHDRAW: false,
   });
   lpActions$ = new BehaviorSubject({
     ADD_FROM_WALLET: false,
@@ -111,6 +119,7 @@ export default class GlobalActionsDisableService {
     'ASSETS': this.assetsActions$,
     'POOLS': this.poolsActions$,
     'STAKING_PROTOCOL': this.stakingProtocolActions$,
+    'STAKING_PROTOCOL_WOMBAT': this.stakingProtocolWombatActions$,
     'LP': this.lpActions$,
     'GMXV2': this.gmxV2Actions$,
     'PENPIE': this.penpieActions$,
@@ -126,6 +135,7 @@ export default class GlobalActionsDisableService {
     this.assetsActions$,
     this.poolsActions$,
     this.stakingProtocolActions$,
+    this.stakingProtocolWombatActions$,
     this.lpActions$,
     this.gmxV2Actions$,
     this.penpieActions$,

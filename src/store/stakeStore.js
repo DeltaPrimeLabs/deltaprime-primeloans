@@ -5,7 +5,7 @@ import {BigNumber} from 'ethers';
 import {
   beefyMaxUnstaked,
   fromWei,
-  mergeArrays, penpieMaxUnstaked,
+  mergeArrays, penpieMaxUnstaked, toWei,
   vectorFinanceMaxUnstaked,
   vectorFinanceRewards, yieldYakBalance,
   yieldYakMaxUnstaked,
@@ -263,6 +263,122 @@ export default {
       setTimeout(async () => {
         await dispatch('fundsStore/updateFunds', {}, {root: true});
       }, stakeRequest.refreshDelay);
+    },
+
+    async depositToWombatYY({state, rootState, dispatch, commit}, {depositRequest}) {
+
+      const provider = rootState.network.provider;
+      const smartLoanContract = rootState.fundsStore.smartLoanContract;
+
+      if (depositRequest.requireApproval) {
+        const tokenForApprove = TOKEN_ADDRESSES[depositRequest.sourceAsset];
+        const fundToken = new ethers.Contract(tokenForApprove, erc20ABI, provider.getSigner());
+        const allowance = formatUnits(await fundToken.allowance(rootState.network.account, smartLoanContract.address), depositRequest.decimals);
+
+        if (parseFloat(allowance) < parseFloat(depositRequest.amount)) {
+          const approveTransaction = await fundToken.connect(provider.getSigner()).approve(smartLoanContract.address, toWei(depositRequest.amount));
+          await awaitConfirmation(approveTransaction, provider, 'approve');
+        }
+      }
+
+
+      let assets = [
+        (await smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG)
+      ];
+
+      const loanAssets = mergeArrays(assets);
+
+      const depositTransaction = depositRequest.minLpOut ? await (await wrapContract(smartLoanContract, loanAssets))[depositRequest.depositMethod]
+      (
+        parseUnits(String(depositRequest.amount),
+          BigNumber.from(depositRequest.decimals.toString())),
+        parseUnits(String(depositRequest.minLpOut),
+          BigNumber.from(depositRequest.decimals.toString())),
+      ) : await (await wrapContract(smartLoanContract, loanAssets))[depositRequest.depositMethod]
+      (
+        parseUnits(String(depositRequest.amount),
+          BigNumber.from(depositRequest.decimals.toString())),
+      );
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+      let tx = await awaitConfirmation(depositTransaction, provider, 'deposit');
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('fundsStore/updateFunds', {}, {root: true});
+      }, config.refreshDelay);
+    },
+
+    async withdrawFromWombatYY({state, rootState, dispatch, commit}, {withdrawRequest}) {
+
+      const provider = rootState.network.provider;
+      const smartLoanContract = rootState.fundsStore.smartLoanContract;
+
+      let assets = [
+        (await smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG)
+      ];
+
+      const loanAssets = mergeArrays(assets);
+
+      const withdrawTransaction = withdrawRequest.minOut ? await (await wrapContract(smartLoanContract, loanAssets))[withdrawRequest.withdrawMethod]
+      (
+        parseUnits(String(withdrawRequest.amount),
+          BigNumber.from(withdrawRequest.decimals.toString())),
+        parseUnits(String(withdrawRequest.minOut),
+          BigNumber.from(withdrawRequest.decimals.toString())),
+      ) : await (await wrapContract(smartLoanContract, loanAssets))[withdrawRequest.withdrawMethod]
+      (
+        parseUnits(String(withdrawRequest.amount),
+          BigNumber.from(withdrawRequest.decimals.toString())),
+      );
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+      let tx = await awaitConfirmation(withdrawTransaction, provider, 'withdraw');
+
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('fundsStore/updateFunds', {}, {root: true});
+      }, config.refreshDelay);
+    },
+
+    async migrateWombatToYY({state, rootState, dispatch, commit}, {migrateRequest}) {
+
+      const provider = rootState.network.provider;
+      const smartLoanContract = rootState.fundsStore.smartLoanContract;
+
+      let assets = [
+        (await smartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await smartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG)
+      ];
+
+      const loanAssets = mergeArrays(assets);
+
+      const migrateTransaction = await (await wrapContract(smartLoanContract, loanAssets))[migrateRequest.migrateMethod]()
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+      let tx = await awaitConfirmation(migrateTransaction, provider, 'migrate');
+
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('fundsStore/updateFunds', {}, {root: true});
+      }, config.refreshDelay);
     },
 
     async unstake({state, rootState, dispatch, commit}, {unstakeRequest}) {

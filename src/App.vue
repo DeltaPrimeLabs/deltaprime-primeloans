@@ -517,6 +517,8 @@ export default {
         this.globalActionsDisableService.disableActionGlobally('WRAP');
         this.globalActionsDisableService.disableActionGlobally('BRIDGE_COLLATERAL');
         this.globalActionsDisableService.disableActionGlobally('DEPOSIT');
+        this.globalActionsDisableService.disableActionGlobally('DEPOSIT_AND_STAKE');
+        this.globalActionsDisableService.disableActionGlobally('MIGRATE');
         this.globalActionsDisableService.disableActionGlobally('BRIDGE');
         this.globalActionsDisableService.disableActionGlobally('BRIDGE_DEPOSIT');
         this.globalActionsDisableService.disableActionGlobally('SWAP_DEPOSIT');
