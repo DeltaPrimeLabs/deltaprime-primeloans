@@ -56,11 +56,11 @@ const wombatApyAggregator = async (event) => {
           },
           AttributeUpdates: {
             lp_tvl: {
-              Value: Number(poolTvl) ? poolTvl : null,
+              Value: Number(poolTvl) ? poolTvl : 0,
               Action: "PUT"
             },
             lp_apy: {
-              Value: Number(poolApy) ? poolApy / 100 : null,
+              Value: Number(poolApy) ? poolApy / 100 : 0,
               Action: "PUT"
             }
           }

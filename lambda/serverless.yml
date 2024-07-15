@@ -199,20 +199,6 @@ functions:
     description: fetch APYs of Wombat pools.
     events:
       - schedule: rate(5 minutes)
-  # loanAggregatorAva:
-  #   handler: aggregators/loan.loanAggregatorAva
-  #   memorySize: 1024
-  #   timeout: 900
-  #   description: upload loan addresses on Avalanche
-  #   events:
-  #     - schedule: rate(5 minutes)
-  # loanAggregatorArb:
-  #   handler: aggregators/loan.loanAggregatorArb
-  #   memorySize: 1024
-  #   timeout: 900
-  #   description: upload loan addresses on Arbitrum
-  #   events:
-  #     - schedule: rate(5 minutes)
   gmxIncentivesCalculatorArb:
     handler: gmxIncentives/gmxIncentivesCalculatorArb.handler
     memorySize: 1024
@@ -680,3 +666,12 @@ package:
   individually: true
   exclude:
     - .serverless/**
+    - arbitrumIncentives
+    - ggpIncentives
+    - gmOpenInterest/getLastWeekHistory.js
+    - gmxIncentives/exportIncentives.js
+    - gmxIncentives/gmxIncentivesCalculatorAvaFrom.js
+    - gmxIncentives/gmxIncentivesCalculatorAvaFromJob.sh
+    - gmxIncentives/retroactiveCalculator.js
+    - sPrime
+    - sPrimeAirdrop

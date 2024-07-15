@@ -26,10 +26,6 @@ provider:
   stage: ${opt:stage, "dev"}
   region: eu-central-1
   environment:
-    SPRIME_AVA_TABLE: sprime-ava-${opt:stage, "dev"}
-    SPRIME_ARB_TABLE: sprime-arb-${opt:stage, "dev"}
-    LOAN_AVA_TABLE: loans-ava-${opt:stage, "dev"}
-    LOAN_ARB_TABLE: loans-arb-${opt:stage, "dev"}
     APY_TABLE: apys-${opt:stage, "dev"}
     FUNC_RPC_AVA: ${file(./.secrets/funcRpc.json):avalanche}
     FUNC_RPC_ARB: ${file(./.secrets/funcRpc.json):arbitrum}
@@ -44,19 +40,6 @@ provider:
         - dynamodb:PutItem
         - dynamodb:UpdateItem
       Resource: "*"
-  # httpApi:
-  #   authorizers:
-  #     auth0Authorizer:
-  #       type: jwt
-  #       identitySource: $request.header.Authorization
-  #       issuerUrl: ${self:provider.environment.AUTH0_ISSUER}
-  #       audience:
-  #         - ${self:provider.environment.AUTH0_AUDIENCE}
-  # you can add statements to the Lambda function's IAM Role here
-
-# you can define service wide environment variables here
-#  environment:
-#    variable1: value1
 
 functions:
   wombatApyAggregator:
@@ -99,5 +82,4 @@ plugins:
 
 package:
   exclude:
-    - .secrets/**
     - .serverless/**

@@ -9,12 +9,12 @@
       "apyIndexes": [0, 1, 4]
     },
     "WOM_ggAVAX_AVAX": {
-      "index": 6,
-      "apyIndexes": [0, 2]
+      "index": 4,
+      "apyIndexes": [0]
     },
     "WOM_ggAVAX_ggAVAX": {
-      "index": 7,
-      "apyIndexes": [0, 2]
+      "index": 5,
+      "apyIndexes": [0, 1, 4]
     }
   }
 }

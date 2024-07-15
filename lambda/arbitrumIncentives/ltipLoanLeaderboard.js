@@ -4,7 +4,6 @@ const {
 } = require('../utils/helpers');
 
 const ltipLoanLeaderboard = async() => {
-  const top = 200;
   const from = 1717432200;
   const to = Math.floor(Date.now() / 1000);
 
