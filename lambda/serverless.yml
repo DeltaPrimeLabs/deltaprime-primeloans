@@ -402,28 +402,6 @@ resources:
         StreamSpecification:
           StreamViewType: "NEW_AND_OLD_IMAGES"
         TableName: ${self:provider.environment.SPRIME_ARB_TABLE}
-    # gmxIncentivesRetroactiveAvaTable:
-    #   Type: AWS::DynamoDB::Table
-    #   DeletionPolicy: Retain
-    #   Properties:
-    #     AttributeDefinitions:
-    #       -
-    #         AttributeName: "id"
-    #         AttributeType: "S"
-    #       -
-    #         AttributeName: "timestamp"
-    #         AttributeType: "N"
-    #     KeySchema:
-    #       -
-    #         AttributeName: "id"
-    #         KeyType: "HASH"
-    #       -
-    #         AttributeName: "timestamp"
-    #         KeyType: "RANGE"
-    #     BillingMode: PAY_PER_REQUEST
-    #     StreamSpecification:
-    #       StreamViewType: "NEW_AND_OLD_IMAGES"
-    #     TableName: ${self:provider.environment.GMX_INCENTIVES_RETROACTIVE_AVA_NEW_TABLE}
     gmxIncentivesArbTable:
       Type: AWS::DynamoDB::Table
       DeletionPolicy: Retain
@@ -665,13 +643,15 @@ plugins:
 package:
   individually: true
   exclude:
+    - package-lock.json
     - .serverless/**
-    - arbitrumIncentives
-    - ggpIncentives
+    - arbitrumIncentives/**
+    - ggpIncentives/**
     - gmOpenInterest/getLastWeekHistory.js
     - gmxIncentives/exportIncentives.js
     - gmxIncentives/gmxIncentivesCalculatorAvaFrom.js
     - gmxIncentives/gmxIncentivesCalculatorAvaFromJob.sh
     - gmxIncentives/retroactiveCalculator.js
-    - sPrime
-    - sPrimeAirdrop
+    - loanStats/**
+    - sPrime/**
+    - sPrimeAirdrop/**

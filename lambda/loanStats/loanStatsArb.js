@@ -46,54 +46,59 @@ const getWrappedContracts = (addresses, network, provider) => {
 }
 
 const saveLiveLoansStatusArbitrum = async (network = 'arbitrum', rpc = 'first') => {
-  const now = Date.now();
-  const provider = getHistoricalProvider(network, rpc);
-  const factoryContract = getFactoryContract(network, provider);
+  try {
+    const now = Date.now();
+    const provider = getHistoricalProvider(network, rpc);
+    const factoryContract = getFactoryContract(network, provider);
 
-  const loanAddresses = await factoryContract.getAllLoans();
-  const totalLoans = loanAddresses.length;
-  console.log(`${totalLoans} loans found`);
+    const loanAddresses = await factoryContract.getAllLoans();
+    const totalLoans = loanAddresses.length;
+    console.log(`${totalLoans} loans found`);
 
-  const batchSize = 100;
-  const loanStats = {};
+    const batchSize = 100;
+    const loanStats = {};
 
-  for (let i = 0; i < Math.ceil(totalLoans / batchSize); i++) {
-    console.log(`processing ${i * batchSize} - ${(i + 1) * batchSize > totalLoans ? totalLoans : (i + 1) * batchSize} loans`);
-    const batchLoanAddresses = loanAddresses.slice(i * batchSize, (i + 1) * batchSize);
-    const wrappedContracts = getWrappedContracts(batchLoanAddresses, network, provider);
+    for (let i = 0; i < Math.ceil(totalLoans / batchSize); i++) {
+      console.log(`processing ${i * batchSize} - ${(i + 1) * batchSize > totalLoans ? totalLoans : (i + 1) * batchSize} loans`);
+      const batchLoanAddresses = loanAddresses.slice(i * batchSize, (i + 1) * batchSize);
+      const wrappedContracts = getWrappedContracts(batchLoanAddresses, network, provider);
 
-    const loanStatusResults = await Promise.all(wrappedContracts.map(contract => contract.getFullLoanStatus()));
+      const loanStatusResults = await Promise.all(wrappedContracts.map(contract => contract.getFullLoanStatus()));
 
-    if (loanStatusResults.length > 0) {
-      loanStatusResults.map(async (status, id) => {
-        loanStats[batchLoanAddresses[id]] = {
-          totalValue: fromWei(status[0]),
-          borrowed: fromWei(status[1]),
-          collateral: fromWei(status[0]) - fromWei(status[1]),
-          twv: fromWei(status[2]),
-          health: fromWei(status[3]),
-          solvent: fromWei(status[4]) === 1e-18,
-          timestamp: now
-        };
-      });
+      if (loanStatusResults.length > 0) {
+        loanStatusResults.map(async (status, id) => {
+          loanStats[batchLoanAddresses[id]] = {
+            totalValue: fromWei(status[0]),
+            borrowed: fromWei(status[1]),
+            collateral: fromWei(status[0]) - fromWei(status[1]),
+            twv: fromWei(status[2]),
+            health: fromWei(status[3]),
+            solvent: fromWei(status[4]) === 1e-18,
+            timestamp: now
+          };
+        });
+      }
     }
+
+    // save loan stats to DB
+    await Promise.all(
+      Object.entries(loanStats).map(async ([loanId, stats]) => {
+        const data = {
+          id: loanId,
+          ...stats
+        };
+
+        const params = {
+          TableName: "loan-stats-arb-prod",
+          Item: data
+        };
+        await dynamoDb.put(params).promise();
+      })
+    );
+  } catch (error) {
+    console.log(error);
+    saveLiveLoansStatusArbitrum('arbitrum', rpc == "first" ? "second" : "first");
   }
-
-  // save loan stats to DB
-  await Promise.all(
-    Object.entries(loanStats).map(async ([loanId, stats]) => {
-      const data = {
-        id: loanId,
-        ...stats
-      };
-
-      const params = {
-        TableName: "loan-stats-arb-prod",
-        Item: data
-      };
-      await dynamoDb.put(params).promise();
-    })
-  );
 }
 
 saveLiveLoansStatusArbitrum('arbitrum', 'first');
