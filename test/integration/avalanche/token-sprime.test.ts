@@ -721,7 +721,7 @@ describe("SPrime", function () {
             await sPrime.withdraw(userShare.totalShare);
 
             // Process mint and lock - 30 days
-            await sPrime.mintForUserAndLock(addr2.address, [100], [30 * 24 * 60 * 60], parseEther("10"), parseEther("10"));
+            await sPrime.mintForUserAndLock(addr2.address, [100], [30 * 24 * 60 * 60], parseEther("10"), parseEther("10"), initaialBin, 1000);
 
             tokenId = await sPrime.getUserTokenId(addr2.address);
             userShare = await positionManager.positions(tokenId);

@@ -479,8 +479,6 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     * @param swapSlippage Slippage for the rebalance.
     */
     function deposit(uint256 activeIdDesired, uint256 idSlippage, uint256 amountX, uint256 amountY, bool isRebalance, uint256 swapSlippage) public nonReentrant {
-        require(swapSlippage <= _MAX_SLIPPAGE, "Slippage too high");
-
         _transferTokens(_msgSender(), address(this), amountX, amountY);
 
         _deposit(_msgSender(), activeIdDesired, idSlippage, amountX, amountY, isRebalance, swapSlippage);
@@ -490,6 +488,9 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
 
 
     function _deposit(address user, uint256 activeIdDesired, uint256 idSlippage, uint256 amountX, uint256 amountY, bool isRebalance, uint256 swapSlippage) internal {
+
+        require(swapSlippage <= _MAX_SLIPPAGE, "Slippage too high");
+
         uint256 tokenId = getUserTokenId(user);
         uint256 activeId = lbPair.getActiveId();
         if(tokenId > 0) {
@@ -525,16 +526,15 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     * @param lockPeriods Lock period to Lock for each amount
     * @param amountX The amount of token X to deposit.
     * @param amountY The amount of token Y to deposit.
+    * @param activeIdDesired Desired bin id.
     * @param idSlippage Bin id slippage from the active id.
     */
-    function mintForUserAndLock(address user, uint256[] calldata percentForLocks, uint256[] calldata lockPeriods, uint256 amountX, uint256 amountY, uint256 idSlippage) public onlyOperator nonReentrant {
-        uint256 activeId = lbPair.getActiveId();
-
+    function mintForUserAndLock(address user, uint256[] calldata percentForLocks, uint256[] calldata lockPeriods, uint256 amountX, uint256 amountY, uint256 activeIdDesired, uint256 idSlippage) public onlyOperator nonReentrant {
         require(percentForLocks.length == lockPeriods.length, "Length dismatch");
         
         uint256 oldBalance = balanceOf(user);
         _transferTokens(_msgSender(), address(this), amountX, amountY);
-        _deposit(user, activeId, idSlippage, amountX, amountY, true, _MAX_SLIPPAGE);
+        _deposit(user, activeIdDesired, idSlippage, amountX, amountY, true, _MAX_SLIPPAGE);
         require(balanceOf(user) > oldBalance, "Negative mint");
 
         uint256 totalLock;

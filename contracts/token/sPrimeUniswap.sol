@@ -583,6 +583,7 @@ contract sPrimeUniswap is
      * @param lockPeriods Lock period to Lock for each amount
      * @param amountX The amount of token X to deposit.
      * @param amountY The amount of token Y to deposit.
+     * @param tickDesired The tick that user wants to add liquidity from
      * @param tickSlippage Tick slippage from the current tick.
      */
     function mintForUserAndLock(
@@ -591,6 +592,7 @@ contract sPrimeUniswap is
         uint256[] calldata lockPeriods,
         uint256 amountX,
         uint256 amountY,
+        int24 tickDesired,
         int24 tickSlippage
     ) public onlyOperator nonReentrant {
         address msgSender = _msgSender();
@@ -601,10 +603,7 @@ contract sPrimeUniswap is
         }
 
         uint256 oldBalance = balanceOf(user);
-        {
-            (, int24 currenTick, , , , , ) = pool.slot0();
-            _deposit(user, currenTick, tickSlippage, amountX, amountY, true, _MAX_SLIPPAGE);
-        }
+        _deposit(user, tickDesired, tickSlippage, amountX, amountY, true, _MAX_SLIPPAGE);
         
         if(balanceOf(user) > oldBalance) {
             lockForUser(user, balanceOf(user) - oldBalance, percentForLocks, lockPeriods);
@@ -783,13 +782,13 @@ contract sPrimeUniswap is
                 from
             );
 
-            if (fromBalance == amount) {
+            if (fromBalance == 0) {
                 userTokenId[to] = userTokenId[from];
                 delete userTokenId[from];
             } else {
                 ( , , , , , int24 tickLower, int24 tickUpper, uint128 liquidity, , , ,) = positionManager.positions(tokenId);
 
-                (uint256 amountX, uint256 amountY) = positionManagerRemove(tokenId, uint128((liquidity * amount) / fromBalance), address(this));
+                (uint256 amountX, uint256 amountY) = positionManagerRemove(tokenId, uint128((liquidity * amount) / (fromBalance + amount)), address(this));
 
                 (
                     uint256 newTokenId,
