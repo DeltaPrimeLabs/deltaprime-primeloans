@@ -93,28 +93,23 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
     226459589,
     226459178,
     226458920,
+    226456387,
     226453081,
     226452344,
-    226427392,
-    226422898,
-    226422707,
-    226422584,
-    226422380,
-    226421178,
-    226421022,
-    226419932,
     226419343,
     226419164,
     226418443,
+    226416714,
     226416359,
     226413682,
+    226412797,
   ]
 
   for (const blockNumber of blockNumbers.reverse()) {
     const block = await arbitrumHistoricalProvider.getBlock(blockNumber);
     const timestamp = block.timestamp;
 
-    let packages = await getArweavePackages(timestamp);
+    let packages = await getArweavePackages(timestamp, 'arbitrum');
 
     const [wrappedContract] = await getWrappedContractsHistorical(["0xda17e8137562064E12cf2Ba79D28610AFE11D0ed"], 'arbitrum', packages);
 
@@ -128,7 +123,7 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
     }
 
     const totalValueBefore = fromWei((await runMethod(wrappedContract, 'getTotalValue', blockNumber - 1)).toString());
-    const totalValueAfter = fromWei((await runMethod(wrappedContract, 'getTotalValue', blockNumber + 10)).toString());
+    const totalValueAfter = fromWei((await runMethod(wrappedContract, 'getTotalValue', blockNumber + 41)).toString());
     console.log(`Checking block: ${blockNumber}`);
     console.log(`before: ${totalValueBefore}, after: ${totalValueAfter}, diff: ${totalValueAfter - totalValueBefore}`);
 
