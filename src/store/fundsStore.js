@@ -2743,6 +2743,7 @@ export default {
 
 
     async addLiquidityTraderJoeV2Pool({state, rootState, commit, dispatch}, {addLiquidityRequest}) {
+      console.log('addLiquidityTraderJoeV2Pool')
       const provider = rootState.network.provider;
 
       const loanAssets = mergeArrays([(
@@ -2754,6 +2755,7 @@ export default {
 
       const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
 
+      console.log('before transaction')
       const transaction = await wrappedContract[addLiquidityRequest.method](
         addLiquidityRequest.routerAddress,
         addLiquidityRequest.addLiquidityInput
