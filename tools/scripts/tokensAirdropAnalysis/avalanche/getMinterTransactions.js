@@ -148,8 +148,8 @@ const TOTAL_DOLLAR_VALUE_TO_BE_DISTRIBUTED = getDollarValueFromMintAmounts(LM_AI
 
 const SPRIME_MINTED_FILENAME = 'sPrimeMintedDollarValuePerUser.json';
 
-console.log(`Total Prime to be distributed: ${LM_AIRDROP_PRIME_AMOUNT + LOYALTY_AIRDROP_PRIME_AMOUNT}`);
-console.log(`Total WAVAX to be distributed: ${LM_AIRDROP_WAVAX_AMOUNT + LOYALTY_AIRDROP_WAVAX_AMOUNT}`);
+console.log(`Total Prime to be distributed: ${LM_AIRDROP_PRIME_AMOUNT + LOYALTY_AIRDROP_PRIME_AMOUNT + PARTNER_GUESSER_PRIME_AMOUNT}`);
+console.log(`Total WAVAX to be distributed: ${LM_AIRDROP_WAVAX_AMOUNT + LOYALTY_AIRDROP_WAVAX_AMOUNT + PARTNER_GUESSER_WAVAX_AMOUNT}`);
 console.log(`Total dollar value to be distributed: $${TOTAL_DOLLAR_VALUE_TO_BE_DISTRIBUTED}`)
 
 
