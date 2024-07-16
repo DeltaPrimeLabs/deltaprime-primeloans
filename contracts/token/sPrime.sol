@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 7791f4c6f965248c1000f6642d53e9701e04a22d;
+// Last deployed from commit: 64844560a0d7eef533c66bbb82b895ea07afad7b;
 
 pragma solidity ^0.8.17;
 
@@ -92,7 +92,9 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     }
 
     modifier onlyOperator() {
-        require(_msgSender() == operator, "Access Denied");
+        if (_msgSender() != operator) {
+            revert Unauthorized();
+        }
         _;
     }
 
@@ -133,7 +135,9 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
      */
     function binInRange(address user) public view returns(bool) {
         uint256 tokenId = getUserTokenId(user);
-        require(tokenId > 0, "No position");
+        if (tokenId == 0) {
+            revert NoPosition();
+        }
 
         IPositionManager.DepositConfig memory depositConfig = positionManager.getDepositConfigFromTokenId(tokenId);
 
@@ -224,7 +228,9 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     * @param poolPrice Oracle Price
     */
     function _getLiquidityTokenAmounts(uint256[] memory depositIds, uint256[] memory liquidityMinted, uint256 poolPrice) internal view returns(uint256 amountX, uint256 amountY) {
-        require(depositIds.length == liquidityMinted.length, "Length Dismatch");
+        if (depositIds.length != liquidityMinted.length) {
+            revert LengthMismatch();
+        }
         poolPrice = FullMath.mulDiv(poolPrice, 10 ** tokenYDecimals, 1e8);
         uint24 binId = lbPair.getIdFromPrice(PriceHelper.convertDecimalPriceTo128x128(poolPrice));
 
@@ -349,7 +355,9 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
         for (uint256 i = 0; i < length; ++i) {
             DepositForm memory config = depositForm[i];
             int256 _id = int256(centerId) + config.deltaId;
-            require(_id >= 0 && uint256(_id) <= type(uint24).max, "Overflow");
+            if (!(_id >= 0 && uint256(_id) <= type(uint24).max)) {
+                revert Overflow();
+            }
             depositIds[i] = uint256(_id);
             liquidityConfigs[i] = LiquidityConfigurations.encodeParams(config.distributionX, config.distributionY, uint24(uint256(_id)));
         }
@@ -364,7 +372,9 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     * @return balanceY The amount of token Y received.
     */
     function _withdrawFromLB(uint256[] memory depositIds, uint256[] memory liquidityMinted, uint256 share) internal returns (uint256 balanceX, uint256 balanceY, uint256[] memory liquidityAmounts) {
-        require(depositIds.length == liquidityMinted.length, "Length dismatch");
+        if (depositIds.length != liquidityMinted.length) {
+            revert LengthMismatch();
+        }
 
         uint256 length;
         uint256 totalShare = balanceOf(_msgSender());
@@ -489,7 +499,9 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
 
     function _deposit(address user, uint256 activeIdDesired, uint256 idSlippage, uint256 amountX, uint256 amountY, bool isRebalance, uint256 swapSlippage) internal {
 
-        require(swapSlippage <= _MAX_SLIPPAGE, "Slippage too high");
+        if (swapSlippage > _MAX_SLIPPAGE) {
+            revert SlippageTooHigh();
+        }
 
         uint256 tokenId = getUserTokenId(user);
         uint256 activeId = lbPair.getActiveId();
@@ -510,10 +522,14 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
         (amountX, amountY) = _swapForEqualValues(amountX, amountY, swapSlippage);
         
         // Revert if active id moved without rebalancing
-        require(activeId == lbPair.getActiveId() || tokenId == 0, "Bin id changed");
+        if (!(activeId == lbPair.getActiveId() || tokenId == 0)) {
+            revert BinIdChanged();
+        }
         activeId = lbPair.getActiveId();
 
-        require(activeIdDesired + idSlippage >= activeId && activeId + idSlippage >= activeIdDesired, "Slippage High");
+        if (!(activeIdDesired + idSlippage >= activeId && activeId + idSlippage >= activeIdDesired)) {
+            revert SlippageTooHigh();
+        }
 
         _transferTokens(address(this), address(lbPair), amountX, amountY);
         _depositToLB(user, activeId);
@@ -530,23 +546,31 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     * @param idSlippage Bin id slippage from the active id.
     */
     function mintForUserAndLock(address user, uint256[] calldata percentForLocks, uint256[] calldata lockPeriods, uint256 amountX, uint256 amountY, uint256 activeIdDesired, uint256 idSlippage) public onlyOperator nonReentrant {
-        require(percentForLocks.length == lockPeriods.length, "Length dismatch");
+        if (percentForLocks.length != lockPeriods.length) {
+            revert LengthMismatch();
+        }
         
         uint256 oldBalance = balanceOf(user);
         _transferTokens(_msgSender(), address(this), amountX, amountY);
         _deposit(user, activeIdDesired, idSlippage, amountX, amountY, true, _MAX_SLIPPAGE);
-        require(balanceOf(user) > oldBalance, "Negative mint");
+        if (balanceOf(user) < oldBalance) {
+            revert NegativeMint();
+        }
 
         uint256 totalLock;
         for(uint8 i = 0 ; i < lockPeriods.length ; i ++) {
             totalLock += percentForLocks[i];
         }
-        require(totalLock == 100, "Should lock all");
+        if (totalLock != 100) {
+            revert ShouldLock100Percent();
+        }
         
         uint256 balance = balanceOf(user) - oldBalance;
         totalLock = 0;
         for(uint8 i = 0 ; i < lockPeriods.length ; i ++) {
-            require(lockPeriods[i] <= MAX_LOCK_TIME, "Cannot lock for more than 3 years");
+            if (lockPeriods[i] > MAX_LOCK_TIME) {
+                revert MaxLockTimeExceeded();
+            }
             // Should minus from total balance to avoid the round issue
             uint256 amount = i == lockPeriods.length - 1 ? balance - totalLock : balance * percentForLocks[i] / 100;
             locks[user].push(LockDetails({
@@ -585,13 +609,17 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     */
     function withdraw(uint256 share) external nonReentrant {
         uint256 tokenId = getUserTokenId(_msgSender());
-        require(tokenId > 0, "No Position to withdraw");
+        if (tokenId == 0) {
+            revert NoPosition();
+        }
 
         (,,,, uint256 centerId, uint256[] memory liquidityMinted) = positionManager.positions(tokenId);
         IPositionManager.DepositConfig memory depositConfig = positionManager.getDepositConfig(centerId);
 
         uint256 lockedBalance = getLockedBalance(_msgSender());
-        require(balanceOf(_msgSender()) >= share + lockedBalance, "Balance is locked");
+        if (balanceOf(_msgSender()) < share + lockedBalance) {
+            revert BalanceIsLocked();
+        }
 
         (uint256 amountX, uint256 amountY, uint256[] memory liquidityAmounts) = _withdrawFromLB(depositConfig.depositIds, liquidityMinted, share);
 
@@ -622,8 +650,12 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     */
     function lockBalance(uint256 amount, uint256 lockPeriod) public nonReentrant {
         uint256 lockedBalance = getLockedBalance(_msgSender());
-        require(balanceOf(_msgSender()) >= amount + lockedBalance, "Insufficient balance to lock");
-        require(lockPeriod <= MAX_LOCK_TIME, "Cannot lock for more than 3 years");
+        if (balanceOf(_msgSender()) < amount + lockedBalance) {
+            revert InsufficientBalance();
+        }
+        if (lockPeriod > MAX_LOCK_TIME) {
+            revert MaxLockTimeExceeded();
+        }
         locks[_msgSender()].push(LockDetails({
             lockPeriod: lockPeriod,
             amount: amount,
@@ -659,8 +691,12 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
         if(from != address(0) && to != address(0)) {
             uint256 lockedBalance = getLockedBalance(from);
             uint256 fromBalance = balanceOf(from);
-            require(fromBalance >= amount + lockedBalance, "Insufficient Balance");
-            require(getUserTokenId(to) == 0, "Receiver already has a postion");
+            if (fromBalance < amount + lockedBalance) {
+                revert InsufficientBalance();
+            }
+            if (getUserTokenId(to) != 0) {
+                revert UserAlreadyHasPosition();
+            }
             
             uint256 tokenId = getUserTokenId(from);
 
@@ -734,4 +770,18 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     function decimals() public view virtual override returns (uint8) {
         return tokenYDecimals;
     }
+
+    // CUSTOM ERRORS
+    error InsufficientBalance();
+    error BalanceIsLocked();
+    error NoPosition();
+    error LengthMismatch();
+    error MaxLockTimeExceeded();
+    error SlippageTooHigh();
+    error BinIdChanged();
+    error UserAlreadyHasPosition();
+    error NegativeMint();
+    error ShouldLock100Percent();
+    error Unauthorized();
+    error Overflow();
 }
