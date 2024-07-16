@@ -1,12 +1,46 @@
 const fs = require('fs');
 const ethers = require("ethers");
-const {getUrlForNetwork} = require("../../../helpers");
+const {WrapperBuilder} = require("@redstone-finance/evm-connector");
+const CACHE_LAYER_URLS = require("../../../../../common/redstone-cache-layer-urls.json");
 
 // Read the output JSON data from a file
 const rawData = fs.readFileSync('result.json');
 const outputJsonData = JSON.parse(rawData);
 
 const sPrimeAirdropABI = [
+    {
+        "inputs": [
+            {
+                "internalType": "uint256[]",
+                "name": "ids",
+                "type": "uint256[]"
+            },
+            {
+                "internalType": "uint256[]",
+                "name": "amounts",
+                "type": "uint256[]"
+            },
+            {
+                "internalType": "uint256",
+                "name": "activeIdDesired",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "idSlippage",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "swapSlippage",
+                "type": "uint256"
+            }
+        ],
+        "name": "migrateLiquidity",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
     {
         "inputs": [
             {
@@ -33,6 +67,16 @@ const sPrimeAirdropABI = [
                 "internalType": "uint256",
                 "name": "amountY",
                 "type": "uint256"
+            },
+            {
+                "internalType": "int24",
+                "name": "tickDesired",
+                "type": "int24"
+            },
+            {
+                "internalType": "int24",
+                "name": "tickSlippage",
+                "type": "int24"
             }
         ],
         "name": "mintForUserAndLock",
@@ -82,8 +126,7 @@ function getProvider(){
 }
 
 function initWallet(networkName) {
-    const key = fs.readFileSync(`../../../.secrets/${networkName}/deployer`).toString().trim();
-    console.log(getUrlForNetwork(networkName));
+    const key = fs.readFileSync(`../../../../../.secrets/${networkName}/deployer`).toString().trim();
     const provider = getProvider();
 
     return new ethers.Wallet(key, provider);
@@ -98,24 +141,36 @@ function readJSON(filename) {
     return JSON.parse(data);
 }
 
+function wrapContract(contract, performer) {
+    return WrapperBuilder.wrap(contract.connect(performer)).usingDataService(
+        {
+            dataServiceId: "redstone-arbitrum-prod",
+            uniqueSignersCount: 3,
+            // @ts-ignore
+            disablePayloadsDryRun: false
+        },
+        CACHE_LAYER_URLS.urls
+    );
+}
+
 async function performAirdrop(data) {
     let wallet = initWallet('arbitrum');
     let provider = getProvider();
 
-    let totalWethAmount = 14.94669004;
-    let totalPrimeAmount = 39425.09784;
-    const sumOfAmountsExcludedAndIncluded = 103490.88183549931;
+    let totalWethAmount = 4.575433664526127;
+    let totalPrimeAmount = 12068.564102557997;
+    const tickDesired = -78724;
+    const tickSlippage = 100;
+    const sumOfDollarValuesAcrossAllUsers = Object.values(data).reduce((acc, currentValue) => acc + currentValue, 0);
+    console.log(`Total dollar value: ${sumOfDollarValuesAcrossAllUsers}`)
 
     let sPrimeContractAddress = '0x04d36A9aAD2072C69E4B0Cb2A403D8a893064945';
-    const sPrimeContract = new ethers.Contract(sPrimeContractAddress, sPrimeAirdropABI, wallet);
+    let sPrimeContract = new ethers.Contract(sPrimeContractAddress, sPrimeAirdropABI, wallet);
+    sPrimeContract = wrapContract(sPrimeContract, wallet);
 
     let distributionHistoryFileName = 'sPrimeAirdropDistributionHistoryArb.json';
     let distributionHistory = readJSON(distributionHistoryFileName);
     let alreadyAirdroppedUsers = distributionHistory.map(entry => entry.address);
-
-    let skippedUsersFileName = 'sPrimeAirdropSkippedUsersArb.json';
-    let skippedUsers = readJSON(skippedUsersFileName);
-    let alreadySkippedUsers = skippedUsers.map(entry => entry.address);
 
     let failedUsersFileName = 'sPrimeAirdropFailedUsersArb.json';
     let failedUsers = readJSON(failedUsersFileName);
@@ -124,69 +179,46 @@ async function performAirdrop(data) {
     for(const userAddress of Object.keys(data)) {
         counter++;
         console.log(`Processing entry ${counter} of ${Object.keys(data).length}`);
-        let entry = data[userAddress];
-        console.log(`Processing user ${userAddress} with amount ${entry.amount}`)
+        let userAmount = data[userAddress];
+        console.log(`Processing user ${userAddress} with amount ${userAmount}`)
 
-        let sPrimeDollarValue = entry.amount;
-        let userFraction = sPrimeDollarValue / sumOfAmountsExcludedAndIncluded;
+        let sPrimeDollarValue = userAmount;
+        let userFraction = sPrimeDollarValue / sumOfDollarValuesAcrossAllUsers;
 
         console.log(`User fraction: ${userFraction}`)
 
-        if(alreadyAirdroppedUsers.includes(entry.address)) {
-            console.log(`User ${entry.address} already airdropped, skipping`);
+
+        if(alreadyAirdroppedUsers.includes(userAddress)) {
+            console.log(`User ${userAddress} already airdropped, skipping`);
             continue;
         }
 
-        if(alreadySkippedUsers.includes(entry.address)) {
-            console.log(`User ${entry.address} already skipped (has sPrime), skipping`);
-            continue;
-        }
+        let primeAmount = (totalPrimeAmount * userFraction).toFixed(18);
+        let wethAmount = (totalWethAmount * userFraction).toFixed(18);
 
-        let airdropAddress = userAddress;
+        console.log(`Minting sPrime with ${primeAmount} Prime and ${wethAmount} WETH for ${userAddress}`);
 
-        let userBalance = 0;
         try {
-            userBalance = await sPrimeContract.balanceOf(airdropAddress);
+            let primeInWei = ethers.utils.parseUnits(primeAmount, 18);
+            let wethInWei = ethers.utils.parseUnits(wethAmount, 18);
+
+            let txHash = (await sPrimeContract.mintForUserAndLock(airdropAddress, percentForLocks, lockPeriods, primeInWei, wethInWei, tickDesired, tickSlippage, {gasLimit: 10000000})).hash;
+            const transaction = await provider.waitForTransaction(txHash, 1, 120_000);
+            if (transaction.status === 0) {
+                failedUsers.push({"address": userAddress, "sPrimeSum": sPrimeDollarValue, "primeAmount": primeAmount, "wethAmount": wethAmount, "txHash": txHash});
+                writeJSON(failedUsersFileName, failedUsers);
+                throw new Error(`mintForUserAndLock failed for ${userAddress} (tx hash: ${txHash})`);
+            } else {
+                console.log(`Transaction ${txHash} success`);
+                distributionHistory.push({"address": userAddress, "primeAmount": primeAmount, "wethAmount": wethAmount, "txHash": txHash});
+                writeJSON(distributionHistoryFileName, distributionHistory);
+            }
         } catch (error) {
-            console.log(`Error getting balance for ${airdropAddress} at counter ${counter}`);
-            failedUsers.push({"address": airdropAddress});
+            console.log(`Error minting SPrime for ${userAddress} at counter ${counter}`);
             writeJSON(distributionHistoryFileName, distributionHistory);
-            writeJSON(skippedUsersFileName, skippedUsers);
             writeJSON(failedUsersFileName, failedUsers);
         }
 
-        if(userBalance > 0) {
-            console.log(`User already has ${userBalance} SPrime, skipping and saving to ${skippedUsersFileName}`);
-            skippedUsers.push({"address": airdropAddress, "balance": userBalance});
-            writeJSON(skippedUsersFileName, skippedUsers);
-        } else {
-            let primeAmount = (totalPrimeAmount * userFraction).toFixed(18);
-            let wethAmount = (totalWethAmount * userFraction).toFixed(18);
-
-            console.log(`Minting sPrime with ${primeAmount} Prime and ${wethAmount} WETH for ${airdropAddress}`);
-
-            try {
-                let primeInWei = ethers.utils.parseUnits(primeAmount, 18);
-                let wethInWei = ethers.utils.parseUnits(wethAmount, 18);
-
-                let txHash = (await sPrimeContract.mintForUserAndLock(airdropAddress, percentForLocks, lockPeriods, primeInWei, wethInWei, {gasLimit: 6000000})).hash;
-                const transaction = await provider.waitForTransaction(txHash, 1, 120_000);
-                if (transaction.status === 0) {
-                    failedUsers.push({"address": airdropAddress, "sPrimeSum": sPrimeDollarValue, "primeAmount": primeAmount, "wethAmount": wethAmount, "txHash": txHash});
-                    writeJSON(failedUsersFileName, failedUsers);
-                    throw new Error(`mintForUserAndLock failed for ${airdropAddress} (tx hash: ${txHash})`);
-                } else {
-                    console.log(`Transaction ${txHash} success`);
-                    distributionHistory.push({"address": airdropAddress, "primeAmount": primeAmount, "wethAmount": wethAmount, "txHash": txHash});
-                    writeJSON(distributionHistoryFileName, distributionHistory);
-                }
-            } catch (error) {
-                console.log(`Error minting SPrime for ${airdropAddress} at counter ${counter}`);
-                writeJSON(distributionHistoryFileName, distributionHistory);
-                writeJSON(skippedUsersFileName, skippedUsers);
-                writeJSON(failedUsersFileName, failedUsers);
-            }
-        }
     }
 }
 
