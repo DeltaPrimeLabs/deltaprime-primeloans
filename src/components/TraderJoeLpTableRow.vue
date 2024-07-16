@@ -79,7 +79,10 @@
         {{ formatTvl(lpToken.tvl) }}
       </div>
 
-      <div class="table__cell table__cell--double-value apr">
+      <div class="table__cell apr">
+        <div class="apr-warning" v-if="lpToken.aprWarning">
+          <img src="src/assets/icons/warning.svg" v-tooltip="{content: `APR value is updated twice a day. Please check TraderJoe website to find the current pool's APR.`, classes: 'info-tooltip long'}">
+        </div>
         {{ apr / 100 | percent }}
       </div>
 
@@ -926,6 +929,16 @@ export default {
 
       &.loan, &.apr, &.max-apr {
         align-items: flex-end;
+      }
+
+      &.apr {
+        flex-direction: row;
+        justify-content: flex-end;
+        align-items: center;
+
+        .apr-warning {
+          margin-right: 5px;
+        }
       }
 
       &.rewards {
