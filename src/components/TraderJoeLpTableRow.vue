@@ -4,7 +4,7 @@
       <div class="table__cell asset">
         <DoubleAssetIcon :primary="lpToken.primary" :secondary="lpToken.secondary"></DoubleAssetIcon>
         <div class="asset__info">
-          <a class="asset__name" :href="lpToken.link" target=”_blank”>{{ lpToken.primary }} - {{
+          <a class="asset__name" :href="lpToken.link" target=”_blank”>{{ lpToken.primary }}&nbsp;-&nbsp;{{
               lpToken.secondary
             }}</a>
           <div class="asset__dex">
@@ -14,6 +14,11 @@
         <div class="bin-step"
              v-tooltip="{content: 'Bin step', classes: 'info-tooltip'}">
           {{ lpToken.binStep }}
+        </div>
+        <div class="sprime-early-access">
+          <img src="src/assets/icons/icon_circle_star.svg" v-if="lpToken.earlyAccessRequired"
+               v-tooltip="{content: 'Early Access is available exclusively for users holding $100 or more in $sPRIME.', classes: 'info-tooltip long'}"/>
+          <span v-else class="early-access-placeholder">&nbsp;</span>
         </div>
       </div>
       <!-- To-do: Show price graph or similar one on click -->
@@ -89,21 +94,21 @@
             v-if="addActionsConfig"
             :config="addActionsConfig"
             v-on:iconButtonClick="actionClick"
-            :disabled="inProcess || noSmartLoan">
+            :disabled="(lpToken.earlyAccessRequired && !hasEarlyAccess) ||inProcess || noSmartLoan">
         </IconButtonMenuBeta>
         <IconButtonMenuBeta
             class="actions__icon-button"
             v-if="removeActionsConfig"
             :config="removeActionsConfig"
             v-on:iconButtonClick="actionClick"
-            :disabled="inProcess || noSmartLoan">
+            :disabled="(lpToken.earlyAccessRequired && !hasEarlyAccess)|| inProcess || noSmartLoan">
         </IconButtonMenuBeta>
         <IconButtonMenuBeta
             class="actions__icon-button"
             v-if="moreActionsConfig"
             :config="moreActionsConfig"
             v-on:iconButtonClick="actionClick"
-            :disabled="inProcess || noSmartLoan || !healthLoaded">
+            :disabled="(lpToken.earlyAccessRequired && !hasEarlyAccess) || inProcess || noSmartLoan || !healthLoaded">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -173,6 +178,12 @@ export default {
 
   async mounted() {
     this.chain = window.chain;
+    if (this.lpToken.earlyAccessRequired) {
+      this.sPrimeService.observeSPrimeValue().subscribe(value => {
+        this.hasEarlyAccess = value >= this.lpToken.minSPrimeValue;
+      });
+    }
+
     this.setupAddActionsConfiguration();
     this.setupRemoveActionsConfiguration();
     this.setupMoreActionsConfiguration();
@@ -209,6 +220,7 @@ export default {
       activePrice: null,
       hasBinsInPool: false,
       account: null,
+      hasEarlyAccess: false,
       chartData: [],
       userValue: 0,
       currentPriceIndex: 0,
@@ -241,7 +253,8 @@ export default {
       'accountService',
       'priceService',
       'ltipService',
-      'globalActionsDisableService'
+      'globalActionsDisableService',
+      'sPrimeService'
     ]),
 
     hasSmartLoanContract() {
@@ -281,7 +294,7 @@ export default {
         this.calculateTotalRewards();
       })
     },
-    setupAddActionsConfiguration() {
+    setupAddActionsConfiguration(hasAccess) {
       this.addActionsConfig = {
         iconSrc: 'src/assets/icons/plus.svg',
         tooltip: 'Add',
@@ -289,18 +302,18 @@ export default {
           {
             key: 'ADD_FROM_WALLET',
             name: 'Import existing LB position',
-            disabled: this.isActionDisabledRecord['ADD_FROM_WALLET'],
+            disabled: !hasAccess || this.isActionDisabledRecord['ADD_FROM_WALLET'],
           },
           {
             key: 'ADD_LIQUIDITY',
             name: 'Create LB position',
-            disabled: this.isActionDisabledRecord['ADD_LIQUIDITY'] || !this.hasSmartLoanContract || this.inProcess,
+            disabled: !hasAccess || this.isActionDisabledRecord['ADD_LIQUIDITY'] || !this.hasSmartLoanContract || this.inProcess,
             disabledInfo: this.isActionDisabledRecord['ADD_LIQUIDITY'] ? '' : 'To create LP token, you need to add some funds from you wallet first'
           },
         ]
       }
     },
-    setupRemoveActionsConfiguration() {
+    setupRemoveActionsConfiguration(hasAccess) {
       this.removeActionsConfig = {
         iconSrc: 'src/assets/icons/minus.svg',
         tooltip: 'Remove',
@@ -314,14 +327,14 @@ export default {
           {
             key: 'REMOVE_LIQUIDITY',
             name: 'Remove LB position',
-            disabled: this.isActionDisabledRecord['REMOVE_LIQUIDITY'] || !this.hasSmartLoanContract || this.inProcess || !this.hasBinsInPool,
+            disabled: !hasAccess || this.isActionDisabledRecord['REMOVE_LIQUIDITY'] || !this.hasSmartLoanContract || this.inProcess || !this.hasBinsInPool,
             disabledInfo: this.isActionDisabledRecord['REMOVE_LIQUIDITY'] ? '' : 'No LB tokens in Prime Account'
           },
         ]
       }
     },
 
-    setupMoreActionsConfiguration() {
+    setupMoreActionsConfiguration(hasAccess) {
       this.moreActionsConfig = {
         iconSrc: 'src/assets/icons/icon_a_more.svg',
         tooltip: 'More',
@@ -329,7 +342,7 @@ export default {
           {
             key: 'CLAIM_TRADERJOE_REWARDS',
             name: 'Claim TraderJoe rewards',
-            disabled: this.isActionDisabledRecord['CLAIM_TRADERJOE_REWARDS'] || !this.hasSmartLoanContract || this.totalRewards.length == 0,
+            disabled: !hasAccess || this.isActionDisabledRecord['CLAIM_TRADERJOE_REWARDS'] || !this.hasSmartLoanContract || this.totalRewards.length == 0,
             disabledInfo: this.isActionDisabledRecord['CLAIM_TRADERJOE_REWARDS'] ? '' : 'You don\'t have any claimable rewards yet.'
           }
         ]
@@ -373,6 +386,12 @@ export default {
 
     calculateUserValue() {
       this.userValue = this.lpToken.primaryBalance * this.firstAsset.price + this.lpToken.secondaryBalance * this.secondAsset.price;
+    },
+
+    setupButtonConfigs(hasAccess) {
+      this.setupAddActionsConfiguration(hasAccess);
+      this.setupRemoveActionsConfiguration(hasAccess);
+      this.setupMoreActionsConfiguration(hasAccess);
     },
 
     async calculateTotalRewards() {
@@ -792,7 +811,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: 180px 100px 100px 180px 140px 70px 110px 115px 30px 80px;
+    grid-template-columns: 200px 90px 90px 180px 140px 70px 110px 115px 30px 80px;
     height: 60px;
     padding-left: 6px;
 
@@ -826,6 +845,13 @@ export default {
           color: var(--asset-table-row__double-value-color);
           font-weight: 500;
           text-align: right;
+        }
+      }
+
+      .sprime-early-access {
+        img, .early-access-placeholder {
+          margin-left: 5px;
+          width: 30px;
         }
       }
 

@@ -2755,7 +2755,8 @@ export default {
       const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
 
       const transaction = await wrappedContract[addLiquidityRequest.method](
-        addLiquidityRequest.addLiquidityInput
+        addLiquidityRequest.addLiquidityInput,
+          {gasLimit: 8000000}
       );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
