@@ -2755,6 +2755,7 @@ export default {
       const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
 
       const transaction = await wrappedContract[addLiquidityRequest.method](
+        addLiquidityRequest.routerAddress,
         addLiquidityRequest.addLiquidityInput
       );
 
@@ -2798,7 +2799,8 @@ export default {
       const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
 
       const transaction = await wrappedContract[removeLiquidityRequest.method](
-        removeLiquidityRequest.removeLiquidityInput
+          removeLiquidityRequest.routerAddress,
+          removeLiquidityRequest.removeLiquidityInput
       );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();

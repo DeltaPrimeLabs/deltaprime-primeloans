@@ -519,6 +519,7 @@ export default {
             firstAmount: addLiquidityEvent.firstAssetAmount,
             secondAmount: addLiquidityEvent.secondAssetAmount,
             addLiquidityInput: addLiquidityEvent.addLiquidityInput,
+            routerAddress: this.lpToken.routerAddress
           };
 
           this.handleTransaction(this.addLiquidityTraderJoeV2Pool, {addLiquidityRequest}, () => {
@@ -564,7 +565,8 @@ export default {
             secondAsset: this.lpToken.secondary,
             remainingBinIds: removeLiquidityEvent.remainingBinIds,
             removeLiquidityInput,
-            lpToken: this.lpToken
+            lpToken: this.lpToken,
+            routerAddress: this.lpToken.routerAddress
           };
 
           this.handleTransaction(this.removeLiquidityTraderJoeV2Pool, {removeLiquidityRequest}, () => {
