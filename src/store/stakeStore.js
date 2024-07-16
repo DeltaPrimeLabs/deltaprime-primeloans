@@ -276,7 +276,7 @@ export default {
         const allowance = formatUnits(await fundToken.allowance(rootState.network.account, smartLoanContract.address), depositRequest.decimals);
 
         if (parseFloat(allowance) < parseFloat(depositRequest.amount)) {
-          const approveTransaction = await fundToken.connect(provider.getSigner()).approve(smartLoanContract.address, toWei(depositRequest.amount));
+          const approveTransaction = await fundToken.connect(provider.getSigner()).approve(smartLoanContract.address, toWei(depositRequest.amount.toString()));
           await awaitConfirmation(approveTransaction, provider, 'approve');
         }
       }

@@ -2,7 +2,7 @@
   <div v-if="asset" id="modal" class="unstake-modal-component modal-component">
     <Modal>
       <div class="modal__title">
-        Unstake
+        {{ title ? title : 'Unstake' }}
       </div>
 
       <template v-if="targetAssetsOptions">
@@ -107,6 +107,8 @@ export default {
     assetLogo: null,
     forceAssetName: null,
     targetAssetsOptions: null,
+    title: null,
+    justInput: null,
   },
 
   data() {
@@ -149,7 +151,7 @@ export default {
     submit() {
       this.transactionOngoing = true;
       let unstakedPart = this.unstakeValue / this.staked;
-      const unstakedReceiptToken = this.maxButtonUsed ? this.receiptTokenBalance * config.MAX_BUTTON_MULTIPLIER : unstakedPart * this.receiptTokenBalance;
+      const unstakedReceiptToken = this.justInput ? this.unstakeValue : this.maxButtonUsed ? this.receiptTokenBalance * config.MAX_BUTTON_MULTIPLIER : unstakedPart * this.receiptTokenBalance;
 
       const unstakeEvent = {
         receiptTokenUnstaked: unstakedReceiptToken,

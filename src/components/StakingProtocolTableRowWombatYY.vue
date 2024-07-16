@@ -327,23 +327,25 @@ export default {
         return;
       }
 
+      const maxToUnstake = this.wombatYYFarmsBalances[this.farm.yrtKey]
       const modalInstance = this.openModal(UnstakeModal);
       modalInstance.apy = this.farm.apy / 100;
-      modalInstance.staked = this.totalStaked;
+      modalInstance.staked = maxToUnstake;
+      modalInstance.title = 'Unstake to underlying asset';
       modalInstance.asset = {
         symbol: this.farm.symbol,
-        price: this.wombatLpAssets[this.farm.lpAssetToken].price
+        price: this.wombatYYFarmsBalances[this.farm.apyKey] * this.wombatLpAssets[this.farm.lpAssetToken].price / this.wombatYYFarmsBalances[this.farm.yrtKey]
       };
-      modalInstance.assetLogo = this.farm.lpTokenLogo;
+      modalInstance.assetLogo = this.farm.YRTTokenLogo;
       modalInstance.targetAssetsOptions = [
         this.farm.assetToken, this.farm.otherAssetToken
       ];
+      modalInstance.justInput = true
       modalInstance.selectedTargetAsset = this.farm.assetToken;
-      modalInstance.forceAssetName = this.farm.name;
-      modalInstance.receiptTokenBalance = this.totalStaked;
+      modalInstance.forceAssetName = this.farm.YRTName;
+      modalInstance.receiptTokenBalance = maxToUnstake;
       modalInstance.isLP = false;
       modalInstance.$on('UNSTAKE', async unstakeEvent => {
-        console.log(unstakeEvent);
         const minOutResponse = await this.contract.getDepositTokensForShares(toWei(unstakeEvent.receiptTokenUnstaked.toString()))
         const minOut = BigNumber.from(minOutResponse);
 

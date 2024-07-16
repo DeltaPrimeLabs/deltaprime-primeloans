@@ -29,6 +29,7 @@ import YAK_ROUTER_ABI from '../../test/abis/YakRouter.json';
 import {getSwapData} from '../utils/paraSwapUtils';
 import {getBurnData} from '../utils/caiUtils';
 import {combineLatest, from, map, tap} from "rxjs";
+import ABI_YY_WOMBAT_STRATEGY from "../abis/YYWombatStrategy.json";
 
 const toBytes32 = require('ethers').utils.formatBytes32String;
 const fromBytes32 = require('ethers').utils.parseBytes32String;
@@ -1026,6 +1027,11 @@ export default {
         wombatFarms.forEach((farm, index) => {
           wombatFarmsBalances[farm.apyKey] = formatUnits(balanceArray[index].toString(), farm.decimals)
         })
+        for (const farm of wombatFarms) {
+          const contract = await new ethers.Contract(farm.strategyContract, ABI_YY_WOMBAT_STRATEGY, provider.getSigner());
+          const YRTBalance = await contract.balanceOf(state.readSmartLoanContract.address);
+          wombatFarmsBalances[farm.yrtKey] = formatUnits(YRTBalance.toString(), farm.decimals)
+        }
       }
 
       if (hasDeprecatedAssets) {
