@@ -543,7 +543,7 @@ export default {
       modalInstance.title = 'Migrate to Yield Yak';
       modalInstance.content = this.wombatLpBalances[this.farm.lpAssetToken] > 0 ? `This action will migrate all your ${this.farm.name} tokens from Wombat to Yield Yak`
           : `Currently you have no ${this.farm.name} tokens in your Prime Account. <br> To create a new position, use the <b>Deposit Token</b> action.`;
-      modalInstance.disabled = this.wombatLpBalances[this.farm.lpAssetToken] > 0
+      modalInstance.disabled = this.wombatLpBalances[this.farm.lpAssetToken] <= 0
 
       const migrateRequest = {
         migrateMethod: this.farm.migrateMethod,
