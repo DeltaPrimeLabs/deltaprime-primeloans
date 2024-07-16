@@ -18,7 +18,7 @@
                       :assetSymbol="asset[0]"
                       :farmingConfig="asset[1]">
     </StakingAssetBeta>
-    <StakingAssetBetaWombatYY v-for="farm in filteredWombatYYFarms" :farm="farm" v-bind:key="farm.name"></StakingAssetBetaWombatYY>
+    <StakingAssetBetaWombatYY v-for="farm in filteredWombatYYFarms" :farm="farm" v-bind:key="farm.apyKey"></StakingAssetBetaWombatYY>
   </div>
 </template>
 

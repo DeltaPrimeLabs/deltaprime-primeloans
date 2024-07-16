@@ -55,14 +55,14 @@
               :config="addActionsConfig"
               v-if="addActionsConfig"
               v-on:iconButtonClick="actionClick"
-              :disabled="disableAllButtons || platypusAffected || platypusAffectedDisableDeposit || noSmartLoan">
+              :disabled="disableAllButtons || platypusAffected || platypusAffectedDisableDeposit || noSmartLoan || !hasEarlyAccess">
           </IconButtonMenuBeta>
           <IconButtonMenuBeta
               class="actions__icon-button last"
               :config="removeActionsConfig"
               v-if="removeActionsConfig"
               v-on:iconButtonClick="actionClick"
-              :disabled="disableAllButtons || platypusAffected || noSmartLoan">
+              :disabled="disableAllButtons || platypusAffected || noSmartLoan || !hasEarlyAccess">
           </IconButtonMenuBeta>
         </div>
       </div>
@@ -107,7 +107,6 @@ export default {
     }
   },
   async mounted() {
-    console.log('MOUNT');
     this.createContractObject();
     this.setupAddActionsConfiguration();
     this.setupRemoveActionsConfiguration();
@@ -119,11 +118,12 @@ export default {
     this.watchExternalStakedPerFarm();
     this.watchActionDisabling();
     this.watchLtipMaxBoostUpdate();
+    this.watchSPrime();
   },
   data() {
     return {
       contract: null,
-
+      hasEarlyAccess: null,
       receiptTokenBalance: 0,
       underlyingTokenStaked: 0,
       maxApy: 0,
@@ -189,6 +189,7 @@ export default {
       'ltipService',
       'globalActionsDisableService',
       'providerService',
+      'sPrimeService',
     ]),
     protocol() {
       return config.PROTOCOLS_CONFIG[this.farm.protocol];
@@ -205,6 +206,16 @@ export default {
 
     async createContractObject() {
       this.contract = await new ethers.Contract(this.farm.strategyContract, ABI_YY_WOMBAT_STRATEGY, provider.getSigner());
+    },
+
+    watchSPrime() {
+      if (this.farm.minSPrimeToUnlock) {
+        this.sPrimeService.observeSPrimeValue().subscribe(value => {
+          this.hasEarlyAccess = value >= this.farm.minSPrimeToUnlock;
+        })
+      } else {
+        this.hasEarlyAccess = true;
+      }
     },
 
     actionClick(key) {
@@ -495,7 +506,6 @@ export default {
       this.isStakedBalanceEstimated = false;
     },
     setupAddActionsConfiguration() {
-      console.log('ADD asjdfnajsd');
       this.addActionsConfig = {
         iconSrc: 'src/assets/icons/plus.svg',
         tooltip: 'Add',
@@ -527,7 +537,7 @@ export default {
           {
             key: 'WITHDRAW',
             name: 'Withdraw asset',
-            disabled: this.isActionDisabledRecord['WITHDRAW'] || this.farm.inactive,
+            disabled: this.isActionDisabledRecord['WITHDRAW'] || this.farm.inactive
           },
           {
             key: 'UNSTAKE_AND_WITHDRAW',
