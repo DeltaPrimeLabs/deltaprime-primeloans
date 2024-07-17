@@ -61,6 +61,7 @@ export default {
       'penpieLpAssets',
       'wombatLpBalances',
       'wombatLpAssets',
+      'wombatYYFarmsBalances',
       'fullLoanStatus'
     ]),
     ...mapState('stakeStore', ['farms']),
@@ -121,6 +122,7 @@ export default {
         modalInstance.penpieLpBalances = this.penpieLpBalances;
         modalInstance.wombatLpAssets = this.wombatLpAssets;
         modalInstance.wombatLpBalances = this.wombatLpBalances;
+        modalInstance.wombatYYFarmsBalances = this.wombatYYFarmsBalances;
         modalInstance.farms = this.farms;
         modalInstance.debtsPerAsset = this.debtsPerAsset;
         modalInstance.debt = this.fullLoanStatus.debt;

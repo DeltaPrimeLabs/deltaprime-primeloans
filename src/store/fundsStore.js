@@ -29,6 +29,7 @@ import YAK_ROUTER_ABI from '../../test/abis/YakRouter.json';
 import {getSwapData} from '../utils/paraSwapUtils';
 import {getBurnData} from '../utils/caiUtils';
 import {combineLatest, from, map, tap} from 'rxjs';
+import ABI_YY_WOMBAT_STRATEGY from "../abis/YYWombatStrategy.json";
 
 const toBytes32 = require('ethers').utils.formatBytes32String;
 const fromBytes32 = require('ethers').utils.parseBytes32String;
@@ -75,6 +76,7 @@ export default {
     penpieLpAssets: null,
     wombatLpBalances: null,
     wombatLpAssets: null,
+    wombatYYFarmsBalances: null,
     accountApr: null,
     debt: null,
     totalValue: null,
@@ -194,6 +196,10 @@ export default {
 
     setWombatLpBalances(state, balances) {
       state.wombatLpBalances = balances;
+    },
+
+    setWombatYYFarmsBalances(state, balances) {
+      state.wombatYYFarmsBalances = balances;
     },
 
     setFullLoanStatus(state, status) {
@@ -962,6 +968,7 @@ export default {
       const balancerLpBalances = {};
       const penpieLpBalances = {};
       let wombatLpBalances = {};
+      let wombatFarmsBalances = {};
       const balancerLpAssets = state.balancerLpAssets;
       const levelLpBalances = {};
       const assetBalances = await state.readSmartLoanContract.getAllAssetsBalances();
@@ -1010,6 +1017,21 @@ export default {
           const asset = wombatAssets[index]
           wombatLpBalances[asset] = formatUnits(balance.toString(), config.WOMBAT_LP_ASSETS[asset].decimals)
         })
+      }
+
+      const wombatFarms = config.WOMBAT_YY_FARMS;
+      if (wombatFarms.length) {
+        const balanceArray = await Promise.all(wombatFarms.map(farm => {
+          return state.readSmartLoanContract[farm.balanceMethod]()
+        }))
+        wombatFarms.forEach((farm, index) => {
+          wombatFarmsBalances[farm.apyKey] = formatUnits(balanceArray[index].toString(), farm.decimals)
+        })
+        for (const farm of wombatFarms) {
+          const contract = await new ethers.Contract(farm.strategyContract, ABI_YY_WOMBAT_STRATEGY, provider.getSigner());
+          const YRTBalance = await contract.balanceOf(state.readSmartLoanContract.address);
+          wombatFarmsBalances[farm.yrtKey] = formatUnits(YRTBalance.toString(), farm.decimals)
+        }
       }
 
       if (hasDeprecatedAssets) {
@@ -1106,6 +1128,7 @@ export default {
       await commit('setGmxV2Balances', gmxV2Balances);
       await commit('setPenpieLpBalances', penpieLpBalances);
       await commit('setWombatLpBalances', wombatLpBalances);
+      await commit('setWombatYYFarmsBalances', wombatFarmsBalances);
       await dispatch('setupConcentratedLpUnderlyingBalances');
       await dispatch('setupTraderJoeV2LpUnderlyingBalancesAndLiquidity');
       const refreshEvent = {assetBalances: balances, lpBalances: lpBalances};
@@ -1598,6 +1621,18 @@ export default {
           }
         }
 
+        let yearlyWombatYYFarmsInterest = 0;
+
+        if (state.wombatLpAssets && state.wombatYYFarmsBalances) {
+          for (let farm of config.WOMBAT_YY_FARMS) {
+            const apy = farm.apy ? farm.apy / 100 : 0;
+            const userValueInPool =
+              state.wombatLpAssets[farm.lpAssetToken].price * state.wombatYYFarmsBalances[farm.apyKey];
+
+            yearlyWombatYYFarmsInterest += userValueInPool * apy;
+          }
+        }
+
         let yearlyFarmInterest = 0;
 
         if (rootState.stakeStore.farms) {
@@ -1644,7 +1679,15 @@ export default {
         }
 
         if (collateral) {
-          apr = (yearlyAssetInterest + yearlyLpInterest + yearlyFarmInterest + yearlyTraderJoeV2Interest + yearlyGrantInterest - yearlyDebtInterest) / collateral;
+          apr = (
+            yearlyAssetInterest
+            + yearlyLpInterest
+            + yearlyFarmInterest
+            + yearlyTraderJoeV2Interest
+            + yearlyWombatYYFarmsInterest
+            + yearlyGrantInterest
+            - yearlyDebtInterest
+          ) / collateral;
         }
 
         commit('setAccountApr', apr);
