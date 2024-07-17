@@ -647,7 +647,7 @@ export default {
             poolName: 'sAVAX Pool',
             debtCoverage: 0.83333333333,
             strategyContract: '0x9B5d890d563EE4c9255bB500a790Ca6B1FB9dB6b',
-            apy: 5.1,
+            apy: 10.71,
             earlyAccessRequired: true,
             minSPrimeToUnlock: 100,
             aprWarning: true
@@ -703,7 +703,7 @@ export default {
             poolName: 'ggAVAX Pool',
             debtCoverage: 0.83333333333,
             strategyContract: '0x13404B1C715aF60869fc658d6D99c117e3543592',
-            apy: 5,
+            apy: 12.24,
             earlyAccessRequired: true,
             minSPrimeToUnlock: 100,
             aprWarning: true
