@@ -7,18 +7,15 @@ const {
   getWrappedContractsHistorical,
   getArweavePackages
 } = require('../utils/helpers');
-const incentivesRpcUrl = require('../.secrets/incentivesRpc.json');
+const extRpcUrl = require('../.secrets/extRpc.json');
 const constants = require('../config/constants.json');
-
-const LOAN = require(`../abis/SmartLoanGigaChadInterface.json`);
 const FACTORY = require('../abis/SmartLoansFactory.json');
-const CACHE_LAYER_URLS = require('../config/redstone-cache-layer-urls.json');
 
 const blockTimestampStart = 1680004800;
 const blockTimestampEnd = 1721059624;
 
 const getHistoricalProvider = (network, rpc) => {
-  return new ethers.providers.JsonRpcProvider(incentivesRpcUrl[network][rpc])
+  return new ethers.providers.JsonRpcProvider(extRpcUrl[network])
 };
 
 const getFactoryContract = (network, provider) => {
@@ -39,7 +36,7 @@ const getHistoricalLoanStatsAva = async (network = 'avalanche', rpc = 'first') =
       console.log(`Processed timestamp: ${timestampInSeconds}`)
 
       const packages = await getArweavePackages(timestampInSeconds);
-      const blockNumber = (await getBlockForTimestamp(timestampInSeconds * 1000)).block;
+      const blockNumber = (await getBlockForTimestamp(network, timestampInSeconds * 1000)).block;
 
       const loanAddresses = await factoryContract.getAllLoans({ blockTag: blockNumber });
       const totalLoans = loanAddresses.length;
@@ -82,22 +79,22 @@ const getHistoricalLoanStatsAva = async (network = 'avalanche', rpc = 'first') =
       console.log(loanStats);
 
       // save loan stats to DB
-      // await Promise.all(
-      //   Object.entries(loanStats).map(async ([loanId, stats]) => {
-      //     const data = {
-      //       id: loanId,
-      //       ...stats
-      //     };
+      await Promise.all(
+        Object.entries(loanStats).map(async ([loanId, stats]) => {
+          const data = {
+            id: loanId.toLowerCase(),
+            ...stats
+          };
 
-      //     const params = {
-      //       TableName: "loan-stats-ava-prod",
-      //       Item: data
-      //     };
-      //     await dynamoDb.put(params).promise();
-      //   })
-      // );
+          const params = {
+            TableName: "loan-stats-ava-prod",
+            Item: data
+          };
+          await dynamoDb.put(params).promise();
+        })
+      );
 
-      timestampInSeconds += 60 * 60; // 1 hr
+      timestampInSeconds += 60 * 60 * 24; // 1 day
     }
   } catch (error) {
     console.log(error);

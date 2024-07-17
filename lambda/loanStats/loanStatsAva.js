@@ -84,7 +84,7 @@ const saveLiveLoansStatusAvalanche = async (network = 'avalanche', rpc = 'first'
     await Promise.all(
       Object.entries(loanStats).map(async ([loanId, stats]) => {
         const data = {
-          id: loanId,
+          id: loanId.toLowerCase(),
           ...stats
         };
 
