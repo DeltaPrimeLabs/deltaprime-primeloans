@@ -801,7 +801,8 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                 'afterDepositExecution',
                 'afterDepositCancellation',
                 'afterWithdrawalExecution',
-                'afterWithdrawalCancellation'
+                'afterWithdrawalCancellation',
+                'refundExecutionFee',
             ],
             hardhatConfig
         )
@@ -1210,7 +1211,8 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                 'afterDepositExecution',
                 'afterDepositCancellation',
                 'afterWithdrawalExecution',
-                'afterWithdrawalCancellation'
+                'afterWithdrawalCancellation',
+                'refundExecutionFee',
             ],
             hardhatConfig
         )

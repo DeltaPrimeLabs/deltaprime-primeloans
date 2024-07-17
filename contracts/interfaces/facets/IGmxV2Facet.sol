@@ -36,4 +36,6 @@ interface IGmxV2Facet {
     function afterWithdrawalExecution(bytes32 key, Withdrawal.Props memory withdrawal, EventUtils.EventLogData memory eventData) external;
 
     function afterWithdrawalCancellation(bytes32 key, Withdrawal.Props memory withdrawal, EventUtils.EventLogData memory eventData) external;
+
+    function refundExecutionFee(bytes32 key, EventUtils.EventLogData memory eventData) external payable;
 }
