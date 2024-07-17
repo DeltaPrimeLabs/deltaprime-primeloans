@@ -579,6 +579,7 @@ export default {
       modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.wombatLpAssets = this.wombatLpAssets;
       modalInstance.wombatLpBalances = this.wombatLpBalances;
+      modalInstance.wombatYYFarmsBalances = this.wombatYYFarmsBalances;
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
