@@ -42,7 +42,7 @@
 
       <div class="table__cell apy">
         <div class="apr-warning" v-if="farm.aprWarning">
-          <img src="src/assets/icons/warning.svg" v-tooltip="{content: `APR value is updated twice a day. Please check TraderJoe website to find the current pool's APR.`, classes: 'info-tooltip long'}">
+          <img src="src/assets/icons/warning.svg" v-tooltip="{content: `APR value is updated twice a day. Please check Yield Yak website to find the current pool's APR.`, classes: 'info-tooltip long'}">
         </div>
         {{ farm.apy / 100 | percent }}
       </div>
