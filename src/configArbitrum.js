@@ -541,6 +541,7 @@ export default {
             }
         ],
     },
+    WOMBAT_YY_FARMS: [],
     liquidityShapes: {
         spot: {
             name: "Spot",
