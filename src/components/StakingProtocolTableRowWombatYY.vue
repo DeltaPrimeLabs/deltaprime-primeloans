@@ -24,6 +24,8 @@
             <div class="by-farm">Yield Yak -> Wombat</div>
           </div>
         </div>
+        <img src="src/assets/icons/icon_circle_star.svg" v-if="farm.earlyAccessRequired"
+             v-tooltip="{content: 'Early Access is available exclusively for users holding $100 or more in $sPRIME.', classes: 'info-tooltip long'}"/>
       </div>
 
       <div class="table__cell">
@@ -38,7 +40,10 @@
       <div class="table__cell rewards__cell">
       </div>
 
-      <div class="table__cell">
+      <div class="table__cell apy">
+        <div class="apr-warning" v-if="farm.aprWarning">
+          <img src="src/assets/icons/warning.svg" v-tooltip="{content: `APR value is updated twice a day. Please check TraderJoe website to find the current pool's APR.`, classes: 'info-tooltip long'}">
+        </div>
         {{ farm.apy / 100 | percent }}
       </div>
 
@@ -515,17 +520,17 @@ export default {
         menuOptions: [
           {
             key: 'DEPOSIT',
-            name: 'Deposit Token',
+            name: `Deposit ${this.farm.assetToken} to Wombat LP farm`,
             disabled: this.isActionDisabledRecord['DEPOSIT']
           },
           {
             key: 'MIGRATE',
-            name: 'Import existing LP position',
+            name: 'Farm Wombat LP',
             disabled: this.isActionDisabledRecord['MIGRATE']
           },
           {
             key: 'DOPOSIT_AND_STAKE',
-            name: 'Deposit and Stake LP',
+            name: 'Deposit Wombat LP from wallet and farm',
             disabled: this.isActionDisabledRecord['DOPOSIT_AND_STAKE']
           },
         ]
@@ -538,12 +543,12 @@ export default {
         menuOptions: [
           {
             key: 'WITHDRAW',
-            name: 'Unstake to underlying asset',
+            name: `Unstake to ${this.farm.assetToken}`,
             disabled: this.isActionDisabledRecord['WITHDRAW'] || this.farm.inactive
           },
           {
             key: 'UNSTAKE_AND_WITHDRAW',
-            name: 'Unstake and withdraw LP',
+            name: 'Withdraw Wombat LP to wallet',
             disabled: this.isActionDisabledRecord['UNSTAKE_AND_WITHDRAW'] || this.farm.inactive
           },
         ]
@@ -553,8 +558,8 @@ export default {
     openMigrateModal() {
       const modalInstance = this.openModal(ConfirmModal);
       modalInstance.title = 'Migrate to Yield Yak';
-      modalInstance.content = this.wombatLpBalances[this.farm.lpAssetToken] > 0 ? `This action will migrate all your ${this.farm.name} tokens from Wombat to Yield Yak`
-          : `Currently you have no ${this.farm.name} tokens in your Prime Account. <br> To create a new position, use the <b>Deposit Token</b> action.`;
+      modalInstance.content = this.wombatLpBalances[this.farm.lpAssetToken] > 0 ? `This action will farm all your Wombat ${this.farm.assetToken} LP tokens in Yield Yak`
+          : `Currently you have no ${this.farm.name} tokens in your Prime Account. <br> To create a new position, use the <b>Deposit ${this.farm.assetToken} to Wombat LP Farm</b> action.`;
       modalInstance.disabled = this.wombatLpBalances[this.farm.lpAssetToken] <= 0
 
       const migrateRequest = {
@@ -703,6 +708,12 @@ export default {
           width: 20px;
           margin-right: 10px;
           transform: translateY(-2px);
+        }
+      }
+
+      &.apy {
+        .apr-warning {
+          margin-right: 5px;
         }
       }
 
