@@ -214,13 +214,18 @@ export default {
       this.fetchSPrimeData();
     });
 
-    this.sPrimeService.observeSPrimeValue().subscribe(value => {
-      this.value = value
+    combineLatest([
+      this.sPrimeService.observeSPrimeValue(),
+      this.sPrimeService.observeSPrimeBalance(),
+      this.sPrimeService.observeSPrimeLockedBalance(),
+    ]).subscribe(([value, balance, locked]) => {
+      this.value = value;
+      this.locked = locked;
+      this.lockedInUd = value * locked / balance;
     });
 
-    this.sPrimeService.observeSPrimeLockedBalance().subscribe(([locked, lockedInUd]) => {
-      this.locked = locked;
-      this.lockedInUd = lockedInUd;
+    this.sPrimeService.observeSPrimeValue().subscribe(value => {
+      this.value = value
     });
 
     this.sPrimeService.observeSPrimeTotalValue().subscribe(value => {
@@ -475,6 +480,8 @@ export default {
       modalInstance.sPrimeValue = this.value;
       modalInstance.sPrimeLockedBalance = this.locked;
       modalInstance.sPrimeLockedValue = this.lockedInUd;
+      console.log('sPrimeBalance: ', sPrimeBalance)
+      console.log('sPrimeLockedBalance: ', this.locked)
       modalInstance.$on('REDEEM', sPrimeRedeemEvent => {
         let sPrimeRedeemRequest = {
           sPrimeAddress: this.sPrimeConfig.sPrimeAddress,

@@ -28,7 +28,7 @@
                      :validators="validators"
                      :info="() => sourceAssetValue">
       </CurrencyInput>
-      <CurrencyInput v-else
+      <CurrencyInput v-else-if="!(asset.inactive || asset.unsupported)"
                      :symbol="asset.short ? asset.short : asset.symbol"
                      :asset="asset"
                      v-on:newValue="withdrawValueChange"
@@ -36,6 +36,12 @@
                      :validators="validators"
                      :info="() => sourceAssetValue">
       </CurrencyInput>
+
+      <div class="modal-top-info-bar" v-if="asset.inactive || asset.unsupported">
+        <div>
+          Your full balance of {{asset.symbol}} will be withdrawn to your wallet.
+        </div>
+      </div>
 
       <div class="transaction-summary-wrapper">
         <TransactionResultSummaryBeta>
@@ -82,7 +88,7 @@
       <div class="button-wrapper">
         <Button :label="'Withdraw'"
                 v-on:click="submit()"
-                :disabled="currencyInputError"
+                :disabled="currencyInputError && !(asset.inactive || asset.unsupported)"
                 :waiting="transactionOngoing">
         </Button>
       </div>
@@ -117,6 +123,7 @@ export default {
     asset: {},
     health: {},
     assetBalances: {},
+    assetBalance: null,
     assets: {},
     logo: null,
     farms: {},

@@ -28,7 +28,7 @@ import {expect} from 'chai';
 import YAK_ROUTER_ABI from '../../test/abis/YakRouter.json';
 import {getSwapData} from '../utils/paraSwapUtils';
 import {getBurnData} from '../utils/caiUtils';
-import {combineLatest, from, map, tap} from "rxjs";
+import {combineLatest, from, map, tap} from 'rxjs';
 import ABI_YY_WOMBAT_STRATEGY from "../abis/YYWombatStrategy.json";
 
 const toBytes32 = require('ethers').utils.formatBytes32String;
@@ -290,7 +290,7 @@ export default {
 
       // Arbitrum-specific methods
       if (window.chain === 'arbitrum') {
-        rootState.serviceRegistry.ltipService.emitRefreshPrimeAccountsLtipData(state.smartLoanContract.address, state.assets['ARB'].price,  rootState.serviceRegistry.dataRefreshEventService);
+        rootState.serviceRegistry.ltipService.emitRefreshPrimeAccountsLtipData(state.smartLoanContract.address, state.assets['ARB'].price, rootState.serviceRegistry.dataRefreshEventService);
         rootState.serviceRegistry.ltipService.emitRefreshPrimeAccountEligibleTvl(wrapContract(state.smartLoanContract));
       }
     },
@@ -417,12 +417,12 @@ export default {
       Object.keys(assets).forEach(assetSymbol => {
         if (assets[assetSymbol].fetchPrice) {
           fetch(assets[assetSymbol].priceEndpoint).then(
-              async resp => {
-                let json = await resp.json();
-                assets[assetSymbol].price = json[assets[assetSymbol].priceJsonField];
-                commit('setAssets', assets);
-                rootState.serviceRegistry.priceService.emitRefreshPrices();
-              }
+            async resp => {
+              let json = await resp.json();
+              assets[assetSymbol].price = json[assets[assetSymbol].priceJsonField];
+              commit('setAssets', assets);
+              rootState.serviceRegistry.priceService.emitRefreshPrices();
+            }
           )
         }
       });
@@ -1096,26 +1096,28 @@ export default {
             lpToken.rewardBalances = {};
 
             lpToken.rewardTokens.forEach(
-            (symbol, index) => {
-              lpToken.rewardBalances[symbol] = formatUnits(result.returnData[index], config.ASSETS_CONFIG[symbol].decimals);
-            }
+              (symbol, index) => {
+                lpToken.rewardBalances[symbol] = formatUnits(result.returnData[index], config.ASSETS_CONFIG[symbol].decimals);
+              }
             )
-          } catch (e) { }
+          } catch (e) {
+          }
         }
       }
 
       // TODO remove after removing deprecated assets
-      console.warn('TODO remove after removing deprecated assets')
-      console.log(state.assets);
-      Object.values(state.assets).forEach(asset => {
-        if (asset.droppingSupport) {
+      for (let asset of Object.values(state.assets)) {
+        if (asset.droppingSupport || asset.unsupported) {
           console.log('droppingSupport', asset.symbol, balances[asset.symbol]);
+          let tokenContract = new ethers.Contract(asset.address, erc20ABI, provider.getSigner());
+          balances[asset.symbol] = formatUnits(await tokenContract.balanceOf(state.smartLoanContract.address), asset.decimals);
           if (balances[asset.symbol] === undefined || Number(balances[asset.symbol]) === 0) {
             console.warn('deleting', asset.symbol);
             delete state.assets[asset.symbol];
           }
         }
-      })
+      }
+
       await commit('setAssets', state.assets);
       await commit('setAssetBalances', balances);
       await commit('setLpBalances', lpBalances);
@@ -1667,7 +1669,13 @@ export default {
         }
 
         if (window.chain === 'avalanche') {
-          yearlyGrantInterest += Math.max(Number(state.wombatLpBalances['WOMBAT_ggAVAX_AVAX_LP_ggAVAX']) * state.wombatLpAssets['WOMBAT_ggAVAX_AVAX_LP_ggAVAX'].price - collateral, 0) * rootState.serviceRegistry.ggpIncentivesService.boostGGPApy$.value.boostApy * state.assets['GGP'].price
+
+          fetch(config.ASSETS_CONFIG['GGP'].priceEndpoint).then(async resp => {
+            let json = await resp.json();
+            const ggpPrice = json[config.ASSETS_CONFIG['GGP'].priceJsonField];
+
+            yearlyGrantInterest += Math.max(Number(state.wombatLpBalances['WOMBAT_ggAVAX_AVAX_LP_ggAVAX']) * state.wombatLpAssets['WOMBAT_ggAVAX_AVAX_LP_ggAVAX'].price - collateral, 0) * rootState.serviceRegistry.ggpIncentivesService.boostGGPApy$.value.boostApy * ggpPrice
+          })
         }
 
         if (collateral) {
@@ -1882,6 +1890,7 @@ export default {
 
       const amountInWei = parseUnits(parseFloat(withdrawRequest.value).toFixed(withdrawRequest.assetDecimals), withdrawRequest.assetDecimals);
 
+      console.log(withdrawRequest)
       const transaction =
         withdrawRequest.assetInactive ?
           await (await wrapContract(state.smartLoanContract, loanAssets)).withdrawUnsupportedToken(withdrawRequest.assetAddress)
@@ -1903,7 +1912,7 @@ export default {
       let tx = await awaitConfirmation(transaction, provider, 'withdraw');
 
 
-      const withdrawAmount = formatUnits(getLog(tx, SMART_LOAN.abi, withdrawRequest.assetInactive ? 'WithdrawUnsupportedToken' : isLevel ? 'WithdrewLLP' : 'Withdrawn').args[isLevel ? 'depositAmount' : 'amount'], withdrawRequest.assetDecimals);
+      const withdrawAmount = formatUnits(getLog(tx, SMART_LOAN.abi, (withdrawRequest.assetInactive || withdrawRequest.assetInactive) ? 'WithdrawUnsupportedToken' : isLevel ? 'WithdrewLLP' : 'Withdrawn').args[isLevel ? 'depositAmount' : 'amount'], withdrawRequest.assetDecimals);
 
       let price;
       switch (withdrawRequest.type) {
@@ -2777,6 +2786,7 @@ export default {
 
 
     async addLiquidityTraderJoeV2Pool({state, rootState, commit, dispatch}, {addLiquidityRequest}) {
+      console.log('addLiquidityTraderJoeV2Pool')
       const provider = rootState.network.provider;
 
       const loanAssets = mergeArrays([(
@@ -2788,7 +2798,9 @@ export default {
 
       const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
 
+      console.log('before transaction')
       const transaction = await wrappedContract[addLiquidityRequest.method](
+        addLiquidityRequest.routerAddress,
         addLiquidityRequest.addLiquidityInput
       );
 
@@ -2832,7 +2844,8 @@ export default {
       const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
 
       const transaction = await wrappedContract[removeLiquidityRequest.method](
-        removeLiquidityRequest.removeLiquidityInput
+          removeLiquidityRequest.routerAddress,
+          removeLiquidityRequest.removeLiquidityInput
       );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();

@@ -65,7 +65,7 @@ export default {
     ...mapActions('network', ['initNetwork']),
     async onClick() {
       if (chain === 'avalanche' && this.vestingContract && this.claimableAmount) {
-        await this.vestingContract.claim({gasLimit: 8000000});
+        await this.vestingContract.claim();
       }
     },
     async fetchClaimable() {
