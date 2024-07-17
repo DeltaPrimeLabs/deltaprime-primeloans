@@ -538,7 +538,7 @@ export default {
         menuOptions: [
           {
             key: 'WITHDRAW',
-            name: 'Withdraw asset',
+            name: 'Unstake to underlying asset',
             disabled: this.isActionDisabledRecord['WITHDRAW'] || this.farm.inactive
           },
           {

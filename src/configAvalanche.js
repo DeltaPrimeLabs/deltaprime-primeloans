@@ -644,7 +644,7 @@ export default {
             poolName: 'sAVAX Pool',
             debtCoverage: 0.83333333333,
             strategyContract: '0x9B5d890d563EE4c9255bB500a790Ca6B1FB9dB6b',
-            apy: 5.4,
+            apy: 5.1,
             minSPrimeToUnlock: 100,
         },
         {
@@ -670,7 +670,7 @@ export default {
             poolName: 'sAVAX Pool',
             debtCoverage: 0.83333333333,
             strategyContract: '0xa84D83787eA216F616C6Bd02C6edC6D6d63f042f',
-            apy: 15.4,
+            apy: 12.4,
             minSPrimeToUnlock: 100,
         },
         {
@@ -696,7 +696,7 @@ export default {
             poolName: 'ggAVAX Pool',
             debtCoverage: 0.83333333333,
             strategyContract: '0x13404B1C715aF60869fc658d6D99c117e3543592',
-            apy: 5.3,
+            apy: 5,
             minSPrimeToUnlock: 100,
         },
         {
@@ -722,7 +722,7 @@ export default {
             poolName: 'ggAVAX Pool',
             debtCoverage: 0.83333333333,
             strategyContract: '0x7f0eB376eabF4b2B4290D09EFb2f4da99B3ea311',
-            apy: 1.4,
+            apy: 0.4,
             minSPrimeToUnlock: 100,
         },
     ],
