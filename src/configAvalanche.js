@@ -649,7 +649,7 @@ export default {
             strategyContract: '0x9B5d890d563EE4c9255bB500a790Ca6B1FB9dB6b',
             apy: 5.1,
             earlyAccessRequired: true,
-            minSPrimeToUnlock: 0,
+            minSPrimeToUnlock: 100,
             aprWarning: true
         },
         {
