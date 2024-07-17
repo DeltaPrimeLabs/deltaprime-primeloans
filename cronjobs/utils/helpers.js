@@ -215,6 +215,6 @@ module.exports = {
   getWrappedContracts,
   getWrappedContractsHistorical,
   getBlockForTimestamp,
-  // getArweavePackages,
+  getArweavePackages,
   fetchAllDataFromDB
 }
