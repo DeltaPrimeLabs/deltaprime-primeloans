@@ -122,7 +122,8 @@ let lockPeriods = [
 ]
 
 function getProvider(){
-    return new ethers.providers.JsonRpcProvider("https://avax.nirvanalabs.xyz/avalanche_aws/ext/bc/C/rpc?apikey=284d7cde-5c20-46a9-abee-2e3932cdb771");
+    // return new ethers.providers.JsonRpcProvider("https://avax.nirvanalabs.xyz/avalanche_aws/ext/bc/C/rpc?apikey=284d7cde-5c20-46a9-abee-2e3932cdb771");
+    return new ethers.providers.JsonRpcProvider("https://avalanche-mainnet.core.chainstack.com/ext/bc/C/rpc/409fa087db6ba9d631bce0d258a14484");
 }
 
 function initWallet(networkName) {
@@ -154,6 +155,13 @@ function wrapContract(contract, performer) {
 }
 
 async function performAirdrop(data) {
+    const negativeAirdrop = [
+        "0x99e4b3a0217f7e45815cc7726caeec63689a016f",
+        "0xd6af05b046ab7e13783eeb3b5505174a450c041b", // this guy has balnanceOf 48 which reverts on trying to burn 0 amounts from LB | Minting sPrime with 59.924914642329085268 Prime and 2.647857630893188929 WAVAX for 0xd6af05b046ab7e13783eeb3b5505174a450c041b
+        "0x003e3336764de10a898916b84c626b69d7294339",
+        "0x21b5a65bd089ecd956bc6e282ebac365ea263443"
+    ]
+
     let wallet = initWallet('avalanche');
     let provider = getProvider();
 
@@ -183,6 +191,11 @@ async function performAirdrop(data) {
         let userAmount = data[userAddress];
         console.log(`Processing user ${userAddress} with amount ${userAmount}`)
 
+        if(negativeAirdrop.includes(userAddress)) {
+            console.log(`User ${userAddress} is in the negative airdrop list, skipping`);
+            continue;
+        }
+
         let sPrimeDollarValue = userAmount;
         let userFraction = sPrimeDollarValue / sumOfDollarValuesAcrossAllUsers;
 
@@ -210,7 +223,7 @@ async function performAirdrop(data) {
                 writeJSON(failedUsersFileName, failedUsers);
                 throw new Error(`mintForUserAndLock failed for ${userAddress} (tx hash: ${txHash})`);
             } else {
-                console.log(`Transaction ${txHash} success`);
+                console.log(`Transaction ${txHash} SUCCESSFUL! <----`);
                 distributionHistory.push({"address": userAddress, "primeAmount": primeAmount, "wavaxAmount": wavaxAmount, "txHash": txHash});
                 writeJSON(distributionHistoryFileName, distributionHistory);
             }
@@ -218,6 +231,7 @@ async function performAirdrop(data) {
             console.log(`Error minting SPrime for ${userAddress} at counter ${counter}`);
             writeJSON(distributionHistoryFileName, distributionHistory);
             writeJSON(failedUsersFileName, failedUsers);
+            throw error;
         }
 
     }

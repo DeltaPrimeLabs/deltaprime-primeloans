@@ -54,5 +54,68 @@
         "primeAmount": "7.465048305272759421",
         "wavaxAmount": "0.329852536930280160",
         "txHash": "0x5018be116e1ea06dc526d8c25fa0a476d2cc666df5cd472b10a5e8945ae05f31"
+    },
+    {
+        "address": "0x4beae7e69f07299a9cb3cc7183e46d32e10c53c5",
+        "sPrimeSum": 90.80582417266106,
+        "primeAmount": "35.906796710670413120",
+        "wavaxAmount": "1.586586918625668474",
+        "txHash": "0x6bef16a735e08d5f3e779a329472438b44ffee20dfe5846ef22e8fec7f2a9c53"
+    },
+    {
+        "address": "0x99e4b3a0217f7e45815cc7726caeec63689a016f",
+        "sPrimeSum": 0.3725417167600013,
+        "primeAmount": "0.147311913215065288",
+        "wavaxAmount": "0.006509161938003979",
+        "txHash": "0xda383fe8252541000a751eb20aab4a1a49ac4c2c95a8c88ae501822232807d07"
+    },
+    {
+        "address": "0xd6af05b046ab7e13783eeb3b5505174a450c041b",
+        "sPrimeSum": 151.54599577399782,
+        "primeAmount": "59.924914642329085268",
+        "wavaxAmount": "2.647857630893188929",
+        "txHash": "0x6a00f5852109b13fe05a97c44fbe1b326f0bfc49dac40b4324dd7e6a83a0f284"
+    },
+    {
+        "address": "0x003e3336764de10a898916b84c626b69d7294339",
+        "sPrimeSum": 3.719669109745797e-10,
+        "primeAmount": "0.000000000147084621",
+        "wavaxAmount": "0.000000000006499119",
+        "txHash": "0x82f3f803d3d8bafe6840f17b9ebc5fba05ed3777c84866dc0e672333c681aacc"
+    },
+    {
+        "address": "0x21b5a65bd089ecd956bc6e282ebac365ea263443",
+        "sPrimeSum": 2.0232765894061038e-7,
+        "primeAmount": "0.000000080005199939",
+        "wavaxAmount": "0.000000003535130261",
+        "txHash": "0x4a8cf8277290cb7f48d9fadd0c1c0d236fd1fe8a2b948e501cc040624604fe00"
+    },
+    {
+        "address": "0x37b187899a8d12fe967e790baba2f7d7da8f4352",
+        "sPrimeSum": 0,
+        "primeAmount": "0.000000000000000000",
+        "wavaxAmount": "0.000000000000000000",
+        "txHash": "0x8423f9cef955d66bcc7a604527fc2221372f130d508ed805bac822de644cbf52"
+    },
+    {
+        "address": "0x0e1c7fbc490b5731b95c6947ecf5296978896f96",
+        "sPrimeSum": 0,
+        "primeAmount": "0.000000000000000000",
+        "wavaxAmount": "0.000000000000000000",
+        "txHash": "0x0cd488dcbad5b76258bb8f2747a8179d9825fd128bc349c08e56fb7e17b7b210"
+    },
+    {
+        "address": "0xc2af7eecd7af8768c132f8e3d1735dee6e1bd270",
+        "sPrimeSum": 0,
+        "primeAmount": "0.000000000000000000",
+        "wavaxAmount": "0.000000000000000000",
+        "txHash": "0xf36a0a9e7f620d38be0e9f1a8c7c7efbd9fca742dffb710d0fe8b97371aebbe4"
+    },
+    {
+        "address": "0xdab4d316c5ffd6bdf78bb3b0b6a4a58a93115bcd",
+        "sPrimeSum": 0,
+        "primeAmount": "0.000000000000000000",
+        "wavaxAmount": "0.000000000000000000",
+        "txHash": "0x4620b4cdd041439921483ccfd4aed279d84628dc3776d4c89e5bda6ac3d5cca4"
     }
 ]
