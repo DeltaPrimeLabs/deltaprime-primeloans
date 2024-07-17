@@ -366,11 +366,16 @@ export default {
       }
     },
     receivedAccordingToOracle() {
-      return (this.estimatedNeededTokens && this.sourceAssetData && this.targetAssetData)
-          ?
-          this.estimatedNeededTokens * this.sourceAssetData.price / this.targetAssetData.price
-          :
-          0;
+      console.log('this.estimatedNeededTokens', this.estimatedNeededTokens);
+      console.log('this.sourceAssetData', this.sourceAssetData);
+      console.log('this.targetAssetData', this.targetAssetData);
+      const result = (this.estimatedNeededTokens && this.sourceAssetData && this.targetAssetData)
+        ?
+        this.estimatedNeededTokens * this.sourceAssetData.price / this.targetAssetData.price
+        :
+        0;
+      console.log('result', result);
+      return result;
     }
   },
 
@@ -441,6 +446,8 @@ export default {
       let sourceDecimals = this.sourceAssetData.decimals;
       let sourceAmountInWei = parseUnits(this.sourceAssetAmount.toFixed(sourceDecimals), BigNumber.from(sourceDecimals));
       let targetDecimals = this.targetAssetData.decimals;
+      console.log(targetDecimals);
+      console.log(this.receivedAccordingToOracle);
       let oracleReceivedAmountInWei = parseUnits(this.receivedAccordingToOracle.toFixed(targetDecimals), BigNumber.from(targetDecimals));
 
       console.log('receivedAccordingToOracle: ', this.receivedAccordingToOracle)
@@ -593,12 +600,12 @@ export default {
     },
 
     setupTargetAsset() {
-      console.log('asfrqger', this.targetAsset);
-      console.log('asfrqger', this.targetAssetsConfig);
+      console.log('this.targetAsset', this.targetAsset);
+      console.log('this.targetAssetsConfig', this.targetAssetsConfig);
       if (this.targetAsset) {
         this.targetAssetData = this.targetAssetsConfig[this.targetAsset];
       }
-      console.log('asfrqger', this.targetAssetData);
+      console.log('this.targetAssetData', this.targetAssetData);
     },
 
     async sourceInputChange(changeEvent) {

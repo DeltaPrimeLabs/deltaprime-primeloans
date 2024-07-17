@@ -271,6 +271,9 @@ export default {
         "GM_AVAX_WAVAX_USDC": {name: "AVAX-USDC", symbol: "GM_AVAX_WAVAX_USDC", short: "GM", decimals: 18, address: addresses.GM_AVAX_WAVAX_USDC, debtCoverage: 0.83333333333, longToken: 'AVAX', shortToken: 'USDC', indexTokenAddress: addresses.AVAX, link: 'https://app.gmx.io/#/stats'},
         "GM_BTC_BTCb_USDC": {name: "BTC-USDC", symbol: "GM_BTC_BTCb_USDC", logoExt: "png", short: "GM", decimals: 18, address: addresses.GM_BTC_BTCb_USDC, debtCoverage: 0.83333333333, longToken: 'BTC', shortToken: 'USDC', indexTokenAddress: addresses.BTC, link: 'https://app.gmx.io/#/stats'},
         "GM_ETH_WETHe_USDC": {name: "ETH-USDC", symbol: "GM_ETH_WETHe_USDC", short: "GM", decimals: 18, address: addresses.GM_ETH_WETHe_USDC, debtCoverage: 0.83333333333, longToken: 'ETH', shortToken: 'USDC', indexTokenAddress: addresses.ETH, link: 'https://app.gmx.io/#/stats'},
+        "GM_BTC_BTCb": {isGMXPlus: true, name: "BTC+", symbol: "GM_BTC_BTCb", short: "GM", decimals: 18, address: addresses.GM_BTC_BTCb, debtCoverage: 0.83333333333, longToken: 'BTC', shortToken: 'USDC', indexTokenAddress: addresses.BTC, link: 'https://app.gmx.io/#/stats', addMethod: 'depositBtcGmxV2Plus'},
+        "GM_ETH_WETHe": {isGMXPlus: true, name: "ETH+", symbol: "GM_ETH_WETHe", short: "GM", decimals: 18, address: addresses.GM_ETH_WETHe, debtCoverage: 0.83333333333, longToken: 'ETH', shortToken: 'USDC', indexTokenAddress: addresses.ETH, link: 'https://app.gmx.io/#/stats', addMethod: 'depositEthGmxV2Plus'},
+        "GM_AVAX_WAVAX": {isGMXPlus: true, name: "AVAX+", symbol: "GM_AVAX_WAVAX", short: "GM", decimals: 18, address: addresses.GM_AVAX_WAVAX, debtCoverage: 0.83333333333, longToken: 'AVAX', shortToken: 'USDC', indexTokenAddress: addresses.AVAX, link: 'https://app.gmx.io/#/stats', addMethod: 'depositAvaxGmxV2Plus'},
     },
     maxTraderJoeV2Bins: 80,
     DEX_CONFIG: {
@@ -643,7 +646,7 @@ export default {
     yieldYakGlpWrapperAddress: '0x5d6fCD3108E016912Fa3448636e378B116167104',
     glpRewardsRouterAddress: '0x82147C5A7E850eA4E28155DF107F2590fD4ba327',
     depositSwapAddress: "0xa0170E529f94C955f77Fcf14F57C7A7cDf0FDb71",
-    gmxV2ReaderAddress: "0x73BA021ACF4Bb6741E82690DdB821e7936050f8C",
+    gmxV2ReaderAddress: "0xBAD04dDcc5CC284A86493aFA75D2BEb970C72216",
     gmxV2DataStoreAddress: "0x2F0b22339414ADeD7D5F06f9D604c7fF5b2fe3f6",
     gmxV2HighExecutionFee: 0,
     gmxV2DepositCallbackGasLimit: 300000,

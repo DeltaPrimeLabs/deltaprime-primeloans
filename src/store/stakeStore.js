@@ -464,7 +464,6 @@ export default {
           Object.values(config.FARMED_TOKENS_CONFIG).forEach(tokenFarms => {
             console.log(tokenFarms);
             tokenFarms.forEach(farm => {
-              console.log(farm);
               const farmData = farmsDataPerFarm.find(data => data[1] === farm.protocolIdentifier);
               farm.totalBalance = farmData[3];
               farm.currentApy = farmData[4];

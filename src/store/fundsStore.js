@@ -400,6 +400,7 @@ export default {
 
       const redstonePriceDataRequest = await fetch(config.redstoneFeedUrl);
       const redstonePriceData = await redstonePriceDataRequest.json();
+      console.log('redstonePriceData', redstonePriceData);
       Object.keys(assets).forEach(assetSymbol => {
         assets[assetSymbol].price = redstonePriceData[assetSymbol] ? redstonePriceData[assetSymbol][0].dataPoints[0].value : 0;
       });
@@ -726,7 +727,7 @@ export default {
 
       Object.values(config.GMX_V2_ASSETS_CONFIG).forEach(
         asset => {
-          if (state.supportedAssets.includes(asset.symbol)) {
+          if (true) {
             lpTokens[asset.symbol] = asset;
           }
         }
@@ -1659,6 +1660,7 @@ export default {
     },
 
     async fund({state, rootState, commit, dispatch}, {fundRequest}) {
+      console.log(fundRequest);
       const provider = rootState.network.provider;
       const amountInWei = parseUnits(fundRequest.value.toString(), fundRequest.assetDecimals);
 
@@ -3392,6 +3394,71 @@ export default {
           await dispatch('updateFunds');
         }, config.gmxV2RefreshDelay)
       }, config.refreshDelay);
+    },
+
+    async addLiquidityGmxPlus({state, rootState, commit, dispatch}, {addLiquidityRequest}) {
+      console.log(addLiquidityRequest);
+
+      const provider = rootState.network.provider;
+
+      const loanAssets = mergeArrays([(
+        await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+        [addLiquidityRequest.sourceAsset, addLiquidityRequest.targetAsset]
+      ]);
+
+      const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
+
+      let executionFeeWei = toWei(addLiquidityRequest.executionFee.toFixed(18));
+
+      console.log(wrappedContract);
+
+      let sourceDecimals = config.ASSETS_CONFIG[addLiquidityRequest.sourceAsset].decimals;
+      let sourceAmount = parseUnits(parseFloat(addLiquidityRequest.sourceAmount).toFixed(sourceDecimals), sourceDecimals);
+
+      let targetDecimals = config.GMX_V2_ASSETS_CONFIG[addLiquidityRequest.targetAsset].decimals;
+
+      let minGmAmount = parseUnits(addLiquidityRequest.minGmAmount.toFixed(targetDecimals), targetDecimals);
+
+
+      const transaction = await wrappedContract[addLiquidityRequest.method](sourceAmount, minGmAmount, executionFeeWei, {value: executionFeeWei, gasLimit: 10000000});
+
+      let tx = await awaitConfirmation(transaction, provider, 'add liquidity to GMXV2+');
+
+    },
+
+
+    async removeLiquidityGmxPlus({state, rootState, commit, dispatch}, {removeLiquidityRequest}) {
+      console.log(removeLiquidityRequest);
+
+      const provider = rootState.network.provider;
+
+      const loanAssets = mergeArrays([(
+        await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+        [removeLiquidityRequest.sourceAsset, removeLiquidityRequest.targetAsset]
+      ]);
+
+      const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
+
+      let executionFeeWei = toWei(removeLiquidityRequest.executionFee.toFixed(18));
+
+      console.log(wrappedContract);
+
+      let sourceDecimals = config.ASSETS_CONFIG[removeLiquidityRequest.sourceAsset].decimals;
+      let sourceAmount = parseUnits(parseFloat(removeLiquidityRequest.sourceAmount).toFixed(sourceDecimals), sourceDecimals);
+
+      let targetDecimals = config.GMX_V2_ASSETS_CONFIG[removeLiquidityRequest.targetAsset].decimals;
+
+      let minGmAmount = parseUnits(removeLiquidityRequest.minGmAmount.toFixed(targetDecimals), targetDecimals);
+
+
+      const transaction = await wrappedContract[removeLiquidityRequest.method](sourceAmount, minGmAmount, executionFeeWei, {value: executionFeeWei, gasLimit: 10000000});
+
+      let tx = await awaitConfirmation(transaction, provider, 'add liquidity to GMXV2+');
+
     },
 
     async borrow({state, rootState, commit, dispatch}, {borrowRequest}) {

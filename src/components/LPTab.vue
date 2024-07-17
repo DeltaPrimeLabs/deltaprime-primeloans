@@ -146,6 +146,9 @@ export default {
     this.fetchOpenInterestData();
     this.isAvalanche = window.chain === 'avalanche';
     this.showLevel = this.levelLpBalances;
+    setTimeout(() => {
+      console.log('gmxV2LpTokens', this.gmxV2LpTokens);
+    }, 2000)
   },
   computed: {
     ...mapState('serviceRegistry', [

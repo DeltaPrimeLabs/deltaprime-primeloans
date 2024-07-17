@@ -41,7 +41,7 @@
           </div>
           <div class="double-value__usd">
             <span>
-              {{((gmxV2Balances && gmxV2Balances[lpToken.symbol]) ? gmxV2Balances[lpToken.symbol] : 0) * lpToken.price | usd}}
+              {{ ((gmxV2Balances && gmxV2Balances[lpToken.symbol]) ? gmxV2Balances[lpToken.symbol] : 0) * lpToken.price | usd }}
             </span>
           </div>
         </template>
@@ -63,44 +63,47 @@
         {{ formatTvl(tvl) }}
       </div>
 
-<!--      <div class="table__cell capacity">-->
-<!--        <bar-gauge-beta v-if="lpToken.maxExposure" :min="0" :max="lpToken.maxExposure" :value="Math.max(lpToken.currentExposure, 0.001)" v-tooltip="{content: `${lpToken.currentExposure ? lpToken.currentExposure.toFixed(2) : 0} ($${lpToken.currentExposure ? (lpToken.currentExposure * this.lpToken.price).toFixed(2) : 0}) out of ${lpToken.maxExposure} ($${lpToken.maxExposure ? (lpToken.maxExposure * this.lpToken.price).toFixed(2) : 0}) is currently used.`, classes: 'info-tooltip'}" :width="80"></bar-gauge-beta>-->
-<!--      </div>-->
+      <!--      <div class="table__cell capacity">-->
+      <!--        <bar-gauge-beta v-if="lpToken.maxExposure" :min="0" :max="lpToken.maxExposure" :value="Math.max(lpToken.currentExposure, 0.001)" v-tooltip="{content: `${lpToken.currentExposure ? lpToken.currentExposure.toFixed(2) : 0} ($${lpToken.currentExposure ? (lpToken.currentExposure * this.lpToken.price).toFixed(2) : 0}) out of ${lpToken.maxExposure} ($${lpToken.maxExposure ? (lpToken.maxExposure * this.lpToken.price).toFixed(2) : 0}) is currently used.`, classes: 'info-tooltip'}" :width="80"></bar-gauge-beta>-->
+      <!--      </div>-->
 
       <div class="table__cell table__cell--double-value apr" v-bind:class="{'apr--with-warning': lpToken.aprWarning}">
         {{ apr / 100 | percent }}
         <div class="apr-warning" v-if="lpToken.aprWarning">
-          <img src="src/assets/icons/warning.svg" v-tooltip="{content: lpToken.aprWarning, classes: 'info-tooltip long'}">
+          <img src="src/assets/icons/warning.svg"
+               v-tooltip="{content: lpToken.aprWarning, classes: 'info-tooltip long'}">
         </div>
       </div>
 
       <div class="table__cell table__cell--double-value max-apr">
-        <span>{{ (maxApr + boostApy) | percent }}<img v-if="boostApy" v-tooltip="{content: `This pool is incentivized!<br>⁃ up to ${maxApr ? (maxApr * 100).toFixed(2) : 0}% Pool APR<br>⁃ up to ${boostApy ? (boostApy * 100).toFixed(2) : 0}% ${chain === 'arbitrum' ? 'ARB' : 'AVAX'} incentives`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span>
+        <span>{{ (maxApr + boostApy) | percent }}<img v-if="boostApy"
+                                                      v-tooltip="{content: `This pool is incentivized!<br>⁃ up to ${maxApr ? (maxApr * 100).toFixed(2) : 0}% Pool APR<br>⁃ up to ${boostApy ? (boostApy * 100).toFixed(2) : 0}% ${chain === 'arbitrum' ? 'ARB' : 'AVAX'} incentives`, classes: 'info-tooltip'}"
+                                                      src="src/assets/icons/stars.png" class="stars-icon"></span>
       </div>
 
       <div class="table__cell"></div>
 
       <div class="table__cell actions">
         <IconButtonMenuBeta
-            class="actions__icon-button"
-            :config="addActionsConfig"
-            v-if="addActionsConfig"
-            v-on:iconButtonClick="actionClick"
-            :disabled="disableAllButtons || !healthLoaded || !assets">
+          class="actions__icon-button"
+          :config="addActionsConfig"
+          v-if="addActionsConfig"
+          v-on:iconButtonClick="actionClick"
+          :disabled="disableAllButtons || !healthLoaded || !assets">
         </IconButtonMenuBeta>
         <IconButtonMenuBeta
-            class="actions__icon-button last"
-            :config="removeActionsConfig"
-            v-if="removeActionsConfig"
-            v-on:iconButtonClick="actionClick"
-            :disabled="disableAllButtons || !healthLoaded || !assets">
+          class="actions__icon-button last"
+          :config="removeActionsConfig"
+          v-if="removeActionsConfig"
+          v-on:iconButtonClick="actionClick"
+          :disabled="disableAllButtons || !healthLoaded || !assets">
         </IconButtonMenuBeta>
         <IconButtonMenuBeta
-            class="actions__icon-button"
-            v-if="moreActionsConfig"
-            :config="moreActionsConfig"
-            v-on:iconButtonClick="actionClick"
-            :disabled="disableAllButtons || !healthLoaded || !assets">
+          class="actions__icon-button"
+          v-if="moreActionsConfig"
+          :config="moreActionsConfig"
+          v-on:iconButtonClick="actionClick"
+          :disabled="disableAllButtons || !healthLoaded || !assets">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -155,32 +158,32 @@ import erc20ABI from '../../test/abis/ERC20.json';
 import {calculateMaxApy, chartPoints, fromWei, toWei} from '../utils/calculate';
 import addresses from '../../common/addresses/avalanche/token_addresses.json';
 import {formatUnits, parseUnits} from 'ethers/lib/utils';
-import DeltaIcon from "./DeltaIcon.vue";
-import SwapModal from "./SwapModal.vue";
-import redstone from "redstone-api";
-import Toggle from "./Toggle.vue";
-import TradingViewChart from "./TradingViewChart.vue";
-import BarGaugeBeta from "./BarGaugeBeta.vue";
-import PartnerInfoModal from "./PartnerInfoModal.vue";
-import moment from "moment/moment";
+import DeltaIcon from './DeltaIcon.vue';
+import SwapModal from './SwapModal.vue';
+import redstone from 'redstone-api';
+import Toggle from './Toggle.vue';
+import TradingViewChart from './TradingViewChart.vue';
+import BarGaugeBeta from './BarGaugeBeta.vue';
+import PartnerInfoModal from './PartnerInfoModal.vue';
+import moment from 'moment/moment';
 import LIQUIDITY_CALCULATOR
-  from "../../artifacts/contracts/interfaces/level/ILiquidityCalculator.sol/ILiquidityCalculator.json";
+  from '../../artifacts/contracts/interfaces/level/ILiquidityCalculator.sol/ILiquidityCalculator.json';
 import IREADER_DEPOSIT_UTILS
-  from "../../artifacts/contracts/interfaces/gmx-v2/IReaderDepositUtils.sol/IReaderDepositUtils.json";
+  from '../../artifacts/contracts/interfaces/gmx-v2/IReaderDepositUtils.sol/IReaderDepositUtils.json';
 import IDATA_STORE
-  from "../../artifacts/contracts/interfaces/gmx-v2/IDataStore.sol/IDataStore.json";
-import SwapToMultipleModal from "./SwapToMultipleModal.vue";
-import TOKEN_ADDRESSES from "../../common/addresses/avalanche/token_addresses.json";
-import {BigNumber} from "ethers";
+  from '../../artifacts/contracts/interfaces/gmx-v2/IDataStore.sol/IDataStore.json';
+import SwapToMultipleModal from './SwapToMultipleModal.vue';
+import TOKEN_ADDRESSES from '../../common/addresses/avalanche/token_addresses.json';
+import {BigNumber} from 'ethers';
 import {
   DEPOSIT_GAS_LIMIT_KEY,
   ESTIMATED_GAS_FEE_BASE_AMOUNT,
   ESTIMATED_GAS_FEE_MULTIPLIER_FACTOR, WITHDRAWAL_GAS_LIMIT_KEY
-} from "../integrations/contracts/dataStore";
-import zapLong from "./zaps-tiles/ZapLong.vue";
-import {calculateGmxV2ExecutionFee, capitalize, hashData} from "../utils/blockchain";
-import Dropdown from "./notifi/settings/Dropdown.vue";
-import {ActionSection} from "../services/globalActionsDisableService";
+} from '../integrations/contracts/dataStore';
+import zapLong from './zaps-tiles/ZapLong.vue';
+import {calculateGmxV2ExecutionFee, capitalize, hashData} from '../utils/blockchain';
+import Dropdown from './notifi/settings/Dropdown.vue';
+import {ActionSection} from '../services/globalActionsDisableService';
 
 export default {
   name: 'GmxV2LpTableRow',
@@ -335,27 +338,28 @@ export default {
       'withdraw',
       'addLiquidityGmxV2',
       'removeLiquidityGmxV2',
+      'addLiquidityGmxPlus',
     ]),
     setupAddActionsConfiguration() {
       this.addActionsConfig =
-          {
-            iconSrc: 'src/assets/icons/plus.svg',
-            tooltip: 'Add',
-            menuOptions: [
-              {
-                key: 'ADD_FROM_WALLET',
-                name: 'Import existing GM token',
-                disabled: this.isActionDisabledRecord['ADD_FROM_WALLET'] || !this.hasSmartLoanContract,
-                disabledInfo: this.isActionDisabledRecord['ADD_FROM_WALLET'] ? '' : 'To import GM token, you need to add some funds from you wallet first'
-              },
-              {
-                key: 'PROVIDE_LIQUIDITY',
-                name: 'Create GM position',
-                disabled: this.isActionDisabledRecord['PROVIDE_LIQUIDITY'] || !this.hasSmartLoanContract,
-                disabledInfo: this.isActionDisabledRecord['PROVIDE_LIQUIDITY'] ? '' : 'To create GM token, you need to add some funds from you wallet first'
-              }
-            ]
-          }
+        {
+          iconSrc: 'src/assets/icons/plus.svg',
+          tooltip: 'Add',
+          menuOptions: [
+            {
+              key: 'ADD_FROM_WALLET',
+              name: 'Import existing GM token',
+              disabled: this.isActionDisabledRecord['ADD_FROM_WALLET'] || !this.hasSmartLoanContract,
+              disabledInfo: this.isActionDisabledRecord['ADD_FROM_WALLET'] ? '' : 'To import GM token, you need to add some funds from you wallet first'
+            },
+            {
+              key: 'PROVIDE_LIQUIDITY',
+              name: 'Create GM position',
+              disabled: this.isActionDisabledRecord['PROVIDE_LIQUIDITY'] || !this.hasSmartLoanContract,
+              disabledInfo: this.isActionDisabledRecord['PROVIDE_LIQUIDITY'] ? '' : 'To create GM token, you need to add some funds from you wallet first'
+            }
+          ]
+        }
     },
     handleDropdownOption(option) {
       this.selectedChart = option.value;
@@ -363,23 +367,23 @@ export default {
 
     setupRemoveActionsConfiguration() {
       this.removeActionsConfig =
-          {
-            iconSrc: 'src/assets/icons/minus.svg',
-            tooltip: 'Remove',
-            menuOptions: [
-              {
-                key: 'WITHDRAW',
-                name: 'Export GM position',
-                disabled: this.isActionDisabledRecord['WITHDRAW'] || !this.hasSmartLoanContract
-              },
-              {
-                key: 'REMOVE_LIQUIDITY',
-                name: 'Remove GM position',
-                disabled: this.isActionDisabledRecord['REMOVE_LIQUIDITY'] || !this.hasSmartLoanContract,
-                disabledInfo: this.isActionDisabledRecord['REMOVE_LIQUIDITY'] ? '' : 'You need to add some funds from you wallet first'
-              }
-            ]
-          }
+        {
+          iconSrc: 'src/assets/icons/minus.svg',
+          tooltip: 'Remove',
+          menuOptions: [
+            {
+              key: 'WITHDRAW',
+              name: 'Export GM position',
+              disabled: this.isActionDisabledRecord['WITHDRAW'] || !this.hasSmartLoanContract
+            },
+            {
+              key: 'REMOVE_LIQUIDITY',
+              name: 'Remove GM position',
+              disabled: this.isActionDisabledRecord['REMOVE_LIQUIDITY'] || !this.hasSmartLoanContract,
+              disabledInfo: this.isActionDisabledRecord['REMOVE_LIQUIDITY'] ? '' : 'You need to add some funds from you wallet first'
+            }
+          ]
+        }
     },
 
     setupMoreActionsConfiguration() {
@@ -441,7 +445,7 @@ export default {
       }
 
       let [longTokenOut, shortTokenOut] = await depositReader.getWithdrawalAmountOut(
-          config.gmxV2DataStoreAddress, marketProps, prices, toWei((this.gmxV2Balances[this.lpToken.symbol]).toString()), this.nullAddress
+        config.gmxV2DataStoreAddress, marketProps, prices, toWei((this.gmxV2Balances[this.lpToken.symbol]).toString()), this.nullAddress
       );
 
       this.longTokenAmount = formatUnits(longTokenOut, longToken.decimals);
@@ -498,7 +502,11 @@ export default {
 
 
       return async (sourceAsset, targetAsset, amountIn) => {
+        console.log('sourceAsset', sourceAsset);
+        console.log('targetAsset', targetAsset);
+        console.log('amountIn', amountIn);
         let gmxData = await (await fetch(`https://${config.chainSlug}-api.gmxinfra.io/prices/tickers`)).json();
+        console.log('gmxData', gmxData);
 
         let shortTokenGmxData = gmxData.find(el => el.tokenSymbol === shortToken.symbol);
         let longTokenGmxData = gmxData.find(el => el.tokenSymbol === longToken.symbol);
@@ -520,17 +528,26 @@ export default {
         }
 
         if (config.GMX_V2_ASSETS_CONFIG[sourceAsset]) {
+          console.log('getWithdrawalAmountOut');
           let [longTokenOut, shortTokenOut] = await depositReader.getWithdrawalAmountOut(
-              config.gmxV2DataStoreAddress, marketProps, prices, amountIn, this.nullAddress
+            config.gmxV2DataStoreAddress, marketProps, prices, amountIn, this.nullAddress
           );
+          console.log(longTokenOut);
+          console.log(shortTokenOut);
 
           return [longTokenOut, shortTokenOut];
         } else {
+          console.log('getDepositAmountOut');
           let isLong = this.lpToken.longToken === sourceAsset;
-
+          console.log('isLong', isLong);
+          console.log('marketProps', marketProps);
+          console.log('amountIn', amountIn);
+          console.log('prices', prices);
           let amountOut = await depositReader.getDepositAmountOut(
-              config.gmxV2DataStoreAddress, marketProps, prices, isLong ? amountIn : 0, isLong ? 0 : amountIn, this.nullAddress
+            config.gmxV2DataStoreAddress, marketProps, prices, isLong ? amountIn : 0, isLong ? 0 : amountIn, this.nullAddress
           );
+
+          console.log('amountOut', amountOut);
 
           return amountOut;
         }
@@ -563,6 +580,7 @@ export default {
     },
 
     async openAddFromWalletModal() {
+      console.log(this.lpToken);
       const modalInstance = this.openModal(AddFromWalletModal);
       modalInstance.asset = this.lpToken;
       modalInstance.assetBalance = this.gmxV2Balances && this.gmxV2Balances[this.lpToken.symbol] ? this.gmxV2Balances[this.lpToken.symbol] : 0;
@@ -597,9 +615,10 @@ export default {
             value: addFromWalletEvent.value.toString(),
             asset: this.lpToken.symbol,
             assetDecimals: config.GMX_V2_ASSETS_CONFIG[this.lpToken.symbol].decimals,
-            pid: this.lpToken.pid,
+            pid: null,
             type: 'GMX_V2',
           };
+          console.log(fundRequest);
           this.handleTransaction(this.fund, {fundRequest: fundRequest}, () => {
             this.$forceUpdate();
           }, (error) => {
@@ -693,14 +712,17 @@ export default {
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.checkMarketDeviation = false;
 
+      console.log('calculate fee');
       const executionFee = await calculateGmxV2ExecutionFee(
-          config.gmxV2DataStoreAddress,
-          config.gmxV2DepositCallbackGasLimit,
-          config.gmxV2UseMaxPriorityFeePerGas,
-          config.gmxV2GasPriceBuffer,
-          config.gmxV2GasPricePremium,
-          true);
+        config.gmxV2DataStoreAddress,
+        config.gmxV2DepositCallbackGasLimit,
+        config.gmxV2UseMaxPriorityFeePerGas,
+        config.gmxV2GasPriceBuffer,
+        config.gmxV2GasPricePremium,
+        true);
       modalInstance.info = `<div>Execution fee: ${executionFee.toFixed(6)}${config.nativeToken}. Unused gas will be returned to your account.</div>`;
+
+      console.log('executionFee', executionFee);
 
 
       const nativeBalance = parseFloat(ethers.utils.formatEther(await this.provider.getBalance(this.account)));
@@ -725,29 +747,51 @@ export default {
 
       modalInstance.initiate();
 
+      if (!this.lpToken.isGMXPlus) {
+        modalInstance.$on('SWAP', swapEvent => {
 
-      modalInstance.$on('SWAP', swapEvent => {
+          console.log(JSON.stringify(swapEvent));
 
-        console.log(JSON.stringify(swapEvent));
+          const addLiquidityRequest = {
+            sourceAsset: swapEvent.sourceAsset,
+            targetAsset: swapEvent.targetAsset,
 
-        const addLiquidityRequest = {
-          sourceAsset: swapEvent.sourceAsset,
-          targetAsset: swapEvent.targetAsset,
+            isLongToken: swapEvent.sourceAsset === this.lpToken.longToken,
+            sourceAmount: swapEvent.sourceAmount,
+            minGmAmount: swapEvent.targetAmount,
+            executionFee: executionFee,
+            method: `deposit${capitalize(this.lpToken.longToken)}${capitalize(this.lpToken.shortToken)}GmxV2`
+          };
 
-          isLongToken: swapEvent.sourceAsset === this.lpToken.longToken,
-          sourceAmount: swapEvent.sourceAmount,
-          minGmAmount: swapEvent.targetAmount,
-          executionFee: executionFee,
-          method: `deposit${capitalize(this.lpToken.longToken)}${capitalize(this.lpToken.shortToken)}GmxV2`
-        };
-
-        this.handleTransaction(this.addLiquidityGmxV2, {addLiquidityRequest: addLiquidityRequest}, () => {
-          this.$forceUpdate();
-        }, (error) => {
-          this.handleTransactionError(error);
-        }).then(() => {
+          this.handleTransaction(this.addLiquidityGmxV2, {addLiquidityRequest: addLiquidityRequest}, () => {
+            this.$forceUpdate();
+          }, (error) => {
+            this.handleTransactionError(error);
+          }).then(() => {
+          });
         });
-      });
+      } else {
+
+        modalInstance.$on('SWAP', swapEvent => {
+          console.log(JSON.stringify(swapEvent));
+          const addLiquidityRequest = {
+            sourceAsset: swapEvent.sourceAsset,
+            targetAsset: swapEvent.targetAsset,
+            sourceAmount: swapEvent.sourceAmount,
+            minGmAmount: swapEvent.targetAmount,
+            executionFee: executionFee,
+            method: 'depositAvaxGmxV2Plus'
+          };
+
+          this.handleTransaction(this.addLiquidityGmxPlus, {addLiquidityRequest: addLiquidityRequest}, () => {
+            this.$forceUpdate();
+          }, (error) => {
+            this.handleTransactionError(error);
+          }).then(() => {
+          });
+
+        })
+      }
     },
 
     async openRemoveLiquidityModal() {
@@ -796,12 +840,12 @@ export default {
       modalInstance.swapDex = 'GmxV2';
 
       const executionFee = await calculateGmxV2ExecutionFee(
-          config.gmxV2DataStoreAddress,
-          config.gmxV2DepositCallbackGasLimit,
-          config.gmxV2UseMaxPriorityFeePerGas,
-          config.gmxV2GasPriceBuffer,
-          config.gmxV2GasPricePremium,
-          false);
+        config.gmxV2DataStoreAddress,
+        config.gmxV2DepositCallbackGasLimit,
+        config.gmxV2UseMaxPriorityFeePerGas,
+        config.gmxV2GasPriceBuffer,
+        config.gmxV2GasPricePremium,
+        false);
       modalInstance.info = `<div>Execution fee: ${executionFee.toFixed(6)}${config.nativeToken}. Unused gas will be returned to your account.</div>`;
 
       const nativeBalance = parseFloat(ethers.utils.formatEther(await this.provider.getBalance(this.account)));
@@ -861,7 +905,7 @@ export default {
           {name: 'Multisig', state: 'ENABLED'},
           {
             name: `Audits `, state: 'ENABLED', tooltip:
-                `
+              `
           `
           },
           {
@@ -897,6 +941,7 @@ export default {
     },
 
     async getWalletLpTokenBalance() {
+      console.log(this.lpToken.address);
       const tokenContract = new ethers.Contract(this.lpToken.address, erc20ABI, this.provider.getSigner());
 
       return await this.getWalletTokenBalance(this.account, this.lpToken.symbol, tokenContract, this.lpToken.decimals);
@@ -1005,7 +1050,7 @@ export default {
       });
 
       const [prices, minPrice, maxPrice] = chartPoints(
-          response
+        response
       );
 
       const priceChange = prices && (prices[prices.length - 1].y - prices[0].y) / prices[prices.length - 1].y;
@@ -1037,17 +1082,17 @@ export default {
     },
 
     depositGasLimitKey(singleToken) {
-      return hashData(["bytes32", "bool"], [DEPOSIT_GAS_LIMIT_KEY, singleToken]);
+      return hashData(['bytes32', 'bool'], [DEPOSIT_GAS_LIMIT_KEY, singleToken]);
     },
 
     watchActionDisabling() {
       this.globalActionsDisableService.getSectionActions$(ActionSection.GMXV2)
-          .subscribe(isActionDisabledRecord => {
-            this.isActionDisabledRecord = isActionDisabledRecord;
-            this.setupAddActionsConfiguration();
-            this.setupRemoveActionsConfiguration();
-            this.setupMoreActionsConfiguration();
-          })
+        .subscribe(isActionDisabledRecord => {
+          this.isActionDisabledRecord = isActionDisabledRecord;
+          this.setupAddActionsConfiguration();
+          this.setupRemoveActionsConfiguration();
+          this.setupMoreActionsConfiguration();
+        })
     },
   },
 };
