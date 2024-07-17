@@ -365,19 +365,20 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
 
     /**
     * @dev Withdraws tokens from the Liquidity Book Pair.
+    * @param user User address to withdraw
     * @param depositIds Deposit ID list.
     * @param liquidityMinted The amount of ids to withdraw.
     * @param share sPrime amount to withdraw.
     * @return balanceX The amount of token X received.
     * @return balanceY The amount of token Y received.
     */
-    function _withdrawFromLB(uint256[] memory depositIds, uint256[] memory liquidityMinted, uint256 share) internal returns (uint256 balanceX, uint256 balanceY, uint256[] memory liquidityAmounts) {
+    function _withdrawFromLB(address user, uint256[] memory depositIds, uint256[] memory liquidityMinted, uint256 share) internal returns (uint256 balanceX, uint256 balanceY, uint256[] memory liquidityAmounts) {
         if (depositIds.length != liquidityMinted.length) {
             revert LengthMismatch();
         }
 
         uint256 length;
-        uint256 totalShare = balanceOf(_msgSender());
+        uint256 totalShare = balanceOf(user);
         // Get the lbPair address and the delta between the upper and lower range.
         uint256 delta = depositIds.length;
 
@@ -510,7 +511,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
             activeId = centerId;
             if(isRebalance) { // Withdraw Position For Rebalance
                 IPositionManager.DepositConfig memory depositConfig = positionManager.getDepositConfig(centerId);
-                (uint256 amountXBefore, uint256 amountYBefore, ) = _withdrawFromLB(depositConfig.depositIds, liquidityMinted, share);
+                (uint256 amountXBefore, uint256 amountYBefore, ) = _withdrawFromLB(user, depositConfig.depositIds, liquidityMinted, share);
                 
                 positionManager.burn(tokenId);   
                 _burn(user, share);
@@ -621,7 +622,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
             revert BalanceIsLocked();
         }
 
-        (uint256 amountX, uint256 amountY, uint256[] memory liquidityAmounts) = _withdrawFromLB(depositConfig.depositIds, liquidityMinted, share);
+        (uint256 amountX, uint256 amountY, uint256[] memory liquidityAmounts) = _withdrawFromLB(_msgSender(), depositConfig.depositIds, liquidityMinted, share);
 
         positionManager.update(IPositionManager.UpdateParams({
             tokenId: tokenId,
