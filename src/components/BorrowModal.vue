@@ -176,7 +176,7 @@ export default {
           balance += addedBorrow;
         }
 
-        tokens.push({price: data.price, balance: balance, borrowed: borrowed, debtCoverage: data.debtCoverage});
+        tokens.push({price: data.price ? data.price : 0, balance: balance, borrowed: borrowed, debtCoverage: data.debtCoverage});
       }
 
       for (const [symbol, data] of Object.entries(this.lpAssets)) {
