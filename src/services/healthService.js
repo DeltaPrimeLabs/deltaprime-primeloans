@@ -146,7 +146,7 @@ export default class HealthService {
       if (wombatYYFarmsBalances) {
         for (const farm of config.WOMBAT_YY_FARMS) {
           tokens.push({
-            price: redstonePriceData[farm.lpAssetToken] ? redstonePriceData[farm.lpAssetToken][0].dataPoints[0].value : 0,
+            price: wombatLpAssets[farm.lpAssetToken].price ? wombatLpAssets[farm.lpAssetToken].price : 0,
             balance: parseFloat(wombatYYFarmsBalances[farm.apyKey]),
             borrowed: 0,
             debtCoverage: farm.debtCoverage,

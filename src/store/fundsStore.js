@@ -407,7 +407,11 @@ export default {
       const redstonePriceDataRequest = await fetch(config.redstoneFeedUrl);
       const redstonePriceData = await redstonePriceDataRequest.json();
       Object.keys(assets).forEach(assetSymbol => {
-        assets[assetSymbol].price = redstonePriceData[assetSymbol] ? redstonePriceData[assetSymbol][0].dataPoints[0].value : 0;
+        if (redstonePriceData[assetSymbol]) {
+          assets[assetSymbol].price = redstonePriceData[assetSymbol][0].dataPoints[0].value;
+        } else {
+          assets[assetSymbol].price = 0
+        }
       });
       commit('setAssets', assets);
 
@@ -419,7 +423,7 @@ export default {
           fetch(assets[assetSymbol].priceEndpoint).then(
             async resp => {
               let json = await resp.json();
-              assets[assetSymbol].price = json[assets[assetSymbol].priceJsonField];
+              assets[assetSymbol].price = json.error ? 0 : json[assets[assetSymbol].priceJsonField];
               commit('setAssets', assets);
               rootState.serviceRegistry.priceService.emitRefreshPrices();
             }
@@ -1507,7 +1511,7 @@ export default {
             //TODO: take from API
             const apy = asset.apy ? asset.apy / 100 : 0;
             if (state.assetBalances[symbol]) {
-              yearlyAssetInterest += parseFloat(state.assetBalances[symbol]) * apy * asset.price;
+              yearlyAssetInterest += parseFloat(state.assetBalances[symbol]) * apy * (asset.price ? asset.price : 0);
             }
           }
         }
@@ -2844,8 +2848,8 @@ export default {
       const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
 
       const transaction = await wrappedContract[removeLiquidityRequest.method](
-          removeLiquidityRequest.routerAddress,
-          removeLiquidityRequest.removeLiquidityInput
+        removeLiquidityRequest.routerAddress,
+        removeLiquidityRequest.removeLiquidityInput
       );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
