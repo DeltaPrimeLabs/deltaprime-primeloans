@@ -164,17 +164,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
 
         return amountY;
     }
-
-    /**
-     * @dev Returns the estimated USD value of the user position
-     * @param user User Address
-     * @return Total Value in tokenY amount for the user's position.
-     */
-    function getUserValueInTokenY(address user) external view returns (uint256) {
-        uint256 poolPrice = getPoolPrice();
-        return getUserValueInTokenY(user, poolPrice);
-    }
-
+    
     /**
     * @dev Returns the fully vested locked balance for an account.
     * @dev Full business logic description can be found in Pool::getFullyVestedLockedBalance() docstring

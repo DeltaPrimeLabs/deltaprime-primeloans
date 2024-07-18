@@ -35,6 +35,8 @@ function encodePriceSqrt(reserve1: BigNumberish, reserve0: BigNumberish): BigNum
 }
 const PositionManagerABI = [
     'function balanceOf(address owner) external view returns (uint256)',
+    'function tokenOfOwnerByIndex(address owner, uint256 index) external view returns (uint256)',
+    'function positions(uint256 tokenId) external view returns (uint96 nonce, address operator, uint80 poolId, int24 tickLower, int24 tickUpper, uint128 liquidity, uint256 feeGrowthInside0LastX128, uint256 feeGrowthInside1LastX128, uint128 tokensOwed0, uint128 tokensOwed1)',
     'function createAndInitializePoolIfNecessary(address token0, address token1, uint24 fee, uint160 sqrtPriceX96) external payable returns (address pool)'
 ];
 
@@ -118,6 +120,7 @@ describe("SPrimeUniswapV3", function () {
             VPrimeArtifact,
             []
         ) as VPrimeMock;
+
         await vPrime.initialize(smartLoansFactory.address);
         await prime.transfer(user1, parseEther("100000"));
         await prime.transfer(user2, parseEther("100000"));
@@ -261,7 +264,7 @@ describe("SPrimeUniswapV3", function () {
             });
 
             initialTick = (await pool.slot0()).tick;
-            await sPrime.deposit(initialTick, 10, parseEther("10"), parseEther("10"), true, 5);
+            await sPrime.deposit(initialTick, 100, parseEther("10"), parseEther("10"), true, 500);
 
             await prime.connect(addr2).approve(swapRouter.address, parseEther("0.1"));
             await swapRouter.connect(addr2).exactInputSingle({
@@ -275,217 +278,229 @@ describe("SPrimeUniswapV3", function () {
             });
 
             initialTick = (await pool.slot0()).tick;
-            await sPrime.connect(addr1).deposit(initialTick, 100, 0, 0, true, 5);
+            await sPrime.deposit(initialTick, 100, 0, 0, true, 500);
             const tokenId = await sPrime.userTokenId(addr1.address);
             expect(tokenId).to.not.equal(0);
         });
 
         it("Should receive the position using the balance", async function () {
-            await prime.connect(addr1).approve(sPrime.address, parseEther("1"));
-            await wavax.connect(addr1).approve(sPrime.address, parseEther("1"));
-
+            sPrime = WrapperBuilder.wrap(
+                sPrime.connect(addr1)
+            ).usingSimpleNumericMock({
+                mockSignersCount: 3,
+                dataPoints: MOCK_PRICES,
+            });
             initialTick = (await pool.slot0()).tick;
-            await sPrime.connect(addr1).deposit(initialTick, 10, parseEther("1"), parseEther("1"), true, 5);
+            await sPrime.deposit(initialTick, 100, parseEther("1"), parseEther("1"), true, 500);
 
-            await prime.connect(addr2).approve(sPrime.address, parseEther("1"));
-            await wavax.connect(addr2).approve(sPrime.address, parseEther("1"));
+            await prime.connect(addr2).approve(sPrime.address, parseEther("10"));
+            await wavax.connect(addr2).approve(sPrime.address, parseEther("10"));
 
-            await sPrime.connect(addr2).deposit(initialTick, 10, parseEther("1"), parseEther("1"), true, 5);
+            sPrime = WrapperBuilder.wrap(
+                sPrime.connect(addr2)
+            ).usingSimpleNumericMock({
+                mockSignersCount: 3,
+                dataPoints: MOCK_PRICES,
+            });
+
+            await sPrime.deposit(initialTick, 100, parseEther("10"), parseEther("10"), true, 500);
 
             // Fetching User 1 Status
 
-            let userBalance = await positionManager.balanceOf(addr1.address);
-            let tokenId = await positionManager.tokenOfOwnerByIndex(addr1.address, userBalance - 1);
+            let tokenId = await sPrime.userTokenId(addr1.address);
             let userShare = await positionManager.positions(tokenId);
-            expect(userShare.totalShare).to.gt(0);
+            expect(userShare.liquidity).to.gt(0);
 
-            const oldCenterId = userShare.centerId;
-            userBalance = await positionManager.balanceOf(addr2.address);
-            tokenId = await positionManager.tokenOfOwnerByIndex(addr2.address, userBalance - 1);
+            const oldLiquidity = userShare.liquidity;
+            tokenId = await sPrime.userTokenId(addr2.address);
 
             userShare = await positionManager.positions(tokenId);
-            expect(userShare.totalShare).to.gt(0);
+            expect(userShare.liquidity).to.gt(0);
 
-            await prime.connect(addr2).approve(swapRouter.address, parseEther("0.1"));
-            const path = {
-                pairBinSteps: [25],
-                versions: [2],
-                tokenPath: [prime.address, wavax.address]
-            }
+            await prime.connect(addr2).approve(swapRouter.address, parseEther("1"));
 
-            await swapRouter.connect(addr2).swapExactTokensForTokens(parseEther("0.1"), 0, path, addr2.address, 1880333856);
+            await swapRouter.connect(addr2).exactInputSingle({
+                tokenIn: prime.address,
+                tokenOut: wavax.address,
+                fee: 3000,
+                recipient: addr2.address,
+                amountIn: parseEther("1"),
+                amountOutMinimum: 0,
+                sqrtPriceLimitX96: 0
+            });
+
+            sPrime = WrapperBuilder.wrap(
+                sPrime.connect(addr1)
+            ).usingSimpleNumericMock({
+                mockSignersCount: 3,
+                dataPoints: MOCK_PRICES,
+            });
 
             // Rebalancing User 1's position
             initialTick = (await pool.slot0()).tick;
-            await sPrime.connect(addr1).deposit(initialTick, 10, 0, 0, true, 5);
-            userBalance = await positionManager.balanceOf(addr1.address);
-            tokenId = await positionManager.tokenOfOwnerByIndex(addr1.address, userBalance - 1);
+            await sPrime.deposit(initialTick, 100, 0, 0, true, 500);
+            tokenId = await sPrime.userTokenId(addr1.address);
             userShare = await positionManager.positions(tokenId);
-            expect(userShare.centerId).to.not.equal(oldCenterId);
-            const user1InitialBalance = userBalance;
+            expect(userShare.liquidity).to.not.equal(oldLiquidity);
 
-            // Transfer share from User 2 to User 1
+            sPrime = WrapperBuilder.wrap(
+                sPrime.connect(addr2)
+            ).usingSimpleNumericMock({
+                mockSignersCount: 3,
+                dataPoints: MOCK_PRICES,
+            });
+            // Transfer share from User 2 to User 3
             const user2Balance = await sPrime.balanceOf(addr2.address);
-            await sPrime.connect(addr2).transfer(addr1.address, user2Balance);
-            userBalance = await positionManager.balanceOf(addr1.address);
-            expect(userBalance).to.gt(user1InitialBalance);
-        });
-
-        it("Should receive the position using the token id", async function () {
-            await prime.connect(addr1).approve(sPrime.address, parseEther("1"));
-            await wavax.connect(addr1).approve(sPrime.address, parseEther("1"));
-
-            initialTick = (await pool.slot0()).tick;
-            await sPrime.connect(addr1).deposit(initialTick, 10, parseEther("1"), parseEther("1"), true, 5);
-
-            await prime.connect(addr2).approve(sPrime.address, parseEther("1"));
-            await wavax.connect(addr2).approve(sPrime.address, parseEther("1"));
-
-            initialTick = (await pool.slot0()).tick;
-            await sPrime.connect(addr2).deposit(initialTick, 10, parseEther("1"), parseEther("1"), true, 5);
-
-            // Fetching User 1 Status
-
-            let userBalance = await positionManager.balanceOf(addr1.address);
-            let tokenId = await positionManager.tokenOfOwnerByIndex(addr1.address, userBalance - 1);
-            let userShare = await positionManager.positions(tokenId);
-            expect(userShare.totalShare).to.gt(0);
-
-            const oldCenterId = userShare.centerId;
-            userBalance = await positionManager.balanceOf(addr2.address);
-            tokenId = await positionManager.tokenOfOwnerByIndex(addr2.address, userBalance - 1);
-
-            userShare = await positionManager.positions(tokenId);
-            expect(userShare.totalShare).to.gt(0);
-
-            await prime.connect(addr2).approve(swapRouter.address, parseEther("100"));
-            const path = {
-                pairBinSteps: [25],
-                versions: [2],
-                tokenPath: [prime.address, wavax.address]
-            }
-
-            await swapRouter.connect(addr2).swapExactTokensForTokens(parseEther("100"), 0, path, addr2.address, 1880333856);
-
-            // Rebalancing User 1's position
-            initialTick = (await pool.slot0()).tick;
-            await sPrime.connect(addr1).deposit(initialTick, 100, 0, 0, true, 5);
-            userBalance = await positionManager.balanceOf(addr1.address);
-            tokenId = await positionManager.tokenOfOwnerByIndex(addr1.address, userBalance - 1);
-            userShare = await positionManager.positions(tokenId);
-            expect(userShare.centerId).to.not.equal(oldCenterId);
-            const user1InitialBalance = userBalance;
-
-            // Transfer share from User 2 to User 1
-            userBalance = await positionManager.balanceOf(addr2.address);
-            tokenId = await positionManager.tokenOfOwnerByIndex(addr2.address, userBalance - 1);
-            await sPrime.connect(addr2).transferPosition(addr1.address, tokenId);
-            userBalance = await positionManager.balanceOf(addr1.address);
-            expect(userBalance).to.gt(user1InitialBalance);
+            await sPrime.transfer(addr3.address, user2Balance);
         });
 
         it("Process rebalance after receiving the nft position", async function () {
-            await prime.connect(addr1).approve(sPrime.address, parseEther("1000"));
-            await wavax.connect(addr1).approve(sPrime.address, parseEther("1"));
+            await prime.connect(addr1).approve(sPrime.address, parseEther("10"));
+            await wavax.connect(addr1).approve(sPrime.address, parseEther("10"));
 
             initialTick = (await pool.slot0()).tick;
-            await sPrime.connect(addr1).deposit(initialTick, 1000, parseEther("1000"), parseEther("1"), true, 5);
+            sPrime = WrapperBuilder.wrap(
+                sPrime.connect(addr1)
+            ).usingSimpleNumericMock({
+                mockSignersCount: 3,
+                dataPoints: MOCK_PRICES,
+            });
+            await sPrime.deposit(initialTick, 100, parseEther("10"), parseEther("10"), true, 500);
 
-            await prime.connect(addr2).approve(sPrime.address, parseEther("1000"));
+            await prime.connect(addr2).approve(sPrime.address, parseEther("1"));
             await wavax.connect(addr2).approve(sPrime.address, parseEther("1"));
 
             initialTick = (await pool.slot0()).tick;
-            await sPrime.connect(addr2).deposit(initialTick, 1000, parseEther("1000"), parseEther("1"), true, 5);
+            sPrime = WrapperBuilder.wrap(
+                sPrime.connect(addr2)
+            ).usingSimpleNumericMock({
+                mockSignersCount: 3,
+                dataPoints: MOCK_PRICES,
+            });
+            await sPrime.deposit(initialTick, 100, parseEther("1"), parseEther("1"), true, 500);
 
             // Fetching User 1 Status
 
-            let userBalance = await positionManager.balanceOf(addr1.address);
-            let tokenId = await positionManager.tokenOfOwnerByIndex(addr1.address, userBalance - 1);
+            let tokenId = await sPrime.userTokenId(addr2.address);
             let userShare = await positionManager.positions(tokenId);
-            expect(userShare.totalShare).to.gt(0);
+            expect(userShare.liquidity).to.gt(0);
 
-            const oldCenterId = userShare.centerId;
-            userBalance = await positionManager.balanceOf(addr2.address);
-            tokenId = await positionManager.tokenOfOwnerByIndex(addr2.address, userBalance - 1);
+            const oldLiquidity = userShare.liquidity;
+            
+            tokenId = await sPrime.userTokenId(addr2.address);
 
             userShare = await positionManager.positions(tokenId);
-            expect(userShare.totalShare).to.gt(0);
+            expect(userShare.liquidity).to.gt(0);
 
-            await prime.connect(addr2).approve(swapRouter.address, parseEther("100"));
-            const path = {
-                pairBinSteps: [25],
-                versions: [2],
-                tokenPath: [prime.address, wavax.address]
-            }
-
-            await swapRouter.connect(addr2).swapExactTokensForTokens(parseEther("100"), 0, path, addr2.address, 1880333856);
+            await prime.connect(addr2).approve(swapRouter.address, parseEther("3"));
+            await swapRouter.connect(addr2).exactInputSingle({
+                tokenIn: prime.address,
+                tokenOut: wavax.address,
+                fee: 3000,
+                recipient: addr2.address,
+                amountIn: parseEther("3"),
+                amountOutMinimum: 0,
+                sqrtPriceLimitX96: 0
+            });
 
             // Rebalancing User 1's position
             initialTick = (await pool.slot0()).tick;
-            await sPrime.connect(addr1).deposit(initialTick, 100, 0, 0, false, 5);
-            userBalance = await positionManager.balanceOf(addr1.address);
-            tokenId = await positionManager.tokenOfOwnerByIndex(addr1.address, userBalance - 1);
-            userShare = await positionManager.positions(tokenId);
-            expect(userShare.centerId).to.not.equal(oldCenterId);
-            const user1InitialShare = userShare.totalShare;
 
-            // Transfer share from User 2 to User 1
+            sPrime = WrapperBuilder.wrap(
+                sPrime.connect(addr2)
+            ).usingSimpleNumericMock({
+                mockSignersCount: 3,
+                dataPoints: MOCK_PRICES,
+            });
+
+            await sPrime.deposit(initialTick, 100, 0, 0, true, 500);
+            tokenId = await sPrime.userTokenId(addr2.address);
+            userShare = await positionManager.positions(tokenId);
+            expect(userShare.liquidity).to.not.equal(oldLiquidity);
+            const user1InitialShare = userShare.liquidity;
+
+            // Transfer share from User 2 to User 4
             const user2Balance = await sPrime.balanceOf(addr2.address);
-            await sPrime.connect(addr2).transfer(addr1.address, user2Balance);
+            await sPrime.transfer(addr4.address, user2Balance);
 
             // After receiving the position process the Rebalance
             initialTick = (await pool.slot0()).tick;
-            await sPrime.connect(addr1).deposit(initialTick, 100, 0, 0, false, 5);
-            userBalance = await positionManager.balanceOf(addr1.address);
-            tokenId = await positionManager.tokenOfOwnerByIndex(addr1.address, userBalance - 1);
+            sPrime = WrapperBuilder.wrap(
+                sPrime.connect(addr4)
+            ).usingSimpleNumericMock({
+                mockSignersCount: 3,
+                dataPoints: MOCK_PRICES,
+            });
+
+            await sPrime.deposit(initialTick, 100, 0, 0, true, 500);
+            tokenId = await sPrime.userTokenId(addr4.address);
             userShare = await positionManager.positions(tokenId);
-            expect(userShare.totalShare).to.gt(user1InitialShare);
+            expect(userShare.liquidity).to.equal(user1InitialShare);
+            tokenId = await sPrime.userTokenId(addr2.address);
+            expect(tokenId).to.equal(0);
         });
     });
 
     describe("Withdraw", function () {
         it("Should withdraw correctly using token ID", async function () {
-            await prime.connect(addr1).approve(sPrime.address, parseEther("1000"));
+            await prime.connect(addr1).approve(sPrime.address, parseEther("1"));
             await wavax.connect(addr1).approve(sPrime.address, parseEther("1"));
+            sPrime = WrapperBuilder.wrap(
+                sPrime.connect(addr1)
+            ).usingSimpleNumericMock({
+                mockSignersCount: 3,
+                dataPoints: MOCK_PRICES,
+            });
 
             initialTick = (await pool.slot0()).tick;
-            await sPrime.connect(addr1).deposit(initialTick, 1000, parseEther("1000"), parseEther("1"), true, 5);
+            await sPrime.deposit(initialTick, 1000, parseEther("1"), parseEther("1"), true, 500);
 
-            let userBalance = await positionManager.balanceOf(addr1.address);
-            let tokenId = await positionManager.tokenOfOwnerByIndex(addr1.address, userBalance - 1);
-
-            await sPrime.connect(addr1).withdraw(tokenId);
-            userBalance = await positionManager.balanceOf(addr1.address);
-            expect(userBalance).to.equal(0);
+            let amount = await sPrime.balanceOf(addr1.address);
+            
+            await sPrime.withdraw(amount);
+            let tokenId = await sPrime.userTokenId(addr1.address);
+            expect(tokenId).to.equal(0);
         });
 
         it("Should receive different amount because of token swap", async function () {
-            await prime.connect(addr2).approve(sPrime.address, parseEther("10000"));
-            await wavax.connect(addr2).approve(sPrime.address, parseEther("10"));
+            await prime.connect(addr2).approve(sPrime.address, parseEther("100"));
+            await wavax.connect(addr2).approve(sPrime.address, parseEther("100"));
 
             initialTick = (await pool.slot0()).tick;
-            await sPrime.connect(addr2).deposit(initialTick, 1000, parseEther("10000"), parseEther("10"), true, 5);
+            sPrime = WrapperBuilder.wrap(
+                sPrime.connect(addr2)
+            ).usingSimpleNumericMock({
+                mockSignersCount: 3,
+                dataPoints: MOCK_PRICES,
+            });
+            await sPrime.deposit(initialTick, 1000, parseEther("10"), parseEther("10"), true, 500);
 
 
-            await prime.connect(addr1).approve(sPrime.address, parseEther("2000"));
-            await wavax.connect(addr1).approve(sPrime.address, parseEther("2"));
+            await prime.connect(addr1).approve(sPrime.address, parseEther("200"));
+            await wavax.connect(addr1).approve(sPrime.address, parseEther("200"));
 
             initialTick = (await pool.slot0()).tick;
-            await sPrime.connect(addr1).deposit(initialTick, 1000, parseEther("100"), parseEther("0.1"), true, 5);
-            let userBalance = await positionManager.balanceOf(addr1.address);
-            let tokenId = await positionManager.tokenOfOwnerByIndex(addr1.address, userBalance - 1);
+            sPrime = WrapperBuilder.wrap(
+                sPrime.connect(addr1)
+            ).usingSimpleNumericMock({
+                mockSignersCount: 3,
+                dataPoints: MOCK_PRICES,
+            });
+            await sPrime.deposit(initialTick, 1000, parseEther("10"), parseEther("0.1"), true, 500);
+            
+            let tokenId = await sPrime.userTokenId(addr1.address);
 
             let userShare = await positionManager.positions(tokenId);
-            expect(userShare.totalShare).to.gt(0);
+            expect(userShare.liquidity).to.gt(0);
             initialTick = (await pool.slot0()).tick;
-            await sPrime.connect(addr1).deposit(initialTick, 1000, parseEther("1"), parseEther("0.05"), true, 5);
-            userBalance = await positionManager.balanceOf(addr1.address);
-            tokenId = await positionManager.tokenOfOwnerByIndex(addr1.address, userBalance - 1);
+            await sPrime.deposit(initialTick, 1000, parseEther("1"), parseEther("0.05"), true, 500);
+            tokenId = await sPrime.userTokenId(addr1.address);
             userShare = await positionManager.positions(tokenId);
-            expect(userShare.totalShare).to.gt(0);
+            expect(userShare.liquidity).to.gt(0);
             const initialPrimeBalance = await prime.balanceOf(addr1.address);
             const initialWAvaxBalance = await wavax.balanceOf(addr1.address);
-            await sPrime.connect(addr1).withdraw(tokenId);
+            let amount = await sPrime.balanceOf(addr1.address);
+            await sPrime.withdraw(amount);
             const afterPrimeBalance = await prime.balanceOf(addr1.address);
             const afterWAvaxBalance = await wavax.balanceOf(addr1.address);
 
@@ -496,13 +511,19 @@ describe("SPrimeUniswapV3", function () {
         });
 
         it("Should fail if trys to withdraw more shares than the balance", async function () {
-            await prime.connect(addr1).approve(sPrime.address, parseEther("1000"));
+            await prime.connect(addr1).approve(sPrime.address, parseEther("1"));
             await wavax.connect(addr1).approve(sPrime.address, parseEther("1"));
 
             initialTick = (await pool.slot0()).tick;
-            await sPrime.connect(addr1).deposit(initialTick, 1000, parseEther("1000"), parseEther("1"), true, 5);
+            sPrime = WrapperBuilder.wrap(
+                sPrime.connect(addr1)
+            ).usingSimpleNumericMock({
+                mockSignersCount: 3,
+                dataPoints: MOCK_PRICES,
+            });
+            await sPrime.deposit(initialTick, 1000, parseEther("1"), parseEther("1"), true, 500);
 
-            await expect(sPrime.connect(addr1).withdraw(parseEther("1000"))).to.be.revertedWith("Insufficient Balance");
+            await expect(sPrime.withdraw(parseEther("1000"))).to.be.revertedWith("BalanceLocked");
         });
     });
 });

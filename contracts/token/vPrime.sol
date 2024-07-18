@@ -30,8 +30,10 @@ contract vPrime is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable {
     /* ========== INITIALIZER ========== */
 
     function initialize(IBorrowersRegistry _borrowersRegistry) external initializer {
-        borrowersRegistry = _borrowersRegistry;
         __PendingOwnable_init();
+        __ReentrancyGuard_init();
+
+        borrowersRegistry = _borrowersRegistry;
     }
 
 
