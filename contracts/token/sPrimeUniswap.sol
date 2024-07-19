@@ -163,11 +163,8 @@ contract sPrimeUniswap is
         if (tokenId == 0) {
             revert NoPosition();
         }
-        return abi.decode(proxyCalldataView(
-            implementation,
-            abi.encodeWithSignature
-            ("tickInRange(uint256)", tokenId)
-        ), (bool));
+        (bool success, bytes memory result) = implementation.staticcall(abi.encodeWithSignature("tickInRange(uint256)", tokenId));
+        return abi.decode(result, (bool));
     }
 
     /**
@@ -180,11 +177,18 @@ contract sPrimeUniswap is
         address user,
         uint256 poolPrice
     ) public view returns (uint256 amountY) {
-        return abi.decode(proxyCalldataView(
-            implementation,
-            abi.encodeWithSignature
-            ("getUserValueInTokenY(address,uint256)", user, poolPrice)
-        ), (uint256));
+        (bool success, bytes memory result) = implementation.staticcall(abi.encodeWithSignature("getUserValueInTokenY(address,uint256)", user, poolPrice));
+        amountY = abi.decode(result, (uint256));
+    }
+
+    /**
+     * @dev Returns the estimated USD value of the user position
+     * @param user User Address
+     * @return Total Value in tokenY amount for the user's position.
+     */
+    function getUserValueInTokenY(address user) external view returns (uint256) {
+        uint256 poolPrice = getPoolPrice();
+        return getUserValueInTokenY(user, poolPrice);
     }
 
     /**

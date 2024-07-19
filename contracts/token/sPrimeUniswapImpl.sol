@@ -12,9 +12,6 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 contract sPrimeUniswapImpl
 {
     using PositionValue for INonfungiblePositionManager;
-    // Constants declaration
-    uint256 public constant PRECISION = 20;
-
     address public sPrime;
 
     constructor(address sPrimeUniswap_) {
@@ -64,15 +61,13 @@ contract sPrimeUniswapImpl
 
         if(tokenId > 0) {
             uint256 price = poolPrice;
-            
-            if (token0 == tokenX) {
-                price = 1 ** (8 + PRECISION) / price; // 16 - 8 + PRECISION
-            } else {
-                price = price * 10 ** (PRECISION - 8);
-            }
 
-            price = FullMath.mulDiv(price, 10 ** token1.decimals(), 10 ** token0.decimals());
-            uint160 sqrtRatioX96 = uint160((UniswapV3IntegrationHelper.sqrt(price) * 2 ** 96) / 10 ** (PRECISION / 2));
+            if (token0 != tokenX) {
+                price = 10 ** (8 + token1.decimals()) / price;
+            } else {
+                price = FullMath.mulDiv(price, 10 ** token1.decimals(), 10 ** 8);
+            }
+            uint160 sqrtRatioX96 = uint160((UniswapV3IntegrationHelper.sqrt(price) * 2 ** 96) / 10 ** (token1.decimals() / 2));
             uint256 amountX;
             (amountX, amountY) = positionManager.total(
                 tokenId,
