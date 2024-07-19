@@ -1778,6 +1778,10 @@ export default {
           break;
         case 'WOMBAT_LP':
           price = state.wombatLpAssets[fundRequest.asset].price;
+          break;
+        case 'GMX_V2':
+          price = state.gmxV2Assets[fundRequest.asset].price;
+          break;
       }
 
       const depositAmountUSD = Number(depositAmount) * price;
@@ -1801,6 +1805,10 @@ export default {
           break;
         case 'WOMBAT_LP':
           assetBalanceBeforeDeposit = state.wombatLpBalances[fundRequest.asset];
+          break;
+        case 'GMX_V2':
+          assetBalanceBeforeDeposit = state.gmxV2Balances[fundRequest.asset];
+          break;
       }
       const assetBalanceAfterDeposit = Number(assetBalanceBeforeDeposit) + Number(depositAmount);
 
@@ -1936,6 +1944,10 @@ export default {
           break;
         case 'PENPIE_LP':
           price = state.penpieLpAssets[withdrawRequest.asset].price;
+          break;
+        case 'GMX_V2':
+          price = state.gmxV2Assets[withdrawRequest.asset].price;
+          break;
       }
       const withdrawAmountUSD = Number(withdrawAmount) * price;
 
@@ -1955,6 +1967,10 @@ export default {
           break;
         case 'PENPIE_LP':
           assetBalanceBeforeWithdraw = state.penpieLpBalances[withdrawRequest.asset].price;
+          break;
+        case 'GMX_V2':
+          assetBalanceBeforeWithdraw = state.gmxV2Balances[withdrawRequest.asset];
+          break;
       }
       const assetBalanceAfterWithdraw = Number(assetBalanceBeforeWithdraw) - Number(withdrawAmount);
       const totalCollateralAfterTransaction = state.fullLoanStatus.totalValue - state.fullLoanStatus.debt - withdrawAmountUSD;

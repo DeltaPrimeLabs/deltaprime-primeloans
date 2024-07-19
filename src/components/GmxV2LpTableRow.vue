@@ -701,7 +701,7 @@ export default {
       modalInstance.sourceAsset = initSourceAsset;
       modalInstance.sourceAssetBalance = this.assetBalances[initSourceAsset];
       modalInstance.assets = {...this.assets};
-      modalInstance.sourceAssets = [this.lpToken.shortToken, this.lpToken.longToken];
+      modalInstance.sourceAssets = this.lpToken.isGMXPlus ? [this.lpToken.longToken] : [this.lpToken.shortToken, this.lpToken.longToken];
       modalInstance.targetAssetsConfig = config.GMX_V2_ASSETS_CONFIG;
       modalInstance.targetAssets = [this.lpToken.symbol];
       modalInstance.assetBalances = {...this.assetBalances, ...this.gmxV2Balances};
