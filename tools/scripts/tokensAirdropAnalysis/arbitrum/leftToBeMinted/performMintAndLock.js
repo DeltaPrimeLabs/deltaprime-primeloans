@@ -159,7 +159,7 @@ async function performAirdrop(data) {
 
     let totalWethAmount = 4.575433664526127;
     let totalPrimeAmount = 12068.564102557997;
-    const tickDesired = -78724;
+    const tickDesired = -78762;
     const tickSlippage = 100;
     const sumOfDollarValuesAcrossAllUsers = Object.values(data).reduce((acc, currentValue) => acc + currentValue, 0);
     console.log(`Total dollar value: ${sumOfDollarValuesAcrossAllUsers}`)
@@ -202,7 +202,7 @@ async function performAirdrop(data) {
             let primeInWei = ethers.utils.parseUnits(primeAmount, 18);
             let wethInWei = ethers.utils.parseUnits(wethAmount, 18);
 
-            let txHash = (await sPrimeContract.mintForUserAndLock(airdropAddress, percentForLocks, lockPeriods, primeInWei, wethInWei, tickDesired, tickSlippage, {gasLimit: 10000000})).hash;
+            let txHash = (await sPrimeContract.mintForUserAndLock(userAddress, percentForLocks, lockPeriods, primeInWei, wethInWei, tickDesired, tickSlippage, {gasLimit: 10000000})).hash;
             const transaction = await provider.waitForTransaction(txHash, 1, 120_000);
             if (transaction.status === 0) {
                 failedUsers.push({"address": userAddress, "sPrimeSum": sPrimeDollarValue, "primeAmount": primeAmount, "wethAmount": wethAmount, "txHash": txHash});
@@ -215,6 +215,7 @@ async function performAirdrop(data) {
             }
         } catch (error) {
             console.log(`Error minting SPrime for ${userAddress} at counter ${counter}`);
+            console.log(error);
             writeJSON(distributionHistoryFileName, distributionHistory);
             writeJSON(failedUsersFileName, failedUsers);
         }
