@@ -9,6 +9,11 @@
             by <a v-on:click="openProfileModal"><b>GMX V2</b></a>
           </div>
         </div>
+        <div class="sprime-early-access">
+          <img src="src/assets/icons/icon_circle_star.svg" v-if="lpToken.minSPrimeToUnlock"
+               v-tooltip="{content: 'Early Access is available exclusively for users holding $100 or more in $sPRIME.', classes: 'info-tooltip long'}"/>
+          <span v-else class="early-access-placeholder">&nbsp;</span>
+        </div>
       </div>
 
       <div class="table__cell table__cell--double-value balance">
@@ -89,21 +94,21 @@
           :config="addActionsConfig"
           v-if="addActionsConfig"
           v-on:iconButtonClick="actionClick"
-          :disabled="disableAllButtons || !healthLoaded || !assets">
+          :disabled="disableAllButtons || !healthLoaded || !assets || !hasEarlyAccess">
         </IconButtonMenuBeta>
         <IconButtonMenuBeta
           class="actions__icon-button last"
           :config="removeActionsConfig"
           v-if="removeActionsConfig"
           v-on:iconButtonClick="actionClick"
-          :disabled="disableAllButtons || !healthLoaded || !assets">
+          :disabled="disableAllButtons || !healthLoaded || !assets || !hasEarlyAccess">
         </IconButtonMenuBeta>
         <IconButtonMenuBeta
           class="actions__icon-button"
           v-if="moreActionsConfig"
           :config="moreActionsConfig"
           v-on:iconButtonClick="actionClick"
-          :disabled="disableAllButtons || !healthLoaded || !assets">
+          :disabled="disableAllButtons || !healthLoaded || !assets || !hasEarlyAccess">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -220,6 +225,7 @@ export default {
     this.watchLtipMaxBoostUpdate();
     this.fetchHistoricalPrices();
     this.watchActionDisabling();
+    this.watchSPrime();
   },
 
   data() {
@@ -254,6 +260,7 @@ export default {
       selectedChart: 'PRICE',
       chain: null,
       isActionDisabledRecord: {},
+      hasEarlyAccess: null
     };
   },
 
@@ -294,6 +301,7 @@ export default {
       'healthService',
       'ltipService',
       'globalActionsDisableService',
+      'sPrimeService',
     ]),
     ...mapState('stakeStore', ['farms']),
 
@@ -697,7 +705,7 @@ export default {
       modalInstance.title = 'Create GMX V2 position';
       modalInstance.swapDex = 'GmxV2';
       modalInstance.swapDebtMode = false;
-      modalInstance.slippageMargin = 0.1;
+      modalInstance.slippageMargin = 0.5;
       modalInstance.sourceAsset = initSourceAsset;
       modalInstance.sourceAssetBalance = this.assetBalances[initSourceAsset];
       modalInstance.assets = {...this.assets};
@@ -816,7 +824,7 @@ export default {
       modalInstance.title = 'Unwind GMX V2 position';
       modalInstance.swapDex = 'GmxV2';
       modalInstance.dexOptions = ['GmxV2'];
-      modalInstance.userSlippage = 0.1;
+      modalInstance.userSlippage = 0.5;
       modalInstance.sourceAsset = this.lpToken.symbol;
       modalInstance.sourceAssetBalance = this.gmxV2Balances[this.lpToken.symbol];
       modalInstance.sourceAssetsConfig = config.GMX_V2_ASSETS_CONFIG;
@@ -1135,6 +1143,16 @@ export default {
           this.setupRemoveActionsConfiguration();
           this.setupMoreActionsConfiguration();
         })
+    },
+
+    watchSPrime() {
+      if (this.lpToken.minSPrimeToUnlock) {
+        this.sPrimeService.observeSPrimeValue().subscribe(value => {
+          this.hasEarlyAccess = value >= this.lpToken.minSPrimeToUnlock;
+        })
+      } else {
+        this.hasEarlyAccess = true;
+      }
     },
   },
 };
