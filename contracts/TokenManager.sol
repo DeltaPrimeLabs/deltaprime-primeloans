@@ -299,8 +299,6 @@ contract TokenManager is OwnableUpgradeable {
     }
 
     function increasePendingExposure(bytes32 assetIdentifier, address user, uint256 amount) public onlyPrimeAccountOrOwner {
-        require(pendingUserExposure[user][assetIdentifier] == 0, "Pending Tx");
-
         pendingUserExposure[user][assetIdentifier] += amount;
         pendingProtocolExposure[assetIdentifier] += amount;
         
