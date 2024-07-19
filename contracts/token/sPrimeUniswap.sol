@@ -158,13 +158,15 @@ contract sPrimeUniswap is
      * @param user User Address.
      * @return status tick status
      */
-    function tickInRange(address user) public view returns (bool) {
+    function tickInRange(address user) public view returns (bool status) {
         uint256 tokenId = userTokenId[user];
         if (tokenId == 0) {
             revert NoPosition();
         }
         (bool success, bytes memory result) = implementation.staticcall(abi.encodeWithSignature("tickInRange(uint256)", tokenId));
-        return abi.decode(result, (bool));
+        if (success) {
+            status = abi.decode(result, (bool));
+        }
     }
 
     /**
@@ -178,7 +180,9 @@ contract sPrimeUniswap is
         uint256 poolPrice
     ) public view returns (uint256 amountY) {
         (bool success, bytes memory result) = implementation.staticcall(abi.encodeWithSignature("getUserValueInTokenY(address,uint256)", user, poolPrice));
-        amountY = abi.decode(result, (uint256));
+        if (success) {
+            amountY = abi.decode(result, (uint256));
+        }
     }
 
     /**
