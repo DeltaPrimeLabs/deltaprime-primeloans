@@ -3459,6 +3459,7 @@ export default {
         [addLiquidityRequest.sourceAsset, addLiquidityRequest.targetAsset]
       ]);
 
+
       const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
 
       let executionFeeWei = toWei(addLiquidityRequest.executionFee.toFixed(18));
@@ -3472,10 +3473,13 @@ export default {
 
       let minGmAmount = parseUnits(addLiquidityRequest.minGmAmount.toFixed(targetDecimals), targetDecimals);
 
+      console.log('minTargetTokenAmount', minTargetTokenAmount);
+      console.log('minShortTokenAmount', minShortTokenAmount);
+      console.log('minLongTokenAmount', minLongTokenAmount);
 
       const transaction = await wrappedContract[addLiquidityRequest.method](sourceAmount, minGmAmount, executionFeeWei, {value: executionFeeWei, gasLimit: 10000000});
 
-      let tx = await awaitConfirmation(transaction, provider, 'add liquidity to GMXV2+');
+      const tx = await awaitConfirmation(transaction, provider, 'add liquidity to GMXV2+');
 
     },
 
@@ -3494,19 +3498,21 @@ export default {
 
       const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
 
-      let executionFeeWei = toWei(removeLiquidityRequest.executionFee.toFixed(18));
+      const executionFeeWei = toWei(removeLiquidityRequest.executionFee.toFixed(18));
 
       console.log(wrappedContract);
 
-      let sourceDecimals = config.ASSETS_CONFIG[removeLiquidityRequest.sourceAsset].decimals;
-      let sourceAmount = parseUnits(parseFloat(removeLiquidityRequest.sourceAmount).toFixed(sourceDecimals), sourceDecimals);
+      const sourceDecimals = config.GMX_V2_ASSETS_CONFIG[removeLiquidityRequest.sourceAsset].decimals;
+      const sourceAmount = parseUnits(parseFloat(removeLiquidityRequest.sourceAmount).toFixed(sourceDecimals), sourceDecimals);
 
-      let targetDecimals = config.GMX_V2_ASSETS_CONFIG[removeLiquidityRequest.targetAsset].decimals;
+      const targetDecimals = config.ASSETS_CONFIG[removeLiquidityRequest.targetAsset].decimals;
 
-      let minGmAmount = parseUnits(removeLiquidityRequest.minGmAmount.toFixed(targetDecimals), targetDecimals);
+      const minTargetTokenAmount = parseUnits(parseFloat(removeLiquidityRequest.targetAmount).toFixed(targetDecimals), targetDecimals);
+      const minLongTokenAmount = minTargetTokenAmount.div(2);
+      const minShortTokenAmount = minTargetTokenAmount.div(2);
 
 
-      const transaction = await wrappedContract[removeLiquidityRequest.method](sourceAmount, minGmAmount, executionFeeWei, {value: executionFeeWei, gasLimit: 10000000});
+      const transaction = await wrappedContract[removeLiquidityRequest.method](sourceAmount, minLongTokenAmount, minShortTokenAmount, executionFeeWei, {value: executionFeeWei, gasLimit: 10000000});
 
       let tx = await awaitConfirmation(transaction, provider, 'add liquidity to GMXV2+');
 

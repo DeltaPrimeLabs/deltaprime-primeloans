@@ -340,6 +340,7 @@ export default {
       'addLiquidityGmxV2',
       'removeLiquidityGmxV2',
       'addLiquidityGmxPlus',
+      'removeLiquidityGmxPlus'
     ]),
     setupAddActionsConfiguration() {
       this.addActionsConfig =
@@ -530,20 +531,32 @@ export default {
 
         if (config.GMX_V2_ASSETS_CONFIG[sourceAsset]) {
           console.log('getWithdrawalAmountOut');
+          if (this.lpToken.isGMXPlus) {
+            marketProps.shortToken = JSON.parse(JSON.stringify(marketProps.longToken));
+            marketProps.indexToken = JSON.parse(JSON.stringify(marketProps.longToken));
+          }
           let [longTokenOut, shortTokenOut] = await depositReader.getWithdrawalAmountOut(
             config.gmxV2DataStoreAddress, marketProps, prices, amountIn, this.nullAddress
           );
           console.log(longTokenOut);
           console.log(shortTokenOut);
 
-          return [longTokenOut, shortTokenOut];
+          if (!this.lpToken.isGMXPlus) {
+            return [longTokenOut, shortTokenOut];
+          } else {
+            return [longTokenOut.add(shortTokenOut)];
+          }
         } else {
-          console.log('getDepositAmountOut');
+          if (this.lpToken.isGMXPlus) {
+            marketProps.shortToken = JSON.parse(JSON.stringify(marketProps.longToken));
+            marketProps.indexToken = JSON.parse(JSON.stringify(marketProps.longToken));
+          }
           let isLong = this.lpToken.longToken === sourceAsset;
+          console.log('getDepositAmountOut');
           console.log('isLong', isLong);
-          console.log('marketProps', marketProps);
           console.log('amountIn', amountIn);
           console.log('prices', prices);
+          console.log('marketProps', marketProps);
           let amountOut = await depositReader.getDepositAmountOut(
             config.gmxV2DataStoreAddress, marketProps, prices, isLong ? amountIn : 0, isLong ? 0 : amountIn, this.nullAddress
           );
@@ -809,7 +822,7 @@ export default {
       modalInstance.sourceAssetsConfig = config.GMX_V2_ASSETS_CONFIG;
       modalInstance.assets = this.assets;
       modalInstance.sourceAssets = {GmxV2: [this.lpToken.symbol]};
-      modalInstance.targetAssets = {GmxV2: [this.lpToken.longToken, this.lpToken.shortToken]};
+      modalInstance.targetAssets = this.lpToken.isGMXPlus ? {GmxV2: [this.lpToken.longToken]} : {GmxV2: [this.lpToken.longToken, this.lpToken.shortToken]};
       modalInstance.assetBalances = {...this.assetBalances, ...this.gmxV2Balances};
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
@@ -867,26 +880,50 @@ export default {
 
       modalInstance.initiate();
 
-      modalInstance.$on('SWAP_TO_MULTIPLE', swapEvent => {
+      if (!this.lpToken.isGMXPlus) {
 
-        const removeLiquidityRequest = {
-          gmToken: swapEvent.sourceAsset,
-          longToken: swapEvent.targetAssets[0],
-          shortToken: swapEvent.targetAssets[1],
-          gmAmount: swapEvent.sourceAmount,
-          minLongAmount: swapEvent.targetAmounts[0],
-          minShortAmount: swapEvent.targetAmounts[1],
-          executionFee: executionFee,
-          method: `withdraw${capitalize(this.lpToken.longToken)}${capitalize(this.lpToken.shortToken)}GmxV2`
-        };
+        modalInstance.$on('SWAP_TO_MULTIPLE', swapEvent => {
 
-        this.handleTransaction(this.removeLiquidityGmxV2, {removeLiquidityRequest: removeLiquidityRequest}, () => {
-          this.$forceUpdate();
-        }, (error) => {
-          this.handleTransactionError(error);
-        }).then(() => {
+          const removeLiquidityRequest = {
+            gmToken: swapEvent.sourceAsset,
+            longToken: swapEvent.targetAssets[0],
+            shortToken: swapEvent.targetAssets[1],
+            gmAmount: swapEvent.sourceAmount,
+            minLongAmount: swapEvent.targetAmounts[0],
+            minShortAmount: swapEvent.targetAmounts[1],
+            executionFee: executionFee,
+            method: `withdraw${capitalize(this.lpToken.longToken)}${capitalize(this.lpToken.shortToken)}GmxV2`
+          };
+
+          this.handleTransaction(this.removeLiquidityGmxV2, {removeLiquidityRequest: removeLiquidityRequest}, () => {
+            this.$forceUpdate();
+          }, (error) => {
+            this.handleTransactionError(error);
+          }).then(() => {
+          });
         });
-      });
+      } else {
+        modalInstance.$on('SWAP_TO_MULTIPLE', swapEvent => {
+          console.log(swapEvent);
+
+          const removeLiquidityRequest = {
+            sourceAsset: swapEvent.sourceAsset,
+            targetAsset: swapEvent.targetAssets[0],
+            executionFee: executionFee,
+            sourceAmount: swapEvent.sourceAmount,
+            targetAmount: swapEvent.targetAmounts[0],
+            method: 'withdrawAvaxGmxV2Plus'
+          }
+
+
+          this.handleTransaction(this.removeLiquidityGmxPlus, {removeLiquidityRequest: removeLiquidityRequest}, () => {
+            this.$forceUpdate();
+          }, (error) => {
+            this.handleTransactionError(error);
+          }).then(() => {
+          });
+        })
+      }
     },
 
     openProfileModal() {
