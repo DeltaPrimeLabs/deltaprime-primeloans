@@ -3536,15 +3536,15 @@ export default {
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
 
-      let tx = await awaitConfirmation(transaction, provider, 'remove liquidity from GMXV2+');
+      let tx = await awaitConfirmation(transaction, provider, 'add liquidity to GMXV2+');
 
-      const gmBalanceAfterTransaction = Number(state.gmxV2Balances[removeLiquidityRequest.gmToken]) - Number(removeLiquidityRequest.sourceAmount);
+      const gmBalanceAfterTransaction = Number(state.gmxV2Balances[removeLiquidityRequest.sourceAsset]) - Number(removeLiquidityRequest.sourceAmount);
       const targetAssetBalanceAfterTransaction = Number(state.assetBalances[removeLiquidityRequest.targetAsset]) + Number(removeLiquidityRequest.targetAmount);
 
       rootState.serviceRegistry.assetBalancesExternalUpdateService
-        .emitExternalAssetBalanceUpdate(removeLiquidityRequest.gmToken, gmBalanceAfterTransaction, false, false);
+        .emitExternalAssetBalanceUpdate(removeLiquidityRequest.sourceAsset, gmBalanceAfterTransaction, false, false);
       rootState.serviceRegistry.assetBalancesExternalUpdateService
-        .emitExternalAssetBalanceUpdate(removeLiquidityRequest.longToken, targetAssetBalanceAfterTransaction, false, false);
+        .emitExternalAssetBalanceUpdate(removeLiquidityRequest.targetAsset, targetAssetBalanceAfterTransaction, false, false);
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {
