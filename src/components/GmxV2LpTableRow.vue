@@ -797,7 +797,7 @@ export default {
             sourceAmount: swapEvent.sourceAmount,
             minGmAmount: swapEvent.targetAmount,
             executionFee: executionFee,
-            method: 'depositAvaxGmxV2Plus'
+            method: this.lpToken.addMethod
           };
 
           this.handleTransaction(this.addLiquidityGmxPlus, {addLiquidityRequest: addLiquidityRequest}, () => {
@@ -912,7 +912,7 @@ export default {
             executionFee: executionFee,
             sourceAmount: swapEvent.sourceAmount,
             targetAmount: swapEvent.targetAmounts[0],
-            method: 'withdrawAvaxGmxV2Plus'
+            method: this.lpToken.removeMethod
           }
 
 
