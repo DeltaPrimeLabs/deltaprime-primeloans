@@ -38,6 +38,7 @@ import "./facets/arbitrum/ILevelFinanceFacet.sol";
 import "./facets/arbitrum/IPenpieFacet.sol";
 import "./facets/arbitrum/ILTIPFacet.sol";
 import "./facets/avalanche/IWombatFacet.sol";
+import "./facets/avalanche/IYieldYakWombatFacet.sol";
 
 interface SmartLoanGigaChadInterface is
     IGMDFacet,
@@ -76,5 +77,6 @@ interface SmartLoanGigaChadInterface is
     IGmxV2Facet,
     IGmxV2PlusFacet,
     IBalancerV2Facet,
-    IGogoPoolFacet
+    IGogoPoolFacet,
+    IYieldYakWombatFacet
 {}

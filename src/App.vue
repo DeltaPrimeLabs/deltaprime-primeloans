@@ -50,10 +50,6 @@
       </a>
     </Banner>
 
-    <!--    <Banner v-if="showPrimeAccountBanner" :closable="true">
-          GM positions temporarily illiquid. Please see Discord before redeeming GM
-        </Banner>-->
-
     <Banner v-if="showArbitrumDepositorBanner" background="green-accent" :closable="true">
       Liquidity mining event is updated! Shortly after a pool hits $1M the next pool opens up.
       <a class="banner-link" href="https://medium.com/@Delta_Prime/relaunching-deltaprime-on-arbitrum-ac43bdd91ed5"
@@ -517,6 +513,8 @@ export default {
         this.globalActionsDisableService.disableActionGlobally('WRAP');
         this.globalActionsDisableService.disableActionGlobally('BRIDGE_COLLATERAL');
         this.globalActionsDisableService.disableActionGlobally('DEPOSIT');
+        this.globalActionsDisableService.disableActionGlobally('DEPOSIT_AND_STAKE');
+        this.globalActionsDisableService.disableActionGlobally('MIGRATE');
         this.globalActionsDisableService.disableActionGlobally('BRIDGE');
         this.globalActionsDisableService.disableActionGlobally('BRIDGE_DEPOSIT');
         this.globalActionsDisableService.disableActionGlobally('SWAP_DEPOSIT');

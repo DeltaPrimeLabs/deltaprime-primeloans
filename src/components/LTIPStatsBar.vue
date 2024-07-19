@@ -93,7 +93,7 @@
 
 import BarGaugeBeta from './BarGaugeBeta.vue';
 import InfoIcon from './InfoIcon.vue';
-import LTIP_EPOCH_5_TOTAL from "../data/arbitrum/ltip/LTIP_EPOCH_5_TOTAL.json";
+import LTIP_EPOCH_6_TOTAL from "../data/arbitrum/ltip/LTIP_EPOCH_6_TOTAL.json";
 import {fromWei} from "../utils/calculate";
 import {mapState} from "vuex";
 import {wrapContract} from "../utils/blockchain";
@@ -167,7 +167,7 @@ export default {
         }
 
         let alreadyCollected = 0;
-        alreadyCollected += getRecord(LTIP_EPOCH_5_TOTAL, this.smartLoanContract.address);
+        alreadyCollected += getRecord(LTIP_EPOCH_6_TOTAL, this.smartLoanContract.address);
 
         if (arbCollected) this.collectedBonus = Math.max(arbCollected - alreadyCollected, 0);
       });

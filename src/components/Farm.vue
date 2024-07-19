@@ -18,6 +18,7 @@
                       :assetSymbol="asset[0]"
                       :farmingConfig="asset[1]">
     </StakingAssetBeta>
+    <StakingAssetBetaWombatYY v-for="farm in filteredWombatYYFarms" :farm="farm" v-bind:key="farm.apyKey"></StakingAssetBetaWombatYY>
   </div>
 </template>
 
@@ -27,10 +28,11 @@ import config from '../config';
 import AssetFilter from './AssetFilter';
 import {mapActions, mapState} from 'vuex';
 import NameValueBadgeBeta from './NameValueBadgeBeta';
+import StakingAssetBetaWombatYY from "./StakingAssetBetaWombatYY.vue";
 
 export default {
   name: 'Farm',
-  components: {StakingAssetBeta, AssetFilter, NameValueBadgeBeta},
+  components: {StakingAssetBetaWombatYY, StakingAssetBeta, AssetFilter, NameValueBadgeBeta},
   computed: {
     ...mapState('fundsStore', ['fullLoanStatus']),
     filteredStakedAssets() {
@@ -42,6 +44,9 @@ export default {
             )
           )
       );
+    },
+    filteredWombatYYFarms() {
+      return config.WOMBAT_YY_FARMS.filter(farm => this.selectedAssets.includes(farm.assetToken));
     },
   },
   mounted() {
@@ -63,7 +68,7 @@ export default {
       this.assetFilterGroups = [
         {
           label: 'Filter by assets',
-          options: Object.entries(config.FARMED_TOKENS_CONFIG).filter(([,value]) => !value[0].isTokenLp).map(el => el[0]),
+          options: [...Object.entries(config.FARMED_TOKENS_CONFIG).filter(([,value]) => !value[0].isTokenLp).map(el => el[0]), 'ggAVAX'],
           key: 'asset'
         },
       ];

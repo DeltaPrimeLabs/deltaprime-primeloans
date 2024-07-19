@@ -143,6 +143,7 @@ export default {
     penpieLpBalances: {},
     wombatLpAssets: {},
     wombatLpBalances: {},
+    wombatYYFarmsBalances: {},
     traderJoeV2LpAssets: {},
     balancerLpAssets: {},
     balancerLpBalances: {},
@@ -323,6 +324,22 @@ export default {
               balance: balance ? balance : 0,
               borrowed: 0,
               debtCoverage: data.debtCoverage
+            });
+          }
+        }
+      }
+
+      if (config.WOMBAT_YY_FARMS) {
+        for (const farm of config.WOMBAT_YY_FARMS) {
+          if (this.wombatLpAssets && this.wombatYYFarmsBalances) {
+            const symbol = farm.apyKey
+            let balance = parseFloat(this.wombatYYFarmsBalances[symbol]);
+
+            tokens.push({
+              price: this.wombatLpAssets[farm.lpAssetToken].price,
+              balance: balance ? balance : 0,
+              borrowed: 0,
+              debtCoverage: farm.debtCoverage
             });
           }
         }
