@@ -74,7 +74,7 @@
       Boost will refill on Monday. Users who don’t withdraw will be compensated.
     </Banner>
     <Banner v-if="showAvalanchePrimeAccountBanner" background="green" :closable="true">
-      GM+ launches Saturday 15:00 CEST
+      GM+ pools are live!
     </Banner>
     <div class="content">
       <div class="top-bar">
