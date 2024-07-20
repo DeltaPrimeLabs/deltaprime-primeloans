@@ -141,7 +141,7 @@ export async function calculateGmxV2ExecutionFee(
   gasPrice += gmxV2GasPricePremium;
 
   //TODO: decrease the multiplicator
-  const deltaPrimeMultiplicator = 1.5;
+  const deltaPrimeMultiplicator = 2;
 
   return deltaPrimeMultiplicator * adjustedGasLimit * gasPrice / 10**18;
 }

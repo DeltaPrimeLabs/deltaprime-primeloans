@@ -40,9 +40,11 @@
             <img class="asset__icon" :src="getAssetIcon(lpToken.longToken)">{{
               formatTokenBalance(longTokenAmount ? longTokenAmount : 0, 6, true)
             }}
+            <span v-if="!lpToken.isGMXPlus">
             <img class="asset__icon" :src="getAssetIcon(lpToken.shortToken)">{{
               formatTokenBalance(shortTokenAmount ? shortTokenAmount : 0, 6, true)
-            }}
+              }}
+            </span>
           </div>
           <div class="double-value__usd">
             <span>
@@ -72,12 +74,12 @@
       <!--        <bar-gauge-beta v-if="lpToken.maxExposure" :min="0" :max="lpToken.maxExposure" :value="Math.max(lpToken.currentExposure, 0.001)" v-tooltip="{content: `${lpToken.currentExposure ? lpToken.currentExposure.toFixed(2) : 0} ($${lpToken.currentExposure ? (lpToken.currentExposure * this.lpToken.price).toFixed(2) : 0}) out of ${lpToken.maxExposure} ($${lpToken.maxExposure ? (lpToken.maxExposure * this.lpToken.price).toFixed(2) : 0}) is currently used.`, classes: 'info-tooltip'}" :width="80"></bar-gauge-beta>-->
       <!--      </div>-->
 
-      <div class="table__cell table__cell--double-value apr" v-bind:class="{'apr--with-warning': lpToken.aprWarning}">
-        {{ apr / 100 | percent }}
+      <div class="table__cell apr" v-bind:class="{'apr--with-warning': lpToken.aprWarning}">
         <div class="apr-warning" v-if="lpToken.aprWarning">
           <img src="src/assets/icons/warning.svg"
-               v-tooltip="{content: lpToken.aprWarning, classes: 'info-tooltip long'}">
+               v-tooltip="{content: 'APR value is updated twice a day. Please check GMX website to find the current pool\'s APR.', classes: 'info-tooltip long'}">
         </div>
+        {{ apr / 100 | percent }}
       </div>
 
       <div class="table__cell table__cell--double-value max-apr">
@@ -1128,7 +1130,7 @@ export default {
       const longTotalWorth = longConfig.price * formatUnits(await longERC20.balanceOf(this.lpToken.address), longConfig.decimals);
       const shortTotalWorth = shortConfig.price * formatUnits(await shortERC20.balanceOf(this.lpToken.address), shortConfig.decimals);
 
-      this.tvl = longTotalWorth + shortTotalWorth;
+      this.tvl = this.lpToken.isGMXPlus ? longTotalWorth : longTotalWorth + shortTotalWorth;
     },
 
     depositGasLimitKey(singleToken) {
@@ -1270,6 +1272,13 @@ export default {
 
       &.apr {
         padding-right: 24px;
+        flex-direction: row;
+        justify-content: flex-end;
+        align-items: center;
+
+        .apr-warning {
+          margin-right: 5px;
+        }
       }
 
       &.max-apr {
