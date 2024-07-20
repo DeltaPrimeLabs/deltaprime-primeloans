@@ -460,7 +460,7 @@ export default {
         config.gmxV2DataStoreAddress, marketProps, prices, toWei((this.gmxV2Balances[this.lpToken.symbol]).toString()), this.nullAddress
       );
 
-      this.longTokenAmount = formatUnits(longTokenOut, longToken.decimals);
+      this.longTokenAmount = this.lpToken.isGMXPlus ?  2 * formatUnits(longTokenOut, longToken.decimals) : formatUnits(longTokenOut, longToken.decimals);
       this.shortTokenAmount = formatUnits(shortTokenOut, shortToken.decimals);
     },
 
@@ -745,6 +745,7 @@ export default {
         config.gmxV2GasPricePremium,
         true);
       modalInstance.info = `<div>Execution fee: ${executionFee.toFixed(6)}${config.nativeToken}. Unused gas will be returned to your account.</div>`;
+      modalInstance.additionalInfo = `<div>Availability of minting and redeeming GM tokens depends on their current state at GMX. Please go to the <b><a href="https://app.gmx.io/#/pools" target="_blank">GMX page</a></b> to check the current "Buyable" or "Sellable" value.</div>`;
 
       console.log('executionFee', executionFee);
 
