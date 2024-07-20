@@ -71,17 +71,10 @@
       We are dropping support to some tokens of your Prime Account. Please review your portfolio
     </Banner>
     <Banner v-if="showAvalancheDepositorBanner" background="green" :closable="true">
-      BTC APY will be boosted this Wednesday.
-      <a class="banner-link"
-         href="https://discord.com/channels/889510301421166643/912702114252329060/1211682978258878504" target="_blank">
-        <b>
-          Learn more.
-        </b>
-      </a>
+      Boost will refill on Monday. Users who don’t withdraw will be compensated.
     </Banner>
-    <Banner v-if="showAvalanchePrimeAccountBanner" :closable="true">
-      Missing GM incentives from the last week are currently being recalculated and will be included in Wednesday's
-      distribution.
+    <Banner v-if="showAvalanchePrimeAccountBanner" background="green" :closable="true">
+      GM+ launches Saturday 15:00 CEST
     </Banner>
     <div class="content">
       <div class="top-bar">
@@ -229,10 +222,10 @@ export default {
 
     if (config.chainId === 43114) {
       if (window.location.href.includes('pools')) {
-        // this.showAvalancheDepositorBanner = true;
+        this.showAvalancheDepositorBanner = true;
       }
       if (window.location.href.includes('prime-account')) {
-        // this.showAvalanchePrimeAccountBanner = true;
+        this.showAvalanchePrimeAccountBanner = true;
       }
     }
   },
