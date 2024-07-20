@@ -855,7 +855,7 @@ export default {
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.targetAssetAmounts = [0, 0];
-      modalInstance.additionalInfo = `<div>The selling capacity might influence minting success. This can be found on <b><a href="https://app.gmx.io/#/pools" target="_blank">GMX</a></b>.</div>`;
+      modalInstance.additionalInfo = `<div>The selling capacity might influence redeeming success. This can be found on <b><a href="https://app.gmx.io/#/pools" target="_blank">GMX</a></b>.</div>`;
 
       // modalInstance.info = `info .`;
       modalInstance.queryMethods = {
