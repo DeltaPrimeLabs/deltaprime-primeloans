@@ -11,9 +11,15 @@
       </div>
 
 
-      <div class="modal-top-desc" v-if="info">
+      <div class="modal-top-info-bar" v-if="info">
         <div>
-          <b v-html="info"></b>
+          <div v-html="info"></div>
+        </div>
+      </div>
+
+      <div class="modal-top-info-bar" v-if="additionalInfo">
+        <div>
+          <div v-html="additionalInfo"></div>
         </div>
       </div>
 
@@ -191,6 +197,7 @@ export default {
       targetAssetAmounts: [],
       fee: 0,
       info: null,
+      additionalInfo: null,
       userSlippage: 0,
       queryMethod: null,
       feeMethods: null,

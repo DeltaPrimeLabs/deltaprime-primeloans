@@ -745,7 +745,7 @@ export default {
         config.gmxV2GasPricePremium,
         true);
       modalInstance.info = `<div>Execution fee: ${executionFee.toFixed(6)}${config.nativeToken}. Unused gas will be returned to your account.</div>`;
-      modalInstance.additionalInfo = `<div>Availability of minting and redeeming GM tokens depends on their current state at GMX. Please go to the <b><a href="https://app.gmx.io/#/pools" target="_blank">GMX page</a></b> to check the current "Buyable" or "Sellable" value.</div>`;
+      modalInstance.additionalInfo = `<div>The buying capacity might influence minting success. This can be found on <b><a href="https://app.gmx.io/#/pools" target="_blank">GMX</a></b>.</div>`;
 
       console.log('executionFee', executionFee);
 
@@ -855,6 +855,7 @@ export default {
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.targetAssetAmounts = [0, 0];
+      modalInstance.additionalInfo = `<div>The selling capacity might influence minting success. This can be found on <b><a href="https://app.gmx.io/#/pools" target="_blank">GMX</a></b>.</div>`;
 
       // modalInstance.info = `info .`;
       modalInstance.queryMethods = {
