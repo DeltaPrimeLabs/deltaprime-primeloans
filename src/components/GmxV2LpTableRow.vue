@@ -514,11 +514,8 @@ export default {
 
 
       return async (sourceAsset, targetAsset, amountIn) => {
-        console.log('sourceAsset', sourceAsset);
-        console.log('targetAsset', targetAsset);
-        console.log('amountIn', amountIn);
-        let gmxData = await (await fetch(`https://${config.chainSlug}-api.gmxinfra.io/prices/tickers`)).json();
-        console.log('gmxData', gmxData);
+        let gmxData = await (await fetch(`https://${config.chainSlug}-v2-1-api.gmxinfra.io/prices/tickers`)).json();
+
 
         let shortTokenGmxData = gmxData.find(el => el.tokenSymbol === shortToken.symbol);
         let longTokenGmxData = gmxData.find(el => el.tokenSymbol === longToken.symbol);
@@ -1129,6 +1126,7 @@ export default {
 
       const longTotalWorth = longConfig.price * formatUnits(await longERC20.balanceOf(this.lpToken.address), longConfig.decimals);
       const shortTotalWorth = shortConfig.price * formatUnits(await shortERC20.balanceOf(this.lpToken.address), shortConfig.decimals);
+
 
       this.tvl = this.lpToken.isGMXPlus ? longTotalWorth : longTotalWorth + shortTotalWorth;
     },
