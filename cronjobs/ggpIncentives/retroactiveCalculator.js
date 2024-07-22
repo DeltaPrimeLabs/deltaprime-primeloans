@@ -81,6 +81,7 @@ const ggpIncentivesCalculatorAvaRetroactive = async (event) => {
     const factoryContract = new ethers.Contract(factoryAddress, FACTORY.abi, avalancheHistoricalProvider);
     let loanAddresses = await factoryContract.getAllLoans({ blockTag: blockNumber });
     const totalLoans = loanAddresses.length;
+    console.log(`${totalLoans} loans found.`);
 
     const incentivesPerWeek = 125;
     const incentivesPerInterval = incentivesPerWeek / (60 * 60 * 24 * 7) * (60 * 60 * 4);
@@ -122,7 +123,8 @@ const ggpIncentivesCalculatorAvaRetroactive = async (event) => {
       
               const ggAvaxBalance = formatUnits(loan[1]);
               const ggAvaxPrice = findClosest(prices['WOMBAT_ggAVAX_AVAX_LP_ggAVAX'], timestampInSeconds * 1000);
-              const loanggAvaxValue = ggAvaxBalance * ggAvaxPrice;
+              const loanggAvaxValue = ggAvaxBalance * ggAvaxPrice.value;
+              console.log(loanId, ggAvaxBalance, ggAvaxPrice.value, loanggAvaxValue)
       
               const eligibleTvl = loanggAvaxValue - collateral > 0 ? loanggAvaxValue - collateral : 0;
       
