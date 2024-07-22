@@ -25,7 +25,7 @@ abstract contract GmxV2PlusFacet is GmxV2FacetCommon {
             ? IERC20(depositedToken).balanceOf(address(this))
             : tokenAmount;
 
-        bytes[] memory data = new bytes[](3);
+        bytes[] memory data = new bytes[](4);
         data[0] = abi.encodeWithSelector(
             IGmxV2Router.sendWnt.selector,
             getGmxV2DepositVault(),
@@ -35,9 +35,15 @@ abstract contract GmxV2PlusFacet is GmxV2FacetCommon {
             IGmxV2Router.sendTokens.selector,
             depositedToken,
             getGmxV2DepositVault(),
-            tokenAmount
+            tokenAmount / 2
         );
         data[2] = abi.encodeWithSelector(
+            IGmxV2Router.sendTokens.selector,
+            depositedToken,
+            getGmxV2DepositVault(),
+            tokenAmount / 2
+        );
+        data[3] = abi.encodeWithSelector(
             IDepositUtils.createDeposit.selector,
             IDepositUtils.CreateDepositParams({
                 receiver: address(this), //receiver
