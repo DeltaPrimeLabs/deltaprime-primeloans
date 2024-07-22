@@ -113,7 +113,7 @@ const ggpIncentives = async (network = 'avalanche', rpc = 'first') => {
   if (incentivesMultiplier == 0) return;
 
   try {
-    const provider = getHistoricalProvider(network, rpc);
+    let provider = getHistoricalProvider(network, rpc);
     const factoryContract = getFactoryContract(network, provider);
     let loanAddresses = await factoryContract.getAllLoans();
     const totalLoans = loanAddresses.length;
@@ -132,17 +132,18 @@ const ggpIncentives = async (network = 'avalanche', rpc = 'first') => {
       let qualifications;
       let retryTime = 0;
 
-      try {
-        qualifications = await getEligibleTvl(batchLoanAddresses, network, provider);
-      } catch (error) {
-        retryTime += 1;
+      while (1) {
+        try {
+          qualifications = await getEligibleTvl(batchLoanAddresses, network, provider);
+          break;
+        } catch (error) {
+          retryTime += 1;
+          if (retryTime > 3) break;
 
-        if (retryTime < 3) {
           console.log('retryTime', retryTime)
           console.log('........will retry the function........');
-          await new Promise((resolve, reject) => setTimeout(resolve, 5000));
-
-          qualifications = await getEligibleTvl(batchLoanAddresses, network, provider);
+          provider = getHistoricalProvider(network, rpc == 'first' ? 'second' : 'first');
+          await new Promise((resolve, reject) => setTimeout(resolve, 10000));
         }
       }
 
@@ -162,7 +163,7 @@ const ggpIncentives = async (network = 'avalanche', rpc = 'first') => {
       // incentives of all loans
       const loanIncentives = {};
 
-      Object.entries(loanQualifications).map(([loanId, loanData]) => {
+      Object.entries(loanQualifications).forEach(([loanId, loanData]) => {
         loanIncentives[loanId] = 0;
 
         if (loanData.eligibleTvl > 0) {
