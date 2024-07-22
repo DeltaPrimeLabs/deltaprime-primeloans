@@ -223,10 +223,10 @@ async function checkCollected() {
 }
 
 
-// fetchData("GGP_EPOCH_4")
+// fetchData("GGP_EPOCH_5")
 // checkNegativeAccounts()
 // checkCollectedInTimestamp(1715152203)
 // checkCollected();
-createDiffJson( "GGP_EPOCH_3", "GGP_EPOCH_4")
+createDiffJson( "GGP_EPOCH_4", "GGP_EPOCH_5")
 // createAddJson( "GM_EPOCH_8", "GM_EPOCH_9_diff", "GM_EPOCH_9")
-// analyzeJson("GGP_EPOCH_3_diff")
+// analyzeJson("GGP_EPOCH_4_diff")

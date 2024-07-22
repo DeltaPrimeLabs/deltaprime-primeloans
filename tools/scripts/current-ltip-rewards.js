@@ -61,7 +61,7 @@ async function fetchLoansDataInBatches(epochName) {
     const task = (address) => fetch(`https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/ltip-${type}-for?addresses=${address}`)
 
     console.log(`LONS: ${loans.length}`)
-    loans = loans.slice(0, 1600);
+    loans = loans.slice(0, 1800);
 
     let resps = await promiseAllInBatches(task, loans, 100);
 
@@ -266,17 +266,17 @@ function createAddJson(files, output) {
 }
 
 
-//last distribution timestamp: 1720517683
-//current distribution timestamp: 1721050801
-// fetchData("LTIP_EPOCH_6", 1720517683, 1721048971, 10000, true)
-// fetchLoansDataInBatches("LTIP_EPOCH_6")
+//last distribution timestamp: 1721050801
+//current distribution timestamp: 1721643728
+fetchData("LTIP_EPOCH_7", 1721050801, 1721643728, 10000, true)
+// fetchLoansDataInBatches("LTIP_EPOCH_7_TOTAL")
 //no need to use this one for pools
-// fetchPoolsDataInBatches("LTIP_EPOCH_6", ["LTIP_SAVINGS_EPOCH_1", "LTIP_EPOCH_2_SAVINGS", "LTIP_EPOCH_3_SAVINGS", "LTIP_EPOCH_4_SAVINGS", "LTIP_EPOCH_5_SAVINGS"])
+// fetchPoolsDataInBatches("LTIP_EPOCH_7", ["LTIP_SAVINGS_EPOCH_1", "LTIP_EPOCH_2_SAVINGS", "LTIP_EPOCH_3_SAVINGS", "LTIP_EPOCH_4_SAVINGS", "LTIP_EPOCH_5_SAVINGS", "LTIP_EPOCH_6_SAVINGS"])
 // fetchData("LTIP_EPOCH_5_TOTAL_4", 1720013265, 1720521317, 10000, false)
 // fetchData("LTIP_EPOCH-test", 1719234231, 1720013265, 10000, true)
 // checkNegativeAccounts()
 // checkCollectedInTimestamp(1715152203)
 // checkCollected();
-// createDiffJson( "LTIP_EPOCH_5_SAVINGS_TOTAL", "LTIP_EPOCH_6_SAVINGS_TOTAL", "arbitrum/ltip")
+// createDiffJson( "LTIP_EPOCH_6_SAVINGS_TOTAL", "LTIP_EPOCH_7_SAVINGS_TOTAL", "arbitrum/ltip")
 // createAddJson( ["LTIP_SAVINGS_EPOCH_1", "LTIP_EPOCH_2_SAVINGS", "LTIP_EPOCH_3_SAVINGS", "LTIP_EPOCH_4_SAVINGS", "LTIP_EPOCH_5_SAVINGS"], "LTIP_EPOCH_5_SAVINGS_TOTAL")
 // analyzeJson("LTIP_EPOCH_5_SAVINGS_TOTAL")
