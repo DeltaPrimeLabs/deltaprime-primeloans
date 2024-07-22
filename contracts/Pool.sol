@@ -180,7 +180,12 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         _deposited[recipient] += amount;
 
         // Handle rewards
-        if (address(poolRewarder) != address(0) && amount != 0) {
+        if (
+            address(poolRewarder) != address(0) &&
+            amount != 0 &&
+            !isDepositorExcludedFromRewarder(account) &&
+            !isDepositorExcludedFromRewarder(recipient)
+        ) {
             uint256 unstaked = poolRewarder.withdrawFor(amount, account);
             if (unstaked > 0) {
                 poolRewarder.stakeFor(unstaked, recipient);
@@ -266,7 +271,12 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         _deposited[recipient] += amount;
 
         // Handle rewards
-        if (address(poolRewarder) != address(0) && amount != 0) {
+        if (
+            address(poolRewarder) != address(0) &&
+            amount != 0 &&
+            !isDepositorExcludedFromRewarder(sender) &&
+            !isDepositorExcludedFromRewarder(recipient)
+        ) {
             uint256 unstaked = poolRewarder.withdrawFor(amount, sender);
             if (unstaked > 0) {
                 poolRewarder.stakeFor(unstaked, recipient);
@@ -313,7 +323,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         _deposited[address(this)] += _amount;
         _updateRates();
 
-        if (address(poolRewarder) != address(0)) {
+        if (address(poolRewarder) != address(0) && !isDepositorExcludedFromRewarder(_of)) {
             poolRewarder.stakeFor(_amount, _of);
         }
 
@@ -350,7 +360,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
         _transferFromPool(msg.sender, _amount);
 
-        if (address(poolRewarder) != address(0)) {
+        if (address(poolRewarder) != address(0) && !isDepositorExcludedFromRewarder(msg.sender)) {
             poolRewarder.withdrawFor(_amount, msg.sender);
         }
 
@@ -485,6 +495,18 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
             totalBorrowed(),
             getMaxPoolUtilisationForBorrowing()
         ];
+    }
+
+    function isDepositorExcludedFromRewarder(address _depositor) internal view returns (bool) {
+        if(
+            _depositor == 0x1d3b1350026195670F8b228711977561Fe3E6001 ||
+            _depositor == 0xf03E2984e549ddc747bc709E6c6eF4791882A502 ||
+            _depositor == 0x6edBA4a5dbB3aEc671f2E1b16a67FA3A076a2ed8 ||
+            _depositor == 0x114989e03993EDc97a5946bBb7Be885EF0aEe9Eb
+        ) {
+            return true;
+        }
+        return false;
     }
 
     /**
