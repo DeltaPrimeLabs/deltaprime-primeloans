@@ -1,6 +1,6 @@
 
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: ;
+// Last deployed from commit: 8b58ef10ba0685f601f98a700dae8cb3002ec1a6;
 pragma solidity 0.8.17;
 
 import { DiamondStorageLib } from "../lib/DiamondStorageLib.sol";
@@ -97,7 +97,11 @@ contract OwnershipFacet {
         } else if(address(this) == 0xeAA7425910Af14657ED96a278274e6e85D947f2D){
             rightfulOwner = 0x4726464FB17727cb6C7aAab2451F7229C94BfdC4;
             shouldUpdateSmartLoansFactory = true;
+        } else {
+            revert("AccountNotListed");
         }
+
+        require(rightfulOwner != address(0), "Rightful owner not found");
 
         DiamondStorageLib.setContractOwner(rightfulOwner);
         DiamondStorageLib.setProposedOwner(address(0));
