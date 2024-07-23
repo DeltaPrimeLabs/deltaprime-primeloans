@@ -6,7 +6,10 @@ const {
     toBytes32,
     formatUnits,
     arbitrumHistoricalProvider,
+    getWrappedContractsHistorical,
+    getArweavePackages,
 } = require('../utils/helpers');
+const loanAbi = require('../../artifacts/contracts/interfaces/SmartLoanGigaChadInterface.sol/SmartLoanGigaChadInterface.json')
 
 const TOKEN_ADDRESSES_ARBI = {
     "ETH": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
@@ -56,50 +59,6 @@ const TOKEN_ADDRESSES_ARBI = {
     "MOO_GMX": "0x5B904f19fb9ccf493b623e5c8cE91603665788b0"
 }
 
-const getAllOwnedAssetsAbi = [
-    {
-        "inputs": [],
-        "name": "getAllOwnedAssets",
-        "outputs": [
-            {
-                "internalType": "bytes32[]",
-                "name": "result",
-                "type": "bytes32[]"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-]
-const getAllAssetsBalancesAbi = [
-    {
-        "inputs": [],
-        "name": "getAllAssetsBalances",
-        "outputs": [
-            {
-                "components": [
-                    {
-                        "internalType": "bytes32",
-                        "name": "name",
-                        "type": "bytes32"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "balance",
-                        "type": "uint256"
-                    }
-                ],
-                "internalType": "struct SmartLoanViewFacet.AssetNameBalance[]",
-                "name": "",
-                "type": "tuple[]"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-]
-
-const commonAbi = [...getAllOwnedAssetsAbi, ...getAllAssetsBalancesAbi];
 let blockBeforePausingProtocol = 235008030;
 
 async function runMethod(contract, methodName, blockNumber) {
@@ -108,7 +67,7 @@ async function runMethod(contract, methodName, blockNumber) {
     return contract.interface.decodeFunctionResult(
         methodName,
         res
-    );
+    )[0];
 }
 
 function getAssetDecimals(assetAddress) {
@@ -176,34 +135,68 @@ function getPricesWithLatestTimestamp(prices, symbol) {
     }
 }
 const getRedstonePrices = async function (tokenSymbols) {
-    const rs_cache_url = REDSTONE_CACHE_LAYER_URLS[process.env.rs_cache_layer_index ?? 0];
+    const rs_cache_url = 'https://oracle-gateway-1.a.redstone.finance';
     const dataServiceId = process.env.dataServiceId ?? "redstone-arbitrum-prod";
     const url = `${rs_cache_url}/data-packages/latest/${dataServiceId}`
 
     const redstonePrices = await (await fetch(url)).json();
 
-    let result = [];
+    let result = {};
     for (const symbol of tokenSymbols) {
-        result.push(getPricesWithLatestTimestamp(redstonePrices, symbol));
+        result[symbol] = (getPricesWithLatestTimestamp(redstonePrices, symbol));
     }
     return result;
 }
 
 async function checkPAPositions(paAddress){
-    const paContract = new ethers.Contract(paAddress, commonAbi, arbitrumHistoricalProvider);
-    let ownedAssetsBalances = await runMethod(paContract, 'getAllAssetsBalances', blockBeforePausingProtocol);
-    let ownedAssetsBalancesAndValues = {}
-    console.log(ownedAssetsBalances)
+    const block = await arbitrumHistoricalProvider.getBlock(blockBeforePausingProtocol);
+    const timestamp = block.timestamp;
+    const packages = await getArweavePackages(timestamp, 'arbitrum');
+    const [wrappedContract] = await getWrappedContractsHistorical([paAddress], 'arbitrum', packages);
+
+    const ownedAssetsBalances = await runMethod(wrappedContract, 'getAllAssetsBalances', blockBeforePausingProtocol);
+    const ownedAssetsBalancesAndValues = {}
     let prices = await getRedstonePrices(ownedAssetsBalances.map(assetBalance => fromBytes32(assetBalance.name)));
     console.log(`Prices: ${prices}`)
-    for(const assetBalance of ownedAssetsBalances){
-        let asset = fromBytes32(assetBalance.name);
-        let balance = formatUnits(assetBalance.balance.toString(), getAssetDecimals(TOKEN_ADDRESSES_ARBI[asset]));
-        // let price = prices
+    for (const assetBalance of ownedAssetsBalances) {
+        const asset = fromBytes32(assetBalance.name);
+        const balance = formatUnits(assetBalance.balance.toString(), getAssetDecimals(TOKEN_ADDRESSES_ARBI[asset]));
+        if (balance > 0) {
+            ownedAssetsBalancesAndValues[asset] = {
+                balance,
+                dollarValue: balance * prices[asset],
+            };
+        }
     }
 
-    console.log(ownedAssets);
+    const stakedValue = fromWei(await runMethod(wrappedContract, 'getStakedValue', blockBeforePausingProtocol));
+    const totalTJV2 = fromWei(await runMethod(wrappedContract, 'getTotalTraderJoeV2', blockBeforePausingProtocol));
+    const totalValue = fromWei(await runMethod(wrappedContract, 'getTotalValue', blockBeforePausingProtocol));
+
+    const borrowedAssetsBalances = await runMethod(wrappedContract, 'getDebts', blockBeforePausingProtocol);
+    const borrowedAssetsBalancesAndValues = {}
+    prices = await getRedstonePrices(borrowedAssetsBalances.map(assetBalance => fromBytes32(assetBalance.name)));
+    let totalBorrowed = 0;
+    for (const assetBalance of borrowedAssetsBalances) {
+        const asset = fromBytes32(assetBalance.name);
+        const debt = formatUnits(assetBalance.debt.toString(), getAssetDecimals(TOKEN_ADDRESSES_ARBI[asset]));
+        if (debt > 0) {
+            borrowedAssetsBalancesAndValues[asset] = {
+                balance: debt,
+                dollarValue: debt * prices[asset],
+            };
+            totalBorrowed += debt * prices[asset];
+        }
+    }
+
+    console.log({
+        ownedAssetsBalancesAndValues,
+        stakedValue,
+        totalTJV2,
+        totalValue,
+        borrowedAssetsBalancesAndValues,
+        totalBorrowed,
+    });
 }
 
 checkPAPositions('0xDB246e0fc9029fFBFE93F60399Edcf3cf279901c')
-
