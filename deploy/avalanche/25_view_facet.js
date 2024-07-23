@@ -21,9 +21,12 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         `SmartLoanViewFacet implementation deployed at address: ${SmartLoanViewFacet.address}`
     );
 
+    // wait 10 seconds
+    await new Promise((r) => setTimeout(r, 10000));
+
     await verifyContract(hre,
         {
-            address: "0x66b00aef4786C3DA60C8C99375a4Bd8AC97C3A1D",
+            address: SmartLoanViewFacet.address,
             contract: `contracts/facets/SmartLoanViewFacet.sol:SmartLoanViewFacet`,
             constructorArguments: []
         });
