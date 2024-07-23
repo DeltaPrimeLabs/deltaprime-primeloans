@@ -23,6 +23,9 @@
     <Banner v-if="showConnectBanner">
       You are not connected to Metamask. <a class="banner-link" @click="initNetwork"><b>Click here</b></a> to connect.
     </Banner>
+    <Banner v-if="showPrimeAccountBanner" background="green-accent" :closable="true">
+      90% of the funds have been recovered. The remaining amount is covered by the stability pool.
+    </Banner>
     <Banner v-if="showInterestRateBanner" background="green-accent" :closable="true">
       Interest rate model will be updated at 12:00 CET. <a class="banner-link"
                                                            href="https://discord.com/channels/889510301421166643/912702114252329060/1180080211254050897"><b>Read
@@ -169,6 +172,7 @@ export default {
       showDeprecatedAssetsBanner: false,
       restrictModalOpen: false,
       buySPrimeModalOpened: false,
+      showWarningBanner: false,
     };
   },
   async created() {
@@ -222,10 +226,10 @@ export default {
 
     if (config.chainId === 43114) {
       if (window.location.href.includes('pools')) {
-        this.showAvalancheDepositorBanner = true;
+        // this.showAvalancheDepositorBanner = true;
       }
       if (window.location.href.includes('prime-account')) {
-        this.showAvalanchePrimeAccountBanner = true;
+        // this.showAvalanchePrimeAccountBanner = true;
       }
     }
   },
