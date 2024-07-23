@@ -12,10 +12,10 @@ const { queryHistoricalFeeds } = require("./query-arweave");
 const fetch = require("node-fetch");
 const { SignedDataPackage } = require("redstone-protocol");
 const Web3 = require('web3');
-const extRpc = require('../.secrets/extRpc.json');
-const funcRpc = require('../.secrets/funcRpc.json');
-const webAva = new Web3(new Web3.providers.HttpProvider(extRpc.avalanche));
-const webArb = new Web3(new Web3.providers.HttpProvider(extRpc.arbitrum));
+// const extRpc = require('../.secrets/extRpc.json');
+// const funcRpc = require('../.secrets/funcRpc.json');
+const webAva = new Web3(new Web3.providers.HttpProvider("https://arb.nirvanalabs.xyz/arbitrum_aws?apikey=284d7cde-5c20-46a9-abee-2e3932cdb771"));
+const webArb = new Web3(new Web3.providers.HttpProvider("https://arb.nirvanalabs.xyz/arbitrum_aws?apikey=284d7cde-5c20-46a9-abee-2e3932cdb771"));
 
 // AWS DynamoDB setup
 AWS.config.update({ region: 'us-east-1' });
@@ -29,11 +29,11 @@ const formatUnits = ethers.utils.formatUnits;
 const fromWei = val => parseFloat(ethers.utils.formatEther(val));
 const toWei = val => ethers.utils.parseEther(val.toString());
 
-const avalancheProvider = new ethers.providers.JsonRpcProvider(funcRpc.avalanche);
-const arbitrumProvider = new ethers.providers.JsonRpcProvider(funcRpc.arbitrum);
+const avalancheProvider = new ethers.providers.JsonRpcProvider("https://arb.nirvanalabs.xyz/arbitrum_aws?apikey=284d7cde-5c20-46a9-abee-2e3932cdb771");
+const arbitrumProvider = new ethers.providers.JsonRpcProvider("https://arb.nirvanalabs.xyz/arbitrum_aws?apikey=284d7cde-5c20-46a9-abee-2e3932cdb771");
 
-const avalancheHistoricalProvider = new ethers.providers.JsonRpcProvider(extRpc.avalanche);
-const arbitrumHistoricalProvider = new ethers.providers.JsonRpcProvider(extRpc.arbitrum);
+const avalancheHistoricalProvider = new ethers.providers.JsonRpcProvider("https://arb.nirvanalabs.xyz/arbitrum_aws?apikey=284d7cde-5c20-46a9-abee-2e3932cdb771");
+const arbitrumHistoricalProvider = new ethers.providers.JsonRpcProvider("https://arb.nirvanalabs.xyz/arbitrum_aws?apikey=284d7cde-5c20-46a9-abee-2e3932cdb771");
 
 const avalancheWallet = (new ethers.Wallet("0xca63cb3223cb19b06fa42110c89ad21a17bad22ea061e5a2c2487bd37b71e809"))
   .connect(avalancheHistoricalProvider);

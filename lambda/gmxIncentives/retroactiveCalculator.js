@@ -9,11 +9,29 @@ const {
   getWrappedContractsHistorical,
   getArweavePackages
 } = require('../utils/helpers');
+const fs = require('fs');
 const constants = require('../config/constants.json');
 const gmTokens = require('../config/gmTokens.json');
 const FACTORY = require('../abis/SmartLoansFactory.json');
 const EthDater = require("ethereum-block-by-date");
 const redstone = require("redstone-api");
+const getAllLoansAbi = [
+  {
+    "inputs": [],
+    "name": "getAllLoans",
+    "outputs": [
+      {
+        "internalType": "address[]",
+        "name": "",
+        "type": "address[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+]
+const SLFArbitrumAddress = '0xFf5e3dDaefF411a1dC6CcE00014e4Bca39265c20';
+const slfContract = new ethers.Contract(SLFArbitrumAddress, getAllLoansAbi, arbitrumHistoricalProvider);
 
 // const config = require("../../src/config");
 // const key = fs.readFileSync("./.secret").toString().trim();
@@ -60,6 +78,15 @@ const findClosest = (numbers, target) => {
   return closest;
 }
 
+function writeJSON(filename, data) {
+  fs.writeFileSync(filename, JSON.stringify(data, null, 4), 'utf8');
+}
+
+function readJSON(filename) {
+  const data = fs.readFileSync(filename, 'utf8');
+  return JSON.parse(data);
+}
+
 const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
   //in seconds
   let timestampInSeconds = blockTimestampStart;
@@ -80,38 +107,42 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
   // console.log('Prices:');
   // console.log(prices);
 
-  const blockNumbers = [
-    226485129,
-    226484685,
-    226465436,
-    226464775,
-    226462046,
-    226461638,
-    226460792,
-    226460411,
-    226460175,
-    226459589,
-    226459178,
-    226458920,
-    226456387,
-    226453081,
-    226452344,
-    226419343,
-    226419164,
-    226418443,
-    226416714,
-    226416359,
-    226413682,
-    226412797,
+  // const blockNumbers = [
+  //   235008014
+  // ]
+
+  let checkedPasFileName = 'checkedPAs.json';
+  let checkedPas = readJSON(checkedPasFileName);
+  let alreadyCheckedPas = checkedPas.map(entry => entry.address);
+
+
+  const pasToMonitor = [
+      "0x22356d363283e71943D3Fe6C70A2812f8AC12F64",
+      "0xABCBE607f39D73D29CF46dcb9529609466Fa504b",
+      "0x0547c4580CE540F8D069182C56D55A9BA4199bcC",
   ]
 
-  for (const blockNumber of blockNumbers.reverse()) {
-    const block = await arbitrumHistoricalProvider.getBlock(blockNumber);
-    const timestamp = block.timestamp;
+  let allPas = await slfContract.getAllLoans();
+    console.log(allPas.length);
 
-    let packages = await getArweavePackages(timestamp, 'arbitrum');
+  let insolventPAs = []
+  const dollarValueThreshold = 10;
+  // let blockBeforeOwnershipTransfer = 234910548;
+  let blockBeforePausingProtocol = 235008030;
+  const block = await arbitrumHistoricalProvider.getBlock(blockBeforePausingProtocol);
+  const timestamp = block.timestamp;
+  let packages = await getArweavePackages(timestamp, 'arbitrum');
+  console.log('Got packages')
+  let counter = 0;
+  for (const pa of allPas) {
+    counter++;
+    if(alreadyCheckedPas.includes(pa)) {
+        console.log(`Already checked PA: ${pa}`)
+        continue;
+    }
+    console.log(`Checking for PA: ${pa} (${counter}/${allPas.length})`)
 
-    const [wrappedContract] = await getWrappedContractsHistorical(["0xda17e8137562064E12cf2Ba79D28610AFE11D0ed"], 'arbitrum', packages);
+    const [wrappedContract] = await getWrappedContractsHistorical([pa], 'arbitrum', packages);
 
     async function runMethod(contract, methodName, blockNumber) {
       const tx = await contract.populateTransaction[methodName]()
@@ -122,140 +153,34 @@ const gmxIncentivesCalculatorAvaRetroactive = async (event) => {
       );
     }
 
-    const totalValueBefore = fromWei((await runMethod(wrappedContract, 'getTotalValue', blockNumber - 1)).toString());
-    const totalValueAfter = fromWei((await runMethod(wrappedContract, 'getTotalValue', blockNumber + 41)).toString());
-    console.log(`Checking block: ${blockNumber}`);
-    console.log(`before: ${totalValueBefore}, after: ${totalValueAfter}, diff: ${totalValueAfter - totalValueBefore}`);
+    // const totalValueBefore = fromWei((await runMethod(wrappedContract, 'getTotalValue', blockBeforeOwnershipTransfer)).toString());
+    // console.log('1')
+    // const debtBefore = fromWei((await runMethod(wrappedContract, 'getDebt', blockBeforeOwnershipTransfer)).toString());
+    // console.log('2')
+    // const colateralBefore = totalValueBefore - debtBefore;
 
-    // console.log(`Updated timestamp: ${timestampInSeconds}, block number: ${blockNumber}, total value: ${totalValue}.`);
-
-    // timestampInSeconds += 60 * 60;
-
-    // const factoryContract = new ethers.Contract(factoryAddress, FACTORY.abi, avalancheHistoricalProvider);
-    // let loanAddresses = await factoryContract.getAllLoans({ blockTag: blockNumber });
-    // const totalLoans = loanAddresses.length;
-
-    // let weeklyIncentives;
-    // if (timestampInSeconds < 1710421200) {// 14.03 14:00 CET
-    //   weeklyIncentives = 1666;
-    // } else if (timestampInSeconds < 1710535200) {// 15.03 21:40 CET
-    //   weeklyIncentives = 1000;
-    // } else {
-    //   weeklyIncentives = 225;
+    const totalValueAfter = fromWei((await runMethod(wrappedContract, 'getTotalValue', blockBeforePausingProtocol)).toString());
+    // if(totalValueAfter < dollarValueThreshold) {
+    //     console.log(`PA: ${pa} has less than $${dollarValueThreshold} value!`);
+    //     checkedPas.push({address: pa, totalValue: totalValueAfter});
+    //     writeJSON(checkedPasFileName, checkedPas);
+    //     continue;
     // }
-    // const incentivesPerInterval = weeklyIncentives / (60 * 60 * 24 * 7) * (60 * 60 * 4);
-    // const batchSize = 200;
+    // const debtAfter = fromWei((await runMethod(wrappedContract, 'getDebt', blockBeforePausingProtocol)).toString());
+    const HRAfter = fromWei((await runMethod(wrappedContract, 'getHealthRatio', blockBeforePausingProtocol)).toString());
+    checkedPas.push({address: pa, totalValue: totalValueAfter, hr: HRAfter});
+    writeJSON(checkedPasFileName, checkedPas);
+    // const collateralAfter = totalValueAfter - debtAfter;
+    console.log(`totalValueAfter: ${totalValueAfter}`)
+    console.log(`HRAfter: ${HRAfter}`)
+    if(HRAfter <= 1.0) {
+      insolventPAs.push(pa);
+      console.log(`PA: ${pa} is INSOLVENT!`)
+    }
 
-    // const loanQualifications = {};
-    // let totalLeveragedGM = 0;
-    // let gmTvl = 0;
-
-    // // calculate gm leveraged by the loan
-    // for (let i = 0; i < Math.ceil(totalLoans / batchSize); i++) {
-    //   try {
-    //     console.log(`processing ${i * batchSize} - ${(i + 1) * batchSize > totalLoans ? totalLoans : (i + 1) * batchSize} loans. ${timestampInSeconds}`);
-
-    //     const batchLoanAddresses = loanAddresses.slice(i * batchSize, (i + 1) * batchSize);
-
-    //     const wrappedContracts = await getWrappedContractsHistorical(batchLoanAddresses, 'avalanche', packages)
-
-    //     async function runMethod(contract, methodName, blockNumber) {
-    //       const tx = await contract.populateTransaction[methodName]()
-    //       let res = await contract.signer.call(tx, blockNumber)
-    //       return contract.interface.decodeFunctionResult(
-    //         methodName,
-    //         res
-    //       )[0];
-    //     }
-
-    //     const loanStats = await Promise.all(
-    //       wrappedContracts.map(contract => Promise.all([
-    //         runMethod(contract, 'getFullLoanStatus', blockNumber),
-    //         runMethod(contract, 'getAllAssetsBalances', blockNumber)
-    //       ])));
-
-
-    //     if (loanStats.length > 0) {
-    //       await Promise.all(
-    //         loanStats.map(async (loan, batchId) => {
-    //           const loanId = batchLoanAddresses[batchId].toLowerCase();
-    //           const status = loan[0];
-    //           const assetBalances = loan[1];
-    //           const collateral = fromWei(status[0]) - fromWei(status[1]);
-
-    //           loanQualifications[loanId] = {
-    //             collateral,
-    //             gmTokens: {},
-    //             loanLeveragedGM: 0
-    //           };
-
-    //           let loanTotalGMValue = 0;
-
-    //           await Promise.all(
-    //             Object.entries(gmTokens.avalanche).map(async ([symbol, token]) => {
-    //               const price = findClosest(prices[symbol], timestampInSeconds * 1000);
-    //               console.log(price);
-
-    //               const asset = assetBalances.find(asset => fromBytes32(asset.name) == symbol);
-    //               const balance = formatUnits(asset.balance.toString(), token.decimals);
-
-    //               loanQualifications[loanId].gmTokens[symbol] = balance * price.value;
-    //               loanTotalGMValue += balance * price.value;
-    //             })
-    //           );
-
-    //           const loanLeveragedGM = loanTotalGMValue - collateral > 0 ? loanTotalGMValue - collateral : 0;
-    //           loanQualifications[loanId].loanLeveragedGM = loanLeveragedGM;
-    //           totalLeveragedGM += loanLeveragedGM;
-    //           gmTvl += loanTotalGMValue;
-    //         })
-    //       );
-    //     }
-    //   } catch (error) {
-    //     console.log(`loan calculation failed. Error: ${error}`);
-    //   }
-    // }
-
-    // console.log(`${Object.entries(loanQualifications).length} loans analyzed.`);
-
-    // // incentives of all loans
-    // const loanIncentives = {};
-
-    // Object.entries(loanQualifications).map(([loanId, loanData]) => {
-    //   loanIncentives[loanId] = 0;
-
-    //   if (loanData.loanLeveragedGM > 0) {
-    //     const intervalIncentivesForLoan = incentivesPerInterval * loanData.loanLeveragedGM / totalLeveragedGM;
-
-    //     loanIncentives[loanId] = intervalIncentivesForLoan;
-    //   }
-    // })
-
-    // // save/update incentives values to DB
-    // await Promise.all(
-    //   Object.entries(loanIncentives).map(async ([loanId, value]) => {
-    //     const data = {
-    //       id: loanId,
-    //       timestamp: timestampInSeconds,
-    //       avaxCollected: value
-    //     };
-
-    //     const params = {
-    //       TableName: 'gmx-incentives-ava-retroactive-prod',
-    //       Item: data
-    //     };
-    //     await dynamoDb.put(params).promise();
-    //   })
-    // );
-
-    // console.log(`GMX incentives updated for timestamp ${timestampInSeconds}.`)
-
-    // console.log(`Updated timestamp: ${timestampInSeconds}, block number: ${blockNumber}.`);
-
-    // timestampInSeconds += 60 * 60 * 4;
   }
-
-  // console.log(Object.values(prices)[0][Object.values(prices)[0].length - 1])
+  console.log(`Insolvent PAs: ${insolventPAs.length}`)
+    console.log(JSON.stringify(insolventPAs, null, 4))
 
   // return event;
 }
