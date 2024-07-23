@@ -54,11 +54,11 @@ contract CaiFacet is
         uint256 afterCaiBalance = IERC20(CAI).balanceOf(address(this));
         uint256 afterFromTokenBalance = IERC20(fromToken).balanceOf(address(this));
 
-        address(CAI).safeApprove(INDEX_ROUTER, 0);
-        address(CAI).safeApprove(INDEX_ROUTER, type(uint256).max);
-
         uint256 fromTokenUsed = beforeFromTokenBalance - afterFromTokenBalance;
         uint256 caiBoughtAmount = afterCaiBalance - beforeCaiBalance;
+
+        CAI.safeApprove(INDEX_ROUTER, 0);
+        CAI.safeApprove(INDEX_ROUTER, type(uint256).max);
 
         checkSlippage(fromTokenSymbol, fromTokenUsed, "CAI", caiBoughtAmount, maxSlippage);
 
@@ -86,9 +86,6 @@ contract CaiFacet is
         require(shares > 0, "Amount of tokens to sell has to be greater than 0");
 
         bytes32 toTokenSymbol = tokenManager.tokenAddressToSymbol(toToken);
-
-        address(CAI).safeApprove(INDEX_ROUTER, 0);
-        address(CAI).safeApprove(INDEX_ROUTER, shares);
 
         uint256 caiBurnt;
         uint256 boughtAmount;
@@ -127,15 +124,20 @@ contract CaiFacet is
         bytes32 outputAsset,
         uint256 outputAmount,
         uint256 maxSlippage
-    ) internal {
+    ) internal view {        
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+
         bytes32[] memory assets = new bytes32[](2);
         assets[0] = inputAsset;
         assets[1] = outputAsset;
 
         uint256[] memory prices = getOracleNumericValuesFromTxMsg(assets);
 
-        uint256 inputValue = prices[0] * inputAmount;
-        uint256 outputValue = prices[1] * outputAmount;
+        IERC20Metadata inputToken = IERC20Metadata(tokenManager.getAssetAddress(inputAsset, true));
+        IERC20Metadata outputToken = IERC20Metadata(tokenManager.getAssetAddress(outputAsset, true));
+
+        uint256 inputValue = prices[0] * inputAmount * 10 ** 10 / 10 ** inputToken.decimals();
+        uint256 outputValue = prices[1] * outputAmount * 10 ** 10 / 10 ** outputToken.decimals();
         uint256 diff = inputValue > outputValue
             ? (inputValue - outputValue)
             : (outputValue - inputValue);

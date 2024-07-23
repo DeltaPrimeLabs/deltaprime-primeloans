@@ -12,7 +12,6 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
     let WombatFacet = await deploy("WombatFacet", {
         from: deployer,
-        gasLimit: 8000000,
         args: [],
     });
 
