@@ -11,7 +11,7 @@ const extRpcUrl = require('../.secrets/extRpc.json');
 const constants = require('../config/constants.json');
 const FACTORY = require('../abis/SmartLoansFactory.json');
 
-const blockTimestampStart = 1680004800;
+const blockTimestampStart = 1709985600;
 const blockTimestampEnd = 1721059624;
 
 const getHistoricalProvider = (network, rpc) => {

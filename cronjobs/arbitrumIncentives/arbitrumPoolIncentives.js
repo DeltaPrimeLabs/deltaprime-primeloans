@@ -473,15 +473,15 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
   }
 
   // for each pool sum up depositors eligible airdrops and verify if they sum up to each pool's eligible airdrop
-  const threshold = 0.3
 
   for (let pool in depositorsEligibleAirdrop) {
+    const threshold = 1;
     let sum = Object.values(depositorsEligibleAirdrop[pool]).reduce((a, b) => a + b);
     console.log(`Sum of ${pool} depositors eligible airdrops: ${sum}`);
     console.log(`Eligible airdrop for ${pool}: ${tokensToBeDistributedPerPool[pool]}`);
     // % diff between sum of depositors eligible airdrops and pool's eligible airdrop
     const diff = Math.abs(sum - tokensToBeDistributedPerPool[pool]);
-    console.log(`sum: ${sum}, expected:${tokensToBeDistributedPerPool[pool]}, diff(&): ${diff}`);
+    console.log(`sum: ${sum}, expected:${tokensToBeDistributedPerPool[pool]}, diff(&): ${diff}, pool: ${pool}`);
 
     if (diff < threshold) {
       await fetch(pingUrl.ltipPoolChcker.success);
