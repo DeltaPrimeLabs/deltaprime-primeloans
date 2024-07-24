@@ -24,7 +24,7 @@
       You are not connected to Metamask. <a class="banner-link" @click="initNetwork"><b>Click here</b></a> to connect.
     </Banner>
     <Banner v-if="showPrimeAccountBanner" background="green-accent" :closable="true">
-      90% of the funds have been recovered. The remaining amount is covered by the stability pool.
+      Reimbursements are in process. ETA for Prime Account unpausing is 20:30 CET.
     </Banner>
     <Banner v-if="showInterestRateBanner" background="green-accent" :closable="true">
       Interest rate model will be updated at 12:00 CET. <a class="banner-link"
