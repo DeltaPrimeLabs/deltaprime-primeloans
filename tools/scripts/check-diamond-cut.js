@@ -13,4 +13,5 @@ const calldata = "0x1f931c1c0000000000000000000000000000000000000000000000000000
 const decodedData = iface.decodeFunctionData("diamondCut", calldata);
 
 // Print the decoded data
+console.log('Add=0, Replace=1, Remove=2')
 console.log(JSON.stringify(decodedData, null, 2));
