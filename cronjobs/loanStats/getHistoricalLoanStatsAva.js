@@ -11,7 +11,7 @@ const extRpcUrl = require('../.secrets/extRpc.json');
 const constants = require('../config/constants.json');
 const FACTORY = require('../abis/SmartLoansFactory.json');
 
-const blockTimestampStart = 1709985600;
+const blockTimestampStart = 1720180800;
 const blockTimestampEnd = 1721059624;
 
 const getHistoricalProvider = (network, rpc) => {
@@ -35,14 +35,14 @@ const getHistoricalLoanStatsAva = async (network = 'avalanche', rpc = 'first') =
     while (timestampInSeconds <= blockTimestampEnd) {
       console.log(`Processed timestamp: ${timestampInSeconds}`)
 
-      const packages = await getArweavePackages(timestampInSeconds);
+      const packages = await getArweavePackages(timestampInSeconds, network);
       const blockNumber = (await getBlockForTimestamp(network, timestampInSeconds * 1000)).block;
 
       const loanAddresses = await factoryContract.getAllLoans({ blockTag: blockNumber });
       const totalLoans = loanAddresses.length;
       console.log(`${totalLoans} loans found`);
 
-      const batchSize = 100;
+      const batchSize = 200;
       const loanStats = {};
 
       for (let i = 0; i < Math.ceil(totalLoans / batchSize); i++) {
