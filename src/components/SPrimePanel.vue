@@ -2,7 +2,7 @@
   <div class="sprime-panel-component" v-bind:class="{'sprime-panel-component--expanded': expanded}">
     <div class="header-actions">
       <a v-if="sPrimeConfig" :href="sPrimeConfig.dexWebsite" target="_blank">
-        <FlatButton :active="!this.isActionDisabledRecord['BUY']">buy prime <img class="buy-prime-logo"
+        <FlatButton :active="!this.isActionDisabledRecord['BUY']">get prime <img class="buy-prime-logo"
                                                                                  src="src/assets/logo/prime.svg"/>
         </FlatButton>
       </a>
@@ -337,6 +337,7 @@ export default {
       'priceService'
     ]),
     ...mapState('network', ['provider', 'account']),
+    ...mapState('fundsStore', ['assets']),
     getDistributionIcon() {
       return `src/assets/icons/sprime-distribution/${DISTRIBUTION_ICON_DICTIONARY[this.distributionType]}${this.themeService.themeChange$.value === 'LIGHT' ? '' : '--dark'}.svg`;
     },
@@ -393,8 +394,9 @@ export default {
       );
 
       const nativeTokenBalance = parseFloat(ethers.utils.formatEther(await this.provider.getBalance(this.account)));
-
       modalInstance.primeBalance = primeBalance;
+      modalInstance.firstAssetPrice = this.poolPrice;
+      modalInstance.secondAssetPrice = this.assets[this.secondAsset].price;
       modalInstance.secondAssetBalance = secondAssetBalance;
       modalInstance.secondAssetSymbol = this.secondAsset;
       modalInstance.nativeTokenBalance = nativeTokenBalance;

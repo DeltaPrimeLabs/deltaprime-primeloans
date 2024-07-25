@@ -27,7 +27,8 @@
                      v-on:inputChange="primeInputChange"
                      :defaultValue="primeAmount"
                      :allow-zero-value="true"
-                     :validators="primeInputValidators">
+                     :validators="primeInputValidators"
+                     :info="() => firstAssetValue">
       </CurrencyInput>
       <div class="modal-top-info modal-top-info--reduced-margin">
         <div class="top-info__label">Available:</div>
@@ -42,7 +43,8 @@
                      v-on:inputChange="secondInputChange"
                      :defaultValue="secondAmount"
                      :allow-zero-value="true"
-                     :validators="secondInputValidators">
+                     :validators="secondInputValidators"
+                     :info="() => secondAssetValue">
       </CurrencyInput>
 
       <div class="toggle-container" v-if="secondAssetSymbol === config.nativeToken">
@@ -103,6 +105,8 @@ export default {
 
   props: {
     secondAssetSymbol: null,
+    secondAssetPrice: null,
+    firstAssetPrice: null,
     primeBalance: Number,
     sPrimeActive: false,
     secondAssetBalance: Number,
@@ -151,6 +155,18 @@ export default {
 
     secondAssetAvailableBalance() {
       return this.isSecondAssetNative ? this.nativeTokenBalance : this.secondAssetBalance;
+    },
+
+    secondAssetValue() {
+      const secondAssetUSDValue = Number(this.secondAmount) * this.secondAssetPrice;
+      return `~ $${secondAssetUSDValue.toFixed(2)}`;
+    },
+
+    firstAssetValue() {
+      console.log(this.firstAmount);
+      console.log(this.firstAssetPrice);
+      const firstAssetUSDValue = Number(this.primeAmount) * this.firstAssetPrice;
+      return `~ $${firstAssetUSDValue.toFixed(2)}`;
     },
   },
 
