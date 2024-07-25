@@ -26,6 +26,8 @@
       <CurrencyInput ref="currencyInput"
                      v-else
                      :symbol="asset.symbol"
+                     :logo="assetLogo"
+                     :force-asset-name="forceAssetName"
                      v-on:newValue="stakeValueChange"
                      :validators="validators"
                      :max="available"
@@ -106,7 +108,9 @@ export default {
     underlyingTokenStaked: {},
     asset: {},
     isLp: false,
-    protocol: null
+    protocol: null,
+    assetLogo: null,
+    forceAssetName: null,
   },
 
   data() {

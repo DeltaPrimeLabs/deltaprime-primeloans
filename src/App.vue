@@ -23,6 +23,13 @@
     <Banner v-if="showConnectBanner">
       You are not connected to Metamask. <a class="banner-link" @click="initNetwork"><b>Click here</b></a> to connect.
     </Banner>
+    <Banner v-if="showPrimeAccountBanner" background="green-accent" :closable="true">
+      Prime Accounts are live again 🔥 Please join our Discord if you got liquidated.
+    </Banner>
+    <Banner v-if="showAffectedPrimeAccountBanner" background="green-accent" :closable="true">
+      Your Prime Account has been reimbursed. Slippage can be compensated.
+      <a class="banner-link" href="https://discord.com/channels/889510301421166643/912702114252329060/1265739191635935242"><b>Read more</b></a>.
+    </Banner>
     <Banner v-if="showInterestRateBanner" background="green-accent" :closable="true">
       Interest rate model will be updated at 12:00 CET. <a class="banner-link"
                                                            href="https://discord.com/channels/889510301421166643/912702114252329060/1180080211254050897"><b>Read
@@ -42,9 +49,13 @@
       Data feeds error. Some functions might be not available.
     </Banner>
 
-<!--    <Banner v-if="showPrimeAccountBanner" :closable="true">
-      GM positions temporarily illiquid. Please see Discord before redeeming GM
-    </Banner>-->
+    <Banner v-if="showRestrictedCountryBanner">
+      Important: users connecting from your country will not be able to access our services starting June 28th.
+      <a class="banner-link"
+         href="https://discord.com/channels/889510301421166643/912702114252329060/1251122070172205067"
+         target="_blank"><b>Read more.</b>
+      </a>
+    </Banner>
 
     <Banner v-if="showArbitrumDepositorBanner" background="green-accent" :closable="true">
       Liquidity mining event is updated! Shortly after a pool hits $1M the next pool opens up.
@@ -67,16 +78,10 @@
       We are dropping support to some tokens of your Prime Account. Please review your portfolio
     </Banner>
     <Banner v-if="showAvalancheDepositorBanner" background="green" :closable="true">
-      BTC APY will be boosted this Wednesday.
-      <a class="banner-link"
-         href="https://discord.com/channels/889510301421166643/912702114252329060/1211682978258878504" target="_blank">
-        <b>
-          Learn more.
-        </b>
-      </a>
+      Boost will refill on Monday. Users who don’t withdraw will be compensated.
     </Banner>
-     <Banner v-if="showAvalanchePrimeAccountBanner" :closable="true">
-       Missing GM incentives from the last week are currently being recalculated and will be included in Wednesday's distribution.
+    <Banner v-if="showAvalanchePrimeAccountBanner" background="green" :closable="true">
+      GM+ pools are live!
     </Banner>
     <div class="content">
       <div class="top-bar">
@@ -84,8 +89,8 @@
           <a href="https://deltaprime.io/">
             <img src="src/assets/icons/deltaprime.svg" class="logo">
           </a>
-          <AppToggle class="top-bar__app-toggle"></AppToggle>
-          <ThemeToggle class="top-bar__theme-toggle"></ThemeToggle>
+          <AppToggle v-if="!isClaimPage" class="top-bar__app-toggle"></AppToggle>
+          <ThemeToggle v-if="!isClaimPage" class="top-bar__theme-toggle"></ThemeToggle>
           <div v-if="isSavingsPage" class="protocol-insurance">
             <span>Reserve Fund:</span>
             <span class="insurance-value">$2,340,000</span>
@@ -95,7 +100,7 @@
           </div>
         </div>
         <!--      <div class="connect" v-if="!account" v-on:click="initNetwork()">Connect to wallet</div>-->
-        <Wallet class="wallet"/>
+        <Wallet :is-claim-page="isClaimPage" class="wallet"/>
       </div>
       <router-view></router-view>
       <ProgressBar></ProgressBar>
@@ -115,6 +120,7 @@ import config from '@/config';
 
 const ethereum = window.ethereum;
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
+const LAUNCH_TIME = 1719853200000;
 import Vue from 'vue';
 import Button from './components/Button';
 import ProgressBar from './components/ProgressBar';
@@ -125,6 +131,12 @@ import ProtectedByBar from './components/ProtectedByBar.vue';
 import InfoIcon from './components/InfoIcon.vue';
 import TermsModal from './components/TermsModal.vue';
 import {combineLatest, forkJoin, map} from 'rxjs';
+import fetch from 'node-fetch';
+import RestrictedCountryModal from './components/RestrictedCountryModal.vue';
+import SPrimeModal from './components/SPrimeModal.vue';
+import TermsService from "./services/termsService";
+
+const BUY_SPRIME_MODAL_CLOSED = 'BUY_SPRIME_MODAL_CLOSED';
 
 export default {
   components: {
@@ -149,17 +161,23 @@ export default {
       showDepositBanner: false,
       showInterestRateBanner: false,
       showPrimeAccountBanner: false,
+      showAffectedPrimeAccountBanner: false,
       showArbitrumDepositorBanner: false,
       showArbitrumPrimeAccountBanner: false,
       showAvalancheDepositorBanner: false,
       showAvalanchePrimeAccountBanner: false,
       showArbitrumCongestionBanner: false,
+      showRestrictedCountryBanner: false,
       remainingTime: '',
       darkMode: false,
       showNoWalletBanner: window.noWalletInstalled,
       isSavingsPage: false,
+      isClaimPage: false,
       signingTermsInProgress: false,
       showDeprecatedAssetsBanner: false,
+      restrictModalOpen: false,
+      buySPrimeModalOpened: false,
+      showWarningBanner: false,
     };
   },
   async created() {
@@ -193,6 +211,10 @@ export default {
       this.isSavingsPage = true;
     }
 
+    if (window.location.href.includes('claim')) {
+      this.isClaimPage = true;
+    }
+
     if (window.location.href.includes('prime-account')) {
       this.showPrimeAccountBanner = true;
     }
@@ -224,17 +246,29 @@ export default {
         this.closeModal();
       }
     });
+    const url = document.location.href;
+    const lastUrlPart = url.split('/').reverse()[0];
+    this.checkClaimTheme(`/${lastUrlPart}`)
     this.watchCloseModal();
     this.checkTerms();
     this.watchHasDeprecatedAssets();
+    this.watchPrimeAccountLoaded();
     setTimeout(() => {
       this.checkWallet();
     }, 500)
+    this.getCountry();
   },
   computed: {
     ...mapState('network', ['account', 'provider']),
     ...mapState('fundsStore', ['protocolPaused', 'oracleError', 'smartLoanContract']),
-    ...mapState('serviceRegistry', ['modalService', 'termsService', 'accountService', 'poolService', 'deprecatedAssetsService']),
+    ...mapState('serviceRegistry', [
+      'modalService',
+      'termsService',
+      'accountService',
+      'poolService',
+      'deprecatedAssetsService',
+      'globalActionsDisableService'
+    ]),
     ...mapState('poolStore', ['pools'])
   },
   methods: {
@@ -343,19 +377,47 @@ export default {
       })
     },
 
+    watchPrimeAccountLoaded() {
+      this.accountService.observeSmartLoanContract$().subscribe(() => {
+        this.showPrimeAccountBanner = false;
+        this.showArbitrumPrimeAccountBanner = false;
+        this.showAffectedPrimeAccountBanner = true;
+
+        if ([
+          '0x2FfD0D2bEa8E922A722De83c451Ad93e097851F5',
+          '0x0b7DcF8E70cF0f9c73D2777d871F4eBD6150Bd3b',
+          '0x48285109D4b959608C8E9691cAb1aFc244a80D5F',
+          '0xCC5159C01C1bdAb6c607F800E71B84898597c9FE',
+          '0xfeD94826098d636c517F7F1021B37EB465b9FCE4',
+          '0x58c80413603841455b3C5abF08d6AA854F376086',
+          '0xc00bE32F7669A3417AD26DD41352418Fc49eB0F7',
+          '0x36a1bCcf37AF1E315888c2cA967B163c50B1D943',
+          '0xb9967f0e4ea928550E3d05B0e57a627AB0302108',
+          '0x7F23dc430AF70aBE865387d5b1FDC91c27daEcCB',
+          '0x35C93a488906798341ce4267Ecb398dC2aD230a6',
+          '0x0844F379be6E5b7Fd4A6D8f7A1b5146A68E23e9f',
+          '0xeAA7425910Af14657ED96a278274e6e85D947f2D'
+        ].map(el => el.toLowerCase()).includes(this.smartLoanContract.address.toLowerCase())) {
+          this.showAffectedPrimeAccountBanner = true;
+        }
+      })
+    },
+
     checkTerms() {
       console.log('checking terms');
       combineLatest([
         this.accountService.observeAccountLoaded(),
         this.accountService.observeSmartLoanContract$(),
-        this.poolService.observePools()
+        this.poolService.observePools(),
+        this.getCountry()
       ])
-        .subscribe(([walletAddress, smartLoanContract, pools]) => {
+        .subscribe(([walletAddress, smartLoanContract, pools, country]) => {
           console.warn('-_---__---__---__---___--__CHECK TERMS--___--___--__---__---___---');
           console.log('account', walletAddress);
           console.log('smartLoanContract', smartLoanContract);
           console.log('pools', pools);
           const isSavingsPage = window.location.href.includes('pools');
+          const isCountryRestricted = config.restrictedCountries.includes(country.country);
 
           if (isSavingsPage) {
             forkJoin(pools.map(pool => pool.contract.balanceOf(walletAddress)))
@@ -364,18 +426,29 @@ export default {
                 console.log(balances);
                 if (balances.every(balance => balance === 0)) {
                   console.log('SAVINGS PAGE - no deposits - terms not required');
+                  if (isCountryRestricted) {
+                    this.restrictApp(false);
+                  } else {
+                    this.openBuySPrimeModal();
+                  }
                 } else {
                   console.log('SAVINGS PAGE - some deposit - checking terms');
-                  this.termsService.checkTerms(walletAddress).then(signedTerms => {
-                    const termsForCurrentPage = signedTerms.find(terms => terms.type === 'SAVINGS');
-                    console.log(termsForCurrentPage);
-                    if (termsForCurrentPage === undefined) {
-                      console.log('SAVINGS PAGE - some deposit - terms not signed');
-                      if (!this.signingTermsInProgress) {
-                        this.handleTermsSign(walletAddress, true);
+                  if (isCountryRestricted) {
+                    this.restrictApp(true);
+                  } else {
+                    this.termsService.checkTerms(walletAddress).then(signedTerms => {
+                      const termsForCurrentPage = signedTerms.find(terms => terms.type === 'SAVINGS');
+                      console.log(termsForCurrentPage);
+                      if (termsForCurrentPage === undefined || termsForCurrentPage.termsVersion !== TermsService.CURRENT_TERMS_VERSION) {
+                        console.log('SAVINGS PAGE - some deposit - terms not signed');
+                        if (!this.signingTermsInProgress) {
+                          this.handleTermsSign(walletAddress, true);
+                        }
+                      } else {
+                        this.openBuySPrimeModal();
                       }
-                    }
-                  })
+                    })
+                  }
                 }
               });
           } else {
@@ -383,20 +456,30 @@ export default {
             console.log(smartLoanContract);
             if (smartLoanContract.address === NULL_ADDRESS) {
               console.log('PA PAGE - no account - terms not required');
+              if (isCountryRestricted) {
+                this.restrictApp(false);
+              } else {
+                this.openBuySPrimeModal();
+              }
             } else {
               console.log('PA PAGE - account created - checking terms');
-              this.termsService.checkTerms(walletAddress).then(signedTerms => {
-                console.log(signedTerms);
-                const termsForCurrentPage = signedTerms.find(terms => terms.type === 'PRIME_ACCOUNT');
-                if (termsForCurrentPage === undefined) {
-                  console.log('PA PAGE - account created - terms not signed');
-                  if (!this.signingTermsInProgress) {
-                    this.handleTermsSign(walletAddress, false, smartLoanContract.address);
+              if (isCountryRestricted) {
+                this.restrictApp(true);
+              } else {
+                this.termsService.checkTerms(walletAddress).then(signedTerms => {
+                  console.log(signedTerms);
+                  const termsForCurrentPage = signedTerms.find(terms => terms.type === 'PRIME_ACCOUNT');
+                  if (termsForCurrentPage === undefined || termsForCurrentPage.termsVersion !== TermsService.CURRENT_TERMS_VERSION) {
+                    console.log('PA PAGE - account created - terms not signed');
+                    if (!this.signingTermsInProgress) {
+                      this.handleTermsSign(walletAddress, false, smartLoanContract.address);
+                    }
+                  } else {
+                    console.log('PA PAGE - account created - terms signed');
+                    this.openBuySPrimeModal();
                   }
-                } else {
-                  console.log('PA PAGE - account created - terms signed');
-                }
-              });
+                });
+              }
             }
           }
         })
@@ -442,6 +525,88 @@ export default {
         }
       }
     },
+
+    async getCountry() {
+      console.warn('get country');
+      const countryRequest = await fetch('https://geo-service-frtt8nrlk-deltaprimelabs.vercel.app/api/hello');
+      const countryResponse = await countryRequest.json();
+      console.warn('----___---___--__---___--___countryResponse-_--___---___--___---__--____-----');
+      console.warn(countryResponse);
+      return countryResponse;
+    },
+
+    restrictApp(allowWithdrawals) {
+      if (allowWithdrawals) {
+        this.globalActionsDisableService.disableActionGlobally('ADD_FROM_WALLET');
+        this.globalActionsDisableService.disableActionGlobally('BORROW');
+        this.globalActionsDisableService.disableActionGlobally('WRAP');
+        this.globalActionsDisableService.disableActionGlobally('BRIDGE_COLLATERAL');
+        this.globalActionsDisableService.disableActionGlobally('DEPOSIT');
+        this.globalActionsDisableService.disableActionGlobally('DEPOSIT_AND_STAKE');
+        this.globalActionsDisableService.disableActionGlobally('MIGRATE');
+        this.globalActionsDisableService.disableActionGlobally('BRIDGE');
+        this.globalActionsDisableService.disableActionGlobally('BRIDGE_DEPOSIT');
+        this.globalActionsDisableService.disableActionGlobally('SWAP_DEPOSIT');
+        this.globalActionsDisableService.disableActionGlobally('STAKE');
+        this.globalActionsDisableService.disableActionGlobally('PROVIDE_LIQUIDITY');
+        this.globalActionsDisableService.disableActionGlobally('PARTNER_PROFILE');
+        this.globalActionsDisableService.disableActionGlobally('ADD_LIQUIDITY');
+        this.globalActionsDisableService.disableActionGlobally('FUND_AND_STAKE');
+        this.globalActionsDisableService.disableActionGlobally('LONG');
+        this.globalActionsDisableService.disableActionGlobally('SHORT');
+        this.globalActionsDisableService.disableActionGlobally('CONVERT_GLP_TO_GM');
+        this.globalActionsDisableService.disableActionGlobally('CREATE_ACCOUNT');
+        this.globalActionsDisableService.disableActionGlobally('IMPORT_AND_STAKE');
+        this.globalActionsDisableService.disableActionGlobally('CREATE_LP');
+        this.globalActionsDisableService.disableActionGlobally('MINT');
+        this.globalActionsDisableService.disableActionGlobally('REBALANCE');
+        this.globalActionsDisableService.disableActionGlobally('REDEEM');
+        this.globalActionsDisableService.disableActionGlobally('BUY');
+      } else {
+        this.globalActionsDisableService.enableReadonlyMode();
+      }
+      if (!this.restrictModalOpen) {
+        const modal = this.openModal(RestrictedCountryModal);
+        modal.allowWithdrawals = allowWithdrawals;
+        setTimeout(() => {
+          this.$forceUpdate();
+        })
+        this.restrictModalOpen = true;
+      }
+    },
+
+    checkClaimTheme(path) {
+      this.isClaimPage = path === '/claim'
+      if (this.isClaimPage) {
+        document.documentElement.classList.remove('theme--dark')
+        document.documentElement.classList.add('theme--light')
+      } else {
+        const wasDark = localStorage.getItem('PA_VIEW_THEME') === 'DARK'
+        document.documentElement.classList.remove(wasDark ? 'theme--light' : 'theme--dark')
+        document.documentElement.classList.add(wasDark ? 'theme--dark' : 'theme--light')
+      }
+    },
+
+    openBuySPrimeModal() {
+      const now = new Date().getTime();
+      if (now > LAUNCH_TIME) {
+        const buySPrimeModalClosedOnce = localStorage.getItem(BUY_SPRIME_MODAL_CLOSED);
+        if (!this.buySPrimeModalOpened && !buySPrimeModalClosedOnce) {
+          const sprimeModalInstance = this.openModal(SPrimeModal);
+          this.buySPrimeModalOpened = true;
+          sprimeModalInstance.$on('CLOSE', () => {
+            console.log('modal closed');
+            localStorage.setItem(BUY_SPRIME_MODAL_CLOSED, 'true');
+          })
+        }
+      }
+    },
+
+  },
+  watch:{
+    $route (to){
+      this.checkClaimTheme(to.fullPath)
+    }
   },
   destroyed() {
     clearInterval(this.gasPriceIntervalId);
@@ -583,4 +748,3 @@ a {
 }
 
 </style>
-

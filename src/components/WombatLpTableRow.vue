@@ -194,6 +194,7 @@ export default {
       'penpieLpAssets',
       'wombatLpBalances',
       'wombatLpAssets',
+      'wombatYYFarmsBalances',
       'noSmartLoan',
       'concentratedLpAssets',
       'concentratedLpBalances',
@@ -366,6 +367,7 @@ export default {
       modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.wombatLpAssets = this.wombatLpAssets;
       modalInstance.wombatLpBalances = this.wombatLpBalances;
+      modalInstance.wombatYYFarmsBalances = this.wombatYYFarmsBalances;
       modalInstance.farms = this.farms;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.loan = this.debt;
@@ -416,6 +418,7 @@ export default {
       modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.wombatLpAssets = this.wombatLpAssets;
       modalInstance.wombatLpBalances = this.wombatLpBalances;
+      modalInstance.wombatYYFarmsBalances = this.wombatYYFarmsBalances;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
@@ -485,6 +488,7 @@ export default {
       modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.wombatLpAssets = this.wombatLpAssets;
       modalInstance.wombatLpBalances = this.wombatLpBalances;
+      modalInstance.wombatYYFarmsBalances = this.wombatYYFarmsBalances;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
@@ -548,6 +552,7 @@ export default {
       modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.wombatLpAssets = this.wombatLpAssets;
       modalInstance.wombatLpBalances = this.wombatLpBalances;
+      modalInstance.wombatYYFarmsBalances = this.wombatYYFarmsBalances;
       modalInstance.farms = this.farms;
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.debt = this.fullLoanStatus.debt;

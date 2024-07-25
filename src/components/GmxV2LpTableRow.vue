@@ -9,6 +9,11 @@
             by <a v-on:click="openProfileModal"><b>GMX V2</b></a>
           </div>
         </div>
+        <div class="sprime-early-access">
+          <img src="src/assets/icons/icon_circle_star.svg" v-if="lpToken.minSPrimeToUnlock"
+               v-tooltip="{content: 'Early Access is available exclusively for users holding $100 or more in $sPRIME.', classes: 'info-tooltip long'}"/>
+          <span v-else class="early-access-placeholder">&nbsp;</span>
+        </div>
       </div>
 
       <div class="table__cell table__cell--double-value balance">
@@ -35,13 +40,15 @@
             <img class="asset__icon" :src="getAssetIcon(lpToken.longToken)">{{
               formatTokenBalance(longTokenAmount ? longTokenAmount : 0, 6, true)
             }}
+            <span v-if="!lpToken.isGMXPlus">
             <img class="asset__icon" :src="getAssetIcon(lpToken.shortToken)">{{
               formatTokenBalance(shortTokenAmount ? shortTokenAmount : 0, 6, true)
-            }}
+              }}
+            </span>
           </div>
           <div class="double-value__usd">
             <span>
-              {{((gmxV2Balances && gmxV2Balances[lpToken.symbol]) ? gmxV2Balances[lpToken.symbol] : 0) * lpToken.price | usd}}
+              {{ ((gmxV2Balances && gmxV2Balances[lpToken.symbol]) ? gmxV2Balances[lpToken.symbol] : 0) * lpToken.price | usd }}
             </span>
           </div>
         </template>
@@ -63,44 +70,47 @@
         {{ formatTvl(tvl) }}
       </div>
 
-<!--      <div class="table__cell capacity">-->
-<!--        <bar-gauge-beta v-if="lpToken.maxExposure" :min="0" :max="lpToken.maxExposure" :value="Math.max(lpToken.currentExposure, 0.001)" v-tooltip="{content: `${lpToken.currentExposure ? lpToken.currentExposure.toFixed(2) : 0} ($${lpToken.currentExposure ? (lpToken.currentExposure * this.lpToken.price).toFixed(2) : 0}) out of ${lpToken.maxExposure} ($${lpToken.maxExposure ? (lpToken.maxExposure * this.lpToken.price).toFixed(2) : 0}) is currently used.`, classes: 'info-tooltip'}" :width="80"></bar-gauge-beta>-->
-<!--      </div>-->
+      <!--      <div class="table__cell capacity">-->
+      <!--        <bar-gauge-beta v-if="lpToken.maxExposure" :min="0" :max="lpToken.maxExposure" :value="Math.max(lpToken.currentExposure, 0.001)" v-tooltip="{content: `${lpToken.currentExposure ? lpToken.currentExposure.toFixed(2) : 0} ($${lpToken.currentExposure ? (lpToken.currentExposure * this.lpToken.price).toFixed(2) : 0}) out of ${lpToken.maxExposure} ($${lpToken.maxExposure ? (lpToken.maxExposure * this.lpToken.price).toFixed(2) : 0}) is currently used.`, classes: 'info-tooltip'}" :width="80"></bar-gauge-beta>-->
+      <!--      </div>-->
 
-      <div class="table__cell table__cell--double-value apr" v-bind:class="{'apr--with-warning': lpToken.aprWarning}">
-        {{ apr / 100 | percent }}
+      <div class="table__cell apr" v-bind:class="{'apr--with-warning': lpToken.aprWarning}">
         <div class="apr-warning" v-if="lpToken.aprWarning">
-          <img src="src/assets/icons/warning.svg" v-tooltip="{content: lpToken.aprWarning, classes: 'info-tooltip long'}">
+          <img src="src/assets/icons/warning.svg"
+               v-tooltip="{content: 'APR value is updated twice a day. Please check GMX website to find the current pool\'s APR.', classes: 'info-tooltip long'}">
         </div>
+        {{ apr / 100 | percent }}
       </div>
 
       <div class="table__cell table__cell--double-value max-apr">
-        <span>{{ (maxApr + boostApy) | percent }}<img v-if="boostApy" v-tooltip="{content: `This pool is incentivized!<br>⁃ up to ${maxApr ? (maxApr * 100).toFixed(2) : 0}% Pool APR<br>⁃ up to ${boostApy ? (boostApy * 100).toFixed(2) : 0}% ${chain === 'arbitrum' ? 'ARB' : 'AVAX'} incentives`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span>
+        <span>{{ (maxApr + boostApy) | percent }}<img v-if="boostApy"
+                                                      v-tooltip="{content: `This pool is incentivized!<br>⁃ up to ${maxApr ? (maxApr * 100).toFixed(2) : 0}% Pool APR<br>⁃ up to ${boostApy ? (boostApy * 100).toFixed(2) : 0}% ${chain === 'arbitrum' ? 'ARB' : 'AVAX'} incentives`, classes: 'info-tooltip'}"
+                                                      src="src/assets/icons/stars.png" class="stars-icon"></span>
       </div>
 
       <div class="table__cell"></div>
 
       <div class="table__cell actions">
         <IconButtonMenuBeta
-            class="actions__icon-button"
-            :config="addActionsConfig"
-            v-if="addActionsConfig"
-            v-on:iconButtonClick="actionClick"
-            :disabled="disableAllButtons || !healthLoaded || !assets">
+          class="actions__icon-button"
+          :config="addActionsConfig"
+          v-if="addActionsConfig"
+          v-on:iconButtonClick="actionClick"
+          :disabled="disableAllButtons || !healthLoaded || !assets || !hasEarlyAccess">
         </IconButtonMenuBeta>
         <IconButtonMenuBeta
-            class="actions__icon-button last"
-            :config="removeActionsConfig"
-            v-if="removeActionsConfig"
-            v-on:iconButtonClick="actionClick"
-            :disabled="disableAllButtons || !healthLoaded || !assets">
+          class="actions__icon-button last"
+          :config="removeActionsConfig"
+          v-if="removeActionsConfig"
+          v-on:iconButtonClick="actionClick"
+          :disabled="disableAllButtons || !healthLoaded || !assets || !hasEarlyAccess">
         </IconButtonMenuBeta>
         <IconButtonMenuBeta
-            class="actions__icon-button"
-            v-if="moreActionsConfig"
-            :config="moreActionsConfig"
-            v-on:iconButtonClick="actionClick"
-            :disabled="disableAllButtons || !healthLoaded || !assets">
+          class="actions__icon-button"
+          v-if="moreActionsConfig"
+          :config="moreActionsConfig"
+          v-on:iconButtonClick="actionClick"
+          :disabled="disableAllButtons || !healthLoaded || !assets || !hasEarlyAccess">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -155,31 +165,32 @@ import erc20ABI from '../../test/abis/ERC20.json';
 import {calculateMaxApy, chartPoints, fromWei, toWei} from '../utils/calculate';
 import addresses from '../../common/addresses/avalanche/token_addresses.json';
 import {formatUnits, parseUnits} from 'ethers/lib/utils';
-import DeltaIcon from "./DeltaIcon.vue";
-import SwapModal from "./SwapModal.vue";
-import redstone from "redstone-api";
-import Toggle from "./Toggle.vue";
-import TradingViewChart from "./TradingViewChart.vue";
-import BarGaugeBeta from "./BarGaugeBeta.vue";
-import PartnerInfoModal from "./PartnerInfoModal.vue";
-import moment from "moment/moment";
+import DeltaIcon from './DeltaIcon.vue';
+import SwapModal from './SwapModal.vue';
+import redstone from 'redstone-api';
+import Toggle from './Toggle.vue';
+import TradingViewChart from './TradingViewChart.vue';
+import BarGaugeBeta from './BarGaugeBeta.vue';
+import PartnerInfoModal from './PartnerInfoModal.vue';
+import moment from 'moment/moment';
 import LIQUIDITY_CALCULATOR
-  from "../../artifacts/contracts/interfaces/level/ILiquidityCalculator.sol/ILiquidityCalculator.json";
+  from '../../artifacts/contracts/interfaces/level/ILiquidityCalculator.sol/ILiquidityCalculator.json';
 import IREADER_DEPOSIT_UTILS
-  from "../../artifacts/contracts/interfaces/gmx-v2/IReaderDepositUtils.sol/IReaderDepositUtils.json";
+  from '../../artifacts/contracts/interfaces/gmx-v2/IReaderDepositUtils.sol/IReaderDepositUtils.json';
 import IDATA_STORE
-  from "../../artifacts/contracts/interfaces/gmx-v2/IDataStore.sol/IDataStore.json";
-import SwapToMultipleModal from "./SwapToMultipleModal.vue";
-import TOKEN_ADDRESSES from "../../common/addresses/avalanche/token_addresses.json";
-import {BigNumber} from "ethers";
+  from '../../artifacts/contracts/interfaces/gmx-v2/IDataStore.sol/IDataStore.json';
+import SwapToMultipleModal from './SwapToMultipleModal.vue';
+import TOKEN_ADDRESSES from '../../common/addresses/avalanche/token_addresses.json';
+import {BigNumber} from 'ethers';
 import {
   DEPOSIT_GAS_LIMIT_KEY,
   ESTIMATED_GAS_FEE_BASE_AMOUNT,
   ESTIMATED_GAS_FEE_MULTIPLIER_FACTOR, WITHDRAWAL_GAS_LIMIT_KEY
-} from "../integrations/contracts/dataStore";
-import zapLong from "./zaps-tiles/ZapLong.vue";
-import {calculateGmxV2ExecutionFee, capitalize, hashData} from "../utils/blockchain";
-import Dropdown from "./notifi/settings/Dropdown.vue";
+} from '../integrations/contracts/dataStore';
+import zapLong from './zaps-tiles/ZapLong.vue';
+import {calculateGmxV2ExecutionFee, capitalize, hashData} from '../utils/blockchain';
+import Dropdown from './notifi/settings/Dropdown.vue';
+import {ActionSection} from '../services/globalActionsDisableService';
 
 export default {
   name: 'GmxV2LpTableRow',
@@ -215,6 +226,8 @@ export default {
     this.watchAssetPricesUpdate();
     this.watchLtipMaxBoostUpdate();
     this.fetchHistoricalPrices();
+    this.watchActionDisabling();
+    this.watchSPrime();
   },
 
   data() {
@@ -248,6 +261,8 @@ export default {
       boostApy: 0,
       selectedChart: 'PRICE',
       chain: null,
+      isActionDisabledRecord: {},
+      hasEarlyAccess: null
     };
   },
 
@@ -274,6 +289,7 @@ export default {
       'penpieLpAssets',
       'wombatLpAssets',
       'wombatLpBalances',
+      'wombatYYFarmsBalances',
       'apys',
     ]),
     ...mapState('poolStore', ['pools']),
@@ -285,7 +301,9 @@ export default {
       'priceService',
       'lpService',
       'healthService',
-      'ltipService'
+      'ltipService',
+      'globalActionsDisableService',
+      'sPrimeService',
     ]),
     ...mapState('stakeStore', ['farms']),
 
@@ -331,27 +349,29 @@ export default {
       'withdraw',
       'addLiquidityGmxV2',
       'removeLiquidityGmxV2',
+      'addLiquidityGmxPlus',
+      'removeLiquidityGmxPlus'
     ]),
     setupAddActionsConfiguration() {
       this.addActionsConfig =
-          {
-            iconSrc: 'src/assets/icons/plus.svg',
-            tooltip: 'Add',
-            menuOptions: [
-              {
-                key: 'ADD_FROM_WALLET',
-                name: 'Import existing GM token',
-                disabled: !this.hasSmartLoanContract,
-                disabledInfo: 'To import GM token, you need to add some funds from you wallet first'
-              },
-              {
-                key: 'PROVIDE_LIQUIDITY',
-                name: 'Create GM position',
-                disabled: !this.hasSmartLoanContract,
-                disabledInfo: 'To create GM token, you need to add some funds from you wallet first'
-              }
-            ]
-          }
+        {
+          iconSrc: 'src/assets/icons/plus.svg',
+          tooltip: 'Add',
+          menuOptions: [
+            {
+              key: 'ADD_FROM_WALLET',
+              name: 'Import existing GM token',
+              disabled: this.isActionDisabledRecord['ADD_FROM_WALLET'] || !this.hasSmartLoanContract,
+              disabledInfo: this.isActionDisabledRecord['ADD_FROM_WALLET'] ? '' : 'To import GM token, you need to add some funds from you wallet first'
+            },
+            {
+              key: 'PROVIDE_LIQUIDITY',
+              name: 'Create GM position',
+              disabled: this.isActionDisabledRecord['PROVIDE_LIQUIDITY'] || !this.hasSmartLoanContract,
+              disabledInfo: this.isActionDisabledRecord['PROVIDE_LIQUIDITY'] ? '' : 'To create GM token, you need to add some funds from you wallet first'
+            }
+          ]
+        }
     },
     handleDropdownOption(option) {
       this.selectedChart = option.value;
@@ -359,23 +379,23 @@ export default {
 
     setupRemoveActionsConfiguration() {
       this.removeActionsConfig =
-          {
-            iconSrc: 'src/assets/icons/minus.svg',
-            tooltip: 'Remove',
-            menuOptions: [
-              {
-                key: 'WITHDRAW',
-                name: 'Export GM position',
-                disabled: !this.hasSmartLoanContract
-              },
-              {
-                key: 'REMOVE_LIQUIDITY',
-                name: 'Remove GM position',
-                disabled: !this.hasSmartLoanContract,
-                disabledInfo: 'You need to add some funds from you wallet first'
-              }
-            ]
-          }
+        {
+          iconSrc: 'src/assets/icons/minus.svg',
+          tooltip: 'Remove',
+          menuOptions: [
+            {
+              key: 'WITHDRAW',
+              name: 'Export GM position',
+              disabled: this.isActionDisabledRecord['WITHDRAW'] || !this.hasSmartLoanContract
+            },
+            {
+              key: 'REMOVE_LIQUIDITY',
+              name: 'Remove GM position',
+              disabled: this.isActionDisabledRecord['REMOVE_LIQUIDITY'] || !this.hasSmartLoanContract,
+              disabledInfo: this.isActionDisabledRecord['REMOVE_LIQUIDITY'] ? '' : 'You need to add some funds from you wallet first'
+            }
+          ]
+        }
     },
 
     setupMoreActionsConfiguration() {
@@ -386,6 +406,7 @@ export default {
           {
             key: 'PARTNER_PROFILE',
             name: 'Show profile',
+            disabled: this.isActionDisabledRecord['PARTNER_PROFILE'],
           }
         ]
       };
@@ -436,10 +457,10 @@ export default {
       }
 
       let [longTokenOut, shortTokenOut] = await depositReader.getWithdrawalAmountOut(
-          config.gmxV2DataStoreAddress, marketProps, prices, toWei((this.gmxV2Balances[this.lpToken.symbol]).toString()), this.nullAddress
+        config.gmxV2DataStoreAddress, marketProps, prices, toWei((this.gmxV2Balances[this.lpToken.symbol]).toString()), this.nullAddress
       );
 
-      this.longTokenAmount = formatUnits(longTokenOut, longToken.decimals);
+      this.longTokenAmount = this.lpToken.isGMXPlus ?  2 * formatUnits(longTokenOut, longToken.decimals) : formatUnits(longTokenOut, longToken.decimals);
       this.shortTokenAmount = formatUnits(shortTokenOut, shortToken.decimals);
     },
 
@@ -457,7 +478,7 @@ export default {
     },
 
     actionClick(key) {
-      if (!this.disableAllButtons && this.healthLoaded) {
+      if (!this.isActionDisabledRecord[key] && !this.disableAllButtons && this.healthLoaded) {
         switch (key) {
           case 'ADD_FROM_WALLET':
             this.openAddFromWalletModal();
@@ -493,7 +514,8 @@ export default {
 
 
       return async (sourceAsset, targetAsset, amountIn) => {
-        let gmxData = await (await fetch(`https://${config.chainSlug}-api.gmxinfra.io/prices/tickers`)).json();
+        let gmxData = await (await fetch(`https://${config.chainSlug}-v2-1-api.gmxinfra.io/prices/tickers`)).json();
+
 
         let shortTokenGmxData = gmxData.find(el => el.tokenSymbol === shortToken.symbol);
         let longTokenGmxData = gmxData.find(el => el.tokenSymbol === longToken.symbol);
@@ -515,17 +537,38 @@ export default {
         }
 
         if (config.GMX_V2_ASSETS_CONFIG[sourceAsset]) {
+          console.log('getWithdrawalAmountOut');
+          if (this.lpToken.isGMXPlus) {
+            marketProps.shortToken = JSON.parse(JSON.stringify(marketProps.longToken));
+            marketProps.indexToken = JSON.parse(JSON.stringify(marketProps.longToken));
+          }
           let [longTokenOut, shortTokenOut] = await depositReader.getWithdrawalAmountOut(
-              config.gmxV2DataStoreAddress, marketProps, prices, amountIn, this.nullAddress
+            config.gmxV2DataStoreAddress, marketProps, prices, amountIn, this.nullAddress
           );
+          console.log(longTokenOut);
+          console.log(shortTokenOut);
 
-          return [longTokenOut, shortTokenOut];
+          if (!this.lpToken.isGMXPlus) {
+            return [longTokenOut, shortTokenOut];
+          } else {
+            return [longTokenOut.add(shortTokenOut)];
+          }
         } else {
+          if (this.lpToken.isGMXPlus) {
+            marketProps.shortToken = JSON.parse(JSON.stringify(marketProps.longToken));
+            marketProps.indexToken = JSON.parse(JSON.stringify(marketProps.longToken));
+          }
           let isLong = this.lpToken.longToken === sourceAsset;
-
+          console.log('getDepositAmountOut');
+          console.log('isLong', isLong);
+          console.log('amountIn', amountIn);
+          console.log('prices', prices);
+          console.log('marketProps', marketProps);
           let amountOut = await depositReader.getDepositAmountOut(
-              config.gmxV2DataStoreAddress, marketProps, prices, isLong ? amountIn : 0, isLong ? 0 : amountIn, this.nullAddress
+            config.gmxV2DataStoreAddress, marketProps, prices, isLong ? amountIn : 0, isLong ? 0 : amountIn, this.nullAddress
           );
+
+          console.log('amountOut', amountOut);
 
           return amountOut;
         }
@@ -558,6 +601,7 @@ export default {
     },
 
     async openAddFromWalletModal() {
+      console.log(this.lpToken);
       const modalInstance = this.openModal(AddFromWalletModal);
       modalInstance.asset = this.lpToken;
       modalInstance.assetBalance = this.gmxV2Balances && this.gmxV2Balances[this.lpToken.symbol] ? this.gmxV2Balances[this.lpToken.symbol] : 0;
@@ -573,6 +617,7 @@ export default {
       modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.wombatLpAssets = this.wombatLpAssets;
       modalInstance.wombatLpBalances = this.wombatLpBalances;
+      modalInstance.wombatYYFarmsBalances = this.wombatYYFarmsBalances;
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.concentratedLpAssets = this.concentratedLpAssets;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
@@ -592,9 +637,10 @@ export default {
             value: addFromWalletEvent.value.toString(),
             asset: this.lpToken.symbol,
             assetDecimals: config.GMX_V2_ASSETS_CONFIG[this.lpToken.symbol].decimals,
-            pid: this.lpToken.pid,
+            pid: null,
             type: 'GMX_V2',
           };
+          console.log(fundRequest);
           this.handleTransaction(this.fund, {fundRequest: fundRequest}, () => {
             this.$forceUpdate();
           }, (error) => {
@@ -627,6 +673,7 @@ export default {
       modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.wombatLpAssets = this.wombatLpAssets;
       modalInstance.wombatLpBalances = this.wombatLpBalances;
+      modalInstance.wombatYYFarmsBalances = this.wombatYYFarmsBalances;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.farms = this.farms;
       modalInstance.health = this.health;
@@ -657,11 +704,11 @@ export default {
       modalInstance.title = 'Create GMX V2 position';
       modalInstance.swapDex = 'GmxV2';
       modalInstance.swapDebtMode = false;
-      modalInstance.slippageMargin = 0.1;
+      modalInstance.slippageMargin = 0.5;
       modalInstance.sourceAsset = initSourceAsset;
       modalInstance.sourceAssetBalance = this.assetBalances[initSourceAsset];
       modalInstance.assets = {...this.assets};
-      modalInstance.sourceAssets = [this.lpToken.shortToken, this.lpToken.longToken];
+      modalInstance.sourceAssets = this.lpToken.isGMXPlus ? [this.lpToken.longToken] : [this.lpToken.shortToken, this.lpToken.longToken];
       modalInstance.targetAssetsConfig = config.GMX_V2_ASSETS_CONFIG;
       modalInstance.targetAssets = [this.lpToken.symbol];
       modalInstance.assetBalances = {...this.assetBalances, ...this.gmxV2Balances};
@@ -675,6 +722,7 @@ export default {
       modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.wombatLpAssets = this.wombatLpAssets;
       modalInstance.wombatLpBalances = this.wombatLpBalances;
+      modalInstance.wombatYYFarmsBalances = this.wombatYYFarmsBalances;
       modalInstance.lpBalances = this.lpBalances;
       modalInstance.concentratedLpBalances = this.concentratedLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
@@ -688,14 +736,18 @@ export default {
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.checkMarketDeviation = false;
 
+      console.log('calculate fee');
       const executionFee = await calculateGmxV2ExecutionFee(
-          config.gmxV2DataStoreAddress,
-          config.gmxV2DepositCallbackGasLimit,
-          config.gmxV2UseMaxPriorityFeePerGas,
-          config.gmxV2GasPriceBuffer,
-          config.gmxV2GasPricePremium,
-          true);
+        config.gmxV2DataStoreAddress,
+        config.gmxV2DepositCallbackGasLimit,
+        config.gmxV2UseMaxPriorityFeePerGas,
+        config.gmxV2GasPriceBuffer,
+        config.gmxV2GasPricePremium,
+        true);
       modalInstance.info = `<div>Execution fee: ${executionFee.toFixed(6)}${config.nativeToken}. Unused gas will be returned to your account.</div>`;
+      modalInstance.additionalInfo = `<div>The buying capacity might influence minting success. This can be found on <b><a href="https://app.gmx.io/#/pools" target="_blank">GMX</a></b>.</div>`;
+
+      console.log('executionFee', executionFee);
 
 
       const nativeBalance = parseFloat(ethers.utils.formatEther(await this.provider.getBalance(this.account)));
@@ -720,29 +772,51 @@ export default {
 
       modalInstance.initiate();
 
+      if (!this.lpToken.isGMXPlus) {
+        modalInstance.$on('SWAP', swapEvent => {
 
-      modalInstance.$on('SWAP', swapEvent => {
+          console.log(JSON.stringify(swapEvent));
 
-        console.log(JSON.stringify(swapEvent));
+          const addLiquidityRequest = {
+            sourceAsset: swapEvent.sourceAsset,
+            targetAsset: swapEvent.targetAsset,
 
-        const addLiquidityRequest = {
-          sourceAsset: swapEvent.sourceAsset,
-          targetAsset: swapEvent.targetAsset,
+            isLongToken: swapEvent.sourceAsset === this.lpToken.longToken,
+            sourceAmount: swapEvent.sourceAmount,
+            minGmAmount: swapEvent.targetAmount,
+            executionFee: executionFee,
+            method: `deposit${capitalize(this.lpToken.longToken)}${capitalize(this.lpToken.shortToken)}GmxV2`
+          };
 
-          isLongToken: swapEvent.sourceAsset === this.lpToken.longToken,
-          sourceAmount: swapEvent.sourceAmount,
-          minGmAmount: swapEvent.targetAmount,
-          executionFee: executionFee,
-          method: `deposit${capitalize(this.lpToken.longToken)}${capitalize(this.lpToken.shortToken)}GmxV2`
-        };
-
-        this.handleTransaction(this.addLiquidityGmxV2, {addLiquidityRequest: addLiquidityRequest}, () => {
-          this.$forceUpdate();
-        }, (error) => {
-          this.handleTransactionError(error);
-        }).then(() => {
+          this.handleTransaction(this.addLiquidityGmxV2, {addLiquidityRequest: addLiquidityRequest}, () => {
+            this.$forceUpdate();
+          }, (error) => {
+            this.handleTransactionError(error);
+          }).then(() => {
+          });
         });
-      });
+      } else {
+
+        modalInstance.$on('SWAP', swapEvent => {
+          console.log(JSON.stringify(swapEvent));
+          const addLiquidityRequest = {
+            sourceAsset: swapEvent.sourceAsset,
+            targetAsset: swapEvent.targetAsset,
+            sourceAmount: swapEvent.sourceAmount,
+            minGmAmount: swapEvent.targetAmount,
+            executionFee: executionFee,
+            method: this.lpToken.addMethod
+          };
+
+          this.handleTransaction(this.addLiquidityGmxPlus, {addLiquidityRequest: addLiquidityRequest}, () => {
+            this.$forceUpdate();
+          }, (error) => {
+            this.handleTransactionError(error);
+          }).then(() => {
+          });
+
+        })
+      }
     },
 
     async openRemoveLiquidityModal() {
@@ -750,13 +824,13 @@ export default {
       modalInstance.title = 'Unwind GMX V2 position';
       modalInstance.swapDex = 'GmxV2';
       modalInstance.dexOptions = ['GmxV2'];
-      modalInstance.userSlippage = 0.1;
+      modalInstance.userSlippage = 0.5;
       modalInstance.sourceAsset = this.lpToken.symbol;
       modalInstance.sourceAssetBalance = this.gmxV2Balances[this.lpToken.symbol];
       modalInstance.sourceAssetsConfig = config.GMX_V2_ASSETS_CONFIG;
       modalInstance.assets = this.assets;
       modalInstance.sourceAssets = {GmxV2: [this.lpToken.symbol]};
-      modalInstance.targetAssets = {GmxV2: [this.lpToken.longToken, this.lpToken.shortToken]};
+      modalInstance.targetAssets = this.lpToken.isGMXPlus ? {GmxV2: [this.lpToken.longToken]} : {GmxV2: [this.lpToken.longToken, this.lpToken.shortToken]};
       modalInstance.assetBalances = {...this.assetBalances, ...this.gmxV2Balances};
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.lpAssets = this.lpAssets;
@@ -774,12 +848,14 @@ export default {
       modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.wombatLpAssets = this.wombatLpAssets;
       modalInstance.wombatLpBalances = this.wombatLpBalances;
+      modalInstance.wombatYYFarmsBalances = this.wombatYYFarmsBalances;
       modalInstance.farms = this.farms;
       modalInstance.targetAsset = this.lpToken.longToken;
       modalInstance.debt = this.fullLoanStatus.debt;
       modalInstance.thresholdWeightedValue = this.fullLoanStatus.thresholdWeightedValue ? this.fullLoanStatus.thresholdWeightedValue : 0;
       modalInstance.health = this.fullLoanStatus.health;
       modalInstance.targetAssetAmounts = [0, 0];
+      modalInstance.additionalInfo = `<div>The selling capacity might influence redeeming success. This can be found on <b><a href="https://app.gmx.io/#/pools" target="_blank">GMX</a></b>.</div>`;
 
       // modalInstance.info = `info .`;
       modalInstance.queryMethods = {
@@ -791,12 +867,12 @@ export default {
       modalInstance.swapDex = 'GmxV2';
 
       const executionFee = await calculateGmxV2ExecutionFee(
-          config.gmxV2DataStoreAddress,
-          config.gmxV2DepositCallbackGasLimit,
-          config.gmxV2UseMaxPriorityFeePerGas,
-          config.gmxV2GasPriceBuffer,
-          config.gmxV2GasPricePremium,
-          false);
+        config.gmxV2DataStoreAddress,
+        config.gmxV2DepositCallbackGasLimit,
+        config.gmxV2UseMaxPriorityFeePerGas,
+        config.gmxV2GasPriceBuffer,
+        config.gmxV2GasPricePremium,
+        false);
       modalInstance.info = `<div>Execution fee: ${executionFee.toFixed(6)}${config.nativeToken}. Unused gas will be returned to your account.</div>`;
 
       const nativeBalance = parseFloat(ethers.utils.formatEther(await this.provider.getBalance(this.account)));
@@ -813,26 +889,50 @@ export default {
 
       modalInstance.initiate();
 
-      modalInstance.$on('SWAP_TO_MULTIPLE', swapEvent => {
+      if (!this.lpToken.isGMXPlus) {
 
-        const removeLiquidityRequest = {
-          gmToken: swapEvent.sourceAsset,
-          longToken: swapEvent.targetAssets[0],
-          shortToken: swapEvent.targetAssets[1],
-          gmAmount: swapEvent.sourceAmount,
-          minLongAmount: swapEvent.targetAmounts[0],
-          minShortAmount: swapEvent.targetAmounts[1],
-          executionFee: executionFee,
-          method: `withdraw${capitalize(this.lpToken.longToken)}${capitalize(this.lpToken.shortToken)}GmxV2`
-        };
+        modalInstance.$on('SWAP_TO_MULTIPLE', swapEvent => {
 
-        this.handleTransaction(this.removeLiquidityGmxV2, {removeLiquidityRequest: removeLiquidityRequest}, () => {
-          this.$forceUpdate();
-        }, (error) => {
-          this.handleTransactionError(error);
-        }).then(() => {
+          const removeLiquidityRequest = {
+            gmToken: swapEvent.sourceAsset,
+            longToken: swapEvent.targetAssets[0],
+            shortToken: swapEvent.targetAssets[1],
+            gmAmount: swapEvent.sourceAmount,
+            minLongAmount: swapEvent.targetAmounts[0],
+            minShortAmount: swapEvent.targetAmounts[1],
+            executionFee: executionFee,
+            method: `withdraw${capitalize(this.lpToken.longToken)}${capitalize(this.lpToken.shortToken)}GmxV2`
+          };
+
+          this.handleTransaction(this.removeLiquidityGmxV2, {removeLiquidityRequest: removeLiquidityRequest}, () => {
+            this.$forceUpdate();
+          }, (error) => {
+            this.handleTransactionError(error);
+          }).then(() => {
+          });
         });
-      });
+      } else {
+        modalInstance.$on('SWAP_TO_MULTIPLE', swapEvent => {
+          console.log(swapEvent);
+
+          const removeLiquidityRequest = {
+            sourceAsset: swapEvent.sourceAsset,
+            targetAsset: swapEvent.targetAssets[0],
+            executionFee: executionFee,
+            sourceAmount: swapEvent.sourceAmount,
+            targetAmount: swapEvent.targetAmounts[0],
+            method: this.lpToken.removeMethod
+          }
+
+
+          this.handleTransaction(this.removeLiquidityGmxPlus, {removeLiquidityRequest: removeLiquidityRequest}, () => {
+            this.$forceUpdate();
+          }, (error) => {
+            this.handleTransactionError(error);
+          }).then(() => {
+          });
+        })
+      }
     },
 
     openProfileModal() {
@@ -856,7 +956,7 @@ export default {
           {name: 'Multisig', state: 'ENABLED'},
           {
             name: `Audits `, state: 'ENABLED', tooltip:
-                `
+              `
           `
           },
           {
@@ -892,6 +992,7 @@ export default {
     },
 
     async getWalletLpTokenBalance() {
+      console.log(this.lpToken.address);
       const tokenContract = new ethers.Contract(this.lpToken.address, erc20ABI, this.provider.getSigner());
 
       return await this.getWalletTokenBalance(this.account, this.lpToken.symbol, tokenContract, this.lpToken.decimals);
@@ -1000,7 +1101,7 @@ export default {
       });
 
       const [prices, minPrice, maxPrice] = chartPoints(
-          response
+        response
       );
 
       const priceChange = prices && (prices[prices.length - 1].y - prices[0].y) / prices[prices.length - 1].y;
@@ -1028,12 +1129,33 @@ export default {
       const longTotalWorth = longConfig.price * formatUnits(await longERC20.balanceOf(this.lpToken.address), longConfig.decimals);
       const shortTotalWorth = shortConfig.price * formatUnits(await shortERC20.balanceOf(this.lpToken.address), shortConfig.decimals);
 
-      this.tvl = longTotalWorth + shortTotalWorth;
+
+      this.tvl = this.lpToken.isGMXPlus ? longTotalWorth : longTotalWorth + shortTotalWorth;
     },
 
     depositGasLimitKey(singleToken) {
-      return hashData(["bytes32", "bool"], [DEPOSIT_GAS_LIMIT_KEY, singleToken]);
-    }
+      return hashData(['bytes32', 'bool'], [DEPOSIT_GAS_LIMIT_KEY, singleToken]);
+    },
+
+    watchActionDisabling() {
+      this.globalActionsDisableService.getSectionActions$(ActionSection.GMXV2)
+        .subscribe(isActionDisabledRecord => {
+          this.isActionDisabledRecord = isActionDisabledRecord;
+          this.setupAddActionsConfiguration();
+          this.setupRemoveActionsConfiguration();
+          this.setupMoreActionsConfiguration();
+        })
+    },
+
+    watchSPrime() {
+      if (this.lpToken.minSPrimeToUnlock) {
+        this.sPrimeService.observeSPrimeValue().subscribe(value => {
+          this.hasEarlyAccess = value >= this.lpToken.minSPrimeToUnlock;
+        })
+      } else {
+        this.hasEarlyAccess = true;
+      }
+    },
   },
 };
 </script>
@@ -1150,6 +1272,13 @@ export default {
 
       &.apr {
         padding-right: 24px;
+        flex-direction: row;
+        justify-content: flex-end;
+        align-items: center;
+
+        .apr-warning {
+          margin-right: 5px;
+        }
       }
 
       &.max-apr {

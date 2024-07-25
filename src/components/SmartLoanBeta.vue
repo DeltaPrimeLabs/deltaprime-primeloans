@@ -12,6 +12,7 @@
           :healthLoading="healthLoading">
       </StatsBarBeta>
 
+      <SPrimePanel v-if="afterLaunchTime" :is-prime-account="true" :user-address="account" :total-deposits-or-borrows="noSmartLoanInternal ? 0 : debt"></SPrimePanel>
       <LTIPStatsBar v-if="isArbitrum"></LTIPStatsBar>
 
       <InfoBubble v-if="noSmartLoanInternal === false" cacheKey="ACCOUNT-READY">
@@ -102,6 +103,7 @@ import Stats from './stats/Stats.vue';
 import LPTab from "./LPTab.vue";
 import Zaps from "./Zaps.vue";
 import LTIPStatsBar from './LTIPStatsBar.vue';
+import SPrimePanel from './SPrimePanel.vue';
 
 const TABS = [
   {
@@ -127,10 +129,12 @@ const TABS = [
 ];
 
 const TUTORIAL_VIDEO_CLOSED_LOCALSTORAGE_KEY = 'TUTORIAL_VIDEO_CLOSED';
+const LAUNCH_TIME = 1719853200000;
 
 export default {
   name: 'SmartLoanBeta',
   components: {
+    SPrimePanel,
     LTIPStatsBar,
     Zaps,
     LPTab,
@@ -165,6 +169,7 @@ export default {
       'penpieLpBalances',
       'wombatLpAssets',
       'wombatLpBalances',
+      'wombatYYFarmsBalances',
       'traderJoeV2LpAssets',
       'fullLoanStatus',
       'noSmartLoan',
@@ -189,7 +194,11 @@ export default {
     ...mapState('network', ['account']),
     primeAccountsBlocked() {
       return config.primeAccountsBlocked;
-    }
+    },
+    afterLaunchTime() {
+      const now = new Date().getTime();
+      return now > LAUNCH_TIME;
+    },
   },
   watch: {
     assetBalances: {
@@ -257,10 +266,12 @@ export default {
     ...mapActions('fundsStore', ['fundsStoreSetup', 'getAccountApr']),
     ...mapActions('stakeStore', ['stakeStoreSetup']),
     ...mapActions('poolStore', ['poolStoreSetup']),
+    ...mapActions('sPrimeStore', ['sPrimeStoreSetup']),
 
     initStoresWhenProviderAndAccountCreated() {
       combineLatest([this.providerService.observeProviderCreated(), this.accountService.observeAccountLoaded()])
           .subscribe(async ([provider, account]) => {
+            this.sPrimeStoreSetup();
             await this.poolStoreSetup();
             await this.fundsStoreSetup();
             await this.stakeStoreSetup();
@@ -376,6 +387,7 @@ export default {
             this.penpieLpBalances,
             this.wombatLpAssets,
             this.wombatLpBalances,
+            this.wombatYYFarmsBalances,
             this.traderJoeV2LpAssets,
             this.farms,
         );
@@ -425,6 +437,7 @@ export default {
 
 .main-content {
   margin-top: 30px;
+  margin-bottom: 60px;
 }
 
 .account-apr-widget-wrapper {

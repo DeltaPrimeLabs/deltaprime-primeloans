@@ -1,13 +1,17 @@
 <template>
   <div class="pools-table-row-component">
-    <div class="table__row" v-if="pool" :class="{'unlocking': poolsUnlocking, 'disabled': pool.disabled}">
+    <div class="table__row" v-if="pool" :class="{'arbitrum': isArbitrum, 'disabled': pool.disabled}">
       <div class="table__cell asset">
         <img class="asset__icon" :src="getAssetIcon(pool.asset.symbol)">
         <div class="asset__info">
           <div class="asset__name">{{ pool.asset.symbol }}</div>
         </div>
+        <div v-if="pool.hasAvalancheBoost">
+          <img
+              v-tooltip="{content: `This pool is incentivized with Boost Program.`, classes: 'info-tooltip'}"
+              src="src/assets/icons/stars.png" class="stars-icon">
+        </div>
       </div>
-
       <div class="table__cell table__cell--double-value deposit">
         <template>
           <div class="double-value__pieces">
@@ -21,6 +25,13 @@
         <template v-if="pool.deposit === 0">
           <div class="no-value-dash"></div>
         </template>
+      </div>
+
+      <div class="table__cell avalanche-boost" v-if="isAvalanche">
+        <div class="avalanche-boost-unclaimed" v-if="pool.hasAvalancheBoost">
+          <LoadedValue :check="() => pool.unclaimed !== null" :value="(pool.hasAvalancheBoost ? pool.unclaimed : 0) | smartRound(5, false)"></LoadedValue>
+          <img class="asset__icon" v-if="pool.avalancheBoostRewardToken" :src="getAssetIcon(pool.avalancheBoostRewardToken)">
+        </div>
       </div>
 
       <div class="table__cell sprime">
@@ -54,7 +65,7 @@
         </div>
       </div>
 
-      <div class="table__cell unlocked" v-if="poolsUnlocking">
+      <div class="table__cell unlocked" v-if="isArbitrum">
         <bar-gauge-beta :min="0" :max="1" :width="80"
                         :value="Math.min(pool.tvl * pool.assetPrice / 1000000, 1)"></bar-gauge-beta>
       </div>
@@ -73,6 +84,13 @@
           v-bind:key="index"
           :config="actionConfig"
           v-on:iconButtonClick="actionClick">
+        </IconButtonMenuBeta>
+        <IconButtonMenuBeta
+            class="actions__icon-button"
+            v-if="moreActionsConfig"
+            :config="moreActionsConfig"
+            v-on:iconButtonClick="actionClick"
+            :disabled="!pool">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -94,6 +112,8 @@ import config from '../config';
 import YAK_ROUTER_ABI from '../../test/abis/YakRouter.json';
 import BarGaugeBeta from './BarGaugeBeta.vue';
 import InfoIcon from './InfoIcon.vue';
+import {ActionSection} from "../services/globalActionsDisableService";
+import ClaimRewardsModal from "./ClaimRewardsModal.vue";
 
 let TOKEN_ADDRESSES;
 
@@ -105,23 +125,32 @@ export default {
   },
 
   async mounted() {
+    this.isArbitrum = config.chainSlug === 'arbitrum';
+    this.isAvalanche = config.chainSlug === 'avalanche';
     await this.setupFiles();
     this.setupActionsConfiguration();
     this.setupWalletAssetBalances();
     this.setupPoolsAssetsData();
     this.watchLifi();
+    this.watchActionDisabling();
+    setTimeout(() => {
+      console.log(this.isActionDisabledRecord);
+    }, 4000)
   },
 
   data() {
     return {
       actionsConfig: null,
+      moreActionsConfig: null,
       walletAssetBalances: {},
       poolDepositBalances: {},
       poolAssetsPrices: {},
       poolContracts: {},
       lifiData: {},
       miningApy: 0,
-      poolsUnlocking: config.poolsUnlocking
+      isArbitrum: null,
+      isAvalanche: null,
+      isActionDisabledRecord: {},
     };
   },
 
@@ -142,18 +171,20 @@ export default {
       'walletAssetBalancesService',
       'lifiService',
       'progressBarService',
-      'providerService'
+      'providerService',
+      'globalActionsDisableService'
     ]),
   },
 
   methods: {
-    ...mapActions('poolStore', ['deposit', 'withdraw', 'swapDeposit']),
+    ...mapActions('poolStore', ['deposit', 'withdraw', 'swapDeposit', 'claimAvalancheBoost']),
 
     async setupFiles() {
       TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
     },
 
     setupActionsConfiguration() {
+      console.warn('WITHDRAW', this.isActionDisabledRecord['WITHDRAW']);
       this.actionsConfig = [
         {
           iconSrc: 'src/assets/icons/plus.svg',
@@ -161,16 +192,18 @@ export default {
           menuOptions: [
             {
               key: 'DEPOSIT',
-              name: 'Deposit'
+              name: 'Deposit',
+              disabled: this.isActionDisabledRecord['DEPOSIT'],
             },
             ...(this.pool.asset.symbol === 'AVAX' ? [{
               key: 'BRIDGE',
-              name: 'Bridge'
+              name: 'Bridge',
+              disabled: this.isActionDisabledRecord['BRIDGE'],
             }] : []),
             {
               key: 'BRIDGE_DEPOSIT',
               name: 'Bridge and deposit',
-              disabled: true,
+              disabled: this.isActionDisabledRecord['BRIDGE_DEPOSIT'] || true,
               disabledInfo: 'Available soon'
             },
           ]
@@ -178,17 +211,34 @@ export default {
         {
           iconSrc: 'src/assets/icons/minus.svg',
           tooltip: 'Withdraw',
-          iconButtonActionKey: 'WITHDRAW'
-        },
-        {
-          iconSrc: 'src/assets/icons/swap.svg',
-          tooltip: 'Swap',
-          iconButtonActionKey: 'SWAP_DEPOSIT'
-        },
+          iconButtonActionKey: 'WITHDRAW',
+          disabled: this.isActionDisabledRecord['WITHDRAW'],
+        }
       ];
     },
 
-    setupWalletAssetBalances() {
+    setupMoreActionsConfiguration() {
+      this.moreActionsConfig = {
+        iconSrc: 'src/assets/icons/icon_a_more.svg',
+        tooltip: 'More',
+        menuOptions: [
+          {
+            iconSrc: 'src/assets/icons/swap.svg',
+            key: 'SWAP_DEPOSIT',
+            name: 'Swap',
+            disabled: this.isActionDisabledRecord['SWAP_DEPOSIT'],
+          }
+          ,
+          this.pool.hasAvalancheBoost ? {
+            key: 'CLAIM_AVALANCHE_BOOST',
+            name: 'Claim rewards',
+            disabled: this.isActionDisabledRecord['CLAIM_AVALANCHE_BOOST'],
+          } : null,
+        ]
+      };
+    },
+
+      setupWalletAssetBalances() {
       this.walletAssetBalancesService.observeWalletAssetBalances().subscribe(balances => {
         this.walletAssetBalances = balances;
       });
@@ -217,34 +267,48 @@ export default {
       });
     },
 
-    actionClick(key) {
-      const history = JSON.parse(localStorage.getItem('active-bridge-deposit'));
-      const activeTransfer = history ? history[this.account.toLowerCase()] : null;
+    watchActionDisabling() {
+      this.globalActionsDisableService.getSectionActions$(ActionSection.POOLS)
+          .subscribe(isActionDisabledRecord => {
+            this.isActionDisabledRecord = isActionDisabledRecord;
+            this.setupActionsConfiguration();
+            this.setupMoreActionsConfiguration();
+          })
+    },
 
-      switch (key) {
-        case 'DEPOSIT':
-          this.openDepositModal();
-          break;
-        case 'BRIDGE':
-          if (activeTransfer) {
-            this.$emit('openResumeBridge', activeTransfer);
-          } else {
-            this.openBridgeModal(true);
-          }
-          break;
-        case 'BRIDGE_DEPOSIT':
-          if (activeTransfer) {
-            this.$emit('openResumeBridge', activeTransfer);
-          } else {
-            this.openBridgeModal(false);
-          }
-          break;
-        case 'WITHDRAW':
-          this.openWithdrawModal();
-          break;
-        case 'SWAP_DEPOSIT':
-          this.openSwapDepositModal();
-          break;
+    actionClick(key) {
+      if (!this.isActionDisabledRecord[key]) {
+        const history = JSON.parse(localStorage.getItem('active-bridge-deposit'));
+        const activeTransfer = history ? history[this.account.toLowerCase()] : null;
+
+        switch (key) {
+          case 'DEPOSIT':
+            this.openDepositModal();
+            break;
+          case 'BRIDGE':
+            if (activeTransfer) {
+              this.$emit('openResumeBridge', activeTransfer);
+            } else {
+              this.openBridgeModal(true);
+            }
+            break;
+          case 'BRIDGE_DEPOSIT':
+            if (activeTransfer) {
+              this.$emit('openResumeBridge', activeTransfer);
+            } else {
+              this.openBridgeModal(false);
+            }
+            break;
+          case 'WITHDRAW':
+            this.openWithdrawModal();
+            break;
+          case 'SWAP_DEPOSIT':
+            this.openSwapDepositModal();
+            break;
+          case 'CLAIM_AVALANCHE_BOOST':
+            this.openClaimAvalancheBoost();
+            break;
+        }
       }
     },
 
@@ -256,6 +320,14 @@ export default {
       modalInstance.accountBalance = this.accountBalance;
       modalInstance.deposit = this.pool.deposit;
       modalInstance.assetSymbol = this.pool.asset.symbol;
+      modalInstance.miningApy = this.pool.miningApy;
+      modalInstance.rewardToken = this.pool.avalancheBoostRewardToken;
+
+      console.log('pool: ', this.pool)
+      console.log('this.pool.miningApy: ', this.pool.miningApy)
+      console.log('modalInstance.miningApy: ', modalInstance.miningApy)
+      console.log('modalInstance.rewardToken: ', modalInstance.rewardToken)
+
       modalInstance.$on('DEPOSIT', depositEvent => {
         const depositRequest = {
           assetSymbol: this.pool.asset.symbol,
@@ -394,6 +466,32 @@ export default {
       };
     },
 
+    async openClaimAvalancheBoost() {
+      const modalInstance = this.openModal(ClaimRewardsModal);
+      let totalRewards = [];
+      totalRewards.push({
+        symbol: this.pool.avalancheBoostRewardToken,
+        amount: this.pool.unclaimed,
+      })
+
+      modalInstance.tokensConfig = config.ASSETS_CONFIG;
+      modalInstance.totalRewards = totalRewards;
+      modalInstance.header = 'Claim Boost rewards'
+
+      modalInstance.$on('CLAIM', () => {
+        const claimBoostRequest = {
+          depositRewarderAddress: config.AVALANCHE_BOOST_CONFIG[this.pool.asset.symbol].depositRewarderAddress
+        };
+
+        this.handleTransaction(this.claimAvalancheBoost({claimBoostRequest: claimBoostRequest}), () => {
+          this.$forceUpdate();
+        }, (error) => {
+          this.handleTransactionError(error);
+        }).then(() => {
+        });
+      });
+    },
+
     handleTransactionError(error, isBridge = false) {
       if (error.code === 4001 || error.code === -32603) {
         this.progressBarService.emitProgressBarCancelledState();
@@ -431,7 +529,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: repeat(3, 1fr) 175px 150px 150px 90px 110px 22px;
+    grid-template-columns: repeat(3, 1fr) 135px 135px 135px 135px 70px 110px 22px;
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;
@@ -445,7 +543,7 @@ export default {
       }
     }
 
-    &.unlocking {
+    &.arbitrum {
       grid-template-columns: repeat(3, 1fr) 140px 140px 140px 140px 90px 90px 22px;
     }
 
@@ -469,6 +567,12 @@ export default {
           margin-left: 8px;
           font-weight: 500;
         }
+
+        .stars-icon {
+          width: 20px;
+          margin-right: 10px;
+          transform: translateY(-2px);
+        }
       }
 
       &.deposit {
@@ -480,6 +584,25 @@ export default {
         justify-content: center;
         align-items: flex-end;
         font-weight: 600;
+      }
+
+      &.avalanche-boost {
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-end;
+        font-weight: 600;
+
+        .avalanche-boost-unclaimed {
+          display: flex;
+          flex-direction: row;
+
+          .asset__icon {
+            margin-left: 5px;
+            width: 20px;
+            height: 20px;
+            opacity: var(--asset-table-row__icon-opacity);
+          }
+        }
       }
 
       &.apy {

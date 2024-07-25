@@ -147,6 +147,7 @@ import BarGaugeBeta from "./BarGaugeBeta.vue";
 import ClaimLevelRewardsModal from "./ClaimLevelRewardsModal.vue";
 import PartnerInfoModal from "./PartnerInfoModal.vue";
 import moment from "moment/moment";
+import {ActionSection} from "../services/globalActionsDisableService";
 
 const FARMING_CONTRACT_ADDRESS = '0xC18c952F800516E1eef6aB482F3d331c84d43d38';
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -186,6 +187,7 @@ export default {
     this.fetchHistoricalPrices();
     this.setupTvl();
     await this.setupApr();
+    this.watchActionDisabling();
   },
 
   data() {
@@ -213,7 +215,8 @@ export default {
       isLpBalanceEstimated: false,
       disableAllButtons: false,
       healthLoaded: false,
-      showChart: false
+      showChart: false,
+      isActionDisabledRecord: {},
     };
   },
 
@@ -237,6 +240,7 @@ export default {
       'penpieLpAssets',
       'wombatLpAssets',
       'wombatLpBalances',
+      'wombatYYFarmsBalances',
     ]),
     ...mapState('poolStore', ['pools']),
     ...mapState('network', ['account', 'provider']),
@@ -245,7 +249,8 @@ export default {
       'dataRefreshEventService',
       'progressBarService',
       'lpService',
-      'healthService'
+      'healthService',
+      'globalActionsDisableService',
     ]),
     ...mapState('stakeStore', ['farms']),
 
@@ -296,14 +301,14 @@ export default {
               {
                 key: 'ADD_FROM_WALLET',
                 name: 'Import existing LLP position',
-                disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
-                disabledInfo: 'To create LLP token, you need to add some funds from you wallet first'
+                disabled: this.isActionDisabledRecord['ADD_FROM_WALLET'] || !this.hasSmartLoanContract || !this.lpTokenBalances,
+                disabledInfo: this.isActionDisabledRecord['ADD_FROM_WALLET'] ? '' : 'To create LLP token, you need to add some funds from you wallet first'
               },
               {
                 key: 'PROVIDE_LIQUIDITY',
                 name: 'Create LLP position',
-                disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
-                disabledInfo: 'To create LLP token, you need to add some funds from you wallet first'
+                disabled: this.isActionDisabledRecord['PROVIDE_LIQUIDITY'] || !this.hasSmartLoanContract || !this.lpTokenBalances,
+                disabledInfo: this.isActionDisabledRecord['PROVIDE_LIQUIDITY'] ? '' : 'To create LLP token, you need to add some funds from you wallet first'
               }
             ]
           }
@@ -318,14 +323,14 @@ export default {
               {
                 key: 'WITHDRAW',
                 name: 'Export LLP position',
-                disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
-                disabledInfo: 'To create LLP token, you need to add some funds from you wallet first'
+                disabled: this.isActionDisabledRecord['WITHDRAW'] || !this.hasSmartLoanContract || !this.lpTokenBalances,
+                disabledInfo: this.isActionDisabledRecord['WITHDRAW'] ? '' : 'To create LLP token, you need to add some funds from you wallet first'
               },
               {
                 key: 'REMOVE_LIQUIDITY',
                 name: 'Remove LLP position',
-                disabled: !this.hasSmartLoanContract || !this.lpTokenBalances,
-                disabledInfo: 'To create LLP token, you need to add some funds from you wallet first'
+                disabled: this.isActionDisabledRecord['REMOVE_LIQUIDITY'] || !this.hasSmartLoanContract || !this.lpTokenBalances,
+                disabledInfo: this.isActionDisabledRecord['REMOVE_LIQUIDITY'] ? '' : 'To create LLP token, you need to add some funds from you wallet first'
               }
             ]
           }
@@ -339,10 +344,12 @@ export default {
           {
             key: 'CLAIM_LEVEL_REWARDS',
             name: 'Claim Level rewards',
+            disabled: this.isActionDisabledRecord['CLAIM_LEVEL_REWARDS'],
           },
           {
             key: 'PARTNER_PROFILE',
             name: 'Show profile',
+            disabled: this.isActionDisabledRecord['PARTNER_PROFILE'],
           }
         ]
       };
@@ -366,7 +373,7 @@ export default {
     },
 
     actionClick(key) {
-      if (!this.disableAllButtons) {
+      if (!this.isActionDisabledRecord[key] && !this.disableAllButtons) {
         switch (key) {
           case 'ADD_FROM_WALLET':
             this.openAddFromWalletModal();
@@ -502,6 +509,7 @@ export default {
       modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.wombatLpAssets = this.wombatLpAssets;
       modalInstance.wombatLpBalances = this.wombatLpBalances;
+      modalInstance.wombatYYFarmsBalances = this.wombatYYFarmsBalances;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.farms = this.farms;
       modalInstance.health = this.health;
@@ -560,6 +568,7 @@ export default {
       modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.wombatLpAssets = this.wombatLpAssets;
       modalInstance.wombatLpBalances = this.wombatLpBalances;
+      modalInstance.wombatYYFarmsBalances = this.wombatYYFarmsBalances;
       modalInstance.farms = this.farms;
       modalInstance.targetAsset = this.lpToken.symbol;
       modalInstance.debt = this.fullLoanStatus.debt;
@@ -630,6 +639,7 @@ export default {
       modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.wombatLpAssets = this.wombatLpAssets;
       modalInstance.wombatLpBalances = this.wombatLpBalances;
+      modalInstance.wombatYYFarmsBalances = this.wombatYYFarmsBalances;
       modalInstance.farms = this.farms;
       modalInstance.targetAsset = this.lpToken.underlyingAssets[0];
       modalInstance.debt = this.fullLoanStatus.debt;
@@ -859,6 +869,16 @@ export default {
       this.closeModal();
       this.disableAllButtons = false;
       this.isLpBalanceEstimated = false;
+    },
+
+    watchActionDisabling() {
+      this.globalActionsDisableService.getSectionActions$(ActionSection.LEVEL_LP)
+          .subscribe(isActionDisabledRecord => {
+            this.isActionDisabledRecord = isActionDisabledRecord;
+            this.setupAddActionsConfiguration();
+            this.setupRemoveActionsConfiguration();
+            this.setupMoreActionsConfiguration();
+          })
     },
   },
 };

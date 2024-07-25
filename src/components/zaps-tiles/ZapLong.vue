@@ -1,5 +1,5 @@
 <template>
-  <ZapTile v-on:tileClick="onTileClick()" :disabled="!hasSmartLoanContract" :img-src="'src/assets/icons/chart-up.png'" :dark-img-src="'src/assets/icons/chart-up--dark.png'" :header="'Long'">
+  <ZapTile v-on:tileClick="onTileClick()" :disabled="disabled || !hasSmartLoanContract" :img-src="'src/assets/icons/chart-up.png'" :dark-img-src="'src/assets/icons/chart-up--dark.png'" :header="'Long'">
     <template #label>
       up to <b>5x</b>
     </template>
@@ -34,6 +34,9 @@ const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 export default {
   name: 'ZapLong',
   components: {ZapTile},
+  props: {
+    disabled: null,
+  },
   data() {
     return {
       tokenIcons: []
@@ -60,6 +63,7 @@ export default {
       'penpieLpAssets',
       'wombatLpBalances',
       'wombatLpAssets',
+      'wombatYYFarmsBalances',
       'fullLoanStatus'
     ]),
     ...mapState('stakeStore', ['farms']),
@@ -96,6 +100,9 @@ export default {
 
     async onTileClick() {
       if (!this.hasSmartLoanContract) return;
+      if (this.disabled) {
+        return;
+      }
       const stableCoins = Object.values(config.ASSETS_CONFIG).filter(asset => asset.isStableCoin).map(asset => asset.symbol);
       const stableCoinsWalletBalances = {};
       this.getStableCoinsWalletBalances(stableCoins).subscribe(balances => {
@@ -117,6 +124,7 @@ export default {
         modalInstance.penpieLpBalances = this.penpieLpBalances;
         modalInstance.wombatLpAssets = this.wombatLpAssets;
         modalInstance.wombatLpBalances = this.wombatLpBalances;
+        modalInstance.wombatYYFarmsBalances = this.wombatYYFarmsBalances;
         modalInstance.farms = this.farms;
         modalInstance.debtsPerAsset = this.debtsPerAsset;
         modalInstance.debt = this.fullLoanStatus.debt;

@@ -2,6 +2,7 @@
   <div class="pools-beta-component">
     <div class="container">
       <div class="main-content">
+        <SPrimePanel v-if="afterLaunchTime" class="sprime-panel" :is-prime-account="false" :user-address="account" :total-deposits-or-borrows="totalDeposit"></SPrimePanel>
         <Block :bordered="true">
           <div class="title">Savings</div>
           <NameValueBadgeBeta :name="'Your deposits'">{{ totalDeposit | usd }}</NameValueBadgeBeta>
@@ -35,14 +36,17 @@ import {mapActions, mapState} from 'vuex';
 import {BehaviorSubject, combineLatest, forkJoin} from 'rxjs';
 import erc20ABI from '../../test/abis/ERC20.json';
 import ResumeBridgeModal from './ResumeBridgeModal';
+import SPrimePanel from "./SPrimePanel.vue";
 
 const ethers = require('ethers');
 
 let TOKEN_ADDRESSES;
+const LAUNCH_TIME = 1719853200000;
 
 export default {
   name: 'PoolsBeta',
   components: {
+    SPrimePanel,
     PoolsTableRowBeta,
     Block,
     NameValueBadgeBeta,
@@ -50,7 +54,6 @@ export default {
   },
   async mounted() {
     await this.setupFiles();
-    this.setupPoolsTableHeaderConfig();
     this.initPools();
     this.watchPools();
     this.initStoresWhenProviderAndAccountCreated();
@@ -68,12 +71,17 @@ export default {
     };
   },
   computed: {
-    ...mapState('serviceRegistry', ['providerService', 'accountService', 'poolService', 'walletAssetBalancesService', 'lifiService', 'progressBarService']),
+    ...mapState('serviceRegistry', ['providerService', 'accountService', 'poolService', 'walletAssetBalancesService', 'lifiService', 'progressBarService', 'avalancheBoostService']),
     ...mapState('network', ['account', 'accountBalance', 'provider']),
+    afterLaunchTime() {
+      const now = new Date().getTime();
+      return now > LAUNCH_TIME;
+    },
   },
 
   methods: {
     ...mapActions('poolStore', ['poolStoreSetup', 'deposit']),
+    ...mapActions('sPrimeStore', ['sPrimeStoreSetup']),
 
     async setupFiles() {
       TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
@@ -82,7 +90,9 @@ export default {
     initStoresWhenProviderAndAccountCreated() {
       combineLatest([this.providerService.observeProviderCreated(), this.accountService.observeAccountLoaded()])
         .subscribe(async ([provider, account]) => {
-          await this.poolStoreSetup();
+          this.poolStoreSetup();
+          this.sPrimeStoreSetup();
+          this.setupPoolsTableHeaderConfig();
         });
     },
 
@@ -108,8 +118,9 @@ export default {
       Object.entries(config.POOLS_CONFIG).forEach(([symbol, pool]) => {
         pools.push({
           asset: {
-            symbol: symbol
-          }
+            symbol: symbol,
+          },
+          hasAvalancheBoost: pool.hasAvalancheBoost
         });
       });
       this.poolsList = pools;
@@ -122,6 +133,34 @@ export default {
         this.setupTotalDeposit();
         this.$forceUpdate();
         this.setupWalletDepositAssetBalances(pools);
+        if (window.chain === 'avalanche') {
+          this.watchAvalancheBoostData();
+        }
+      });
+    },
+
+    watchAvalancheBoostData() {
+      this.avalancheBoostService.observeAvalancheBoostRates().subscribe(rates => {
+        const incentivizedPools = Object.keys(rates);
+        incentivizedPools.forEach(
+            poolAsset => {
+              const poolIndex = this.poolsList.findIndex(pool => pool.asset.symbol === poolAsset);
+              this.poolsList[poolIndex].hasAvalancheBoost =true;
+              this.poolsList[poolIndex].avalancheBoostRewardToken = config.AVALANCHE_BOOST_CONFIG[poolAsset].rewardToken;
+              let secondsInYear = 3600 * 24 * 365;
+              this.poolsList[poolIndex].miningApy = rates[poolAsset] * secondsInYear / (this.poolsList[poolIndex].tvl * this.poolsList[poolIndex].assetPrice);
+            }
+        );
+      });
+
+      this.avalancheBoostService.observeAvalancheBoostUnclaimed().subscribe(unclaimed => {
+        const incentivizedPools = Object.keys(unclaimed);
+        incentivizedPools.forEach(
+            poolAsset => {
+              const poolIndex = this.poolsList.findIndex(pool => pool.asset.symbol === poolAsset);
+              this.poolsList[poolIndex].unclaimed = unclaimed[poolAsset];
+            }
+        );
       });
     },
 
@@ -185,7 +224,7 @@ export default {
 
     setupPoolsTableHeaderConfig() {
       this.poolsTableHeaderConfig =
-        config.poolsUnlocking ?
+        window.chain === 'arbitrum' ?
           {
             gridTemplateColumns: 'repeat(3, 1fr) 140px 140px 140px 140px 90px 90px 22px',
             cells: [
@@ -204,7 +243,7 @@ export default {
                 id: 'DEPOSIT',
               },
               {
-                label: '$sPRIME',
+                label: 'sPRIME',
                 sortable: false,
                 class: 'sprime',
                 id: 'SPRIME',
@@ -252,7 +291,7 @@ export default {
           }
           :
           {
-            gridTemplateColumns: 'repeat(3, 1fr) 175px 150px 150px 90px 110px 22px',
+            gridTemplateColumns: 'repeat(3, 1fr) 135px 135px 135px 135px 70px 110px 22px',
             cells: [
               {
                 label: 'Asset',
@@ -269,7 +308,14 @@ export default {
                 id: 'DEPOSIT',
               },
               {
-                label: '$sPRIME',
+                label: 'Rewards',
+                sortable: false,
+                class: 'deposit',
+                id: 'BOOST',
+                tooltip: `Your unclaimed rewards from the Boost Program`
+              },
+              {
+                label: 'sPRIME',
                 sortable: false,
                 class: 'sprime',
                 id: 'SPRIME',
@@ -320,6 +366,11 @@ export default {
 
   .main-content {
     margin-top: 30px;
+    margin-bottom: 100px;
+
+    .sprime-panel {
+      margin-bottom: 30px;
+    }
 
     .title {
       margin-top: 55px;

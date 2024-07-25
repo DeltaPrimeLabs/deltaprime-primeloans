@@ -119,6 +119,17 @@ contract SolvencyMethods is DiamondHelper, ProxyConnector {
         );
     }
 
+    // This function executes SolvencyFacetProd.getThresholdWeightedValuePayable()
+    function _getThresholdWeightedValue() public virtual returns (uint256 twv) {
+        twv = abi.decode(
+            proxyDelegateCalldata(
+                DiamondHelper._getFacetAddress(SolvencyFacetProd.getThresholdWeightedValue.selector),
+                abi.encodeWithSelector(SolvencyFacetProd.getThresholdWeightedValue.selector)
+            ),
+            (uint256)
+        );
+    }
+
     // This function executes SolvencyFacetProd.getHealthRatioWithPrices()
     function _getHealthRatioWithPrices(SolvencyFacetProd.CachedPrices memory cachedPrices) public virtual returns (uint256 health) {
         health = abi.decode(

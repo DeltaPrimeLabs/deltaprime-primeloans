@@ -103,6 +103,7 @@ export default {
     penpieLpBalances: {},
     wombatLpAssets: {},
     wombatLpBalances: {},
+    wombatYYFarmsBalances: {},
     farms: {},
     debtsPerAsset: {},
     assetBalance: Number,
@@ -175,7 +176,7 @@ export default {
           balance += addedBorrow;
         }
 
-        tokens.push({price: data.price, balance: balance, borrowed: borrowed, debtCoverage: data.debtCoverage});
+        tokens.push({price: data.price ? data.price : 0, balance: balance, borrowed: borrowed, debtCoverage: data.debtCoverage});
       }
 
       for (const [symbol, data] of Object.entries(this.lpAssets)) {
@@ -241,6 +242,22 @@ export default {
         }
       }
 
+      if (config.WOMBAT_YY_FARMS) {
+        for (const farm of config.WOMBAT_YY_FARMS) {
+          if (this.wombatLpAssets && this.wombatYYFarmsBalances) {
+            const symbol = farm.apyKey
+            let balance = parseFloat(this.wombatYYFarmsBalances[symbol]);
+
+            tokens.push({
+              price: this.wombatLpAssets[farm.lpAssetToken].price,
+              balance: balance ? balance : 0,
+              borrowed: 0,
+              debtCoverage: farm.debtCoverage
+            });
+          }
+        }
+      }
+
       for (const [symbol, data] of Object.entries(this.gmxV2Assets)) {
         tokens.push({
           price: data.price,
@@ -262,6 +279,9 @@ export default {
       }
 
       let lbTokens = Object.values(this.traderJoeV2LpAssets);
+
+      console.log('tokens: ', tokens)
+      console.log('lbTokens: ', tokens)
 
       this.healthAfterTransaction = calculateHealth(tokens, lbTokens);
     },

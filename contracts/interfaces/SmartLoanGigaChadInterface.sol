@@ -19,6 +19,8 @@ import "./facets/ISolvencyFacetProd.sol";
 import "./facets/IHealthMeterFacetProd.sol";
 import "./IDiamondLoupe.sol";
 import "./facets/celo/IUbeswapDEXFacet.sol";
+import "./facets/IGmxV2Facet.sol";
+import "./facets/IGmxV2PlusFacet.sol";
 import "./facets/avalanche/IVectorFinanceFacet.sol";
 import "./facets/avalanche/IVectorFinanceFacetOld.sol";
 import "./facets/avalanche/IBeefyFinanceFacet.sol";
@@ -31,13 +33,12 @@ import "./facets/avalanche/IBalancerV2Facet.sol";
 import "./facets/avalanche/IGogoPoolFacet.sol";
 import "./facets/arbitrum/ISushiSwapDEXFacet.sol";
 import "./facets/arbitrum/IBeefyFinanceArbitrumFacet.sol";
-import "./facets/arbitrum/IGmxV2ArbitrumFacet.sol";
-import "./facets/avalanche/IGmxV2AvalancheFacet.sol";
 import "./facets/arbitrum/ISushiSwapFacet.sol";
 import "./facets/arbitrum/ILevelFinanceFacet.sol";
 import "./facets/arbitrum/IPenpieFacet.sol";
 import "./facets/arbitrum/ILTIPFacet.sol";
 import "./facets/avalanche/IWombatFacet.sol";
+import "./facets/avalanche/IYieldYakWombatFacet.sol";
 
 interface SmartLoanGigaChadInterface is
     IGMDFacet,
@@ -73,8 +74,9 @@ interface SmartLoanGigaChadInterface is
     IUniswapV3Facet,
     ITraderJoeV2AutopoolsFacet,
     ISushiSwapDEXFacet,
-    IGmxV2ArbitrumFacet,
-    IGmxV2AvalancheFacet,
+    IGmxV2Facet,
+    IGmxV2PlusFacet,
     IBalancerV2Facet,
-    IGogoPoolFacet
+    IGogoPoolFacet,
+    IYieldYakWombatFacet
 {}

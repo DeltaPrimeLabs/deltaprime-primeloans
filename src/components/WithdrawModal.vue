@@ -28,7 +28,7 @@
                      :validators="validators"
                      :info="() => sourceAssetValue">
       </CurrencyInput>
-      <CurrencyInput v-else
+      <CurrencyInput v-else-if="!(asset.inactive || asset.unsupported)"
                      :symbol="asset.short ? asset.short : asset.symbol"
                      :asset="asset"
                      v-on:newValue="withdrawValueChange"
@@ -36,6 +36,12 @@
                      :validators="validators"
                      :info="() => sourceAssetValue">
       </CurrencyInput>
+
+      <div class="modal-top-info-bar" v-if="asset.inactive || asset.unsupported">
+        <div>
+          Your full balance of {{asset.symbol}} will be withdrawn to your wallet.
+        </div>
+      </div>
 
       <div class="transaction-summary-wrapper">
         <TransactionResultSummaryBeta>
@@ -82,7 +88,7 @@
       <div class="button-wrapper">
         <Button :label="'Withdraw'"
                 v-on:click="submit()"
-                :disabled="currencyInputError"
+                :disabled="currencyInputError && !(asset.inactive || asset.unsupported)"
                 :waiting="transactionOngoing">
         </Button>
       </div>
@@ -117,6 +123,7 @@ export default {
     asset: {},
     health: {},
     assetBalances: {},
+    assetBalance: null,
     assets: {},
     logo: null,
     farms: {},
@@ -131,6 +138,7 @@ export default {
     penpieLpBalances: {},
     wombatLpAssets: {},
     wombatLpBalances: {},
+    wombatYYFarmsBalances: {},
     traderJoeV2LpAssets: {},
     balancerLpAssets: {},
     balancerLpBalances: {},
@@ -288,21 +296,49 @@ export default {
         }
       }
 
-      for (const [symbol, data] of Object.entries(this.balancerLpAssets)) {
-        if (this.balancerLpBalances) {
-          let balance = parseFloat(this.balancerLpBalances[symbol]);
+      if (config.WOMBAT_YY_FARMS) {
+        for (const farm of config.WOMBAT_YY_FARMS) {
+          if (this.wombatLpAssets && this.wombatYYFarmsBalances) {
+            const symbol = farm.apyKey
+            let balance = parseFloat(this.wombatYYFarmsBalances[symbol]);
+            if (symbol === this.asset.apyKey) {
+              balance -= withdrawn;
+            }
 
-          tokens.push({price: data.price, balance: balance ? balance : 0, borrowed: 0, debtCoverage: data.debtCoverage});
+            tokens.push({
+              price: this.wombatLpAssets[farm.lpAssetToken].price,
+              balance: balance ? balance : 0,
+              borrowed: 0,
+              debtCoverage: farm.debtCoverage
+            });
+          }
         }
       }
 
-      for (const [symbol, data] of Object.entries(this.gmxV2Assets)) {
-        tokens.push({
-          price: data.price,
-          balance: parseFloat(this.gmxV2Balances[symbol]),
-          borrowed: 0,
-          debtCoverage: data.debtCoverage
-        });
+      if (this.balancerLpAssets) {
+        for (const [symbol, data] of Object.entries(this.balancerLpAssets)) {
+          if (this.balancerLpBalances) {
+            let balance = parseFloat(this.balancerLpBalances[symbol]);
+
+            tokens.push({
+              price: data.price,
+              balance: balance ? balance : 0,
+              borrowed: 0,
+              debtCoverage: data.debtCoverage
+            });
+          }
+        }
+      }
+
+      if (this.gmxV2Assets) {
+        for (const [symbol, data] of Object.entries(this.gmxV2Assets)) {
+          tokens.push({
+            price: data.price,
+            balance: parseFloat(this.gmxV2Balances[symbol]),
+            borrowed: 0,
+            debtCoverage: data.debtCoverage
+          });
+        }
       }
 
       for (const [, farms] of Object.entries(this.farms)) {

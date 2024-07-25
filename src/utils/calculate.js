@@ -542,3 +542,53 @@ function formatTokenBalance(value, precision = 5, toFixed = false) {
     return '';
   }
 }
+
+export  function getTraderJoeV2IdSlippageFromPriceSlippage(priceSlippage, binStep) {
+  return Math.floor(
+      Math.log(1 + priceSlippage) / Math.log(1 + binStep / 1e4)
+  );
+}
+
+export function fillBinsArray(centerId, numberOfBins) {
+  if (numberOfBins % 2 === 0) {
+    throw new Error('numberOfBins must be an odd number.');
+  }
+
+  const bins = [];
+  const halfBins = Math.floor(numberOfBins / 2);
+  const lowestBin = centerId - halfBins;
+
+  for (let i = 0; i < numberOfBins; i++) {
+    bins.push(lowestBin + i);
+  }
+
+  return bins;
+}
+
+// Function to convert price to tick
+export function uniswapV3PriceToTick(price) {
+  return Math.log(price) / Math.log(1.0001);
+}
+
+export function uniswapV3TickToPrice(tick) {
+  return Math.pow(1.0001, tick);
+}
+
+// Function to calculate tick slippage
+export function getUniswapV3SlippageFromPriceSlippage(currentPrice, slippage) {
+  // Calculate the price range after slippage
+  const lowerPrice = currentPrice * (1 - slippage);
+  const upperPrice = currentPrice * (1 + slippage);
+
+  // Convert prices to ticks
+  const tickLower = uniswapV3PriceToTick(lowerPrice);
+  const tickUpper = uniswapV3PriceToTick(upperPrice);
+
+  // Calculate tick slippage
+  const tickSlippage = tickUpper - tickLower;
+
+  return parseInt((tickSlippage / 2).toString());
+}
+
+
+

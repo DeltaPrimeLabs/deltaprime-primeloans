@@ -146,6 +146,9 @@ export default {
     this.fetchOpenInterestData();
     this.isAvalanche = window.chain === 'avalanche';
     this.showLevel = this.levelLpBalances;
+    setTimeout(() => {
+      console.log('gmxV2LpTokens', this.gmxV2LpTokens);
+    }, 2000)
   },
   computed: {
     ...mapState('serviceRegistry', [
@@ -256,7 +259,7 @@ export default {
     },
     setupTraderJoeLpTableHeaderConfig() {
       this.traderJoeLpTableHeaderConfig = {
-        gridTemplateColumns: '180px 100px 100px 180px 140px 70px 110px 115px 30px 80px',
+        gridTemplateColumns: '200px 90px 90px 210px 110px 70px 110px 115px 30px 80px',
         cells: [
           {
             label: 'TraderJoe V2',
@@ -367,7 +370,7 @@ export default {
         gridTemplateColumns: 'repeat(4, 1fr) 12% 135px 60px 80px 22px',
         cells: [
           {
-            label: 'LP Token',
+            label: 'Pangolin',
             sortable: false,
             class: 'token',
             id: 'TOKEN',
@@ -429,7 +432,7 @@ export default {
         gridTemplateColumns: 'repeat(2, 1fr) 300px 10% 10% 10% 60px 80px 22px',
         cells: [
           {
-            label: 'Balancer vault',
+            label: 'Balancer',
             sortable: false,
             class: 'token',
             id: 'TOKEN',
@@ -569,7 +572,7 @@ export default {
         gridTemplateColumns: 'repeat(2, 1fr) 240px 130px 100px 120px 100px 60px 80px 22px',
         cells: [
           {
-            label: 'GM Token',
+            label: 'GMX V2',
             sortable: false,
             class: 'token',
             id: 'TOKEN',
@@ -643,10 +646,10 @@ export default {
     },
     setupPenpieLpTableHeaderConfig() {
       this.penpieLpTableHeaderConfig = {
-        gridTemplateColumns: '100px 130px 130px 1fr 80px 120px 110px 100px 40px 80px 22px',
+        gridTemplateColumns: '105px 130px 130px 1fr 80px 120px 110px 100px 40px 80px 22px',
         cells: [
           {
-            label: 'Penpie Token',
+            label: 'Penpie',
             sortable: false,
             class: 'token',
             id: 'TOKEN',
@@ -724,7 +727,7 @@ export default {
         gridTemplateColumns: '140px 125px 125px 1fr 140px 65px 110px 110px 30px 80px 22px',
         cells: [
           {
-            label: 'Wombat Token',
+            label: 'Wombat',
             sortable: false,
             class: 'token',
             id: 'TOKEN',

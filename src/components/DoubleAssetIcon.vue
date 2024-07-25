@@ -1,8 +1,8 @@
 <template>
   <div class="double-asset-icon-component">
-    <div class="double-icon">
+    <div class="double-icon" :class="{'double-icon--big': size === 'BIG'}">
       <div class="icon icon__secondary">
-        <img class="icon__img" :src="logoSrc(secondary)">
+        <img class="icon__img" :src="forceSecondary ? forceSecondary : logoSrc(secondary)">
       </div>
       <div class="icon icon__primary">
         <img class="icon__img" :src="logoSrc(primary)">
@@ -17,6 +17,11 @@ export default {
   props: {
     primary: null,
     secondary: null,
+    forceSecondary: null,
+    size: {
+      type: String,
+      default: 'SMALL'
+    },
   }
 };
 </script>
@@ -49,6 +54,19 @@ export default {
       .icon__img {
         width: 22px;
         height: 22px;
+      }
+    }
+
+    &.double-icon--big {
+
+      .icon {
+        width: 36px;
+        height: 36px;
+      }
+
+      .icon__img {
+        width: 36px;
+        height: 36px;
       }
     }
   }
