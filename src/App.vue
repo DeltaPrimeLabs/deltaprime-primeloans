@@ -381,7 +381,6 @@ export default {
       this.accountService.observeSmartLoanContract$().subscribe(() => {
         this.showPrimeAccountBanner = false;
         this.showArbitrumPrimeAccountBanner = false;
-        this.showAffectedPrimeAccountBanner = true;
 
         if ([
           '0x2FfD0D2bEa8E922A722De83c451Ad93e097851F5',
