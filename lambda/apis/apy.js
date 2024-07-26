@@ -1,6 +1,4 @@
-const AWS = require('aws-sdk');
-AWS.config.setPromisesDependency(require('bluebird'));
-const dynamoDb = new AWS.DynamoDB.DocumentClient();
+const { dynamoDb } = require("../utils/helpers");
 
 const levelTvlApi = (event, context, callback) => {
   const params = {

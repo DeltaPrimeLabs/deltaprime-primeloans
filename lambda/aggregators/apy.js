@@ -435,7 +435,7 @@ const traderJoeApyAggregator = async (event) => {
   for (const [network, pools] of Object.entries(traderJoeConfig)) {
     for (const [pool, poolData] of Object.entries(pools)) {
       // navigate pools page and wait till javascript fully load.
-      const URL = `https://traderjoexyz.com/${network}/pool/v21/`;
+      const URL = `https://traderjoexyz.com/${network}/pool/${poolData.version}/`;
 
       await page.setViewport({
         width: 1920,
@@ -627,6 +627,7 @@ const gmxApyAggregator = async (event) => {
     const marketInnerTexts = await Promise.all(Array.from(marketRows).map(async market => {
       return (await (await market.getProperty("textContent")).jsonValue()).replace(/\s+/g, "");
     }));
+    await new Promise((resolve, reject) => setTimeout(resolve, 5000));
 
     for (const [poolId, marketId] of Object.entries(pools)) {
       try {

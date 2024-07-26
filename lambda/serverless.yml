@@ -42,11 +42,9 @@ provider:
     GM_OPEN_INTEREST_TABLE: gm-open-interest-${opt:stage, "dev"}
     REFERRAL_TABLE: referral-${opt:stage, "dev"}
     TERMS_VERSION_TABLE: terms-version-${opt:stage, "dev"}
+    LOAN_STATS_AVA_TABLE: loan-stats-ava-${opt:stage, "dev"}
+    LOAN_STATS_ARB_TABLE: loan-stats-arb-${opt:stage, "dev"}
     TJ_API_KEY: ${file(./.secrets/traderJoe.json):apiKey}
-    FUNC_RPC_AVA: ${file(./.secrets/funcRpc.json):avalanche}
-    FUNC_RPC_ARB: ${file(./.secrets/funcRpc.json):arbitrum}
-    EXT_RPC_AVA: ${file(./.secrets/extRpc.json):avalanche}
-    EXT_RPC_ARB: ${file(./.secrets/extRpc.json):arbitrum}
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -367,6 +365,14 @@ functions:
       - httpApi:
           method: POST
           path: /terms-version/create
+  getLoanStatsApi:
+    handler: apis/loanStats.getLoanStatsApi
+    memorySize: 512
+    description: Get Loan stats for the period
+    events:
+      - httpApi:
+          method: get
+          path: /loan-stats
 
 resources:
   Resources:
