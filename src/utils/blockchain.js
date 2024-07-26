@@ -267,7 +267,7 @@ async function getLoanHistoryData(walletAddress) {
   const startDate = 1701428400 * 1000;
   const endDate = new Date().getTime();
 
-  const response = await fetch(`https://us-central1-delta-prime-db.cloudfunctions.net/loanhistory?address=${walletAddress}&from=${startDate}&to=${endDate}&network=${window.chain}`);
+  const response = await fetch(`https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/loan-stats?address=${walletAddress}&from=${startDate}&to=${endDate}&network=${window.chain}`);
   const body = await response.json()
 
   return body.data;
