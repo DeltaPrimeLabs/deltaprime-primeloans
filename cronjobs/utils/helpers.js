@@ -91,9 +91,18 @@ const getWrappedContractsHistorical = (addresses, network, packages) => {
 
 // this is being used in retroactiveCalculator in ec2 - uncomment it when you run it on ec2
 async function getArweavePackages(timestamp, chain) {
-  const nodeAddress1 = '0x83cbA8c619fb629b81A65C2e67fE15cf3E3C9747';
-  const nodeAddress2 = '0x2c59617248994D12816EE1Fa77CE0a64eEB456BF';
-  const nodeAddress3 = '0x12470f7aBA85c8b81D63137DD5925D6EE114952b';
+  let nodeAddress1, nodeAddress2, nodeAddress3;
+  if(chain === 'avalanche') {
+    nodeAddress1 = '0x83cbA8c619fb629b81A65C2e67fE15cf3E3C9747';
+    nodeAddress2 = '0x2c59617248994D12816EE1Fa77CE0a64eEB456BF';
+    nodeAddress3 = '0x12470f7aBA85c8b81D63137DD5925D6EE114952b';
+  } else if (chain === 'arbitrum') {
+    nodeAddress1 = '0x345Efd26098e173F811e3B9Af1B0e0a11872B38b';
+    nodeAddress2 = '0xb7f154bB5491565D215F4EB1c3fe3e84960627aF';
+    nodeAddress3 = '0xE6b0De8F4B31F137d3c59b5a0A71e66e7D504Ef9';
+  } else {
+    throw new Error('Invalid chain');
+  }
   //do dziesietnych
 
   const dater = new EthDater(chain == 'avalanche' ? webAva : webArb);
@@ -107,8 +116,7 @@ async function getArweavePackages(timestamp, chain) {
   let packages = [];
 
 
-  for (let obj of feeds) {
-
+  await Promise.all(feeds.map(async obj => {
     let txId = obj.node.id;
     let url = `https://arweave.net/${txId}`;
 
@@ -119,7 +127,7 @@ async function getArweavePackages(timestamp, chain) {
     const dataPackage = SignedDataPackage.fromObj(json)
 
     packages.push(dataPackage);
-  }
+  }))
 
   return packages;
 }

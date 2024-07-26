@@ -302,7 +302,7 @@ const getIncentivesMultiplier = async (startTime) => {
 
 let retryTime = 0;
 
-async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, chain, rpc = "first") {
+async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, chain, rpc = "second") {
   let startTime = Date.now();
   let provider = getProvider("arbitrum", rpc);
   let arbitrumPools = await getPoolContracts(chain, provider);
@@ -493,7 +493,7 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          errorMessage: `difference calculated: ${diff} - sum ${sum} - expected ${tokensToBeDistributedPerPool[pool]}`
+          errorMessage: `difference calculated: ${diff}, sum ${sum}, expected ${tokensToBeDistributedPerPool[pool]}, pool: ${pool}`
         })
       });
       console.log(`------------difference check for ${pool} failed-------------`)
