@@ -22,7 +22,7 @@ const wombatApyAggregator = async (event) => {
       timeout: 60000
     });
 
-    await new Promise((resolve, reject) => setTimeout(resolve, 10000));
+    await new Promise((resolve, reject) => setTimeout(resolve, 20000));
 
     const poolRows = await page.$$("#pool-list > div.flex-col > div.flex-col > div.flex-col > div");
 
