@@ -31,6 +31,22 @@
     "TJ_AVAX_sAVAX_LP": {
       "protocolIdentifier": "YY_TJ_AVAX_sAVAX_LP",
       "stakingContractAddress": "0x22EDe03f1115666CF05a4bAfafaEe8F43D42cD56"
+    },
+    "WOMBAT_sAVAX_AVAX_LP_sAVAX": {
+      "protocolIdentifier": "YY_WOM_sAVAX_AVAX_LP_sAVAX",
+      "stakingContractAddress": "0x9B5d890d563EE4c9255bB500a790Ca6B1FB9dB6b"
+    },
+    "WOMBAT_sAVAX_AVAX_LP_AVAX": {
+      "protocolIdentifier": "YY_WOM_sAVAX_AVAX_LP_AVAX",
+      "stakingContractAddress": "0xa84D83787eA216F616C6Bd02C6edC6D6d63f042f"
+    },
+    "WOMBAT_ggAVAX_AVAX_LP_ggAVAX": {
+      "protocolIdentifier": "YY_WOM_ggAVAX_AVAX_LP_ggAVAX",
+      "stakingContractAddress": "0x13404B1C715aF60869fc658d6D99c117e3543592"
+    },
+    "WOMBAT_ggAVAX_AVAX_LP_AVAX": {
+      "protocolIdentifier": "YY_WOM_ggAVAX_AVAX_LP_AVAX",
+      "stakingContractAddress": "0x7f0eB376eabF4b2B4290D09EFb2f4da99B3ea311"
     }
   },
   "arbitrum": {

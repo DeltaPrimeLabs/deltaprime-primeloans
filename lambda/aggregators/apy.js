@@ -250,7 +250,7 @@ const vectorApyAggregator = async (event) => {
 
 const lpAndFarmApyAggregator = async (event) => {
   const VECTOR_APY_URL = "https://vector-api-git-overhaul-vectorfinance.vercel.app/api/v1/vtx/apr";
-  const YIELDYAK_APY_AVA_URL = "https://staging-api.yieldyak.com/apys";
+  const YIELDYAK_APY_AVA_URL = "https://staging-api.yieldyak.com/43114/apys";
   const YIELDYAK_APY_ARB_URL = "https://staging-api.yieldyak.com/42161/apys";
 
   // fetching lp APYs
@@ -289,7 +289,7 @@ const lpAndFarmApyAggregator = async (event) => {
   // fetching farm APYs
   const apys = {};
   const urls = [
-    VECTOR_APY_URL,
+    // VECTOR_APY_URL,
     YIELDYAK_APY_AVA_URL,
     YIELDYAK_APY_ARB_URL
   ];
@@ -297,33 +297,36 @@ const lpAndFarmApyAggregator = async (event) => {
   try {
     await Promise.all(urls.map(url =>
       fetch(url).then(resp => resp.json())
-    )).then(async ([vectorAprs, yieldYakAvaApys, yieldYakArbApys]) => {
+    )).then(async ([yieldYakAvaApys, yieldYakArbApys]) => {
 
-      if (!vectorAprs["Staking"]) console.log('APRs not available from Vector.');
-      const stakingAprs = vectorAprs['Staking'];
+      // if (!vectorAprs["Staking"]) {
+      //   console.log('APRs not available from Vector.');
+      // } else {
+      //   const stakingAprs = vectorAprs['Staking'];
 
-      // fetching Vector APYs
-      for (const [token, farm] of Object.entries(vectorApyConfig)) {
-        if (Object.keys(stakingAprs).includes(farm.vectorId)) {
-          // manual weekly APY
-          const aprTotal = parseFloat(stakingAprs[farm.vectorId].total);
-          const weeklyApy = (1 + aprTotal / 100 / 52) ** 52 - 1;
+      //   // fetching Vector APYs
+      //   for (const [token, farm] of Object.entries(vectorApyConfig)) {
+      //     if (Object.keys(stakingAprs).includes(farm.vectorId)) {
+      //       // manual weekly APY
+      //       const aprTotal = parseFloat(stakingAprs[farm.vectorId].total);
+      //       const weeklyApy = (1 + aprTotal / 100 / 52) ** 52 - 1;
 
-          if (token in apys) {
-            apys[token][farm.protocolIdentifier] = weeklyApy;
-          } else {
-            apys[token] = {
-              [farm.protocolIdentifier]: weeklyApy
-            };
-          }
-        }
-      }
+      //       if (token in apys) {
+      //         apys[token][farm.protocolIdentifier] = weeklyApy;
+      //       } else {
+      //         apys[token] = {
+      //           [farm.protocolIdentifier]: weeklyApy
+      //         };
+      //       }
+      //     }
+      //   }
+      // }
 
       // fetching YieldYak APYs Avalanche
       for (const [token, farm] of Object.entries(yieldYakConfig.avalanche)) {
-        if (!yieldYakAvaApys[farm.stakingContractAddress]) continue
+        // if (!yieldYakAvaApys[farm.stakingContractAddress]) continue
 
-        const yieldApy = yieldYakAvaApys[farm.stakingContractAddress].apy / 100;
+        const yieldApy = yieldYakAvaApys[farm.stakingContractAddress] ? yieldYakAvaApys[farm.stakingContractAddress].apy / 100 : 0;
 
         if (token in apys) {
           apys[token][farm.protocolIdentifier] = yieldApy;
@@ -336,9 +339,9 @@ const lpAndFarmApyAggregator = async (event) => {
 
       // fetching YieldYak APYs Arbitrum
       for (const [token, farm] of Object.entries(yieldYakConfig.arbitrum)) {
-        if (!yieldYakArbApys[farm.stakingContractAddress]) continue
+        // if (!yieldYakArbApys[farm.stakingContractAddress]) continue
 
-        const yieldApy = yieldYakArbApys[farm.stakingContractAddress].apy / 100;
+        const yieldApy = yieldYakArbApys[farm.stakingContractAddress] ? yieldYakArbApys[farm.stakingContractAddress].apy / 100 : 0;
 
         if (token in apys) {
           apys[token][farm.protocolIdentifier] = yieldApy;
