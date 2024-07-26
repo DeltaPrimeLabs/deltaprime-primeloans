@@ -2,10 +2,10 @@ const { fetchAllDataFromDB } = require('../utils/helpers');
 
 const getLoanStatsApi = async (event, context, callback) => {
   try {
-    const address = Number(event.queryStringParameters.address);
+    const address = event.queryStringParameters.address;
     const from = Number(event.queryStringParameters.from); // query all as default
     const to = Number(event.queryStringParameters.to) || Math.floor(Date.now() / 1000); // query all as default
-    const network = Number(event.queryStringParameters.network);
+    const network = event.queryStringParameters.network;
 
     let LOAN_STATS_TABLE;
     if (network == 'avalanche') {
