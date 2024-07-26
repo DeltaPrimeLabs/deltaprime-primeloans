@@ -34,7 +34,8 @@
     },
     "WOMBAT_sAVAX_AVAX_LP_sAVAX": {
       "protocolIdentifier": "YY_WOM_sAVAX_AVAX_LP_sAVAX",
-      "stakingContractAddress": "0x9B5d890d563EE4c9255bB500a790Ca6B1FB9dB6b"
+      "stakingContractAddress": "0x9B5d890d563EE4c9255bB500a790Ca6B1FB9dB6b",
+      "add": "sAvax"
     },
     "WOMBAT_sAVAX_AVAX_LP_AVAX": {
       "protocolIdentifier": "YY_WOM_sAVAX_AVAX_LP_AVAX",
@@ -42,7 +43,8 @@
     },
     "WOMBAT_ggAVAX_AVAX_LP_ggAVAX": {
       "protocolIdentifier": "YY_WOM_ggAVAX_AVAX_LP_ggAVAX",
-      "stakingContractAddress": "0x13404B1C715aF60869fc658d6D99c117e3543592"
+      "stakingContractAddress": "0x13404B1C715aF60869fc658d6D99c117e3543592",
+      "add": "ggAvax"
     },
     "WOMBAT_ggAVAX_AVAX_LP_AVAX": {
       "protocolIdentifier": "YY_WOM_ggAVAX_AVAX_LP_AVAX",

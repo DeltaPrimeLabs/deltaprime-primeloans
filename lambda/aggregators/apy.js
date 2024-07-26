@@ -322,11 +322,18 @@ const lpAndFarmApyAggregator = async (event) => {
       //   }
       // }
 
+      const { sAvaxApr, ggAvaxApr } = await fetchAssetApy();
       // fetching YieldYak APYs Avalanche
       for (const [token, farm] of Object.entries(yieldYakConfig.avalanche)) {
         // if (!yieldYakAvaApys[farm.stakingContractAddress]) continue
 
-        const yieldApy = yieldYakAvaApys[farm.stakingContractAddress] ? yieldYakAvaApys[farm.stakingContractAddress].apy / 100 : 0;
+        let yieldApy = yieldYakAvaApys[farm.stakingContractAddress] ? yieldYakAvaApys[farm.stakingContractAddress].apy / 100 : 0;
+
+        if (farm.add == 'sAvax') {
+          yieldApy += sAvaxApr ? sAvaxApr / 100 : 0;
+        } else if (farm.add == 'ggAvax') {
+          yieldApy += ggAvaxApr ? ggAvaxApr / 100 : 0;
+        }
 
         if (token in apys) {
           apys[token][farm.protocolIdentifier] = yieldApy;
