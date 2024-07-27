@@ -78,7 +78,7 @@
       We are dropping support to some tokens of your Prime Account. Please review your portfolio
     </Banner>
     <Banner v-if="showAvalancheDepositorBanner" background="green" :closable="true">
-      Boost will refill on Monday. Users who don’t withdraw will be compensated.
+      We are awaiting a Boost refill. Users who don’t withdraw will be compensated.
     </Banner>
     <Banner v-if="showAvalanchePrimeAccountBanner" background="green" :closable="true">
       GM+ pools are live!
@@ -231,7 +231,7 @@ export default {
 
     if (config.chainId === 43114) {
       if (window.location.href.includes('pools')) {
-        // this.showAvalancheDepositorBanner = true;
+        this.showAvalancheDepositorBanner = true;
       }
       if (window.location.href.includes('prime-account')) {
         // this.showAvalanchePrimeAccountBanner = true;
