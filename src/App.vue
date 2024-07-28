@@ -78,7 +78,7 @@
       We are dropping support to some tokens of your Prime Account. Please review your portfolio
     </Banner>
     <Banner v-if="showAvalancheDepositorBanner" background="green" :closable="true">
-      We are awaiting a Boost refill. Users who don’t withdraw will be compensated.
+      Boost is all filled up again. Happy Boosting!
     </Banner>
     <Banner v-if="showAvalanchePrimeAccountBanner" background="green" :closable="true">
       GM+ pools are live!
