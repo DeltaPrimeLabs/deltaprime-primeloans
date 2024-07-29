@@ -644,7 +644,7 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         uint256 pid,
         uint256 reward,
         uint256[] memory additionalRewards
-    ) internal {
+    ) noRecentOwnershipTransfer internal {
         (, , address rewarder, , , , ) = IWombatMaster(WOMBAT_MASTER).poolInfo(pid);
         address boostedRewarder = IWombatMaster(WOMBAT_MASTER).boostedRewarders(
             pid
