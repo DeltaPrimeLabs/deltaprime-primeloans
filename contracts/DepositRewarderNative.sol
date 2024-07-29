@@ -13,8 +13,8 @@ contract DepositRewarderNative is DepositRewarderAbstract {
         uint256 reward = rewards[_user];
         if (reward > 0) {
             rewards[_user] = 0;
-            bool sent = _user.send(reward);
-            require(sent, "Failed to send native token");
+            (bool success, bytes memory result) = _user.call{value: reward, gas: 5000}("");
+            require(success, "Failed to send native token");
         }
     }
 

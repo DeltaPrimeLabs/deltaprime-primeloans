@@ -162,7 +162,7 @@ abstract contract DepositRewarderAbstract is
         uint256 amount,
         address account
     ) external nonReentrant onlyPool updateReward(account) returns (uint256) {
-        amount = balanceOf[account] < amount ? balanceOf[account] : amount;
+        amount = _min(balanceOf[account], amount);
 
         balanceOf[account] -= amount;
         totalSupply -= amount;
