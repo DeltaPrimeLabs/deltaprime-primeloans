@@ -367,15 +367,16 @@ contract sPrimeUniswap is
         int24 tickLower,
         int24 tickUpper,
         uint256 amountX,
-        uint256 amountY
+        uint256 amountY,
+        uint256 desiredAmountX,
+        uint256 desiredAmountY
     ) internal {
         uint256 tokenId = userTokenId[user];
-        bool sequence = getToken0() != tokenX;
         uint256 amountXAdded;
         uint256 amountYAdded;
         tokenX.forceApprove(address(positionManager), amountX);
         tokenY.forceApprove(address(positionManager), amountY);
-        (uint256 amount0, uint256 amount1) = sequence ? (amountY, amountX) : (amountX, amountY);
+        (uint256 amount0, uint256 amount1) = tokenSequence ? (amountY, amountX) : (amountX, amountY);
 
         if (tokenId == 0) {
             (tokenId, , amountXAdded, amountYAdded) = positionManager.mint(
@@ -387,8 +388,8 @@ contract sPrimeUniswap is
                     tickUpper: tickUpper,
                     amount0Desired: amount0,
                     amount1Desired: amount1,
-                    amount0Min: 0,
-                    amount1Min: 0,
+                    amount0Min: desiredAmountX,
+                    amount1Min: desiredAmountY,
                     recipient: address(this),
                     deadline: block.timestamp
                 })
@@ -400,13 +401,13 @@ contract sPrimeUniswap is
                     tokenId: tokenId,
                     amount0Desired: amount0,
                     amount1Desired: amount1,
-                    amount0Min: 0,
-                    amount1Min: 0,
+                    amount0Min: desiredAmountX,
+                    amount1Min: desiredAmountY,
                     deadline: block.timestamp
                 })
             );
         }
-        if(sequence) {
+        if(tokenSequence) {
             (amountXAdded, amountYAdded) = (amountYAdded, amountXAdded);
         }
 
@@ -450,6 +451,8 @@ contract sPrimeUniswap is
      * @param tickSlippage The tick slippage that are allowed to slip
      * @param amountX The amount of token X to deposit.
      * @param amountY The amount of token Y to deposit.
+     * @param desiredAmountX The desired amount of token X to deposit.
+     * @param desiredAmountY The desired amount of token Y to deposit.
      * @param isRebalance Rebalance the existing position with deposit.
      * @param swapSlippage Slippage for the rebalance.
      */
@@ -458,10 +461,16 @@ contract sPrimeUniswap is
         int24 tickSlippage,
         uint256 amountX,
         uint256 amountY,
+        uint256 desiredAmountX,
+        uint256 desiredAmountY,
         bool isRebalance,
         uint256 swapSlippage
     ) public nonReentrant {
         _transferTokens(_msgSender(), address(this), amountX, amountY);
+
+        if (swapSlippage > _MAX_SLIPPAGE) {
+            revert SlippageTooHigh();
+        }
 
         _deposit(
             _msgSender(),
@@ -469,6 +478,8 @@ contract sPrimeUniswap is
             tickSlippage,
             amountX,
             amountY,
+            desiredAmountX,
+            desiredAmountY,
             isRebalance,
             swapSlippage
         );
@@ -480,14 +491,11 @@ contract sPrimeUniswap is
         int24 tickSlippage,
         uint256 amountX,
         uint256 amountY,
+        uint256 desiredAmountX,
+        uint256 desiredAmountY,
         bool isRebalance,
         uint256 swapSlippage
     ) internal {
-        if (swapSlippage > _MAX_SLIPPAGE) {
-            revert SlippageTooHigh();
-        }
-
-        int24 currenTick;
         int24 tickLower;
         int24 tickUpper;
 
@@ -498,7 +506,7 @@ contract sPrimeUniswap is
 
             if (isRebalance) {
                 // Withdraw Position For Rebalance
-                (uint256 amountXBefore, uint256 amountYBefore) = positionManagerRemove(tokenId, liquidity, address(this));
+                (uint256 amountXBefore, uint256 amountYBefore) = positionManagerRemove(tokenId, liquidity, address(this), 0, 0);
                 
                 if(getToken0() != tokenX) {
                     (amountXBefore, amountYBefore) = (amountYBefore, amountXBefore);
@@ -512,7 +520,7 @@ contract sPrimeUniswap is
         (amountX, amountY) = _swapForEqualValues(amountX, amountY, swapSlippage);
 
         if (userTokenId[user] == 0) {
-            (, currenTick, , , , , ) = pool.slot0();
+            (, int24 currenTick, , , , , ) = pool.slot0();
             currenTick = convertToNearestTickSpacingMultiple(currenTick);
             if (!(tickDesired + tickSlippage >= currenTick && currenTick + tickSlippage >= tickDesired)) {
                 revert SlippageTooHigh();
@@ -520,7 +528,7 @@ contract sPrimeUniswap is
             tickLower = currenTick - tickSpacing * deltaId;
             tickUpper = currenTick + tickSpacing * deltaId;
         }
-        _depositToUniswap(user, tickLower, tickUpper, amountX, amountY);
+        _depositToUniswap(user, tickLower, tickUpper, amountX, amountY, desiredAmountX, desiredAmountY);
 
         notifyVPrimeController(user);
     }
@@ -545,7 +553,7 @@ contract sPrimeUniswap is
      * @dev Users can use withdraw function for withdrawing their share.
      * @param share Amount to withdraw
      */
-    function withdraw(uint256 share) external nonReentrant {
+    function withdraw(uint256 share, uint256 amountXMin, uint256 amountYMin) external nonReentrant {
         address msgSender = _msgSender();
         uint256 tokenId = userTokenId[msgSender];
         if (tokenId == 0) {
@@ -561,7 +569,8 @@ contract sPrimeUniswap is
             revert BalanceLocked();
         }
 
-        positionManagerRemove(tokenId, uint128((liquidity * share) / balance), msgSender);
+        (amountXMin, amountYMin) = tokenSequence ? (amountYMin, amountXMin) : (amountXMin, amountYMin);
+        positionManagerRemove(tokenId, uint128((liquidity * share) / balance), msgSender, amountXMin, amountYMin);
 
         // Burn Position NFT
         if (balance == share) {
@@ -601,7 +610,7 @@ contract sPrimeUniswap is
         }
 
         uint256 oldBalance = balanceOf(user);
-        _deposit(user, tickDesired, tickSlippage, amountX, amountY, true, _MAX_SLIPPAGE);
+        _deposit(user, tickDesired, tickSlippage, amountX, amountY, 0, 0, true, _MAX_SLIPPAGE);
         
         if(balanceOf(user) > oldBalance) {
             lockForUser(user, balanceOf(user) - oldBalance, percentForLocks, lockPeriods);
@@ -659,14 +668,16 @@ contract sPrimeUniswap is
     function positionManagerRemove(
         uint256 tokenId,
         uint128 liquidity,
-        address recipient
+        address recipient,
+        uint256 amount0Min,
+        uint256 amount1Min
     ) internal returns (uint256, uint256) {
         positionManager.decreaseLiquidity(
             INonfungiblePositionManager.DecreaseLiquidityParams({
                 tokenId: tokenId,
                 liquidity: liquidity,
-                amount0Min: 0,
-                amount1Min: 0,
+                amount0Min: amount0Min,
+                amount1Min: amount1Min,
                 deadline: block.timestamp
             })
         );
@@ -703,13 +714,18 @@ contract sPrimeUniswap is
 
         (, , , , , , , uint128 liquidity , , , ,) = positionManager.positions(tokenId);
 
-        (uint256 amountX, uint256 amountY) = positionManagerRemove(tokenId, liquidity, address(this));
+        (uint256 amountX, uint256 amountY) = positionManagerRemove(tokenId, liquidity, address(this), 0, 0);
 
         if(getToken0() != tokenX) {
             (amountX, amountY) = (amountY, amountX);
         }
         positionManager.burn(tokenId);
-        _deposit(_msgSender(), tickDesired, tickSlippage, amountX, amountY, true, swapSlippage);
+
+        if (swapSlippage > _MAX_SLIPPAGE) {
+            revert SlippageTooHigh();
+        }
+
+        _deposit(_msgSender(), tickDesired, tickSlippage, amountX, amountY, 0, 0, true, swapSlippage);
     }
 
     /**
@@ -786,7 +802,7 @@ contract sPrimeUniswap is
             } else {
                 ( , , , , , int24 tickLower, int24 tickUpper, uint128 liquidity, , , ,) = positionManager.positions(tokenId);
 
-                (uint256 amountX, uint256 amountY) = positionManagerRemove(tokenId, uint128((liquidity * amount) / (fromBalance + amount)), address(this));
+                (uint256 amountX, uint256 amountY) = positionManagerRemove(tokenId, uint128((liquidity * amount) / (fromBalance + amount)), address(this), 0, 0);
 
                 (
                     uint256 newTokenId,

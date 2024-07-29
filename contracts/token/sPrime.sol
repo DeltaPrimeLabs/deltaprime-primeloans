@@ -160,7 +160,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
         IPositionManager.DepositConfig memory depositConfig = positionManager.getDepositConfig(centerId);
         (uint256 amountX, uint256 amountY) = _getLiquidityTokenAmounts(depositConfig.depositIds, liquidityMinted, poolPrice);
 
-        amountY = amountY + FullMath.mulDiv(amountX, poolPrice, 1e8);
+        amountY = amountY + FullMath.mulDiv(amountX, poolPrice * 10 ** tokenYDecimals, 10 ** (8 + tokenXDecimals));
 
         return amountY;
     }
@@ -247,12 +247,12 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
             uint256 totalSupply = lbPair.totalSupply(id);
             uint256 xAmount = liquidity.mulDivRoundDown(binReserveX, totalSupply);
             uint256 yAmount = liquidity.mulDivRoundDown(binReserveY, totalSupply);
-            if(binId > id) {
-                xAmount = xAmount + FullMath.mulDiv(yAmount, 10 ** 18, currentPrice);
-                yAmount = 0;
-            } else if(binId < id) {
+            if(binId < id) {
                 yAmount = yAmount + FullMath.mulDiv(xAmount, currentPrice, 10 ** 18);
                 xAmount = 0;
+            } else if(binId > id) {
+                xAmount = xAmount + FullMath.mulDiv(yAmount, 10 ** 18, currentPrice);
+                yAmount = 0;
             } 
 
             amountX += xAmount;
@@ -273,7 +273,13 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
 
     function getPoolPrice() public view returns(uint256) {
         uint256 price = PriceHelper.convert128x128PriceToDecimal(lbPair.getPriceFromId(lbPair.getActiveId()));
-        return FullMath.mulDiv(price, 1e8, 1e18);
+        // price * 1e8 * 1edx / 1edy / 1e18
+        if (tokenXDecimals >= 10 + tokenYDecimals) {
+            price = price * 10 ** (tokenXDecimals - 10 - tokenYDecimals);
+        } else {
+            price = price / 10 ** (10 + tokenYDecimals - tokenXDecimals);
+        }
+        return price;
     }
 
     /**
@@ -609,7 +615,7 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     * @dev Users can use withdraw function for withdrawing their share.
     * @param share Amount to withdraw
     */
-    function withdraw(uint256 share) external nonReentrant {
+    function withdraw(uint256 share, uint256 amountXMin, uint256 amountYMin) external nonReentrant {
         uint256 tokenId = getUserTokenId(_msgSender());
         if (tokenId == 0) {
             revert NoPosition();
@@ -624,7 +630,9 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
         }
 
         (uint256 amountX, uint256 amountY, uint256[] memory liquidityAmounts) = _withdrawFromLB(_msgSender(), depositConfig.depositIds, liquidityMinted, share);
-
+        if(amountX < amountXMin || amountY < amountYMin) {
+            revert SlippageTooHigh();
+        }
         positionManager.update(IPositionManager.UpdateParams({
             tokenId: tokenId,
             share: share,

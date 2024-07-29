@@ -22,7 +22,9 @@ interface ISPrime {
     * @param shareWithdraw The amount of share to withdraw.
     */
     function withdraw(
-        uint256 shareWithdraw
+        uint256 shareWithdraw,
+        uint256 amountXMin,
+        uint256 amountYMin
     ) external;
 
     function getTokenX() external view returns(IERC20);
