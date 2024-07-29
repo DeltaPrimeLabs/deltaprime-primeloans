@@ -39,6 +39,7 @@ describe('Smart loan', () => {
     describe('Test ownership transfer flow', () => {
         let smartLoansFactory: SmartLoansFactory,
             loan: Contract,
+            lastOwnershipTransferTimestamp: number,
             owner1: SignerWithAddress,
             owner2: SignerWithAddress,
             owner3: SignerWithAddress,
@@ -116,10 +117,11 @@ describe('Smart loan', () => {
 
             await loan.connect(owner1).proposeOwnershipTransfer(owner2.address);
 
+            lastOwnershipTransferTimestamp = await loan.getAccountLastOwnershipTransferTimestamp()
             expect(await loan.owner()).to.equal(owner1.address);
             expect(await loan.proposedOwner()).to.equal(owner2.address);
             await expect(loan.connect(badGuy).borrow(toBytes32("AVAX"), toWei("1"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-            await expect(loan.connect(owner1).borrow(toBytes32("AVAX"), toWei("1"))).to.be.revertedWith("CalldataMustHaveValidPayload()");
+            await expect(loan.connect(owner1).borrow(toBytes32("AVAX"), toWei("1"))).to.be.revertedWith("CalldataMustHaveValidPayload");
             await expect(loan.connect(owner2).borrow(toBytes32("AVAX"), toWei("1"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
 
             expect(await smartLoansFactory.ownersToLoans(owner1.address)).to.equal(loan.address);
@@ -131,12 +133,14 @@ describe('Smart loan', () => {
 
             await loan.connect(owner2).acceptOwnership();
 
+            expect(await loan.getAccountLastOwnershipTransferTimestamp()).to.be.above(lastOwnershipTransferTimestamp);
             expect(await loan.owner()).to.equal(owner2.address);
             expect(await loan.proposedOwner()).to.equal(ZERO);
 
             await expect(loan.connect(badGuy).borrow(toBytes32("AVAX"), toWei("1"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
             await expect(loan.connect(owner1).borrow(toBytes32("AVAX"), toWei("1"))).to.be.revertedWith("DiamondStorageLib: Must be contract owner");
-            await expect(loan.connect(owner2).borrow(toBytes32("AVAX"), toWei("1"))).to.be.revertedWith("CalldataMustHaveValidPayload()");
+            await expect(loan.connect(owner2).borrow(toBytes32("AVAX"), toWei("1"))).to.be.revertedWith("CalldataMustHaveValidPayload");
+            await expect(loan.connect(owner2).withdraw(toBytes32("AVAX"), toWei("1"))).to.be.revertedWith("DiamondStorageLib: Ownership transfer too recent");
 
             expect(await smartLoansFactory.ownersToLoans(owner2.address)).to.equal(loan.address);
             expect(await smartLoansFactory.loansToOwners(loan.address)).to.equal(owner2.address);

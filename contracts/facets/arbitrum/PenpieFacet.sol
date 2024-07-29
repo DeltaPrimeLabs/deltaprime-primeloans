@@ -188,6 +188,7 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         uint256 amount
     )
         external
+        noRecentOwnershipTransfer
         onlyOwner
         canRepayDebtFully
         nonReentrant
@@ -307,6 +308,11 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
     modifier onlyOwner() {
         DiamondStorageLib.enforceIsContractOwner();
+        _;
+    }
+
+    modifier noRecentOwnershipTransfer() {
+        DiamondStorageLib.enforceNoRecentOwnershipTransfer();
         _;
     }
 

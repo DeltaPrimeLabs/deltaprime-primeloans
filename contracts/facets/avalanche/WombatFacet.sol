@@ -612,6 +612,7 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         uint256 amount
     )
         internal
+        noRecentOwnershipTransfer
         onlyOwner
         nonReentrant
         remainsSolvent
@@ -701,6 +702,11 @@ contract WombatFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         IWombatMaster.UserInfo memory userInfo = IWombatMaster(WOMBAT_MASTER)
             .userInfo(pid, address(this));
         return userInfo.amount;
+    }
+
+    modifier noRecentOwnershipTransfer() {
+        DiamondStorageLib.enforceNoRecentOwnershipTransfer();
+        _;
     }
 
     modifier onlyOwner() {

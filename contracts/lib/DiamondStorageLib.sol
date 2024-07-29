@@ -24,6 +24,8 @@ library DiamondStorageLib {
     //TODO: maybe we should keep here a tuple[tokenId, factory] to account for multiple Uniswap V3 deployments
     bytes32 constant OWNED_UNISWAP_V3_TOKEN_IDS_POSITION = keccak256("diamond.standard.uniswap_v3_token_ids_1685370112");
 
+    uint256 constant MIN_TIME_SINCE_OWNERSHIP_TRANSFER = 1 days;
+
     struct FacetAddressAndPosition {
         address facetAddress;
         uint96 functionSelectorPosition; // position in facetFunctionSelectors.functionSelectors array
@@ -74,6 +76,8 @@ library DiamondStorageLib {
         // Timestamp since which the account is frozen
         // 0 means an account that is not frozen. Any other value means that the account is frozen
         uint256 frozenSince;
+
+        uint256 lastOwnershipTransferTimestamp;
     }
 
     struct TraderJoeV2Storage {
@@ -148,6 +152,7 @@ library DiamondStorageLib {
 
     function setContractOwner(address _newOwner) internal {
         SmartLoanStorage storage sls = smartLoanStorage();
+        sls.lastOwnershipTransferTimestamp = block.timestamp;
         address previousOwner = sls.contractOwner;
         sls.contractOwner = _newOwner;
         emit OwnershipTransferred(previousOwner, _newOwner);
@@ -284,6 +289,10 @@ library DiamondStorageLib {
 
     function enforceIsContractOwner() internal view {
         require(msg.sender == smartLoanStorage().contractOwner, "DiamondStorageLib: Must be contract owner");
+    }
+
+    function enforceNoRecentOwnershipTransfer() internal view {
+        require(block.timestamp - smartLoanStorage().lastOwnershipTransferTimestamp >= MIN_TIME_SINCE_OWNERSHIP_TRANSFER, "DiamondStorageLib: Ownership transfer too recent");
     }
 
     function enforceIsPauseAdmin() internal view {

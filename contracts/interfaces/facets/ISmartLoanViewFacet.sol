@@ -21,6 +21,10 @@ interface ISmartLoanViewFacet {
 
     function getPercentagePrecision() external view returns (uint256);
 
+    function getAccountLastOwnershipTransferTimestamp() external view returns (uint256);
+
+    function getAccountFrozenSince() external view returns (uint256);
+
     function getContractOwner() external view returns (address _owner);
 
     function getProposedOwner() external view returns (address _proposed);

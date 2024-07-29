@@ -1223,6 +1223,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             'getDebts',
             'getPercentagePrecision',
             'getAccountFrozenSince',
+            'getAccountLastOwnershipTransferTimestamp',
             'getAllAssetsPrices',
             'getBalance',
             'getSupportedTokensAddresses',

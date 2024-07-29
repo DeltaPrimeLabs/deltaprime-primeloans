@@ -59,6 +59,11 @@ contract SmartLoanViewFacet is ReentrancyGuardKeccak, SolvencyMethods {
         return sls.frozenSince;
     }
 
+    function getAccountLastOwnershipTransferTimestamp() public view returns (uint256){
+        DiamondStorageLib.SmartLoanStorage storage sls = DiamondStorageLib.smartLoanStorage();
+        return sls.lastOwnershipTransferTimestamp;
+    }
+
 
     /**
     * Returns a current balance of the asset held by the smart loan
