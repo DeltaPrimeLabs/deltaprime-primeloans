@@ -3227,7 +3227,7 @@ export default {
     async depositPendleLPAndStake({state, rootState, commit, dispatch}, {depositAndStakeRequest}) {
       const provider = rootState.network.provider;
 
-      const tokenForApprove = TOKEN_ADDRESSES[depositAndStakeRequest.sourceAsset];
+      const tokenForApprove = depositAndStakeRequest.market;
       const fundToken = new ethers.Contract(tokenForApprove, erc20ABI, provider.getSigner());
       const allowance = formatUnits(await fundToken.allowance(rootState.network.account, state.smartLoanContract.address), depositAndStakeRequest.decimals);
 
