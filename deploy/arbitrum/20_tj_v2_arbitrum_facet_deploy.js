@@ -22,6 +22,9 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         `TraderJoeV2ArbitrumFacet implementation deployed at address: ${TraderJoeV2ArbitrumFacet.address}`
     );
 
+    // sleep for 10 seconds to wait for the tx to be confirmed
+    await new Promise(r => setTimeout(r, 10000));
+
     await verifyContract(hre,
         {
             address: TraderJoeV2ArbitrumFacet.address,

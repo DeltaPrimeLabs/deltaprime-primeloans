@@ -199,7 +199,6 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
     **/
     function unstakeAVAXYak(uint256 amount) public onlyOwnerOrInsolvent nonReentrant {
         IYieldYak yakStakingContract = IYieldYak(YY_AAVE_AVAX);
-        uint256 initialDepositTokenBalance = address(this).balance;
 
         amount = Math.min(yakStakingContract.balanceOf(address(this)), amount);
 
@@ -207,19 +206,17 @@ contract YieldYakFacet is ReentrancyGuardKeccak, SolvencyMethods, OnlyOwnerOrIns
 
         uint256 depositTokenBalanceAfterWithdrawal = address(this).balance;
 
-        IWrappedNativeToken(AVAX_TOKEN).deposit{value: address(this).balance}();
-
-        uint256 avaxTokenReceived = depositTokenBalanceAfterWithdrawal - initialDepositTokenBalance;
+        IWrappedNativeToken(AVAX_TOKEN).deposit{value: depositTokenBalanceAfterWithdrawal}();
 
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        _increaseExposure(tokenManager, AVAX_TOKEN, avaxTokenReceived);
+        _increaseExposure(tokenManager, AVAX_TOKEN, depositTokenBalanceAfterWithdrawal);
         _decreaseExposure(tokenManager, YY_AAVE_AVAX, amount);
 
         emit Unstaked(
             msg.sender,
             "AVAX",
             YY_AAVE_AVAX,
-            avaxTokenReceived,
+            depositTokenBalanceAfterWithdrawal,
             amount,
             block.timestamp
         );

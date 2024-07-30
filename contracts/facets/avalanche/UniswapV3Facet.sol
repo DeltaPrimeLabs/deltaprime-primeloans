@@ -6,7 +6,7 @@ import "../../OnlyOwnerOrInsolvent.sol";
 import "../../interfaces/joe-v2/ILBRouter.sol";
 import "../../interfaces/joe-v2/ILBFactory.sol";
 import {DiamondStorageLib} from "../../lib/DiamondStorageLib.sol";
-import "../../lib/uniswap-v3/UniswapV3IntegrationHelper.sol";
+import "../../lib/uniswap-v3/OracleLibrary.sol";
 import "@redstone-finance/evm-connector/contracts/data-services/AvalancheDataServiceConsumerBase.sol";
 
 //This path is updated during deployment
@@ -48,7 +48,7 @@ contract UniswapV3Facet is IUniswapV3Facet, AvalancheDataServiceConsumerBase, Re
         return false;
     }
 
-    function mintLiquidityUniswapV3(INonfungiblePositionManager.MintParams memory params) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent {
+    function mintLiquidityUniswapV3(INonfungiblePositionManager.MintParams memory params) external nonReentrant onlyOwner noBorrowInTheSameBlock remainsSolvent {
         address poolAddress = PoolAddress.computeAddress(UNISWAP_V3_FACTORY_ADDRESS, PoolAddress.getPoolKey(params.token0, params.token1, params.fee));
 
         if (!isPoolWhitelisted(poolAddress)) revert UniswapV3PoolNotWhitelisted();
@@ -63,18 +63,16 @@ contract UniswapV3Facet is IUniswapV3Facet, AvalancheDataServiceConsumerBase, Re
         {
             //TODO: write tests for that
 
-            (uint160 poolSqrtPrice,,,,,,) = IUniswapV3Pool(poolAddress).slot0();
-            uint256 sqrtPoolPrice = UniswapV3IntegrationHelper.sqrtPriceX96ToSqrtUint(poolSqrtPrice, IERC20Metadata(params.token0).decimals());
-
             bytes32[] memory symbols = new bytes32[](2);
 
             symbols[0] = token0;
             symbols[1] = token1;
 
             uint256[] memory prices = getOracleNumericValuesFromTxMsg(symbols);
+            (,int24 tick,,,,,) = IUniswapV3Pool(poolAddress).slot0();
 
-            uint256 oraclePrice = prices[0] * 1e18 / prices[1];
-            uint256 poolPrice = sqrtPoolPrice * sqrtPoolPrice / 10 ** IERC20Metadata(params.token1).decimals();
+            uint256 poolPrice = OracleLibrary.getQuoteAtTick(tick, uint128(10 ** IERC20Metadata(params.token0).decimals()), params.token0, params.token1);
+            uint256 oraclePrice = prices[0] * (10 ** IERC20Metadata(params.token1).decimals()) / prices[1];
 
             if (oraclePrice > poolPrice) {
                 if ((oraclePrice - poolPrice) * 1e18 / oraclePrice > ACCEPTED_UNISWAP_SLIPPAGE) revert SlippageTooHigh();
@@ -98,22 +96,17 @@ contract UniswapV3Facet is IUniswapV3Facet, AvalancheDataServiceConsumerBase, Re
 
         {
             uint256[] storage tokenIds = DiamondStorageLib.getUV3OwnedTokenIds();
-            if (tokenIds.length > MAX_OWNED_UNISWAP_V3_POSITIONS) revert TooManyUniswapV3Positions();
+            if (tokenIds.length >= MAX_OWNED_UNISWAP_V3_POSITIONS) revert TooManyUniswapV3Positions();
             tokenIds.push(tokenId);
         }
 
-        if (IERC20(params.token0).balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset(token0);
-        }
-
-        if (IERC20(params.token1).balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset(token1);
-        }
+        _decreaseExposure(tokenManager, params.token0, amount0);
+        _decreaseExposure(tokenManager, params.token1, amount1);
 
         emit AddLiquidityUniswapV3(msg.sender, poolAddress, tokenId, token0, token1, liquidity, amount0, amount1, block.timestamp);
     }
 
-    function increaseLiquidityUniswapV3(INonfungiblePositionManager.IncreaseLiquidityParams memory params) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure remainsSolvent {
+    function increaseLiquidityUniswapV3(INonfungiblePositionManager.IncreaseLiquidityParams memory params) external nonReentrant onlyOwner noBorrowInTheSameBlock remainsSolvent {
         (
         ,,
         address token0Address,
@@ -132,18 +125,17 @@ contract UniswapV3Facet is IUniswapV3Facet, AvalancheDataServiceConsumerBase, Re
         if (!isPoolWhitelisted(poolAddress)) revert UniswapV3PoolNotWhitelisted();
 
         {
-            (uint160 poolSqrtPrice,,,,,,) = IUniswapV3Pool(poolAddress).slot0();
-            uint256 sqrtPoolPrice = UniswapV3IntegrationHelper.sqrtPriceX96ToSqrtUint(poolSqrtPrice, IERC20Metadata(token0Address).decimals());
-
             bytes32[] memory symbols = new bytes32[](2);
 
             symbols[0] = token0;
             symbols[1] = token1;
 
             uint256[] memory prices = getOracleNumericValuesFromTxMsg(symbols);
+            (,int24 tick,,,,,) = IUniswapV3Pool(poolAddress).slot0();
 
-            uint256 oraclePrice = prices[0] * 1e18 / prices[1];
-            uint256 poolPrice = sqrtPoolPrice * sqrtPoolPrice / 10 ** IERC20Metadata(token1Address).decimals();
+            uint256 poolPrice = OracleLibrary.getQuoteAtTick(tick, uint128(10 ** IERC20Metadata(token0Address).decimals()), token0Address, token1Address);
+            uint256 oraclePrice = prices[0] * (10 ** IERC20Metadata(token1Address).decimals()) / prices[1];
+
 
             if (oraclePrice > poolPrice) {
                 if ((oraclePrice - poolPrice) * 1e18 / oraclePrice > ACCEPTED_UNISWAP_SLIPPAGE) revert SlippageTooHigh();
@@ -164,18 +156,13 @@ contract UniswapV3Facet is IUniswapV3Facet, AvalancheDataServiceConsumerBase, Re
         uint256 amount1
         ) = INonfungiblePositionManager(NONFUNGIBLE_POSITION_MANAGER_ADDRESS).increaseLiquidity(params);
 
-        if (IERC20(token0Address).balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset(token0);
-        }
-
-        if (IERC20(token1Address).balanceOf(address(this)) == 0) {
-            DiamondStorageLib.removeOwnedAsset(token1);
-        }
+        _decreaseExposure(tokenManager, token0Address, amount0);
+        _decreaseExposure(tokenManager, token1Address, amount1);
 
         emit IncreaseLiquidityUniswapV3(msg.sender, poolAddress, params.tokenId, token0, token1, amount0, amount1, block.timestamp);
     }
 
-    function decreaseLiquidityUniswapV3(INonfungiblePositionManager.DecreaseLiquidityParams memory params) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure onlyOwnerOrInsolvent {
+    function decreaseLiquidityUniswapV3(INonfungiblePositionManager.DecreaseLiquidityParams memory params) external nonReentrant noBorrowInTheSameBlock onlyOwnerOrInsolvent {
         (
         ,,
         address token0Address,
@@ -191,18 +178,17 @@ contract UniswapV3Facet is IUniswapV3Facet, AvalancheDataServiceConsumerBase, Re
         bytes32 token1 = tokenManager.tokenAddressToSymbol(token1Address);
 
         {
-            (uint160 poolSqrtPrice,,,,,,) = IUniswapV3Pool(poolAddress).slot0();
-            uint256 sqrtPoolPrice = UniswapV3IntegrationHelper.sqrtPriceX96ToSqrtUint(poolSqrtPrice, IERC20Metadata(token0Address).decimals());
-
             bytes32[] memory symbols = new bytes32[](2);
 
             symbols[0] = token0;
             symbols[1] = token1;
 
             uint256[] memory prices = getOracleNumericValuesFromTxMsg(symbols);
+            (,int24 tick,,,,,) = IUniswapV3Pool(poolAddress).slot0();
 
-            uint256 oraclePrice = prices[0] * 1e18 / prices[1];
-            uint256 poolPrice = sqrtPoolPrice * sqrtPoolPrice / 10 ** IERC20Metadata(token1Address).decimals();
+            uint256 poolPrice = OracleLibrary.getQuoteAtTick(tick, uint128(10 ** IERC20Metadata(token0Address).decimals()), token0Address, token1Address);
+            uint256 oraclePrice = prices[0] * (10 ** IERC20Metadata(token1Address).decimals()) / prices[1];
+
 
             if (oraclePrice > poolPrice) {
                 if ((oraclePrice - poolPrice) * 1e18 / oraclePrice > ACCEPTED_UNISWAP_SLIPPAGE) revert SlippageTooHigh();
@@ -221,18 +207,13 @@ contract UniswapV3Facet is IUniswapV3Facet, AvalancheDataServiceConsumerBase, Re
 
         INonfungiblePositionManager(NONFUNGIBLE_POSITION_MANAGER_ADDRESS).collect(collectParams);
 
-        if (IERC20(token0Address).balanceOf(address(this)) > 0) {
-            DiamondStorageLib.addOwnedAsset(token0, token0Address);
-        }
-
-        if (IERC20(token1Address).balanceOf(address(this)) > 0) {
-            DiamondStorageLib.addOwnedAsset(token1, token1Address);
-        }
+        _increaseExposure(tokenManager, token0Address, amount0);
+        _increaseExposure(tokenManager, token1Address, amount1);
 
         emit DecreaseLiquidityUniswapV3(msg.sender, poolAddress, params.tokenId, token0, token1, amount0, amount1, block.timestamp);
     }
 
-    function burnLiquidityUniswapV3(uint256 tokenId) external nonReentrant onlyOwner noBorrowInTheSameBlock recalculateAssetsExposure onlyOwnerOrInsolvent {
+    function burnLiquidityUniswapV3(uint256 tokenId) external nonReentrant noBorrowInTheSameBlock onlyOwnerOrInsolvent {
         uint256[] storage tokenIds = getTokenIds();
         for (uint256 i; i < tokenIds.length; i++) {
             if (tokenIds[i] == tokenId) {

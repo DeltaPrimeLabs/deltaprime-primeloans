@@ -5,6 +5,7 @@ pragma solidity 0.8.17;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "../ReentrancyGuardKeccak.sol";
+import "../lib/SolvencyMethods.sol";
 import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 import "../interfaces/ITokenManager.sol";
 import "../interfaces/IWrappedNativeToken.sol";
@@ -16,11 +17,12 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "../interfaces/gmx-v2/IDepositCallbackReceiver.sol";
 import "../interfaces/gmx-v2/EventUtils.sol";
 import "../interfaces/gmx-v2/IWithdrawalCallbackReceiver.sol";
+import "../interfaces/gmx-v2/IGasFeeCallbackReceiver.sol";
 
 //This path is updated during deployment
 import "../lib/local/DeploymentConstants.sol";
 
-abstract contract GmxV2CallbacksFacet is IDepositCallbackReceiver, IWithdrawalCallbackReceiver, ReentrancyGuardKeccak {
+abstract contract GmxV2CallbacksFacet is IDepositCallbackReceiver, IWithdrawalCallbackReceiver, IGasFeeCallbackReceiver, ReentrancyGuardKeccak, SolvencyMethods {
     using TransferHelper for address;
     using Deposit for Deposit.Props;
     using Withdrawal for Withdrawal.Props;
@@ -45,10 +47,12 @@ abstract contract GmxV2CallbacksFacet is IDepositCallbackReceiver, IWithdrawalCa
     }
 
     function wrapNativeToken() internal {
-        if(address(this).balance > 0){
+        uint256 balance = address(this).balance;
+        if(balance > 0){
             IWrappedNativeToken nativeToken = IWrappedNativeToken(DeploymentConstants.getNativeToken());
-            nativeToken.deposit{value : address(this).balance}();
-            DiamondStorageLib.addOwnedAsset(DeploymentConstants.getNativeTokenSymbol(), DeploymentConstants.getNativeToken());
+            nativeToken.deposit{value : balance}();
+            ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+            _increaseExposure(tokenManager, address(nativeToken), balance);
         }
     }
 
@@ -197,6 +201,12 @@ abstract contract GmxV2CallbacksFacet is IDepositCallbackReceiver, IWithdrawalCa
         );
     }
 
+    function refundExecutionFee(bytes32 /* key */, EventUtils.EventLogData memory /* eventData */) external payable {
+        wrapNativeToken();
+
+        emit GasFeeRefunded(msg.value);
+    }
+
     // MODIFIERS
     modifier onlyGmxV2Keeper() {
         require(isCallerAuthorized(msg.sender), "Must be a GMX V2 authorized Keeper");
@@ -237,4 +247,10 @@ abstract contract GmxV2CallbacksFacet is IDepositCallbackReceiver, IWithdrawalCa
      * @param executionFee amount of execution fee paid
     **/
     event WithdrawalCancelled(address indexed accountAddress, address indexed market, uint256 executionFee);
+
+    /**
+     * @dev emitted after gmx execution fee is refunded
+     * @param refundedFee amount of execution fee refunded
+    **/
+    event GasFeeRefunded(uint256 refundedFee);
 }
