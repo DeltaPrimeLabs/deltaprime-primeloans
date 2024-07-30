@@ -56,7 +56,9 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         IPendleRouter.TokenInput memory input,
         IPendleRouter.LimitOrderData memory limit
     ) external onlyOwner nonReentrant remainsSolvent {
-        address lpToken = _getPendleLpToken(market);
+        require(minLpOut > 0, "Invalid minLpOut");
+
+        address lpToken = _getPenpieLpToken(market);
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
         IERC20 token = IERC20(tokenManager.getAssetAddress(asset, false));
 
@@ -99,7 +101,7 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         IPendleRouter.TokenOutput memory output,
         IPendleRouter.LimitOrderData memory limit
     ) external onlyOwnerOrInsolvent nonReentrant returns (uint256) {
-        address lpToken = _getPendleLpToken(market);
+        address lpToken = _getPenpieLpToken(market);
         uint256 netTokenOut;
 
         {
@@ -107,26 +109,19 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
             require(amount > 0, "Cannot unstake 0 tokens");
 
             {
-                address owner = DiamondStorageLib.contractOwner();
+                (
+                    uint256 pendingPenpie,
+                    address[] memory bonusTokenAddresses,
+                    uint256[] memory pendingBonusRewards
+                ) = pendingRewards(market);
+
                 IPendleDepositHelper(DEPOSIT_HELPER).withdrawMarketWithClaim(
                     market,
                     amount,
                     true
                 );
 
-                uint256 pnpBalance = IERC20(PNP).balanceOf(address(this));
-                uint256 pendleBalance = IERC20(PENDLE).balanceOf(address(this));
-                uint256 siloBalance = IERC20(SILO).balanceOf(address(this));
-
-                if (pnpBalance > 0) {
-                    PNP.safeTransfer(owner, pnpBalance);
-                }
-                if (pendleBalance > 0) {
-                    PENDLE.safeTransfer(owner, pendleBalance);
-                }
-                if (siloBalance > 0) {
-                    SILO.safeTransfer(owner, siloBalance);
-                }
+                _handleRewards(pendingPenpie, bonusTokenAddresses, pendingBonusRewards);
             }
 
             market.safeApprove(PENDLE_ROUTER, 0);
@@ -144,6 +139,8 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
             ITokenManager tokenManager = DeploymentConstants.getTokenManager();
             address token = tokenManager.getAssetAddress(asset, false);
+
+            require(token == output.tokenOut, "Invalid input token");
 
             _increaseExposure(tokenManager, token, netTokenOut);
             _decreaseExposure(tokenManager, lpToken, amount);
@@ -168,7 +165,7 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         address market,
         uint256 amount
     ) external onlyOwner nonReentrant remainsSolvent {
-        address lpToken = _getPendleLpToken(market);
+        address lpToken = _getPenpieLpToken(market);
 
         market.safeTransferFrom(msg.sender, address(this), amount);
 
@@ -189,32 +186,34 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
     function unstakeFromPenpieAndWithdrawPendleLP(
         address market,
         uint256 amount
-    ) external onlyOwner canRepayDebtFully nonReentrant remainsSolvent returns (uint256) {
+    )
+        external
+        onlyOwner
+        canRepayDebtFully
+        nonReentrant
+        remainsSolvent
+        returns (uint256)
+    {
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        address lpToken = _getPendleLpToken(market);
+        address lpToken = _getPenpieLpToken(market);
 
         amount = Math.min(IERC20(lpToken).balanceOf(address(this)), amount);
         require(amount > 0, "Cannot unstake 0 tokens");
 
-        uint256 beforePendleBalance = IERC20(PENDLE).balanceOf(address(this));
+        (
+            uint256 pendingPenpie,
+            address[] memory bonusTokenAddresses,
+            uint256[] memory pendingBonusRewards
+        ) = pendingRewards(market);
 
         IPendleDepositHelper(DEPOSIT_HELPER).withdrawMarketWithClaim(
             market,
             amount,
             true
         );
-
-        uint256 pendleClaimed = IERC20(PENDLE).balanceOf(address(this)) - beforePendleBalance;
-        if (pendleClaimed > 0) {
-            PENDLE.safeTransfer(msg.sender, pendleClaimed);
-        }
+        _handleRewards(pendingPenpie, bonusTokenAddresses, pendingBonusRewards);
 
         market.safeTransfer(msg.sender, amount);
-
-        uint256 pnpReceived = IERC20(PNP).balanceOf(address(this));
-        if (pnpReceived > 0) {
-            PNP.safeTransfer(msg.sender, pnpReceived);
-        }
 
         _decreaseExposure(tokenManager, lpToken, amount);
 
@@ -245,19 +244,11 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         stakingTokens[0] = market;
         IMasterPenpie(MASTER_PENPIE).multiclaim(stakingTokens);
 
-        if (pendingPenpie > 0) {
-            PNP.safeTransfer(msg.sender, pendingPenpie);
-        }
-        uint256 length = pendingBonusRewards.length;
-        for (uint256 i; i != length; ++i) {
-            if (pendingBonusRewards[i] > 0) {
-                bonusTokenAddresses[i].safeTransfer(msg.sender, pendingBonusRewards[i]);
-            }
-        }
+        _handleRewards(pendingPenpie, bonusTokenAddresses, pendingBonusRewards);
     }
 
     // INTERNAL FUNCTIONS
-    function _getPendleLpToken(address market) internal pure returns (address) {
+    function _getPenpieLpToken(address market) internal pure returns (address) {
         // ezETH
         if (market == PENDLE_EZ_ETH_MARKET) {
             return 0xecCDC2C2191d5148905229c5226375124934b63b;
@@ -280,6 +271,36 @@ contract PenpieFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         }
 
         revert("Invalid market address");
+    }
+
+    function _handleRewards(
+        uint256 pendingPenpie,
+        address[] memory bonusTokenAddresses,
+        uint256[] memory pendingBonusRewards
+    ) internal {
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        address owner = DiamondStorageLib.contractOwner();
+
+        if (pendingPenpie > 0 && tokenManager.isTokenAssetActive(PNP)) {
+            _increaseExposure(tokenManager, PNP, pendingPenpie);
+        } else if (pendingPenpie > 0) {
+            PNP.safeTransfer(owner, pendingPenpie);
+        }
+
+        uint256 len = bonusTokenAddresses.length;
+        for (uint256 i; i != len; ++i) {
+            address bonusToken = bonusTokenAddresses[i];
+            uint256 pendingReward = pendingBonusRewards[i];
+            if (pendingReward == 0) {
+                continue;
+            }
+
+            if (tokenManager.isTokenAssetActive(bonusToken)) {
+                _increaseExposure(tokenManager, bonusToken, pendingReward);
+            } else {
+                bonusToken.safeTransfer(owner, pendingReward);
+            }
+        }
     }
 
     // MODIFIERS

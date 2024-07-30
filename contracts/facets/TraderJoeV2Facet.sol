@@ -48,6 +48,19 @@ abstract contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, 
         return false;
     }
 
+    function isRouterWhitelisted(address router) internal view virtual returns (bool) {
+        address[] memory routers = new address[](2);
+        // Trader Joe V2.1
+        routers[0] = 0xb4315e873dBcf96Ffd0acd8EA43f689D8c20fB30;
+        // Trader Joe V2.2
+        routers[1] = 0x18556DA13313f3532c54711497A8FedAC273220E;
+
+        for (uint i; i < routers.length; ++i) {
+            if (router == routers[i]) return true;
+        }
+        return false;
+    }
+
     function _removeLiquidity(ILBRouter traderJoeV2Router, RemoveLiquidityParameters memory parameters) internal returns (uint256, uint256){
         (uint amountX, uint256 amountY) = traderJoeV2Router.removeLiquidity(
             parameters.tokenX, parameters.tokenY, parameters.binStep, parameters.amountXMin, parameters.amountYMin, parameters.ids, parameters.amounts, address(this), parameters.deadline
@@ -144,8 +157,8 @@ abstract contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, 
     }
 
 
-    function addLiquidityTraderJoeV2(ILBRouter.LiquidityParameters memory liquidityParameters) external nonReentrant onlyOwner noBorrowInTheSameBlock remainsSolvent {
-        ILBRouter traderJoeV2Router = ILBRouter(getJoeV2RouterAddress());
+    function addLiquidityTraderJoeV2(ILBRouter traderJoeV2Router, ILBRouter.LiquidityParameters memory liquidityParameters) external nonReentrant onlyOwner noBorrowInTheSameBlock remainsSolvent {
+        if (!isRouterWhitelisted(address(traderJoeV2Router))) revert TraderJoeV2RouterNotWhitelisted();
         TraderJoeV2Bin[] memory ownedBins = getOwnedTraderJoeV2Bins();
         ILBFactory lbFactory = traderJoeV2Router.getFactory();
         ILBFactory.LBPairInformation memory pairInfo = lbFactory.getLBPairInformation(liquidityParameters.tokenX, liquidityParameters.tokenY, liquidityParameters.binStep);
@@ -193,9 +206,8 @@ abstract contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, 
         emit AddLiquidityTraderJoeV2(msg.sender, address(pairInfo.LBPair), depositIds, liquidityMinted, tokenX, tokenY, amountXAdded, amountYAdded, block.timestamp);
     }
     
-    function removeLiquidityTraderJoeV2(RemoveLiquidityParameters memory parameters) external nonReentrant onlyOwnerOrInsolvent noBorrowInTheSameBlock {
-        ILBRouter traderJoeV2Router = ILBRouter(getJoeV2RouterAddress());
-
+    function removeLiquidityTraderJoeV2(ILBRouter traderJoeV2Router, RemoveLiquidityParameters memory parameters) external nonReentrant onlyOwnerOrInsolvent noBorrowInTheSameBlock {
+        if (!isRouterWhitelisted(address(traderJoeV2Router))) revert TraderJoeV2RouterNotWhitelisted();
         ILBPair lbPair = ILBPair(traderJoeV2Router.getFactory().getLBPairInformation(parameters.tokenX, parameters.tokenY, parameters.binStep).LBPair);
         lbPair.approveForAll(address(traderJoeV2Router), true);
 
@@ -276,6 +288,8 @@ abstract contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, 
     event WithdrawnLiquidityTraderJoeV2(address indexed user, address indexed pair, uint256[] binIds, uint[] amounts, uint256 timestamp);
 
     error TraderJoeV2PoolNotWhitelisted();
+
+    error TraderJoeV2RouterNotWhitelisted();
 
     error TooManyBins();
 

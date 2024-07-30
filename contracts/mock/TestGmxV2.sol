@@ -133,6 +133,10 @@ contract TestGmxV2 is IDepositCallbackReceiver, IWithdrawalCallbackReceiver {
         emit WithdrawalCancelled();
     }
 
+    function refundExecutionFee(bytes32 key, EventUtils.EventLogData memory eventData) external payable override {
+        emit GasFeeRefunded();
+    }
+
     //TODO: remove, these are mock events
     event DepositExecuted();
 
@@ -142,6 +146,7 @@ contract TestGmxV2 is IDepositCallbackReceiver, IWithdrawalCallbackReceiver {
 
     event WithdrawalCancelled();
 
+    event GasFeeRefunded();
 }
 
 

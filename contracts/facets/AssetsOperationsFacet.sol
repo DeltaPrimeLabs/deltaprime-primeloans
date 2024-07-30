@@ -181,7 +181,6 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
         _amount = Math.min(_amount, token.balanceOf(address(this)));
         _amount = Math.min(_amount, pool.getBorrowed(address(this)));
-        require(token.balanceOf(address(this)) >= _amount, "There is not enough funds to repay");
 
         address(token).safeApprove(address(pool), 0);
         address(token).safeApprove(address(pool), _amount);
@@ -238,6 +237,9 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
 
         IERC20Metadata toToken = getERC20TokenInstance(_toAsset, false);
         IERC20Metadata fromToken = getERC20TokenInstance(_fromAsset, false);
+
+        require(address(toToken) == _path[0], "Invalid token input");
+        require(address(fromToken) == _path[_path.length - 1], "Invalid token input");
 
         Pool(tokenManager.getPoolAddress(_toAsset)).borrow(_borrowAmount);
         uint256 initialRepayTokenAmount = fromToken.balanceOf(address(this));

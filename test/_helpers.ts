@@ -719,6 +719,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             await deployFacet("SolvencyFacetMockAvalanche", diamondAddress, [
                     'canRepayDebtFully',
                     'isSolvent',
+                    'isSolventPayable',
                     'isSolventWithPrices',
                     'getOwnedAssetsWithNativePrices',
                     'getTotalValueWithPrices',
@@ -728,12 +729,14 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                     'getStakedPositionsPrices',
                     'getAllPricesForLiquidation',
                     'getDebt',
+                    'getDebtPayable',
                     'getTotalTraderJoeV2',
                     'getDebtWithPrices',
                     'getPrice',
                     'getPrices',
                     'getTotalAssetsValue',
                     'getThresholdWeightedValue',
+                    'getThresholdWeightedValuePayable',
                     'getStakedValue',
                     'getTotalValue',
                     'getFullLoanStatus',
@@ -781,13 +784,28 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         )
 
         await deployFacet(
+            "GmxV2PlusFacetAvalanche",
+            diamondAddress,
+            [
+                'depositBtcGmxV2Plus',
+                'depositAvaxGmxV2Plus',
+                'depositEthGmxV2Plus',
+                'withdrawBtcGmxV2Plus',
+                'withdrawAvaxGmxV2Plus',
+                'withdrawEthGmxV2Plus',
+            ],
+            hardhatConfig
+        )
+
+        await deployFacet(
             "GmxV2CallbacksFacetAvalanche",
             diamondAddress,
             [
                 'afterDepositExecution',
                 'afterDepositCancellation',
                 'afterWithdrawalExecution',
-                'afterWithdrawalCancellation'
+                'afterWithdrawalCancellation',
+                'refundExecutionFee',
             ],
             hardhatConfig
         )
@@ -916,6 +934,72 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             'swapToGgAvax',
         ],
         hardhatConfig);
+
+        await deployFacet("WombatFacet", diamondAddress, [
+            'depositSavaxToAvaxSavax',
+            'withdrawSavaxFromAvaxSavax',
+            'sAvaxBalanceAvaxSavax',
+            'depositGgavaxToAvaxGgavax',
+            'withdrawGgavaxFromAvaxGgavax',
+            'ggAvaxBalanceAvaxGgavax',
+            'depositAvaxToAvaxSavax',
+            'withdrawAvaxFromAvaxSavax',
+            'avaxBalanceAvaxSavax',
+            'depositAvaxToAvaxGgavax',
+            'withdrawAvaxFromAvaxGgavax',
+            'avaxBalanceAvaxGgavax',
+            'withdrawSavaxFromAvaxSavaxInOtherToken',
+            'withdrawGgavaxFromAvaxGgavaxInOtherToken',
+            'withdrawAvaxFromAvaxSavaxInOtherToken',
+            'withdrawAvaxFromAvaxGgavaxInOtherToken',
+            'depositAndStakeAvaxSavaxLpSavax',
+            'unstakeAndWithdrawAvaxSavaxLpSavax',
+            'depositAndStakeAvaxSavaxLpAvax',
+            'unstakeAndWithdrawAvaxSavaxLpAvax',
+            'depositAvaxGgavaxLpGgavax',
+            'unstakeAndWithdrawAvaxGgavaxLpGgavax',
+            'depositAndStakeAvaxGgavaxLpAvax',
+            'unstakeAndWithdrawAvaxGgavaxLpAvax',
+            'claimAllWombatRewards',
+            'pendingRewardsForAvaxSavaxLpSavax',
+            'pendingRewardsForAvaxSavaxLpAvax',
+            'pendingRewardsForAvaxGgavaxLpGgavax',
+            'pendingRewardsForAvaxGgavaxLpAvax',
+        ],
+        hardhatConfig);
+
+        await deployFacet("YieldYakWombatFacet", diamondAddress, [
+                'depositSavaxToAvaxSavaxYY',
+                'withdrawSavaxFromAvaxSavaxYY',
+                'sAvaxBalanceAvaxSavaxYY',
+                'depositGgavaxToAvaxGgavaxYY',
+                'withdrawGgavaxFromAvaxGgavaxYY',
+                'ggAvaxBalanceAvaxGgavaxYY',
+                'depositAvaxToAvaxSavaxYY',
+                'withdrawAvaxFromAvaxSavaxYY',
+                'avaxBalanceAvaxSavaxYY',
+                'depositAvaxToAvaxGgavaxYY',
+                'withdrawAvaxFromAvaxGgavaxYY',
+                'avaxBalanceAvaxGgavaxYY',
+                'withdrawSavaxFromAvaxSavaxInOtherTokenYY',
+                'withdrawGgavaxFromAvaxGgavaxInOtherTokenYY',
+                'withdrawAvaxFromAvaxSavaxInOtherTokenYY',
+                'withdrawAvaxFromAvaxGgavaxInOtherTokenYY',
+                'depositAndStakeAvaxSavaxLpSavaxYY',
+                'unstakeAndWithdrawAvaxSavaxLpSavaxYY',
+                'depositAndStakeAvaxSavaxLpAvaxYY',
+                'unstakeAndWithdrawAvaxSavaxLpAvaxYY',
+                'depositAvaxGgavaxLpGgavaxYY',
+                'unstakeAndWithdrawAvaxGgavaxLpGgavaxYY',
+                'depositAndStakeAvaxGgavaxLpAvaxYY',
+                'unstakeAndWithdrawAvaxGgavaxLpAvaxYY',
+                'migrateAvaxSavaxLpSavaxFromWombatToYY',
+                'migrateAvaxGgavaxLpGgavaxFromWombatToYY',
+                'migrateAvaxSavaxLpAvaxFromWombatToYY',
+                'migrateAvaxGgavaxLpAvaxFromWombatToYY',
+            ],
+            hardhatConfig
+        );
 
         if (mock) {
             await deployFacet("UniswapV3FacetMock", diamondAddress, ['mintLiquidityUniswapV3', 'increaseLiquidityUniswapV3', 'decreaseLiquidityUniswapV3', 'burnLiquidityUniswapV3', 'getOwnedUniswapV3TokenIds'], hardhatConfig)
@@ -1143,6 +1227,19 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             ],
             hardhatConfig
         )
+
+        await deployFacet(
+            "GmxV2PlusFacetArbitrum",
+            diamondAddress,
+            [
+                'depositBtcGmxV2Plus',
+                'depositEthGmxV2Plus',
+                'withdrawBtcGmxV2Plus',
+                'withdrawEthGmxV2Plus',
+            ],
+            hardhatConfig
+        )
+
         await deployFacet(
             "GmxV2CallbacksFacetArbitrum",
             diamondAddress,
@@ -1150,7 +1247,8 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                 'afterDepositExecution',
                 'afterDepositCancellation',
                 'afterWithdrawalExecution',
-                'afterWithdrawalCancellation'
+                'afterWithdrawalCancellation',
+                'refundExecutionFee',
             ],
             hardhatConfig
         )
