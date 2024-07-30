@@ -33,7 +33,8 @@ const avalancheProvider = new ethers.providers.JsonRpcProvider("https://arb.nirv
 const arbitrumProvider = new ethers.providers.JsonRpcProvider("https://arb.nirvanalabs.xyz/arbitrum_aws?apikey=284d7cde-5c20-46a9-abee-2e3932cdb771");
 
 const avalancheHistoricalProvider = new ethers.providers.JsonRpcProvider("https://avax.nirvanalabs.xyz/avalanche_aws/ext/bc/C/rpc?apikey=284d7cde-5c20-46a9-abee-2e3932cdb771");
-const arbitrumHistoricalProvider = new ethers.providers.JsonRpcProvider("https://arb.nirvanalabs.xyz/arbitrum_aws?apikey=284d7cde-5c20-46a9-abee-2e3932cdb771");
+const arbitrumHistoricalProvider = new ethers.providers.JsonRpcProvider("https://nd-820-127-885.p2pify.com/eb20dbbf452bafebd4ea76aa69c6629e");
+// const arbitrumHistoricalProvider = new ethers.providers.JsonRpcProvider("https://arbitrum-mainnet.core.chainstack.com/28e5e6b4acb2f22a05d4223a1490e45b");
 
 const avalancheWallet = (new ethers.Wallet("0xca63cb3223cb19b06fa42110c89ad21a17bad22ea061e5a2c2487bd37b71e809"))
   .connect(avalancheHistoricalProvider);
