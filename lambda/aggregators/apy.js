@@ -442,30 +442,33 @@ const traderJoeApyAggregator = async (event) => {
 
   // fetch APYs for Avalanche and Arbitrum
   for (const [network, pools] of Object.entries(traderJoeConfig)) {
+    console.log(network);
+    const URL = `https://traderjoexyz.com/${network}/pool`;
+
+    await page.setViewport({
+      width: 1920,
+      height: 1080
+    });
+
+    await page.goto(URL, {
+      waitUntil: "networkidle0",
+      timeout: 60000
+    });
+
+    const marketRows = await page.$$(".chakra-table__container .chakra-table > tbody > tr");
+    const marketInnerTexts = await Promise.all(Array.from(marketRows).map(async market => {
+      return (await (await market.getProperty("textContent")).jsonValue()).replace(/\s+/g, "");
+    }));
+    await new Promise((resolve, reject) => setTimeout(resolve, 5000));
+
     for (const [pool, poolData] of Object.entries(pools)) {
-      // navigate pools page and wait till javascript fully load.
-      const URL = `https://traderjoexyz.com/${network}/pool/${poolData.version}/`;
-
-      await page.setViewport({
-        width: 1920,
-        height: 1080
-      });
-
-      await page.goto(URL + `${poolData.assetX}/${poolData.assetY}/${poolData.binStep}`, {
-        waitUntil: "networkidle0",
-        timeout: 60000
-      });
-
       try {
-        const tabs = await page.$$(".chakra-tabs__tab");
-        console.log(pool, tabs.length);
-        tabs.length == 16 ? await tabs[6].click() : await tabs[5].click();
+        const matchId = marketInnerTexts.findIndex(innerText => innerText.startsWith(poolData.index));
+        const market = marketRows[matchId];
+        const marketColumns = await market.$$("td");
+        const marketApy = parseFloat((await (await marketColumns[6].getProperty("textContent")).jsonValue()).split('%')[0].trim());
 
-        await new Promise((resolve, reject) => setTimeout(resolve, 5000));
-
-        const stats = await page.$$(".chakra-stat__number");
-        const apy = (await (await stats[3].getProperty('textContent')).jsonValue()).replace('%', '');
-        console.log(pool, apy);
+        console.log(pool, marketApy);
 
         const params = {
           TableName: process.env.APY_TABLE,
@@ -474,7 +477,7 @@ const traderJoeApyAggregator = async (event) => {
           },
           AttributeUpdates: {
             lp_apy: {
-              Value: apy == 'NaN' ? 0 : apy / 100,
+              Value: marketApy ? marketApy / 100 : 0,
               Action: "PUT"
             }
           }
@@ -486,6 +489,35 @@ const traderJoeApyAggregator = async (event) => {
         console.log(error);
       }
     }
+    // try {
+    //   const tabs = await page.$$(".chakra-tabs__tab");
+    //   console.log(pool, tabs.length);
+    //   tabs.length == 16 ? await tabs[6].click() : await tabs[5].click();
+
+    //   await new Promise((resolve, reject) => setTimeout(resolve, 5000));
+
+    //   const stats = await page.$$(".chakra-stat__number");
+    //   const apy = (await (await stats[3].getProperty('textContent')).jsonValue()).replace('%', '');
+    //   console.log(pool, apy);
+
+    //   const params = {
+    //     TableName: process.env.APY_TABLE,
+    //     Key: {
+    //       id: pool
+    //     },
+    //     AttributeUpdates: {
+    //       lp_apy: {
+    //         Value: apy == 'NaN' ? 0 : apy / 100,
+    //         Action: "PUT"
+    //       }
+    //     }
+    //   };
+    //   await dynamoDb.update(params).promise();
+
+    //   await new Promise((resolve, reject) => setTimeout(resolve, 15000));
+    // } catch (error) {
+    //   console.log(error);
+    // }
   }
 
   // await browser.close();
