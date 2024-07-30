@@ -716,6 +716,7 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             await deployFacet("SolvencyFacetMockAvalanche", diamondAddress, [
                     'canRepayDebtFully',
                     'isSolvent',
+                    'isSolventPayable',
                     'isSolventWithPrices',
                     'getOwnedAssetsWithNativePrices',
                     'getTotalValueWithPrices',
@@ -725,12 +726,14 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                     'getStakedPositionsPrices',
                     'getAllPricesForLiquidation',
                     'getDebt',
+                    'getDebtPayable',
                     'getTotalTraderJoeV2',
                     'getDebtWithPrices',
                     'getPrice',
                     'getPrices',
                     'getTotalAssetsValue',
                     'getThresholdWeightedValue',
+                    'getThresholdWeightedValuePayable',
                     'getStakedValue',
                     'getTotalValue',
                     'getFullLoanStatus',
@@ -778,13 +781,28 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         )
 
         await deployFacet(
+            "GmxV2PlusFacetAvalanche",
+            diamondAddress,
+            [
+                'depositBtcGmxV2Plus',
+                'depositAvaxGmxV2Plus',
+                'depositEthGmxV2Plus',
+                'withdrawBtcGmxV2Plus',
+                'withdrawAvaxGmxV2Plus',
+                'withdrawEthGmxV2Plus',
+            ],
+            hardhatConfig
+        )
+
+        await deployFacet(
             "GmxV2CallbacksFacetAvalanche",
             diamondAddress,
             [
                 'afterDepositExecution',
                 'afterDepositCancellation',
                 'afterWithdrawalExecution',
-                'afterWithdrawalCancellation'
+                'afterWithdrawalCancellation',
+                'refundExecutionFee',
             ],
             hardhatConfig
         )
@@ -1173,6 +1191,19 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
             ],
             hardhatConfig
         )
+
+        await deployFacet(
+            "GmxV2PlusFacetArbitrum",
+            diamondAddress,
+            [
+                'depositBtcGmxV2Plus',
+                'depositEthGmxV2Plus',
+                'withdrawBtcGmxV2Plus',
+                'withdrawEthGmxV2Plus',
+            ],
+            hardhatConfig
+        )
+
         await deployFacet(
             "GmxV2CallbacksFacetArbitrum",
             diamondAddress,
@@ -1180,7 +1211,8 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                 'afterDepositExecution',
                 'afterDepositCancellation',
                 'afterWithdrawalExecution',
-                'afterWithdrawalCancellation'
+                'afterWithdrawalCancellation',
+                'refundExecutionFee',
             ],
             hardhatConfig
         )

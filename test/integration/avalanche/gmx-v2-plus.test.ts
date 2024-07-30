@@ -55,7 +55,7 @@ describe('Smart loan', () => {
         await syncTime();
     });
 
-    describe('A loan with Gmx V2 LP operations', () => {
+    describe('A loan with Gmx V2 GM+ LP operations', () => {
         let smartLoansFactory: SmartLoansFactory,
             loan: SmartLoanGigaChadInterface,
             wrappedLoan: any,
@@ -77,7 +77,7 @@ describe('Smart loan', () => {
             paraSwapMin = constructSimpleSDK({ chainId: 42161, axios });
 
             [owner, nonOwner, depositor] = await getFixedGasSigners(10000000);
-            let assetsList = ['AVAX', 'BTC', 'ETH', 'USDC', 'GM_BTC_BTCb_USDC', 'GM_ETH_WETHe_USDC', 'GM_AVAX_WAVAX_USDC'];
+            let assetsList = ['AVAX', 'BTC', 'ETH', 'USDC', 'GM_AVAX_WAVAX'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'AVAX', airdropList: [depositor]}
             ];
@@ -163,19 +163,12 @@ describe('Smart loan', () => {
             await wrappedLoan.fund(toBytes32("AVAX"), toWei("100"));
         });
 
-        it("should deposit to GMX V2", async () => {
+        it("should deposit to GMX V2 GM+ Pool", async () => {
             const tokenAmount = toWei('10');
             const maxFee = toWei('0.5');
 
-            const minAmount = fromWei(tokenAmount) * tokensPrices.get('AVAX')! / tokensPrices.get('GM_AVAX_WAVAX_USDC')! * 0.98;
-            await wrappedLoan.depositAvaxUsdcGmxV2(true, tokenAmount, toWei(minAmount.toFixed(18)), maxFee, { value: maxFee });
+            const minAmount = fromWei(tokenAmount) * tokensPrices.get('AVAX')! / tokensPrices.get('GM_AVAX_WAVAX')! * 0.98;
+            await wrappedLoan.depositAvaxGmxV2Plus(tokenAmount, toWei(minAmount.toFixed(18)), maxFee, { value: maxFee });
         });
-
-        // it("should withdraw from to GMX V2", async () => {
-        //     const gmAmount = await tokenContracts.get('GM_AVAX_WAVAX_USDC')!.balanceOf(wrappedLoan.address);
-        //     const maxFee = toWei('0.01');
-        //
-        //     await wrappedLoan.withdrawAvaxUsdcGmxV2(gmAmount, 0, 0, maxFee, { value: maxFee });
-        // });
     });
 });
