@@ -965,6 +965,39 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
         ],
         hardhatConfig);
 
+        await deployFacet("YieldYakWombatFacet", diamondAddress, [
+                'depositSavaxToAvaxSavaxYY',
+                'withdrawSavaxFromAvaxSavaxYY',
+                'sAvaxBalanceAvaxSavaxYY',
+                'depositGgavaxToAvaxGgavaxYY',
+                'withdrawGgavaxFromAvaxGgavaxYY',
+                'ggAvaxBalanceAvaxGgavaxYY',
+                'depositAvaxToAvaxSavaxYY',
+                'withdrawAvaxFromAvaxSavaxYY',
+                'avaxBalanceAvaxSavaxYY',
+                'depositAvaxToAvaxGgavaxYY',
+                'withdrawAvaxFromAvaxGgavaxYY',
+                'avaxBalanceAvaxGgavaxYY',
+                'withdrawSavaxFromAvaxSavaxInOtherTokenYY',
+                'withdrawGgavaxFromAvaxGgavaxInOtherTokenYY',
+                'withdrawAvaxFromAvaxSavaxInOtherTokenYY',
+                'withdrawAvaxFromAvaxGgavaxInOtherTokenYY',
+                'depositAndStakeAvaxSavaxLpSavaxYY',
+                'unstakeAndWithdrawAvaxSavaxLpSavaxYY',
+                'depositAndStakeAvaxSavaxLpAvaxYY',
+                'unstakeAndWithdrawAvaxSavaxLpAvaxYY',
+                'depositAvaxGgavaxLpGgavaxYY',
+                'unstakeAndWithdrawAvaxGgavaxLpGgavaxYY',
+                'depositAndStakeAvaxGgavaxLpAvaxYY',
+                'unstakeAndWithdrawAvaxGgavaxLpAvaxYY',
+                'migrateAvaxSavaxLpSavaxFromWombatToYY',
+                'migrateAvaxGgavaxLpGgavaxFromWombatToYY',
+                'migrateAvaxSavaxLpAvaxFromWombatToYY',
+                'migrateAvaxGgavaxLpAvaxFromWombatToYY',
+            ],
+            hardhatConfig
+        );
+
         if (mock) {
             await deployFacet("UniswapV3FacetMock", diamondAddress, ['mintLiquidityUniswapV3', 'increaseLiquidityUniswapV3', 'decreaseLiquidityUniswapV3', 'burnLiquidityUniswapV3', 'getOwnedUniswapV3TokenIds'], hardhatConfig)
 
