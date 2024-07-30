@@ -820,7 +820,7 @@ export default {
 
         .apr-warning {
           position: absolute;
-          left: 45px;
+          left: 38px;
         }
       }
 

@@ -234,7 +234,8 @@ export default {
           decimals: 18,
           apyKey: 'WOM_ggAVAX_ggAVAX',
           boostGGP: true,
-          addTokenApy: true
+          addTokenApy: true,
+          aprWarning: 'This pool’s APY is overvalued. This will be resolved soon.'
         },
         {
           name: 'AVAX',
