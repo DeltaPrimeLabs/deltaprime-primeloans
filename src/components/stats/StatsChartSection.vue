@@ -131,7 +131,7 @@ export default {
         return {
           x: timestamp,
           y: valueForTimestamp,
-          event: selectedDataset.events[index].length > 0 ? selectedDataset.events[index] : null
+          event: selectedDataset.events[index] && selectedDataset.events[index].length > 0 ? selectedDataset.events[index] : null
         }
       })
       if (this.chartMin === this.chartMax) {
