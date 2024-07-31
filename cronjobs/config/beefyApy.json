@@ -1,0 +1,18 @@
+{
+  "sushi": {
+    "arb": {
+      "dpx-weth": {
+        "symbol": "SUSHI_DPX_ETH_LP",
+        "protocolIdentifier": "MOO_SUSHI_DPX_ETH_LP"
+      }
+    }
+  },
+  "gmx": {
+    "arb": {
+      "gmx": {
+        "symbol": "GMX",
+        "protocolIdentifier": "MOO_GMX"
+      }
+    }
+  }
+}

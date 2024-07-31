@@ -234,7 +234,8 @@ export default {
           decimals: 18,
           apyKey: 'WOM_ggAVAX_ggAVAX',
           boostGGP: true,
-          addTokenApy: true
+          addTokenApy: true,
+          aprWarning: 'This pool’s APY is overvalued. This will be resolved soon.'
         },
         {
           name: 'AVAX',
@@ -262,17 +263,17 @@ export default {
       'WOMBAT_sAVAX_AVAX_LP_sAVAX': { decimals: 18, debtCoverage: 0.83333333333, balanceMethod: 'sAvaxBalanceAvaxSavax', pendingRewardsMethod: 'pendingRewardsForAvaxSavaxLpSavax', short: 'WOMBAT LP', logoExt: 'png', name: 'WOMBAT LP', addTokenApy: true, asset: 'sAVAX', apyKey: 'WOM_sAVAX_sAVAX' },
     },
     TRADERJOEV2_LP_ASSETS_CONFIG: {
-        'TJLB_JOE-AVAX_2_2': { primary: 'JOE', secondary: 'AVAX', name: 'JOE-AVAX', dex: 'TraderJoe', symbol: 'TJLB_JOE-AVAX_2_2', routerAddress: "0x18556DA13313f3532c54711497A8FedAC273220E", debtCoverage: 0.83333333333, decimals: 18, baseFee: '0.25', address: addresses['TJLB_JOE-AVAX_2_2'], binStep: 25, hardcodeApy: 337.71, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2', link: "https://traderjoexyz.com/avalanche/pool/v22/0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd/AVAX/25", earlyAccessRequired: true, minSPrimeValue: 100, isIncentivized: true, aprWarning: true},
-        'TJLB_USDT-USDC_2_2': { primary: 'USDT', secondary: 'USDC', name: 'USDT-USDC', dex: 'TraderJoe', symbol: 'TJLB_USDT-USDC_2_2', routerAddress: "0x18556DA13313f3532c54711497A8FedAC273220E", debtCoverage: 0.83333333333, decimals: 18, baseFee: '0.01', address: addresses['TJLB_USDT-USDC_2_2'], binStep: 1, hardcodeApy: 15.03, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2', link: "https://traderjoexyz.com/avalanche/pool/v22/0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7/0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E/1", earlyAccessRequired: true, minSPrimeValue: 100, isIncentivized: true, aprWarning: true},
+        'TJLB_JOE-AVAX_2_2': { primary: 'JOE', secondary: 'AVAX', name: 'JOE-AVAX', dex: 'TraderJoe', symbol: 'TJLB_JOE-AVAX_2_2', routerAddress: "0x18556DA13313f3532c54711497A8FedAC273220E", debtCoverage: 0.83333333333, decimals: 18, baseFee: '0.25', address: addresses['TJLB_JOE-AVAX_2_2'], binStep: 25, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2', link: "https://traderjoexyz.com/avalanche/pool/v22/0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd/AVAX/25", isIncentivized: true},
+        'TJLB_USDT-USDC_2_2': { primary: 'USDT', secondary: 'USDC', name: 'USDT-USDC', dex: 'TraderJoe', symbol: 'TJLB_USDT-USDC_2_2', routerAddress: "0x18556DA13313f3532c54711497A8FedAC273220E", debtCoverage: 0.83333333333, decimals: 18, baseFee: '0.01', address: addresses['TJLB_USDT-USDC_2_2'], binStep: 1, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2', link: "https://traderjoexyz.com/avalanche/pool/v22/0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7/0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E/1", isIncentivized: true},
         'TJLB_AVAX-USDC': { primary: 'AVAX', secondary: 'USDC', name: 'AVAX-USDC', dex: 'TraderJoe', symbol: 'TJLB_AVAX-USDC', routerAddress: "0xb4315e873dBcf96Ffd0acd8EA43f689D8c20fB30", debtCoverage: 0.83333333333, decimals: 18, baseFee: '0.002', address: addresses['TJLB_AVAX-USDC'], binStep: 20, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2', link: "https://traderjoexyz.com/avalanche/pool/v21/AVAX/0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e/20"},
         'TJLB_ETH-AVAX': { primary: 'ETH', secondary: 'AVAX', name: 'ETH-AVAX', dex: 'TraderJoe', symbol: 'TJLB_ETH-AVAX', routerAddress: "0xb4315e873dBcf96Ffd0acd8EA43f689D8c20fB30", debtCoverage: 0.83333333333, decimals: 18, baseFee: '0.001', address: addresses['TJLB_ETH-AVAX'], binStep: 10, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2', link: 'https://traderjoexyz.com/avalanche/pool/v21/0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab/AVAX/10'},
         'TJLB_BTC.b-AVAX': { primary: 'BTC', secondary: 'AVAX', name: 'BTC-AVAX', dex: 'TraderJoe', symbol: 'TJLB_BTCB-AVAX', routerAddress: "0xb4315e873dBcf96Ffd0acd8EA43f689D8c20fB30", debtCoverage: 0.83333333333, decimals: 18, baseFee: '0.1', address: addresses['TJLB_BTC.b-AVAX'], binStep: 10, addMethod: 'addLiquidityTraderJoeV2', removeMethod: 'removeLiquidityTraderJoeV2', link: 'https://traderjoexyz.com/avalanche/pool/v21/0x152b9d0fdc40c096757f570a51e494bd4b943e50/AVAX/10'},
     },
     LEVEL_LP_ASSETS_CONFIG: {},
     GMX_V2_ASSETS_CONFIG: {
-        "GM_AVAX_WAVAX": {minSPrimeToUnlock: 100, isGMXPlus: true, aprWarning: true, name: "AVAX+", symbol: "GM_AVAX_WAVAX", short: "GM", decimals: 18, address: addresses.GM_AVAX_WAVAX, debtCoverage: 0.83333333333, longToken: 'AVAX', shortToken: 'AVAX', indexTokenAddress: addresses.AVAX, link: 'https://app.gmx.io/#/stats', addMethod: 'depositAvaxGmxV2Plus', removeMethod: 'withdrawAvaxGmxV2Plus', hardcodeApy: 13.00},
-        "GM_BTC_BTCb": {minSPrimeToUnlock: 100, isGMXPlus: true, aprWarning: true, name: "BTC+", symbol: "GM_BTC_BTCb", logoExt: "png", short: "GM", decimals: 18, address: addresses.GM_BTC_BTCb, debtCoverage: 0.83333333333, longToken: 'BTC', shortToken: 'BTC', indexTokenAddress: addresses.BTC, link: 'https://app.gmx.io/#/stats', addMethod: 'depositBtcGmxV2Plus', removeMethod: 'withdrawBtcGmxV2Plus', hardcodeApy: 13.40},
-        "GM_ETH_WETHe": {minSPrimeToUnlock: 100, isGMXPlus: true, aprWarning: true, name: "ETH+", symbol: "GM_ETH_WETHe", short: "GM", decimals: 18, address: addresses.GM_ETH_WETHe, debtCoverage: 0.83333333333, longToken: 'ETH', shortToken: 'ETH', indexTokenAddress: addresses.ETH, link: 'https://app.gmx.io/#/stats', addMethod: 'depositEthGmxV2Plus', removeMethod: 'withdrawEthGmxV2Plus', hardcodeApy: 12.38},
+        "GM_AVAX_WAVAX": {isGMXPlus: true, name: "AVAX+", symbol: "GM_AVAX_WAVAX", short: "GM", decimals: 18, address: addresses.GM_AVAX_WAVAX, debtCoverage: 0.83333333333, longToken: 'AVAX', shortToken: 'AVAX', indexTokenAddress: addresses.AVAX, link: 'https://app.gmx.io/#/stats', addMethod: 'depositAvaxGmxV2Plus', removeMethod: 'withdrawAvaxGmxV2Plus'},
+        "GM_BTC_BTCb": {isGMXPlus: true, name: "BTC+", symbol: "GM_BTC_BTCb", logoExt: "png", short: "GM", decimals: 18, address: addresses.GM_BTC_BTCb, debtCoverage: 0.83333333333, longToken: 'BTC', shortToken: 'BTC', indexTokenAddress: addresses.BTC, link: 'https://app.gmx.io/#/stats', addMethod: 'depositBtcGmxV2Plus', removeMethod: 'withdrawBtcGmxV2Plus'},
+        "GM_ETH_WETHe": {isGMXPlus: true, name: "ETH+", symbol: "GM_ETH_WETHe", short: "GM", decimals: 18, address: addresses.GM_ETH_WETHe, debtCoverage: 0.83333333333, longToken: 'ETH', shortToken: 'ETH', indexTokenAddress: addresses.ETH, link: 'https://app.gmx.io/#/stats', addMethod: 'depositEthGmxV2Plus', removeMethod: 'withdrawEthGmxV2Plus'},
         "GM_AVAX_WAVAX_USDC": {name: "AVAX-USDC", symbol: "GM_AVAX_WAVAX_USDC", short: "GM", decimals: 18, address: addresses.GM_AVAX_WAVAX_USDC, debtCoverage: 0.83333333333, longToken: 'AVAX', shortToken: 'USDC', indexTokenAddress: addresses.AVAX, link: 'https://app.gmx.io/#/stats'},
         "GM_BTC_BTCb_USDC": {name: "BTC-USDC", symbol: "GM_BTC_BTCb_USDC", logoExt: "png", short: "GM", decimals: 18, address: addresses.GM_BTC_BTCb_USDC, debtCoverage: 0.83333333333, longToken: 'BTC', shortToken: 'USDC', indexTokenAddress: addresses.BTC, link: 'https://app.gmx.io/#/stats'},
         "GM_ETH_WETHe_USDC": {name: "ETH-USDC", symbol: "GM_ETH_WETHe_USDC", short: "GM", decimals: 18, address: addresses.GM_ETH_WETHe_USDC, debtCoverage: 0.83333333333, longToken: 'ETH', shortToken: 'USDC', indexTokenAddress: addresses.ETH, link: 'https://app.gmx.io/#/stats'},
@@ -650,9 +651,7 @@ export default {
             poolName: 'sAVAX Pool',
             debtCoverage: 0.83333333333,
             strategyContract: '0x9B5d890d563EE4c9255bB500a790Ca6B1FB9dB6b',
-            apy: 8.5,
-            earlyAccessRequired: true,
-            minSPrimeToUnlock: 100,
+            apy: 7.46,
             aprWarning: true
         },
         {
@@ -678,9 +677,7 @@ export default {
             poolName: 'sAVAX Pool',
             debtCoverage: 0.83333333333,
             strategyContract: '0xa84D83787eA216F616C6Bd02C6edC6D6d63f042f',
-            apy: 9.5,
-            earlyAccessRequired: true,
-            minSPrimeToUnlock: 100,
+            apy: 14.5,
             aprWarning: true
         },
         {
@@ -706,9 +703,7 @@ export default {
             poolName: 'ggAVAX Pool',
             debtCoverage: 0.83333333333,
             strategyContract: '0x13404B1C715aF60869fc658d6D99c117e3543592',
-            apy: 8.77,
-            earlyAccessRequired: true,
-            minSPrimeToUnlock: 100,
+            apy: 8.34,
             aprWarning: true
         },
         {
@@ -735,8 +730,6 @@ export default {
             debtCoverage: 0.83333333333,
             strategyContract: '0x7f0eB376eabF4b2B4290D09EFb2f4da99B3ea311',
             apy: 0.4,
-            earlyAccessRequired: true,
-            minSPrimeToUnlock: 100,
             aprWarning: true
         },
     ],
