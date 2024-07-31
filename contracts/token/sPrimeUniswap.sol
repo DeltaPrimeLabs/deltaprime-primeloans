@@ -376,7 +376,9 @@ contract sPrimeUniswap is
         uint256 amountYAdded;
         tokenX.forceApprove(address(positionManager), amountX);
         tokenY.forceApprove(address(positionManager), amountY);
+
         (uint256 amount0, uint256 amount1) = tokenSequence ? (amountY, amountX) : (amountX, amountY);
+        (desiredAmountX, desiredAmountY) = tokenSequence ? (desiredAmountY, desiredAmountX) : (desiredAmountX, desiredAmountY);
 
         if (tokenId == 0) {
             (tokenId, , amountXAdded, amountYAdded) = positionManager.mint(
@@ -803,7 +805,8 @@ contract sPrimeUniswap is
                 ( , , , , , int24 tickLower, int24 tickUpper, uint128 liquidity, , , ,) = positionManager.positions(tokenId);
 
                 (uint256 amountX, uint256 amountY) = positionManagerRemove(tokenId, uint128((liquidity * amount) / (fromBalance + amount)), address(this), 0, 0);
-
+                getToken0().forceApprove(address(positionManager), amountX);
+                getToken1().forceApprove(address(positionManager), amountY);
                 (
                     uint256 newTokenId,
                     ,

@@ -838,7 +838,6 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
 
 
     /**
-
      * @dev emitted after the user locks deposit
      * @param user the address that locks the deposit
      * @param amount the amount locked
@@ -846,7 +845,8 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
      * @param unlockTime the time when the deposit will be unlocked
      **/
     event DepositLocked(address indexed user, uint256 amount, uint256 lockTime, uint256 unlockTime);
-
+    
+    /**
      * @dev emitted after changing vesting distributor
      * @param distributor an address of the newly set distributor
      * @param timestamp of the distributor change
