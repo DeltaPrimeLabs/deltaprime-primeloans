@@ -12,8 +12,9 @@ import "../interfaces/gmx-v2/IDepositUtils.sol";
 import "../interfaces/gmx-v2/IWithdrawalUtils.sol";
 import "../interfaces/gmx-v2/IGmxV2Router.sol";
 import "../interfaces/gmx-v2/IWithdrawalCallbackReceiver.sol";
+import "../interfaces/gmx-v2/IGasFeeCallbackReceiver.sol";
 
-contract TestGmxV2 is IDepositCallbackReceiver, IWithdrawalCallbackReceiver {
+contract TestGmxV2 is IDepositCallbackReceiver, IWithdrawalCallbackReceiver, IGasFeeCallbackReceiver {
 
     address GMX_V2_ROUTER = 0x7452c558d45f8afC8c83dAe62C3f8A5BE19c71f6;
     address GMX_V2_EXCHANGE_ROUTER = 0x7C68C7866A64FA2160F78EEaE12217FFbf871fa8;

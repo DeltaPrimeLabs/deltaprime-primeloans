@@ -1183,11 +1183,19 @@ export const deployAllFacets = async function (diamondAddress: any, mock: boolea
                 'depositLinkUsdcGmxV2',
                 'depositUniUsdcGmxV2',
                 'depositBtcUsdcGmxV2',
+                'depositSolUsdcGmxV2',
+                'depositNearUsdcGmxV2',
+                'depositAtomUsdcGmxV2',
+                'depositGmxUsdcGmxV2',
                 'withdrawEthUsdcGmxV2',
                 'withdrawArbUsdcGmxV2',
                 'withdrawLinkUsdcGmxV2',
                 'withdrawUniUsdcGmxV2',
-                'withdrawBtcUsdcGmxV2'
+                'withdrawBtcUsdcGmxV2',
+                'withdrawSolUsdcGmxV2',
+                'withdrawNearUsdcGmxV2',
+                'withdrawAtomUsdcGmxV2',
+                'withdrawGmxUsdcGmxV2',
             ],
             hardhatConfig
         )
