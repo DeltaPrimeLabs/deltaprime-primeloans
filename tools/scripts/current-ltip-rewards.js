@@ -61,7 +61,7 @@ async function fetchLoansDataInBatches(epochName) {
     const task = (address) => fetch(`https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/ltip-${type}-for?addresses=${address}`)
 
     console.log(`LONS: ${loans.length}`)
-    loans = loans.slice(0, 1800);
+    loans = loans.slice(0, 2200);
 
     let resps = await promiseAllInBatches(task, loans, 100);
 
@@ -148,7 +148,7 @@ function createDiffJson(file1, file2, location = 'avalanche') {
         }
     )
 
-    fs.writeFileSync(`src/data/${location}/${file2}_diff.json`, JSON.stringify(json2))
+    fs.writeFileSync(`src/data/${location}/${file2}_diff_2.json`, JSON.stringify(json2))
 
     console.log('distributed Avax in this epoch: ', collectedAvax)
 
@@ -266,10 +266,10 @@ function createAddJson(files, output) {
 }
 
 
-//last distribution timestamp: 1721050801
-//current distribution timestamp: 1721643728
-fetchData("LTIP_EPOCH_7", 1721050801, 1721643728, 10000, true)
-// fetchLoansDataInBatches("LTIP_EPOCH_7_TOTAL")
+//last distribution timestamp: 1721643728
+//current distribution timestamp: 1722247318
+// fetchData("LTIP_EPOCH_8", 1721643728, 1722247318, 10000, false)
+// fetchLoansDataInBatches("LTIP_EPOCH_8_TOTAL")
 //no need to use this one for pools
 // fetchPoolsDataInBatches("LTIP_EPOCH_7", ["LTIP_SAVINGS_EPOCH_1", "LTIP_EPOCH_2_SAVINGS", "LTIP_EPOCH_3_SAVINGS", "LTIP_EPOCH_4_SAVINGS", "LTIP_EPOCH_5_SAVINGS", "LTIP_EPOCH_6_SAVINGS"])
 // fetchData("LTIP_EPOCH_5_TOTAL_4", 1720013265, 1720521317, 10000, false)
@@ -277,6 +277,6 @@ fetchData("LTIP_EPOCH_7", 1721050801, 1721643728, 10000, true)
 // checkNegativeAccounts()
 // checkCollectedInTimestamp(1715152203)
 // checkCollected();
-// createDiffJson( "LTIP_EPOCH_6_SAVINGS_TOTAL", "LTIP_EPOCH_7_SAVINGS_TOTAL", "arbitrum/ltip")
+// createDiffJson( "LTIP_EPOCH_6_TOTAL", "LTIP_EPOCH_8_TOTAL", "arbitrum/ltip")
 // createAddJson( ["LTIP_SAVINGS_EPOCH_1", "LTIP_EPOCH_2_SAVINGS", "LTIP_EPOCH_3_SAVINGS", "LTIP_EPOCH_4_SAVINGS", "LTIP_EPOCH_5_SAVINGS"], "LTIP_EPOCH_5_SAVINGS_TOTAL")
-// analyzeJson("LTIP_EPOCH_5_SAVINGS_TOTAL")
+analyzeJson("LTIP_EPOCH_8_TOTAL_diff")
