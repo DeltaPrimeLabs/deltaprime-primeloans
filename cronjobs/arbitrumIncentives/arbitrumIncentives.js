@@ -18,7 +18,8 @@ const incentivesRpcUrl = require('../.secrets/incentivesRpc.json');
 
 const factoryAddress = constants.arbitrum.factory;
 const getHistoricalProvider = (rpc) => {
-  return new ethers.providers.JsonRpcProvider(incentivesRpcUrl.arbitrum[rpc])
+  // return new ethers.providers.JsonRpcProvider(incentivesRpcUrl.arbitrum[rpc])
+  return new ethers.providers.JsonRpcProvider(extRpcUrl.arbitrum)
 };
 
 const wrap = (contract, network) => {

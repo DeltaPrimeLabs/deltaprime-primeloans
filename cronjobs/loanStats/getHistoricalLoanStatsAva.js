@@ -1,5 +1,4 @@
 const ethers = require('ethers');
-const WrapperBuilder = require('@redstone-finance/evm-connector').WrapperBuilder;
 const {
   dynamoDb,
   fromWei,
