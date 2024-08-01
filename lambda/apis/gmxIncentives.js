@@ -1,10 +1,11 @@
 const AWS = require('aws-sdk');
+const { fetchAllDataFromDB } = require('../utils/helpers');
 AWS.config.setPromisesDependency(require('bluebird'));
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
 
 const getGmxIncentivesApi = (event, context, callback) => {
   const params = {
-    TableName: event.queryStringParameters.network === 'arbitrum' ? process.env.GMX_INCENTIVES_ARB_TABLE : process.env.GMX_INCENTIVES_AVA_TABLE,
+    TableName: event.queryStringParameters.network === 'arbitrum' ? process.env.GMX_INCENTIVES_ARB_TABLE : process.env.GMX_INCENTIVES_RETROACTIVE_AVA_TABLE,
     Key: {
       id: event.pathParameters.id.toLowerCase()
     }
@@ -48,7 +49,41 @@ const getGmBoostApyApi = (event, context, callback) => {
     });
 };
 
+const getGmxIncentivesNewApi = async (event, context, callback) => {
+  try {
+    const params = {
+      TableName: process.env.GMX_INCENTIVES_RETROACTIVE_AVA_TABLE,
+      KeyConditionExpression: 'id = :id',
+      ExpressionAttributeValues: {
+        ':id': event.pathParameters.id.toLowerCase()
+      }
+    };
+
+    const result = await fetchAllDataFromDB(params, false)
+
+    let accumulatedIncentives = 0;
+
+    result.map((item) => {
+      accumulatedIncentives += Number(item.avaxCollected);
+    });
+
+    const response = {
+      statusCode: 200,
+      body: JSON.stringify({
+        total: accumulatedIncentives,
+        list: result
+      }),
+    };
+    callback(null, response);
+  } catch(error) {
+    console.error(error);
+    callback(new Error('Couldn\'t fetch GMX Incentives values.'));
+    return;
+  }
+};
+
 module.exports = {
   getGmxIncentivesApi,
-  getGmBoostApyApi
+  getGmBoostApyApi,
+  getGmxIncentivesNewApi
 }

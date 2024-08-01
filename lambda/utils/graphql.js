@@ -13,8 +13,8 @@ const createHttpLink = require("apollo-link-http").createHttpLink;
 const InMemoryCache = require("apollo-cache-inmemory").InMemoryCache;
 
 const GRAPH_API = {
-  "avalanche": "https://api.thegraph.com/subgraphs/name/mbare0/deltaprime",
-  "arbitrum": "https://api.thegraph.com/subgraphs/name/keizir/deltaprime"
+  "avalanche": "https://api.studio.thegraph.com/query/78666/deltaprime/v0.0.1",
+  "arbitrum": `https://api.studio.thegraph.com/query/50916/deltaprime/version/latest`
 };
 
 const fetchPools = async (network) => {

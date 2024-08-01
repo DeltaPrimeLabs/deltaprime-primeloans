@@ -1369,6 +1369,12 @@ export default {
           if (traderJoeV2LpAssets['TJLB_MAGIC_ETH']) {
             traderJoeV2LpAssets['TJLB_MAGIC_ETH'].apy = 114.81;
           }
+
+          if (traderJoeV2LpAssets[symbol].hardcodeApy) {
+            traderJoeV2LpAssets[symbol].apy = traderJoeV2LpAssets[symbol].hardcodeApy;
+          }
+
+          console.log(symbol, 'APY: ', traderJoeV2LpAssets[symbol].apy);
         }
       }
       commit('setTraderJoeV2LpAssets', traderJoeV2LpAssets);
@@ -1413,6 +1419,10 @@ export default {
           for (let [symbol, asset] of Object.entries(gmxV2Assets)) {
             if (apys[symbol] && apys[symbol].lp_apy) {
               gmxV2Assets[symbol].apy = apys[symbol].lp_apy * 100;
+            }
+
+            if (gmxV2Assets[symbol].hardcodeApy) {
+              gmxV2Assets[symbol].apy = gmxV2Assets[symbol].hardcodeApy;
             }
           }
         }

@@ -1,0 +1,10 @@
+{
+  "avalanche": {
+    "ggAVAX": {
+      "name": "ggAVAX",
+      "symbol": "ggAVAX",
+      "decimals": "18"
+    }
+  },
+  "arbitrum": {}
+}

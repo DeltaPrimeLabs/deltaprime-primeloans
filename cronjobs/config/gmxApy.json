@@ -1,0 +1,16 @@
+{
+  "arbitrum": {
+    "GM_ARB_ARB_USDC": "ARB/USD",
+    "GM_LINK_LINK_USDC": "LINK/USD",
+    "GM_UNI_UNI_USDC": "UNI/USD",
+    "GM_SOL_SOL_USDC": "SOL/USD",
+    "GM_ETH_WETH_USDC": "ETH/USD",
+    "GM_BTC_WBTC_USDC": "BTC/USD"
+  },
+  "avalanche": {
+    "GM_BTC_BTCb_USDC": "BTC/USD",
+    "GM_ETH_WETHe_USDC": "ETH/USD",
+    "GM_AVAX_WAVAX_USDC": "AVAX/USD",
+    "GM_SOL_SOL_USDC": "SOL/USD"
+  }
+}
