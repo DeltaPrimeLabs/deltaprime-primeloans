@@ -2029,7 +2029,7 @@ export default {
       let tx = await awaitConfirmation(transaction, provider, 'withdraw');
 
       const price = state.penpieLpAssets[unstakeRequest.asset].price;
-      const withdrawAmountUSD = Number(amountInWei) * price;
+      const withdrawAmountUSD = fromWei(amountInWei) * price;
       const assetBalanceBeforeWithdraw = state.penpieLpBalances[unstakeRequest.asset].price;
 
       const assetBalanceAfterWithdraw = Number(assetBalanceBeforeWithdraw) - Number(unstakeRequest.value);
