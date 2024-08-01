@@ -1430,6 +1430,14 @@ export default {
         commit('setGmxV2Assets', gmxV2Assets);
       }
 
+      let wombatYYFarms = config.WOMBAT_YY_FARMS;
+
+      if (wombatYYFarms && wombatYYFarms.length > 0) {
+        wombatYYFarms.forEach(farm => {
+          farm.apy = apys[farm.lpAssetToken][farm.apyKey] * 100;
+        })
+      }
+
       dataRefreshNotificationService.emitAssetApysDataRefresh();
     },
 
