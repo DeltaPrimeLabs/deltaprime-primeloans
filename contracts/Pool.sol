@@ -779,6 +779,6 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     // getMaxPoolUtilisationForBorrowing was breached
     error MaxPoolUtilisationBreached();
 
-    // getMaxPoolUtilisationForBorrowing was breached
+    // Contract paused
     error PoolPaused();
 }
