@@ -42,6 +42,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     VestingDistributor public vestingDistributor;
 
     uint8 internal _decimals;
+    bool public paused;
 
     function initialize(
         IRatesCalculator ratesCalculator_,
@@ -83,6 +84,15 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      **/
     function setTotalSupplyCap(uint256 _newTotalSupplyCap) external onlyOwner {
         totalSupplyCap = _newTotalSupplyCap;
+    }
+
+    /**
+     * Pause to the Pool.
+     * Only the owner of the Contract can execute this function.
+     * @dev _pause bool status
+     **/
+    function setPause(bool _paused) external onlyOwner {
+        paused = _paused;
     }
 
     /**
@@ -157,7 +167,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     function transfer(
         address recipient,
         uint256 amount
-    ) external override nonReentrant returns (bool) {
+    ) external override nonReentrant notPaused returns (bool) {
         if (recipient == address(0)) revert TransferToZeroAddress();
 
         if (recipient == address(this)) revert TransferToPoolAddress();
@@ -202,7 +212,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     function increaseAllowance(
         address spender,
         uint256 addedValue
-    ) external returns (bool) {
+    ) external notPaused returns (bool) {
         if (spender == address(0)) revert SpenderZeroAddress();
         uint256 newAllowance = _allowed[msg.sender][spender] + addedValue;
         _allowed[msg.sender][spender] = newAllowance;
@@ -214,7 +224,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     function decreaseAllowance(
         address spender,
         uint256 subtractedValue
-    ) external returns (bool) {
+    ) external notPaused returns (bool) {
         if (spender == address(0)) revert SpenderZeroAddress();
         uint256 currentAllowance = _allowed[msg.sender][spender];
         if (currentAllowance < subtractedValue)
@@ -230,7 +240,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     function approve(
         address spender,
         uint256 amount
-    ) external override returns (bool) {
+    ) external override notPaused returns (bool) {
         if (spender == address(0)) revert SpenderZeroAddress();
         _allowed[msg.sender][spender] = amount;
 
@@ -243,7 +253,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         address sender,
         address recipient,
         uint256 amount
-    ) external override nonReentrant returns (bool) {
+    ) external override nonReentrant notPaused returns (bool) {
         if (_allowed[sender][msg.sender] < amount)
             revert InsufficientAllowance(amount, _allowed[sender][msg.sender]);
 
@@ -282,7 +292,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      * Deposits the amount
      * It updates user deposited balance, total deposited and rates
      **/
-    function deposit(uint256 _amount) public virtual {
+    function deposit(uint256 _amount) public virtual notPaused {
         depositOnBehalf(_amount, msg.sender);
     }
 
@@ -293,7 +303,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     function depositOnBehalf(
         uint256 _amount,
         address _of
-    ) public virtual nonReentrant {
+    ) public virtual nonReentrant notPaused {
         if (_amount == 0) revert ZeroDepositAmount();
         require(_of != address(0), "Address zero");
         require(_of != address(this), "Cannot deposit on behalf of pool");
@@ -332,7 +342,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      * Withdraws selected amount from the user deposits
      * @dev _amount the amount to be withdrawn
      **/
-    function withdraw(uint256 _amount) external nonReentrant {
+    function withdraw(uint256 _amount) external nonReentrant notPaused {
         _accumulateDepositInterest(msg.sender);
         _amount = Math.min(_amount, _deposited[msg.sender]);
 
@@ -363,7 +373,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      * @dev _amount the amount to be borrowed
      * @dev It is only meant to be used by a SmartLoanDiamondProxy
      **/
-    function borrow(uint256 _amount) public virtual canBorrow nonReentrant {
+    function borrow(uint256 _amount) public virtual canBorrow nonReentrant notPaused {
         if (_amount > IERC20(tokenAddress).balanceOf(address(this)))
             revert InsufficientPoolFunds();
 
@@ -384,7 +394,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
      * It updates user borrowed balance, total borrowed amount and rates
      * @dev It is only meant to be used by a SmartLoanDiamondProxy
      **/
-    function repay(uint256 amount) external nonReentrant {
+    function repay(uint256 amount) external nonReentrant notPaused {
         _accumulateBorrowingInterest(msg.sender);
 
         if (amount > borrowed[msg.sender]) revert RepayingMoreThanWasBorrowed();
@@ -610,6 +620,13 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
         ) revert MaxPoolUtilisationBreached();
     }
 
+    modifier notPaused() {
+        if (paused) {
+            revert PoolPaused();
+        }
+        _;
+    }
+
     /* ========== EVENTS ========== */
 
     /**
@@ -761,4 +778,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
     // getMaxPoolUtilisationForBorrowing was breached
     error MaxPoolUtilisationBreached();
+
+    // getMaxPoolUtilisationForBorrowing was breached
+    error PoolPaused();
 }
