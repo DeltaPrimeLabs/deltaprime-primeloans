@@ -25,7 +25,7 @@ abstract contract GmxV2PlusFacet is GmxV2FacetCommon {
             ? IERC20(depositedToken).balanceOf(address(this))
             : tokenAmount;
 
-        bytes[] memory data = new bytes[](3);
+        bytes[] memory data = new bytes[](4);
         data[0] = abi.encodeWithSelector(
             IGmxV2Router.sendWnt.selector,
             getGmxV2DepositVault(),
@@ -35,9 +35,15 @@ abstract contract GmxV2PlusFacet is GmxV2FacetCommon {
             IGmxV2Router.sendTokens.selector,
             depositedToken,
             getGmxV2DepositVault(),
-            tokenAmount
+            tokenAmount / 2
         );
         data[2] = abi.encodeWithSelector(
+            IGmxV2Router.sendTokens.selector,
+            depositedToken,
+            getGmxV2DepositVault(),
+            tokenAmount / 2
+        );
+        data[3] = abi.encodeWithSelector(
             IDepositUtils.createDeposit.selector,
             IDepositUtils.CreateDepositParams({
                 receiver: address(this), //receiver
@@ -172,19 +178,18 @@ abstract contract GmxV2PlusFacet is GmxV2FacetCommon {
             uint256[] memory tokenPrices;
 
             {
-                bytes32[] memory tokenSymbols = new bytes32[](3);
-                tokenSymbols[0] = tokenManager.tokenAddressToSymbol(longToken);
-                tokenSymbols[1] = tokenManager.tokenAddressToSymbol(shortToken);
-                tokenSymbols[2] = tokenManager.tokenAddressToSymbol(gmToken);
+                bytes32[] memory tokenSymbols = new bytes32[](2);
+                tokenSymbols[0] = tokenManager.tokenAddressToSymbol(shortToken); // Short token and long token is the same, hence we can reuse the price
+                tokenSymbols[1] = tokenManager.tokenAddressToSymbol(gmToken);
                 tokenPrices = getPrices(tokenSymbols);
             }
             require(
                 isWithinBounds(
-                    (tokenPrices[2] * gmAmount) /
+                    (tokenPrices[1] * gmAmount) /
                         10 ** IERC20Metadata(gmToken).decimals(), // Deposit Amount In USD
                     (tokenPrices[0] * minLongTokenAmount) /
                         10 ** IERC20Metadata(longToken).decimals() +
-                        (tokenPrices[1] * minShortTokenAmount) /
+                        (tokenPrices[0] * minShortTokenAmount) /
                         10 ** IERC20Metadata(shortToken).decimals()
                 ), // Output Amount In USD
                 "Invalid min output value"
@@ -194,7 +199,7 @@ abstract contract GmxV2PlusFacet is GmxV2FacetCommon {
                 minLongTokenAmount *
                 tokenManager.debtCoverage(longToken)) /
                 10 ** IERC20Metadata(longToken).decimals()) +
-                ((tokenPrices[1] *
+                ((tokenPrices[0] *
                     minShortTokenAmount *
                     tokenManager.debtCoverage(shortToken)) /
                     10 ** IERC20Metadata(shortToken).decimals())) / 1e8;
