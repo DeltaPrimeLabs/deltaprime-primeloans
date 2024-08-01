@@ -3384,7 +3384,7 @@ export default {
         sourceAmount,
         minGmAmount,
         executionFeeWei,
-        {value: executionFeeWei}
+        {value: executionFeeWei, gasLimit: 9999999}
       );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
@@ -3441,7 +3441,7 @@ export default {
         minLongAmount,
         minShortAmount,
         executionFeeWei,
-        {value: executionFeeWei}
+        {value: executionFeeWei, gasLimit: 9999999}
       );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
@@ -3499,7 +3499,7 @@ export default {
 
       let minGmAmount = parseUnits(addLiquidityRequest.minGmAmount.toFixed(targetDecimals), targetDecimals);
 
-      const transaction = await wrappedContract[addLiquidityRequest.method](sourceAmount, minGmAmount, executionFeeWei, {value: executionFeeWei});
+      const transaction = await wrappedContract[addLiquidityRequest.method](sourceAmount, minGmAmount, executionFeeWei, {value: executionFeeWei, gasLimit: 9999999});
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
@@ -3557,7 +3557,7 @@ export default {
       const minShortTokenAmount = minTargetTokenAmount.div(2);
 
 
-      const transaction = await wrappedContract[removeLiquidityRequest.method](sourceAmount, minLongTokenAmount, minShortTokenAmount, executionFeeWei, {value: executionFeeWei});
+      const transaction = await wrappedContract[removeLiquidityRequest.method](sourceAmount, minLongTokenAmount, minShortTokenAmount, executionFeeWei, {value: executionFeeWei, gasLimit: 9999999});
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();

@@ -45,6 +45,7 @@ export default {
       "ezETH": {name: "ezETH", symbol: "ezETH", logoExt: "png", decimals: 18, address: addresses.ezETH, debtCoverage: 0.83333333333, tradingViewSymbol: "PYTH:EZETHUSD"},
       "weETH": {name: "weETH", symbol: "weETH", logoExt: "png", decimals: 18, address: addresses.weETH, debtCoverage: 0.83333333333, tradingViewSymbol: "CRYPTO:WEETHUSD"},
       "rsETH": {name: "rsETH", symbol: "rsETH", logoExt: "png", decimals: 18, address: addresses.rsETH, debtCoverage: 0.83333333333},
+      "SOL": {name: "SOL", symbol: "SOL", decimals: 18, address: addresses.SOL, debtCoverage: 0.83333333333, tradingViewSymbol: "BINANCE:SOLUSDT"},
     },
     PRIME: {hide: true, name: "PRIME", symbol: "PRIME", decimals: 18, address: addresses.PRIME},
     SPRIME_CONFIG: {
@@ -382,11 +383,17 @@ export default {
         "arbSnrLLP": {name: "Senior", symbol: "arbSnrLLP", pid: 0, short: "Snr", decimals: 18, address: addresses.arbSnrLLP, debtCoverage: 0.83333333333, balanceMethod: "levelSnrBalance", groupIdentifier: 'STKD_SNR_LLP_GROUP', underlyingAssets: ['BTC', 'ETH', 'USDT', 'USDC'], link: 'https://app.level.finance/liquidity/senior-tranche/buy'},
     },
     GMX_V2_ASSETS_CONFIG: {
+        "GM_ETH_WETH": {isGMXPlus: true, name: "ETH+", symbol: "GM_ETH_WETH", short: "GM", decimals: 18, address: addresses.GM_ETH_WETH, debtCoverage: 0.83333333333, longToken: 'ETH', shortToken: 'ETH', indexTokenAddress: addresses.ETH, link: 'https://app.gmx.io/#/stats', addMethod: 'depositEthGmxV2Plus', removeMethod: 'withdrawEthGmxV2Plus'},
+        "GM_BTC_WBTC": {isGMXPlus: true, name: "BTC+", symbol: "GM_BTC_WBTC", short: "GM", decimals: 18, address: addresses.GM_BTC_WBTC, debtCoverage: 0.83333333333, longToken: 'BTC', shortToken: 'BTC', indexTokenAddress: addresses.BTC, link: 'https://app.gmx.io/#/stats', addMethod: 'depositBtcGmxV2Plus', removeMethod: 'withdrawBtcGmxV2Plus'},
         "GM_ETH_WETH_USDC": {name: "ETH-USDC", symbol: "GM_ETH_WETH_USDC", short: "GM", decimals: 18, address: addresses.GM_ETH_WETH_USDC, debtCoverage: 0.83333333333, longToken: 'ETH', shortToken: 'USDC', indexTokenAddress: addresses.ETH, link: 'https://app.gmx.io/#/stats'},
         "GM_BTC_WBTC_USDC": {name: "BTC-USDC", symbol: "GM_BTC_WBTC_USDC", short: "GM", logoExt: "png", price: 1, decimals: 18, address: addresses.GM_BTC_WBTC_USDC, debtCoverage: 0.83333333333, longToken: 'BTC', shortToken: 'USDC', indexTokenAddress: addresses.BTC, link: 'https://app.gmx.io/#/stats'},
         "GM_ARB_ARB_USDC": {name: "ARB-USDC", symbol: "GM_ARB_ARB_USDC", short: "GM", logoExt: "png", decimals: 18, address: addresses.GM_ARB_ARB_USDC, debtCoverage: 0.83333333333, longToken: 'ARB', shortToken: 'USDC', indexTokenAddress: addresses.ARB, link: 'https://app.gmx.io/#/stats'},
         "GM_UNI_UNI_USDC": {name: "UNI-USDC", symbol: "GM_UNI_UNI_USDC", short: "GM", logoExt: "png", price: 1, decimals: 18, address: addresses.GM_UNI_UNI_USDC, debtCoverage: 0.83333333333, longToken: 'UNI', shortToken: 'USDC', indexTokenAddress: addresses.UNI, link: 'https://app.gmx.io/#/stats'},
         "GM_LINK_LINK_USDC": {name: "LINK-USDC", symbol: "GM_LINK_LINK_USDC", short: "GM", price: 1, decimals: 18, address: addresses.GM_LINK_LINK_USDC, debtCoverage: 0.83333333333, longToken: 'LINK', shortToken: 'USDC', indexTokenAddress: addresses.LINK, link: 'https://app.gmx.io/#/stats'},
+        "GM_SOL_SOL_USDC": {name: "SOL-USDC", symbol: "GM_SOL_SOL_USDC", short: "GM", price: 1, decimals: 18, address: addresses.GM_SOL_SOL_USDC, debtCoverage: 0.83333333333, longToken: 'SOL', shortToken: 'USDC', indexTokenAddress: addresses.SOL, link: 'https://app.gmx.io/#/stats'},
+        "GM_NEAR_WETH_USDC": {name: "NEAR-WETH", symbol: "GM_NEAR_WETH_USDC", short: "GM", logoExt: 'png', price: 1, decimals: 18, address: addresses.GM_NEAR_WETH_USDC, debtCoverage: 0.83333333333, iconToken: 'NEAR', longToken: 'ETH', shortToken: 'USDC', indexTokenAddress: addresses.ETH, link: 'https://app.gmx.io/#/stats'},
+        "GM_ATOM_WETH_USDC": {name: "ATOM-WETH", symbol: "GM_ATOM_WETH_USDC", short: "GM", logoExt: 'svg', price: 1, decimals: 18, address: addresses.GM_ATOM_WETH_USDC, debtCoverage: 0.83333333333, iconToken: 'ATOM', longToken: 'ETH', shortToken: 'USDC', indexTokenAddress: addresses.ETH, link: 'https://app.gmx.io/#/stats'},
+        "GM_GMX_GMX_USDC": {name: "GMX-USDC", symbol: "GM_GMX_GMX_USDC", short: "GM", price: 1, decimals: 18, address: addresses.GM_GMX_GMX_USDC, debtCoverage: 0.83333333333, longToken: 'GMX', shortToken: 'USDC', indexTokenAddress: addresses.GMX, link: 'https://app.gmx.io/#/stats'},
     },
     LP_ASSETS_CONFIG: {
         // "SUSHI_DPX_ETH_LP": {
@@ -565,7 +572,7 @@ export default {
     glpRewardsRouterAddress: '0xA906F338CB21815cBc4Bc87ace9e68c87eF8d8F1', //TODO: needs testing
     depositSwapAddress: "0xaa3A31fd272db802621Ee2CA691bBd8d01dd49e2",
     levelLiquidityCalculatorAddress: "0xf1e5D6c0ce39fDBb9682F1A3385f0d2067740C61",
-    gmxV2ReaderAddress: "0xf60becbba223eea9495da3f606753867ec10d139",
+    gmxV2ReaderAddress: "0x60a0fF4cDaF0f6D496d71e0bC0fFa86FE8E6B23c",
     gmxV2DataStoreAddress: "0xFD70de6b91282D8017aA4E741e9Ae325CAb992d8",
     gmxV2HighExecutionFee: 0,
     gmxV2DepositCallbackGasLimit: 300000,

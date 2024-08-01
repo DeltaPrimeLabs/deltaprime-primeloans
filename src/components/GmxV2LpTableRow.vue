@@ -2,7 +2,8 @@
   <div class="lp-table-row-component gmxV2" :class="{'expanded': rowExpanded}">
     <div class="table__row" v-if="lpToken">
       <div class="table__cell asset">
-        <img class="asset__icon" :src="getAssetIcon(lpToken.longToken)">
+        <img v-if="!lpToken.iconToken" class="asset__icon" :src="getAssetIcon(lpToken.longToken)">
+        <img v-if="lpToken.iconToken" class="asset__icon" :src="getIcon(lpToken.iconToken, lpToken.logoExt)">
         <div class="asset__info">
           <a class="asset__name" :href="lpToken.link" target=”_blank”>{{ lpToken.name }}</a>
           <div class="asset__dex">
