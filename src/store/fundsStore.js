@@ -3385,7 +3385,7 @@ export default {
         sourceAmount,
         minGmAmount,
         executionFeeWei,
-        {value: executionFeeWei, gasLimit: 9999999}
+        {value: executionFeeWei}
       );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
