@@ -623,9 +623,19 @@ export default {
         });
       }
 
-      const claimRewardsRequest = {
-        merkleEntries
-      };
+      const claimRewardsRequest =
+          this.lpToken.version === '2.2'
+              ?
+              {
+                version: this.lpToken.version,
+                pair: this.lpToken.address,
+                ids: this.lpToken.binIds
+              }
+              :
+              {
+                version: this.lpToken.version,
+                merkleEntries: merkleEntries
+              };
 
       modalInstance.$on('CLAIM', addFromWalletEvent => {
         if (this.smartLoanContract) {

@@ -2,6 +2,7 @@ import {
   LB_ROUTER_V21_ADDRESS, 
   LBRouterV21ABI
 } from '@traderjoe-xyz/sdk-v2';
+import lbHooksBaseRewarder from '/artifacts/contracts/interfaces/joe-v2/ILBHooksBaseRewarder.sol/ILBHooksBaseRewarder.json';
 import * as traderJoeSdk from '@traderjoe-xyz/sdk-v2';
 import { JSBI, ERC20ABI } from '@traderjoe-xyz/sdk';
 import { Token, TokenAmount } from '@traderjoe-xyz/sdk-core';
@@ -240,12 +241,22 @@ export default class TraderJoeService {
     return removeLiquidityParams;
   }
 
-  async getRewardsInfo(loan, market, token) {
+  async getRewardsInfo(loan, market) {
     try {
       const URL = `https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/traderjoe/rewards/claimable?chain=${window.chain}&loan=${loan}&market=${market}`;
       const rewardsInfo = await axios.get(URL);
 
       return rewardsInfo.data;
+    } catch (error) {
+      console.log(`fetching rewards info failed. ${error}`);
+    }
+  }
+
+  async getRewardsInfoV2_2(rewarder, primeAccountAddress, binIds, provider) {
+    try {
+      const lbHooksSimpleRewarder = new ethers.Contract(rewarder, lbHooksBaseRewarder.abi, provider);
+
+      return lbHooksSimpleRewarder.getPendingRewards(primeAccountAddress, binIds);
     } catch (error) {
       console.log(`fetching rewards info failed. ${error}`);
     }
