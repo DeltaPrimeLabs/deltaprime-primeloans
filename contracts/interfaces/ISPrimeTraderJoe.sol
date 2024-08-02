@@ -4,6 +4,7 @@ pragma solidity ^0.8.17;
 
 import "./ISPrime.sol";
 import "./joe-v2/ILBPair.sol";
+import "./IPositionManager.sol";
 
 interface ISPrimeTraderJoe is ISPrime {
   struct DepositForm{
@@ -31,4 +32,5 @@ interface ISPrimeTraderJoe is ISPrime {
     ) external;
     
   function getLBPair() external view returns(ILBPair);
+  function positionManager() external view returns(IPositionManager);
 }

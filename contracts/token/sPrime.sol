@@ -7,11 +7,8 @@ pragma solidity ^0.8.17;
 import "../interfaces/joe-v2/ILBRouter.sol";
 import "../interfaces/joe-v2/ILBHooksBaseRewarder.sol";
 import "../interfaces/ISPrimeTraderJoe.sol";
-import "../interfaces/IPositionManager.sol";
 import "../interfaces/IVPrimeController.sol";
-import "../lib/joe-v2/math/SafeCast.sol";
 import "../lib/uniswap-v3/FullMath.sol";
-import "../lib/joe-v2/math/Uint256x256Math.sol";
 import "../lib/joe-v2/math/LiquidityConfigurations.sol";
 import "../lib/joe-v2/PriceHelper.sol";
 import "../abstract/PendingOwnableUpgradeable.sol";
@@ -25,8 +22,6 @@ import "@redstone-finance/evm-connector/contracts/core/ProxyConnector.sol";
 // SPrime contract declaration
 contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableUpgradeable, ERC20Upgradeable, ProxyConnector {
     using SafeERC20 for IERC20Metadata; // Using SafeERC20 for IERC20Metadata for safe token transfers
-    using SafeCast for uint256; // Using SafeCast for uint256 for safe type casting
-    using Uint256x256Math for uint256;
     using PackedUint128Math for bytes32;
 
     // Constants declaration
@@ -54,6 +49,8 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
 
     address public operator;
     ILBHooksBaseRewarder public baseRewarder;
+
+    address private implementation;
 
     constructor() {
         _disableInitializers();
@@ -114,6 +111,12 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
         baseRewarder = _baseRewarder;
     }
 
+    function setImplementation(
+        address _implementation
+    ) public onlyOwner {
+        implementation = _implementation;
+    }
+
     /** Public View Functions */
 
     function getLBPair() public view returns (ILBPair) {
@@ -133,20 +136,15 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
      * @param user User Address.
      * @return status bin status
      */
-    function binInRange(address user) public view returns(bool) {
+    function binInRange(address user) public view returns(bool status) {
         uint256 tokenId = getUserTokenId(user);
         if (tokenId == 0) {
             revert NoPosition();
         }
-
-        IPositionManager.DepositConfig memory depositConfig = positionManager.getDepositConfigFromTokenId(tokenId);
-
-        uint256[] memory depositIds = depositConfig.depositIds;
-        uint256 activeId = lbPair.getActiveId();
-        if (depositIds[0] <= activeId && depositIds[depositIds.length - 1] >= activeId) {
-            return true;
+        (bool success, bytes memory result) = implementation.staticcall(abi.encodeWithSignature("binInRange(uint256)", tokenId));
+        if (success) {
+            status = abi.decode(result, (bool));
         }
-        return false;
     }
 
     /**
@@ -158,7 +156,17 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     function getUserValueInTokenY(address user, uint256 poolPrice) public view returns (uint256) {
         (,,,,uint256 centerId, uint256[] memory liquidityMinted) = positionManager.positions(getUserTokenId(user));
         IPositionManager.DepositConfig memory depositConfig = positionManager.getDepositConfig(centerId);
-        (uint256 amountX, uint256 amountY) = _getLiquidityTokenAmounts(depositConfig.depositIds, liquidityMinted, poolPrice);
+        
+        if (depositConfig.depositIds.length != liquidityMinted.length) {
+            revert LengthMismatch();
+        }
+
+        uint256 amountX = 0;
+        uint256 amountY = 0;
+        (bool success, bytes memory result) = implementation.staticcall(abi.encodeWithSignature("getLiquidityTokenAmounts(uint256[],uint256[],uint256)", depositConfig.depositIds, liquidityMinted, poolPrice));
+        if (success) {
+            (amountX, amountY) = abi.decode(result, (uint256, uint256));
+        }
 
         amountY = amountY + FullMath.mulDiv(amountX, poolPrice * 10 ** tokenYDecimals, 10 ** (8 + tokenXDecimals));
 
@@ -221,44 +229,6 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     }
 
     /** Internal Functions */
-    
-    /**
-    * @dev Returns the token balances for the specific bin.
-    * @param depositIds Deposited bin id list.
-    * @param liquidityMinted Liquidity minted for each bin.
-    * @param poolPrice Oracle Price
-    */
-    function _getLiquidityTokenAmounts(uint256[] memory depositIds, uint256[] memory liquidityMinted, uint256 poolPrice) internal view returns(uint256 amountX, uint256 amountY) {
-        if (depositIds.length != liquidityMinted.length) {
-            revert LengthMismatch();
-        }
-        poolPrice = FullMath.mulDiv(poolPrice, 10 ** tokenYDecimals, 1e8);
-        uint24 binId = lbPair.getIdFromPrice(PriceHelper.convertDecimalPriceTo128x128(poolPrice));
-
-        for (uint256 i; i < depositIds.length; ++i) {
-            uint24 id = depositIds[i].safe24();
-
-            uint256 liquidity = liquidityMinted[i];
-            (uint256 binReserveX, uint256 binReserveY) = lbPair.getBin(id);
-
-            // Get Current Pool price from id.
-            uint256 currentPrice = PriceHelper.convert128x128PriceToDecimal(lbPair.getPriceFromId(id));
-
-            uint256 totalSupply = lbPair.totalSupply(id);
-            uint256 xAmount = liquidity.mulDivRoundDown(binReserveX, totalSupply);
-            uint256 yAmount = liquidity.mulDivRoundDown(binReserveY, totalSupply);
-            if(binId > id) {
-                yAmount = yAmount + FullMath.mulDiv(xAmount, currentPrice, 10 ** 18);
-                xAmount = 0;
-            } else if(binId < id) {
-                xAmount = xAmount + FullMath.mulDiv(yAmount, 10 ** 18, currentPrice);
-                yAmount = 0;
-            } 
-
-            amountX += xAmount;
-            amountY += yAmount;
-        }
-    }
 
     /**
      * @dev Returns the total weight of tokens in a liquidity pair.
