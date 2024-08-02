@@ -537,6 +537,8 @@ export default {
           }
         }
 
+        console.log(prices)
+
         if (config.GMX_V2_ASSETS_CONFIG[sourceAsset]) {
           console.log('getWithdrawalAmountOut');
           if (this.lpToken.isGMXPlus) {
@@ -786,7 +788,7 @@ export default {
             sourceAmount: swapEvent.sourceAmount,
             minGmAmount: swapEvent.targetAmount,
             executionFee: executionFee,
-            method: `deposit${capitalize(this.lpToken.longToken)}${capitalize(this.lpToken.shortToken)}GmxV2`
+            method: this.lpToken.addMethod ? this.lpToken.addMethod : `deposit${capitalize(this.lpToken.longToken)}${capitalize(this.lpToken.shortToken)}GmxV2`
           };
 
           this.handleTransaction(this.addLiquidityGmxV2, {addLiquidityRequest: addLiquidityRequest}, () => {
@@ -902,7 +904,7 @@ export default {
             minLongAmount: swapEvent.targetAmounts[0],
             minShortAmount: swapEvent.targetAmounts[1],
             executionFee: executionFee,
-            method: `withdraw${capitalize(this.lpToken.longToken)}${capitalize(this.lpToken.shortToken)}GmxV2`
+            method: this.lpToken.removeMethod ? this.lpToken.removeMethod :`withdraw${capitalize(this.lpToken.longToken)}${capitalize(this.lpToken.shortToken)}GmxV2`
           };
 
           this.handleTransaction(this.removeLiquidityGmxV2, {removeLiquidityRequest: removeLiquidityRequest}, () => {
