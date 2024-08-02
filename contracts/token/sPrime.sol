@@ -247,10 +247,10 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
             uint256 totalSupply = lbPair.totalSupply(id);
             uint256 xAmount = liquidity.mulDivRoundDown(binReserveX, totalSupply);
             uint256 yAmount = liquidity.mulDivRoundDown(binReserveY, totalSupply);
-            if(binId < id) {
+            if(binId > id) {
                 yAmount = yAmount + FullMath.mulDiv(xAmount, currentPrice, 10 ** 18);
                 xAmount = 0;
-            } else if(binId > id) {
+            } else if(binId < id) {
                 xAmount = xAmount + FullMath.mulDiv(yAmount, 10 ** 18, currentPrice);
                 yAmount = 0;
             } 
