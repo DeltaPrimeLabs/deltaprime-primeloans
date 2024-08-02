@@ -2,12 +2,14 @@
   <div class="lp-table-row-component gmxV2" :class="{'expanded': rowExpanded}">
     <div class="table__row" v-if="lpToken">
       <div class="table__cell asset">
-        <img v-if="!lpToken.iconToken" class="asset__icon" :src="getAssetIcon(lpToken.longToken)">
-        <img v-if="lpToken.iconToken" class="asset__icon" :src="getIcon(lpToken.iconToken, lpToken.logoExt)">
-        <div class="asset__info">
-          <a class="asset__name" :href="lpToken.link" target=”_blank”>{{ lpToken.name }}</a>
-          <div class="asset__dex">
-            by <a v-on:click="openProfileModal"><b>GMX V2</b></a>
+        <div class="asset-info">
+          <img v-if="!lpToken.iconToken" class="asset__icon" :src="getAssetIcon(lpToken.longToken)">
+          <img v-if="lpToken.iconToken" class="asset__icon" :src="getIcon(lpToken.iconToken, lpToken.logoExt)">
+          <div class="asset__info">
+            <a class="asset__name" :href="lpToken.link" target=”_blank”>{{ lpToken.name }}</a>
+            <div class="asset__dex">
+              by <a v-on:click="openProfileModal"><b>GMX V2</b></a>
+            </div>
           </div>
         </div>
         <div class="sprime-early-access">
@@ -1176,7 +1178,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: repeat(2, 1fr) 240px 130px 100px 120px 100px 60px 80px 22px;
+    grid-template-columns: 150px 1fr 240px 130px 100px 120px 100px 60px 80px 22px;
     height: 60px;
     border-style: solid;
     border-width: 0 0 2px 0;
@@ -1187,9 +1189,22 @@ export default {
     .table__cell {
       display: flex;
       flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
 
       &.asset {
-        align-items: center;
+        .asset-info {
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+        }
+
+        .sprime-early-access {
+          img {
+            min-width: 26px;
+            width: 26px;
+          }
+        }
 
         .asset__icon {
           cursor: pointer;
