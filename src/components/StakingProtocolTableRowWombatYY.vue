@@ -37,7 +37,20 @@
         </div>
       </div>
 
-      <div class="table__cell rewards__cell">
+      <div class="table__cell table__cell--double-value">
+        <template>
+          <div class="table__cell ggp-collected">
+            <template
+                v-if="collectedGGP !== null && farm.boostGGP">
+              <span>
+                <img v-if="ggpConfig" class="asset__icon" :src="getIcon('GGP', ggpConfig.logoExt)">
+                <span>{{ formatTokenBalanceWithLessThan(collectedGGP, 4, true) }}</span>
+              </span>
+            </template>
+            <div v-else class="no-value-dash"></div>
+            <vue-loaders-ball-beat v-else color="#A6A3FF" scale="0.5"></vue-loaders-ball-beat>
+          </div>
+        </template>
       </div>
 
       <div class="table__cell apy">
@@ -112,6 +125,7 @@ export default {
     }
   },
   async mounted() {
+    this.chain = window.chain;
     this.createContractObject();
     this.setupAddActionsConfiguration();
     this.setupRemoveActionsConfiguration();
@@ -122,11 +136,17 @@ export default {
     this.watchFarmRefreshEvent();
     this.watchExternalStakedPerFarm();
     this.watchActionDisabling();
-    this.watchLtipMaxBoostUpdate();
     this.watchSPrime();
+    if (window.chain === 'arbitrum') {
+      this.watchLtipMaxBoostUpdate();
+    }
+    if (window.chain === 'avalanche') {
+      this.watchGgpIncentives();
+    }
   },
   data() {
     return {
+      chain: null,
       contract: null,
       hasEarlyAccess: null,
       receiptTokenBalance: 0,
@@ -143,7 +163,10 @@ export default {
       platypusAffected: false,
       platypusAffectedDisableDeposit: false,
       isActionDisabledRecord: {},
-    };
+      collectedGGP: null,
+      ggpConfig: null,
+      ggpCollectedTooltip: ''
+    }
   },
   watch: {
     smartLoanContract: {
@@ -195,6 +218,7 @@ export default {
       'globalActionsDisableService',
       'providerService',
       'sPrimeService',
+      'ggpIncentivesService',
     ]),
     protocol() {
       return config.PROTOCOLS_CONFIG[this.farm.protocol];
@@ -204,7 +228,10 @@ export default {
     },
     isLP() {
       return this.asset.secondary != null;
-    }
+    },
+    ggpConfig() {
+      return config.ASSETS_CONFIG['GGP'];
+    },
   },
   methods: {
     ...mapActions('stakeStore', ['migrateWombatToYY', 'depositToWombatYY', 'withdrawFromWombatYY']),
@@ -443,7 +470,6 @@ export default {
         this.balance = this.farm.totalBalance;
         // normal token staked
         this.underlyingTokenStaked = this.farm.totalStaked;
-        this.rewards = this.farm.rewards;
         this.setApy();
         if (this.farm.totalStaked > 0 && this.farm.droppingSupport) {
           console.warn('has deprecated farms');
@@ -553,6 +579,22 @@ export default {
           },
         ]
       }
+    },
+
+    watchGgpIncentives() {
+      this.ggpIncentivesService.collectedGGPYieldYak$.subscribe(collected => {
+        this.collectedGGP = collected;
+        setTimeout(() => {
+          this.$forceUpdate();
+        });
+      });
+      this.ggpIncentivesService.boostGGPYieldYakApy$.subscribe(boost => {
+        // this.boostApy = boost ? boost.boostApy * this.assets['GGP'].price : 0;
+        this.boostApy = 10;
+        setTimeout(() => {
+          this.$forceUpdate();
+        });
+      });
     },
 
     openMigrateModal() {

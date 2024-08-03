@@ -88,7 +88,12 @@
                     :tooltip="{content: 'How many tokens you are currently staking.', classes: 'info-tooltip long', placement: 'force-top'}"></InfoIcon>
               </div>
             </div>
-            <div class="table__header__cell"></div>
+            <div class="table__header__cell">GGP collected
+              <div class="info__icon__wrapper">
+                <InfoIcon
+                    :tooltip="{content: ggpCollectedTooltip, classes: 'info-tooltip long', placement: 'force-top'}"></InfoIcon>
+              </div>
+            </div>
             <div class="table__header__cell">Min. APY
               <div class="info__icon__wrapper">
                 <InfoIcon
@@ -143,7 +148,6 @@ export default {
   data() {
     return {
       available: null,
-
       chain: null,
       tableBodyExpanded: false,
       bodyHasCollapsed: true,
@@ -155,6 +159,7 @@ export default {
       isTotalStakedEstimated: false,
       isAvailableEstimated: false,
       lpBalances: {},
+      ggpCollectedTooltip: 'GGP collected from the Gogopool incentives program for DeltaPrime. Incentives are sent weekly to your wallet.'
     };
   },
   async mounted() {

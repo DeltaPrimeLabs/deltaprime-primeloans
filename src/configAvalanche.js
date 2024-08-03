@@ -704,6 +704,7 @@ export default {
             debtCoverage: 0.83333333333,
             strategyContract: '0x13404B1C715aF60869fc658d6D99c117e3543592',
             apy: 8.34,
+            boostGGP: true,
             aprWarning: true
         },
         {
@@ -786,6 +787,10 @@ export default {
     ggpIncentivesEnpoints: {
       boostApy: 'https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/ggp-boost-apy',
       collectedGGP: 'https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/ggp-incentives-for'
+    },
+    ggpYieldYakIncentivesEnpoints : {
+        boostApy: '',
+        collectedGGP: 'https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/ggp-incentives-yy-for'
     },
     geolocationServiceUrl: "https://geo-service-p19wbkdp8-deltaprimelabs.vercel.app/api/geolocation",
     restrictedCountries: ['US', 'AS', 'GU', 'PR', 'MP', 'VI', 'BY', 'CU', 'KP', 'SY', 'CI', 'LR', 'SD', 'ZW', 'IQ']

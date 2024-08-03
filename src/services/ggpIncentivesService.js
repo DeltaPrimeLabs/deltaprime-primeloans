@@ -7,6 +7,8 @@ import DataRefreshEventService from "./dataRefreshEventService";
 export default class GgpIncentivesService {
   collectedGGP$ = new BehaviorSubject(null);
   boostGGPApy$ = new BehaviorSubject(null);
+  collectedGGPYieldYak$ = new BehaviorSubject(null);
+  boostGGPYieldYakApy$ = new BehaviorSubject(null);
 
   emitLoadData(primeAccountAddress) {
     console.log('asdas load');
@@ -32,6 +34,18 @@ export default class GgpIncentivesService {
     fetch(`${config.ggpIncentivesEnpoints.collectedGGP}?addresses=${primeAccountAddress}`).then(
         res => res.json().then(
             json => this.collectedGGP$.next(Object.values(json.data)[0].ggpCollected)
+        )
+    );
+
+    fetch(config.ggpYieldYakIncentivesEnpoints.boostApy).then(
+        res => res.json().then(
+            json => this.boostGGPYieldYakApy$.next(json)
+        )
+    );
+
+    fetch(`${config.ggpYieldYakIncentivesEnpoints.collectedGGP}?addresses=${primeAccountAddress}`).then(
+        res => res.json().then(
+            json => this.collectedGGPYieldYak$.next(Object.values(json.data)[0].ggpCollected)
         )
     );
   }
