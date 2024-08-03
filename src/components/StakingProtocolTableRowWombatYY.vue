@@ -164,7 +164,6 @@ export default {
       platypusAffectedDisableDeposit: false,
       isActionDisabledRecord: {},
       collectedGGP: null,
-      ggpConfig: null,
       ggpCollectedTooltip: ''
     }
   },
@@ -589,8 +588,7 @@ export default {
         });
       });
       this.ggpIncentivesService.boostGGPYieldYakApy$.subscribe(boost => {
-        // this.boostApy = boost ? boost.boostApy * this.assets['GGP'].price : 0;
-        this.boostApy = 10;
+        this.boostApy = boost ? boost.boostApy * this.assets['GGP'].price : 0;
         setTimeout(() => {
           this.$forceUpdate();
         });
@@ -740,6 +738,14 @@ export default {
         .double-value__usd {
           font-size: $font-size-xxs;
           color: var(--staking-protocol-table-row__secondary-text-color);
+        }
+      }
+
+      &.ggp-collected {
+        .asset__icon {
+          width: 20px;
+          height: 20px;
+          opacity: var(--asset-table-row__icon-opacity);
         }
       }
 

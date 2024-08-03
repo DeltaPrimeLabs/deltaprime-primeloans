@@ -53,7 +53,7 @@
 
         <div class="header__cell cell__max-apy max-apr">
           <div class="header__cell__label">Max APY:</div>
-          <div class="header__cell__value"><span>{{ (maxLeveragedApy) | percent }}</span>
+          <div class="header__cell__value"><span>{{ (maxLeveragedApy + boostApy) | percent }}<img v-if="boostApy" v-tooltip="{content: `This pool is incentivized!<br>⁃ up to ${maxLeveragedApy ? (maxLeveragedApy * 100).toFixed(2) : 0}% Pool APR<br>⁃ up to ${boostApy ? (boostApy * 100).toFixed(2) : 0}% ${chain === 'arbitrum' ? 'ARB' : 'AVAX'} incentives`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span>
           </div>
         </div>
 
@@ -159,20 +159,22 @@ export default {
       isTotalStakedEstimated: false,
       isAvailableEstimated: false,
       lpBalances: {},
+      boostApy: null,
       ggpCollectedTooltip: 'GGP collected from the Gogopool incentives program for DeltaPrime. Incentives are sent weekly to your wallet.'
     };
   },
   async mounted() {
-    // this.chain = window.chain;
+    this.chain = window.chain;
     this.watchExternalAssetBalanceUpdate();
     this.watchExternalTotalStakedUpdate();
     this.watchAssetBalancesDataRefreshEvent();
     this.watchFarmRefreshEvent();
+    this.watchGgpIncentives();
   },
   computed: {
     ...mapState('fundsStore', ['smartLoanContract', 'noSmartLoan', "wombatLpBalances", 'assetBalances', 'wombatYYFarmsBalances', 'assets']),
     ...mapState('poolStore', ['pools']),
-    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'stakedExternalUpdateService', 'dataRefreshEventService', 'farmService', 'ltipService', 'accountService']),
+    ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'stakedExternalUpdateService', 'dataRefreshEventService', 'farmService', 'ltipService', 'accountService', 'ggpIncentivesService']),
     asset() {
       return config.ASSETS_CONFIG[this.assetSymbol] ? config.ASSETS_CONFIG[this.assetSymbol] : config.LP_ASSETS_CONFIG[this.assetSymbol];
     },
@@ -257,6 +259,15 @@ export default {
       this.farmService.observeRefreshFarm().subscribe(async () => {
         this.totalStaked = this.availableFarms.reduce((acc, farm) => acc + parseFloat(farm.totalStaked), 0);
         await this.setupMaxStakingApy();
+      });
+    },
+
+    watchGgpIncentives() {
+      this.ggpIncentivesService.boostGGPYieldYakApy$.subscribe(boost => {
+        this.boostApy = boost ? boost.boostApy * this.assets['GGP'].price : 0;
+        setTimeout(() => {
+          this.$forceUpdate();
+        });
       });
     },
   },
