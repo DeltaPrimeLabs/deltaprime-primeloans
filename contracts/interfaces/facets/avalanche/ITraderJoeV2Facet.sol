@@ -30,6 +30,6 @@ interface ITraderJoeV2Facet {
 
     function getOwnedTraderJoeV2Bins() external view returns (TraderJoeV2Bin[] memory result);
 
-    function claimReward(ILBPair pair, uint256[] calldata ids);
+    function claimReward(ILBPair pair, uint256[] calldata ids) external;
 
 }
