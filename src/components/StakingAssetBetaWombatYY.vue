@@ -88,12 +88,13 @@
                     :tooltip="{content: 'How many tokens you are currently staking.', classes: 'info-tooltip long', placement: 'force-top'}"></InfoIcon>
               </div>
             </div>
-            <div class="table__header__cell">GGP collected
+            <div v-if="farm.boostGGP" class="table__header__cell">GGP collected
               <div class="info__icon__wrapper">
                 <InfoIcon
                     :tooltip="{content: ggpCollectedTooltip, classes: 'info-tooltip long', placement: 'force-top'}"></InfoIcon>
               </div>
             </div>
+            <div v-else class="table__header__cell"></div>
             <div class="table__header__cell">Min. APY
               <div class="info__icon__wrapper">
                 <InfoIcon
