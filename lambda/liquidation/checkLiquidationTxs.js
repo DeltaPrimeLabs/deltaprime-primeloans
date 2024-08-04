@@ -1,20 +1,43 @@
 const {ethers} = require('ethers');
 const EthDater = require("ethereum-block-by-date");
+const fromWei = (val) => parseFloat(ethers.utils.formatEther(val));
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+const Promise = require('bluebird');
 const TOKEN_ADDRESSES = require("../../common/addresses/avax/token_addresses.json");
 const fromBytes32 = require('ethers').utils.parseBytes32String;
+const knownPrivateKey = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
 const formatUnits = (val, decimalPlaces) => parseFloat(ethers.utils.formatUnits(val, decimalPlaces));
+const cliProgress = require('cli-progress');
 
 const sPrimeUniswapAbi = require('./sPrimeUniswap.json');
-const sPrimeUniswapAddress = '0xd38C5cEca20Fb43503E108ed8d4CaCA5B57E730E';
-const sPrimeUniswapContract = new ethers.Contract(sPrimeUniswapAddress, sPrimeUniswapAbi, getProvider());
+const sPrimeAbi = require('./sPrime.json');
+const sPrimeAddress = '0xd38C5cEca20Fb43503E108ed8d4CaCA5B57E730E';
+const sPrimeContract = new ethers.Contract(sPrimeAddress, sPrimeAbi, getWallet());
+const SMARTL_LOANS_FACTORY_ABI = [
+    'function getAllLoans() view returns (address[] memory)',
+    'function getOwnerOfLoan(address loan) view returns (address)',
+];
+let factoryContract = new ethers.Contract('0x3Ea9D480295A73fd2aF95b4D96c2afF88b21B03D', SMARTL_LOANS_FACTORY_ABI, getProvider());
+let primeAccounts = []
+let sPrimeHolders = []
 
 function getRpcUrl() {
+    // return 'https://avalanche-mainnet.core.chainstack.com/ext/bc/C/rpc/409fa087db6ba9d631bce0d258a14484'
     return 'https://avax.nirvanalabs.xyz/avalanche_aws/ext/bc/C/rpc?apikey=284d7cde-5c20-46a9-abee-2e3932cdb771'
+    // return 'https://nd-033-589-713.p2pify.com/d41fdf9956747a40bae4edec06ad4ab9/ext/bc/C/rpc'
 }
 
 function getProvider() {
     return new ethers.providers.JsonRpcProvider(getRpcUrl());
+}
+
+function getWallet(){
+    return new ethers.Wallet(knownPrivateKey, getProvider());
+}
+
+async function getTimestampFromBlockNumber(blockNumber, provider) {
+    const block = await provider.getBlock(blockNumber);
+    return block.timestamp;
 }
 
 async function getTxs(url){
@@ -81,19 +104,24 @@ async function processSuccessfullLiquidationTx(tx) {
 
     const txRes = await provider.getTransaction(hash);
     const receipt = await txRes.wait();
+    let timestamp = await getTimestampFromBlockNumber(receipt.blockNumber, provider);
+
     const feeTransferLogs = receipt.logs.filter(log => log.topics[0] === '0xd5e79e0953563b535ee3d864e1ac35be98c6a24c9c38b6b91c358cea8c68939b');
 
     const tokenSymbols = Object.keys(TOKEN_ADDRESSES);
     const prices = await getRedstonePrices(tokenSymbols);
     let totalUsdValue = 0;
     let usdValue = 0;
+    let assetsTransferred = {};
     for (const log of feeTransferLogs) {
         const asset = fromBytes32(log.topics[2]);
+        console.log(`ASSET: ${asset}`)
         const [amount] = new ethers.utils.AbiCoder().decode(['uint256', 'uint256'], log.data);
         let erc20 = new ethers.Contract(TOKEN_ADDRESSES[asset], abi, provider);
         let decimals = await erc20.decimals();
 
         if (amount.gt(0)) {
+            assetsTransferred[asset] = formatUnits(amount.toString(), decimals);
             let balanceString = amount.toString();
             usdValue = 0;
             try{
@@ -106,7 +134,14 @@ async function processSuccessfullLiquidationTx(tx) {
         }
     }
 
-    return totalUsdValue;
+    return {totalUsdValue: totalUsdValue, assetsTransferred: assetsTransferred, timestamp: timestamp, blockNumber: receipt.blockNumber};
+}
+
+async function getSPrimeHoldersCached(chain =  'avalanche'){
+    if(sPrimeHolders.length === 0){
+        sPrimeHolders = await getSPrimeHolders(chain);
+    }
+    return sPrimeHolders;
 }
 
 async function getSPrimeHolders(chain = "arbitrum"){
@@ -123,8 +158,17 @@ async function getSPrimeHolders(chain = "arbitrum"){
         let limit = 100;
         let hasMoreHolders = true;
 
+        const progressBar1 = new cliProgress.SingleBar({
+            format: `Fetching sPrime holders |{bar}| {percentage}% | Holders fetched {value}/{total} Elapsed: {duration_formatted}`,
+            barCompleteChar: '=',
+            barIncompleteChar: ' ',
+            hideCursor: true
+        }, cliProgress.Presets.shades_classic);
+
+        progressBar1.start(0, 0);
+
         while (hasMoreHolders) {
-            const url = `https://api.chainbase.online/v1/token/holders?chain_id=${chainId}&contract_address=${sPrimeUniswapAddress}&page=${page}&limit=${limit}`;
+            const url = `https://api.chainbase.online/v1/token/holders?chain_id=${chainId}&contract_address=${sPrimeAddress}&page=${page}&limit=${limit}`;
             const response = await fetch(url, {
                 headers: {
                     "x-api-key": '2hjmIoJ2wPBnaBbEjjqMOLp0plz'
@@ -135,15 +179,22 @@ async function getSPrimeHolders(chain = "arbitrum"){
             if (json.data && json.data.length > 0) {
                 sPrimeHolders = [...sPrimeHolders, ...json.data];
                 page++;
+                progressBar1.setTotal(progressBar1.total + json.data.length);
+                progressBar1.increment(json.data.length);
 
                 await new Promise((resolve, reject) => setTimeout(resolve, 600));
             } else {
                 hasMoreHolders = false;
+                progressBar1.stop();
+            }
+            if(page > 2){
+                console.log('TODO: Remove after testing')
+                progressBar1.stop();
+                break;
             }
         }
 
         sPrimeHolders = [...new Set(sPrimeHolders)];
-        console.log(`Found ${sPrimeHolders.length} sPrime holders.`);
 
         return sPrimeHolders;
 }
@@ -151,6 +202,10 @@ async function getSPrimeHolders(chain = "arbitrum"){
 // Function to fetch balance
 async function fetchBalance(address) {
     return sPrimeUniswapContract.balanceOf(address);
+}
+
+async function fetchOwner(primeAccountAddress) {
+    return factoryContract.ownerOf(primeAccountAddress);
 }
 
 async function getHoldersBalances(holders){
@@ -170,25 +225,78 @@ async function getHoldersBalances(holders){
     return holdersBalances;
 }
 
-async function isInRange(userAddress){
-    return await sPrimeUniswapContract.tickInRange(userAddress);
+async function isInRange(userAddress, blockNumber ){
+    let methodName = 'binInRange';
+    const tx = await sPrimeContract.populateTransaction[methodName](userAddress)
+    let res = await sPrimeContract.signer.call(tx, blockNumber)
+    try{
+        let inRange =  sPrimeContract.interface.decodeFunctionResult(
+            methodName,
+            res
+        );
+        return inRange
+    } catch (e) {
+        if(e.errorArgs.concat().includes('No position')){
+            return false;
+        }
+    }
 }
 
-async function getHoldersIsInRange(holders){
+async function getUserValueInTokenY(userAddress, blockNumber){
+    let methodName = 'getUserValueInTokenY(address)';
+    const tx = await sPrimeContract.populateTransaction[methodName](userAddress)
+    let res = await sPrimeContract.signer.call(tx, blockNumber)
+    try {
+        let result =  sPrimeContract.interface.decodeFunctionResult(
+            methodName,
+            res
+        );
+        return result;
+    } catch (e) {
+        return 0;
+    }
+
+}
+
+async function getUserValuesInTokenY(holders, blockNumber){
+    let usersValuesInTokenY = {}
+    let usersValues;
+    // Use Promise.map with concurrency option
+    await Promise.map(holders, address => {
+        return getUserValueInTokenY(address, blockNumber).then(userValueInTokenY => {
+            return userValueInTokenY;
+        });
+    }, { concurrency: 50 }).then(results => {
+        console.log('All in range fetched');
+        usersValues = results.map(balance => Number(fromWei(balance.toString())))
+    }).catch(error => {
+        console.error('Error fetching in range', error);
+    });
+
+    for(let i=0; i<holders.length; i++){
+        usersValuesInTokenY[holders[i]] = usersValues[i];
+    }
+
+    return usersValuesInTokenY;
+}
+
+async function getHoldersIsInRange(holders, blockNumber){
     let holdersInRange = []
     // Use Promise.map with concurrency option
     await Promise.map(holders, address => {
-        return isInRange(address).then(inRange => {
+        return isInRange(address, blockNumber).then(inRange => {
             return inRange;
         });
-    }, { concurrency: 300 }).then(results => {
+    }, { concurrency: 50 }).then(results => {
         console.log('All in range fetched');
         holdersInRange = results;
     }).catch(error => {
         console.error('Error fetching in range', error);
     });
 
-    return holdersInRange;
+    holders = holders.filter((_, index) => holdersInRange[index]);
+
+    return holders;
 }
 
 async function getSPrimeRevSharingUsersAllocationsArbitrum(epoch = 0, tokenDistributionAmount = 10000){
@@ -246,11 +354,17 @@ async function getSPrimeRevSharingUsersAllocationsArbitrum(epoch = 0, tokenDistr
 
 }
 
-async function checkFailedLiquidationTxsEvents(startTime, endTime) {
-    // const startBlock = (await getBlockForTimestamp(startTime)).block;
-    // const endBlock = (await getBlockForTimestamp(endTime)).block;
-    const startBlock = 47970100;
-    const endBlock = 48284253
+async function getLiquidationTxsBetweenBlocks(startBlock = 47425100, endBlock = 48834295) {
+    // 47425100   (Jul-1-2024 17:16:36 UTC)
+    // 48834295   (Aug-4-2024 12:39:38 UTC)
+
+    const progressBar1 = new cliProgress.SingleBar({
+        format: `Fetching liquidation txs between blocks ${startBlock} and ${endBlock} |{bar}| {percentage}% | Liquidator {value}/{total} Elapsed: {duration_formatted}`,
+        barCompleteChar: '=',
+        barIncompleteChar: ' ',
+        hideCursor: true
+    }, cliProgress.Presets.shades_classic);
+
     const liquidatorAddresses = [
         "0xD6F515Bf564F852939e2733f50a750e68e33E504",
         "0x0d25015D4567Cb6f450d58329bad6BC7eA718E67",
@@ -259,10 +373,12 @@ async function checkFailedLiquidationTxsEvents(startTime, endTime) {
         "0xEBc567e074c954cE6FD370fD763E00A383E7005C",
     ];
 
+    progressBar1.start(liquidatorAddresses.length, 0);
+
     const txPerPage = 100;
 
+    let liquidatorsTxs = [];
     for(const liquidatorAddress of liquidatorAddresses){
-        let result = [];
         let page = 1;
         while(true) {
             const url = `https://api.snowtrace.io/api?module=account&action=txlist` +
@@ -278,27 +394,140 @@ async function checkFailedLiquidationTxsEvents(startTime, endTime) {
             if(apiResult.length === 0){
                 break;
             }
-            result.push(...partialResult);
+            liquidatorsTxs.push(...partialResult);
             if(partialResult.length < txPerPage){
                 break;
             }
             page += 1;
         }
-
-        let totalUsdValue = 0;
-
-        for(const tx of result){
-            if(tx['functionName'].includes('liquidateLoan')){
-                if(tx['isError'] !== '1'){
-                    const usdValue = await processSuccessfullLiquidationTx(tx);
-                    totalUsdValue += usdValue;
-                }
-            }
-        }
-        console.log('totalUsdValue', totalUsdValue);
-
-        await getSPrimeRevSharingUsersAllocationsArbitrum(0, totalUsdValue);
+        progressBar1.increment(1);
     }
+    progressBar1.stop();
+
+    console.log(`Found ${liquidatorsTxs.length} liquidators txs`)
+    let liquidationTxs = liquidatorsTxs.filter(tx => tx['functionName'].includes('liquidateLoan'))
+    console.log(`Found ${liquidationTxs.length} liquidation txs`)
+
+    let successfullLiquidationTxs = liquidationTxs.filter(tx => tx['isError'] !== '1');
+    console.log(`Found ${successfullLiquidationTxs.length} successfull liquidation txs`)
+
+
+    return successfullLiquidationTxs;
 }
 
-checkFailedLiquidationTxsEvents(1720952696, 1721471096);
+async function extractAssetsTransferredAndUsdValue(liquidationTxs){
+    let liquidationTxsData = {};
+
+    const progressBar1 = new cliProgress.SingleBar({
+        format: `Analyzing ${liquidationTxs.length} liquidation txs |{bar}| {percentage}% | Tx {value}/{total} Elapsed: {duration_formatted}`,
+        barCompleteChar: '=',
+        barIncompleteChar: ' ',
+        hideCursor: true
+    }, cliProgress.Presets.shades_classic);
+    progressBar1.start(liquidationTxs.length, 0);
+
+    for(const liquidationTx of liquidationTxs){
+        let liquidationTxData = await processSuccessfullLiquidationTx(liquidationTx);
+        liquidationTxsData[liquidationTx['hash']] = {
+            totalUsdValue: liquidationTxData['totalUsdValue'],
+            assetsTransferred: liquidationTxData['assetsTransferred'],
+            timestamp: liquidationTxData['timestamp'],
+            blockNumber: liquidationTxData['blockNumber']
+        };
+        progressBar1.increment(1);
+    }
+    progressBar1.stop();
+
+    console.log(`Processed txs: ${liquidationTxs.map(tx => tx['hash'])}`)
+
+    return liquidationTxsData;
+}
+
+async function getSPrimeHoldersSharesAtBlock(blockNumber){
+    console.log('TODO: Implement historical sPrime holders fetching. Returning current sPrime holders for now');
+    return getSPrimeHoldersCached('avalanche');
+}
+
+async function getUsersLiquidationsShares(liquidationsData){
+    console.log(`Processing ${Object.keys(liquidationsData).length} liquidations user shares`)
+    let liquidationToUsersShares = {};
+    for(const liquidationHash in liquidationsData){
+        let liquidationData = liquidationsData[liquidationHash];
+
+        let sPrimeHolders = await getSPrimeHoldersSharesAtBlock(liquidationData['blockNumber']);
+        console.log(`Found ${sPrimeHolders.length} sPrime holders at block ${liquidationData['blockNumber']}`);
+
+        let sPrimeHoldersInRange = await getHoldersIsInRange(sPrimeHolders, liquidationData['blockNumber']);
+        console.log(`Found ${sPrimeHoldersInRange.length} sPrime holders in range at block ${liquidationData['blockNumber']}`);
+
+        let usersValuesInTokenY = await getUserValuesInTokenY(sPrimeHoldersInRange, liquidationData['blockNumber']);
+        let totalValueInTokenY = Object.values(usersValuesInTokenY).reduce((a, b) => a + b, 0);
+
+        let usersLiquidationsShares = {};
+        for(const userAddress in usersValuesInTokenY){
+            usersLiquidationsShares[userAddress] = usersValuesInTokenY[userAddress] / totalValueInTokenY;
+        }
+        // check if usersLiquidationsShares sums up to 100%
+        let sum = Object.values(usersLiquidationsShares).reduce((a, b) => a + b, 0);
+        if(Math.abs(sum-1) > 1e-10){
+            throw new Error(`Users liquidations shares do not sum up to 100%: ${sum}`);
+        }
+
+        liquidationToUsersShares[liquidationHash] = usersLiquidationsShares;
+    }
+    return liquidationToUsersShares;
+}
+
+async function processLiquidationsRevenue(){
+    let finalUsersLiquidationsShares = {};
+    let totalUsdSum = 0;
+    let totalAssetsTransferred = {};
+    let usersUsdSum = {};
+    let liquidationTxs = await getLiquidationTxsBetweenBlocks(47425100, 48834295);
+    console.log('TODO: Remove after testing')
+    liquidationTxs = liquidationTxs.slice(1, 3);
+
+    let processedLiquidationsData = await extractAssetsTransferredAndUsdValue(liquidationTxs);
+
+    let usersLiquidationsShares = await getUsersLiquidationsShares(processedLiquidationsData);
+
+    for(const liquidationHash in processedLiquidationsData){
+        let liquidationData = processedLiquidationsData[liquidationHash];
+        let usersShares = usersLiquidationsShares[liquidationHash];
+
+        // calculate users usd value
+        for(const userAddress in usersShares){
+            let userShare = usersShares[userAddress];
+            let userUsdValue = liquidationData['totalUsdValue'] * userShare;
+            if(userAddress in usersUsdSum){
+                usersUsdSum[userAddress] += userUsdValue;
+            } else {
+                usersUsdSum[userAddress] = userUsdValue;
+            }
+            totalUsdSum += userUsdValue;
+        }
+
+        // calculate total assets transferred
+        for(const asset in liquidationData['assetsTransferred']){
+            let assetAmount = liquidationData['assetsTransferred'][asset];
+            if(asset in totalAssetsTransferred){
+                totalAssetsTransferred[asset] += assetAmount;
+            } else {
+                totalAssetsTransferred[asset] = assetAmount;
+            }
+        }
+    }
+
+    for(const userAddress in usersUsdSum){
+        finalUsersLiquidationsShares[userAddress] = usersUsdSum[userAddress] / totalUsdSum;
+    }
+
+    // console.log(finalUsersLiquidationsShares);
+    console.log(totalAssetsTransferred);
+
+
+}
+
+// checkFailedLiquidationTxsEvents(1720952696, 1721471096);
+// processSuccessfullLiquidationTx({hash: '0x365372c222960a9d56498f7537729caa6a9df39a7ef516c2d224bb70ced1e592'})
+processLiquidationsRevenue()
