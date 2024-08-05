@@ -466,7 +466,7 @@ const traderJoeApyAggregator = async (event) => {
         const matchId = marketInnerTexts.findIndex(innerText => innerText.startsWith(poolData.index));
         const market = marketRows[matchId];
         const marketColumns = await market.$$("td");
-        const marketApy = parseFloat((await (await marketColumns[6].getProperty("textContent")).jsonValue()).split('%')[0].trim());
+        const marketApy = parseFloat((await (await marketColumns[6].getProperty("textContent")).jsonValue()).split('%')[0].replace(',', '').trim());
 
         console.log(pool, marketApy);
 
