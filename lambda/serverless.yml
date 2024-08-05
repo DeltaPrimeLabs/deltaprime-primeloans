@@ -35,6 +35,7 @@ provider:
     GMX_INCENTIVES_RETROACTIVE_AVA_TABLE: gmx-incentives-retroactive-ava
     GMX_INCENTIVES_ARB_TABLE: gmx-incentives-arb-${opt:stage, "dev"}
     GGP_INCENTIVES_AVA_TABLE: ggp-incentives-ava-${opt:stage, "dev"}
+    GGP_INCENTIVES_YY_WOMBAT_AVA_TABLE: ggp-incentives-yy-ava-${opt:stage, "dev"}
     ARBITRUM_INCENTIVES_ARB_TABLE: arbitrum-incentives-arb-${opt:stage, "dev"}
     POOL_ARBITRUM_INCENTIVES_ARB_TABLE: pool-arbitrum-incentives-arb-${opt:stage, "dev"}
     LTIP_LOAN_LEADERBOARD_ARB_TABLE: ltip-loan-leaderboard-arb-${opt:stage, "dev"}
@@ -333,6 +334,23 @@ functions:
       - httpApi:
           method: get
           path: /ggp-boost-apy
+  getGgpIncentivesYYWombatForApi:
+    handler: apis/ggpIncentives.getGgpIncentivesYYWombatForApi
+    memorySize: 1024
+    timeout: 20
+    description: Fetch GGP YY Wombat incentives on Avalanche
+    events:
+      - httpApi:
+          method: get
+          path: /ggp-incentives-yy-for
+  getGgpYYWombatBoostApyApi:
+    handler: apis/ggpIncentives.getGgpYYWombatBoostApyApi
+    memorySize: 512
+    description: Fetch GGP YY Wombat Boost APY on Avalanche
+    events:
+      - httpApi:
+          method: get
+          path: /ggp-yy-boost-apy
   getAccountByReferralApi:
     handler: apis/referral.getAccountByReferralApi
     memorySize: 512
@@ -608,6 +626,28 @@ resources:
         StreamSpecification:
           StreamViewType: "NEW_AND_OLD_IMAGES"
         TableName: ${self:provider.environment.GGP_INCENTIVES_AVA_TABLE}
+    ggpIncentivesYYWombatAvaTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: "id"
+            AttributeType: "S"
+          -
+            AttributeName: "timestamp"
+            AttributeType: "N"
+        KeySchema:
+          -
+            AttributeName: "id"
+            KeyType: "HASH"
+          -
+            AttributeName: "timestamp"
+            KeyType: "RANGE"
+        BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: "NEW_AND_OLD_IMAGES"
+        TableName: ${self:provider.environment.GGP_INCENTIVES_YY_WOMBAT_AVA_TABLE}
     # loansAvaTable:
     #   Type: AWS::DynamoDB::Table
     #   DeletionPolicy: Retain
