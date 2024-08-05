@@ -176,20 +176,20 @@ const ggpIncentives = async (network = 'avalanche', rpc = 'first') => {
       const boostApy = totalEligibleTvl > 0 ? (incentivesPerInterval / incentivesMultiplier) / totalEligibleTvl * 24 * 365 : 0;
       console.log(boostApy)
 
-      // const params = {
-      //   TableName: "statistics-prod",
-      //   Key: {
-      //     id: "GGP_ggAVAX"
-      //   },
-      //   AttributeUpdates: {
-      //     boostApy: {
-      //       Value: Number(boostApy) ? boostApy : null,
-      //       Action: "PUT"
-      //     }
-      //   }
-      // };
+      const params = {
+        TableName: "statistics-prod",
+        Key: {
+          id: "GGP_YY_ggAVAX"
+        },
+        AttributeUpdates: {
+          boostApy: {
+            Value: Number(boostApy) ? boostApy : null,
+            Action: "PUT"
+          }
+        }
+      };
 
-      // await dynamoDb.update(params).promise();
+      await dynamoDb.update(params).promise();
 
       console.log("GGP boost APY on Avalanche saved.");
 
@@ -242,4 +242,4 @@ const ggpIncentives = async (network = 'avalanche', rpc = 'first') => {
   }
 }
 
-ggpIncentives('avalanche', 'second');
+ggpIncentives('avalanche', 'first');
