@@ -63,7 +63,7 @@ async function fetchLoansDataInBatches(epochName) {
     console.log(`LONS: ${loans.length}`)
     loans = loans.slice(0, 2200);
 
-    let resps = await promiseAllInBatches(task, loans, 100);
+    let resps = await promiseAllInBatches(task, loans, 25);
 
     let jsons = await Promise.all(resps.map(json => json.json()))
 
@@ -163,11 +163,12 @@ async function promiseAllInBatches(task, items, batchSize) {
         console.log(`Processing from position ${position} to ${batchSize}`)
         const itemsForBatch = items.slice(position, position + batchSize);
         currentSleepTimeMs = 0;
-        results = [...results, ...await runWithTimeout(itemsForBatch.map(item => task(item)), 2000)];
+        results = [...results, ...await runWithTimeout(itemsForBatch.map(item => task(item)), 20000)];
 
 
         position += batchSize;
-        // await sleep(1000); // Sleep for 5000 milliseconds (5 seconds)
+        // sleep 30 seconds with promise timeout
+        // await new Promise(resolve => setTimeout(resolve, 500));
     }
     return results;
 }
@@ -269,7 +270,7 @@ function createAddJson(files, output) {
 //last distribution timestamp: 1722247318
 //current distribution timestamp: 1722868282
 // fetchData("LTIP_EPOCH_9", 1722247318, 1722868282, 10000, true)
-// fetchLoansDataInBatches("LTIP_EPOCH_8_TOTAL")
+// fetchLoansDataInBatches("LTIP_EPOCH_9_TOTAL")
 //no need to use this one for pools
 // fetchPoolsDataInBatches("LTIP_EPOCH_7", ["LTIP_SAVINGS_EPOCH_1", "LTIP_EPOCH_2_SAVINGS", "LTIP_EPOCH_3_SAVINGS", "LTIP_EPOCH_4_SAVINGS", "LTIP_EPOCH_5_SAVINGS", "LTIP_EPOCH_6_SAVINGS"])
 // fetchData("LTIP_EPOCH_5_TOTAL_4", 1720013265, 1720521317, 10000, false)
@@ -277,6 +278,6 @@ function createAddJson(files, output) {
 // checkNegativeAccounts()
 // checkCollectedInTimestamp(1715152203)
 // checkCollected();
-// createDiffJson( "LTIP_EPOCH_6_TOTAL", "LTIP_EPOCH_8_TOTAL", "arbitrum/ltip")
+createDiffJson( "LTIP_EPOCH_8_TOTAL", "LTIP_EPOCH_9_TOTAL", "arbitrum/ltip")
 // createAddJson( ["LTIP_SAVINGS_EPOCH_1", "LTIP_EPOCH_2_SAVINGS", "LTIP_EPOCH_3_SAVINGS", "LTIP_EPOCH_4_SAVINGS", "LTIP_EPOCH_5_SAVINGS"], "LTIP_EPOCH_5_SAVINGS_TOTAL")
 // analyzeJson("LTIP_EPOCH_9_SAVINGS")
