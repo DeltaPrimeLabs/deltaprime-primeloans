@@ -188,7 +188,11 @@ export default ({
 
       switch (alert.alertType) {
         case "announcement":
-          payload = { client: this.client };
+          payload = { 
+            client: this.client,
+            targetGroupId: this.targetGroups[0].id,
+            alertType: "announcement",
+          };
           break;
         case "liquidation":
           payload = {

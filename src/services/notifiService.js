@@ -70,11 +70,7 @@ export default class notifiService {
         // get alerts statuses for initialization on settings screen
         let fusionEvent;
 
-        if (alert.filter.filterType == 'BROADCAST_MESSAGES') {
-          fusionEvent = ['announcement'];
-        } else {
-          fusionEvent = Object.entries(config.fusionEventIds).find(([name, eventId]) => eventId == alert.sourceGroup.sources[0].fusionEventTypeId);
-        }
+        fusionEvent = Object.entries(config.fusionEventIds).find(([name, eventId]) => eventId == alert.sourceGroup.sources[0].fusionEventTypeId); // TODO: use alert.name instead
 
         if (this.alertSettings[fusionEvent[0]]) {
           this.alertSettings[fusionEvent[0]]['created'] = true;
@@ -107,7 +103,7 @@ export default class notifiService {
 
     if (authenticated) {
       // get user's targets and alerts configured
-      data = await client.fetchData();
+      data = await client.fetchData(); // TODO: change to fetchFusionData
       history = await this.getNotifications(client);
     }
 
@@ -177,21 +173,21 @@ export default class notifiService {
     this.emitAlertSettingsUpdated();
   }
 
-  async createAnnouncements({ client }) {
-    const eventType = {
-      type: 'broadcast',
-      name: 'DeltaPrime Announcements',
-      broadcastId: {
-        type: 'value',
-        value: 'deltaprime__announcements'
-      },
-    }
-
-    const result = await client.ensureAlert({
-      eventType,
-      inputs: {},
+  async createAnnouncements({ client, targetGroupId, alertType }) {
+    const result = await client.ensureFusionAlerts({
+      alerts: [
+        {
+          filterOptions: JSON.stringify({
+            version: 1,
+            input: {},
+          }),
+          fusionEventId: config.fusionEventIds[alertType],
+          name: config.fusionEventIds[alertType],
+          subscriptionValue: "*",
+          targetGroupId,
+        },
+      ],
     });
-
     return result;
   }
 
