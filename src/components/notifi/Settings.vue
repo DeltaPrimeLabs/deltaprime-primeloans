@@ -197,7 +197,9 @@ export default ({
         case "liquidation":
           payload = {
             client: this.client,
-            walletAddress: this.account
+            walletAddress: this.account,
+            targetGroupId: this.targetGroups[0].id,
+            alertType: "liquidation",
           };
           break;
         case "loanHealth":

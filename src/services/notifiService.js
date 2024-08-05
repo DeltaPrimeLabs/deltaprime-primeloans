@@ -200,30 +200,21 @@ export default class notifiService {
   - DAILY
   */
 
-  async createLiquidationAlerts({ client, walletAddress, network }) {
-    const eventType = {
-      type: 'fusion',
-      name: 'Liquidation Alerts',
-      // sourceType: 'DELTA_PRIME',
-      // filterType: 'LIQUIDATIONS',
-      sourceAddress: {
-        type: 'ref',
-        ref: 'walletAddress',
-      },
-      selectedUIType: 'TOGGLE',
-      fusionEventId: {
-        type: 'value',
-        value: config.fusionEventIds.liquidation
-      },
-      alertFrequency: 'DAILY',
-      // filterOptions: {},
-    };
+  async createLiquidationAlerts({ client, walletAddress, network, targetGroupId, alertType }) {
   
-    const result = await client.ensureAlert({
-      eventType,
-      inputs: {
-        walletAddress: walletAddress.toLowerCase()
-      },
+    const result = await client.ensureFusionAlerts({
+      alerts: [
+        {
+          filterOptions: JSON.stringify({
+            version: 1,
+            input: {},
+          }),
+          fusionEventId: config.fusionEventIds[alertType],
+          name: config.fusionEventIds[alertType],
+          subscriptionValue: walletAddress,
+          targetGroupId,
+        },
+      ],
     });
   
     return result;
