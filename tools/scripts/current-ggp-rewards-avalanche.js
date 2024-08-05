@@ -56,11 +56,11 @@ async function promiseAllInBatches(task, items, batchSize) {
         console.log(`Processing from position ${position} to ${batchSize}`)
         const itemsForBatch = items.slice(position, position + batchSize);
         currentSleepTimeMs = 0;
-        results = [...results, ...await runWithTimeout(itemsForBatch.map(item => task(item)), 2000)];
+        results = [...results, ...await runWithTimeout(itemsForBatch.map(item => task(item)), 10000)];
 
 
         position += batchSize;
-        // await sleep(1000); // Sleep for 5000 milliseconds (5 seconds)
+        await sleep(1000); // Sleep for 5000 milliseconds (5 seconds)
     }
     return results;
 }
@@ -71,9 +71,9 @@ async function fetchData(file) {
     const task = (loan) => fetch(` https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/ggp-incentives-for?addresses=${loan}`)
 
     console.log(`LONS: ${loans.length}`)
-    loans = loans.slice(0, 4800);
+    loans = loans.slice(0, 5000);
 
-    let resps = await promiseAllInBatches(task, loans, 100);
+    let resps = await promiseAllInBatches(task, loans, 20);
 
 
     let jsons = await Promise.all(resps.map(json => json.json()))
@@ -223,10 +223,10 @@ async function checkCollected() {
 }
 
 
-// fetchData("GGP_EPOCH_6")
+// fetchData("GGP_EPOCH_7")
 // checkNegativeAccounts()
 // checkCollectedInTimestamp(1715152203)
 // checkCollected();
-createDiffJson( "GGP_EPOCH_5", "GGP_EPOCH_6")
+createDiffJson( "GGP_EPOCH_6", "GGP_EPOCH_7")
 // createAddJson( "GM_EPOCH_8", "GM_EPOCH_9_diff", "GM_EPOCH_9")
 // analyzeJson("GGP_EPOCH_4_diff")
