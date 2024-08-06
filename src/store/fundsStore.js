@@ -2940,7 +2940,7 @@ export default {
           ?
           await wrappedContract.claimReward(claimRewardsRequest.pair, claimRewardsRequest.ids)
           :
-          await wrappedContract.claimReward(claimRewardsRequest.merkleEntries);
+          await wrappedContract.claimReward(claimRewardsRequest.merkleEntries, {gasLimit: 10000000});
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       const tx = await awaitConfirmation(transaction, provider, 'claim rewards from traderjoe v2 pools');
