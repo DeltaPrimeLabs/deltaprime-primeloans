@@ -142,9 +142,10 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
             revert NoPosition();
         }
         (bool success, bytes memory result) = implementation.staticcall(abi.encodeWithSignature("binInRange(uint256)", tokenId));
-        if (success) {
-            status = abi.decode(result, (bool));
+        if (!success)  {
+            revert ProxyCallFailed();
         }
+        status = abi.decode(result, (bool));
     }
 
     /**
@@ -164,9 +165,12 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
         uint256 amountX = 0;
         uint256 amountY = 0;
         (bool success, bytes memory result) = implementation.staticcall(abi.encodeWithSignature("getLiquidityTokenAmounts(uint256[],uint256[],uint256)", depositConfig.depositIds, liquidityMinted, poolPrice));
-        if (success) {
-            (amountX, amountY) = abi.decode(result, (uint256, uint256));
+        
+        if (!success)  {
+            revert ProxyCallFailed();
         }
+
+        (amountX, amountY) = abi.decode(result, (uint256, uint256));
 
         amountY = amountY + FullMath.mulDiv(amountX, poolPrice * 10 ** tokenYDecimals, 10 ** (8 + tokenXDecimals));
 
@@ -764,4 +768,5 @@ contract SPrime is ISPrimeTraderJoe, ReentrancyGuardUpgradeable, PendingOwnableU
     error ShouldLock100Percent();
     error Unauthorized();
     error Overflow();
+    error ProxyCallFailed();
 }

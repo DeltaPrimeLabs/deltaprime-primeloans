@@ -164,9 +164,10 @@ contract sPrimeUniswap is
             revert NoPosition();
         }
         (bool success, bytes memory result) = implementation.staticcall(abi.encodeWithSignature("tickInRange(uint256)", tokenId));
-        if (success) {
-            status = abi.decode(result, (bool));
+        if (!success)  {
+            revert ProxyCallFailed();
         }
+        status = abi.decode(result, (bool));
     }
 
     /**
@@ -180,9 +181,11 @@ contract sPrimeUniswap is
         uint256 poolPrice
     ) public view returns (uint256 amountY) {
         (bool success, bytes memory result) = implementation.staticcall(abi.encodeWithSignature("getUserValueInTokenY(address,uint256)", user, poolPrice));
-        if (success) {
-            amountY = abi.decode(result, (uint256));
+        
+        if (!success)  {
+            revert ProxyCallFailed();
         }
+        amountY = abi.decode(result, (uint256));
     }
 
     /**
@@ -905,4 +908,5 @@ contract sPrimeUniswap is
     error InsufficientBalanceToLock();
     error LockPeriodExceeded();
     error AccessDenied();
+    error ProxyCallFailed();
 }
