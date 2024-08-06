@@ -2938,7 +2938,7 @@ export default {
       const transaction =
           claimRewardsRequest.version === '2.2'
           ?
-          await wrappedContract.claimReward(claimRewardsRequest.pair, claimRewardsRequest.ids)
+          await wrappedContract.claimReward(claimRewardsRequest.pair, claimRewardsRequest.ids, {gasLimit: 10000000})
           :
           await wrappedContract.claimReward(claimRewardsRequest.merkleEntries, {gasLimit: 10000000});
 
