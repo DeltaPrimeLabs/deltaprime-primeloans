@@ -177,9 +177,9 @@ function getPoolEligibleTVLMultiplier(chain, pool) {
 function getSubgraphEndpoint(chain) {
   switch (chain) {
     case "avalanche":
-      return "https://api.thegraph.com/subgraphs/name/mbare0/deltaprime";
+      return "https://api.studio.thegraph.com/query/78666/deltaprime/version/latest";
     case "arbitrum":
-      return "https://api.thegraph.com/subgraphs/name/keizir/deltaprime";
+      return "https://api.studio.thegraph.com/query/50916/deltaprime/version/latest";
   }
 }
 
@@ -317,7 +317,7 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
   if (incentivesMultiplier == 0) return;
 
   try {
-    poolsDepositors = await getDepositorsAddressesFromChainbase(chain);
+    poolsDepositors = await getDepositorsAddressesFromSubgraph(chain);
     for (let pool in arbitrumPoolsTVL) {
       let poolEligibleTVLMultiplier = getPoolEligibleTVLMultiplier(chain, pool);
       console.log(`${pool} eligible TVL multiplier: ${poolEligibleTVLMultiplier}`)
@@ -475,7 +475,7 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
   // for each pool sum up depositors eligible airdrops and verify if they sum up to each pool's eligible airdrop
 
   for (let pool in depositorsEligibleAirdrop) {
-    const threshold = 1;
+    const threshold = 0.1;
     let sum = Object.values(depositorsEligibleAirdrop[pool]).reduce((a, b) => a + b);
     console.log(`Sum of ${pool} depositors eligible airdrops: ${sum}`);
     console.log(`Eligible airdrop for ${pool}: ${tokensToBeDistributedPerPool[pool]}`);
