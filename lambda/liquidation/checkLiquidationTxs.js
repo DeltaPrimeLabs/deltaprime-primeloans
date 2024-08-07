@@ -1,3 +1,4 @@
+const fs = require("fs");
 const {ethers} = require('ethers');
 const EthDater = require("ethereum-block-by-date");
 const fromWei = (val) => parseFloat(ethers.utils.formatEther(val));
@@ -65,343 +66,12 @@ async function getTxs(url){
 //     );
 //   }
 
-function getPricesWithLatestTimestamp(prices, symbol) {
-    if (symbol in prices) {
-        let symbolPriceObject = prices[symbol];
-        let currentNewestTimestampIndex = 0;
-        for (let i = 0; i < symbolPriceObject.length; i++) {
-            if (symbolPriceObject[i].timestampMilliseconds > symbolPriceObject[currentNewestTimestampIndex].timestampMilliseconds) {
-                currentNewestTimestampIndex = i;
-            }
-        }
-        return symbolPriceObject[currentNewestTimestampIndex].dataPoints[0].value;
-    } else {
-        throw new Error(`Symbol ${symbol} not found in the prices object`);
-    }
-}
-
-async function getRedstonePrices(tokenSymbols, chain) {
-    const dataServiceId = process.env.dataServiceId ?? `redstone-${chain}-prod`;
-    const url = `https://oracle-gateway-1.a.redstone.finance/data-packages/latest/${dataServiceId}`
-
-    const redstonePrices = await (await fetch(url)).json();
-
-    let result = {};
-    for (const symbol of tokenSymbols) {
-        try {
-            result[symbol] = getPricesWithLatestTimestamp(redstonePrices, symbol);
-        } catch {}
-    }
-    return result;
-}
-
-async function getDollarValue(decimals, balance, price) {
-    return  formatUnits(balance, decimals) * price;
-
-}
-
-async function processSuccessfullLiquidationTx(tx, chain) {
-    const abi = [
-        "function balanceOf(address owner) view returns (uint256)",
-        "function decimals() view returns (uint8)",
-        "function symbol() view returns (string)",
-        "event Transfer(address indexed from, address indexed to, uint amount)"
-    ];
-    let provider = getProvider(chain);
-    let TOKEN_ADDRESSES = chain === 'arbitrum'? TOKEN_ADDRESSES_ARBITRUM : TOKEN_ADDRESSES_AVALANCHE;
-
-    const hash = tx['hash']
-
-    const txRes = await provider.getTransaction(hash);
-    const receipt = await txRes.wait();
-    let timestamp = await getTimestampFromBlockNumber(receipt.blockNumber, provider);
-
-    const feeTransferLogs = receipt.logs.filter(log => log.topics[0] === '0xd5e79e0953563b535ee3d864e1ac35be98c6a24c9c38b6b91c358cea8c68939b');
-
-    const tokenSymbols = Object.keys(TOKEN_ADDRESSES);
-    const prices = await getRedstonePrices(tokenSymbols, chain);
-    let totalUsdValue = 0;
-    let usdValue = 0;
-    let assetsTransferred = {};
-    for (const log of feeTransferLogs) {
-        const asset = fromBytes32(log.topics[2]);
-        // console.log(`ASSET: ${asset}`)
-        const [amount] = new ethers.utils.AbiCoder().decode(['uint256', 'uint256'], log.data);
-        let erc20 = new ethers.Contract(TOKEN_ADDRESSES[asset], abi, provider);
-        let decimals = await erc20.decimals();
-
-        if (amount.gt(0)) {
-            assetsTransferred[asset] = formatUnits(amount.toString(), decimals);
-            let balanceString = amount.toString();
-            usdValue = 0;
-            try{
-                usdValue = await getDollarValue(decimals, balanceString, prices[asset]);
-            } catch (e) {
-                console.log(`some error: ${e}`)
-            }
-
-            totalUsdValue += usdValue;
-        }
-    }
-
-    return {totalUsdValue: totalUsdValue, assetsTransferred: assetsTransferred, timestamp: timestamp, blockNumber: receipt.blockNumber};
-}
-
-async function getSPrimeHoldersCached(chain =  'avalanche'){
-    if(sPrimeHolders.length === 0){
-        sPrimeHolders = await getSPrimeHolders(chain);
-    }
-    return sPrimeHolders;
-}
-
-async function getSPrimeHolders(chain = "arbitrum"){
-        let chainId;
-        let sPrimeHolders = [];
-        let contractAddress = chain === "avalanche" ? sPrimeAddress : sPrimeUniswapAddress;
-
-        if (chain === "arbitrum") {
-            chainId = 42161;
-        } else if (chain === "avalanche") {
-            chainId = 43114;
-        }
-
-        let page = 1;
-        let limit = 100;
-        let hasMoreHolders = true;
-
-        while (hasMoreHolders) {
-            const url = `https://api.chainbase.online/v1/token/holders?chain_id=${chainId}&contract_address=${contractAddress}&page=${page}&limit=${limit}`;
-            const response = await fetch(url, {
-                headers: {
-                    "x-api-key": '2hjmIoJ2wPBnaBbEjjqMOLp0plz'
-                }
-            });
-            const json = await response.json();
-
-            if (json.data && json.data.length > 0) {
-                sPrimeHolders = [...sPrimeHolders, ...json.data];
-                page++;
-
-                await new Promise((resolve, reject) => setTimeout(resolve, 600));
-            } else {
-                hasMoreHolders = false;
-            }
-            // if(page > 2){
-            //     console.log('TODO: Remove after testing')
-            //     progressBar1.stop();
-            //     break;
-            // }
-        }
-
-        sPrimeHolders = [...new Set(sPrimeHolders)];
-
-        return sPrimeHolders;
-}
-
-// Function to fetch balance
-async function fetchBalance(address) {
-    return sPrimeUniswapContract.balanceOf(address);
-}
-
-async function fetchOwner(primeAccountAddress) {
-    return factoryContract.ownerOf(primeAccountAddress);
-}
-
-async function getHoldersBalances(holders){
-    let holdersBalances = []
-    // Use Promise.map with concurrency option
-    await Promise.map(holders, address => {
-        return fetchBalance(address).then(balance => {
-            return balance;
-        });
-    }, { concurrency: 300 }).then(results => {
-        console.log('All balances fetched');
-        holdersBalances = results.map(balance => Number(fromWei(balance)));
-    }).catch(error => {
-        console.error('Error fetching balances', error);
-    });
-
-    return holdersBalances;
-}
-
-async function isInRange(userAddress, blockNumber ){
-    let methodName = 'binInRange';
-    const tx = await sPrimeContract.populateTransaction[methodName](userAddress)
-    let res = await sPrimeContract.signer.call(tx, blockNumber)
-    try{
-        let inRange =  sPrimeContract.interface.decodeFunctionResult(
-            methodName,
-            res
-        );
-        return inRange
-    } catch (e) {
-        if(e.errorArgs.concat().includes('No position')){
-            return false;
-        }
-    }
-}
-
-async function getUserValueInTokenY(userAddress, blockNumber){
-    let methodName = 'getUserValueInTokenY(address)';
-    const tx = await sPrimeContract.populateTransaction[methodName](userAddress)
-    let res = await sPrimeContract.signer.call(tx, blockNumber)
-    try {
-        let result =  sPrimeContract.interface.decodeFunctionResult(
-            methodName,
-            res
-        );
-        return result;
-    } catch (e) {
-        return 0;
-    }
-
-}
-
-async function getUserValueInTokenYCurrent(userAddress, chain){
-    // let methodName = 'getUserValueInTokenY(address)';
-    // const tx = await sPrimeContract.populateTransaction[methodName](userAddress)
-    // let res = await sPrimeContract.signer.call(tx, blockNumber)
-    // try {
-    //     let result =  sPrimeContract.interface.decodeFunctionResult(
-    //         methodName,
-    //         res
-    //     );
-    //     return result;
-    // } catch (e) {
-    //     return 0;
-    // }
-    let contract = chain === 'avalanche'? sPrimeContract : sPrimeUniswapContract;
-
-    return contract['getUserValueInTokenY(address)'](userAddress);
-
-}
-
-async function getUsersValuesInTokenYCurrent(holders, chain){
-    let usersValuesInTokenY = {}
-    let usersValues;
-    // Use Promise.map with concurrency option
-    await Promise.map(holders, address => {
-        return getUserValueInTokenYCurrent(address, chain).then(userValueInTokenY => {
-            return userValueInTokenY;
-        });
-    }, { concurrency: 50 }).then(results => {
-        // console.log('All user values fetched');
-        usersValues = results.map(balance => Number(fromWei(balance.toString())))
-    }).catch(error => {
-        console.error('Error fetching in range', error);
-    });
-
-    for(let i=0; i<holders.length; i++){
-        usersValuesInTokenY[holders[i]] = usersValues[i];
-    }
-
-    return usersValuesInTokenY;
-}
-
-async function getUserValuesInTokenY(holders, blockNumber){
-    let usersValuesInTokenY = {}
-    let usersValues;
-    // Use Promise.map with concurrency option
-    await Promise.map(holders, address => {
-        return getUserValueInTokenY(address, blockNumber).then(userValueInTokenY => {
-            return userValueInTokenY;
-        });
-    }, { concurrency: 50 }).then(results => {
-        // console.log('All user values fetched');
-        usersValues = results.map(balance => Number(fromWei(balance.toString())))
-    }).catch(error => {
-        console.error('Error fetching in range', error);
-    });
-
-    for(let i=0; i<holders.length; i++){
-        usersValuesInTokenY[holders[i]] = usersValues[i];
-    }
-
-    return usersValuesInTokenY;
-}
-
-async function getHoldersIsInRange(holders, blockNumber){
-    let holdersInRange = []
-    // Use Promise.map with concurrency option
-    await Promise.map(holders, address => {
-        return isInRange(address, blockNumber).then(inRange => {
-            return inRange;
-        });
-    }, { concurrency: 50 }).then(results => {
-        // console.log('All in range fetched');
-        holdersInRange = results;
-    }).catch(error => {
-        console.error('Error fetching in range', error);
-    });
-
-    holders = holders.filter((_, index) => holdersInRange[index]);
-
-    return holders;
-}
-
-async function getSPrimeRevSharingUsersAllocationsArbitrum(epoch = 0, tokenDistributionAmount = 10000){
-
-    let sPrimeTotalSupply = fromWei(await sPrimeUniswapContract.totalSupply());
-    let sPrimeHolders = await getSPrimeHolders();
-
-    let holdersBalances = await getHoldersBalances(sPrimeHolders);
-    let holdersInRange = await getHoldersIsInRange(sPrimeHolders);
-
-    // sum of balances
-    let totalBalance = holdersBalances.reduce((a, b) => a + b, 0);
-    console.log(`Total balance: ${totalBalance}`);
-    console.log(`Total supply: ${sPrimeTotalSupply}`)
-    console.log(`Difference: ${sPrimeTotalSupply - totalBalance}`);
-    // number of holders not in range
-    let holdersNotInRange = holdersInRange.filter(inRange => !inRange);
-    console.log(`Holders not in range: ${holdersNotInRange.length}`);
-    // sum of balances of holders not in range
-    let totalBalanceNotInRange = holdersBalances.filter((_, index) => !holdersInRange[index]).reduce((a, b) => a + b, 0);
-    console.log(`Total balance not in range: ${totalBalanceNotInRange}`);
-    // number of holders in range
-    let holdersInRangeCount = holdersInRange.filter(inRange => inRange).length;
-    console.log(`Holders in range: ${holdersInRangeCount}`);
-    // sum of balances of holders in range
-    let totalBalanceInRange = holdersBalances.filter((_, index) => holdersInRange[index]).reduce((a, b) => a + b, 0);
-    console.log(`Total balance in range: ${totalBalanceInRange}`);
-
-    let userAllocations = {}
-    let biggestTokenAmount = 0;
-    for(let i=0; i<sPrimeHolders.length; i++){
-        if(holdersInRange[i]){
-            let tokenAmount = tokenDistributionAmount * holdersBalances[i] / totalBalanceInRange;
-            if(tokenAmount > biggestTokenAmount){
-                biggestTokenAmount = tokenAmount;
-            }
-            userAllocations[sPrimeHolders[i]] = tokenAmount;
-        } else {
-            userAllocations[sPrimeHolders[i]] = 0;
-        }
-    }
-
-
-    const objArray = Object.entries(userAllocations);
-
-    // Step 2: Sort the array by the values
-    objArray.sort((a, b) => b[1] - a[1]);
-
-    // Step 3: Convert the sorted array back into an object
-    const sortedObj = Object.fromEntries(objArray);
-
-    // save user allocations to a JSON file
-    fs.writeFileSync(`arbitrum/sPrimeRevSharingAllocationEpoch${epoch}.json`, JSON.stringify(sortedObj, null, 2));
-    console.log(`Biggest token amount: ${biggestTokenAmount}`);
-
-}
-
 async function getLiquidationTxsBetweenBlocks(chain = 'avalanche', startBlock = 47425100, endBlock = 48834295) {
     // 47425100   (Jul-1-2024 17:16:36 UTC)
     // 48834295   (Aug-4-2024 12:39:38 UTC)
 
     const progressBar1 = new cliProgress.SingleBar({
         format: `Fetching liquidation txs between blocks ${startBlock} and ${endBlock} |{bar}| {percentage}% | Liquidator {value}/{total} Elapsed: {duration_formatted}`,
-        barCompleteChar: '=',
-        barIncompleteChar: ' ',
         hideCursor: true
     }, cliProgress.Presets.shades_classic);
 
@@ -461,132 +131,73 @@ async function getLiquidationTxsBetweenBlocks(chain = 'avalanche', startBlock = 
     return successfullLiquidationTxs;
 }
 
-async function extractAssetsTransferredAndUsdValue(liquidationTxs, chain){
-    let liquidationTxsData = {};
-
-    const progressBar1 = new cliProgress.SingleBar({
-        format: `Analyzing ${liquidationTxs.length} liquidation txs |{bar}| {percentage}% | Tx {value}/{total} Elapsed: {duration_formatted}`,
-        barCompleteChar: '=',
-        barIncompleteChar: ' ',
-        hideCursor: true
-    }, cliProgress.Presets.shades_classic);
-    progressBar1.start(liquidationTxs.length, 0);
-
-    for(const liquidationTx of liquidationTxs){
-        let liquidationTxData = await processSuccessfullLiquidationTx(liquidationTx, chain);
-        liquidationTxsData[liquidationTx['hash']] = {
-            totalUsdValue: liquidationTxData['totalUsdValue'],
-            assetsTransferred: liquidationTxData['assetsTransferred'],
-            timestamp: liquidationTxData['timestamp'],
-            blockNumber: liquidationTxData['blockNumber']
-        };
-        progressBar1.increment(1);
-    }
-    progressBar1.stop();
-
-    console.log(`Processed txs: ${liquidationTxs.map(tx => tx['hash'])}`)
-
-    return liquidationTxsData;
+async function getProcessedLiquidationDataFromDb(txHash){
+    let apiEndpoint = `https://im34modd75.execute-api.eu-west-3.amazonaws.com/getProcessedLiquidationFromHashArbitrum?txHash=${txHash}`;
+    let response = await fetch(apiEndpoint);
+    let data = await response.json();
+    return data['Items'][0]
 }
 
-async function getSPrimeHoldersSharesAtBlock(blockNumber){
-    // console.log('TODO: Implement historical sPrime holders fetching. Returning current sPrime holders for now');
-    return getSPrimeHoldersCached('avalanche');
-}
-
-async function getUsersLiquidationsShares(liquidationsData){
-    console.log(`Processing ${Object.keys(liquidationsData).length} liquidations user shares`)
-
-    const progressBar1 = new cliProgress.SingleBar({
-        format: `Analyzing user share across ${Object.keys(liquidationsData).length} liquidation txs |{bar}| {percentage}% | Tx {value}/{total} Elapsed: {duration_formatted}`,
-        barCompleteChar: '=',
-        barIncompleteChar: ' ',
-        hideCursor: true
-    }, cliProgress.Presets.shades_classic);
-    progressBar1.start(Object.keys(liquidationsData).length, 0);
-
-    let liquidationToUsersShares = {};
-    for(const liquidationHash in liquidationsData){
-        let liquidationData = liquidationsData[liquidationHash];
-
-        let sPrimeHolders = await getSPrimeHoldersSharesAtBlock(liquidationData['blockNumber']);
-        // console.log(`Found ${sPrimeHolders.length} sPrime holders at block ${liquidationData['blockNumber']}`);
-
-        let sPrimeHoldersInRange = await getHoldersIsInRange(sPrimeHolders, liquidationData['blockNumber']);
-        // console.log(`Found ${sPrimeHoldersInRange.length} sPrime holders in range at block ${liquidationData['blockNumber']}`);
-
-        let usersValuesInTokenY = await getUserValuesInTokenY(sPrimeHoldersInRange, liquidationData['blockNumber']);
-        let totalValueInTokenY = Object.values(usersValuesInTokenY).reduce((a, b) => a + b, 0);
-
-        let usersLiquidationsShares = {};
-        for(const userAddress in usersValuesInTokenY){
-            usersLiquidationsShares[userAddress] = usersValuesInTokenY[userAddress] / totalValueInTokenY;
-        }
-        // check if usersLiquidationsShares sums up to 100%
-        let sum = Object.values(usersLiquidationsShares).reduce((a, b) => a + b, 0);
-        if(Math.abs(sum-1) > 1e-10){
-            throw new Error(`Users liquidations shares do not sum up to 100%: ${sum}`);
-        }
-
-        liquidationToUsersShares[liquidationHash] = usersLiquidationsShares;
-
-        progressBar1.increment(1);
-    }
-    progressBar1.stop();
-    return liquidationToUsersShares;
-}
-
-async function processLiquidationsRevenue(chain = 'avalanche', startBlock, endBlock){
+async function processLiquidationsRevenue(chain = 'avalanche', startBlock, endBlock, epoch){
     let finalUsersLiquidationsShares = {};
     let totalUsdSum = 0;
     let totalAssetsTransferred = {};
     let usersUsdSum = {};
     let liquidationTxs = await getLiquidationTxsBetweenBlocks(chain, startBlock, endBlock);
 
-    // console.log('TODO: Remove after testing')
-    // liquidationTxs = liquidationTxs.slice(1, 3);
 
-    let processedLiquidationsData = await extractAssetsTransferredAndUsdValue(liquidationTxs, chain);
+    const bar1 = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
+    bar1.start(liquidationTxs.length, 0);
 
-    // let usersLiquidationsShares = await getUsersLiquidationsShares(processedLiquidationsData);
+    for(const liquidationTx of liquidationTxs){
+        bar1.increment();
+        let processedLiquidationData = await getProcessedLiquidationDataFromDb(liquidationTx['hash']);
+        let usersSPrimeSharesAtTimeOfLiquidation = processedLiquidationData['usersSPrimeDollarValues']; // Although it is called dollar values, it is actually the sPrime shares
 
-    for(const liquidationHash in processedLiquidationsData){
-        let liquidationData = processedLiquidationsData[liquidationHash];
-        // let usersShares = usersLiquidationsShares[liquidationHash];
-        totalUsdSum += liquidationData['totalUsdValue'];
-
-        // // calculate users usd value
-        // for(const userAddress in usersShares){
-        //     let userShare = usersShares[userAddress];
-        //     let userUsdValue = liquidationData['totalUsdValue'] * userShare;
-        //     if(userAddress in usersUsdSum){
-        //         usersUsdSum[userAddress] += userUsdValue;
-        //     } else {
-        //         usersUsdSum[userAddress] = userUsdValue;
-        //     }
-        //     totalUsdSum += userUsdValue;
-        // }
-
-        // calculate total assets transferred
-        for(const asset in liquidationData['assetsTransferred']){
-            let assetAmount = liquidationData['assetsTransferred'][asset];
-            if(asset in totalAssetsTransferred){
-                totalAssetsTransferred[asset] += assetAmount;
+        totalUsdSum += processedLiquidationData['revenueDollarValue'];
+        for(const userAddress in usersSPrimeSharesAtTimeOfLiquidation){
+            if(userAddress in usersUsdSum){
+                usersUsdSum[userAddress] += usersSPrimeSharesAtTimeOfLiquidation[userAddress] * processedLiquidationData['revenueDollarValue'];
             } else {
-                totalAssetsTransferred[asset] = assetAmount;
+                usersUsdSum[userAddress] = usersSPrimeSharesAtTimeOfLiquidation[userAddress] * processedLiquidationData['revenueDollarValue'];
+            }
+        }
+
+        for(const asset in processedLiquidationData['assetsTransferred']){
+            if(asset in totalAssetsTransferred){
+                totalAssetsTransferred[asset] += processedLiquidationData['assetsTransferred'][asset];
+            } else {
+                totalAssetsTransferred[asset] = processedLiquidationData['assetsTransferred'][asset];
             }
         }
     }
+    bar1.stop();
 
-    // for(const userAddress in usersUsdSum){
-    //     finalUsersLiquidationsShares[userAddress] = usersUsdSum[userAddress] / totalUsdSum;
-    // }
+    for(const userAddress in usersUsdSum){
+        if(userAddress in finalUsersLiquidationsShares){
+            finalUsersLiquidationsShares[userAddress] = usersUsdSum[userAddress] / totalUsdSum;
+        } else {
+            finalUsersLiquidationsShares[userAddress] = usersUsdSum[userAddress] / totalUsdSum;
+        }
+    }
 
-    console.log(finalUsersLiquidationsShares);
-    console.log(totalAssetsTransferred);
-    console.log(totalUsdSum);
+    let sumOfFinalUsersLiquidationShares = Object.values(finalUsersLiquidationsShares).reduce((a, b) => a + b, 0);
+    if(Math.abs(sumOfFinalUsersLiquidationShares - 1) > 0.0001){
+        console.error(`Sum of final users liquidation shares is not 1: ${sumOfFinalUsersLiquidationShares}`);
+    } else {
+        console.log(`Sum of final users liquidation shares is 1: ${sumOfFinalUsersLiquidationShares}`);
+    }
 
+    console.log(`Users USD sum: ${Object.values(usersUsdSum).reduce((a, b) => a + b, 0)}`);
+    console.log(`Total USD sum: ${totalUsdSum}`);
 
+    // save finalUsersLiquidationsShares to json file
+    writeJSON(`revSharing${chain}Epoch${epoch}.json`, finalUsersLiquidationsShares);
+
+}
+
+function writeJSON(filename, data) {
+    fs.writeFileSync(filename, JSON.stringify(data, null, 4), 'utf8');
 }
 
 async function checkSPrimeTotalValueMinted(chain){
@@ -595,16 +206,122 @@ async function checkSPrimeTotalValueMinted(chain){
     let tokenYPrice = (await getRedstonePrices([tokenYName], chain))[tokenYName];
     console.log('Token Y price: ', tokenYPrice);
     console.log('Getting holders')
-    let sPrimeHolders = await getSPrimeHolders(chain);
+    const currentTimestampInSeconds = Math.floor(Date.now() / 1000);
+    let sPrimeHolders = await getSPrimeHoldersAtTimestampFromSubgraph(chain, currentTimestampInSeconds);
     console.log('Getting holders balances')
     let balances = await getUsersValuesInTokenYCurrent(sPrimeHolders, chain);
     let totalValue = Object.values(balances).reduce((a, b) => a + b, 0);
     console.log(`Total value in Token Y: ${totalValue} for chain ${chain}`);
+}
+
+async function getUserValueInTokenYCurrent(userAddress, chain){
+    let contract = chain === 'avalanche'? sPrimeContract : sPrimeUniswapContract;
+
+    return contract['getUserValueInTokenY(address)'](userAddress);
 
 }
+
+async function getUsersValuesInTokenYCurrent(holders, chain){
+    let usersValuesInTokenY = {}
+    let usersValues;
+    // Use Promise.map with concurrency option
+    await Promise.map(holders, address => {
+        return getUserValueInTokenYCurrent(address, chain).then(userValueInTokenY => {
+            return userValueInTokenY;
+        });
+    }, { concurrency: 50 }).then(results => {
+        // console.log('All user values fetched');
+        usersValues = results.map(balance => Number(fromWei(balance.toString())))
+    }).catch(error => {
+        console.error('Error fetching in range', error);
+    });
+
+    for(let i=0; i<holders.length; i++){
+        usersValuesInTokenY[holders[i]] = usersValues[i];
+    }
+
+    return usersValuesInTokenY;
+}
+
+async function getSPrimeHoldersAtTimestampFromSubgraph(chain, timestamp) {
+    let url;
+    if (chain === 'avalanche') {
+        url = 'https://api.studio.thegraph.com/query/78666/deltaprime/version/latest';
+    } else if (chain === 'arbitrum') {
+        url = 'https://api.studio.thegraph.com/query/50916/deltaprime/version/latest';
+    }
+
+    let holders = [];
+    let skip = 0;
+    const pageSize = 100;
+
+    while (true) {
+        let query = `
+        {
+            sprimeHolders(where: {createdAt_lte: "${timestamp}"}, first: ${pageSize}, skip: ${skip}) {
+                id
+                createdAt
+            }
+        }
+        `;
+
+        let response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ query: query }),
+        });
+
+        let responseJson = await response.json();
+        let currentBatch = responseJson['data']['sprimeHolders'];
+
+        if (currentBatch.length === 0) {
+            break;
+        }
+
+        holders.push(...currentBatch);
+        skip += pageSize;
+    }
+
+    console.log(`Holders: ${holders.length}`);
+    return holders.map(holder => holder['id']);
+}
+
+async function getRedstonePrices(tokenSymbols, chain) {
+    const dataServiceId = process.env.dataServiceId ?? `redstone-${chain}-prod`;
+    const url = `https://oracle-gateway-1.a.redstone.finance/data-packages/latest/${dataServiceId}`
+
+    const redstonePrices = await (await fetch(url)).json();
+
+    let result = {};
+    for (const symbol of tokenSymbols) {
+        try {
+            result[symbol] = getPricesWithLatestTimestamp(redstonePrices, symbol);
+        } catch {}
+    }
+    return result;
+}
+
+function getPricesWithLatestTimestamp(prices, symbol) {
+    if (symbol in prices) {
+        let symbolPriceObject = prices[symbol];
+        let currentNewestTimestampIndex = 0;
+        for (let i = 0; i < symbolPriceObject.length; i++) {
+            if (symbolPriceObject[i].timestampMilliseconds > symbolPriceObject[currentNewestTimestampIndex].timestampMilliseconds) {
+                currentNewestTimestampIndex = i;
+            }
+        }
+        return symbolPriceObject[currentNewestTimestampIndex].dataPoints[0].value;
+    } else {
+        throw new Error(`Symbol ${symbol} not found in the prices object`);
+    }
+}
+
+
 
 // checkFailedLiquidationTxsEvents(1720952696, 1721471096);
 // processSuccessfullLiquidationTx({hash: '0x365372c222960a9d56498f7537729caa6a9df39a7ef516c2d224bb70ced1e592'})
 // processLiquidationsRevenue('avalanche', 48829999, 48872209);
-// processLiquidationsRevenue('arbitrum', 239306466, 239656466);
-checkSPrimeTotalValueMinted('arbitrum');
+processLiquidationsRevenue('arbitrum', 227699100, 240352048, 0);
+// checkSPrimeTotalValueMinted('arbitrum');
