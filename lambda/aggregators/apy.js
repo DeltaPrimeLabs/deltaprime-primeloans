@@ -584,18 +584,17 @@ const beefyApyAggregator = async (event) => {
           timeout: 60000
         });
 
-        const apy = await page.evaluate(() => {      
-          const boxes = document.querySelectorAll("div.MuiBox-root");
-          let apy;
-          Array.from(boxes).map(box => {
-            const content = box.innerText.replace(/\s+/g, "").toLowerCase();
-            if (content.startsWith('apy')) {
-              apy = content.replace('apy', '').replace('%', '').trim();
-            }
-          });
+        const containers = await page.$$(".MuiContainer-root");
+        const divs = await containers[1].$$("div");
 
-          return apy;
-        });
+        let apy;
+        for (let i = 0; i < divs.length; i++) {
+          content = (await (await divs[i].getProperty("textContent")).jsonValue()).toLowerCase();
+          if (content.startsWith('apy')) {
+            apy = content.replace('apy', '').replace('%', '').trim();
+            break;
+          }
+        }
 
         console.log(poolData.symbol, apy);
 
