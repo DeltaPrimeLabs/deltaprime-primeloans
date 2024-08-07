@@ -15,6 +15,7 @@ contract RevenueDistributor is Ownable{
         address rewardToken;
         uint256 totalAllocation;
         mapping(address => uint256) allocations;
+        mapping(address => bool) claimed;
     }
 
     mapping(uint256 => Epoch) public epochs;
@@ -103,10 +104,12 @@ contract RevenueDistributor is Ownable{
 
     function _claim(uint256 epochId, address user) internal returns (uint256) {
         Epoch storage epoch = epochs[epochId];
-        uint256 allocation = epoch.allocations[user];
-        require(allocation > 0, "No allocation to claim");
+        require(!epoch.claimed[user], "Already claimed");
 
-        epoch.allocations[user] = 0;
+        uint256 allocation = epoch.allocations[user];
+        require(allocation > 0, "No allocation for this user");
+
+        epoch.claimed[user] = true;
         IERC20(epoch.rewardToken).safeTransfer(user, allocation);
 
         return allocation;
