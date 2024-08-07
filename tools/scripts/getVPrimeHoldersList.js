@@ -110,7 +110,14 @@ async function getVPrimeHolders(chain) {
             ],
             "stateMutability": "view",
             "type": "function"
-        }
+        },
+        {
+            "inputs": [],
+            "name": "getLastRecordedTotalSupply",
+            "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+            "stateMutability": "view",
+            "type": "function"
+        },
     ];
 
     let votingPowerSum = ethers.BigNumber.from(0);
@@ -149,7 +156,7 @@ async function getVPrimeHolders(chain) {
     }
 
     const vPrime = new ethers.Contract(vPrimeAddr, vPrimeAbi, getProvider(chain));
-    const totalVotingPower = await vPrime.balanceOf(vPrimeAddr);
+    const totalVotingPower = await vPrime.getLastRecordedTotalSupply();
 
     console.log(`Found ${holders.length} vPrime holders that needs update on ${chain} chain.`);
     console.log(`Sum of voting power: ${ethers.utils.formatEther(votingPowerSum)}, total voting power: ${ethers.utils.formatEther(totalVotingPower)}`);
