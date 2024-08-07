@@ -477,7 +477,7 @@ async function extractAssetsTransferredAndUsdValue(liquidationTxs, chain){
         liquidationTxsData[liquidationTx['hash']] = {
             totalUsdValue: liquidationTxData['totalUsdValue'],
             assetsTransferred: liquidationTxData['assetsTransferred'],
-            timestamp: liquidationTxData['timestampx'],
+            timestamp: liquidationTxData['timestamp'],
             blockNumber: liquidationTxData['blockNumber']
         };
         progressBar1.increment(1);
