@@ -78,8 +78,8 @@
           <div class="stat__title">Revenue received
             <InfoIcon class="stat__info-icon" :size="16" :tooltip="{ content: 'DeltaPrime fees distributed to your sPRIME. You are eligible for fees only when your sPRIME is active.'}"></InfoIcon>
           </div>
-          <div class="stat__value revenue">
-            <FlatButton :active="false">soon</FlatButton>
+          <div class="stat__value">
+            <div class="stat__value">{{ revenueReceived | usd }}</div>
           </div>
         </div>
         <div class="stat">
@@ -199,6 +199,7 @@ export default {
       activeBinIndex: null,
       poolPrice: null,
       balanceLimit: null,
+      revenueReceived: null
     };
   },
   mounted() {
@@ -207,10 +208,18 @@ export default {
     this.secondAsset = config.SPRIME_CONFIG[this.dex].default;
     this.sPrimeConfig = config.SPRIME_CONFIG[this.dex][this.secondAsset];
 
+    const sprimeStart = new Date();
+    sprimeStart.setDate(1);
+    sprimeStart.setMonth(6);
+    sprimeStart.setFullYear(2024);
+    const today = new Date();
+    const diffTime = today - sprimeStart;
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
     combineLatest([
       this.accountService.observeAccountLoaded(),
       this.providerService.observeProviderCreated()
-    ]).subscribe(() => {
+    ]).subscribe(([account, provider]) => {
       this.fetchSPrimeData();
     });
 
@@ -218,10 +227,13 @@ export default {
       this.sPrimeService.observeSPrimeValue(),
       this.sPrimeService.observeSPrimeBalance(),
       this.sPrimeService.observeSPrimeLockedBalance(),
-    ]).subscribe(([value, balance, locked]) => {
+      this.sPrimeService.observeRevenueReceived(),
+    ]).subscribe(([value, balance, locked, revenueReceived]) => {
       this.value = value;
       this.locked = locked;
       this.lockedInUd = value * locked / balance;
+      this.revenueReceived = revenueReceived;
+      this.ytdApr = revenueReceived / value / diffDays * 365;
     });
 
     this.sPrimeService.observeSPrimeValue().subscribe(value => {
@@ -759,10 +771,6 @@ export default {
           font-size: 18px;
           font-weight: 500;
           color: var(--s-prime-panel__secondary-text-color);
-
-          &.revenue {
-            width: 60px;
-          }
         }
 
         .stat__extra-info {
