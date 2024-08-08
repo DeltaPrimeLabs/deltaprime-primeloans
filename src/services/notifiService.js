@@ -200,66 +200,45 @@ export default class notifiService {
   - DAILY
   */
 
-  async createLiquidationAlerts({ client, walletAddress, network }) {
-    const eventType = {
-      type: 'fusion',
-      name: 'Liquidation Alerts',
-      // sourceType: 'DELTA_PRIME',
-      // filterType: 'LIQUIDATIONS',
-      sourceAddress: {
-        type: 'ref',
-        ref: 'walletAddress',
-      },
-      selectedUIType: 'TOGGLE',
-      fusionEventId: {
-        type: 'value',
-        value: config.fusionEventIds.liquidation
-      },
-      alertFrequency: 'DAILY',
-      // filterOptions: {},
-    };
+  async createLiquidationAlerts({ client, walletAddress, network, targetGroupId, alertType }) {
   
-    const result = await client.ensureAlert({
-      eventType,
-      inputs: {
-        walletAddress: walletAddress.toLowerCase()
-      },
+    const result = await client.ensureFusionAlerts({
+      alerts: [
+        {
+          filterOptions: JSON.stringify({
+            version: 1,
+            input: {},
+          }),
+          fusionEventId: config.fusionEventIds[alertType],
+          name: config.fusionEventIds[alertType],
+          subscriptionValue: walletAddress,
+          targetGroupId,
+        },
+      ],
     });
   
     return result;
   }
 
-  async createLoanHealthAlerts({ client, walletAddress, healthRatio, network }) {
-    const eventType = {
-      type: 'fusion',
-      name: 'Loan Health Alerts',
-      fusionEventId: {
-        type: 'value',
-        value: config.fusionEventIds.loanHealth
-      },
-      // sourceType: 'DELTA_PRIME',
-      // filterType: 'DELTA_PRIME_LENDING_HEALTH_EVENTS',
-      sourceAddress: {
-        type: 'ref',
-        ref: 'walletAddress',
-      },
-      selectedUIType: 'HEALTH_CHECK',
-      alertFrequency: 'DAILY',
-      checkRatios: [
-        { type: 'below', ratio: 1 },
-        { type: 'above', ratio: 0 }
-      ], // fallback number
-      healthCheckSubtitle: '', // mandatory but unused field
-      numberType: 'integer',
-    }
-
-    const result = await client.ensureAlert({
-      eventType,
-      inputs: {
-        walletAddress: walletAddress.toLowerCase(),
-        ['Loan Health Alerts__healthRatio']: healthRatio, // in decimal like 0.05 for 5%
-        ['Loan Health Alerts__healthThresholdDirection']: 'below',
-      },
+  async createLoanHealthAlerts({ client, walletAddress, healthRatio, network, targetGroupId }) {
+    const result = await client.ensureFusionAlerts({
+      alerts: [
+        {
+          filterOptions: JSON.stringify({
+            version: 1,
+            input: {
+              belowThreshold: {
+                thresholdDirection: "below",
+                threshold: healthRatio, // TODO: Double confirm if 0.1 or 10
+              },
+            },
+          }),
+          fusionEventId: config.fusionEventIds.loanHealth,
+          name: config.fusionEventIds.loanHealth,
+          subscriptionValue: walletAddress,
+          targetGroupId,
+        },
+      ],
     });
   
     return result;

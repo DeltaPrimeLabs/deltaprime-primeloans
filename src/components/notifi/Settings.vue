@@ -147,15 +147,15 @@ export default ({
 
     if (currentHealthRate.filterOptions && currentHealthRate.filterOptions.threshold) {
       switch (currentHealthRate.filterOptions.threshold) {
-        case 0.1: // 10%
+        case 10: // 10%
           this.selectedHealthRate = healthRates[0];
           break;
-        case 0.2: // 20%
+        case 20: // 20%
           this.selectedHealthRate = healthRates[1];
           break;
         default:
           this.selectedHealthRate = healthRates[2];
-          this.selectedHealthRate.value = parseFloat((currentHealthRate.filterOptions.threshold * 100).toFixed(2));
+          this.selectedHealthRate.value = parseFloat((currentHealthRate.filterOptions.threshold ).toFixed(2));
           break;
       };
     }
@@ -176,8 +176,9 @@ export default ({
       const payload = {
         client: this.client,
         walletAddress: this.account,
-        healthRatio: parseFloat((this.selectedHealthRate.value / 100.0).toFixed(4)),
-        network: window.chain
+        healthRatio: parseFloat((this.selectedHealthRate.value).toFixed(4)),
+        network: window.chain,
+        targetGroupId: this.targetGroups[0].id,
       };
 
       this.notifiService.handleCreateAlert(alert, payload);
@@ -197,7 +198,9 @@ export default ({
         case "liquidation":
           payload = {
             client: this.client,
-            walletAddress: this.account
+            walletAddress: this.account,
+            targetGroupId: this.targetGroups[0].id,
+            alertType: "liquidation",
           };
           break;
         case "loanHealth":
@@ -208,7 +211,8 @@ export default ({
           payload = {
             client: this.client,
             walletAddress: this.account,
-            healthRatio: this.selectedHealthRate.value / 100.0
+            healthRatio: this.selectedHealthRate.value,
+            targetGroupId: this.targetGroups[0].id,
           };
           break;
       }
