@@ -17,6 +17,7 @@ const beefyConfig = require("../config/beefyApy.json");
 const levelConfig = require("../config/levelApy.json");
 const gmxApyConfig = require("../config/gmxApy.json");
 const balancerApyConfig = require("../config/balancerApy.json");
+const pendleApyConfig = require("../config/pendleApy.json");
 
 const formatUnits = (val, decimals) => parseFloat(ethers.utils.formatUnits(val, decimals));
 
@@ -249,7 +250,7 @@ const vectorApyAggregator = async (event) => {
 
 const lpAndFarmApyAggregator = async (event) => {
   const VECTOR_APY_URL = "https://vector-api-git-overhaul-vectorfinance.vercel.app/api/v1/vtx/apr";
-  const YIELDYAK_APY_AVA_URL = "https://staging-api.yieldyak.com/apys";
+  const YIELDYAK_APY_AVA_URL = "https://staging-api.yieldyak.com/43114/apys";
   const YIELDYAK_APY_ARB_URL = "https://staging-api.yieldyak.com/42161/apys";
 
   // fetching lp APYs
@@ -288,7 +289,7 @@ const lpAndFarmApyAggregator = async (event) => {
   // fetching farm APYs
   const apys = {};
   const urls = [
-    VECTOR_APY_URL,
+    // VECTOR_APY_URL,
     YIELDYAK_APY_AVA_URL,
     YIELDYAK_APY_ARB_URL
   ];
@@ -296,33 +297,43 @@ const lpAndFarmApyAggregator = async (event) => {
   try {
     await Promise.all(urls.map(url =>
       fetch(url).then(resp => resp.json())
-    )).then(async ([vectorAprs, yieldYakAvaApys, yieldYakArbApys]) => {
+    )).then(async ([yieldYakAvaApys, yieldYakArbApys]) => {
 
-      if (!vectorAprs["Staking"]) console.log('APRs not available from Vector.');
-      const stakingAprs = vectorAprs['Staking'];
+      // if (!vectorAprs["Staking"]) {
+      //   console.log('APRs not available from Vector.');
+      // } else {
+      //   const stakingAprs = vectorAprs['Staking'];
 
-      // fetching Vector APYs
-      for (const [token, farm] of Object.entries(vectorApyConfig)) {
-        if (Object.keys(stakingAprs).includes(farm.vectorId)) {
-          // manual weekly APY
-          const aprTotal = parseFloat(stakingAprs[farm.vectorId].total);
-          const weeklyApy = (1 + aprTotal / 100 / 52) ** 52 - 1;
+      //   // fetching Vector APYs
+      //   for (const [token, farm] of Object.entries(vectorApyConfig)) {
+      //     if (Object.keys(stakingAprs).includes(farm.vectorId)) {
+      //       // manual weekly APY
+      //       const aprTotal = parseFloat(stakingAprs[farm.vectorId].total);
+      //       const weeklyApy = (1 + aprTotal / 100 / 52) ** 52 - 1;
 
-          if (token in apys) {
-            apys[token][farm.protocolIdentifier] = weeklyApy;
-          } else {
-            apys[token] = {
-              [farm.protocolIdentifier]: weeklyApy
-            };
-          }
-        }
-      }
+      //       if (token in apys) {
+      //         apys[token][farm.protocolIdentifier] = weeklyApy;
+      //       } else {
+      //         apys[token] = {
+      //           [farm.protocolIdentifier]: weeklyApy
+      //         };
+      //       }
+      //     }
+      //   }
+      // }
 
+      const { sAvaxApr, ggAvaxApr } = await fetchAssetApy();
       // fetching YieldYak APYs Avalanche
       for (const [token, farm] of Object.entries(yieldYakConfig.avalanche)) {
-        if (!yieldYakAvaApys[farm.stakingContractAddress]) continue
+        // if (!yieldYakAvaApys[farm.stakingContractAddress]) continue
 
-        const yieldApy = yieldYakAvaApys[farm.stakingContractAddress].apy / 100;
+        let yieldApy = yieldYakAvaApys[farm.stakingContractAddress] ? yieldYakAvaApys[farm.stakingContractAddress].apy / 100 : 0;
+
+        if (farm.add == 'sAvax') {
+          yieldApy += sAvaxApr ? sAvaxApr / 100 : 0;
+        } else if (farm.add == 'ggAvax') {
+          yieldApy += ggAvaxApr ? ggAvaxApr / 100 : 0;
+        }
 
         if (token in apys) {
           apys[token][farm.protocolIdentifier] = yieldApy;
@@ -335,9 +346,9 @@ const lpAndFarmApyAggregator = async (event) => {
 
       // fetching YieldYak APYs Arbitrum
       for (const [token, farm] of Object.entries(yieldYakConfig.arbitrum)) {
-        if (!yieldYakArbApys[farm.stakingContractAddress]) continue
+        // if (!yieldYakArbApys[farm.stakingContractAddress]) continue
 
-        const yieldApy = yieldYakArbApys[farm.stakingContractAddress].apy / 100;
+        const yieldApy = yieldYakArbApys[farm.stakingContractAddress] ? yieldYakArbApys[farm.stakingContractAddress].apy / 100 : 0;
 
         if (token in apys) {
           apys[token][farm.protocolIdentifier] = yieldApy;
@@ -431,30 +442,33 @@ const traderJoeApyAggregator = async (event) => {
 
   // fetch APYs for Avalanche and Arbitrum
   for (const [network, pools] of Object.entries(traderJoeConfig)) {
+    console.log(network);
+    const URL = `https://traderjoexyz.com/${network}/pool`;
+
+    await page.setViewport({
+      width: 1920,
+      height: 1080
+    });
+
+    await page.goto(URL, {
+      waitUntil: "networkidle0",
+      timeout: 60000
+    });
+
+    const marketRows = await page.$$(".chakra-table__container .chakra-table > tbody > tr");
+    const marketInnerTexts = await Promise.all(Array.from(marketRows).map(async market => {
+      return (await (await market.getProperty("textContent")).jsonValue()).replace(/\s+/g, "");
+    }));
+    await new Promise((resolve, reject) => setTimeout(resolve, 5000));
+
     for (const [pool, poolData] of Object.entries(pools)) {
-      // navigate pools page and wait till javascript fully load.
-      const URL = `https://traderjoexyz.com/${network}/pool/v21/`;
-
-      await page.setViewport({
-        width: 1920,
-        height: 1080
-      });
-
-      await page.goto(URL + `${poolData.assetX}/${poolData.assetY}/${poolData.binStep}`, {
-        waitUntil: "networkidle0",
-        timeout: 60000
-      });
-
       try {
-        const tabs = await page.$$(".chakra-tabs__tab");
-        console.log(pool, tabs.length);
-        tabs.length == 16 ? await tabs[6].click() : await tabs[5].click();
+        const matchId = marketInnerTexts.findIndex(innerText => innerText.startsWith(poolData.index));
+        const market = marketRows[matchId];
+        const marketColumns = await market.$$("td");
+        const marketApy = parseFloat((await (await marketColumns[6].getProperty("textContent")).jsonValue()).split('%')[0].trim());
 
-        await new Promise((resolve, reject) => setTimeout(resolve, 5000));
-
-        const stats = await page.$$(".chakra-stat__number");
-        const apy = (await (await stats[3].getProperty('textContent')).jsonValue()).replace('%', '');
-        console.log(pool, apy);
+        console.log(pool, marketApy);
 
         const params = {
           TableName: process.env.APY_TABLE,
@@ -463,17 +477,47 @@ const traderJoeApyAggregator = async (event) => {
           },
           AttributeUpdates: {
             lp_apy: {
-              Value: Number(apy) ? apy / 100 : null,
+              Value: marketApy ? marketApy / 100 : 0,
               Action: "PUT"
             }
           }
         };
         await dynamoDb.update(params).promise();
+
         await new Promise((resolve, reject) => setTimeout(resolve, 15000));
       } catch (error) {
         console.log(error);
       }
     }
+    // try {
+    //   const tabs = await page.$$(".chakra-tabs__tab");
+    //   console.log(pool, tabs.length);
+    //   tabs.length == 16 ? await tabs[6].click() : await tabs[5].click();
+
+    //   await new Promise((resolve, reject) => setTimeout(resolve, 5000));
+
+    //   const stats = await page.$$(".chakra-stat__number");
+    //   const apy = (await (await stats[3].getProperty('textContent')).jsonValue()).replace('%', '');
+    //   console.log(pool, apy);
+
+    //   const params = {
+    //     TableName: process.env.APY_TABLE,
+    //     Key: {
+    //       id: pool
+    //     },
+    //     AttributeUpdates: {
+    //       lp_apy: {
+    //         Value: apy == 'NaN' ? 0 : apy / 100,
+    //         Action: "PUT"
+    //       }
+    //     }
+    //   };
+    //   await dynamoDb.update(params).promise();
+
+    //   await new Promise((resolve, reject) => setTimeout(resolve, 15000));
+    // } catch (error) {
+    //   console.log(error);
+    // }
   }
 
   // await browser.close();
@@ -595,6 +639,11 @@ const gmxApyAggregator = async (event) => {
     timeout: 60000
   });
 
+  const notifications = await page.$$(".single-toast > header > svg");
+  for (let i = 0; i < notifications.length; i ++) {
+    await notifications[i].click();
+  }
+
   // fetch GM tokens' APYs on Arbitrum and Avalanche
   for (const [network, pools] of Object.entries(gmxApyConfig)) {
     if (network == "avalanche") {
@@ -612,16 +661,14 @@ const gmxApyAggregator = async (event) => {
 
       await dropdownBtns[1].click();
 
-      await page.goto(URL, {
-        waitUntil: "networkidle0",
-        timeout: 60000
-      });
+      await new Promise((resolve, reject) => setTimeout(resolve, 7000));
     }
 
     const marketRows = await page.$$(".token-table > tbody > tr");
     const marketInnerTexts = await Promise.all(Array.from(marketRows).map(async market => {
       return (await (await market.getProperty("textContent")).jsonValue()).replace(/\s+/g, "");
     }));
+    await new Promise((resolve, reject) => setTimeout(resolve, 5000));
 
     for (const [poolId, marketId] of Object.entries(pools)) {
       try {
@@ -676,31 +723,40 @@ const fetchAssetApy = async () => {
   console.log("yyAVAX APR: ", yyAvaxApr);
 
   // fetch staking APR of ggAVAX
-  const { page } = await newChrome();
-  const GGP_URL = "https://multisiglabs.grafana.net/public-dashboards/4d21b06344684b8ab05ddd2828898ec8?orgId=1";
+  // const { page } = await newChrome();
+  // const GGP_URL = "https://multisiglabs.grafana.net/public-dashboards/4d21b06344684b8ab05ddd2828898ec8?orgId=1";
 
-  await page.setViewport({
-    width: 1920,
-    height: 1080
-  });
+  // await page.setViewport({
+  //   width: 1920,
+  //   height: 1080
+  // });
 
-  await page.goto(GGP_URL, {
-    waitUntil: "networkidle0",
-    timeout: 60000
-  });
+  // await page.goto(GGP_URL, {
+  //   waitUntil: "networkidle0",
+  //   timeout: 60000
+  // });
 
-  const panels = await page.$$(".react-grid-layout > .react-grid-item");
-  const ggAvaxApr = parseFloat((await (await panels[2].getProperty("textContent")).jsonValue()).split('APR')[1].split('%')[0].trim());
+  // const panels = await page.$$(".react-grid-layout > .react-grid-item");
+  // const ggAvaxApr = parseFloat((await (await panels[2].getProperty("textContent")).jsonValue()).split('APR')[1].split('%')[0].trim());
+  const ggpApiRes = await (await fetch('https://api.gogopool.com/metrics/apy')).json();
+  const ggAvaxApr = ggpApiRes.total_apy;
   console.log("ggAVAX APR: ", ggAvaxApr);
+
+  // CAI API
+  const caiApiUrl = "https://api.phuture.finance/apy/43114/0x48f88A3fE843ccb0b5003e70B4192c1d7448bEf0";
+  const caiApiRes = await (await fetch(caiApiUrl)).json();
+  const caiApr = caiApiRes.data.apy;
+  console.log("CAI APR: ", caiApr);
 
   return {
     sAvaxApr,
     yyAvaxApr,
-    ggAvaxApr
+    ggAvaxApr,
+    caiApr
   }
 }
 
-const balanerApyAggregator = async (event) => {
+const balancerTvlAndApyAggregator = async (event) => {
   const { sAvaxApr, yyAvaxApr, ggAvaxApr } = await fetchAssetApy();
   const assetAprs = {
     "avalanche": {
@@ -739,6 +795,9 @@ const balanerApyAggregator = async (event) => {
         const pool = poolRows[matchId];
         const poolColumns = await pool.$$("td");
 
+        const vaultTvl = parseFloat((await (await poolColumns[2].getProperty("textContent")).jsonValue()).split('$')[1].replaceAll(',','').trim());
+        console.log(identifier, vaultTvl);
+
         const assetAppreciation = assetAprs[network][identifier] / 2;
         const vaultApy = parseFloat((await (await poolColumns[4].getProperty("textContent")).jsonValue()).split('%')[0].trim());
         const poolApy = ((1 + vaultApy / 100.0) * (1 + assetAppreciation / 100.0) - 1) * 100;
@@ -754,6 +813,9 @@ const balanerApyAggregator = async (event) => {
             lp_apy: {
               Value: Number(poolApy) ? poolApy / 100 : null,
               Action: "PUT"
+            },
+            tvl: {
+              Value: Number(vaultTvl) ? vaultTvl : null
             }
           }
         };
@@ -770,7 +832,7 @@ const balanerApyAggregator = async (event) => {
 }
 
 const assetStakingApyAggregator = async (event) => {
-  const { sAvaxApr, yyAvaxApr, ggAvaxApr } = await fetchAssetApy();
+  const { sAvaxApr, yyAvaxApr, ggAvaxApr, caiApr } = await fetchAssetApy();
 
   let params = {
     TableName: process.env.APY_TABLE,
@@ -814,6 +876,118 @@ const assetStakingApyAggregator = async (event) => {
   };
   await dynamoDb.update(params).promise();
 
+  params = {
+    TableName: process.env.APY_TABLE,
+    Key: {
+      id: "CAI"
+    },
+    AttributeUpdates: {
+      apy: {
+        Value: Number(caiApr) ? caiApr : null,
+        Action: "PUT"
+      }
+    }
+  };
+  await dynamoDb.update(params).promise();
+
+  return event;
+}
+
+const pendleTvlAndApyAggregator = async (event) => {
+  const { page } = await newChrome();
+
+  // navigate pools page and wait till javascript fully load.
+  const BASE_URL = "https://www.pendle.magpiexyz.io/stake";
+
+  await page.setViewport({
+    width: 1920,
+    height: 1080
+  });
+
+  await page.goto(BASE_URL, {
+    waitUntil: "networkidle0",
+    timeout: 60000
+  });
+
+  // accept tersm and close modal
+  let dialog = await page.$(".MuiDialog-paper");
+
+  let checkbox = await dialog.$(".MuiCheckbox-root");
+  await checkbox.click();
+
+  let acceptBtn = await dialog.$("button");
+  await acceptBtn.click();
+
+  // change network to Arbitrum
+  const tabs = await page.$$(".MuiSelect-select");
+
+  await tabs[2].click();
+
+  await page.mainFrame().waitForFunction(
+    selector => !!document.querySelector(selector).innerText,
+    {},
+    "ul.MuiMenu-list"
+  )
+
+  const dropdownBtns = await page.$$("ul.MuiMenu-list > li");
+
+  await dropdownBtns[2].click();
+
+  // wait for load
+  await page.goto(BASE_URL, {
+    waitUntil: "networkidle0",
+    timeout: 60000
+  });
+
+  const poolRows = await page.$$('.MuiAccordion-root');
+  const poolInnerTexts = await Promise.all(Array.from(poolRows).map(async pool => {
+    return (await (await pool.getProperty("textContent")).jsonValue()).toLowerCase();
+  }));
+
+  for (const [identifier, poolData] of Object.entries(pendleApyConfig)) {
+    try {
+      // await page.goto(`${BASE_URL}/${poolData.marketAddress}`, {
+      //   waitUntil: "networkidle0",
+      //   timeout: 60000
+      // });
+      // await new Promise((resolve, reject) => setTimeout(resolve, 5000));
+
+      // const pool = await page.$('.MuiAccordion-root.Mui-expanded');
+      // const poolColumns = await pool.$$("div.MuiAccordionSummary-root > div.MuiAccordionSummary-content > div > div >div");
+      const rowId = poolInnerTexts.findIndex(innerText => innerText.includes(poolData.key) && innerText.includes(poolData.maturity));
+      const pool = poolRows[rowId];
+      const poolColumns = await pool.$$("div.MuiAccordionSummary-root > div.MuiAccordionSummary-content > div > div >div");
+
+      const poolApy = parseFloat((await (await poolColumns[1].getProperty("textContent")).jsonValue()).split('%')[0].trim());
+
+      const tvlRaw = (await (await poolColumns[3].getProperty("textContent")).jsonValue()).split('$')[1].trim();
+      const tvlUnit = tvlRaw.charAt(tvlRaw.length - 1) === "K" ? 1000 : 1000000;
+      const poolTvl = tvlUnit * parseFloat(tvlRaw.slice(0, -1));
+
+      console.log(identifier, poolApy, poolTvl);
+      const params = {
+        TableName: process.env.APY_TABLE,
+        Key: {
+          id: identifier
+        },
+        AttributeUpdates: {
+          lp_apy: {
+            Value: Number(poolApy) ? poolApy / 100 : null,
+            Action: "PUT"
+          },
+          tvl: {
+            Value: Number(poolTvl) ? poolTvl : null
+          }
+        }
+      };
+      await dynamoDb.update(params).promise();
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  console.log('fetching done.');
+
   return event;
 }
 
@@ -827,6 +1001,7 @@ module.exports = {
   sushiApyAggregator,
   beefyApyAggregator,
   gmxApyAggregator,
-  balanerApyAggregator,
-  assetStakingApyAggregator
+  balancerTvlAndApyAggregator,
+  assetStakingApyAggregator,
+  pendleTvlAndApyAggregator
 }

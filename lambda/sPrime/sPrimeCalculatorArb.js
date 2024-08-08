@@ -10,7 +10,8 @@ const {
   getHistoricalTokenPrice,
   getSymbolFromPoolAddress,
   dynamoDb,
-  arbitrumProvider
+  arbitrumProvider,
+  fetchAllDataFromDB
 } = require('../utils/helpers');
 
 const tvlThreshold = 4000000;
@@ -32,9 +33,9 @@ const getLatestSprimes = async () => {
     TableName: networkConfig.database,
   };
 
-  const res = await dynamoDb.scan(params).promise();
+  const res = await fetchAllDataFromDB(params, true);
 
-  return res.Items;
+  return res;
 };
 
 const sPrimeCalculator = async (event) => {  

@@ -180,7 +180,7 @@ contract VestingDistributor {
 
     function updateWithdrawn(address account, uint256 amount) public onlyPool {
         withdrawn[account] += amount;
-        if (withdrawn[account] > locked[account]) {
+        if (withdrawn[account] > availableToWithdraw(account)) {
             revert WithdrawMoreThanLocked();
         }
         totalLockedMultiplied -= amount * multiplier[account] / 1e18;

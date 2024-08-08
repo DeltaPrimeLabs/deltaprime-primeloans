@@ -25,7 +25,7 @@
         <div v-if="!embedded" class="logo-wrapper">
           <img class="logo" :src="logo ? `src/assets/logo/${logo}` : logoSrc(symbol)"/>
           <img class="logo secondary" v-if="symbolSecondary" :src="logoSrc(symbolSecondary)"/>
-          <span v-if="!isMobile" class="symbol">{{ (asset && asset.short) ? asset.short : symbol }}<br>{{ symbolSecondary ? symbolSecondary : '' }}</span>
+          <span v-if="!isMobile" class="symbol">{{forceAssetName ? forceAssetName : (asset && asset.short) ? asset.short : symbol }}<br>{{ symbolSecondary ? symbolSecondary : '' }}</span>
         </div>
       </div>
     </div>
@@ -71,6 +71,7 @@ export default {
     symbol: {type: String, default: 'AVAX'},
     symbolSecondary: {type: String, default: null},
     logo: {default: null},
+    forceAssetName: {default: null},
     flexDirection: {type: String, default: 'column'},
     validators: {
       type: Array, default: () => []

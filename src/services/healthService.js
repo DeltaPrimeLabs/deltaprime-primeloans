@@ -28,7 +28,7 @@ export default class HealthService {
     levelAssets, levelBalances,
     gmxV2Assets, gmxV2Balances,
     penpieLpAssets, penpieLpBalances,
-    wombatLpAssets, wombatLpBalances,
+    wombatLpAssets, wombatLpBalances, wombatYYFarmsBalances,
     traderJoeV2LpAssets,
     stakeStoreFarms
   ) {
@@ -139,6 +139,18 @@ export default class HealthService {
             borrowed: 0,
             debtCoverage: data.debtCoverage,
             symbol: symbol
+          });
+        }
+      }
+
+      if (wombatYYFarmsBalances) {
+        for (const farm of config.WOMBAT_YY_FARMS) {
+          tokens.push({
+            price: wombatLpAssets[farm.lpAssetToken].price ? wombatLpAssets[farm.lpAssetToken].price : 0,
+            balance: parseFloat(wombatYYFarmsBalances[farm.apyKey]),
+            borrowed: 0,
+            debtCoverage: farm.debtCoverage,
+            symbol: farm.apyKey
           });
         }
       }

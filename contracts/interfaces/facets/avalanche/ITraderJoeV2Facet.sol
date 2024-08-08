@@ -1,7 +1,6 @@
 pragma solidity ^0.8.17;
 
 import "../../joe-v2/ILBRouter.sol";
-import "../../joe-v2/IRewarder.sol";
 
 interface ITraderJoeV2Facet {
 
@@ -25,12 +24,10 @@ interface ITraderJoeV2Facet {
 
     function withdrawLiquidityTraderJoeV2(ILBPair pair, uint256[] memory ids, uint256[] memory amounts) external;
 
-    function addLiquidityTraderJoeV2(ILBRouter.LiquidityParameters memory liquidityParameters) external;
+    function addLiquidityTraderJoeV2(ILBRouter traderJoeV2Router, ILBRouter.LiquidityParameters memory liquidityParameters) external;
 
-    function removeLiquidityTraderJoeV2(RemoveLiquidityParameters memory parameters) external;
+    function removeLiquidityTraderJoeV2(ILBRouter traderJoeV2Router, RemoveLiquidityParameters memory parameters) external;
 
     function getOwnedTraderJoeV2Bins() external view returns (TraderJoeV2Bin[] memory result);
-
-    function claimReward(IRewarder.MerkleEntry[] calldata merkleEntries) external;
 
 }

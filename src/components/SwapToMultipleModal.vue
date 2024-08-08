@@ -11,9 +11,15 @@
       </div>
 
 
-      <div class="modal-top-desc" v-if="info">
+      <div class="modal-top-info-bar" v-if="info">
         <div>
-          <b v-html="info"></b>
+          <div v-html="info"></div>
+        </div>
+      </div>
+
+      <div class="modal-top-info-bar" v-if="additionalInfo">
+        <div>
+          <div v-html="additionalInfo"></div>
         </div>
       </div>
 
@@ -65,8 +71,8 @@
           <span class="deviation-value">{{ fee | percent }}</span>
           <div class="info__icon__wrapper">
             <InfoIcon
-                class="info__icon"
-                :tooltip="{content: 'The fee of underlying protocol.', placement: 'top', classes: 'info-tooltip'}"
+              class="info__icon"
+              :tooltip="{content: 'The fee of underlying protocol.', placement: 'top', classes: 'info-tooltip'}"
             ></InfoIcon>
           </div>
         </div>
@@ -113,16 +119,16 @@
               </div>
             </div>
 
-<!--            <div class="summary__divider divider&#45;&#45;long light"></div>-->
+            <!--            <div class="summary__divider divider&#45;&#45;long light"></div>-->
 
-<!--            <div class="summary__value__pair">-->
-<!--              <div class="summary__label">-->
-<!--                {{ targetName }} balance:-->
-<!--              </div>-->
-<!--              <div class="summary__value">-->
-<!--                {{ formatTokenBalance(Number(assetBalances[targetAsset]) + Number(targetAssetAmount)) }}-->
-<!--              </div>-->
-<!--            </div>-->
+            <!--            <div class="summary__value__pair">-->
+            <!--              <div class="summary__label">-->
+            <!--                {{ targetName }} balance:-->
+            <!--              </div>-->
+            <!--              <div class="summary__value">-->
+            <!--                {{ formatTokenBalance(Number(assetBalances[targetAsset]) + Number(targetAssetAmount)) }}-->
+            <!--              </div>-->
+            <!--            </div>-->
           </div>
         </TransactionResultSummaryBeta>
       </div>
@@ -150,11 +156,11 @@ import {calculateHealth, formatUnits, fromWei, parseUnits} from '../utils/calcul
 import {BigNumber} from 'ethers';
 import SimpleInput from './SimpleInput';
 import TOKEN_ADDRESSES from '../../common/addresses/avalanche/token_addresses.json';
-import DeltaIcon from "./DeltaIcon.vue";
-import InfoIcon from "./InfoIcon.vue";
+import DeltaIcon from './DeltaIcon.vue';
+import InfoIcon from './InfoIcon.vue';
 import Toggle from './Toggle.vue';
-import AssetsTableRow from "./AssetsTableRow.vue";
-import {log} from "util";
+import AssetsTableRow from './AssetsTableRow.vue';
+import {log} from 'util';
 
 const ethers = require('ethers');
 
@@ -191,6 +197,7 @@ export default {
       targetAssetAmounts: [],
       fee: 0,
       info: null,
+      additionalInfo: null,
       userSlippage: 0,
       queryMethod: null,
       feeMethods: null,
@@ -225,13 +232,14 @@ export default {
       balancerLpBalances: {},
       wombatLpAssets: {},
       wombatLpBalances: {},
+      wombatYYFarmsBalances: {},
       transactionOngoing: false,
       debt: 0,
       thresholdWeightedValue: 0,
       path: null,
       adapters: null,
       maxButtonUsed: false,
-      valueAsset: "USDC",
+      valueAsset: 'USDC',
       dexOptions: null,
       swapDex: null,
       title: 'Swap',
@@ -247,7 +255,7 @@ export default {
       return this.sourceAssetBalance;
     },
     sourceName() {
-      return (this.sourceAssetData && this.sourceAssetData.short) ? this.sourceAssetData.short: this.sourceAsset;
+      return (this.sourceAssetData && this.sourceAssetData.short) ? this.sourceAssetData.short : this.sourceAsset;
     }
   },
 
@@ -301,22 +309,23 @@ export default {
       let amountInWei = parseUnits(this.sourceAssetAmount.toFixed(decimals), BigNumber.from(decimals));
 
       const queryResponse = await this.query(this.sourceAsset, this.targetAsset, amountInWei);
+      console.log('queryResponse', queryResponse);
 
       if (this.feeMethods && this.feeMethods[this.swapDex]) {
         this.fee = fromWei(await this.feeMethods[this.swapDex](this.sourceAsset, this.targetAssets[this.swapDex], amountInWei), this.sourceAssetData.decimals);
       }
 
       if (queryResponse) {
-        let estimatedReceived = queryResponse.map((amount, i) =>
-        {
-          return parseFloat(formatUnits(amount, this.targetConfig(i).decimals))
-        }
+        let estimatedReceived = queryResponse.map((amount, i) => {
+            console.log(this.targetConfig(i));
+            return parseFloat(formatUnits(amount, this.targetConfig(i).decimals))
+          }
         );
 
         if (this.feeMethods && this.feeMethods[this.swapDex]) {
 
           estimatedReceived.forEach(
-              received => received - this.fee * received
+            received => received - this.fee * received
           )
         }
 
@@ -332,13 +341,13 @@ export default {
 
     async updateAmountsWithSlippage(estimatedReceivedTokens) {
       this.targetAssets[this.swapDex].forEach(
-          async (asset, index) => {
-            this.targetAssetAmounts[index] = estimatedReceivedTokens[index] * (1 - (this.userSlippage / 100 + (this.fee ? this.fee : 0)));
+        async (asset, index) => {
+          this.targetAssetAmounts[index] = estimatedReceivedTokens[index] * (1 - (this.userSlippage / 100 + (this.fee ? this.fee : 0)));
 
-            if (this.$refs[`targetInput-${index}`] && this.$refs[`targetInput-${index}`][0]) {
-              await (this.$refs[`targetInput-${index}`][0]).setCurrencyInputValue(this.targetAssetAmounts[index]);
-            }
+          if (this.$refs[`targetInput-${index}`] && this.$refs[`targetInput-${index}`][0]) {
+            await (this.$refs[`targetInput-${index}`][0]).setCurrencyInputValue(this.targetAssetAmounts[index]);
           }
+        }
       );
 
       this.setSlippageWarning();
@@ -405,11 +414,11 @@ export default {
             await this.chooseBestTrade();
           } else {
             this.targetAssets[this.swapDex].forEach(
-                async (target, index) => {
-                  this.targetAssetAmounts[index] = 0;
-                  this.estimatedReceivedTokens[index] = 0;
-                  await this.$refs[`targetInput-${index}`].setCurrencyInputValue(0);
-                }
+              async (target, index) => {
+                this.targetAssetAmounts[index] = 0;
+                this.estimatedReceivedTokens[index] = 0;
+                await this.$refs[`targetInput-${index}`].setCurrencyInputValue(0);
+              }
             )
           }
         }
@@ -531,7 +540,12 @@ export default {
         if (this.balancerLpBalances) {
           let balance = parseFloat(this.balancerLpBalances[symbol]);
 
-          tokens.push({price: data.price, balance: balance ? balance : 0, borrowed: 0, debtCoverage: data.debtCoverage});
+          tokens.push({
+            price: data.price,
+            balance: balance ? balance : 0,
+            borrowed: 0,
+            debtCoverage: data.debtCoverage
+          });
         }
       }
 
@@ -572,6 +586,22 @@ export default {
               balance: balance ? balance : 0,
               borrowed: 0,
               debtCoverage: data.debtCoverage
+            });
+          }
+        }
+      }
+
+      if (config.WOMBAT_YY_FARMS) {
+        for (const farm of config.WOMBAT_YY_FARMS) {
+          if (this.wombatLpAssets && this.wombatYYFarmsBalances) {
+            const symbol = farm.apyKey
+            let balance = parseFloat(this.wombatYYFarmsBalances[symbol]);
+
+            tokens.push({
+              price: this.wombatLpAssets[farm.lpAssetToken].price,
+              balance: balance ? balance : 0,
+              borrowed: 0,
+              debtCoverage: farm.debtCoverage
             });
           }
         }

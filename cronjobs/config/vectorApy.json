@@ -1,0 +1,14 @@
+{
+  "AVAX": {
+    "protocolIdentifier": "VF_AVAX_SAVAX",
+    "vectorId": "AVAX_SAVAX"
+  },
+  "sAVAX": {
+    "protocolIdentifier": "VF_SAVAX_MAIN",
+    "vectorId": "SAVAX"
+  },
+  "USDC": {
+    "protocolIdentifier": "VF_USDC_MAIN",
+    "vectorId": "USDC"
+  }
+}

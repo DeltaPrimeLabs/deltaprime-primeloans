@@ -31,17 +31,20 @@ provider:
     LOAN_AVA_TABLE: loans-ava-${opt:stage, "dev"}
     LOAN_ARB_TABLE: loans-arb-${opt:stage, "dev"}
     APY_TABLE: apys-${opt:stage, "dev"}
-    GMX_INCENTIVES_AVA_TABLE: gmx-incentives-ava-${opt:stage, "dev"}
+    STATISTICS_TABLE: statistics-${opt:stage, "dev"}
+    GMX_INCENTIVES_RETROACTIVE_AVA_TABLE: gmx-incentives-retroactive-ava
     GMX_INCENTIVES_ARB_TABLE: gmx-incentives-arb-${opt:stage, "dev"}
+    GGP_INCENTIVES_AVA_TABLE: ggp-incentives-ava-${opt:stage, "dev"}
+    ARBITRUM_INCENTIVES_ARB_TABLE: arbitrum-incentives-arb-${opt:stage, "dev"}
+    POOL_ARBITRUM_INCENTIVES_ARB_TABLE: pool-arbitrum-incentives-arb-${opt:stage, "dev"}
+    LTIP_LOAN_LEADERBOARD_ARB_TABLE: ltip-loan-leaderboard-arb-${opt:stage, "dev"}
+    LTIP_LOAN_LEADERBOARD_LASTDIST_ARB_TABLE: ltip-loan-leaderboard-lastdist-arb-${opt:stage, "dev"}
     GM_OPEN_INTEREST_TABLE: gm-open-interest-${opt:stage, "dev"}
     REFERRAL_TABLE: referral-${opt:stage, "dev"}
+    TERMS_VERSION_TABLE: terms-version-${opt:stage, "dev"}
+    LOAN_STATS_AVA_TABLE: loan-stats-ava-${opt:stage, "dev"}
+    LOAN_STATS_ARB_TABLE: loan-stats-arb-${opt:stage, "dev"}
     TJ_API_KEY: ${file(./.secrets/traderJoe.json):apiKey}
-    FUNC_RPC_AVA: ${file(./.secrets/funcRpc.json):avalanche}
-    FUNC_RPC_ARB: ${file(./.secrets/funcRpc.json):arbitrum}
-    EXT_RPC_AVA: ${file(./.secrets/extRpc.json):avalanche}
-    EXT_RPC_ARB: ${file(./.secrets/extRpc.json):arbitrum}
-    AUTH0_AUDIENCE: ${file(./.secrets/auth0.json):audience}
-    AUTH0_ISSUER: ${file(./.secrets/auth0.json):issuer}
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -51,14 +54,14 @@ provider:
         - dynamodb:PutItem
         - dynamodb:UpdateItem
       Resource: "*"
-  httpApi:
-    authorizers:
-      auth0Authorizer:
-        type: jwt
-        identitySource: $request.header.Authorization
-        issuerUrl: ${self:provider.environment.AUTH0_ISSUER}
-        audience:
-          - ${self:provider.environment.AUTH0_AUDIENCE}
+  # httpApi:
+  #   authorizers:
+  #     auth0Authorizer:
+  #       type: jwt
+  #       identitySource: $request.header.Authorization
+  #       issuerUrl: ${self:provider.environment.AUTH0_ISSUER}
+  #       audience:
+  #         - ${self:provider.environment.AUTH0_AUDIENCE}
   # you can add statements to the Lambda function's IAM Role here
 
 # you can define service wide environment variables here
@@ -69,14 +72,14 @@ functions:
   # sPrimeCalculatorAva:
   #   handler: sPrime/sPrimeCalculatorAva.handler
   #   memorySize: 1024
-  #   timeout: 600
+  #   timeout: 900
   #   description: Calculate sPRIME Value for depositors on Avalanche.
   #   events:
   #     - schedule: rate(5 minutes)
   # sPrimeCalculatorArb:
   #   handler: sPrime/sPrimeCalculatorArb.handler
   #   memorySize: 1024
-  #   timeout: 600
+  #   timeout: 900
   #   description: Calculate sPRIME Value for depositors on Arbitrum.
   #   events:
   #     - schedule: rate(5 minutes)
@@ -89,9 +92,9 @@ functions:
           method: get
           path: /sprime/{id}
   levelTvlAndApyAggregator:
-    handler: aggregators/apy.levelTvlAggregator
+    handler: aggregators/apy.levelTvlAndApyAggregator
     memorySize: 512
-    timeout: 600
+    timeout: 900
     description: Fetch TVL from Level Finance.
     events:
       - schedule: rate(5 minutes)
@@ -134,7 +137,7 @@ functions:
   traderJoeApyAggregator:
     handler: aggregators/apy.traderJoeApyAggregator
     memorySize: 2048
-    timeout: 300
+    timeout: 900
     description: Fetch APYs from TraderJoe website.
     events:
       - schedule: rate(15 minutes)
@@ -159,8 +162,8 @@ functions:
     description: Fetch GM token APYs from GMX website.
     events:
       - schedule: rate(5 minutes)
-  balanerApyAggregator:
-    handler: aggregators/apy.balanerApyAggregator
+  balancerTvlAndApyAggregator:
+    handler: aggregators/apy.balancerTvlAndApyAggregator
     memorySize: 2048
     timeout: 300
     description: Fetch pool APYs from Balancer website.
@@ -180,20 +183,35 @@ functions:
     description: fetch Open Interests of GM pool.
     events:
       - schedule: rate(3 hours)
-  # loanAggregatorAva:
-  #   handler: aggregators/loan.loanAggregatorAva
-  #   memorySize: 1024
-  #   timeout: 600
-  #   description: upload loan addresses on Avalanche
-  #   events:
-  #     - schedule: rate(5 minutes)
-  # loanAggregatorArb:
-  #   handler: aggregators/loan.loanAggregatorArb
-  #   memorySize: 1024
-  #   timeout: 600
-  #   description: upload loan addresses on Arbitrum
-  #   events:
-  #     - schedule: rate(5 minutes)
+  pendleTvlAndApyAggregator:
+    handler: aggregators/apy.pendleTvlAndApyAggregator
+    memorySize: 2048
+    timeout: 300
+    description: fetch TVLs and APYs of Pendle pools.
+    events:
+      - schedule: rate(5 minutes)
+  wombatApyAggregator:
+    handler: aggregators/apy.wombatApyAggregator
+    memorySize: 2048
+    timeout: 300
+    description: fetch APYs of Wombat pools.
+    events:
+      - schedule: rate(5 minutes)
+  gmxIncentivesCalculatorArb:
+    handler: gmxIncentives/gmxIncentivesCalculatorArb.handler
+    memorySize: 1024
+    timeout: 900
+    description: Calculate incentives for loans on Arbitrum.
+    events:
+      - schedule: rate(10 minutes)
+  assetApyApi:
+    handler: apis/apy.assetApyApi
+    memorySize: 512
+    description: Fetch APYS of all assets and farms
+    events:
+      - httpApi:
+          method: get
+          path: /apys
   getRewardsInfoApi:
     handler: apis/traderJoe.getRewardsInfoApi
     memorySize: 512
@@ -202,28 +220,85 @@ functions:
       - httpApi:
           method: get
           path: /traderjoe/rewards/claimable
-  gmxIncentivesCalculatorAva:
-    handler: gmxIncentives/gmxIncentivesCalculatorAva.handler
-    memorySize: 1024
-    timeout: 600
-    description: Calculate incentives for loans on Avalanche.
-    events:
-      - schedule: rate(10 minutes)
-  gmxIncentivesCalculatorArb:
-    handler: gmxIncentives/gmxIncentivesCalculatorArb.handler
-    memorySize: 1024
-    timeout: 600
-    description: Calculate incentives for loans on Arbitrum.
-    events:
-      - schedule: rate(10 minutes)
   getGmxIncentivesApi:
     handler: apis/gmxIncentives.getGmxIncentivesApi
-    memorySize: 512
+    memorySize: 2048
+    timeout: 20
     description: Fetch GMX incentives values for a loan on Avalanche and Arbitrum
     events:
       - httpApi:
           method: get
           path: /gmx-incentives/{id}
+  getGmxIncentivesNewApi:
+    handler: apis/gmxIncentives.getGmxIncentivesNewApi
+    memorySize: 2048
+    timeout: 20
+    description: Fetch new retroactive GMX incentives values from a week ago to certain timestamp for a loan on Avalanche
+    events:
+      - httpApi:
+          method: get
+          path: /gmx-incentives-new/{id}
+  getLoanArbitrumIncentivesForApi:
+    handler: apis/arbitrumIncentives.getLoanArbitrumIncentivesForApi
+    memorySize: 2048
+    timeout: 20
+    description: Fetch LTIP PA ARB incentives accumulated for specific loans on Arbitrum
+    events:
+      - httpApi:
+          method: get
+          path: /ltip-loan-for
+  getLoanArbitrumIncentivesLeaderboardApi:
+    handler: apis/arbitrumIncentives.getLoanArbitrumIncentivesLeaderboardApi
+    memorySize: 2048
+    timeout: 29
+    description: Fetch LTIP PA top loans for leaderboard on Arbitrum
+    events:
+      - httpApi:
+          method: get
+          path: /ltip-loan-leaderboard
+  getPoolArbitrumIncentivesForApi:
+    handler: apis/arbitrumIncentives.getPoolArbitrumIncentivesForApi
+    memorySize: 2048
+    timeout: 20
+    description: Fetch LTIP Pool ARB incentives accumulated for specific pool depositors on Arbitrum
+    events:
+      - httpApi:
+          method: get
+          path: /ltip-pool-for
+  getPoolArbitrumIncentivesLeaderboardApi:
+    handler: apis/arbitrumIncentives.getPoolArbitrumIncentivesLeaderboardApi
+    memorySize: 2048
+    timeout: 20
+    description: Fetch LTIP Pool top loans for leaderboard on Arbitrum
+    events:
+      - httpApi:
+          method: get
+          path: /ltip-pool-leaderboard
+  getLtipBoostApyApi:
+    handler: apis/arbitrumIncentives.getLtipBoostApyApi
+    memorySize: 512
+    description: Fetch LTIP Boost APY and Total Eligible TVL on Arbitrum
+    events:
+      - httpApi:
+          method: get
+          path: /ltip-boost-apy
+  getLtipPoolBoostApyApi:
+    handler: apis/arbitrumIncentives.getLtipPoolBoostApyApi
+    memorySize: 512
+    description: Fetch LTIP Pool Boost APYs on Arbitrum
+    events:
+      - httpApi:
+          method: get
+          path: /ltip-pool-boost-apy
+  getLtipPoolTotalIncentivesApi:
+    handler: apis/arbitrumIncentives.getLtipPoolTotalIncentivesApi
+    memorySize: 2048
+    timeout: 20
+    description: Fetch total ARB incentives for LTIP PAs on Arbitrum
+    events:
+      - httpApi:
+          method: get
+          path: /arbitrum-grant-total
   getGmBoostApyApi:
     handler: apis/gmxIncentives.getGmBoostApyApi
     memorySize: 512
@@ -234,12 +309,30 @@ functions:
           path: /gm-boost-apy
   getGmOpenInterestsApi:
     handler: apis/gmOpenInterests.getGmOpenInterestsApi
-    memorySize: 512
+    memorySize: 2048
+    timeout: 20
     description: Fetch Open Interest of GM pools
     events:
       - httpApi:
           method: get
           path: /gm-open-interests
+  getGgpIncentivesForApi:
+    handler: apis/ggpIncentives.getGgpIncentivesForApi
+    memorySize: 1024
+    timeout: 20
+    description: Fetch GGP incentives on Avalanche
+    events:
+      - httpApi:
+          method: get
+          path: /ggp-incentives-for
+  getGgpBoostApyApi:
+    handler: apis/ggpIncentives.getGgpBoostApyApi
+    memorySize: 512
+    description: Fetch GGP Boost APY on Avalanche
+    events:
+      - httpApi:
+          method: get
+          path: /ggp-boost-apy
   getAccountByReferralApi:
     handler: apis/referral.getAccountByReferralApi
     memorySize: 512
@@ -256,8 +349,30 @@ functions:
       - httpApi:
           method: POST
           path: /referral/create
-          # authorizer:
-          #   name: auth0Authorizer
+  getTermsInfoApi:
+    handler: apis/termsVersion.getTermsInfoApi
+    memorySize: 512
+    description: Get Terms verison info by PA address
+    events:
+      - httpApi:
+          method: get
+          path: /terms-version/{walletAddress}
+  saveTermsInfoApi:
+    handler: apis/termsVersion.saveTermsInfoApi
+    memorySize: 512
+    description: Save Terms version info with PA address and wallet
+    events:
+      - httpApi:
+          method: POST
+          path: /terms-version/create
+  getLoanStatsApi:
+    handler: apis/loanStats.getLoanStatsApi
+    memorySize: 512
+    description: Get Loan stats for the period
+    events:
+      - httpApi:
+          method: get
+          path: /loan-stats
 
 resources:
   Resources:
@@ -293,22 +408,6 @@ resources:
         StreamSpecification:
           StreamViewType: "NEW_AND_OLD_IMAGES"
         TableName: ${self:provider.environment.SPRIME_ARB_TABLE}
-    gmxIncentivesAvaTable:
-      Type: AWS::DynamoDB::Table
-      DeletionPolicy: Retain
-      Properties:
-        AttributeDefinitions:
-          -
-            AttributeName: "id"
-            AttributeType: "S"
-        KeySchema:
-          -
-            AttributeName: "id"
-            KeyType: "HASH"
-        BillingMode: PAY_PER_REQUEST
-        StreamSpecification:
-          StreamViewType: "NEW_AND_OLD_IMAGES"
-        TableName: ${self:provider.environment.GMX_INCENTIVES_AVA_TABLE}
     gmxIncentivesArbTable:
       Type: AWS::DynamoDB::Table
       DeletionPolicy: Retain
@@ -341,6 +440,22 @@ resources:
         StreamSpecification:
           StreamViewType: "NEW_AND_OLD_IMAGES"
         TableName: ${self:provider.environment.APY_TABLE}
+    StatisticsTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: "id"
+            AttributeType: "S"
+        KeySchema:
+          -
+            AttributeName: "id"
+            KeyType: "HASH"
+        BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: "NEW_AND_OLD_IMAGES"
+        TableName: ${self:provider.environment.STATISTICS_TABLE}
     gmOpenInterestTable:
       Type: AWS::DynamoDB::Table
       DeletionPolicy: Retain
@@ -373,6 +488,126 @@ resources:
         StreamSpecification:
           StreamViewType: "NEW_AND_OLD_IMAGES"
         TableName: ${self:provider.environment.REFERRAL_TABLE}
+    termsVersionTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: "walletAddress"
+            AttributeType: "S"
+          -
+            AttributeName: "type"
+            AttributeType: "S"
+        KeySchema:
+          -
+            AttributeName: "walletAddress"
+            KeyType: "HASH"
+          -
+            AttributeName: "type"
+            KeyType: "RANGE"
+        BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: "NEW_AND_OLD_IMAGES"
+        TableName: ${self:provider.environment.TERMS_VERSION_TABLE}
+    arbitrumIncentivesArbTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: "id"
+            AttributeType: "S"
+          # -
+          #   AttributeName: "timestamp"
+          #   AttributeType: "N"
+        KeySchema:
+          -
+            AttributeName: "id"
+            KeyType: "HASH"
+          # -
+          #   AttributeName: "timestamp"
+          #   KeyType: "RANGE"
+        BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: "NEW_AND_OLD_IMAGES"
+        TableName: ${self:provider.environment.ARBITRUM_INCENTIVES_ARB_TABLE}
+    # poolArbitrumIncentivesArbTable:
+    #   Type: AWS::DynamoDB::Table
+    #   DeletionPolicy: Retain
+    #   Properties:
+    #     AttributeDefinitions:
+    #       -
+    #         AttributeName: "id"
+    #         AttributeType: "S"
+    #       -
+    #         AttributeName: "timestamp"
+    #         AttributeType: "N"
+    #     KeySchema:
+    #       -
+    #         AttributeName: "id"
+    #         KeyType: "HASH"
+    #       -
+    #         AttributeName: "timestamp"
+    #         KeyType: "RANGE"
+    #     BillingMode: PAY_PER_REQUEST
+    #     StreamSpecification:
+    #       StreamViewType: "NEW_AND_OLD_IMAGES"
+    #     TableName: ${self:provider.environment.POOL_ARBITRUM_INCENTIVES_ARB_TABLE}
+    ltipLoanLeaderboardArbTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: "id"
+            AttributeType: "S"
+        KeySchema:
+          -
+            AttributeName: "id"
+            KeyType: "HASH"
+        BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: "NEW_AND_OLD_IMAGES"
+        TableName: ${self:provider.environment.LTIP_LOAN_LEADERBOARD_ARB_TABLE}
+    ltipLoanLeaderboardLastdistArbTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: "id"
+            AttributeType: "S"
+        KeySchema:
+          -
+            AttributeName: "id"
+            KeyType: "HASH"
+        BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: "NEW_AND_OLD_IMAGES"
+        TableName: ${self:provider.environment.LTIP_LOAN_LEADERBOARD_LASTDIST_ARB_TABLE}
+    ggpIncentivesAvaTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: "id"
+            AttributeType: "S"
+          -
+            AttributeName: "timestamp"
+            AttributeType: "N"
+        KeySchema:
+          -
+            AttributeName: "id"
+            KeyType: "HASH"
+          -
+            AttributeName: "timestamp"
+            KeyType: "RANGE"
+        BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: "NEW_AND_OLD_IMAGES"
+        TableName: ${self:provider.environment.GGP_INCENTIVES_AVA_TABLE}
     # loansAvaTable:
     #   Type: AWS::DynamoDB::Table
     #   DeletionPolicy: Retain
@@ -391,24 +626,38 @@ resources:
     #     StreamSpecification:
     #       StreamViewType: "NEW_AND_OLD_IMAGES"
     #     TableName: ${self:provider.environment.LOAN_AVA_TABLE}
-    # loansArbTable:
-    #   Type: AWS::DynamoDB::Table
-    #   DeletionPolicy: Retain
-    #   Properties:
-    #     AttributeDefinitions:
-    #       -
-    #         AttributeName: "id"
-    #         AttributeType: "S"
-    #     KeySchema:
-    #       -
-    #         AttributeName: "id"
-    #         KeyType: "HASH"
-    #     ProvisionedThroughput:
-    #       ReadCapacityUnits: 5
-    #       WriteCapacityUnits: 5
-    #     StreamSpecification:
-    #       StreamViewType: "NEW_AND_OLD_IMAGES"
-    #     TableName: ${self:provider.environment.LOAN_ARB_TABLE}
+    loansArbTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: "id"
+            AttributeType: "S"
+        KeySchema:
+          -
+            AttributeName: "id"
+            KeyType: "HASH"
+        BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: "NEW_AND_OLD_IMAGES"
+        TableName: ${self:provider.environment.LOAN_ARB_TABLE}
 
 plugins:
   - serverless-prune-plugin
+
+package:
+  individually: true
+  exclude:
+    - package-lock.json
+    - .serverless/**
+    - arbitrumIncentives/**
+    - ggpIncentives/**
+    - gmOpenInterest/getLastWeekHistory.js
+    - gmxIncentives/exportIncentives.js
+    - gmxIncentives/gmxIncentivesCalculatorAvaFrom.js
+    - gmxIncentives/gmxIncentivesCalculatorAvaFromJob.sh
+    - gmxIncentives/retroactiveCalculator.js
+    - loanStats/**
+    - sPrime/**
+    - sPrimeAirdrop/**

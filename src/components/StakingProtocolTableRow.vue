@@ -189,6 +189,7 @@ export default {
       'penpieLpAssets',
       'wombatLpAssets',
       'wombatLpBalances',
+      'wombatYYFarmsBalances',
       'noSmartLoan'
     ]),
     ...mapState('serviceRegistry', [
@@ -301,6 +302,7 @@ export default {
       modalInstance.penpieLpBalances = this.penpieLpBalances;
       modalInstance.wombatLpAssets = this.wombatLpAssets;
       modalInstance.wombatLpBalances = this.wombatLpBalances;
+      modalInstance.wombatYYFarmsBalances = this.wombatYYFarmsBalances;
       modalInstance.farms = this.farms;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
       modalInstance.loan = this.debt;
@@ -427,7 +429,6 @@ export default {
     watchFarmRefreshEvent() {
       this.farmService.observeRefreshFarm().subscribe(async () => {
         // receipt token staked
-        console.log('// receipt token staked', this.farm);
         this.balance = this.farm.totalBalance;
         // normal token staked
         this.underlyingTokenStaked = this.farm.totalStaked;

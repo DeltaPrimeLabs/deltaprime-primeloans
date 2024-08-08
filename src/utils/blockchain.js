@@ -7,8 +7,8 @@ import IDATA_STORE from "../../artifacts/contracts/interfaces/gmx-v2/IDataStore.
 import {fromWei} from "./calculate";
 import {
   depositGasLimitKey,
-  ESTIMATED_GAS_FEE_BASE_AMOUNT,
-  ESTIMATED_GAS_FEE_MULTIPLIER_FACTOR,
+  ESTIMATED_GAS_FEE_BASE_AMOUNT, ESTIMATED_GAS_FEE_BASE_AMOUNT_V2_1,
+  ESTIMATED_GAS_FEE_MULTIPLIER_FACTOR, ESTIMATED_GAS_FEE_PER_ORACLE_PRICE,
   WITHDRAWAL_GAS_LIMIT_KEY
 } from "../integrations/contracts/dataStore";
 import {formatUnits} from "ethers/lib/utils";
@@ -125,7 +125,9 @@ export async function calculateGmxV2ExecutionFee(
       :
       fromWei(await dataStore.getUint(hashData(["bytes32"], [WITHDRAWAL_GAS_LIMIT_KEY]))) * 10**18 + gmxV2DepositCallbackGasLimit;
 
-  let baseGasLimit = fromWei(await dataStore.getUint(ESTIMATED_GAS_FEE_BASE_AMOUNT)) * 10**18;
+  //TODO: user the proper oracle price count
+  let oraclePriceCount = 2;
+  let baseGasLimit = (fromWei(await dataStore.getUint(ESTIMATED_GAS_FEE_BASE_AMOUNT_V2_1)) + (fromWei(await dataStore.getUint(ESTIMATED_GAS_FEE_PER_ORACLE_PRICE)) * oraclePriceCount))  * 10**18;
 
   let multiplierFactor = formatUnits(await dataStore.getUint(ESTIMATED_GAS_FEE_MULTIPLIER_FACTOR), 30);
 
@@ -138,7 +140,8 @@ export async function calculateGmxV2ExecutionFee(
   gasPrice *= (1 + gmxV2GasPriceBuffer);
   gasPrice += gmxV2GasPricePremium;
 
-  const deltaPrimeMultiplicator = 1.1;
+  //TODO: decrease the multiplicator
+  const deltaPrimeMultiplicator = 2;
 
   return deltaPrimeMultiplicator * adjustedGasLimit * gasPrice / 10**18;
 }

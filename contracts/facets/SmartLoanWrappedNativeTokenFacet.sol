@@ -15,12 +15,12 @@ contract SmartLoanWrappedNativeTokenFacet is OnlyOwnerOrInsolvent {
 
     function wrapNativeToken(uint256 amount) onlyOwnerOrInsolvent public {
         require(amount <= address(this).balance, "Not enough native token to wrap");
+        require(amount > 0, "Cannot wrap 0 tokens");
         IWrappedNativeToken wrapped = IWrappedNativeToken(DeploymentConstants.getNativeToken());
         wrapped.deposit{value : amount}();
 
-        if (wrapped.balanceOf(address(this)) != 0) {
-            DiamondStorageLib.addOwnedAsset(DeploymentConstants.getNativeTokenSymbol(), address(wrapped));
-        }
+        ITokenManager tokenManager = DeploymentConstants.getTokenManager();
+        _increaseExposure(tokenManager, address(wrapped), amount);
 
         emit WrapNative(msg.sender, amount, block.timestamp);
     }
@@ -34,7 +34,7 @@ contract SmartLoanWrappedNativeTokenFacet is OnlyOwnerOrInsolvent {
         }
 
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        tokenManager.increaseProtocolExposure(DeploymentConstants.getNativeTokenSymbol(), msg.value);
+        _increaseExposure(tokenManager, address(wrapped), msg.value);
 
         emit DepositNative(msg.sender, msg.value, block.timestamp);
     }
@@ -51,7 +51,7 @@ contract SmartLoanWrappedNativeTokenFacet is OnlyOwnerOrInsolvent {
         }
 
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
-        tokenManager.decreaseProtocolExposure(DeploymentConstants.getNativeTokenSymbol(), _amount);
+        _decreaseExposure(tokenManager, address(wrapped), _amount);
 
         payable(msg.sender).safeTransferETH(_amount);
 

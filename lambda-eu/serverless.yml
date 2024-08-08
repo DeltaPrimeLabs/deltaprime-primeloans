@@ -1,0 +1,85 @@
+# Welcome to Serverless!
+#
+# This file is the main config file for your service.
+# It's very minimal at this point and uses default values.
+# You can always add more config options for more control.
+# We've included some commented out config examples here.
+# Just uncomment any of them to get that config option.
+#
+# For full config options, check the docs:
+#    docs.serverless.com
+#
+# Happy Coding!
+
+service: deltaprime-eu-cloud
+# app and org for use with dashboard.serverless.com
+#app: your-app-name
+#org: your-org-name
+
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  stage: ${opt:stage, "dev"}
+  region: eu-central-1
+  environment:
+    APY_TABLE: apys-${opt:stage, "dev"}
+    FUNC_RPC_AVA: ${file(./.secrets/funcRpc.json):avalanche}
+    FUNC_RPC_ARB: ${file(./.secrets/funcRpc.json):arbitrum}
+    EXT_RPC_AVA: ${file(./.secrets/extRpc.json):avalanche}
+    EXT_RPC_ARB: ${file(./.secrets/extRpc.json):arbitrum}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+      Resource: "*"
+
+functions:
+  wombatApyAggregator:
+    handler: aggregators/apy.wombatApyAggregator
+    memorySize: 2048
+    timeout: 300
+    description: fetch APYs of Wombat pools.
+    events:
+      - schedule: rate(5 minutes)
+  assetApyApi:
+    handler: apis/apy.assetApyApi
+    memorySize: 512
+    description: Fetch APYS of all assets and farms
+    events:
+      - httpApi:
+          method: get
+          path: /apys
+
+resources:
+  Resources:
+    ApysTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: "id"
+            AttributeType: "S"
+        KeySchema:
+          -
+            AttributeName: "id"
+            KeyType: "HASH"
+        BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: "NEW_AND_OLD_IMAGES"
+        TableName: ${self:provider.environment.APY_TABLE}
+
+plugins:
+  - serverless-prune-plugin
+
+package:
+  exclude:
+    - .serverless/**

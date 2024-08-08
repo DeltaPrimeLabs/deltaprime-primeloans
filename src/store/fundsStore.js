@@ -29,6 +29,7 @@ import YAK_ROUTER_ABI from '../../test/abis/YakRouter.json';
 import {getSwapData} from '../utils/paraSwapUtils';
 import {getBurnData} from '../utils/caiUtils';
 import {combineLatest, from, map, tap} from 'rxjs';
+import ABI_YY_WOMBAT_STRATEGY from "../abis/YYWombatStrategy.json";
 
 const toBytes32 = require('ethers').utils.formatBytes32String;
 const fromBytes32 = require('ethers').utils.parseBytes32String;
@@ -75,6 +76,7 @@ export default {
     penpieLpAssets: null,
     wombatLpBalances: null,
     wombatLpAssets: null,
+    wombatYYFarmsBalances: null,
     accountApr: null,
     debt: null,
     totalValue: null,
@@ -194,6 +196,10 @@ export default {
 
     setWombatLpBalances(state, balances) {
       state.wombatLpBalances = balances;
+    },
+
+    setWombatYYFarmsBalances(state, balances) {
+      state.wombatYYFarmsBalances = balances;
     },
 
     setFullLoanStatus(state, status) {
@@ -400,8 +406,13 @@ export default {
 
       const redstonePriceDataRequest = await fetch(config.redstoneFeedUrl);
       const redstonePriceData = await redstonePriceDataRequest.json();
+      console.log('redstonePriceData', redstonePriceData);
       Object.keys(assets).forEach(assetSymbol => {
-        assets[assetSymbol].price = redstonePriceData[assetSymbol] ? redstonePriceData[assetSymbol][0].dataPoints[0].value : 0;
+        if (redstonePriceData[assetSymbol]) {
+          assets[assetSymbol].price = redstonePriceData[assetSymbol][0].dataPoints[0].value;
+        } else {
+          assets[assetSymbol].price = 0
+        }
       });
       commit('setAssets', assets);
 
@@ -413,7 +424,7 @@ export default {
           fetch(assets[assetSymbol].priceEndpoint).then(
             async resp => {
               let json = await resp.json();
-              assets[assetSymbol].price = json[assets[assetSymbol].priceJsonField];
+              assets[assetSymbol].price = json.error ? 0 : json[assets[assetSymbol].priceJsonField];
               commit('setAssets', assets);
               rootState.serviceRegistry.priceService.emitRefreshPrices();
             }
@@ -726,7 +737,7 @@ export default {
 
       Object.values(config.GMX_V2_ASSETS_CONFIG).forEach(
         asset => {
-          if (state.supportedAssets.includes(asset.symbol)) {
+          if (true) {
             lpTokens[asset.symbol] = asset;
           }
         }
@@ -962,6 +973,7 @@ export default {
       const balancerLpBalances = {};
       const penpieLpBalances = {};
       let wombatLpBalances = {};
+      let wombatFarmsBalances = {};
       const balancerLpAssets = state.balancerLpAssets;
       const levelLpBalances = {};
       const assetBalances = await state.readSmartLoanContract.getAllAssetsBalances();
@@ -1010,6 +1022,21 @@ export default {
           const asset = wombatAssets[index]
           wombatLpBalances[asset] = formatUnits(balance.toString(), config.WOMBAT_LP_ASSETS[asset].decimals)
         })
+      }
+
+      const wombatFarms = config.WOMBAT_YY_FARMS;
+      if (wombatFarms.length) {
+        const balanceArray = await Promise.all(wombatFarms.map(farm => {
+          return state.readSmartLoanContract[farm.balanceMethod]()
+        }))
+        wombatFarms.forEach((farm, index) => {
+          wombatFarmsBalances[farm.apyKey] = formatUnits(balanceArray[index].toString(), farm.decimals)
+        })
+        for (const farm of wombatFarms) {
+          const contract = await new ethers.Contract(farm.strategyContract, ABI_YY_WOMBAT_STRATEGY, provider.getSigner());
+          const YRTBalance = await contract.balanceOf(state.readSmartLoanContract.address);
+          wombatFarmsBalances[farm.yrtKey] = formatUnits(YRTBalance.toString(), farm.decimals)
+        }
       }
 
       if (hasDeprecatedAssets) {
@@ -1106,6 +1133,7 @@ export default {
       await commit('setGmxV2Balances', gmxV2Balances);
       await commit('setPenpieLpBalances', penpieLpBalances);
       await commit('setWombatLpBalances', wombatLpBalances);
+      await commit('setWombatYYFarmsBalances', wombatFarmsBalances);
       await dispatch('setupConcentratedLpUnderlyingBalances');
       await dispatch('setupTraderJoeV2LpUnderlyingBalancesAndLiquidity');
       const refreshEvent = {assetBalances: balances, lpBalances: lpBalances};
@@ -1341,6 +1369,12 @@ export default {
           if (traderJoeV2LpAssets['TJLB_MAGIC_ETH']) {
             traderJoeV2LpAssets['TJLB_MAGIC_ETH'].apy = 114.81;
           }
+
+          if (traderJoeV2LpAssets[symbol].hardcodeApy) {
+            traderJoeV2LpAssets[symbol].apy = traderJoeV2LpAssets[symbol].hardcodeApy;
+          }
+
+          console.log(symbol, 'APY: ', traderJoeV2LpAssets[symbol].apy);
         }
       }
       commit('setTraderJoeV2LpAssets', traderJoeV2LpAssets);
@@ -1385,6 +1419,10 @@ export default {
           for (let [symbol, asset] of Object.entries(gmxV2Assets)) {
             if (apys[symbol] && apys[symbol].lp_apy) {
               gmxV2Assets[symbol].apy = apys[symbol].lp_apy * 100;
+            }
+
+            if (gmxV2Assets[symbol].hardcodeApy) {
+              gmxV2Assets[symbol].apy = gmxV2Assets[symbol].hardcodeApy;
             }
           }
         }
@@ -1484,7 +1522,7 @@ export default {
             //TODO: take from API
             const apy = asset.apy ? asset.apy / 100 : 0;
             if (state.assetBalances[symbol]) {
-              yearlyAssetInterest += parseFloat(state.assetBalances[symbol]) * apy * asset.price;
+              yearlyAssetInterest += parseFloat(state.assetBalances[symbol]) * apy * (asset.price ? asset.price : 0);
             }
           }
         }
@@ -1598,6 +1636,18 @@ export default {
           }
         }
 
+        let yearlyWombatYYFarmsInterest = 0;
+
+        if (state.wombatLpAssets && state.wombatYYFarmsBalances) {
+          for (let farm of config.WOMBAT_YY_FARMS) {
+            const apy = farm.apy ? farm.apy / 100 : 0;
+            const userValueInPool =
+              state.wombatLpAssets[farm.lpAssetToken].price * state.wombatYYFarmsBalances[farm.apyKey];
+
+            yearlyWombatYYFarmsInterest += userValueInPool * apy;
+          }
+        }
+
         let yearlyFarmInterest = 0;
 
         if (rootState.stakeStore.farms) {
@@ -1644,7 +1694,15 @@ export default {
         }
 
         if (collateral) {
-          apr = (yearlyAssetInterest + yearlyLpInterest + yearlyFarmInterest + yearlyTraderJoeV2Interest + yearlyGrantInterest - yearlyDebtInterest) / collateral;
+          apr = (
+            yearlyAssetInterest
+            + yearlyLpInterest
+            + yearlyFarmInterest
+            + yearlyTraderJoeV2Interest
+            + yearlyWombatYYFarmsInterest
+            + yearlyGrantInterest
+            - yearlyDebtInterest
+          ) / collateral;
         }
 
         commit('setAccountApr', apr);
@@ -1659,6 +1717,7 @@ export default {
     },
 
     async fund({state, rootState, commit, dispatch}, {fundRequest}) {
+      console.log(fundRequest);
       const provider = rootState.network.provider;
       const amountInWei = parseUnits(fundRequest.value.toString(), fundRequest.assetDecimals);
 
@@ -1729,6 +1788,10 @@ export default {
           break;
         case 'WOMBAT_LP':
           price = state.wombatLpAssets[fundRequest.asset].price;
+          break;
+        case 'GMX_V2':
+          price = state.gmxV2Assets[fundRequest.asset].price;
+          break;
       }
 
       const depositAmountUSD = Number(depositAmount) * price;
@@ -1752,6 +1815,10 @@ export default {
           break;
         case 'WOMBAT_LP':
           assetBalanceBeforeDeposit = state.wombatLpBalances[fundRequest.asset];
+          break;
+        case 'GMX_V2':
+          assetBalanceBeforeDeposit = state.gmxV2Balances[fundRequest.asset];
+          break;
       }
       const assetBalanceAfterDeposit = Number(assetBalanceBeforeDeposit) + Number(depositAmount);
 
@@ -1887,6 +1954,10 @@ export default {
           break;
         case 'PENPIE_LP':
           price = state.penpieLpAssets[withdrawRequest.asset].price;
+          break;
+        case 'GMX_V2':
+          price = state.gmxV2Assets[withdrawRequest.asset].price;
+          break;
       }
       const withdrawAmountUSD = Number(withdrawAmount) * price;
 
@@ -1906,6 +1977,10 @@ export default {
           break;
         case 'PENPIE_LP':
           assetBalanceBeforeWithdraw = state.penpieLpBalances[withdrawRequest.asset].price;
+          break;
+        case 'GMX_V2':
+          assetBalanceBeforeWithdraw = state.gmxV2Balances[withdrawRequest.asset];
+          break;
       }
       const assetBalanceAfterWithdraw = Number(assetBalanceBeforeWithdraw) - Number(withdrawAmount);
       const totalCollateralAfterTransaction = state.fullLoanStatus.totalValue - state.fullLoanStatus.debt - withdrawAmountUSD;
@@ -1954,7 +2029,7 @@ export default {
       let tx = await awaitConfirmation(transaction, provider, 'withdraw');
 
       const price = state.penpieLpAssets[unstakeRequest.asset].price;
-      const withdrawAmountUSD = Number(amountInWei) * price;
+      const withdrawAmountUSD = fromWei(amountInWei) * price;
       const assetBalanceBeforeWithdraw = state.penpieLpBalances[unstakeRequest.asset].price;
 
       const assetBalanceAfterWithdraw = Number(assetBalanceBeforeWithdraw) - Number(unstakeRequest.value);
@@ -2743,6 +2818,7 @@ export default {
 
 
     async addLiquidityTraderJoeV2Pool({state, rootState, commit, dispatch}, {addLiquidityRequest}) {
+      console.log('addLiquidityTraderJoeV2Pool')
       const provider = rootState.network.provider;
 
       const loanAssets = mergeArrays([(
@@ -2754,7 +2830,9 @@ export default {
 
       const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
 
+      console.log('before transaction')
       const transaction = await wrappedContract[addLiquidityRequest.method](
+        addLiquidityRequest.routerAddress,
         addLiquidityRequest.addLiquidityInput
       );
 
@@ -2798,6 +2876,7 @@ export default {
       const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
 
       const transaction = await wrappedContract[removeLiquidityRequest.method](
+        removeLiquidityRequest.routerAddress,
         removeLiquidityRequest.removeLiquidityInput
       );
 
@@ -3148,7 +3227,7 @@ export default {
     async depositPendleLPAndStake({state, rootState, commit, dispatch}, {depositAndStakeRequest}) {
       const provider = rootState.network.provider;
 
-      const tokenForApprove = TOKEN_ADDRESSES[depositAndStakeRequest.sourceAsset];
+      const tokenForApprove = depositAndStakeRequest.market;
       const fundToken = new ethers.Contract(tokenForApprove, erc20ABI, provider.getSigner());
       const allowance = formatUnits(await fundToken.allowance(rootState.network.account, state.smartLoanContract.address), depositAndStakeRequest.decimals);
 
@@ -3300,6 +3379,7 @@ export default {
 
       let executionFeeWei = toWei(addLiquidityRequest.executionFee.toFixed(18));
 
+      console.log(addLiquidityRequest)
       const transaction = await wrappedContract[addLiquidityRequest.method](
         addLiquidityRequest.isLongToken,
         sourceAmount,
@@ -3362,7 +3442,7 @@ export default {
         minLongAmount,
         minShortAmount,
         executionFeeWei,
-        {value: executionFeeWei}
+        {value: executionFeeWei, gasLimit: 9999999}
       );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
@@ -3392,6 +3472,119 @@ export default {
           await dispatch('updateFunds');
         }, config.gmxV2RefreshDelay)
       }, config.refreshDelay);
+    },
+
+    async addLiquidityGmxPlus({state, rootState, commit, dispatch}, {addLiquidityRequest}) {
+      console.log(addLiquidityRequest);
+
+      const provider = rootState.network.provider;
+
+      const loanAssets = mergeArrays([(
+        await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+        [addLiquidityRequest.sourceAsset, addLiquidityRequest.targetAsset]
+      ]);
+
+
+      const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
+
+      let executionFeeWei = toWei(addLiquidityRequest.executionFee.toFixed(18));
+
+      console.log(wrappedContract);
+
+      let sourceDecimals = config.ASSETS_CONFIG[addLiquidityRequest.sourceAsset].decimals;
+      let sourceAmount = parseUnits(parseFloat(addLiquidityRequest.sourceAmount).toFixed(sourceDecimals), sourceDecimals);
+
+      let targetDecimals = config.GMX_V2_ASSETS_CONFIG[addLiquidityRequest.targetAsset].decimals;
+
+      let minGmAmount = parseUnits(addLiquidityRequest.minGmAmount.toFixed(targetDecimals), targetDecimals);
+
+      const transaction = await wrappedContract[addLiquidityRequest.method](sourceAmount, minGmAmount, executionFeeWei, {value: executionFeeWei, gasLimit: 9999999});
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      const tx = await awaitConfirmation(transaction, provider, 'add liquidity to GMXV2+');
+
+      const firstAssetBalanceAfterTransaction = Number(state.assetBalances[addLiquidityRequest.sourceAsset]) - Number(addLiquidityRequest.sourceAmount);
+      const secondAssetBalanceAfterTransaction = Number(state.gmxV2Balances[addLiquidityRequest.targetAsset]) + Number(addLiquidityRequest.minGmAmount);
+
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate(addLiquidityRequest.sourceAsset, firstAssetBalanceAfterTransaction, false, false);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate(addLiquidityRequest.targetAsset, secondAssetBalanceAfterTransaction, true, false);
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+        setTimeout(async () => {
+          await dispatch('updateFunds');
+        }, config.gmxV2RefreshDelay)
+      }, config.refreshDelay);
+
+    },
+
+
+    async removeLiquidityGmxPlus({state, rootState, commit, dispatch}, {removeLiquidityRequest}) {
+      console.log(removeLiquidityRequest);
+
+      const provider = rootState.network.provider;
+
+      const loanAssets = mergeArrays([(
+        await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
+        (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
+        Object.keys(config.POOLS_CONFIG),
+        [removeLiquidityRequest.sourceAsset, removeLiquidityRequest.targetAsset]
+      ]);
+
+      const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
+
+      const executionFeeWei = toWei(removeLiquidityRequest.executionFee.toFixed(18));
+
+      console.log(wrappedContract);
+
+      const sourceDecimals = config.GMX_V2_ASSETS_CONFIG[removeLiquidityRequest.sourceAsset].decimals;
+      const sourceAmount = parseUnits(parseFloat(removeLiquidityRequest.sourceAmount).toFixed(sourceDecimals), sourceDecimals);
+
+      const targetDecimals = config.ASSETS_CONFIG[removeLiquidityRequest.targetAsset].decimals;
+
+      const minTargetTokenAmount = parseUnits(parseFloat(removeLiquidityRequest.targetAmount).toFixed(targetDecimals), targetDecimals);
+      const minLongTokenAmount = minTargetTokenAmount.div(2);
+      const minShortTokenAmount = minTargetTokenAmount.div(2);
+
+
+      const transaction = await wrappedContract[removeLiquidityRequest.method](sourceAmount, minLongTokenAmount, minShortTokenAmount, executionFeeWei, {value: executionFeeWei, gasLimit: 9999999});
+
+      rootState.serviceRegistry.progressBarService.requestProgressBar();
+      rootState.serviceRegistry.modalService.closeModal();
+
+      let tx = await awaitConfirmation(transaction, provider, 'add liquidity to GMXV2+');
+
+      const gmBalanceAfterTransaction = Number(state.gmxV2Balances[removeLiquidityRequest.sourceAsset]) - Number(removeLiquidityRequest.sourceAmount);
+      const targetAssetBalanceAfterTransaction = Number(state.assetBalances[removeLiquidityRequest.targetAsset]) + Number(removeLiquidityRequest.targetAmount);
+
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate(removeLiquidityRequest.sourceAsset, gmBalanceAfterTransaction, false, false);
+      rootState.serviceRegistry.assetBalancesExternalUpdateService
+        .emitExternalAssetBalanceUpdate(removeLiquidityRequest.targetAsset, targetAssetBalanceAfterTransaction, false, false);
+
+      rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
+      setTimeout(() => {
+        rootState.serviceRegistry.progressBarService.emitProgressBarSuccessState();
+      }, SUCCESS_DELAY_AFTER_TRANSACTION);
+
+      setTimeout(async () => {
+        await dispatch('updateFunds');
+        setTimeout(async () => {
+          await dispatch('updateFunds');
+        }, config.gmxV2RefreshDelay)
+      }, config.refreshDelay);
+
     },
 
     async borrow({state, rootState, commit, dispatch}, {borrowRequest}) {

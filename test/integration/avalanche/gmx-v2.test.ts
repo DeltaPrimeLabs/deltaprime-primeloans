@@ -30,7 +30,6 @@ import {
     time,
     toBytes32,
     toWei,
-    paraSwapRouteToSimpleData,
     getContractSelectors
 } from "../../_helpers";
 import {syncTime} from "../../_syncTime"
@@ -61,9 +60,6 @@ describe('Smart loan', () => {
             loan: SmartLoanGigaChadInterface,
             wrappedLoan: any,
             nonOwnerWrappedLoan: any,
-            btcBalance: BigNumber,
-            usdtBalance: BigNumber,
-            usdcBalance: BigNumber,
             poolContracts: Map<string, Contract> = new Map(),
             tokenContracts: Map<string, Contract> = new Map(),
             lendingPools: Array<PoolAsset> = [],
@@ -77,41 +73,11 @@ describe('Smart loan', () => {
             MOCK_PRICES: any,
             diamondAddress: any;
 
-        const getSwapData = async (srcToken: keyof typeof TOKEN_ADDRESSES, destToken: keyof typeof TOKEN_ADDRESSES, srcDecimals: number, destDecimals: number, srcAmount: any) => {
-            const priceRoute = await paraSwapMin.swap.getRate({
-                srcToken: TOKEN_ADDRESSES[srcToken],
-                destToken: TOKEN_ADDRESSES[destToken],
-                srcDecimals,
-                destDecimals,
-                amount: srcAmount.toString(),
-                userAddress: wrappedLoan.address,
-                side: SwapSide.SELL,
-                options: {
-                    includeContractMethods: [ContractMethod.simpleSwap]
-                }
-            });
-            const txParams = await paraSwapMin.swap.buildTx({
-                srcToken: priceRoute.srcToken,
-                destToken: priceRoute.destToken,
-                srcDecimals,
-                destDecimals,
-                srcAmount: priceRoute.srcAmount,
-                slippage: 300,
-                priceRoute,
-                userAddress: wrappedLoan.address,
-                partner: 'anon',
-            }, {
-                ignoreChecks: true,
-            });
-            const swapData = paraSwapRouteToSimpleData(txParams);
-            return swapData;
-        };
-
         before("deploy factory and pool", async () => {
             paraSwapMin = constructSimpleSDK({ chainId: 42161, axios });
 
             [owner, nonOwner, depositor] = await getFixedGasSigners(10000000);
-            let assetsList = ['AVAX', 'BTC', 'USDT', 'USDC', 'GM_AVAX_WAVAX_USDC'];
+            let assetsList = ['AVAX', 'BTC', 'ETH', 'USDC', 'GM_BTC_BTCb_USDC', 'GM_ETH_WETHe_USDC', 'GM_AVAX_WAVAX_USDC'];
             let poolNameAirdropList: Array<PoolInitializationObject> = [
                 {name: 'AVAX', airdropList: [depositor]}
             ];
@@ -191,37 +157,18 @@ describe('Smart loan', () => {
                 });
         });
 
-
         it("should swap and fund", async () => {
-            await tokenContracts.get('AVAX')!.connect(owner).deposit({value: toWei("10")});
-            await tokenContracts.get('AVAX')!.connect(owner).approve(wrappedLoan.address, toWei("10"));
-            await wrappedLoan.fund(toBytes32("AVAX"), toWei("10"));
-
-            let initialTotalValue = await wrappedLoan.getTotalValue();
-            let initialHR = await wrappedLoan.getHealthRatio();
-            let initialTWV = await wrappedLoan.getThresholdWeightedValue();
-
-            // let swapData = await getSwapData('AVAX', 'BTC', 18, 8, toWei('2'));
-            // console.log('swap 1')
-            // await wrappedLoan.paraSwap(swapData);
-            // btcBalance = await tokenContracts.get('BTC')!.balanceOf(wrappedLoan.address);
-            // swapData = await getSwapData('AVAX', 'USDT', 18, 6, toWei('2'));
-            // console.log('swap 2')
-            // await wrappedLoan.paraSwap(swapData);
-            // usdtBalance = await tokenContracts.get('USDT')!.balanceOf(wrappedLoan.address);
-            // swapData = await getSwapData('AVAX', 'USDC', 18, 6, toWei('2'));
-            // console.log('swap 3')
-            // await wrappedLoan.paraSwap(swapData);
-            // usdcBalance = await tokenContracts.get('USDC')!.balanceOf(wrappedLoan.address);
+            await tokenContracts.get('AVAX')!.connect(owner).deposit({value: toWei("100")});
+            await tokenContracts.get('AVAX')!.connect(owner).approve(wrappedLoan.address, toWei("100"));
+            await wrappedLoan.fund(toBytes32("AVAX"), toWei("100"));
         });
 
         it("should deposit to GMX V2", async () => {
-            const tokenAmount = toWei('0.0005');
-            const maxFee = toWei('0.01');
+            const tokenAmount = toWei('10');
+            const maxFee = toWei('0.5');
 
-            console.log(`WAVAX PA balance: ${fromWei(await tokenContracts.get('AVAX')!.balanceOf(wrappedLoan.address))}`);
-
-            await wrappedLoan.depositAvaxUsdcGmxV2(true, tokenAmount, 0, maxFee, { value: maxFee });
+            const minAmount = fromWei(tokenAmount) * tokensPrices.get('AVAX')! / tokensPrices.get('GM_AVAX_WAVAX_USDC')! * 0.98;
+            await wrappedLoan.depositAvaxUsdcGmxV2(true, tokenAmount, toWei(minAmount.toFixed(18)), maxFee, { value: maxFee });
         });
 
         // it("should withdraw from to GMX V2", async () => {
@@ -232,5 +179,3 @@ describe('Smart loan', () => {
         // });
     });
 });
-
-

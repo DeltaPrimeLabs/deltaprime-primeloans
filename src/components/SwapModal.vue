@@ -30,6 +30,12 @@
         </div>
       </div>
 
+      <div class="modal-top-info-bar" v-if="additionalInfo">
+        <div>
+          <div v-html="additionalInfo"></div>
+        </div>
+      </div>
+
       <div class="asset-info" v-if="!swapDebtMode">
         Available:
         <span v-if="sourceAssetBalance && sourceAssetData" class="asset-info__value">{{
@@ -58,7 +64,8 @@
       >
       </CurrencyComboInput>
 
-      <div class="reverse-swap-button" v-on:click="reverseSwap" v-bind:style="blockReversing ? 'pointer-events: none' : ''">
+      <div class="reverse-swap-button" v-on:click="reverseSwap"
+           v-bind:style="blockReversing ? 'pointer-events: none' : ''">
         <DeltaIcon class="reverse-swap-icon" :size="22" :icon-src="'src/assets/icons/swap-arrow.svg'"></DeltaIcon>
       </div>
 
@@ -73,9 +80,11 @@
       <div class="target-asset-info">
         <div class="usd-info">
           Price:&nbsp;<span
-          class="price-info__value">1 {{
+            class="price-info__value">1 {{
             (targetAssetData && targetAssetData.short) ? targetAssetData.short : targetAsset
-          }} = {{ estimatedNeededTokens / estimatedReceivedTokens | smartRound }} {{ sourceAssetNameToDisplay ? sourceAssetNameToDisplay : sourceAsset }}</span>
+          }} = {{
+            estimatedNeededTokens / estimatedReceivedTokens | smartRound
+          }} {{ sourceAssetNameToDisplay ? sourceAssetNameToDisplay : sourceAsset }}</span>
         </div>
       </div>
 
@@ -83,8 +92,8 @@
         <div class="label-with-separator">
           Acceptable Slippage
           <InfoIcon
-            class="label__info-icon"
-            :tooltip="{ content: 'Choose the maximum slippage you are willing to accept', placement: 'top', classes: 'info-tooltip' }"
+              class="label__info-icon"
+              :tooltip="{ content: 'Choose the maximum slippage you are willing to accept', placement: 'top', classes: 'info-tooltip' }"
           ></InfoIcon>
           <div class="vertical-separator"></div>
           <div class="advanced-mode">
@@ -98,12 +107,12 @@
         <div v-if="!advancedSlippageMode" class="price-impact-wrapper">
           <div class="price-impact-option__content">
             <div
-              v-for="(option, key) in slippageOptions"
-              class="price-impact-option-tile"
-              :key="key"
-              :class="[selectedSlippageOption === key ? 'active' : '', option.disabled ? 'disabled' : '']"
-              v-tooltip="{ content: option.tooltip, placement: 'bottom', classes: 'info-tooltip' }"
-              v-on:click="() => handlePriceImpactClick(key)"
+                v-for="(option, key) in slippageOptions"
+                class="price-impact-option-tile"
+                :key="key"
+                :class="[selectedSlippageOption === key ? 'active' : '', option.disabled ? 'disabled' : '']"
+                v-tooltip="{ content: option.tooltip, placement: 'bottom', classes: 'info-tooltip' }"
+                v-on:click="() => handlePriceImpactClick(key)"
             >
               <div class="price-impact-label">
                 {{ option.name }} {{ option.value / 100 | percent }}
@@ -114,11 +123,12 @@
           <div class="dex-slippage-standalone">
             <span v-if="!feeMethods" class="slippage-label">Price impact:</span>
             <span v-if="feeMethods" class="slippage-label">Max. fee:</span>
-            <span class="deviation-value">{{ feeMethods ? fee * 100 : marketDeviation }}<span class="percent">%</span></span>
+            <span class="deviation-value">{{ feeMethods ? fee * 100 : marketDeviation }}<span
+                class="percent">%</span></span>
             <div class="info__icon__wrapper">
               <InfoIcon
-                class="info__icon"
-                :tooltip="{content: 'Compares trade price on an aggregator or DEX to oracle market prices. A lower or negative number indicates prices closer to or better than market, enhancing trade quality', placement: 'top', classes: 'info-tooltip'}"
+                  class="info__icon"
+                  :tooltip="{content: 'Compares trade price on an aggregator or DEX to oracle market prices. A lower or negative number indicates prices closer to or better than market, enhancing trade quality', placement: 'top', classes: 'info-tooltip'}"
               ></InfoIcon>
             </div>
           </div>
@@ -132,18 +142,17 @@
           <div class="dex-slippage">
             <span v-if="!feeMethods" class="slippage-label">Price impact:</span>
             <span v-if="feeMethods" class="slippage-label">Max. fee:</span>
-            <span class="deviation-value">{{ feeMethods ? fee * 100 : marketDeviation }}<span class="percent">%</span></span>
+            <span class="deviation-value">{{ feeMethods ? fee * 100 : marketDeviation }}<span
+                class="percent">%</span></span>
             <div class="info__icon__wrapper">
               <InfoIcon
-                class="info__icon"
-                :tooltip="{content: 'Compares trade price on an aggregator or DEX to oracle market prices. A lower or negative number indicates prices closer to or better than market, enhancing trade quality', placement: 'top', classes: 'info-tooltip'}"
+                  class="info__icon"
+                  :tooltip="{content: 'Compares trade price on an aggregator or DEX to oracle market prices. A lower or negative number indicates prices closer to or better than market, enhancing trade quality', placement: 'top', classes: 'info-tooltip'}"
               ></InfoIcon>
             </div>
           </div>
         </div>
       </div>
-
-
 
 
       <div v-if="slippageWarning" class="slippage-warning">
@@ -289,6 +298,7 @@ export default {
       targetAssetAmount: 0,
       fee: 0,
       info: null,
+      additionalInfo: null,
       userSlippage: 0.5,
       slippageMargin: null,
       queryMethod: null,
@@ -324,6 +334,7 @@ export default {
       penpieLpBalances: {},
       wombatLpAssets: {},
       wombatLpBalances: {},
+      wombatYYFarmsBalances: {},
       traderJoeV2LpAssets: {},
       balancerLpAssets: {},
       balancerLpBalances: {},
@@ -366,11 +377,16 @@ export default {
       }
     },
     receivedAccordingToOracle() {
-      return (this.estimatedNeededTokens && this.sourceAssetData && this.targetAssetData)
-          ?
-          this.estimatedNeededTokens * this.sourceAssetData.price / this.targetAssetData.price
-          :
-          0;
+      console.log('this.estimatedNeededTokens', this.estimatedNeededTokens);
+      console.log('this.sourceAssetData', this.sourceAssetData);
+      console.log('this.targetAssetData', this.targetAssetData);
+      const result = (this.estimatedNeededTokens && this.sourceAssetData && this.targetAssetData)
+        ?
+        this.estimatedNeededTokens * this.sourceAssetData.price / this.targetAssetData.price
+        :
+        0;
+      console.log('result', result);
+      return result;
     }
   },
 
@@ -441,16 +457,18 @@ export default {
       let sourceDecimals = this.sourceAssetData.decimals;
       let sourceAmountInWei = parseUnits(this.sourceAssetAmount.toFixed(sourceDecimals), BigNumber.from(sourceDecimals));
       let targetDecimals = this.targetAssetData.decimals;
+      console.log(targetDecimals);
+      console.log(this.receivedAccordingToOracle);
       let oracleReceivedAmountInWei = parseUnits(this.receivedAccordingToOracle.toFixed(targetDecimals), BigNumber.from(targetDecimals));
 
       console.log('receivedAccordingToOracle: ', this.receivedAccordingToOracle)
       console.log('estimatedNeededTokens: ', this.estimatedNeededTokens)
       const queryResponse =
           this.swapDebtMode
-          ?
-          await this.query(this.targetAsset, this.sourceAsset, sourceAmountInWei)
-          :
-          await this.query(this.sourceAsset, this.targetAsset, sourceAmountInWei);
+              ?
+              await this.query(this.targetAsset, this.sourceAsset, sourceAmountInWei)
+              :
+              await this.query(this.sourceAsset, this.targetAsset, sourceAmountInWei);
 
 
       let estimated;
@@ -500,12 +518,12 @@ export default {
     async updateAmountsWithSlippage() {
       this.targetAssetAmount =
           this.swapDebtMode
-          ?
-          this.receivedAccordingToOracle * (1 + ((this.userSlippage + this.marketDeviation) / 100 + (this.fee ? this.fee : 0)))
-          :
-          this.receivedAccordingToOracle * (1 - ((this.userSlippage + this.marketDeviation) / 100 + (this.fee ? this.fee : 0)));
+              ?
+              this.receivedAccordingToOracle * (1 + ((this.userSlippage + this.marketDeviation) / 100 + (this.fee ? this.fee : 0)))
+              :
+              this.receivedAccordingToOracle * (1 - ((this.userSlippage + this.marketDeviation) / 100 + (this.fee ? this.fee : 0)));
 
-
+      console.log('this.receivedAccordingToOracle', this.receivedAccordingToOracle);
       const targetInputChangeEvent = await this.$refs.targetInput.setCurrencyInputValue(this.targetAssetAmount);
 
       this.estimatedReceivedTokens = this.targetAssetAmount;
@@ -524,7 +542,7 @@ export default {
       }
 
       let slippageMargin = this.slippageMargin ? this.slippageMargin : config.SWAP_DEXS_CONFIG[this.swapDex].slippageMargin;
-
+      console.log(slippageMargin);
       let updatedSlippage = slippageMargin + 100 * dexSlippage;
 
       // this.userSlippage = parseFloat(updatedSlippage.toFixed(3));
@@ -580,7 +598,7 @@ export default {
           symbol: assetSymbol,
           short: asset.short,
           name: asset.name,
-          logo: `src/assets/logo/${assetSymbol.toLowerCase()}.${asset.logoExt ? asset.logoExt : 'svg'}`
+          logo: asset.forceLogo ? asset.forceLogo : `src/assets/logo/${assetSymbol.toLowerCase()}.${asset.logoExt ? asset.logoExt : 'svg'}`
         };
         this.targetAssetOptions.push(assetOption);
       });
@@ -593,12 +611,12 @@ export default {
     },
 
     setupTargetAsset() {
-      console.log('asfrqger', this.targetAsset);
-      console.log('asfrqger', this.targetAssetsConfig);
+      console.log('this.targetAsset', this.targetAsset);
+      console.log('this.targetAssetsConfig', this.targetAssetsConfig);
       if (this.targetAsset) {
         this.targetAssetData = this.targetAssetsConfig[this.targetAsset];
       }
-      console.log('asfrqger', this.targetAssetData);
+      console.log('this.targetAssetData', this.targetAssetData);
     },
 
     async sourceInputChange(changeEvent) {
@@ -842,8 +860,8 @@ export default {
         });
       }
 
-      for (const [symbol, data] of Object.entries(this.balancerLpAssets)) {
-        if (this.balancerLpBalances) {
+      if (this.balancerLpBalances) {
+        for (const [symbol, data] of Object.entries(this.balancerLpAssets)) {
           let balance = parseFloat(this.balancerLpBalances[symbol]);
 
           tokens.push({
@@ -901,34 +919,54 @@ export default {
         }
       }
 
-      for (const [symbol, data] of Object.entries(this.gmxV2Assets)) {
-        let balance = parseFloat(this.gmxV2Balances[symbol]);
+      if (config.WOMBAT_YY_FARMS) {
+        for (const farm of config.WOMBAT_YY_FARMS) {
+          if (this.wombatLpAssets && this.wombatYYFarmsBalances) {
+            const symbol = farm.apyKey
+            let balance = parseFloat(this.wombatYYFarmsBalances[symbol]);
 
-        if (symbol === this.sourceAsset) {
-          balance -= this.sourceAssetAmount;
+            tokens.push({
+              price: this.wombatLpAssets[farm.lpAssetToken].price,
+              balance: balance ? balance : 0,
+              borrowed: 0,
+              debtCoverage: farm.debtCoverage
+            });
+          }
         }
-
-        if (symbol === this.targetAsset) {
-          balance += this.targetAssetAmount;
-        }
-
-        tokens.push({
-          price: data.price,
-          balance: balance,
-          borrowed: 0,
-          debtCoverage: data.debtCoverage
-        });
       }
 
-      for (const [, farms] of Object.entries(this.farms)) {
-        farms.forEach(farm => {
+      if (this.gmxV2Assets) {
+        for (const [symbol, data] of Object.entries(this.gmxV2Assets)) {
+          let balance = parseFloat(this.gmxV2Balances[symbol]);
+
+          if (symbol === this.sourceAsset) {
+            balance -= this.sourceAssetAmount;
+          }
+
+          if (symbol === this.targetAsset) {
+            balance += this.targetAssetAmount;
+          }
+
           tokens.push({
-            price: farm.price,
-            balance: typeof farm.totalBalance === 'string' ? parseFloat(farm.totalBalance) : farm.totalBalance,
+            price: data.price,
+            balance: balance,
             borrowed: 0,
-            debtCoverage: farm.debtCoverage
+            debtCoverage: data.debtCoverage
           });
-        });
+        }
+      }
+
+      if (this.farms) {
+        for (const [, farms] of Object.entries(this.farms)) {
+          farms.forEach(farm => {
+            tokens.push({
+              price: farm.price,
+              balance: typeof farm.totalBalance === 'string' ? parseFloat(farm.totalBalance) : farm.totalBalance,
+              borrowed: 0,
+              debtCoverage: farm.debtCoverage
+            });
+          });
+        }
       }
 
       let lbTokens = Object.values(this.traderJoeV2LpAssets);
@@ -1038,9 +1076,11 @@ export default {
 .price-impact-option {
   display: flex;
   flex-direction: column;
+
   &.price-impact {
     margin-top: 10px;
   }
+
   .label-with-separator {
     font-family: Montserrat;
     font-size: $font-size-md;
@@ -1053,6 +1093,7 @@ export default {
     color: var(--swap-modal__label-with-separator);
     display: flex;
     align-items: center;
+
     &:after {
       content: "";
       display: block;
@@ -1061,6 +1102,7 @@ export default {
       flex-grow: 1;
       margin-left: 10px;
     }
+
     .label__info-icon {
       margin-left: 8px;
     }

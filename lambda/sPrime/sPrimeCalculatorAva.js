@@ -10,7 +10,8 @@ const {
   getHistoricalTokenPrice,
   getSymbolFromPoolAddress,
   dynamoDb,
-  avalancheProvider
+  avalancheProvider,
+  fetchAllDataFromDB
 } = require('../utils/helpers');
 const initialSPrimeData = require('./sPrimeValue.json');
 
@@ -33,9 +34,9 @@ const getLatestSprimes = async () => {
     TableName: networkConfig.database,
   };
 
-  const res = await dynamoDb.scan(params).promise();
+  const res = await fetchAllDataFromDB(params, true);
 
-  return res.Items;
+  return res;
 };
 
 const sPrimeCalculator = async (event) => {

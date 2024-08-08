@@ -12,11 +12,11 @@ import "../interfaces/IStakingPositions.sol";
 import "../interfaces/facets/avalanche/ITraderJoeV2Facet.sol";
 import "../interfaces/uniswap-v3-periphery/INonfungiblePositionManager.sol";
 import "../lib/uniswap-v3/UniswapV3IntegrationHelper.sol";
+import "../lib/uniswap-v3/LiquidityAmounts.sol";
 import {PriceHelper} from "../lib/joe-v2/PriceHelper.sol";
 import {Uint256x256Math} from "../lib/joe-v2/math/Uint256x256Math.sol";
 import {TickMath} from "../lib/uniswap-v3/TickMath.sol";
 import {FullMath} from "../lib/uniswap-v3/FullMath.sol";
-
 
 //This path is updated during deployment
 import "../lib/local/DeploymentConstants.sol";
@@ -288,7 +288,7 @@ abstract contract SolvencyFacetProd is RedstoneConsumerNumericBase, DiamondHelpe
         bytes32 nativeTokenSymbol = DeploymentConstants.getNativeTokenSymbol();
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
 
-        uint256 weightedValueOfTokens = ownedAssetsPrices[0].price * (address(this).balance - msg.value) * tokenManager.debtCoverage(tokenManager.getAssetAddress(nativeTokenSymbol, true)) / (10 ** 26);
+        uint256 weightedValueOfTokens = ownedAssetsPrices[0].price * address(this).balance * tokenManager.debtCoverage(tokenManager.getAssetAddress(nativeTokenSymbol, true)) / (10 ** 26);
 
         if (ownedAssetsPrices.length > 0) {
 
@@ -568,6 +568,7 @@ abstract contract SolvencyFacetProd is RedstoneConsumerNumericBase, DiamondHelpe
         uint256 total;
 
         uint256[] memory ownedUniswapV3TokenIds = DiamondStorageLib.getUV3OwnedTokenIdsView();
+        uint256 PRECISION = 20;
 
         if (ownedUniswapV3TokenIds.length > 0) {
 
@@ -593,22 +594,18 @@ abstract contract SolvencyFacetProd is RedstoneConsumerNumericBase, DiamondHelpe
                     uint160 sqrtPriceX96_a = TickMath.getSqrtRatioAtTick(position.tickLower);
                     uint160 sqrtPriceX96_b = TickMath.getSqrtRatioAtTick(position.tickUpper);
 
-                    uint256 sqrtPrice_a = UniswapV3IntegrationHelper.sqrtPriceX96ToSqrtUint(sqrtPriceX96_a, IERC20Metadata(position.token0).decimals());
-                    uint256 sqrtPrice_b = UniswapV3IntegrationHelper.sqrtPriceX96ToSqrtUint(sqrtPriceX96_b, IERC20Metadata(position.token0).decimals());
+                    uint256 price = 10**(PRECISION) * prices[0] * 10 ** IERC20Metadata(position.token1).decimals() / prices[1] / 10 ** IERC20Metadata(position.token0).decimals();
+                    uint160 sqrtMarketPriceX96 = uint160(UniswapV3IntegrationHelper.sqrt(price) * 2**96 / 10**(PRECISION/2));
 
-                    uint256 sqrtMarketPrice = UniswapV3IntegrationHelper.sqrt(prices[0] * 1e18 / prices[1] * 10 ** IERC20Metadata(position.token1).decimals());
+                    (uint256 token0Amount, uint256 token1amount) = LiquidityAmounts.getAmountsForLiquidity(
+                        sqrtMarketPriceX96,
+                        sqrtPriceX96_a,
+                        sqrtPriceX96_b,
+                        position.liquidity
+                    );
 
-                    uint256 positionWorth;
-
-                    if (sqrtMarketPrice < sqrtPrice_a) {
-                        positionWorth = debtCoverage0 * position.liquidity / 1e18 * (1e36 / sqrtPrice_a - 1e36 / sqrtPrice_b) / 10 ** IERC20Metadata(position.token0).decimals() * prices[0] / 10 ** 8;
-                    } else if (sqrtMarketPrice < sqrtPrice_b) {
-                        positionWorth =
-                        position.liquidity * (debtCoverage0 * (sqrtPrice_b - sqrtMarketPrice) * 10 ** IERC20Metadata(position.token0).decimals() / (sqrtMarketPrice * sqrtPrice_b) * prices[0] / 10 ** 8
-                            + debtCoverage1 * (sqrtMarketPrice - sqrtPrice_a) / 10 ** IERC20Metadata(position.token1).decimals() * prices[1] / 10 ** 8) / 10**18;
-                    } else {
-                        positionWorth = debtCoverage1 * position.liquidity / 1e18 * (sqrtPrice_b - sqrtPrice_a) / 10 ** IERC20Metadata(position.token1).decimals() * prices[1] / 10 ** 8;
-                    }
+                    uint256 positionWorth = debtCoverage0 * token0Amount / 10 ** IERC20Metadata(position.token0).decimals() * prices[0] / 10 ** 8
+                        + debtCoverage1 * token1amount / 10 ** IERC20Metadata(position.token1).decimals() * prices[1] / 10 ** 8;
 
                     total = total + positionWorth;
                 }

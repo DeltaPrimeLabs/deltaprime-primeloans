@@ -11,7 +11,6 @@ import "../SolvencyFacetProd.sol";
 import "../../interfaces/IStakingPositions.sol";
 import "../../interfaces/facets/avalanche/ITraderJoeV2Facet.sol";
 import "../../interfaces/uniswap-v3-periphery/INonfungiblePositionManager.sol";
-import "../../lib/uniswap-v3/UniswapV3IntegrationHelper.sol";
 import {PriceHelper} from "../../lib/joe-v2/PriceHelper.sol";
 import {Uint256x256Math} from "../../lib/joe-v2/math/Uint256x256Math.sol";
 import {TickMath} from "../../lib/uniswap-v3/TickMath.sol";

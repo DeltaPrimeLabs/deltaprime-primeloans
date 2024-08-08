@@ -4,7 +4,7 @@
       <div class="table__cell asset">
         <DoubleAssetIcon :primary="lpToken.primary" :secondary="lpToken.secondary"></DoubleAssetIcon>
         <div class="asset__info">
-          <a class="asset__name" :href="lpToken.link" target=”_blank”>{{ lpToken.primary }} - {{
+          <a class="asset__name" :href="lpToken.link" target=”_blank”>{{ lpToken.primary }}&nbsp;-&nbsp;{{
               lpToken.secondary
             }}</a>
           <div class="asset__dex">
@@ -14,6 +14,11 @@
         <div class="bin-step"
              v-tooltip="{content: 'Bin step', classes: 'info-tooltip'}">
           {{ lpToken.binStep }}
+        </div>
+        <div class="sprime-early-access">
+          <img src="src/assets/icons/icon_circle_star.svg" v-if="lpToken.earlyAccessRequired"
+               v-tooltip="{content: 'Early Access is available exclusively for users holding $100 or more in $sPRIME.', classes: 'info-tooltip long'}"/>
+          <span v-else class="early-access-placeholder">&nbsp;</span>
         </div>
       </div>
       <!-- To-do: Show price graph or similar one on click -->
@@ -74,12 +79,16 @@
         {{ formatTvl(lpToken.tvl) }}
       </div>
 
-      <div class="table__cell table__cell--double-value apr">
+      <div class="table__cell apr">
+        <div class="apr-warning" v-if="lpToken.aprWarning">
+          <img src="src/assets/icons/warning.svg" v-tooltip="{content: `APR value is updated twice a day. Please check TraderJoe website to find the current pool's APR.`, classes: 'info-tooltip long'}">
+        </div>
         {{ apr / 100 | percent }}
       </div>
 
-      <div class="table__cell table__cell--double-value max-apr">
+      <div class="table__cell max-apr">
         <span>{{ (maxApr + boostApy) | percent }}<img v-if="boostApy" v-tooltip="{content: `This pool is incentivized!<br>⁃ up to ${maxApr ? (maxApr * 100).toFixed(2) : 0}% Pool APR<br>⁃ up to ${boostApy ? (boostApy * 100).toFixed(2) : 0}% ${chain === 'arbitrum' ? 'ARB' : 'AVAX'} incentives`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span>
+        <img v-if="chain === 'avalanche' && lpToken.isIncentivized" src="src/assets/icons/stars.png" class="stars-icon">
       </div>
       <div class="table__cell"></div>
 
@@ -89,21 +98,21 @@
             v-if="addActionsConfig"
             :config="addActionsConfig"
             v-on:iconButtonClick="actionClick"
-            :disabled="inProcess || noSmartLoan">
+            :disabled="(lpToken.earlyAccessRequired && !hasEarlyAccess) ||inProcess || noSmartLoan">
         </IconButtonMenuBeta>
         <IconButtonMenuBeta
             class="actions__icon-button"
             v-if="removeActionsConfig"
             :config="removeActionsConfig"
             v-on:iconButtonClick="actionClick"
-            :disabled="inProcess || noSmartLoan">
+            :disabled="(lpToken.earlyAccessRequired && !hasEarlyAccess)|| inProcess || noSmartLoan">
         </IconButtonMenuBeta>
         <IconButtonMenuBeta
             class="actions__icon-button"
             v-if="moreActionsConfig"
             :config="moreActionsConfig"
             v-on:iconButtonClick="actionClick"
-            :disabled="inProcess || noSmartLoan || !healthLoaded">
+            :disabled="(lpToken.earlyAccessRequired && !hasEarlyAccess) || inProcess || noSmartLoan || !healthLoaded">
         </IconButtonMenuBeta>
       </div>
     </div>
@@ -173,6 +182,12 @@ export default {
 
   async mounted() {
     this.chain = window.chain;
+    if (this.lpToken.earlyAccessRequired) {
+      this.sPrimeService.observeSPrimeValue().subscribe(value => {
+        this.hasEarlyAccess = value >= this.lpToken.minSPrimeValue;
+      });
+    }
+
     this.setupAddActionsConfiguration();
     this.setupRemoveActionsConfiguration();
     this.setupMoreActionsConfiguration();
@@ -209,6 +224,7 @@ export default {
       activePrice: null,
       hasBinsInPool: false,
       account: null,
+      hasEarlyAccess: false,
       chartData: [],
       userValue: 0,
       currentPriceIndex: 0,
@@ -241,7 +257,8 @@ export default {
       'accountService',
       'priceService',
       'ltipService',
-      'globalActionsDisableService'
+      'globalActionsDisableService',
+      'sPrimeService'
     ]),
 
     hasSmartLoanContract() {
@@ -281,7 +298,7 @@ export default {
         this.calculateTotalRewards();
       })
     },
-    setupAddActionsConfiguration() {
+    setupAddActionsConfiguration(hasAccess) {
       this.addActionsConfig = {
         iconSrc: 'src/assets/icons/plus.svg',
         tooltip: 'Add',
@@ -373,6 +390,12 @@ export default {
 
     calculateUserValue() {
       this.userValue = this.lpToken.primaryBalance * this.firstAsset.price + this.lpToken.secondaryBalance * this.secondAsset.price;
+    },
+
+    setupButtonConfigs(hasAccess) {
+      this.setupAddActionsConfiguration(hasAccess);
+      this.setupRemoveActionsConfiguration(hasAccess);
+      this.setupMoreActionsConfiguration(hasAccess);
     },
 
     async calculateTotalRewards() {
@@ -519,6 +542,7 @@ export default {
             firstAmount: addLiquidityEvent.firstAssetAmount,
             secondAmount: addLiquidityEvent.secondAssetAmount,
             addLiquidityInput: addLiquidityEvent.addLiquidityInput,
+            routerAddress: this.lpToken.routerAddress
           };
 
           this.handleTransaction(this.addLiquidityTraderJoeV2Pool, {addLiquidityRequest}, () => {
@@ -564,7 +588,8 @@ export default {
             secondAsset: this.lpToken.secondary,
             remainingBinIds: removeLiquidityEvent.remainingBinIds,
             removeLiquidityInput,
-            lpToken: this.lpToken
+            lpToken: this.lpToken,
+            routerAddress: this.lpToken.routerAddress
           };
 
           this.handleTransaction(this.removeLiquidityTraderJoeV2Pool, {removeLiquidityRequest}, () => {
@@ -792,7 +817,7 @@ export default {
 
   .table__row {
     display: grid;
-    grid-template-columns: 180px 100px 100px 180px 140px 70px 110px 115px 30px 80px;
+    grid-template-columns: 200px 90px 90px 210px 110px 70px 110px 115px 30px 80px;
     height: 60px;
     padding-left: 6px;
 
@@ -829,6 +854,15 @@ export default {
         }
       }
 
+      .sprime-early-access {
+        width: 50px;
+
+        img, .early-access-placeholder {
+          margin-left: 5px;
+          display: inline-block;
+        }
+      }
+
       &.asset {
         align-items: center;
         justify-content: space-between;
@@ -845,7 +879,7 @@ export default {
           justify-content: center;
           margin-left: 8px;
           font-weight: 500;
-          width: 135px;
+          width: 150px;
         }
 
         .asset__name {
@@ -897,6 +931,16 @@ export default {
         align-items: flex-end;
       }
 
+      &.apr {
+        flex-direction: row;
+        justify-content: flex-end;
+        align-items: center;
+
+        .apr-warning {
+          margin-right: 5px;
+        }
+      }
+
       &.rewards {
         align-items: center;
         justify-content: flex-end;
@@ -904,6 +948,10 @@ export default {
 
       &.max-apr {
         font-weight: 600;
+        flex-direction: row;
+        align-items: center;
+        justify-content: end;
+
         .stars-icon {
           width: 20px;
           margin-left: 2px;
@@ -993,6 +1041,7 @@ export default {
     padding: 0 4px;
     width: 30px;
     height: 20px;
+    margin-left: 5px;
     border-radius: 6px;
     border: solid 1px var(--flat-button__border-color);
     text-transform: uppercase;

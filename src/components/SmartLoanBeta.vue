@@ -169,6 +169,7 @@ export default {
       'penpieLpBalances',
       'wombatLpAssets',
       'wombatLpBalances',
+      'wombatYYFarmsBalances',
       'traderJoeV2LpAssets',
       'fullLoanStatus',
       'noSmartLoan',
@@ -386,6 +387,7 @@ export default {
             this.penpieLpBalances,
             this.wombatLpAssets,
             this.wombatLpBalances,
+            this.wombatYYFarmsBalances,
             this.traderJoeV2LpAssets,
             this.farms,
         );
@@ -435,6 +437,7 @@ export default {
 
 .main-content {
   margin-top: 30px;
+  margin-bottom: 60px;
 }
 
 .account-apr-widget-wrapper {

@@ -1,10 +1,11 @@
-const AWS = require('aws-sdk');
-AWS.config.setPromisesDependency(require('bluebird'));
-const dynamoDb = new AWS.DynamoDB.DocumentClient();
 const ethers = require('ethers');
 const SMART_LOAN_FACTORY_TUP = require('../abis/SmartLoansFactoryTUP.json');
 const SMART_LOAN_FACTORY = require('../abis/SmartLoansFactory.json');
-const { arbitrumProvider, avalancheProvider } = require('../utils/helpers');
+const {
+  dynamoDb,
+  arbitrumProvider,
+  avalancheProvider
+} = require('../utils/helpers');
 
 const getAccountByReferralApi = (event, context, callback) => {
   const params = {

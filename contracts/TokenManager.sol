@@ -218,6 +218,9 @@ contract TokenManager is OwnableUpgradeable {
         // and update map(address=>uint256) tokenPostitionInList if the token is not already the last element
         uint256 tokenToRemoveIndex = tokenPositionInList[tokenToRemove];
         require(tokenToRemoveIndex < supportedTokensList.length, "Index out of range");
+        if (tokenToRemoveIndex == 0 && supportedTokensList[0] != tokenToRemove) {
+            revert("Token does not exist");
+        }
         if (tokenToRemoveIndex != (supportedTokensList.length - 1)) {
             address currentLastToken = supportedTokensList[supportedTokensList.length - 1];
             tokenPositionInList[currentLastToken] = tokenToRemoveIndex;
