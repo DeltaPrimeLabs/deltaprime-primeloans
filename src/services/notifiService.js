@@ -153,20 +153,21 @@ export default class notifiService {
       this.deleteAlert(payload.client, alert.alertId);
     } else {
       const alertRes = await this[this.alertSettings[alert.alertType].createMethod](payload);
-
-      if (!alertRes.id) return;
+      const createdAlert = alertRes.alerts[0];
+      if (!createdAlert) return;
+      // if (!alertRes.id) return;
 
       // update alerts states for settings screen
       if (alert.alertType === 'borrowRate' || alert.alertType === 'lendingRate') {
         if (!this.alertSettings[alert.alertType]['filterOptions']) this.alertSettings[alert.alertType]['filterOptions'] = [];
         this.alertSettings[alert.alertType]['filterOptions'].push({
-          ...JSON.parse(alertRes.filterOptions),
+          ...JSON.parse(createdAlert.filterOptions),
           poolAddress: payload.poolAddress,
-          id: alertRes.id
+          id: createdAlert.id
         });
       } else {
-        this.alertSettings[alert.alertType]['id'] = alertRes.id;
-        this.alertSettings[alert.alertType]['filterOptions'] = JSON.parse(alertRes.filterOptions);
+        this.alertSettings[alert.alertType]['id'] = createdAlert.id;
+        this.alertSettings[alert.alertType]['filterOptions'] = JSON.parse(createdAlert.filterOptions);
       }
     }
 
