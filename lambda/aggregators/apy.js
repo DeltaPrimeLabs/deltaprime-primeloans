@@ -455,11 +455,17 @@ const traderJoeApyAggregator = async (event) => {
       timeout: 60000
     });
 
+    await new Promise((resolve, reject) => setTimeout(resolve, 5000));
+
+    const tableHeads = await page.$$(".chakra-table__container .chakra-table > thead > tr > th");
+    await tableHeads[2].click();
+
+    await new Promise((resolve, reject) => setTimeout(resolve, 2000));
+
     const marketRows = await page.$$(".chakra-table__container .chakra-table > tbody > tr");
     const marketInnerTexts = await Promise.all(Array.from(marketRows).map(async market => {
       return (await (await market.getProperty("textContent")).jsonValue()).replace(/\s+/g, "");
     }));
-    await new Promise((resolve, reject) => setTimeout(resolve, 5000));
 
     for (const [pool, poolData] of Object.entries(pools)) {
       try {
