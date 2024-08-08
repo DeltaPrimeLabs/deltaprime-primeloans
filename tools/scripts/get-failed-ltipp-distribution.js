@@ -74,7 +74,7 @@ async function checkDistribution(fromBlock, toBlock) {
         // Process the transfer events
         transferEvents.forEach(event => {
             const recipientAddress = event.args.to.toLowerCase();
-            const amountTransferred = parseFloat(ethers.utils.formatEther(event.args.value.toString()));
+            const amountTransferred = parseFloat(ethers.utils.formatEther(event.args.value.toString())).toString();
 
             // Check if the recipient is in the distribution map and if the amount matches
             if (distributionMap.has(recipientAddress)) {
