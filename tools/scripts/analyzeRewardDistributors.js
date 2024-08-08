@@ -130,6 +130,10 @@ async function analyzeRewardDistributor(rewardDistributor, startBlock, rewardTok
     })
 
     events = events.sort((e1, e2) => e1.timestamp - e2.timestamp);
+    events = events.map(evt => ({
+        timestamp: new Date(evt.timestamp * 1000).toLocaleString(),
+        message: evt.message
+    }))
     console.log('Events', events);
 }
 
