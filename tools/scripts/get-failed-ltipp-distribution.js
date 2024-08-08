@@ -47,11 +47,13 @@ async function checkDistribution(fromBlock, toBlock) {
     const arbTokenContract = new ethers.Contract(arbTokenAddr, arbTokenAbi, provider);
 
     // Load distribution data from JSON file
-    const distributionData = JSON.parse(fs.readFileSync("distribution.json", "utf8"));
+    const distributionData = JSON.parse(fs.readFileSync("distribution_history_pa.json", "utf8"));
+
+    console.log(distributionData)
 
     // Create a map for quick lookup of expected token amounts by address
     const distributionMap = new Map(
-        distributionData.map(entry => [Object.keys(entry)[0].toLowerCase(), Object.values(entry)[0]])
+        Object.keys(distributionData).map(key => [key.toLowerCase(), distributionData[key]])
     );
 
     // Process blocks in chunks of 10,000
@@ -72,7 +74,7 @@ async function checkDistribution(fromBlock, toBlock) {
         // Process the transfer events
         transferEvents.forEach(event => {
             const recipientAddress = event.args.to.toLowerCase();
-            const amountTransferred = event.args.value.toString();
+            const amountTransferred = parseFloat(ethers.utils.formatEther(event.args.value.toString()));
 
             // Check if the recipient is in the distribution map and if the amount matches
             if (distributionMap.has(recipientAddress)) {
