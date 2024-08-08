@@ -77,7 +77,8 @@ export default ({
   },
   props: {
     notifiClient: null,
-    alertType: null
+    alertType: null,
+    targetGroupId: null
   },
   computed: {
     ...mapState('serviceRegistry', ['notifiService'])
@@ -113,7 +114,7 @@ export default ({
     },
 
     handleApyInput(apy) {
-      this.threshold = parseFloat((apy / 100).toFixed(4));
+      this.threshold = Number(parseFloat((apy)).toFixed(4));
     },
 
     async handleSave() {
@@ -127,7 +128,8 @@ export default ({
         poolAddress: this.poolAddress,
         thresholdDirection: this.thresholdDirection,
         threshold: this.threshold,
-        network: window.chain
+        network: window.chain,
+        targetGroupId: this.targetGroupId
       };
 
       await this.notifiService.handleCreateAlert(alert, payload);

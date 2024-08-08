@@ -66,6 +66,7 @@
             <AddInterestRate
               :notifiClient="client"
               :alertType="alert.type"
+              :targetGroupId="targetGroups[0].id"
             ></AddInterestRate>
             <div>
               <div
@@ -73,8 +74,8 @@
                 v-bind:key="id"
                 class="interest-rate"
               >
-                <span>{{ option.thresholdDirection|title }}&nbsp;</span>
-                <span class="rate__value">{{ (option.threshold * 100).toFixed(2) }}</span>&nbsp;APY %
+                <span>{{ option.input.aboveOrBelowThreshold.thresholdDirection | title }}&nbsp;</span>
+                <span class="rate__value">{{ parseFloat(option.input.aboveOrBelowThreshold.threshold).toFixed(2) }}</span>&nbsp;APY %
                 <span class="rate__asset-name">{{ addressToPoolName(option.poolAddress) }}</span>
                 <span
                   class="remove-icon"

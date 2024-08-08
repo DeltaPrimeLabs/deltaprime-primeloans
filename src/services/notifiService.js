@@ -245,43 +245,26 @@ export default class notifiService {
     return result;
   }
 
-  async createBorrowRateAlerts({ client, poolAddress, thresholdDirection, threshold, network }) {
-    const name = `Borrow Rate Alerts: ${poolAddress.toLowerCase()} ${thresholdDirection} ${threshold}`;
-    const eventType = {
-      type: 'fusion',
-      name,
-      fusionEventId: {
-        type: 'value',
-        value: config.fusionEventIds.borrowRate
-      },
-      // sourceType: 'DELTA_PRIME_LENDING_RATES',
-      // filterType: 'DELTA_PRIME_BORROW_RATE_EVENTS',
-      sourceAddress: {
-        type: 'value',
-        value: poolAddress.toLowerCase(),
-      },
-      // selectedUIType: 'TOGGLE',
-      // filterOptions: {
-      //   alertFrequency: 'DAILY',
-      //   threshold,
-      //   thresholdDirection,
-      // },
-      selectedUIType: 'HEALTH_CHECK',
-      healthCheckSubtitle: '', // mandatory but unused field
-      numberType: 'integer',
-      checkRatios: [
-        { type: 'below', ratio: 1 },
-        { type: 'above', ratio: 0 }
-      ], // fallback number
-      alertFrequency: 'DAILY', // optional
-    }
-
-    const result = await client.ensureAlert({
-      eventType,
-      inputs: {
-        [`${name}__healthRatio`]: threshold,
-        [`${name}__healthThresholdDirection`]: thresholdDirection,
-      },
+  async createBorrowRateAlerts({ client, poolAddress, thresholdDirection, threshold, network, targetGroupId }) {
+    const result = await client.ensureFusionAlerts({
+      alerts: [
+        {
+          filterOptions: JSON.stringify({
+            version: 1,
+            input: {
+              aboveOrBelowThreshold: {
+                thresholdDirection,
+                threshold,
+              },
+            },
+          }),
+          fusionEventId: config.fusionEventIds.borrowRate,
+          // NOTE: to avoid duplicate name, the name of alert needs to be unique. <fusionEventId>:;:<subscriptionValue>:;:<thresholdDirection>:;:<threshold>
+          name: `${config.fusionEventIds.borrowRate}:;:${poolAddress.toLowerCase()}:;:${thresholdDirection}:;:${threshold}`,
+          subscriptionValue: poolAddress,
+          targetGroupId,
+        },
+      ],
     });
 
     return result;
