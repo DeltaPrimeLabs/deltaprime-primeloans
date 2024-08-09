@@ -66,6 +66,7 @@
             <AddInterestRate
               :notifiClient="client"
               :alertType="alert.type"
+              :targetGroupId="targetGroups[0].id"
             ></AddInterestRate>
             <div>
               <div
@@ -73,8 +74,8 @@
                 v-bind:key="id"
                 class="interest-rate"
               >
-                <span>{{ option.thresholdDirection|title }}&nbsp;</span>
-                <span class="rate__value">{{ (option.threshold * 100).toFixed(2) }}</span>&nbsp;APY %
+                <span>{{ option.input.aboveOrBelowThreshold.thresholdDirection | title }}&nbsp;</span>
+                <span class="rate__value">{{ parseFloat(option.input.aboveOrBelowThreshold.threshold).toFixed(2) }}</span>&nbsp;APY %
                 <span class="rate__asset-name">{{ addressToPoolName(option.poolAddress) }}</span>
                 <span
                   class="remove-icon"
@@ -144,9 +145,10 @@ export default ({
     const currentHealthRate = this.alertSettings['loanHealth'];
     const healthRates = notifiConfig.HEALTH_RATES_CONFIG;
     this.selectedHealthRate = healthRates[1]; // default health rate: 20%
-
-    if (currentHealthRate.filterOptions && currentHealthRate.filterOptions.threshold) {
-      switch (currentHealthRate.filterOptions.threshold) {
+    const filterOptions = currentHealthRate.filterOptions && currentHealthRate.filterOptions.input.belowThreshold;
+    if (filterOptions ) {
+      const thresholdValue = Number(parseFloat(filterOptions.threshold).toFixed(2));
+      switch (thresholdValue) {
         case 10: // 10%
           this.selectedHealthRate = healthRates[0];
           break;
@@ -155,7 +157,7 @@ export default ({
           break;
         default:
           this.selectedHealthRate = healthRates[2];
-          this.selectedHealthRate.value = parseFloat((currentHealthRate.filterOptions.threshold ).toFixed(2));
+          this.selectedHealthRate.value = thresholdValue;
           break;
       };
     }
@@ -176,7 +178,7 @@ export default ({
       const payload = {
         client: this.client,
         walletAddress: this.account,
-        healthRatio: parseFloat((this.selectedHealthRate.value).toFixed(4)),
+        healthRatio: Number(parseFloat(this.selectedHealthRate.value).toFixed(4)),
         network: window.chain,
         targetGroupId: this.targetGroups[0].id,
       };
