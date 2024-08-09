@@ -80,7 +80,7 @@ export default {
     }
   },
   NOTIFICATION_ICONS_CONFIG: {
-    "Announcement": {
+    "General Announcements": {
       LIGHT: "src/assets/icons/icon_announcement.svg",
       DARK: "src/assets/icons/icon_announcement_dark.svg"
     },
