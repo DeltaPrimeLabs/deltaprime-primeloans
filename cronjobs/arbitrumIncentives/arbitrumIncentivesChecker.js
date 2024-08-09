@@ -5,8 +5,8 @@ const {
 const pingUrl = require('../.secrets/ping.json');
 
 const threshold = 0.000001;
-// 476.19047619047619 = 80000 ARB per week hourly
-const expectedIncentives = 476.19047619047619; // change the value accordingly based on incentives of interval
+// 297.619047619 = 80000 ARB per week hourly
+const expectedIncentives = 297.619047619; // change the value accordingly based on incentives of interval
 
 const arbitrumIncentivesChecker = async () => {
   try {
