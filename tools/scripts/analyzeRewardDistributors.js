@@ -81,6 +81,7 @@ async function analyzeRewardDistributor(rewardDistributor, startBlock, rewardTok
         })
     })
 
+    let totalNotifyAmount = 0;
     notifyRewardAmountTxs.map(tx => {
         const [rewardInWei] = new ethers.utils.AbiCoder().decode(['uint256'], '0x' + tx.input.slice(10));
         const reward = parseFloat(ethers.utils.formatEther(rewardInWei));
@@ -88,6 +89,7 @@ async function analyzeRewardDistributor(rewardDistributor, startBlock, rewardTok
             timestamp: parseFloat(tx.timeStamp),
             message: `notifyRewardsAmounts ${reward} ${rewardTokenSymbol}`
         })
+        totalNotifyAmount += reward;
     })
 
     txs = [];
@@ -118,6 +120,7 @@ async function analyzeRewardDistributor(rewardDistributor, startBlock, rewardTok
     };
 
     const rewardTokenReceiveTxs = txs.filter(tx => tx.tokenAddress.toLowerCase() === rewardToken.toLowerCase());
+    const totalTokensSentPerAddress = {}
 
     rewardTokenReceiveTxs.map(tx => {
         const from = tx.from.toLowerCase();
@@ -127,7 +130,10 @@ async function analyzeRewardDistributor(rewardDistributor, startBlock, rewardTok
             timestamp: Math.floor(new Date(tx.timestamp).getTime() / 1000),
             message: `${addressMapping[from] || from} FUND with ${reward} ${rewardTokenSymbol}`
         })
+        totalTokensSentPerAddress[addressMapping[from] || from] = (totalTokensSentPerAddress[addressMapping[from] || from] || 0) + reward;
     })
+
+    const totalTokensFunded = Object.values(totalTokensSentPerAddress).reduce((acc, val) => acc + val, 0);
 
     events = events.sort((e1, e2) => e1.timestamp - e2.timestamp);
     events = events.map(evt => ({
@@ -135,9 +141,12 @@ async function analyzeRewardDistributor(rewardDistributor, startBlock, rewardTok
         message: evt.message
     }))
     console.log('Events', events);
+    console.log('Total tokens sent per address', totalTokensSentPerAddress);
+    console.log('Total tokens funded', totalTokensFunded);
+    console.log(`Unused tokens: ${totalTokensFunded - totalNotifyAmount}`)
 }
 
-analyzeRewardDistributor('0x6d149Fcc150A3B097D7647408345898fe9db1ded', 47509821, 'sAVAX', '0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE');
+// analyzeRewardDistributor('0x6d149Fcc150A3B097D7647408345898fe9db1ded', 47509821, 'sAVAX', '0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE');
 // analyzeRewardDistributor('0x3750F8d6Df82699ada6bBd1463C4E91fCf37005D', 47509886, 'sAVAX', '0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE');
 // analyzeRewardDistributor('0xB913aC229910d705297DEB1c168af3dA1416B227', 47509939, 'ggAVAX', '0xA25EaF2906FA1a3a13EdAc9B9657108Af7B703e3');
-// analyzeRewardDistributor('0x50b0b59f14bA882BD511Fe08d1cdc975807a94A4', 47510076, 'ggAVAX', '0xA25EaF2906FA1a3a13EdAc9B9657108Af7B703e3');
+analyzeRewardDistributor('0x50b0b59f14bA882BD511Fe08d1cdc975807a94A4', 47510076, 'ggAVAX', '0xA25EaF2906FA1a3a13EdAc9B9657108Af7B703e3');
