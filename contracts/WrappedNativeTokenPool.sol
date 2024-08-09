@@ -19,7 +19,7 @@ contract WrappedNativeTokenPool is Pool {
     /**
      * Wraps and deposits amount attached to the transaction
      **/
-    function depositNativeToken() public payable virtual {
+    function depositNativeToken() public payable virtual gated {
         if(msg.value == 0) revert ZeroDepositAmount();
 
         _accumulateDepositInterest(msg.sender);
@@ -45,7 +45,7 @@ contract WrappedNativeTokenPool is Pool {
      * Unwraps and withdraws selected amount from the user deposits
      * @dev _amount the amount to be withdrawn
      **/
-    function withdrawNativeToken(uint256 _amount) external nonReentrant {
+    function withdrawNativeToken(uint256 _amount) external nonReentrant gated {
         if(_amount > IERC20(tokenAddress).balanceOf(address(this))) revert InsufficientPoolFunds();
 
         _accumulateDepositInterest(msg.sender);
