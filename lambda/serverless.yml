@@ -626,28 +626,28 @@ resources:
         StreamSpecification:
           StreamViewType: "NEW_AND_OLD_IMAGES"
         TableName: ${self:provider.environment.GGP_INCENTIVES_AVA_TABLE}
-    ggpIncentivesYYWombatAvaTable:
-      Type: AWS::DynamoDB::Table
-      DeletionPolicy: Retain
-      Properties:
-        AttributeDefinitions:
-          -
-            AttributeName: "id"
-            AttributeType: "S"
-          -
-            AttributeName: "timestamp"
-            AttributeType: "N"
-        KeySchema:
-          -
-            AttributeName: "id"
-            KeyType: "HASH"
-          -
-            AttributeName: "timestamp"
-            KeyType: "RANGE"
-        BillingMode: PAY_PER_REQUEST
-        StreamSpecification:
-          StreamViewType: "NEW_AND_OLD_IMAGES"
-        TableName: ${self:provider.environment.GGP_INCENTIVES_YY_WOMBAT_AVA_TABLE}
+    # ggpIncentivesYYWombatAvaTable:
+    #   Type: AWS::DynamoDB::Table
+    #   DeletionPolicy: Retain
+    #   Properties:
+    #     AttributeDefinitions:
+    #       -
+    #         AttributeName: "id"
+    #         AttributeType: "S"
+    #       -
+    #         AttributeName: "timestamp"
+    #         AttributeType: "N"
+    #     KeySchema:
+    #       -
+    #         AttributeName: "id"
+    #         KeyType: "HASH"
+    #       -
+    #         AttributeName: "timestamp"
+    #         KeyType: "RANGE"
+    #     BillingMode: PAY_PER_REQUEST
+    #     StreamSpecification:
+    #       StreamViewType: "NEW_AND_OLD_IMAGES"
+    #     TableName: ${self:provider.environment.GGP_INCENTIVES_YY_WOMBAT_AVA_TABLE}
     # loansAvaTable:
     #   Type: AWS::DynamoDB::Table
     #   DeletionPolicy: Retain
