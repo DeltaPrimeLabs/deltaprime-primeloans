@@ -78,12 +78,13 @@ async function checkDistribution(fromBlock, toBlock) {
 
             // Check if the recipient is in the distribution map and if the amount matches
             if (distributionMap.has(recipientAddress)) {
-                const expectedAmount = distributionMap.get(recipientAddress).toString();
+                const expectedAmount = distributionMap.get(recipientAddress);
 
                 if (amountTransferred === expectedAmount) {
                     // Remove the successfully processed entry
                     distributionMap.delete(recipientAddress);
                 } else {
+                    console.log(`${typeof amountTransferred} ${typeof expectedAmount}`)
                     console.log(`Amount mismatch for ${recipientAddress}: Expected ${expectedAmount}, Transferred ${amountTransferred}`);
                 }
             }
