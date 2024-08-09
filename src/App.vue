@@ -24,11 +24,6 @@
       You are not connected to Metamask. <a class="banner-link" @click="initNetwork"><b>Click here</b></a> to connect.
     </Banner>
     <Banner v-if="showPrimeAccountBanner" background="green-accent" :closable="true">
-      Prime Accounts are live again 🔥 Please join our Discord if you got liquidated.
-    </Banner>
-    <Banner v-if="showAffectedPrimeAccountBanner" background="green-accent" :closable="true">
-      Your Prime Account has been reimbursed. Slippage can be compensated.
-      <a class="banner-link" href="https://discord.com/channels/889510301421166643/912702114252329060/1265739191635935242"><b>Read more</b></a>.
     </Banner>
     <Banner v-if="showInterestRateBanner" background="green-accent" :closable="true">
       Interest rate model will be updated at 12:00 CET. <a class="banner-link"
@@ -216,7 +211,7 @@ export default {
     }
 
     if (window.location.href.includes('prime-account')) {
-      this.showPrimeAccountBanner = true;
+      // this.showPrimeAccountBanner = true;
     }
 
     if (config.chainId === 42161) {

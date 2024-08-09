@@ -436,7 +436,7 @@ export default {
 
         totalRewards.push({
           symbol: token.symbol,
-          amount: rewardToken.toFixed()
+          amount: rewardToken.toFixed(6)
         });
       });
 
@@ -610,7 +610,7 @@ export default {
 
       const merkleEntries = [];
 
-      if (this.lpToken.rewardsInfo) {
+      if (this.lpToken.rewardsInfo && this.lpToken.version !== '2.2') {
         this.lpToken.rewardsInfo.rewards.map((reward, id) => {
           merkleEntries.push({
             market: this.lpToken.address,
@@ -623,9 +623,19 @@ export default {
         });
       }
 
-      const claimRewardsRequest = {
-        merkleEntries
-      };
+      const claimRewardsRequest =
+          this.lpToken.version === '2.2'
+              ?
+              {
+                version: this.lpToken.version,
+                pair: this.lpToken.address,
+                ids: this.lpToken.binIds
+              }
+              :
+              {
+                version: this.lpToken.version,
+                merkleEntries: merkleEntries
+              };
 
       modalInstance.$on('CLAIM', addFromWalletEvent => {
         if (this.smartLoanContract) {

@@ -663,20 +663,11 @@ export default {
     },
 
     async setupTraderJoeV2LpAssets({state, rootState, commit}) {
-      const traderJoeService = rootState.serviceRegistry.traderJoeService;
       let lpTokens = {};
 
       Object.values(config.TRADERJOEV2_LP_ASSETS_CONFIG).forEach(async asset => {
         // To-do: check if the assets supported. correct symbols if not.
         lpTokens[asset.symbol] = asset;
-
-        try {
-          const rewardsInfo = await traderJoeService.getRewardsInfo(state.smartLoanContract.address, asset.address);
-
-          lpTokens[asset.symbol]['rewardsInfo'] = rewardsInfo;
-        } catch (error) {
-          console.log(`fetching climable rewards error: ${error}`);
-        }
       });
 
       // To-do: request price of TJLB token prices from Redstone
@@ -1135,7 +1126,7 @@ export default {
       await commit('setWombatLpBalances', wombatLpBalances);
       await commit('setWombatYYFarmsBalances', wombatFarmsBalances);
       await dispatch('setupConcentratedLpUnderlyingBalances');
-      await dispatch('setupTraderJoeV2LpUnderlyingBalancesAndLiquidity');
+      await dispatch('setupTraderJoeV2LpUnderlyingBalancesAndRewardsAndLiquidity');
       const refreshEvent = {assetBalances: balances, lpBalances: lpBalances};
       dataRefreshNotificationService.emitAssetBalancesDataRefresh();
       dataRefreshNotificationService.emitAssetBalancesDataRefreshEvent(refreshEvent);
@@ -1259,7 +1250,8 @@ export default {
       }
     },
 
-    async refreshTraderJoeV2LpUnderlyingBalancesAndLiquidity({state, dispatch, rootState}, {lpAsset}) {
+    async refreshTraderJoeV2LpUnderlyingBalancesAndRewardsAndLiquidity({state, dispatch, rootState}, {lpAsset}) {
+      const provider = rootState.network.provider;
       const loanAllBins = await state.readSmartLoanContract.getOwnedTraderJoeV2Bins();
       const loanBinsForPair = loanAllBins.filter(bin =>
         bin.pair.toLowerCase() === lpAsset.address.toLowerCase()
@@ -1301,17 +1293,38 @@ export default {
       lpAsset.binBalanceSecondary = isLiquidityValuable ? binBalanceSecondary : []; // price assigned to each bin
       lpAsset.binTotalSupply = isLiquidityValuable ? binTotalSupply : []; // price assigned to each bin
 
+      const traderJoeService = rootState.serviceRegistry.traderJoeService;
+
+      try {
+        const rewardsInfo = lpAsset.version === '2.2'
+            ?
+            {
+              rewards: [
+                {
+                  tokenAddress: config.ASSETS_CONFIG[lpAsset.rewardToken].address,
+                  amount: await traderJoeService.getRewardsInfoV2_2(lpAsset.hooksSimpleRewarder, state.smartLoanContract.address, lpAsset.binIds, provider)
+                }
+              ]
+            }
+            :
+            await traderJoeService.getRewardsInfo(state.smartLoanContract.address, lpAsset.address);
+
+        lpAsset.rewardsInfo = rewardsInfo;
+      } catch (error) {
+        console.log(`fetching climable rewards error: ${error}`);
+      }
+
       const lpService = rootState.serviceRegistry.lpService;
       lpService.emitRefreshLp('TJV2');
     },
 
-    async setupTraderJoeV2LpUnderlyingBalancesAndLiquidity({state, dispatch, rootState}) {
+    async setupTraderJoeV2LpUnderlyingBalancesAndRewardsAndLiquidity({state, dispatch, rootState}) {
       const traderJoeV2LpAssets = state.traderJoeV2LpAssets;
 
       Object.keys(traderJoeV2LpAssets).forEach(async assetSymbol => {
         const lpAsset = traderJoeV2LpAssets[assetSymbol];
 
-        await dispatch('refreshTraderJoeV2LpUnderlyingBalancesAndLiquidity', {lpAsset});
+        await dispatch('refreshTraderJoeV2LpUnderlyingBalancesAndRewardsAndLiquidity', {lpAsset});
       });
     },
 
@@ -2029,7 +2042,7 @@ export default {
       let tx = await awaitConfirmation(transaction, provider, 'withdraw');
 
       const price = state.penpieLpAssets[unstakeRequest.asset].price;
-      const withdrawAmountUSD = Number(amountInWei) * price;
+      const withdrawAmountUSD = fromWei(amountInWei) * price;
       const assetBalanceBeforeWithdraw = state.penpieLpBalances[unstakeRequest.asset].price;
 
       const assetBalanceAfterWithdraw = Number(assetBalanceBeforeWithdraw) - Number(unstakeRequest.value);
@@ -2768,7 +2781,7 @@ export default {
         .emitExternalAssetBalanceUpdate(fundLiquidityRequest.secondAsset, secondAssetBalanceAfterTransaction, false, true);
 
       const lpAsset = state.traderJoeV2LpAssets[fundLiquidityRequest.lpToken.symbol];
-      await dispatch('refreshTraderJoeV2LpUnderlyingBalancesAndLiquidity', {lpAsset});
+      await dispatch('refreshTraderJoeV2LpUnderlyingBalancesAndRewardsAndLiquidity', {lpAsset});
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {
@@ -2799,7 +2812,7 @@ export default {
       );
 
       const lpAsset = state.traderJoeV2LpAssets[withdrawLiquidityRequest.lpToken.symbol];
-      await dispatch('refreshTraderJoeV2LpUnderlyingBalancesAndLiquidity', {lpAsset});
+      await dispatch('refreshTraderJoeV2LpUnderlyingBalancesAndRewardsAndLiquidity', {lpAsset});
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
@@ -2851,7 +2864,7 @@ export default {
 
       // update underlying assets' balances
       const lpAsset = state.traderJoeV2LpAssets[addLiquidityRequest.symbol];
-      await dispatch('refreshTraderJoeV2LpUnderlyingBalancesAndLiquidity', {lpAsset});
+      await dispatch('refreshTraderJoeV2LpUnderlyingBalancesAndRewardsAndLiquidity', {lpAsset});
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
       setTimeout(() => {
@@ -2922,7 +2935,13 @@ export default {
 
       const wrappedContract = await wrapContract(state.smartLoanContract, loanAssets);
 
-      const transaction = await wrappedContract.claimReward(claimRewardsRequest.merkleEntries);
+      const transaction =
+          claimRewardsRequest.version === '2.2'
+          ?
+          await wrappedContract.claimReward(claimRewardsRequest.pair, claimRewardsRequest.ids)
+          :
+          await wrappedContract.claimReward(claimRewardsRequest.merkleEntries);
+
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       const tx = await awaitConfirmation(transaction, provider, 'claim rewards from traderjoe v2 pools');
 
@@ -3227,7 +3246,7 @@ export default {
     async depositPendleLPAndStake({state, rootState, commit, dispatch}, {depositAndStakeRequest}) {
       const provider = rootState.network.provider;
 
-      const tokenForApprove = TOKEN_ADDRESSES[depositAndStakeRequest.sourceAsset];
+      const tokenForApprove = depositAndStakeRequest.market;
       const fundToken = new ethers.Contract(tokenForApprove, erc20ABI, provider.getSigner());
       const allowance = formatUnits(await fundToken.allowance(rootState.network.account, state.smartLoanContract.address), depositAndStakeRequest.decimals);
 
@@ -3379,6 +3398,7 @@ export default {
 
       let executionFeeWei = toWei(addLiquidityRequest.executionFee.toFixed(18));
 
+      console.log(addLiquidityRequest)
       const transaction = await wrappedContract[addLiquidityRequest.method](
         addLiquidityRequest.isLongToken,
         sourceAmount,
@@ -3441,7 +3461,7 @@ export default {
         minLongAmount,
         minShortAmount,
         executionFeeWei,
-        {value: executionFeeWei}
+        {value: executionFeeWei, gasLimit: 9999999}
       );
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
@@ -3499,7 +3519,7 @@ export default {
 
       let minGmAmount = parseUnits(addLiquidityRequest.minGmAmount.toFixed(targetDecimals), targetDecimals);
 
-      const transaction = await wrappedContract[addLiquidityRequest.method](sourceAmount, minGmAmount, executionFeeWei, {value: executionFeeWei});
+      const transaction = await wrappedContract[addLiquidityRequest.method](sourceAmount, minGmAmount, executionFeeWei, {value: executionFeeWei, gasLimit: 9999999});
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
@@ -3557,7 +3577,7 @@ export default {
       const minShortTokenAmount = minTargetTokenAmount.div(2);
 
 
-      const transaction = await wrappedContract[removeLiquidityRequest.method](sourceAmount, minLongTokenAmount, minShortTokenAmount, executionFeeWei, {value: executionFeeWei});
+      const transaction = await wrappedContract[removeLiquidityRequest.method](sourceAmount, minLongTokenAmount, minShortTokenAmount, executionFeeWei, {value: executionFeeWei, gasLimit: 9999999});
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();

@@ -88,7 +88,7 @@
             :config="addActionsConfig"
             v-if="addActionsConfig"
             v-on:iconButtonClick="actionClick"
-            :disabled="disableAllButtons || noSmartLoan || !healthLoaded">
+            :disabled="disableAllButtons || noSmartLoan || !healthLoaded || isMatured(lpToken.maturity)">
         </IconButtonMenuBeta>
         <IconButtonMenuBeta
             class="actions__icon-button last"
@@ -295,6 +295,12 @@ export default {
           }
         ]
       };
+    },
+
+    isMatured(maturity) {
+      const [day, month, year] = maturity.split('/')
+      const maturityDate = new Date(`${year}-${month}-${day}`)
+      return maturityDate < new Date()
     },
 
     actionClick(key) {
