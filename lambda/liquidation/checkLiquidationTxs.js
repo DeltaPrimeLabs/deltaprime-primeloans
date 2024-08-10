@@ -131,8 +131,9 @@ async function getLiquidationTxsBetweenBlocks(chain = 'avalanche', startBlock = 
     return successfullLiquidationTxs;
 }
 
-async function getProcessedLiquidationDataFromDb(txHash){
-    let apiEndpoint = `https://im34modd75.execute-api.eu-west-3.amazonaws.com/getProcessedLiquidationFromHashArbitrum?txHash=${txHash}`;
+async function getProcessedLiquidationDataFromDb(chain, txHash){
+    chain = chain.charAt(0).toUpperCase() + chain.slice(1);
+    let apiEndpoint = `https://im34modd75.execute-api.eu-west-3.amazonaws.com/getProcessedLiquidationFromHash${chain}?txHash=${txHash}`;
     let response = await fetch(apiEndpoint);
     let data = await response.json();
     return data['Items'][0]
@@ -151,7 +152,7 @@ async function processLiquidationsRevenue(chain = 'avalanche', startBlock, endBl
 
     for(const liquidationTx of liquidationTxs){
         bar1.increment();
-        let processedLiquidationData = await getProcessedLiquidationDataFromDb(liquidationTx['hash']);
+        let processedLiquidationData = await getProcessedLiquidationDataFromDb(chain, liquidationTx['hash']);
         let usersSPrimeSharesAtTimeOfLiquidation = processedLiquidationData['usersSPrimeDollarValues']; // Although it is called dollar values, it is actually the sPrime shares
 
         totalUsdSum += processedLiquidationData['revenueDollarValue'];
@@ -322,6 +323,6 @@ function getPricesWithLatestTimestamp(prices, symbol) {
 
 // checkFailedLiquidationTxsEvents(1720952696, 1721471096);
 // processSuccessfullLiquidationTx({hash: '0x365372c222960a9d56498f7537729caa6a9df39a7ef516c2d224bb70ced1e592'})
-// processLiquidationsRevenue('avalanche', 48829999, 48872209);
-processLiquidationsRevenue('arbitrum', 227699100, 240352048, 0);
+processLiquidationsRevenue('avalanche', 47424034, 49093788);
+// processLiquidationsRevenue('arbitrum', 227699100, 240352048, 0);
 // checkSPrimeTotalValueMinted('arbitrum');
