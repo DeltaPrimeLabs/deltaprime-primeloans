@@ -144,6 +144,7 @@ async function analyzeRewardDistributor(rewardDistributor, startBlock, rewardTok
     console.log('Total tokens sent per address', totalTokensSentPerAddress);
     console.log('Total tokens funded', totalTokensFunded);
     console.log(`Unused tokens: ${totalTokensFunded - totalNotifyAmount}`)
+    console.log(`Used tokens: ${totalNotifyAmount}`)
 }
 
 // analyzeRewardDistributor('0x6d149Fcc150A3B097D7647408345898fe9db1ded', 47509821, 'sAVAX', '0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE');
