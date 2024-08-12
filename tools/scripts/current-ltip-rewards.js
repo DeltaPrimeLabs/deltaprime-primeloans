@@ -63,7 +63,7 @@ async function fetchLoansDataInBatches(epochName) {
     console.log(`LONS: ${loans.length}`)
     loans = loans.slice(0, 2200);
 
-    let resps = await promiseAllInBatches(task, loans, 25);
+    let resps = await promiseAllInBatches(task, loans, 60);
 
     let jsons = await Promise.all(resps.map(json => json.json()))
 
@@ -168,7 +168,7 @@ async function promiseAllInBatches(task, items, batchSize) {
 
         position += batchSize;
         // sleep 30 seconds with promise timeout
-        // await new Promise(resolve => setTimeout(resolve, 500));
+        // await new Promise(resolve => setTimeout(resolve, 10000));
     }
     return results;
 }
@@ -269,8 +269,8 @@ function createAddJson(files, output) {
 
 //last distribution timestamp: 1722868282
 //current distribution timestamp: 1723461276
-fetchData("LTIP_EPOCH_10", 1722868282, 1723461276, 10000, true)
-// fetchLoansDataInBatches("LTIP_EPOCH_9_TOTAL")
+// fetchData("LTIP_EPOCH_10", 1722868282, 1723461276, 10000, true)
+// fetchLoansDataInBatches("LTIP_EPOCH_10_TOTAL")
 //no need to use this one for pools
 // fetchPoolsDataInBatches("LTIP_EPOCH_7", ["LTIP_SAVINGS_EPOCH_1", "LTIP_EPOCH_2_SAVINGS", "LTIP_EPOCH_3_SAVINGS", "LTIP_EPOCH_4_SAVINGS", "LTIP_EPOCH_5_SAVINGS", "LTIP_EPOCH_6_SAVINGS"])
 // fetchData("LTIP_EPOCH_5_TOTAL_4", 1720013265, 1720521317, 10000, false)
@@ -278,6 +278,6 @@ fetchData("LTIP_EPOCH_10", 1722868282, 1723461276, 10000, true)
 // checkNegativeAccounts()
 // checkCollectedInTimestamp(1715152203)
 // checkCollected();
-// createDiffJson( "LTIP_EPOCH_8_TOTAL", "LTIP_EPOCH_9_TOTAL", "arbitrum/ltip")
+createDiffJson( "LTIP_EPOCH_9_TOTAL", "LTIP_EPOCH_10_TOTAL", "arbitrum/ltip")
 // createAddJson( ["LTIP_SAVINGS_EPOCH_1", "LTIP_EPOCH_2_SAVINGS", "LTIP_EPOCH_3_SAVINGS", "LTIP_EPOCH_4_SAVINGS", "LTIP_EPOCH_5_SAVINGS"], "LTIP_EPOCH_5_SAVINGS_TOTAL")
 // analyzeJson("LTIP_EPOCH_9_SAVINGS")
