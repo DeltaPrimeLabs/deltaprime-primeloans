@@ -8,6 +8,7 @@ import UNI_V3_POSITION_MANAGER
 import TRADERJOE_V2_POSITION_MANAGER from '@artifacts/contracts/interfaces/IPositionManager.sol/IPositionManager.json';
 
 import ARBITRUM_REVENUE_DISTRIBUTION_EPOCH_0 from "../data/arbitrum/revenue-distribution/distributionHistoryArbitrumEpoch0.json";
+import AVALANCHE_REVENUE_DISTRIBUTION_EPOCH_0 from "../data/avalanche/revenue-distribution/distributionHistoryAvalancheEpoch0.json";
 
 
 const ethers = require('ethers');
@@ -165,10 +166,13 @@ export default class sPrimeService {
               )
             }
 
+            let revenueReceived;
             if (config.chainSlug === 'arbitrum') {
-              const revenueReceived = ARBITRUM_REVENUE_DISTRIBUTION_EPOCH_0[walletAddress].amount * secondAssetPrice;
-              this.revenueReceived$.next(revenueReceived);
+              revenueReceived = ARBITRUM_REVENUE_DISTRIBUTION_EPOCH_0[walletAddress].amount * secondAssetPrice;
+            } else {
+              revenueReceived = AVALANCHE_REVENUE_DISTRIBUTION_EPOCH_0[walletAddress] * secondAssetPrice;
             }
+              this.revenueReceived$.next(revenueReceived);
 
           }
         )
