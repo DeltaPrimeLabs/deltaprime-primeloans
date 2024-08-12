@@ -93,25 +93,18 @@ export default ({
     },
 
     getBoxIcon(notification) {
-      if (notification.category === 'CREATOR_MESSAGE') {
-        return this.iconsConfig.Announcement[this.theme];
-      }
 
-      const sourceName = notification.detail.sourceName;
+      const sourceName = notification.detail.sourceName; // sourceName = topic name
 
       return this.iconsConfig[sourceName] && this.iconsConfig[sourceName][this.theme];
     },
 
     getBoxTitle(notification) {
-      return notification.category === 'CREATOR_MESSAGE' 
-            ? 'DeltaPrime Announcements'
-            : notification.detail.notificationTypeName;
+      return notification.detail.notificationTypeName;
     },
 
     getBoxMessage(notification) {
-      return notification.category === 'CREATOR_MESSAGE'
-            ? notification.detail.message
-            : notification.detail.genericMessage.replace('Loan Health score', 'Health');
+      return notification.detail.genericMessage.replace('Loan Health score', 'Health')
     },
 
     handleDetail(notification) {

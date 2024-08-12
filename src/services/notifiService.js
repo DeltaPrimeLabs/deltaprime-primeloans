@@ -69,8 +69,9 @@ export default class notifiService {
       for (const alert of notifi.alerts) {
         // get alerts statuses for initialization on settings screen
         let fusionEvent;
+        const alertMetadata = this.resolveAlertName(alert.name);
 
-        fusionEvent = Object.entries(config.fusionEventIds).find(([name, eventId]) => eventId == alert.sourceGroup.sources[0].fusionEventTypeId); // TODO: use alert.name instead
+        fusionEvent = Object.entries(config.fusionEventIds).find(([name, eventId]) => eventId == alertMetadata.fusionEventTypeId); 
 
         if (this.alertSettings[fusionEvent[0]]) {
           this.alertSettings[fusionEvent[0]]['created'] = true;
@@ -80,7 +81,7 @@ export default class notifiService {
             if (!this.alertSettings[fusionEvent[0]]['filterOptions']) this.alertSettings[fusionEvent[0]]['filterOptions'] = [];
             this.alertSettings[fusionEvent[0]]['filterOptions'].push({
               ...JSON.parse(alert.filterOptions),
-              poolAddress: alert.sourceGroup.sources[0].blockchainAddress,
+              poolAddress: alertMetadata.subscriptionValue,
               id: alert.id
             });
           } else {
@@ -94,6 +95,24 @@ export default class notifiService {
     this.emitAlertSettingsUpdated();
   }
 
+  resolveAlertName(alertName) {
+    const resolved = alertName.split(':;:');
+    // NOTE: "Announcements", "Loan Health" and "Liquidation" alerts.
+    if (resolved.length === 1) {
+      return {
+        fusionEventTypeId: resolved[0],
+      };
+    }
+    // NOTE: "Borrow Rate", "Lending Rate" alerts.
+    const [fusionEventTypeId, subscriptionValue, thresholdDirection, threshold] = resolved;
+    return {
+      fusionEventTypeId,
+      subscriptionValue,
+      thresholdDirection,
+      threshold,
+    };  
+  }
+
   async refreshClientInfo(client) {
     // check if user already authenticated by notifi
     const initRes = await client.initialize();
@@ -103,7 +122,7 @@ export default class notifiService {
 
     if (authenticated) {
       // get user's targets and alerts configured
-      data = await client.fetchData(); // TODO: change to fetchFusionData
+      data = await client.fetchFusionData();
       history = await this.getNotifications(client);
     }
 
@@ -155,7 +174,6 @@ export default class notifiService {
       const alertRes = await this[this.alertSettings[alert.alertType].createMethod](payload);
       const createdAlert = alertRes.alerts[0];
       if (!createdAlert) return;
-      // if (!alertRes.id) return;
 
       // update alerts states for settings screen
       if (alert.alertType === 'borrowRate' || alert.alertType === 'lendingRate') {
@@ -230,7 +248,7 @@ export default class notifiService {
             input: {
               belowThreshold: {
                 thresholdDirection: "below",
-                threshold: healthRatio, // TODO: Double confirm if 0.1 or 10
+                threshold: healthRatio, // NOTE: threshold percentage conversion is handled by parser
               },
             },
           }),
@@ -286,6 +304,7 @@ export default class notifiService {
           fusionEventId: config.fusionEventIds.lendingRate,
           name: config.fusionEventIds.lendingRate,
           // NOTE: to avoid duplicate name, the name of alert needs to be unique. <fusionEventId>:;:<subscriptionValue>:;:<thresholdDirection>:;:<threshold>
+          // This name variable can be resolve and used as metadata (example in NotificationDetail.vue)
           name: `${config.fusionEventIds.lendingRate}:;:${poolAddress.toLowerCase()}:;:${thresholdDirection}:;:${threshold}`,
           subscriptionValue: poolAddress,
           targetGroupId,
@@ -297,7 +316,7 @@ export default class notifiService {
   }
 
   async getNotifications(client, after, first = 20) {
-    const history = await client.getNotificationHistory({
+    const history = await client.getFusionNotificationHistory({
       after,
       first
     });
