@@ -267,9 +267,9 @@ function createAddJson(files, output) {
 }
 
 
-//last distribution timestamp: 1722247318
-//current distribution timestamp: 1722868282
-// fetchData("LTIP_EPOCH_9", 1722247318, 1722868282, 10000, true)
+//last distribution timestamp: 1722868282
+//current distribution timestamp: 1723461276
+fetchData("LTIP_EPOCH_10", 1722868282, 1723461276, 10000, true)
 // fetchLoansDataInBatches("LTIP_EPOCH_9_TOTAL")
 //no need to use this one for pools
 // fetchPoolsDataInBatches("LTIP_EPOCH_7", ["LTIP_SAVINGS_EPOCH_1", "LTIP_EPOCH_2_SAVINGS", "LTIP_EPOCH_3_SAVINGS", "LTIP_EPOCH_4_SAVINGS", "LTIP_EPOCH_5_SAVINGS", "LTIP_EPOCH_6_SAVINGS"])
@@ -278,6 +278,6 @@ function createAddJson(files, output) {
 // checkNegativeAccounts()
 // checkCollectedInTimestamp(1715152203)
 // checkCollected();
-createDiffJson( "LTIP_EPOCH_8_TOTAL", "LTIP_EPOCH_9_TOTAL", "arbitrum/ltip")
+// createDiffJson( "LTIP_EPOCH_8_TOTAL", "LTIP_EPOCH_9_TOTAL", "arbitrum/ltip")
 // createAddJson( ["LTIP_SAVINGS_EPOCH_1", "LTIP_EPOCH_2_SAVINGS", "LTIP_EPOCH_3_SAVINGS", "LTIP_EPOCH_4_SAVINGS", "LTIP_EPOCH_5_SAVINGS"], "LTIP_EPOCH_5_SAVINGS_TOTAL")
 // analyzeJson("LTIP_EPOCH_9_SAVINGS")
