@@ -11,7 +11,8 @@ let wallet = mnemonicWallet.connect(provider);
 
 let factory = new ethers.Contract('0x3Ea9D480295A73fd2aF95b4D96c2afF88b21B03D', FACTORY_ARTIFACT.abi, wallet);
 
-
+const GGP_AWS_ENDPOINT = 'https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/ggp-incentives-for';
+const YY_GGP_AWS_ENDPOINT = 'https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/ggp-incentives-yy-for';
 let collectedTotal = 0;
 
 function sleep(ms) {
@@ -65,10 +66,10 @@ async function promiseAllInBatches(task, items, batchSize) {
     return results;
 }
 
-async function fetchData(file) {
+async function fetchData(file, endpoint) {
     let loans = await factory.getAllLoans();
 
-    const task = (loan) => fetch(` https://2t8c1g5jra.execute-api.us-east-1.amazonaws.com/ggp-incentives-for?addresses=${loan}`)
+    const task = (loan) => fetch(`${endpoint}?addresses=${loan}`)
 
     console.log(`LONS: ${loans.length}`)
     loans = loans.slice(0, 5000);
@@ -223,10 +224,11 @@ async function checkCollected() {
 }
 
 
-// fetchData("GGP_EPOCH_7")
+// fetchData("GGP_EPOCH_8", GGP_AWS_ENDPOINT)
+fetchData("YY_GGP_EPOCH_1", YY_GGP_AWS_ENDPOINT)
 // checkNegativeAccounts()
 // checkCollectedInTimestamp(1715152203)
 // checkCollected();
-createDiffJson( "GGP_EPOCH_6", "GGP_EPOCH_7")
+// createDiffJson( "GGP_EPOCH_7", "GGP_EPOCH_8")
 // createAddJson( "GM_EPOCH_8", "GM_EPOCH_9_diff", "GM_EPOCH_9")
 // analyzeJson("GGP_EPOCH_4_diff")
