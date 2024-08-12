@@ -233,7 +233,7 @@ export default {
           short: 'Wombat LP',
           decimals: 18,
           apyKey: 'WOM_ggAVAX_ggAVAX',
-          boostGGP: true,
+          boostGGP: false,
           addTokenApy: true,
           aprWarning: 'This pool’s APY is overvalued. This will be resolved soon.'
         },

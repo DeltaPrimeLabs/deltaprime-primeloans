@@ -170,7 +170,6 @@ export default {
     this.watchExternalTotalStakedUpdate();
     this.watchAssetBalancesDataRefreshEvent();
     this.watchFarmRefreshEvent();
-    this.watchGgpIncentives();
   },
   computed: {
     ...mapState('fundsStore', ['smartLoanContract', 'noSmartLoan', "wombatLpBalances", 'assetBalances', 'wombatYYFarmsBalances', 'assets']),
@@ -260,15 +259,6 @@ export default {
       this.farmService.observeRefreshFarm().subscribe(async () => {
         this.totalStaked = this.availableFarms.reduce((acc, farm) => acc + parseFloat(farm.totalStaked), 0);
         await this.setupMaxStakingApy();
-      });
-    },
-
-    watchGgpIncentives() {
-      this.ggpIncentivesService.boostGGPYieldYakApy$.subscribe(boost => {
-        this.boostApy = boost ? boost.boostApy * this.assets['GGP'].price : 0;
-        setTimeout(() => {
-          this.$forceUpdate();
-        });
       });
     },
   },
