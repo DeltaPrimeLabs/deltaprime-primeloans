@@ -63,7 +63,7 @@ let retryTime = 0;
 
 const arbitrumIncentives = async (rpc = 'first') => {
   const now = Math.floor(Date.now() / 1000);
-  const incentivesPerWeek = 50000;
+  const incentivesPerWeek = 25000;
   const incentivesMultiplier = await getIncentivesMultiplier(now);
 
   if (incentivesMultiplier == 0) return;
