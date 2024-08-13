@@ -1101,6 +1101,9 @@ export default {
         }
       }
 
+
+
+
       // TODO remove after removing deprecated assets
       for (let asset of Object.values(state.assets)) {
         if (asset.droppingSupport || asset.unsupported) {
