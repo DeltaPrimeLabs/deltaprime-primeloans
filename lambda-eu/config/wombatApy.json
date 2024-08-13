@@ -1,19 +1,23 @@
 {
   "avalanche": {
     "WOM_sAVAX_AVAX": {
-      "index": 2,
+      "index": 5,
+      "poolName": "sAVAX Pool",
       "apyIndexes": [0, 2]
     },
     "WOM_sAVAX_sAVAX": {
-      "index": 3,
+      "index": 6,
+      "poolName": "sAVAX Pool",
       "apyIndexes": [0, 2]
     },
     "WOM_ggAVAX_AVAX": {
-      "index": 4,
+      "index": 7,
+      "poolName": "ggAVAX-AVAX Pool",
       "apyIndexes": [0]
     },
     "WOM_ggAVAX_ggAVAX": {
-      "index": 5,
+      "index": 8,
+      "poolName": "ggAVAX-AVAX Pool",
       "apyIndexes": [0, 1, 4]
     }
   }

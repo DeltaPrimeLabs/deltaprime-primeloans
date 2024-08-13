@@ -36,9 +36,14 @@ const wombatApyAggregator = async (event) => {
 
         const apyColumn = await pool.$$("div > div.relative > div.items-center > div.justify-self-center > span > div > div.hidden > div.justify-between > span");
         let poolApy = 0;
+        const apyIndexes = {
+          1: [0],
+          3: [0, 2],
+          5: [0, 1, 4]
+        };
 
         try {
-          for (const rowIndex of poolInfo.apyIndexes) {
+          for (const rowIndex of apyIndexes[apyColumn.length]) {
             const apyRaw = apyColumn[rowIndex];
             const rowApy = (await (await apyRaw.getProperty("textContent")).jsonValue()).replace(/\s+/g, "").replace('%', '').trim();
             poolApy += Number(rowApy);
