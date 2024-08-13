@@ -6,7 +6,8 @@ const {
   fromWei,
   fromBytes32,
   formatUnits,
-  fetchAllDataFromDB
+  fetchAllDataFromDB,
+  getRedstoneDataPackages
 } = require('../utils/helpers');
 const constants = require('../config/constants.json');
 const ggpTokens = require('../config/ggpTokens.json');
@@ -29,25 +30,17 @@ const getFactoryContract = (network, provider) => {
   return factoryContract;
 }
 
-
-const wrap = (contract, network) => {
-  return WrapperBuilder.wrap(contract).usingDataService(
-    {
-      dataServiceId: `redstone-${network}-prod`,
-      uniqueSignersCount: 3,
-      disablePayloadsDryRun: true
-    },
-    CACHE_LAYER_URLS.urls
-  );
+const wrap = (contract, network, dataPackages) => {
+  return WrapperBuilder.wrap(contract).usingDataPackages(dataPackages);
 }
 
-const getWrappedContracts = (addresses, network, provider) => {
+const getWrappedContracts = (addresses, network, provider, dataPackages) => {
   const wallet = (new ethers.Wallet("0xca63cb3223cb19b06fa42110c89ad21a17bad22ea061e5a2c2487bd37b71e809"))
     .connect(provider);
 
   return addresses.map(address => {
     const loanContract = new ethers.Contract(address, LOAN.abi, wallet);
-    const wrappedContract = wrap(loanContract, network);
+    const wrappedContract = wrap(loanContract, network, dataPackages);
 
     return wrappedContract;
   });
@@ -67,11 +60,11 @@ const getIncentivesMultiplier = async (now) => {
   return Math.round((now - res[0].timestamp) / 3600);
 };
 
-const getEligibleTvl = async (batchLoanAddresses, network, provider) => {
+const getEligibleTvl = async (batchLoanAddresses, network, provider, dataPackages) => {
   const loanQualifications = {};
   let totalEligibleTvl = 0;
 
-  const wrappedContracts = getWrappedContracts(batchLoanAddresses, network, provider);
+  const wrappedContracts = getWrappedContracts(batchLoanAddresses, network, provider, dataPackages);
 
   const loanStats = await Promise.all(
     wrappedContracts.map(contract => Promise.all([contract.getFullLoanStatus(), contract.ggAvaxBalanceAvaxGgavaxYY()]))
@@ -134,7 +127,8 @@ const ggpIncentives = async (network = 'avalanche', rpc = 'first') => {
 
       while (1) {
         try {
-          qualifications = await getEligibleTvl(batchLoanAddresses, network, provider);
+          const dataPackages = await getRedstoneDataPackages(network);
+          qualifications = await getEligibleTvl(batchLoanAddresses, network, provider, dataPackages);
           break;
         } catch (error) {
           console.log(error)

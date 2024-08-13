@@ -2,7 +2,8 @@ const ethers = require('ethers');
 const WrapperBuilder = require('@redstone-finance/evm-connector').WrapperBuilder;
 const {
   dynamoDb,
-  fromWei
+  fromWei,
+  getRedstoneDataPackages
 } = require('../utils/helpers');
 const incentivesRpcUrl = require('../.secrets/incentivesRpc.json');
 const constants = require('../config/constants.json');
@@ -22,24 +23,17 @@ const getFactoryContract = (network, provider) => {
   return factoryContract;
 }
 
-const wrap = (contract, network) => {
-  return WrapperBuilder.wrap(contract).usingDataService(
-    {
-      dataServiceId: `redstone-${network}-prod`,
-      uniqueSignersCount: 3,
-      disablePayloadsDryRun: true
-    },
-    CACHE_LAYER_URLS.urls
-  );
+const wrap = (contract, network, dataPackages) => {
+  return WrapperBuilder.wrap(contract).usingDataPackages(dataPackages);
 }
 
-const getWrappedContracts = (addresses, network, provider) => {
+const getWrappedContracts = (addresses, network, provider, dataPackages) => {
   const wallet = (new ethers.Wallet("0xca63cb3223cb19b06fa42110c89ad21a17bad22ea061e5a2c2487bd37b71e809"))
     .connect(provider);
 
   return addresses.map(address => {
     const loanContract = new ethers.Contract(address, LOAN.abi, wallet);
-    const wrappedContract = wrap(loanContract, network);
+    const wrappedContract = wrap(loanContract, network, dataPackages);
 
     return wrappedContract;
   });
@@ -55,13 +49,15 @@ const saveLiveLoansStatusAvalanche = async (network = 'avalanche', rpc = 'first'
     const totalLoans = loanAddresses.length;
     console.log(`${totalLoans} loans found`);
 
-    const batchSize = 100;
+    const batchSize = 150;
     const loanStats = {};
 
     for (let i = 0; i < Math.ceil(totalLoans / batchSize); i++) {
       console.log(`processing ${i * batchSize} - ${(i + 1) * batchSize > totalLoans ? totalLoans : (i + 1) * batchSize} loans`);
+
+      const dataPackages = await getRedstoneDataPackages(network);
       const batchLoanAddresses = loanAddresses.slice(i * batchSize, (i + 1) * batchSize);
-      const wrappedContracts = getWrappedContracts(batchLoanAddresses, network, provider);
+      const wrappedContracts = getWrappedContracts(batchLoanAddresses, network, provider, dataPackages);
 
       const loanStatusResults = await Promise.all(wrappedContracts.map(contract => contract.getFullLoanStatus()));
 

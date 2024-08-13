@@ -5,7 +5,8 @@ const {
   dynamoDb,
   fromWei,
   fromBytes32,
-  formatUnits
+  formatUnits,
+  getRedstoneDataPackages
 } = require('../utils/helpers');
 const constants = require('../config/constants.json');
 const gmTokens = require('../config/gmTokens.json');
@@ -20,21 +21,14 @@ const avalancheHistoricalProvider = new ethers.providers.JsonRpcProvider('https:
 const avalancheWallet = (new ethers.Wallet("0xca63cb3223cb19b06fa42110c89ad21a17bad22ea061e5a2c2487bd37b71e809"))
   .connect(avalancheHistoricalProvider);
 
-const wrap = (contract, network) => {
-  return WrapperBuilder.wrap(contract).usingDataService(
-    {
-      dataServiceId: `redstone-${network}-prod`,
-      uniqueSignersCount: 3,
-      disablePayloadsDryRun: true
-    },
-    CACHE_LAYER_URLS.urls
-  );
+const wrap = (contract, network, dataPackages) => {
+  return WrapperBuilder.wrap(contract).usingDataPackages(dataPackages);
 }
 
-const getWrappedContracts = (addresses, network) => {
+const getWrappedContracts = (addresses, network, dataPackages) => {
   return addresses.map(address => {
     const loanContract = new ethers.Contract(address, LOAN.abi, network == "avalanche" ? avalancheWallet : arbitrumWallet);
-    const wrappedContract = wrap(loanContract, network);
+    const wrappedContract = wrap(loanContract, network, dataPackages);
 
     return wrappedContract;
   });
@@ -57,8 +51,9 @@ const gmxIncentivesCalculatorAvaFrom = async (event) => {
   for (let i = 0; i < Math.ceil(totalLoans/batchSize); i++) {
     console.log(`processing ${i * batchSize} - ${(i + 1) * batchSize > totalLoans ? totalLoans : (i + 1) * batchSize} loans`);
 
+    const dataPackages = await getRedstoneDataPackages('avalanche');
     const batchLoanAddresses = loanAddresses.slice(i * batchSize, (i + 1) * batchSize);
-    const wrappedContracts = getWrappedContracts(batchLoanAddresses, 'avalanche');
+    const wrappedContracts = getWrappedContracts(batchLoanAddresses, 'avalanche', dataPackages);
 
     const loanStats = await Promise.all(
       wrappedContracts.map(contract => Promise.all([contract.getFullLoanStatus(), contract.getAllAssetsBalances()]))

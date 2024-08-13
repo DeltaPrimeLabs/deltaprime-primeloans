@@ -3,6 +3,7 @@ const ethers = require('ethers');
 const redstone = require('redstone-api');
 const WrapperBuilder = require('@redstone-finance/evm-connector').WrapperBuilder;
 const EthDater = require("ethereum-block-by-date");
+const fs = require('fs');
 
 const networkInfo = require('./constants.json');
 const CACHE_LAYER_URLS = require('../config/redstone-cache-layer-urls.json');
@@ -203,6 +204,22 @@ const fetchAllDataFromDB = async (params, scan = true, totalSegments = 5) => {
   }
 };
 
+const getRedstoneDataPackages = async (chain) => {
+  const feeds = JSON.parse(fs.readFileSync(`../redstone/${chain}DataPackages.json`, 'utf-8'));
+  const packages = [];
+
+  await Promise.all(feeds["___ALL_FEEDS___"].map(async feed => {
+    const dataPackage = SignedDataPackage.fromObj(JSON.parse(feed))
+
+    packages.push(dataPackage);
+  }))
+
+  return packages;
+  // return {
+  //   "___ALL_FEEDS___": packages
+  // };
+}
+
 module.exports = {
   parseUnits,
   formatUnits,
@@ -224,5 +241,6 @@ module.exports = {
   getWrappedContractsHistorical,
   getBlockForTimestamp,
   getArweavePackages,
-  fetchAllDataFromDB
+  fetchAllDataFromDB,
+  getRedstoneDataPackages
 }
