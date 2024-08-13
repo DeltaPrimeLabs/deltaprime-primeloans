@@ -21,7 +21,6 @@ const webArb = new Web3(new Web3.providers.HttpProvider(extRpc.arbitrum));
 // AWS DynamoDB setup
 AWS.config.update({ region: 'us-east-1' });
 AWS.config.setPromisesDependency(require('bluebird'));
-console.log(AWS.config.credentials);
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
 
 // String -> BigNumber
