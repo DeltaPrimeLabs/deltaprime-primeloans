@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 163cb6d95659cf59c2c6c38001dc26adb791e5bc;
+// Last deployed from commit: cb1fa840386b7a38a8711e20dbc566c5b3a700d7;
 pragma solidity 0.8.17;
 
 import "./lib/Bytes32EnumerableMap.sol";
@@ -56,6 +56,22 @@ contract TokenManager is OwnableUpgradeable {
 
     mapping(address => mapping(bytes32 => uint256)) public pendingUserExposure;
     mapping(bytes32 => uint256) public pendingProtocolExposure;
+
+    address public vPrimeControllerAddress;
+
+    /**
+    * Returns the address of the vPrimeController contract
+     */
+    function getVPrimeControllerAddress() public view returns (address) {
+        return vPrimeControllerAddress;
+    }
+
+    /**
+    * Sets the address of the vPrimeController contract
+     */
+    function setVPrimeControllerAddress(address _vPrimeControllerAddress) public onlyOwner {
+        vPrimeControllerAddress = _vPrimeControllerAddress;
+    }
 
     function initialize(Asset[] memory tokenAssets, poolAsset[] memory poolAssets) external initializer {
         __Ownable_init();
@@ -286,8 +302,6 @@ contract TokenManager is OwnableUpgradeable {
     }
 
     function increasePendingExposure(bytes32 assetIdentifier, address user, uint256 amount) public onlyPrimeAccountOrOwner {
-        require(pendingUserExposure[user][assetIdentifier] == 0, "Pending Tx");
-
         pendingUserExposure[user][assetIdentifier] += amount;
         pendingProtocolExposure[assetIdentifier] += amount;
         

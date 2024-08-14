@@ -71,8 +71,8 @@ export default {
       accounts: [getKey('fuji', 'deployer'), getKey('fuji', 'admin')]
     },
     avalanche: {
-      // url: 'https://api.avax.network/ext/bc/C/rpc',
-      url: 'https://rpc.ankr.com/avalanche',
+      url: 'https://api.avax.network/ext/bc/C/rpc',
+      // url: 'https://rpc.ankr.com/avalanche',
       gasPrice: 100000000000,
       chainId: 43114,
       accounts: [getKey('avalanche', 'deployer'), getKey('avalanche', 'admin')]

@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import {DiamondStorageLib} from "../lib/DiamondStorageLib.sol";
 import "../OnlyOwnerOrInsolvent.sol";
 import "../interfaces/ITokenManager.sol";
+import "../interfaces/IVPrimeController.sol";
 import "./SmartLoanLiquidationFacet.sol";
 import "../interfaces/facets/IYieldYakRouter.sol";
 
@@ -158,9 +159,9 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         IERC20Metadata token = getERC20TokenInstance(_asset, false);
         _increaseExposure(tokenManager, address(token), _amount);
 
+        notifyVPrimeController(DiamondStorageLib.contractOwner(), tokenManager);
         emit Borrowed(msg.sender, _asset, _amount, block.timestamp);
     }
-
 
     /**
      * Repays funds to the pool
@@ -189,6 +190,8 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         _decreaseExposure(tokenManager, address(token), _amount);
 
         emit Repaid(msg.sender, _asset, _amount, block.timestamp);
+
+        notifyVPrimeController(DiamondStorageLib.contractOwner(), tokenManager);
     }
 
     function withdrawUnsupportedToken(address token) external nonReentrant onlyOwner remainsSolvent {
@@ -293,6 +296,42 @@ contract AssetsOperationsFacet is ReentrancyGuardKeccak, OnlyOwnerOrInsolvent {
         _processRepay(tokenManager, fromAssetPool, address(fromToken), _repayAmount, fromToken.balanceOf(address(this)) - initialRepayTokenAmount);
 
         emit DebtSwap(msg.sender, address(fromToken), address(toToken), _repayAmount, _borrowAmount, block.timestamp);
+    }
+
+    function containsOracleCalldata() public view returns (bool) {
+        // Checking if the calldata ends with the RedStone marker
+        bool hasValidRedstoneMarker;
+        assembly {
+            let calldataLast32Bytes := calldataload(sub(calldatasize(), STANDARD_SLOT_BS))
+            hasValidRedstoneMarker := eq(
+                REDSTONE_MARKER_MASK,
+                and(calldataLast32Bytes, REDSTONE_MARKER_MASK)
+            )
+        }
+        return hasValidRedstoneMarker;
+    }
+
+    function getVPrimeControllerAddress(ITokenManager tokenManager) internal view returns (address) {
+        if(address(tokenManager) != address(0)) {
+            return tokenManager.getVPrimeControllerAddress();
+        }
+        return address(0);
+    }
+
+    function notifyVPrimeController(address account, ITokenManager tokenManager) internal {
+        address vPrimeControllerAddress = getVPrimeControllerAddress(tokenManager);
+        if(vPrimeControllerAddress != address(0)){
+            if(containsOracleCalldata()) {
+                proxyCalldata(
+                    vPrimeControllerAddress,
+                    abi.encodeWithSignature
+                    ("updateVPrimeSnapshot(address)", account),
+                    false
+                );
+            } else {
+                IVPrimeController(vPrimeControllerAddress).setUserNeedsUpdate(account);
+            }
+        }
     }
 
     /* ======= VIEW FUNCTIONS ======*/

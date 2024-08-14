@@ -22,5 +22,7 @@ module.exports.getUrlForNetwork = function getUrlForNetwork(networkName) {
     case 'avalanche':
       // return 'https://api.avax.network/ext/bc/C/rpc';
       return 'https://rpc.ankr.com/avalanche';
+    case 'arbitrum':
+        return 'https://rpc.ankr.com/arbitrum';
   }
 }

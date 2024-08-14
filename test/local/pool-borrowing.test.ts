@@ -15,6 +15,7 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {customError, fromWei, getFixedGasSigners, time, toWei} from "../_helpers";
 import {LinearIndex, MockToken, OpenBorrowersRegistry, Pool, MockVariableUtilisationRatesCalculator, MockBorrowersRegistry} from "../../typechain";
 import {Contract} from "ethers";
+import {WrapperBuilder} from "@redstone-finance/evm-connector";
 
 chai.use(solidity);
 
@@ -24,6 +25,7 @@ const ZERO = ethers.constants.AddressZero;
 describe('Pool with variable utilisation interest rates', () => {
     describe('Single borrowing with interest rates', () => {
         let sut: Pool,
+            sutWrapped: Contract,
             owner: SignerWithAddress,
             depositor: SignerWithAddress,
             mockToken: Contract,
@@ -32,6 +34,19 @@ describe('Pool with variable utilisation interest rates', () => {
         before("Deploy Pool contract", async () => {
             [owner, depositor] = await getFixedGasSigners(10000000);
             sut = (await deployContract(owner, PoolArtifact)) as Pool;
+            const MOCK_PRICES = [
+                {
+                    dataFeedId: 'AVAX',
+                    value: 25
+                }
+            ];
+            sutWrapped = WrapperBuilder
+                    // @ts-ignore
+                    .wrap(sut)
+                    .usingSimpleNumericMock({
+                        mockSignersCount: 10,
+                        dataPoints: MOCK_PRICES,
+                    });
 
             mockToken = (await deployContract(owner, MockTokenArtifact, [[depositor.address, owner.address]])) as MockToken;
 
@@ -54,6 +69,15 @@ describe('Pool with variable utilisation interest rates', () => {
 
             await mockToken.connect(depositor).approve(sut.address, toWei("2.0"));
             await sut.connect(depositor).deposit(toWei("2.0"));
+        });
+
+        it("should check for redstone calldata", async () => {
+            console.log('Checking non-wrapped contract');
+            let containsRedstoneCalldata = await sut.containsOracleCalldata();
+            expect(containsRedstoneCalldata).to.be.false;
+            console.log('Checking wrapped contract');
+            containsRedstoneCalldata = await sutWrapped.containsOracleCalldata();
+            expect(containsRedstoneCalldata).to.be.true;
         });
 
         it("should borrow", async () => {
@@ -182,10 +206,10 @@ describe('Pool with variable utilisation interest rates', () => {
         });
 
         it("should be able to borrow at threshold", async () => {
-            await sut.connect(borrower).borrow(toWei("0.90"));
+            await sut.connect(borrower).borrow(toWei("0.925"));
 
             let borrowed = fromWei(await sut.getBorrowed(borrower.address));
-            expect(borrowed).to.be.closeTo(0.90, 0.000001);
+            expect(borrowed).to.be.closeTo(0.925, 0.000001);
         });
 
         it("should not be able to borrow above threshold", async () => {
@@ -194,7 +218,7 @@ describe('Pool with variable utilisation interest rates', () => {
             await expect(sut.connect(borrower).borrow(toWei("0.01"))).to.be.reverted;
 
             let borrowed = fromWei(await sut.getBorrowed(borrower.address));
-            expect(borrowed).to.be.closeTo(0.90, 0.000001);
+            expect(borrowed).to.be.closeTo(0.925, 0.000001);
         });
     });
 
@@ -237,18 +261,18 @@ describe('Pool with variable utilisation interest rates', () => {
         });
 
         it("should not allow non registered account to borrow", async () => {
-            await expect(sut.connect(nonRegistered).borrow(toWei("1.0"))).to.be.revertedWith(customError("NotAuthorizedToBorrow"));
+            await expect(sut.connect(nonRegistered).borrow(toWei("1.0"))).to.be.revertedWith("NotAuthorizedToBorrow");
         });
 
         it("should allow registered account to borrow", async () => {
             expect(await mockToken.connect(registered).balanceOf(registered.address)).to.equal("0");
-            await expect(sut.connect(nonRegistered).borrow(toWei("1.0"))).to.be.revertedWith(customError("NotAuthorizedToBorrow"));
-            await expect(sut.connect(registered).borrow(toWei("1.0"))).to.be.revertedWith(customError("NotAuthorizedToBorrow"));
-            await expect(sut.connect(borrower).borrow(toWei("1.0"))).to.be.revertedWith(customError("NotAuthorizedToBorrow"));
+            await expect(sut.connect(nonRegistered).borrow(toWei("1.0"))).to.be.revertedWith("NotAuthorizedToBorrow");
+            await expect(sut.connect(registered).borrow(toWei("1.0"))).to.be.revertedWith("NotAuthorizedToBorrow");
+            await expect(sut.connect(borrower).borrow(toWei("1.0"))).to.be.revertedWith("NotAuthorizedToBorrow");
 
             await borrowersRegistry.connect(owner).updateRegistry(registered.address, borrower.address);
 
-            await expect(sut.connect(borrower).borrow(toWei("1.0"))).to.be.revertedWith(customError("NotAuthorizedToBorrow"));
+            await expect(sut.connect(borrower).borrow(toWei("1.0"))).to.be.revertedWith("NotAuthorizedToBorrow");
             await expect(sut.connect(registered).borrow(toWei("1.0"))).not.to.be.reverted;
 
             expect(fromWei(await mockToken.connect(registered).balanceOf(registered.address))).to.equal(1);

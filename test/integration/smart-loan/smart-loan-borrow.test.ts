@@ -77,17 +77,18 @@ describe('Smart loan', () => {
             doubleMethodTxContract = await deployContract(admin, DoubleMethodTxArtifact) as DoubleBorrowExecInSingleTx;
             smartLoansFactory = await deployContract(admin, SmartLoansFactoryArtifact) as SmartLoansFactory;
 
-            await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, admin, depositor);
-            tokensPrices = await getTokensPricesMap(assetsList.filter(el => el !== 'MCKUSD'), "avalanche", getRedstonePrices, [{symbol: 'MCKUSD', value: 1}]);
-            MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
-            supportedAssets = convertAssetsListToSupportedAssets(assetsList, {MCKUSD: tokenContracts.get('MCKUSD')!.address});
-            addMissingTokenContracts(tokenContracts, assetsList);
-
             let tokenManager = await deployContract(
                 admin,
                 MockTokenManagerArtifact,
                 []
             ) as MockTokenManager;
+            await deployPools(smartLoansFactory, poolNameAirdropList, tokenContracts, poolContracts, lendingPools, admin, depositor, 1000, 'AVAX', [], tokenManager.address);
+            tokensPrices = await getTokensPricesMap(assetsList.filter(el => el !== 'MCKUSD'), "avalanche", getRedstonePrices, [{symbol: 'MCKUSD', value: 1}]);
+            MOCK_PRICES = convertTokenPricesMapToMockPrices(tokensPrices);
+            supportedAssets = convertAssetsListToSupportedAssets(assetsList, {MCKUSD: tokenContracts.get('MCKUSD')!.address});
+            addMissingTokenContracts(tokenContracts, assetsList);
+
+
 
             await tokenManager.connect(admin).initialize(supportedAssets, lendingPools);
             await tokenManager.connect(admin).setFactoryAddress(smartLoansFactory.address);

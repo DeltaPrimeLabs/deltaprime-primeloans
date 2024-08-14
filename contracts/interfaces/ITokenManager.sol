@@ -15,6 +15,7 @@ interface ITokenManager {
     function addTokenAssets ( Asset[] memory tokenAssets ) external;
     function deactivateToken ( address token ) external;
     function debtCoverage ( address ) external view returns ( uint256 );
+    function getVPrimeControllerAddress ( ) external view returns ( address );
     function debtCoverageStaked ( bytes32 ) external view returns ( uint256 );
     function getAllPoolAssets (  ) external view returns ( bytes32[] memory result );
     function getAllTokenAssets (  ) external view returns ( bytes32[] memory result );

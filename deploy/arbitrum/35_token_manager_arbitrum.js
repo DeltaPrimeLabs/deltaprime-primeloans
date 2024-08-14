@@ -21,6 +21,10 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         `TokenManager implementation deployed at address: ${TokenManager.address}`
     );
 
+    await new Promise((resolve) => {
+        setTimeout(resolve, 5000);
+    });
+
     await verifyContract(hre,
         {
             address: TokenManager.address,

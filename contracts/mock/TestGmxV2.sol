@@ -134,7 +134,7 @@ contract TestGmxV2 is IDepositCallbackReceiver, IWithdrawalCallbackReceiver, IGa
         emit WithdrawalCancelled();
     }
 
-    function refundExecutionFee(bytes32 key, EventUtils.EventLogData memory eventData) external payable override {
+    function refundExecutionFee(bytes32 key, EventUtils.EventLogData memory eventData) external payable {
         emit GasFeeRefunded();
     }
 

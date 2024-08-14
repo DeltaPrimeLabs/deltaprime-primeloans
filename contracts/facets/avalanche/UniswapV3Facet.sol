@@ -112,7 +112,7 @@ contract UniswapV3Facet is IUniswapV3Facet, AvalancheDataServiceConsumerBase, Re
         address token0Address,
         address token1Address,
         uint24 fee,
-        ,,
+        ,,,,,,
         ) = INonfungiblePositionManager(NONFUNGIBLE_POSITION_MANAGER_ADDRESS).positions(params.tokenId);
 
         ITokenManager tokenManager = DeploymentConstants.getTokenManager();
@@ -168,7 +168,7 @@ contract UniswapV3Facet is IUniswapV3Facet, AvalancheDataServiceConsumerBase, Re
         address token0Address,
         address token1Address,
         uint24 fee,
-        ,,
+        ,,,,,,
         ) = INonfungiblePositionManager(NONFUNGIBLE_POSITION_MANAGER_ADDRESS).positions(params.tokenId);
         address poolAddress = PoolAddress.computeAddress(UNISWAP_V3_FACTORY_ADDRESS, PoolAddress.getPoolKey(token0Address, token1Address, fee));
 

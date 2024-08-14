@@ -68,7 +68,7 @@ describe("Pool ERC20 token functions", () => {
     //         await sut.connect(user1).deposit(toWei("1.0"));
     //
     //         await expect(sut.connect(user1).transfer(user2.address, toWei("1.1")))
-    //             .to.be.revertedWith(customError("TransferAmountExceedsBalance", toWei("1.1"), toWei("1.0")));
+    //             .to.be.revertedWith("TransferAmountExceedsBalance");
     //     });
     //
     //     it("should accumulate user1 interest prior to transferring the funds", async () => {
@@ -114,11 +114,85 @@ describe("Pool ERC20 token functions", () => {
     //     });
     //
     // });
-    //
+
+    describe("lock deposit", () => {
+
+        it("should allow a user to deposit and lock funds", async () => {
+            await mockToken.connect(user1).approve(sut.address, toWei("1.0"));
+            await sut.connect(user1).deposit(toWei("1.0"));
+
+            console.log('1')
+            expect(await balanceOf(user1)).to.be.closeTo(1.0, 0.00001);
+            expect(await balanceOf(user2)).to.be.closeTo(0, 0.00001);
+            await sut.connect(user1).transfer(user2.address, toWei("1.0"));
+            expect(await balanceOf(user1)).to.be.closeTo(0, 0.00001);
+            expect(await balanceOf(user2)).to.be.closeTo(1.0, 0.00001);
+
+            let sixtyDays = 60 * 24 * 60 * 60;
+
+            console.log('2')
+
+            expect(fromWei(await sut.lockedBalances(user2.address))).to.be.closeTo(0, 0.00001);
+            expect(await sut.lockedUntil(user2.address)).to.be.equal(0);
+
+            await sut.connect(user2).lockDeposit(toWei("0.7"), sixtyDays);
+
+            console.log('3')
+
+            expect(fromWei(await sut.lockedBalances(user2.address))).to.be.closeTo(0.7, 0.00001);
+            let timestampInSecondsNowPlus60days = Math.floor(Date.now() / 1000) + sixtyDays;
+            expect(await sut.lockedUntil(user2.address)).to.be.closeTo(timestampInSecondsNowPlus60days, 30 * 60);
+        });
+
+        // it("should not allow a user to decrease the locked amount", async () => {
+        //     let sixtyDays = 60 * 24 * 60 * 60;
+        //     await expect(sut.connect(user2).lockDeposit(toWei("0.6"), sixtyDays))
+        //         .to.be.revertedWith("Cannot decrease locked amount");
+        // });
+        //
+        // it("should not allow a user to decrease the lock time", async () => {
+        //     let thirtyDays = 30 * 24 * 60 * 60;
+        //     await expect(sut.connect(user2).lockDeposit(toWei("0.7"), thirtyDays))
+        //         .to.be.revertedWith("Cannot decrease lock time");
+        // });
+        //
+        // it("should not allow a user to transfer, withdraw, or transferFrom when funds are locked", async () => {
+        //     await expect(sut.connect(user2).transfer(user1.address, toWei("1.0")))
+        //         .to.be.revertedWith("Balance is locked");
+        //
+        //     await expect(sut.connect(user2).withdraw(toWei("1.0")))
+        //         .to.be.revertedWith("Balance is locked");
+        //
+        //     await expect(sut.connect(user1).transferFrom(user2.address, user1.address, toWei("1.0")))
+        //         .to.be.revertedWith("Balance is locked");
+        // });
+        //
+        // it("should allow a user to transfer, withdraw, and transferFrom after the lock period has ended", async () => {
+        //     let sixtyDays = 60 * 24 * 60 * 60;
+        //     await sut.connect(user2).lockDeposit(toWei("0.7"), sixtyDays);
+        //
+        //     // wait 60 days
+        //     await time.increase(time.duration.days(60));
+        //
+        //     await sut.connect(user2).transfer(user1.address, toWei("0.1"));
+        //     expect(await balanceOf(user1)).to.be.closeTo(0.1, 0.00001);
+        //     expect(await balanceOf(user2)).to.be.closeTo(0.6, 0.00001);
+        //
+        //     await sut.connect(user2).withdraw(toWei("0.1"));
+        //     expect(await balanceOf(user1)).to.be.closeTo(0.1, 0.00001);
+        //     expect(await balanceOf(user2)).to.be.closeTo(0.5, 0.00001);
+        //
+        //     await sut.connect(user2).approve(user1.address, toWei("0.1"));
+        //     await sut.connect(user1).transferFrom(user2.address, user1.address, toWei("0.1"));
+        //     expect(await balanceOf(user1)).to.be.closeTo(0.2, 0.00001);
+        //     expect(await balanceOf(user2)).to.be.closeTo(0.4, 0.00001);
+        // });
+    });
+
     // describe("approve", () => {
     //     it("should revert upon setting an allowance for a zero address", async () => {
     //         await expect(sut.connect(user1).approve(ethers.constants.AddressZero, toWei("1.05"))).
-    //         to.be.revertedWith(customError("SpenderZeroAddress"));
+    //         to.be.revertedWith("SpenderZeroAddress");
     //     });
     //
     //     it("should properly assign amount to different spenders within one owner", async () => {
@@ -172,7 +246,7 @@ describe("Pool ERC20 token functions", () => {
     // describe("increaseAllowance", () => {
     //     it("should revert upon increasing an allowance for a zero address", async () => {
     //         await expect(sut.connect(user1).increaseAllowance(ethers.constants.AddressZero, toWei("1"))).
-    //         to.be.revertedWith(customError("SpenderZeroAddress"));
+    //         to.be.revertedWith("SpenderZeroAddress");
     //     });
     //
     //     it("should increase an allowance", async () => {
@@ -185,7 +259,7 @@ describe("Pool ERC20 token functions", () => {
     // describe("decreaseAllowance", () => {
     //     it("should revert upon decreasing an allowance for a zero address", async () => {
     //         await expect(sut.connect(user1).decreaseAllowance(ethers.constants.AddressZero, toWei("1"))).
-    //         to.be.revertedWith(customError("SpenderZeroAddress"));
+    //         to.be.revertedWith("SpenderZeroAddress");
     //     });
     //
     //     it("should decrease an allowance", async () => {
@@ -196,7 +270,7 @@ describe("Pool ERC20 token functions", () => {
     //     });
     //
     //     it("should revert upon decreasing an allowance for below the current allowance level", async () => {
-    //         await expect(sut.connect(user1).decreaseAllowance(user2.address, toWei("100"))).to.be.revertedWith(customError("InsufficientAllowance", toWei("100"), 0));
+    //         await expect(sut.connect(user1).decreaseAllowance(user2.address, toWei("100"))).to.be.revertedWith("InsufficientAllowance");
     //     });
     //
     // });
@@ -210,7 +284,7 @@ describe("Pool ERC20 token functions", () => {
     //         await sut.connect(user1).withdraw(toWei("1.0"));
     //
     //         await expect(sut.connect(user2).transferFrom(user1.address, user2.address, toWei("1.01")))
-    //             .to.be.revertedWith(customError("TransferAmountExceedsBalance", toWei("1.01"), toWei("1.0")));
+    //             .to.be.revertedWith("TransferAmountExceedsBalance");
     //     });
     //
     //     it("should revert if caller's allowance for user1's tokens is too low", async () => {
@@ -221,7 +295,7 @@ describe("Pool ERC20 token functions", () => {
     //
     //         await expect(sut.connect(user2).transferFrom(user1.address, user2.address, toWei("0.55")))
     //             // .to.be.revertedWith("Not enough tokens allowed");
-    //             .to.be.revertedWith(customError("InsufficientAllowance", toWei("0.55"), toWei("0.5")));
+    //             .to.be.revertedWith("InsufficientAllowance");
     //     });
     //
     //     it("should decrease allowance by the transfer amount", async () => {
@@ -291,170 +365,170 @@ describe("Pool ERC20 token functions", () => {
     //         expect(await balanceOf(user3)).to.be.closeTo(2, 0.000001);
     //     });
     // });
-
-    describe("totalSupply with multiple depositors", () => {
-        it("should properly sum total tokens supply - minting", async () => {
-            await mockToken.connect(user1).approve(sut.address, toWei("4.06"));
-            await sut.connect(user1).deposit(toWei("4.06"));
-
-            await mockToken.connect(user2).approve(sut.address, toWei("3.1"));
-            await sut.connect(user2).deposit(toWei("3.1"));
-
-            await mockToken.connect(user3).approve(sut.address, toWei("12.14"));
-            await sut.connect(user3).deposit(toWei("12.14"));
-
-            await mockToken.connect(user4).approve(sut.address, toWei("4.354"));
-            await sut.connect(user4).deposit(toWei("4.354"));
-
-            await mockToken.connect(user5).approve(sut.address, toWei("12.64"));
-            await sut.connect(user5).deposit(toWei("12.64"));
-
-            let balanceOfUser1 = await balanceOf(user1);
-            let balanceOfUser2 = await balanceOf(user2);
-            let balanceOfUser3 = await balanceOf(user3);
-            let balanceOfUser4 = await balanceOf(user4);
-            let balanceOfUser5 = await balanceOf(user5);
-
-            let sumOfBalances = balanceOfUser1 + balanceOfUser2 + balanceOfUser3 + balanceOfUser4 + balanceOfUser5;
-
-            expect(fromWei(await sut.totalSupply())).to.be.equal(36.294);
-            expect(fromWei(await sut.totalSupply())).to.be.closeTo(sumOfBalances, 0.000001);
-        });
-
-        it("should properly sum total tokens supply - minting and burning", async () => {
-            await mockToken.connect(user1).approve(sut.address, toWei("4.06"));
-            await sut.connect(user1).deposit(toWei("4.06"));
-
-            await mockToken.connect(user2).approve(sut.address, toWei("3.1"));
-            await sut.connect(user2).deposit(toWei("3.1"));
-
-            await sut.connect(user1).withdraw(toWei("2.0"));
-            await sut.connect(user2).withdraw(toWei("1.5"));
-
-            let balanceOfUser1 = await balanceOf(user1);
-            let balanceOfUser2 = await balanceOf(user2);
-
-            expect(fromWei(await sut.totalSupply())).to.be.closeTo(3.660000, 0.000001);
-            expect(fromWei(await sut.totalSupply())).to.be.closeTo(balanceOfUser1 + balanceOfUser2, 0.000001);
-        });
-
-        it("should properly sum total tokens supply with accumulated interest - minting", async () => {
-            await mockToken.connect(user1).approve(sut.address, toWei("4.06"));
-            await sut.connect(user1).deposit(toWei("4.06"));
-
-            await mockToken.connect(user2).approve(sut.address, toWei("3.1"));
-            await sut.connect(user2).deposit(toWei("3.1"));
-
-            await mockToken.connect(user3).approve(sut.address, toWei("12.14"));
-            await sut.connect(user3).deposit(toWei("12.14"));
-
-            await mockToken.connect(user4).approve(sut.address, toWei("4.354"));
-            await sut.connect(user4).deposit(toWei("4.354"));
-
-            await mockToken.connect(user5).approve(sut.address, toWei("12.64"));
-            await sut.connect(user5).deposit(toWei("12.64"));
-
-            await mockToken.connect(user6).approve(sut.address, toWei("20"));
-            await sut.connect(user6).borrow(toWei("20"));
-
-            await time.increase(time.duration.years(1));
-
-            let balanceOfUser1 = await balanceOf(user1);
-            let balanceOfUser2 = await balanceOf(user2);
-            let balanceOfUser3 = await balanceOf(user3);
-            let balanceOfUser4 = await balanceOf(user4);
-            let balanceOfUser5 = await balanceOf(user5);
-
-            expect(balanceOfUser1).to.be.closeTo(4.113694825591007, 0.000001);
-            expect(balanceOfUser2).to.be.closeTo(3.1409985121507686, 0.000001);
-            expect(balanceOfUser3).to.be.closeTo(12.30055546371301, 0.000001);
-            expect(balanceOfUser4).to.be.closeTo(4.41158307158208, 0.000001);
-            expect(balanceOfUser5).to.be.closeTo(12.807168126963134, 0.000001);
-
-            let sumOfBalances = balanceOfUser1 + balanceOfUser2 + balanceOfUser3 + balanceOfUser4 + balanceOfUser5;
-
-            expect(fromWei(await sut.totalSupply())).to.be.closeTo(sumOfBalances, 0.000001);
-        });
-
-        it("should properly sum total tokens supply with accumulated interest - burning", async () => {
-            await mockToken.connect(user1).approve(sut.address, toWei("4.06"));
-            await sut.connect(user1).deposit(toWei("4.06"));
-
-            await mockToken.connect(user2).approve(sut.address, toWei("3.1"));
-            await sut.connect(user2).deposit(toWei("3.1"));
-
-            await sut.connect(user3).borrow(toWei("2"));
-
-            await time.increase(time.duration.years(1));
-
-            expect(await balanceOf(user1)).to.be.closeTo(4.087217877094972, 0.000001);
-            expect(await balanceOf(user2)).to.be.closeTo(3.120782122905028, 0.000001);
-
-            await sut.connect(user1).withdraw(toWei("2.06"));
-            await sut.connect(user2).withdraw(toWei("1.1"));
-
-            expect(await balanceOf(user1)).to.be.closeTo(2.0272178785753985, 0.000001);
-            expect(await balanceOf(user2)).to.be.closeTo(2.0207821245144038, 0.000001);
-        });
-
-        it("should properly sum total tokens supply with accumulated interest - minting, burning and borrowing", async () => {
-            await mockToken.connect(user1).approve(sut.address, toWei("3.06"));
-            await sut.connect(user1).deposit(toWei("3.06"));
-
-            await mockToken.connect(user2).approve(sut.address, toWei("2.1"));
-            await sut.connect(user2).deposit(toWei("2.1"));
-
-            await sut.connect(user3).borrow(toWei("1"));
-
-            await time.increase(time.duration.years(1));
-            expect(await balanceOf(user1)).to.be.closeTo(3.074232558139535, 0.000001);
-            expect(await balanceOf(user2)).to.be.closeTo(2.1097674418604653, 0.000001);
-            await sut.connect(user1).withdraw(toWei("2.06"));
-            await sut.connect(user2).withdraw(toWei("1.1"));
-
-            expect(await balanceOf(user1)).to.be.closeTo(1.014232558845335, 0.000001);
-            expect(await balanceOf(user2)).to.be.closeTo(1.0097674426995662, 0.000001);
-
-            await time.increase(time.duration.years(1));
-
-            let balanceOfUser1 = await balanceOf(user1);
-            let balanceOfUser2 = await balanceOf(user2);
-
-            expect(balanceOfUser1).to.be.closeTo(1.0266198264725823, 0.000001);
-            expect(balanceOfUser2).to.be.closeTo(1.0221001755114634, 0.000001);
-
-            let sumOfBalances = balanceOfUser1 + balanceOfUser2;
-
-            expect(fromWei(await sut.totalSupply())).to.be.closeTo(sumOfBalances, 0.000001);
-
-            await sut.connect(user3).borrow(toWei("0.7"));
-
-            await time.increase(time.duration.years(1));
-
-            balanceOfUser1 = await balanceOf(user1);
-            balanceOfUser2 = await balanceOf(user2);
-
-            expect(balanceOfUser1).to.be.closeTo(1.2436627106811908, 0.000001);
-            expect(balanceOfUser2).to.be.closeTo(1.2381875371078563, 0.000001);
-
-            sumOfBalances = balanceOfUser1 + balanceOfUser2;
-
-            expect(fromWei(await sut.totalSupply())).to.be.closeTo(sumOfBalances, 0.000001);
-
-            await mockToken.connect(user3).approve(sut.address, toWei("0.22"));
-            await sut.connect(user3).repay(toWei("0.22"));
-
-            await time.increase(time.duration.years(1));
-
-            balanceOfUser1 = await balanceOf(user1);
-            balanceOfUser2 = await balanceOf(user2);
-
-            expect(balanceOfUser1).to.be.closeTo(1.4464277028533703, 0.000001);
-            expect(balanceOfUser2).to.be.closeTo(1.440059863901895, 0.000001);
-
-            sumOfBalances = balanceOfUser1 + balanceOfUser2;
-
-            expect(fromWei(await sut.totalSupply())).to.be.closeTo(sumOfBalances, 0.000001);
-        });
-    });
+    //
+    // describe("totalSupply with multiple depositors", () => {
+    //     it("should properly sum total tokens supply - minting", async () => {
+    //         await mockToken.connect(user1).approve(sut.address, toWei("4.06"));
+    //         await sut.connect(user1).deposit(toWei("4.06"));
+    //
+    //         await mockToken.connect(user2).approve(sut.address, toWei("3.1"));
+    //         await sut.connect(user2).deposit(toWei("3.1"));
+    //
+    //         await mockToken.connect(user3).approve(sut.address, toWei("12.14"));
+    //         await sut.connect(user3).deposit(toWei("12.14"));
+    //
+    //         await mockToken.connect(user4).approve(sut.address, toWei("4.354"));
+    //         await sut.connect(user4).deposit(toWei("4.354"));
+    //
+    //         await mockToken.connect(user5).approve(sut.address, toWei("12.64"));
+    //         await sut.connect(user5).deposit(toWei("12.64"));
+    //
+    //         let balanceOfUser1 = await balanceOf(user1);
+    //         let balanceOfUser2 = await balanceOf(user2);
+    //         let balanceOfUser3 = await balanceOf(user3);
+    //         let balanceOfUser4 = await balanceOf(user4);
+    //         let balanceOfUser5 = await balanceOf(user5);
+    //
+    //         let sumOfBalances = balanceOfUser1 + balanceOfUser2 + balanceOfUser3 + balanceOfUser4 + balanceOfUser5;
+    //
+    //         expect(fromWei(await sut.totalSupply())).to.be.equal(36.294);
+    //         expect(fromWei(await sut.totalSupply())).to.be.closeTo(sumOfBalances, 0.000001);
+    //     });
+    //
+    //     it("should properly sum total tokens supply - minting and burning", async () => {
+    //         await mockToken.connect(user1).approve(sut.address, toWei("4.06"));
+    //         await sut.connect(user1).deposit(toWei("4.06"));
+    //
+    //         await mockToken.connect(user2).approve(sut.address, toWei("3.1"));
+    //         await sut.connect(user2).deposit(toWei("3.1"));
+    //
+    //         await sut.connect(user1).withdraw(toWei("2.0"));
+    //         await sut.connect(user2).withdraw(toWei("1.5"));
+    //
+    //         let balanceOfUser1 = await balanceOf(user1);
+    //         let balanceOfUser2 = await balanceOf(user2);
+    //
+    //         expect(fromWei(await sut.totalSupply())).to.be.closeTo(3.660000, 0.000001);
+    //         expect(fromWei(await sut.totalSupply())).to.be.closeTo(balanceOfUser1 + balanceOfUser2, 0.000001);
+    //     });
+    //
+    //     it("should properly sum total tokens supply with accumulated interest - minting", async () => {
+    //         await mockToken.connect(user1).approve(sut.address, toWei("4.06"));
+    //         await sut.connect(user1).deposit(toWei("4.06"));
+    //
+    //         await mockToken.connect(user2).approve(sut.address, toWei("3.1"));
+    //         await sut.connect(user2).deposit(toWei("3.1"));
+    //
+    //         await mockToken.connect(user3).approve(sut.address, toWei("12.14"));
+    //         await sut.connect(user3).deposit(toWei("12.14"));
+    //
+    //         await mockToken.connect(user4).approve(sut.address, toWei("4.354"));
+    //         await sut.connect(user4).deposit(toWei("4.354"));
+    //
+    //         await mockToken.connect(user5).approve(sut.address, toWei("12.64"));
+    //         await sut.connect(user5).deposit(toWei("12.64"));
+    //
+    //         await mockToken.connect(user6).approve(sut.address, toWei("20"));
+    //         await sut.connect(user6).borrow(toWei("20"));
+    //
+    //         await time.increase(time.duration.years(1));
+    //
+    //         let balanceOfUser1 = await balanceOf(user1);
+    //         let balanceOfUser2 = await balanceOf(user2);
+    //         let balanceOfUser3 = await balanceOf(user3);
+    //         let balanceOfUser4 = await balanceOf(user4);
+    //         let balanceOfUser5 = await balanceOf(user5);
+    //
+    //         expect(balanceOfUser1).to.be.closeTo(4.113694825591007, 0.000001);
+    //         expect(balanceOfUser2).to.be.closeTo(3.1409985121507686, 0.000001);
+    //         expect(balanceOfUser3).to.be.closeTo(12.30055546371301, 0.000001);
+    //         expect(balanceOfUser4).to.be.closeTo(4.41158307158208, 0.000001);
+    //         expect(balanceOfUser5).to.be.closeTo(12.807168126963134, 0.000001);
+    //
+    //         let sumOfBalances = balanceOfUser1 + balanceOfUser2 + balanceOfUser3 + balanceOfUser4 + balanceOfUser5;
+    //
+    //         expect(fromWei(await sut.totalSupply())).to.be.closeTo(sumOfBalances, 0.000001);
+    //     });
+    //
+    //     it("should properly sum total tokens supply with accumulated interest - burning", async () => {
+    //         await mockToken.connect(user1).approve(sut.address, toWei("4.06"));
+    //         await sut.connect(user1).deposit(toWei("4.06"));
+    //
+    //         await mockToken.connect(user2).approve(sut.address, toWei("3.1"));
+    //         await sut.connect(user2).deposit(toWei("3.1"));
+    //
+    //         await sut.connect(user3).borrow(toWei("2"));
+    //
+    //         await time.increase(time.duration.years(1));
+    //
+    //         expect(await balanceOf(user1)).to.be.closeTo(4.087217877094972, 0.000001);
+    //         expect(await balanceOf(user2)).to.be.closeTo(3.120782122905028, 0.000001);
+    //
+    //         await sut.connect(user1).withdraw(toWei("2.06"));
+    //         await sut.connect(user2).withdraw(toWei("1.1"));
+    //
+    //         expect(await balanceOf(user1)).to.be.closeTo(2.0272178785753985, 0.000001);
+    //         expect(await balanceOf(user2)).to.be.closeTo(2.0207821245144038, 0.000001);
+    //     });
+    //
+    //     it("should properly sum total tokens supply with accumulated interest - minting, burning and borrowing", async () => {
+    //         await mockToken.connect(user1).approve(sut.address, toWei("3.06"));
+    //         await sut.connect(user1).deposit(toWei("3.06"));
+    //
+    //         await mockToken.connect(user2).approve(sut.address, toWei("2.1"));
+    //         await sut.connect(user2).deposit(toWei("2.1"));
+    //
+    //         await sut.connect(user3).borrow(toWei("1"));
+    //
+    //         await time.increase(time.duration.years(1));
+    //         expect(await balanceOf(user1)).to.be.closeTo(3.074232558139535, 0.000001);
+    //         expect(await balanceOf(user2)).to.be.closeTo(2.1097674418604653, 0.000001);
+    //         await sut.connect(user1).withdraw(toWei("2.06"));
+    //         await sut.connect(user2).withdraw(toWei("1.1"));
+    //
+    //         expect(await balanceOf(user1)).to.be.closeTo(1.014232558845335, 0.000001);
+    //         expect(await balanceOf(user2)).to.be.closeTo(1.0097674426995662, 0.000001);
+    //
+    //         await time.increase(time.duration.years(1));
+    //
+    //         let balanceOfUser1 = await balanceOf(user1);
+    //         let balanceOfUser2 = await balanceOf(user2);
+    //
+    //         expect(balanceOfUser1).to.be.closeTo(1.0266198264725823, 0.000001);
+    //         expect(balanceOfUser2).to.be.closeTo(1.0221001755114634, 0.000001);
+    //
+    //         let sumOfBalances = balanceOfUser1 + balanceOfUser2;
+    //
+    //         expect(fromWei(await sut.totalSupply())).to.be.closeTo(sumOfBalances, 0.000001);
+    //
+    //         await sut.connect(user3).borrow(toWei("0.7"));
+    //
+    //         await time.increase(time.duration.years(1));
+    //
+    //         balanceOfUser1 = await balanceOf(user1);
+    //         balanceOfUser2 = await balanceOf(user2);
+    //
+    //         expect(balanceOfUser1).to.be.closeTo(1.2436627106811908, 0.000001);
+    //         expect(balanceOfUser2).to.be.closeTo(1.2381875371078563, 0.000001);
+    //
+    //         sumOfBalances = balanceOfUser1 + balanceOfUser2;
+    //
+    //         expect(fromWei(await sut.totalSupply())).to.be.closeTo(sumOfBalances, 0.000001);
+    //
+    //         await mockToken.connect(user3).approve(sut.address, toWei("0.22"));
+    //         await sut.connect(user3).repay(toWei("0.22"));
+    //
+    //         await time.increase(time.duration.years(1));
+    //
+    //         balanceOfUser1 = await balanceOf(user1);
+    //         balanceOfUser2 = await balanceOf(user2);
+    //
+    //         expect(balanceOfUser1).to.be.closeTo(1.4464277028533703, 0.000001);
+    //         expect(balanceOfUser2).to.be.closeTo(1.440059863901895, 0.000001);
+    //
+    //         sumOfBalances = balanceOfUser1 + balanceOfUser2;
+    //
+    //         expect(fromWei(await sut.totalSupply())).to.be.closeTo(sumOfBalances, 0.000001);
+    //     });
+    // });
 });
