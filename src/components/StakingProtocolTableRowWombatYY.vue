@@ -588,7 +588,8 @@ export default {
         });
       });
       this.ggpIncentivesService.boostGGPYieldYakApy$.subscribe(boost => {
-        this.boostApy = boost ? boost.boostApy * this.assets['GGP'].price : 0;
+        const ggpPrice = this.assets['GGP'] ? this.assets['GGP'].price : 0;
+        this.boostApy = boost ? boost.boostApy * ggpPrice : 0;
         setTimeout(() => {
           this.$forceUpdate();
         });

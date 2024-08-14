@@ -1,6 +1,5 @@
 <template>
   <div class="page-content">
-    <!--    <button v-on:click="testClick()">test</button>-->
     <Banner v-if="showNetworkBanner">
       You are connected to a wrong network. Please change to Avalanche or Arbitrum.
     </Banner>
@@ -391,7 +390,7 @@ export default {
           '0x35C93a488906798341ce4267Ecb398dC2aD230a6',
           '0x0844F379be6E5b7Fd4A6D8f7A1b5146A68E23e9f',
           '0xeAA7425910Af14657ED96a278274e6e85D947f2D'
-        ].map(el => el.toLowerCase()).includes(this.smartLoanContract.address.toLowerCase())) {
+        ].map(el => el.toLowerCase()).includes(this.smartLoanContract && this.smartLoanContract.address.toLowerCase())) {
           this.showAffectedPrimeAccountBanner = true;
         }
       })
@@ -448,7 +447,7 @@ export default {
           } else {
             console.log('PA PAGE - checking PA contract');
             console.log(smartLoanContract);
-            if (smartLoanContract.address === NULL_ADDRESS) {
+            if (smartLoanContract && smartLoanContract.address === NULL_ADDRESS) {
               console.log('PA PAGE - no account - terms not required');
               if (isCountryRestricted) {
                 this.restrictApp(false);
