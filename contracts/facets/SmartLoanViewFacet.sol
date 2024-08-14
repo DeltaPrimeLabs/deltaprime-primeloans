@@ -41,6 +41,7 @@ contract SmartLoanViewFacet is ReentrancyGuardKeccak, SolvencyMethods {
 
     function initialize(address owner) external {
         require(owner != address(0), "Initialize: Cannot set the owner to a zero address");
+        require(address(this) != DeploymentConstants.getDiamondAddress(), "DiamondInit: Cannot initialize DiamondBeacon");
 
         DiamondStorageLib.SmartLoanStorage storage sls = DiamondStorageLib.smartLoanStorage();
         require(!sls._initialized, "DiamondInit: contract is already initialized");
