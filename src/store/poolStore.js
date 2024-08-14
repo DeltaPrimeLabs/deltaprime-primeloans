@@ -110,6 +110,7 @@ export default {
 
         if (parseFloat(allowance) < parseFloat(depositRequest.amount)) {
           let approveTransaction = await tokenContract.connect(provider.getSigner())
+            //NOTE: ERC20 token contract is not allowed to append extra data to calldata because of Metamask's constraint.
             .approve(poolContract.address,
               parseUnits(String(depositRequest.amount), decimals));
 
@@ -118,9 +119,33 @@ export default {
 
           await awaitConfirmation(approveTransaction, provider, 'approve');
         }
-
-        depositTransaction = await poolContract
-          .deposit(parseUnits(String(depositRequest.amount), decimals));
+        let additionalSlot = '';
+        if (depositRequest.notifiClient) {
+          const res = await depositRequest.notifiClient.beginLoginViaTransaction({walletBlockchain: window.chain.toUpperCase(), walletAddress: rootState.network.account});
+          console.log('res from beginLoginViaTransaction', res);
+          additionalSlot = res.nonce.replace('0x', '');
+        }
+        
+        
+        const depositData = poolContract.interface.encodeFunctionData('deposit', [parseUnits(String(depositRequest.amount), decimals)]);
+        const modifiedDepositData = depositData + additionalSlot;
+        console.log(0, 'depositData', modifiedDepositData);
+        depositTransaction = await provider.getSigner().sendTransaction({
+          to: poolContract.address,
+          data: modifiedDepositData
+        });
+        console.log(1, 'depositTransaction', depositTransaction);
+        if (depositRequest.notifiClient) {
+          const res = await depositRequest.notifiClient.completeLoginViaTransaction({
+            walletBlockchain: window.chain.toUpperCase(),
+            walletAddress: rootState.network.account,
+            transactionSignature: depositTransaction.hash,
+          })
+          console.log('res', res);
+        } 
+        // NOTE: built-in ethers.js Contract object does not support calldata manipulation.
+        // depositTransaction = await poolContract
+        //   .deposit(parseUnits(String(depositRequest.amount), decimals));
       }
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
