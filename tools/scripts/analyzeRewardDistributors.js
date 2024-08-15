@@ -119,6 +119,9 @@ async function analyzeRewardDistributor(rewardDistributor, startBlock, rewardTok
         '0x6cafe2f3a293736dc13a08a03a272d1dd36affd1': 'Avalanche',
     };
 
+    console.log(`Fund txs:`)
+    console.log(txs.map(el => el.txHash));
+
     const rewardTokenReceiveTxs = txs.filter(tx => tx.tokenAddress.toLowerCase() === rewardToken.toLowerCase());
     const totalTokensSentPerAddress = {}
 
