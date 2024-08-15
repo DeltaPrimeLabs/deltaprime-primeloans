@@ -67,9 +67,9 @@ function getPoolDecimals(pool) {
 function getSubgraphEndpoint(chain) {
   switch (chain) {
     case "avalanche":
-      return "https://api.studio.thegraph.com/query/78666/deltaprime/v0.0.1";
+      return `https://gateway-arbitrum.network.thegraph.com/api/${subgraphConfig.apiKey}/subgraphs/id/DPjhMarRUjoC6yoLGKaCDduf9xTKhzKVXU7pFc2FCDqN`;
     case "arbitrum":
-      return `https://gateway-arbitrum.network.thegraph.com/api/${subgraphConfig.arbitrum}/subgraphs/id/839tNWmeEHHDN41Tq83PAuv7JRw3raUJc6phkcgRAqjR`;
+      return `https://gateway-arbitrum.network.thegraph.com/api/${subgraphConfig.apiKey}/subgraphs/id/FYfDHXCWtiMM98bhgY1kTzUPdW9PxiCJTq5s9aB4kz3z`;
   }
 }
 

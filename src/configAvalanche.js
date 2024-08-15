@@ -10,6 +10,7 @@ import BTC_POOL_TUP from '/deployments/avalanche/BtcPoolTUP.json';
 import ETH_POOL_TUP from '/deployments/avalanche/EthPoolTUP.json';
 import PANGOLIN_INTERMEDIARY_TUP from '/deployments/avalanche/PangolinIntermediaryTUP.json';
 import TRADERJOE_INTERMEDIARY_TUP from '/deployments/avalanche/TraderJoeIntermediaryTUP.json';
+import subgraphConfig from '../.secrets/subgraph.json';
 
 export default {
     MIN_ALLOWED_HEALTH: 0.0182,
@@ -769,7 +770,7 @@ export default {
     dataProviderId: "redstone-avalanche-prod",
     dataProviderHistoricalPrices: "redstone-avalanche",
     redstoneFeedUrl: "https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-avalanche-prod",
-    subgraph: "https://api.studio.thegraph.com/query/78666/deltaprime/v0.0.1",
+    subgraph: `https://gateway-arbitrum.network.thegraph.com/api/${subgraphConfig.apiKey}/subgraphs/id/DPjhMarRUjoC6yoLGKaCDduf9xTKhzKVXU7pFc2FCDqN`,
     readRpcUrl: "https://avalanche-mainnet.core.chainstack.com/ext/bc/C/rpc/0968db18a01a90bac990ff00df6f7da1",
     fallbackRpcs: [
       'https://api.avax.network/ext/bc/C/rpc',

@@ -7,6 +7,7 @@ const incentivesRpcUrl = require('../.secrets/incentivesRpc.json');
 const pingUrl = require('../.secrets/ping.json');
 const { dynamoDb, fetchAllDataFromDB } = require('../utils/helpers');
 const chainbaseConfig = require('../.secrets/chainbase.json');
+import subgraphConfig from '../.secrets/subgraph.json';
 
 function getRpcUrl(chain, rpc) {
   // switch(chain){
@@ -177,9 +178,9 @@ function getPoolEligibleTVLMultiplier(chain, pool) {
 function getSubgraphEndpoint(chain) {
   switch (chain) {
     case "avalanche":
-      return "https://api.thegraph.com/subgraphs/name/mbare0/deltaprime";
+      return `https://gateway-arbitrum.network.thegraph.com/api/${subgraphConfig.apiKey}/subgraphs/id/DPjhMarRUjoC6yoLGKaCDduf9xTKhzKVXU7pFc2FCDqN`;
     case "arbitrum":
-      return "https://api.thegraph.com/subgraphs/name/keizir/deltaprime";
+      return `https://gateway-arbitrum.network.thegraph.com/api/${subgraphConfig.apiKey}/subgraphs/id/FYfDHXCWtiMM98bhgY1kTzUPdW9PxiCJTq5s9aB4kz3z`;
   }
 }
 
