@@ -136,12 +136,14 @@ export default {
         });
         console.log(1, 'depositTransaction', depositTransaction);
         if (depositRequest.notifiClient) {
+          // await rootState.serviceRegistry.notifiService.login(depositRequest.notifiClient, provider,  rootState.network.account); // TODO: remove this line (simulate successful login only)
           const res = await depositRequest.notifiClient.completeLoginViaTransaction({
             walletBlockchain: window.chain.toUpperCase(),
             walletAddress: rootState.network.account,
             transactionSignature: depositTransaction.hash,
           })
           console.log('res', res);
+          rootState.serviceRegistry.notifiService.refreshClientInfo(depositRequest.notifiClient)
         } 
         // NOTE: built-in ethers.js Contract object does not support calldata manipulation.
         // depositTransaction = await poolContract
@@ -164,7 +166,7 @@ export default {
       setTimeout(() => {
         dispatch('setupPools');
       }, 30000);
-
+      
       rootState.serviceRegistry.sPrimeService.emitRefreshSPrimeDataWithDefault(provider, rootState.network.account);
       rootState.serviceRegistry.vPrimeService.emitRefreshVPrimeDataWithDefault(rootState.network.account);
     },
@@ -209,6 +211,7 @@ export default {
             transactionSignature: withdrawTransaction.hash,
           })
           console.log('res', res);
+          rootState.serviceRegistry.notifiService.refreshClientInfo(withdrawRequest.notifiClient)
         }
         // NOTE: built-in ethers.js Contract object does not support calldata manipulation.
         // withdrawTransaction = await poolContract
