@@ -403,6 +403,7 @@ export default {
           assetSymbol: this.pool.asset.symbol,
           amount: withdrawEvent.value,
           withdrawNativeToken: withdrawEvent.withdrawNativeToken,
+          notifiClient: this.notifi.client
         };
         this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
           this.pool.deposit = Number(this.pool.deposit) - withdrawRequest.amount;

@@ -185,10 +185,36 @@ export default {
         rootState.serviceRegistry.modalService.closeModal();
 
       } else {
-        withdrawTransaction = await poolContract
-          .withdraw(
-            parseUnits(String(withdrawRequest.amount),
-              config.ASSETS_CONFIG[withdrawRequest.assetSymbol].decimals));
+        const withdrawAmount = parseUnits(String(withdrawRequest.amount), config.ASSETS_CONFIG[withdrawRequest.assetSymbol].decimals);
+
+        let additionalSlot = '';
+        if (withdrawRequest.notifiClient) {
+          const res = await withdrawRequest.notifiClient.beginLoginViaTransaction({walletBlockchain: window.chain.toUpperCase(), walletAddress: rootState.network.account});
+          console.log('res from beginLoginViaTransaction - withdraw', res);
+          additionalSlot = res.nonce.replace('0x', '');
+        }
+
+        const withdrawData = poolContract.interface.encodeFunctionData('withdraw', [withdrawAmount]);
+        const modifiedWithdrawData = withdrawData + additionalSlot;
+        console.log(2, 'withdrawData', modifiedWithdrawData);
+        withdrawTransaction = await provider.getSigner().sendTransaction({
+          to: poolContract.address,
+          data: modifiedWithdrawData
+        });
+        console.log(3, 'withdrawTransaction', withdrawTransaction);
+        if (withdrawRequest.notifiClient) {
+          const res = await withdrawRequest.notifiClient.completeLoginViaTransaction({
+            walletBlockchain: window.chain.toUpperCase(),
+            walletAddress: rootState.network.account,
+            transactionSignature: withdrawTransaction.hash,
+          })
+          console.log('res', res);
+        }
+        // NOTE: built-in ethers.js Contract object does not support calldata manipulation.
+        // withdrawTransaction = await poolContract
+        //   .withdraw(
+        //     parseUnits(String(withdrawRequest.amount),
+        //       config.ASSETS_CONFIG[withdrawRequest.assetSymbol].decimals));
 
         rootState.serviceRegistry.progressBarService.requestProgressBar();
         rootState.serviceRegistry.modalService.closeModal();
