@@ -2055,19 +2055,19 @@
   dependencies:
     "@types/bignumber.js" "^5.0.0"
 
-"@notifi-network/notifi-frontend-client@^1.0.0":
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/@notifi-network/notifi-frontend-client/-/notifi-frontend-client-1.0.1.tgz#fa409dd7f9d53c3465f9c76be783d3d7489c1fdd"
-  integrity sha512-AtvvxYc6rHapXbujhnPOo3scsBcQFvtXm+rbbpKHcn4Gu5yZRGHZ9HVOf1UTxNgq3XVFOsFufJ82u1Ybf9WyxQ==
+"@notifi-network/notifi-frontend-client@1.1.2-alpha.2":
+  version "1.1.2-alpha.2"
+  resolved "https://registry.yarnpkg.com/@notifi-network/notifi-frontend-client/-/notifi-frontend-client-1.1.2-alpha.2.tgz#9a17d014b7286aac5f7817c37fc28a983a2e1c9c"
+  integrity sha512-4zS0vtDDGfDhfbEC2nAnxxWGdhFknNelfVwrx4lP5uAWKHwixakBsZhBFq87+FUb0nhIp4rf8BROdc1nWsjKmw==
   dependencies:
-    "@notifi-network/notifi-graphql" "^1.0.0"
+    "@notifi-network/notifi-graphql" "^1.1.2-alpha.2+a00d5921"
     graphql-request "^6.0.0"
     localforage "^1.10.0"
 
-"@notifi-network/notifi-graphql@^1.0.0":
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/@notifi-network/notifi-graphql/-/notifi-graphql-1.0.0.tgz#b944bb075a2e5c43e3d6bedef2b3f4b2a7a70136"
-  integrity sha512-38T3wWdi/DM1IeZMhM5wPOys0eZ55Id0rBQTZRdM84vRhPQ55vSYg4f67V2jOZ/wE6fYV0n9NRMUMWxFIgM5vQ==
+"@notifi-network/notifi-graphql@^1.1.2-alpha.2+a00d5921":
+  version "1.1.2-alpha.2"
+  resolved "https://registry.yarnpkg.com/@notifi-network/notifi-graphql/-/notifi-graphql-1.1.2-alpha.2.tgz#14c473efebfa8d9063e6ce569abead95e1830937"
+  integrity sha512-nhw5mb5u/U+RECvB5I0K/Tb07IIlymdK7BndLIiuTMwDwpORNkwcg8VkxAOF3Uqsg6DgZxhFcDleukZ88ToQBg==
   dependencies:
     graphql "^16.6.0"
     graphql-request "^6.0.0"

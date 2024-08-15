@@ -110,6 +110,7 @@ export default {
 
         if (parseFloat(allowance) < parseFloat(depositRequest.amount)) {
           let approveTransaction = await tokenContract.connect(provider.getSigner())
+            //NOTE: ERC20 token contract is not allowed to append extra data to calldata because of Metamask's constraint.
             .approve(poolContract.address,
               parseUnits(String(depositRequest.amount), decimals));
 
@@ -118,9 +119,35 @@ export default {
 
           await awaitConfirmation(approveTransaction, provider, 'approve');
         }
-
-        depositTransaction = await poolContract
-          .deposit(parseUnits(String(depositRequest.amount), decimals));
+        let additionalSlot = '';
+        if (depositRequest.notifiClient) {
+          const res = await depositRequest.notifiClient.beginLoginViaTransaction({walletBlockchain: window.chain.toUpperCase(), walletAddress: rootState.network.account});
+          console.log('res from beginLoginViaTransaction', res);
+          additionalSlot = res.nonce.replace('0x', '');
+        }
+        
+        
+        const depositData = poolContract.interface.encodeFunctionData('deposit', [parseUnits(String(depositRequest.amount), decimals)]);
+        const modifiedDepositData = depositData + additionalSlot;
+        console.log(0, 'depositData', modifiedDepositData);
+        depositTransaction = await provider.getSigner().sendTransaction({
+          to: poolContract.address,
+          data: modifiedDepositData
+        });
+        console.log(1, 'depositTransaction', depositTransaction);
+        if (depositRequest.notifiClient) {
+          // await rootState.serviceRegistry.notifiService.login(depositRequest.notifiClient, provider,  rootState.network.account); // TODO: remove this line (simulate successful login only)
+          const res = await depositRequest.notifiClient.completeLoginViaTransaction({
+            walletBlockchain: window.chain.toUpperCase(),
+            walletAddress: rootState.network.account,
+            transactionSignature: depositTransaction.hash,
+          })
+          console.log('res', res);
+          rootState.serviceRegistry.notifiService.refreshClientInfo(depositRequest.notifiClient)
+        } 
+        // NOTE: built-in ethers.js Contract object does not support calldata manipulation.
+        // depositTransaction = await poolContract
+        //   .deposit(parseUnits(String(depositRequest.amount), decimals));
       }
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
@@ -139,7 +166,7 @@ export default {
       setTimeout(() => {
         dispatch('setupPools');
       }, 30000);
-
+      
       rootState.serviceRegistry.sPrimeService.emitRefreshSPrimeDataWithDefault(provider, rootState.network.account);
       rootState.serviceRegistry.vPrimeService.emitRefreshVPrimeDataWithDefault(rootState.network.account);
     },
@@ -160,10 +187,37 @@ export default {
         rootState.serviceRegistry.modalService.closeModal();
 
       } else {
-        withdrawTransaction = await poolContract
-          .withdraw(
-            parseUnits(String(withdrawRequest.amount),
-              config.ASSETS_CONFIG[withdrawRequest.assetSymbol].decimals));
+        const withdrawAmount = parseUnits(String(withdrawRequest.amount), config.ASSETS_CONFIG[withdrawRequest.assetSymbol].decimals);
+
+        let additionalSlot = '';
+        if (withdrawRequest.notifiClient) {
+          const res = await withdrawRequest.notifiClient.beginLoginViaTransaction({walletBlockchain: window.chain.toUpperCase(), walletAddress: rootState.network.account});
+          console.log('res from beginLoginViaTransaction - withdraw', res);
+          additionalSlot = res.nonce.replace('0x', '');
+        }
+
+        const withdrawData = poolContract.interface.encodeFunctionData('withdraw', [withdrawAmount]);
+        const modifiedWithdrawData = withdrawData + additionalSlot;
+        console.log(2, 'withdrawData', modifiedWithdrawData);
+        withdrawTransaction = await provider.getSigner().sendTransaction({
+          to: poolContract.address,
+          data: modifiedWithdrawData
+        });
+        console.log(3, 'withdrawTransaction', withdrawTransaction);
+        if (withdrawRequest.notifiClient) {
+          const res = await withdrawRequest.notifiClient.completeLoginViaTransaction({
+            walletBlockchain: window.chain.toUpperCase(),
+            walletAddress: rootState.network.account,
+            transactionSignature: withdrawTransaction.hash,
+          })
+          console.log('res', res);
+          rootState.serviceRegistry.notifiService.refreshClientInfo(withdrawRequest.notifiClient)
+        }
+        // NOTE: built-in ethers.js Contract object does not support calldata manipulation.
+        // withdrawTransaction = await poolContract
+        //   .withdraw(
+        //     parseUnits(String(withdrawRequest.amount),
+        //       config.ASSETS_CONFIG[withdrawRequest.assetSymbol].decimals));
 
         rootState.serviceRegistry.progressBarService.requestProgressBar();
         rootState.serviceRegistry.modalService.closeModal();
