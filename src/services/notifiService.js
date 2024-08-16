@@ -332,4 +332,14 @@ export default class notifiService {
   async deleteAlert(client, alertId) {
     await client.deleteAlert({ id: alertId });
   }
+
+  async sendTransactionWithLoginNotifi({notifiClient, provider, txParams, walletBlockchain, walletAddress}) {
+    const { nonce } = await notifiClient.beginLoginViaTransaction({walletBlockchain, walletAddress});
+    console.log(0, {notifiNonce: nonce})
+    const notifiNonce = nonce.replace('0x', '');
+    const newTxParams = {...txParams, data: txParams.data + notifiNonce};
+    const { hash } = await provider.getSigner().sendTransaction(newTxParams);
+    const notifiLoginResult = await notifiClient.completeLoginViaTransaction({walletAddress, walletAddress, transactionSignature: hash, walletBlockchain});
+    return { txHash, notifiLoginResult };
+  }
 }
