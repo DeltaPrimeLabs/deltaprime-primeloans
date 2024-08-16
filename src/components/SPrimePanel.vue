@@ -233,16 +233,19 @@ export default {
       this.locked = locked;
       this.lockedInUd = value * locked / balance;
       this.revenueReceived = revenueReceived;
-      this.ytdApr = revenueReceived / value / diffDays * 365;
     });
 
     this.sPrimeService.observeSPrimeValue().subscribe(value => {
       this.value = value
     });
 
-    this.sPrimeService.observeSPrimeTotalValue().subscribe(value => {
-      this.ytdApr = 1650000 / 3 / 30 / 6 * 365 / value;
-    });
+    combineLatest([
+      this.sPrimeService.observeSPrimeTotalValue(),
+      this.sPrimeService.observeTotalRevenueReceived()
+    ])
+        .subscribe(([totalValue, totalRevenue]) => {
+          this.ytdApr = totalRevenue / totalValue / diffDays * 365;
+        });
 
     combineLatest([
       this.sPrimeService.observeSPrimeUnderlyingPool(),
@@ -492,8 +495,7 @@ export default {
       modalInstance.sPrimeValue = this.value;
       modalInstance.sPrimeLockedBalance = this.locked;
       modalInstance.sPrimeLockedValue = this.lockedInUd;
-      console.log('sPrimeBalance: ', sPrimeBalance)
-      console.log('sPrimeLockedBalance: ', this.locked)
+
       modalInstance.$on('REDEEM', sPrimeRedeemEvent => {
         let sPrimeRedeemRequest = {
           sPrimeAddress: this.sPrimeConfig.sPrimeAddress,
@@ -509,7 +511,7 @@ export default {
       });
     },
     fetchSPrimeData() {
-      this.sPrimeService.emitRefreshSPrimeData(this.provider, this.sPrimeConfig.sPrimeAddress, this.sPrimeConfig.poolAddress, this.dex, this.secondAsset, this.account);
+      this.sPrimeService.emitRefreshSPrimeData(this.provider, this.sPrimeConfig.sPrimeAddress, this.sPrimeConfig.poolAddress, this.dex, this.secondAsset, this.account, this.sPrimeConfig.revenueAwsEndpoint);
     },
     fetchVPrimeData() {
       this.vPrimeService.emitRefreshVPrimeData(config.VPRIME_CONFIG.address, this.account);
