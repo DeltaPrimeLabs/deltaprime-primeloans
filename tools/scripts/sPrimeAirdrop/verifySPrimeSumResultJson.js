@@ -1,7 +1,7 @@
 const fs = require('fs');
 
 // Read the output JSON data from a file
-const rawData = fs.readFileSync('sPrimeSumResultArb.json');
+const rawData = fs.readFileSync('sPrimeSumResultAva.json');
 const outputJsonData = JSON.parse(rawData);
 
 function analyzeSPrimeSums(data) {
