@@ -225,10 +225,10 @@ async function checkCollected() {
 
 
 // fetchData("GGP_EPOCH_8", GGP_AWS_ENDPOINT)
-fetchData("YY_GGP_EPOCH_1", YY_GGP_AWS_ENDPOINT)
+// fetchData("YY_GGP_EPOCH_2", YY_GGP_AWS_ENDPOINT)
 // checkNegativeAccounts()
 // checkCollectedInTimestamp(1715152203)
 // checkCollected();
-// createDiffJson( "GGP_EPOCH_7", "GGP_EPOCH_8")
-// createAddJson( "GM_EPOCH_8", "GM_EPOCH_9_diff", "GM_EPOCH_9")
+createDiffJson( "YY_GGP_EPOCH_1", "YY_GGP_EPOCH_2")
+// createAddJson( "GM_EPOCH_8",x "GM_EPOCH_9_diff", "GM_EPOCH_9")
 // analyzeJson("GGP_EPOCH_4_diff")
