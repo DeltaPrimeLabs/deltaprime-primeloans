@@ -686,6 +686,11 @@ resources:
 plugins:
   - serverless-prune-plugin
 
+custom:
+  prune:
+    automatic: true       # Automatically prune old versions after deployment
+    number: 3             # Number of versions to keep
+
 package:
   individually: true
   exclude:

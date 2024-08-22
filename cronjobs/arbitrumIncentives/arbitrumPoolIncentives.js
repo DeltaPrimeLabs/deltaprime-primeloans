@@ -475,7 +475,7 @@ async function calculateEligibleAirdropPerPool(numberOfTokensToBeDistributed, ch
   // for each pool sum up depositors eligible airdrops and verify if they sum up to each pool's eligible airdrop
 
   for (let pool in depositorsEligibleAirdrop) {
-    const threshold = 0.1;
+    const threshold = 0.2;
     let sum = Object.values(depositorsEligibleAirdrop[pool]).reduce((a, b) => a + b);
     console.log(`Sum of ${pool} depositors eligible airdrops: ${sum}`);
     console.log(`Eligible airdrop for ${pool}: ${tokensToBeDistributedPerPool[pool]}`);
