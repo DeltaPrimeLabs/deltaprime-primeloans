@@ -9,7 +9,7 @@
   "author": "",
   "license": "ISC",
   "engines": {
-    "node": "16"
+    "node": "18"
   },
   "main": "index.js",
   "dependencies": {
@@ -22,6 +22,7 @@
     "bluebird": "^3.7.2",
     "ethereum-block-by-date": "^1.4.9",
     "ethers": "^5.5.4",
+    "graphql": "^16.6.0",
     "graphql-request": "^6.1.0",
     "graphql-tag": "^2.12.6",
     "node-fetch": "^2.7.0",

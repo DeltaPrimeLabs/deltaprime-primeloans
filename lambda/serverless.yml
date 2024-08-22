@@ -18,7 +18,7 @@ service: deltaprime-cloud
 
 # You can pin your service to only deploy with a specific Serverless version
 # Check out our docs for more details
-frameworkVersion: "3"
+frameworkVersion: "4"
 
 provider:
   name: aws
@@ -45,7 +45,7 @@ provider:
     TERMS_VERSION_TABLE: terms-version-${opt:stage, "dev"}
     LOAN_STATS_AVA_TABLE: loan-stats-ava-${opt:stage, "dev"}
     LOAN_STATS_ARB_TABLE: loan-stats-arb-${opt:stage, "dev"}
-    TJ_API_KEY: ${file(./.secrets/traderJoe.json):apiKey}
+#    TJ_API_KEY: ${file(./.secrets/traderJoe.json):apiKey}
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -109,14 +109,14 @@ functions:
           path: /levelTvl/{id}
   glpAprAggregator:
     handler: aggregators/apy.glpAprAggregator
-    memorySize: 2048
+    memorySize: 3072
     timeout: 300
     description: Fetch GLP Apr from GMX website.
     events:
       - schedule: rate(5 minutes)
   vectorApyAggregator:
     handler: aggregators/apy.vectorApyAggregator
-    memorySize: 2048
+    memorySize: 3072
     timeout: 300
     description: Fetch auto-compounding APYs from Vector website.
     events:
@@ -130,70 +130,70 @@ functions:
       - schedule: rate(5 minutes)
   steakHutApyAggregator:
     handler: aggregators/apy.steakHutApyAggregator
-    memorySize: 2048
+    memorySize: 3072
     timeout: 300
     description: Fetch APYs from StackHut website.
     events:
       - schedule: rate(5 minutes)
   traderJoeApyAggregator:
     handler: aggregators/apy.traderJoeApyAggregator
-    memorySize: 2048
+    memorySize: 3072
     timeout: 900
     description: Fetch APYs from TraderJoe website.
     events:
       - schedule: rate(15 minutes)
   sushiApyAggregator:
     handler: aggregators/apy.sushiApyAggregator
-    memorySize: 2048
+    memorySize: 3072
     timeout: 300
     description: Fetch APYs from Sushi website.
     events:
       - schedule: rate(5 minutes)
   beefyApyAggregator:
     handler: aggregators/apy.beefyApyAggregator
-    memorySize: 2048
+    memorySize: 3072
     timeout: 300
     description: Fetch APYs from Beefy website.
     events:
       - schedule: rate(3 minutes)
   gmxApyAggregator:
     handler: aggregators/apy.gmxApyAggregator
-    memorySize: 2048
+    memorySize: 3072
     timeout: 300
     description: Fetch GM token APYs from GMX website.
     events:
       - schedule: rate(5 minutes)
   balancerTvlAndApyAggregator:
     handler: aggregators/apy.balancerTvlAndApyAggregator
-    memorySize: 2048
+    memorySize: 3072
     timeout: 300
     description: Fetch pool APYs from Balancer website.
     events:
       - schedule: rate(5 minutes)
   assetStakingApyAggregator:
     handler: aggregators/apy.assetStakingApyAggregator
-    memorySize: 2048
+    memorySize: 3072
     timeout: 300
     description: Fetch staking APYs of various assets.
     events:
       - schedule: rate(5 minutes)
   gmOpenInterestAggregator:
     handler: gmOpenInterest/gmOpenInterestAggregator.handler
-    memorySize: 2048
+    memorySize: 3072
     timeout: 300
     description: fetch Open Interests of GM pool.
     events:
       - schedule: rate(3 hours)
   pendleTvlAndApyAggregator:
     handler: aggregators/apy.pendleTvlAndApyAggregator
-    memorySize: 2048
+    memorySize: 3072
     timeout: 300
     description: fetch TVLs and APYs of Pendle pools.
     events:
       - schedule: rate(5 minutes)
   wombatApyAggregator:
     handler: aggregators/apy.wombatApyAggregator
-    memorySize: 2048
+    memorySize: 3072
     timeout: 300
     description: fetch APYs of Wombat pools.
     events:
@@ -223,7 +223,7 @@ functions:
           path: /traderjoe/rewards/claimable
   getGmxIncentivesApi:
     handler: apis/gmxIncentives.getGmxIncentivesApi
-    memorySize: 2048
+    memorySize: 3072
     timeout: 20
     description: Fetch GMX incentives values for a loan on Avalanche and Arbitrum
     events:
@@ -232,7 +232,7 @@ functions:
           path: /gmx-incentives/{id}
   getGmxIncentivesNewApi:
     handler: apis/gmxIncentives.getGmxIncentivesNewApi
-    memorySize: 2048
+    memorySize: 3072
     timeout: 20
     description: Fetch new retroactive GMX incentives values from a week ago to certain timestamp for a loan on Avalanche
     events:
@@ -241,7 +241,7 @@ functions:
           path: /gmx-incentives-new/{id}
   getLoanArbitrumIncentivesForApi:
     handler: apis/arbitrumIncentives.getLoanArbitrumIncentivesForApi
-    memorySize: 2048
+    memorySize: 3072
     timeout: 20
     description: Fetch LTIP PA ARB incentives accumulated for specific loans on Arbitrum
     events:
@@ -250,7 +250,7 @@ functions:
           path: /ltip-loan-for
   getLoanArbitrumIncentivesLeaderboardApi:
     handler: apis/arbitrumIncentives.getLoanArbitrumIncentivesLeaderboardApi
-    memorySize: 2048
+    memorySize: 3072
     timeout: 29
     description: Fetch LTIP PA top loans for leaderboard on Arbitrum
     events:
@@ -259,7 +259,7 @@ functions:
           path: /ltip-loan-leaderboard
   getPoolArbitrumIncentivesForApi:
     handler: apis/arbitrumIncentives.getPoolArbitrumIncentivesForApi
-    memorySize: 2048
+    memorySize: 3072
     timeout: 20
     description: Fetch LTIP Pool ARB incentives accumulated for specific pool depositors on Arbitrum
     events:
@@ -268,7 +268,7 @@ functions:
           path: /ltip-pool-for
   getPoolArbitrumIncentivesLeaderboardApi:
     handler: apis/arbitrumIncentives.getPoolArbitrumIncentivesLeaderboardApi
-    memorySize: 2048
+    memorySize: 3072
     timeout: 20
     description: Fetch LTIP Pool top loans for leaderboard on Arbitrum
     events:
@@ -293,7 +293,7 @@ functions:
           path: /ltip-pool-boost-apy
   getLtipPoolTotalIncentivesApi:
     handler: apis/arbitrumIncentives.getLtipPoolTotalIncentivesApi
-    memorySize: 2048
+    memorySize: 3072
     timeout: 20
     description: Fetch total ARB incentives for LTIP PAs on Arbitrum
     events:
@@ -310,7 +310,7 @@ functions:
           path: /gm-boost-apy
   getGmOpenInterestsApi:
     handler: apis/gmOpenInterests.getGmOpenInterestsApi
-    memorySize: 2048
+    memorySize: 3072
     timeout: 20
     description: Fetch Open Interest of GM pools
     events:

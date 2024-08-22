@@ -677,6 +677,8 @@ const gmxApyAggregator = async (event) => {
 
     for (const [poolId, marketId] of Object.entries(pools)) {
       try {
+        console.log(`marketInnerTexts: ${marketInnerTexts}`);
+        console.log(`marketId: ${marketId}`);
         const matchId = marketInnerTexts.findIndex(innerText => innerText.startsWith(marketId));
         const market = marketRows[matchId];
         const marketColumns = await market.$$("td");

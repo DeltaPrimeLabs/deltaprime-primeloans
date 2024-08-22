@@ -13,23 +13,23 @@
   },
   "TJ_AVAX_USDC_LP": {
     "dex": "TraderJoe",
-    "url": "https://api.thegraph.com/subgraphs/name/traderjoe-xyz/exchange"
+    "url": "https://thegraph.com/hosted-service/subgraph/traderjoe-xyz/joe-v2"
   },
   "TJ_AVAX_USDT_LP": {
     "dex": "TraderJoe",
-    "url": "https://api.thegraph.com/subgraphs/name/traderjoe-xyz/exchange"
+    "url": "https://thegraph.com/hosted-service/subgraph/traderjoe-xyz/joe-v2"
   },
   "TJ_AVAX_ETH_LP": {
     "dex": "TraderJoe",
-    "url": "https://api.thegraph.com/subgraphs/name/traderjoe-xyz/exchange"
+    "url": "https://thegraph.com/hosted-service/subgraph/traderjoe-xyz/joe-v2"
   },
   "TJ_AVAX_BTC_LP": {
     "dex": "TraderJoe",
-    "url": "https://api.thegraph.com/subgraphs/name/traderjoe-xyz/exchange"
+    "url": "https://thegraph.com/hosted-service/subgraph/traderjoe-xyz/joe-v2"
   },
   "TJ_AVAX_sAVAX_LP": {
     "dex": "TraderJoe",
-    "url": "https://api.thegraph.com/subgraphs/name/traderjoe-xyz/exchange",
+    "url": "https://thegraph.com/hosted-service/subgraph/traderjoe-xyz/joe-v2",
     "appreciation": 3.6
   }
 }

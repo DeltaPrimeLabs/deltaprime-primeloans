@@ -372,7 +372,7 @@ export async function getPangolinLpApr(url) {
 }
 
 export async function getTraderJoeLpApr(lpAddress, assetAppreciation = 0) {
-  let tjSubgraphUrl = 'https://api.thegraph.com/subgraphs/name/traderjoe-xyz/exchange';
+  let tjSubgraphUrl = 'https://thegraph.com/hosted-service/subgraph/traderjoe-xyz/joe-v2';
 
   const FEE_RATE = 0.0025;
 

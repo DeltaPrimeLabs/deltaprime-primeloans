@@ -76,7 +76,7 @@ const fetchAllDepositors = async (network) => {
 }
 
 const fetchTraderJoeLpApr = async (lpAddress, assetAppreciation = 0) => {
-  const tjSubgraphUrl = 'https://api.thegraph.com/subgraphs/name/traderjoe-xyz/exchange';
+  const tjSubgraphUrl = 'https://thegraph.com/hosted-service/subgraph/traderjoe-xyz/joe-v2';
   const FEE_RATE = 0.0025;
   const aprDate = new Date();
   const date = Math.round(aprDate.getTime() / 1000 - 32 * 3600);
