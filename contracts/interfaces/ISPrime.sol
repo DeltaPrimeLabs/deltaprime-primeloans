@@ -17,6 +17,12 @@ interface ISPrime {
         uint256 unlockTime;
     }
 
+    //Uniswap V3
+    function userTokenId(address user) external view returns (uint256);
+    //TraderJoe V2
+    function getUserTokenId(address user) external view returns (uint256);
+
+
     /**
     * @dev Users can use withdraw function for withdrawing their share.
     * @param shareWithdraw The amount of share to withdraw.
