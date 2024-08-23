@@ -3613,7 +3613,7 @@ export default {
         await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
         (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
         Object.keys(config.POOLS_CONFIG),
-        [borrowRequest.asset]
+        [borrowRequest.asset, 'PRIME']
       ]);
 
       const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).borrow(
@@ -3661,7 +3661,8 @@ export default {
       const loanAssets = mergeArrays([(
         await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
         (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
-        Object.keys(config.POOLS_CONFIG)
+        Object.keys(config.POOLS_CONFIG),
+        'PRIME'
       ]);
 
       const transaction = await (await wrapContract(state.smartLoanContract, loanAssets)).repay(

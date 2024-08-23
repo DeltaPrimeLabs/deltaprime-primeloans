@@ -32,7 +32,7 @@ export default {
       const provider = rootState.network.provider;
 
       // let dataFeeds = ['PRIME', sPrimeMintRequest.secondAsset]
-      let dataFeeds = [...Object.keys(config.POOLS_CONFIG)]
+      let dataFeeds = [...Object.keys(config.POOLS_CONFIG), 'PRIME']
       const sprimeContract = await wrapContract(new ethers.Contract(sPrimeMintRequest.sPrimeAddress, sPrimeMintRequest.dex === 'TRADERJOEV2' ? SPRIME_TJV2.abi : SPRIME_UNISWAP.abi, provider.getSigner()), dataFeeds);
 
       const secondAssetDecimals = config.SPRIME_CONFIG[sPrimeMintRequest.dex][sPrimeMintRequest.secondAsset].secondAssetDecimals;
@@ -86,7 +86,7 @@ export default {
       rootState.serviceRegistry.modalService.closeModal();
 
       // let dataFeeds = ['PRIME', sPrimeMintRequest.secondAsset]
-      let dataFeeds = [...Object.keys(config.POOLS_CONFIG), sPrimeRebalanceRequest.secondAsset]
+      let dataFeeds = [...Object.keys(config.POOLS_CONFIG), sPrimeRebalanceRequest.secondAsset, 'PRIME']
       const sprimeContract = await wrapContract(new ethers.Contract(sPrimeRebalanceRequest.sPrimeAddress, sPrimeRebalanceRequest.dex === 'TRADERJOEV2' ? SPRIME_TJV2.abi : SPRIME_UNISWAP.abi, provider.getSigner()), dataFeeds);
 
       const transaction = window.chain === 'avalanche' ?
@@ -111,7 +111,7 @@ export default {
 
       let share = toWei(sPrimeRedeemRequest.share);
 
-      let dataFeeds = [...Object.keys(config.POOLS_CONFIG), sPrimeRedeemRequest.secondAsset]
+      let dataFeeds = [...Object.keys(config.POOLS_CONFIG), sPrimeRedeemRequest.secondAsset, 'PRIME']
       const sprimeContract = await wrapContract(new ethers.Contract(sPrimeRedeemRequest.sPrimeAddress, SPRIME.abi, provider.getSigner()), dataFeeds);
 
       const transaction = await sprimeContract.withdraw(share, 0, 0);

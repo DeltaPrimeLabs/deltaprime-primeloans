@@ -88,7 +88,7 @@ export default {
 
       const tokenContract = new ethers.Contract(config.POOLS_CONFIG[depositRequest.assetSymbol].tokenAddress, erc20ABI, provider.getSigner());
       const decimals = config.ASSETS_CONFIG[depositRequest.assetSymbol].decimals;
-      const dataFeeds = [...Object.keys(config.POOLS_CONFIG)];
+      const dataFeeds = [...Object.keys(config.POOLS_CONFIG), 'PRIME'];
       const poolContract = await wrapContract(state.pools.find(pool => pool.asset.symbol === depositRequest.assetSymbol).contract.connect(provider.getSigner()), dataFeeds);
       const wallet = rootState.network.account;
 
@@ -147,7 +147,7 @@ export default {
     async withdraw({state, rootState, dispatch}, {withdrawRequest}) {
       const provider = rootState.network.provider;
       let withdrawTransaction;
-      const dataFeeds = [...Object.keys(config.POOLS_CONFIG)];
+      const dataFeeds = [...Object.keys(config.POOLS_CONFIG), 'PRIME'];
       const pool = state.pools.find(pool => pool.asset.symbol === withdrawRequest.assetSymbol);
       let poolContract = await wrapContract(pool.contract.connect(provider.getSigner()), dataFeeds);
 
