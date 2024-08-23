@@ -429,6 +429,9 @@ export default {
       if (dex === 'ParaSwap') {
         dex = 'ParaSwapV2'
       }
+      if (dex === 'Direct') {
+        dex = 'GLP_DIRECT'
+      }
       this.swapDex = dex;
       this.setupSourceAssetOptions();
       this.setupTargetAssetOptions();
@@ -567,7 +570,14 @@ export default {
       if (this.sourceAssets) {
         sourceAssets = this.sourceAssets;
       } else {
-        sourceAssets = this.swapDexsConfig[this.swapDex].availableAssets;
+        if (this.swapDexsConfig[this.swapDex].coreAsset && this.sourceAsset === this.swapDexsConfig[this.swapDex].coreAsset) {
+          sourceAssets = [this.swapDexsConfig[this.swapDex].coreAsset]
+        } else {
+          sourceAssets = this.swapDexsConfig[this.swapDex].availableAssets;
+        }
+      }
+      if (this.targetAsset === this.swapDexsConfig[this.swapDex].coreAsset) {
+        sourceAssets = sourceAssets.filter(asset => asset !== this.swapDexsConfig[this.swapDex].coreAsset);
       }
 
       sourceAssets.forEach(assetSymbol => {
@@ -589,7 +599,11 @@ export default {
       if (this.targetAssets) {
         targetAssets = this.targetAssets;
       } else {
-        targetAssets = this.swapDexsConfig[this.swapDex].availableAssets;
+        if (this.swapDexsConfig[this.swapDex].coreAsset && this.targetAsset === this.swapDexsConfig[this.swapDex].coreAsset) {
+          targetAssets = [this.swapDexsConfig[this.swapDex].coreAsset]
+        } else {
+          targetAssets = this.swapDexsConfig[this.swapDex].availableAssets;
+        }
       }
 
       targetAssets.forEach(assetSymbol => {
