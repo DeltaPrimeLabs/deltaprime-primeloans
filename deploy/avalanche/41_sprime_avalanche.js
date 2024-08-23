@@ -53,25 +53,54 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     // console.log(`Verified PositionManager`);
 
 
-    embedCommitHash("sPrime", "./contracts/token");
-    let sPrime = await deploy("SPrime", {
+    // embedCommitHash("sPrime", "./contracts/token");
+    // let sPrime = await deploy("SPrime", {
+    //     from: deployer,
+    //     gasLimit: 10000000,
+    //     args: [],
+    // });
+    //
+    //
+    // console.log(
+    //     `SPrime deployed at address: ${sPrime.address}`
+    // );
+    //
+    // // sleep 5 seconds
+    // await new Promise((resolve) => setTimeout(resolve, 5000));
+    //
+    // await verifyContract(hre,
+    //     {
+    //         address: sPrime.address,
+    //         contract: `contracts/token/sPrime.sol:SPrime`,
+    //         constructorArguments: []
+    //     });
+    // console.log(`Verified sPrime`);
+
+    const sPrimeUPAddress = "0xd38C5cEca20Fb43503E108ed8d4CaCA5B57E730E";
+
+    embedCommitHash("sPrimeImpl", "./contracts/token");
+    const constructorArgs = [sPrimeUPAddress]
+    let sPrimeImpl = await deploy("SPrimeImpl", {
         from: deployer,
-        gasLimit: 15000000,
-        args: [],
+        gasLimit: 10000000,
+        args: constructorArgs,
     });
 
-    
+
     console.log(
-        `SPrime deployed at address: ${sPrime.address}`
+        `sPrimeImpl deployed at address: ${sPrimeImpl.address}`
     );
+
+    // sleep 5 seconds
+    await new Promise((resolve) => setTimeout(resolve, 5000));
 
     await verifyContract(hre,
         {
-            address: sPrime.address,
-            contract: `contracts/token/sPrime.sol:SPrime`,
-            constructorArguments: []
+            address: sPrimeImpl.address,
+            contract: `contracts/token/sPrimeImpl.sol:SPrimeImpl`,
+            constructorArguments: constructorArgs
         });
-    console.log(`Verified sPrime`);
+    console.log(`Verified sPrimeImpl`);
 
     // const depositForm = [];
     // for(let i=0; i<spotUniform.distributionX.length; i++) {
