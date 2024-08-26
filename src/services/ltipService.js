@@ -97,7 +97,7 @@ export default class LtipService {
     fetch(`${config.ltipApyEndpoint}`).then(
         res => res.json().then(
             json => {
-              this.updateLtipMaxBoostApy(arbPrice, json.arbApy, dataRefreshEventService)}
+              this.updateLtipMaxBoostApy(arbPrice, 0, dataRefreshEventService)}
         )
     );
 

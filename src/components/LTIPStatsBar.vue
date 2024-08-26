@@ -21,8 +21,8 @@
         </InfoIcon>
       </div>
       <div class="stat-value">
-        <bar-gauge-beta v-tooltip="{content: `Community mission completion: $${(totalEligibleTVL / 1000000).toFixed(1)}M / $${milestone / 1000000}M`, classes: 'info-tooltip'}"
-                        :min="0" :max="milestone" :value="totalEligibleTVL" :width="108" :green-on-completion="true"></bar-gauge-beta>
+        <bar-gauge-beta v-tooltip="{content: `Community mission completed! Retention bonuses are coming!`, classes: 'info-tooltip'}"
+                        :min="0" :max="1" :value="1" :width="108" :green-on-completion="true"></bar-gauge-beta>
       </div>
     </div>
     <div class="stat__entry">
@@ -80,7 +80,7 @@
         </InfoIcon>
       </div>
       <div class="stat-value">
-        {{ collectedBonus | smartRound(8, true) }}
+        {{ 0 | smartRound(8, true) }}
         <img class="incentives-icon" src="src/assets/logo/arb.png">
       </div>
     </div>

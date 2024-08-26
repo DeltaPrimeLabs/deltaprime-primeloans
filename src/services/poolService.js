@@ -40,7 +40,7 @@ export default class PoolService {
           const totalBorrowed = formatUnits(String(poolDetails[4]), config.ASSETS_CONFIG[poolAsset].decimals);
           const tvl = formatUnits(String(poolDetails[0]), config.ASSETS_CONFIG[poolAsset].decimals);
           const isPoolDisabled = config.POOLS_CONFIG[poolAsset].disabled;
-          const miningApy = poolDetails[6][poolAsset]
+          const miningApy = 0
 
           const pool = {
             asset: config.ASSETS_CONFIG[poolAsset],
