@@ -148,9 +148,9 @@ function createDiffJson(file1, file2, location = 'avalanche') {
         }
     )
 
-    fs.writeFileSync(`src/data/${location}/${file2}_diff_2.json`, JSON.stringify(json2))
+    fs.writeFileSync(`src/data/${location}/${file2}_diff.json`, JSON.stringify(json2))
 
-    console.log('distributed Avax in this epoch: ', collectedAvax)
+    console.log('distributed ARB in this epoch: ', collectedAvax)
 
 }
 
@@ -269,8 +269,8 @@ function createAddJson(files, output) {
 
 //last distribution timestamp: 1723461276
 //current distribution timestamp: 1724061094
-// fetchData("LTIP_EPOCH_11", 1723461276, 1724061094, 10000, true)
-// fetchLoansDataInBatches("LTIP_EPOCH_11_TOTAL")
+fetchData("LTIP_EPOCH_12", 1724079600, 1724662800, 12000, true)
+// fetchLoansDataInBatches("LTIP_EPOCH_12_TOTAL")
 //no need to use this one for pools
 // fetchPoolsDataInBatches("LTIP_EPOCH_7", ["LTIP_SAVINGS_EPOCH_1", "LTIP_EPOCH_2_SAVINGS", "LTIP_EPOCH_3_SAVINGS", "LTIP_EPOCH_4_SAVINGS", "LTIP_EPOCH_5_SAVINGS", "LTIP_EPOCH_6_SAVINGS"])
 // fetchData("LTIP_EPOCH_5_TOTAL_4", 1720013265, 1720521317, 10000, false)
@@ -278,6 +278,6 @@ function createAddJson(files, output) {
 // checkNegativeAccounts()
 // checkCollectedInTimestamp(1715152203)
 // checkCollected();
-createDiffJson( "LTIP_EPOCH_10_TOTAL", "LTIP_EPOCH_11_TOTAL", "arbitrum/ltip")
+// createDiffJson( "LTIP_EPOCH_11_TOTAL", "LTIP_EPOCH_12_TOTAL", "arbitrum/ltip")
 // createAddJson( ["LTIP_SAVINGS_EPOCH_1", "LTIP_EPOCH_2_SAVINGS", "LTIP_EPOCH_3_SAVINGS", "LTIP_EPOCH_4_SAVINGS", "LTIP_EPOCH_5_SAVINGS"], "LTIP_EPOCH_5_SAVINGS_TOTAL")
-// analyzeJson("LTIP_EPOCH_9_SAVINGS")
+// analyzeJson("LTIPP_PA_EPOCH_12")
