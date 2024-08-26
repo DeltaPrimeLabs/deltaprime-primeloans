@@ -21,7 +21,7 @@
         </InfoIcon>
       </div>
       <div class="stat-value">
-        <bar-gauge-beta v-tooltip="{content: `Community mission completed! Retention bonuses are coming!`, classes: 'info-tooltip'}"
+        <bar-gauge-beta v-tooltip="{content: `4 levels completed. Speed & Retention bonuses incoming!`, classes: 'info-tooltip'}"
                         :min="0" :max="1" :value="1" :width="108" :green-on-completion="true"></bar-gauge-beta>
       </div>
     </div>
