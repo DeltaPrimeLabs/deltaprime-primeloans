@@ -13,7 +13,7 @@ import {yieldYakBalance} from './utils/calculate';
 import subgraphConfig from '../.secrets/subgraph.json';
 
 export default {
-    isDegen: false,
+    isDegen: true,
     MIN_ALLOWED_HEALTH: 0.0182,
     DECIMALS_PRECISION: 8,
     MAX_BUTTON_MULTIPLIER: 1.01,
