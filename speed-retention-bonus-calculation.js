@@ -35,7 +35,7 @@ const getIncentives = async (from, to) => {
             }
         };
 
-        return await fetchAllDataFromDB(params, true);
+        return await fetchAllDataFromDB(params, true, 100);
 
     } catch (error) {
         console.error(error);
@@ -140,6 +140,7 @@ async function calculateSpeedBonuses() {
     const milestonesHit = {};
     const START_OF_LTIP = 1717432200;
     const END_OF_LTIP = 1724689800;
+    // const END_OF_LTIP = 1718641800; // For testing = 17 June 2024 16:30:00
     const INTERVAL = 3600;
     const _7_DAYS = 7 * 24 * 3600;
     const SPEED_BONUS_INCENTIVES = 8333;
@@ -152,7 +153,9 @@ async function calculateSpeedBonuses() {
     const dir = 'speed-bonuses';
     let csvFileData = '';
 
+    console.time('getLtipEligibleTvlHistory');
     const tvlHistory = await getLtipEligibleTvlHistory();
+    console.timeEnd('getLtipEligibleTvlHistory');
     tvlHistory.sort((a,b) => a.id - b.id);
 
     for (let tvlPoint of tvlHistory) {
@@ -162,15 +165,18 @@ async function calculateSpeedBonuses() {
 
         eligibleTvlCsv += `${tvlPoint.id},${tvlPoint.totalEligibleTvl}\n`;
 
-        const collected = await getIncentives(tvlPoint.id - 1799, tvlPoint.id + 1800);
-        const sumCollected = collected.reduce((a,b) => a + b.arbCollected, 0);
-
-        let timeSinceLastMilestone = tvlPoint.id - lastMilestoneHit;
         console.log(`${tvlPoint.id} ${tvlPoint.totalEligibleTvl}`)
+        let timeSinceLastMilestone = tvlPoint.id - lastMilestoneHit;
 
         //MILESTONE HIT
         if (tvlPoint.totalEligibleTvl > currentMilestone && (timeSinceLastMilestone <= _7_DAYS) && !milestonesHit[currentMilestone]) {
-            let totalIncentives = SPEED_BONUS_INCENTIVES *  (_7_DAYS - timeSinceLastMilestone) / _7_DAYS;
+            console.time('getIncentives');
+            const collected = await getIncentives(tvlPoint.id - 1799, tvlPoint.id + 1800);
+            console.timeEnd('getIncentives');
+            const sumCollected = collected.reduce((a,b) => a + b.arbCollected, 0);
+
+            // let totalIncentives = SPEED_BONUS_INCENTIVES *  (_7_DAYS - timeSinceLastMilestone) / _7_DAYS;
+            let totalIncentives = 6220;
 
             let csvFileData = `Timestamp,${timestamp}\nLast milestone timestamp,${lastMilestoneHit}\nCurrent milestone,${currentMilestone}\nTotal incentives,${totalIncentives}\n\n`
             +`Prime account,Eligible TVL,Incentives\n`;
@@ -190,6 +196,9 @@ async function calculateSpeedBonuses() {
         }
 
         if (tvlPoint.totalEligibleTvl > currentMilestone) {
+            console.log(`Milestone hit: ${currentMilestone} at ${tvlPoint.id}`);
+            console.log(`Time since last milestone: ${timeSinceLastMilestone} (in days: ${timeSinceLastMilestone / 86400})`);
+
             milestonesHit[currentMilestone] = true;
             currentMilestoneIndex++;
             currentMilestone = MILESTONES[currentMilestoneIndex];
@@ -259,20 +268,5 @@ function arrayToCSVRow(data) {
     return csvRows.join('\n');
 }
 
-
-//last distribution timestamp: 1723461276
-//current distribution timestamp: 1724061094
-// fetchData("LTIP_EPOCH_12", 1724079600, 1724662800, 12000, true)
-// fetchLoansDataInBatches("LTIP_EPOCH_12_TOTAL")
-//no need to use this one for pools
-// fetchPoolsDataInBatches("LTIP_EPOCH_7", ["LTIP_SAVINGS_EPOCH_1", "LTIP_EPOCH_2_SAVINGS", "LTIP_EPOCH_3_SAVINGS", "LTIP_EPOCH_4_SAVINGS", "LTIP_EPOCH_5_SAVINGS", "LTIP_EPOCH_6_SAVINGS"])
-// fetchData("LTIP_EPOCH_5_TOTAL_4", 1720013265, 1720521317, 10000, false)
-// fetchData("LTIP_EPOCH-test", 1719234231, 1720013265, 10000, true)
-// checkNegativeAccounts()
-// checkCollectedInTimestamp(1715152203)
-// checkCollected();
-// createDiffJson( "LTIP_EPOCH_11_TOTAL", "LTIP_EPOCH_12_TOTAL", "arbitrum/ltip")
-// createAddJson( ["LTIP_SAVINGS_EPOCH_1", "LTIP_EPOCH_2_SAVINGS", "LTIP_EPOCH_3_SAVINGS", "LTIP_EPOCH_4_SAVINGS", "LTIP_EPOCH_5_SAVINGS"], "LTIP_EPOCH_5_SAVINGS_TOTAL")
-// analyzeJson("LTIPP_PA_EPOCH_12")
-// calculateSpeedBonuses()
-calculateRetentionBonuses()
+calculateSpeedBonuses()
+// calculateRetentionBonuses()
