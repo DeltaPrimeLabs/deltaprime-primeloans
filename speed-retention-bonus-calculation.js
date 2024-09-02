@@ -1,5 +1,7 @@
 const jsonRPC = "https://arbitrum-mainnet.core.chainstack.com/9a30fb13b2159a76c8e143c52d5579bf";
 const fetch = require("node-fetch");
+const cliProgress = require('cli-progress');
+
 
 const FACTORY_ARTIFACT = require(`./artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json`);
 const fs = require("fs");
@@ -215,6 +217,23 @@ async function calculateSpeedBonuses() {
 
 }
 
+const cache = new Map();
+
+async function getCachedIncentives(startTime, endTime) {
+    const cacheKey = `${startTime}-${endTime}`;
+
+    if (cache.has(cacheKey)) {
+        // console.log(`Cache hit for ${cacheKey}`);
+        return cache.get(cacheKey);
+    }
+
+    // console.log(`Cache miss for ${cacheKey}`);
+    const result = await getIncentives(startTime, endTime);
+    cache.set(cacheKey, result);
+
+    return result;
+}
+
 async function calculateRetentionBonuses() {
     const START_OF_LTIP = 1717432200;
     const END_OF_LTIP = 1724689800;
@@ -226,39 +245,99 @@ async function calculateRetentionBonuses() {
     const tvlHistory = await getLtipEligibleTvlHistory();
     tvlHistory.sort((a,b) => a.id - b.id);
 
+    for(let i = 0; i < tvlHistory.length; i++){
+        // if diff is higher than 3601, log the timestamps
+        if(tvlHistory[i + 1] && Math.abs(tvlHistory[i].id - tvlHistory[i + 1].id) > 7200){
+            console.log(`Timestamps: ${tvlHistory[i].id} - ${tvlHistory[i + 1].id} -> diff: ${Math.abs(tvlHistory[i].id - tvlHistory[i + 1].id)} seconds`);
+        }
+    }
+
+    console.log(tvlHistory[0].id)
+    console.log(tvlHistory[tvlHistory.length - 1].id)
+
+    throw new Error('Check timestamps');
+
     let loans = await factory.getAllLoans();
 
     let minMaxTvl = 0;
     let minMaxTvlTime = 0;
     let timeWindow = 3600 * 24 * 7 * 8;
 
+    let accountsEligibleTvlsOverTime = {};
+
+    const progressBar = new cliProgress.SingleBar({
+        format: 'Progress |{bar}| {percentage}% | ETA: {eta}s | {value}/{total}',
+        hideCursor: true
+    }, cliProgress.Presets.shades_classic);
+
+    progressBar.start(loans.length, 0); // Start the progress bar
+
     for (let loan of loans) {
+        const startTime = Date.now();
+
+
         let history = await getIncentivesForAccount(loan);
         history.sort((a,b) => a.timestamp - b.timestamp)
+        // filter out results that are outside of the LTIP period
+        history = history.filter(dataPoint => dataPoint.timestamp >= START_OF_LTIP && dataPoint.timestamp <= END_OF_LTIP);
+
+        // log number of data points for loan
+        // console.log(`Loan ${loan} has ${history.length} data points`);
 
         let i = 0;
+        let prevUsedHistoricalTvl = tvlHistory[0].totalEligibleTvl;
         for (let dataPoint of history) {
-            const collected = await getIncentives(dataPoint.timestamp - 1799, dataPoint.timestamp + 1800);
+            const collected = await getCachedIncentives(dataPoint.timestamp - 1799, dataPoint.timestamp + 1800);
 
             const sumCollected = collected.reduce((a,b) => a + b.arbCollected, 0);
 
-            const point = tvlHistory.find((el, i) => tvlHistory[i + 1] && tvlHistory[i + 1].id > dataPoint.timestamp && tvlHistory[i].id < dataPoint.timestamp)
+            let point = tvlHistory.find((el, i) => tvlHistory[i + 1] && tvlHistory[i + 1].id > dataPoint.timestamp && tvlHistory[i].id < dataPoint.timestamp)
+            if(!point && dataPoint.timestamp > tvlHistory[0].id){
+                console.log(`No TVL data found for timestamp ${dataPoint.timestamp}. Using previous TVL data.`);
+                point = {
+                    totalEligibleTvl: prevUsedHistoricalTvl
+                }
+            } else {
+                prevUsedHistoricalTvl = point ? point.totalEligibleTvl : tvlHistory[0].totalEligibleTvl;
+            }
             const totalEligibleTvl = point ? point.totalEligibleTvl : tvlHistory[0].totalEligibleTvl;
             const paEligibleTvl = totalEligibleTvl * dataPoint.arbCollected / sumCollected;
 
-            if (((paEligibleTvl < minMaxTvl && (dataPoint.timestamp - minMaxTvlTime) < timeWindow))
-                || (paEligibleTvl < minMaxTvl && (dataPoint.timestamp - minMaxTvlTime) > timeWindow)
-                || i === 0) {
-                minMaxTvl = paEligibleTvl;
-                minMaxTvlTime = dataPoint.timestamp;
+            // if (((paEligibleTvl < minMaxTvl && (dataPoint.timestamp - minMaxTvlTime) < timeWindow))
+            //     || (paEligibleTvl < minMaxTvl && (dataPoint.timestamp - minMaxTvlTime) > timeWindow)
+            //     || i === 0) {
+            //     minMaxTvl = paEligibleTvl;
+            //     minMaxTvlTime = dataPoint.timestamp;
+            // }
+
+            // console.log(`paEligibleTvl: ${paEligibleTvl}, minMaxTvl: ${minMaxTvl},  minMaxTvlTime: ${minMaxTvlTime},`)
+            if(!accountsEligibleTvlsOverTime[loan]){
+                accountsEligibleTvlsOverTime[loan] = [
+                    {
+                        timestamp: dataPoint.timestamp,
+                        tvl: paEligibleTvl
+                    }
+                ];
+            } else {
+                accountsEligibleTvlsOverTime[loan].push({
+                    timestamp: dataPoint.timestamp,
+                    tvl: paEligibleTvl
+                });
             }
-
-            console.log(`paEligibleTvl: ${paEligibleTvl}, minMaxTvl: ${minMaxTvl},  minMaxTvlTime: ${minMaxTvlTime},`)
-
 
             i++;
         }
+
+        const endTime = Date.now();
+        const elapsed = endTime - startTime;
+        progressBar.increment(1, { eta: ((loans.length - i - 1) * elapsed) / 1000 });
+
+
     }
+
+    progressBar.stop(); // Stop the progress bar
+    // save accountsEligibleTvlsOverTime to json file
+    fs.writeFileSync('accountsEligibleTvlsOverTime.json', JSON.stringify(accountsEligibleTvlsOverTime));
 }
 
 
@@ -272,5 +351,5 @@ function arrayToCSVRow(data) {
     return csvRows.join('\n');
 }
 
-calculateSpeedBonuses()
-// calculateRetentionBonuses()
+// calculateSpeedBonuses()
+calculateRetentionBonuses()
