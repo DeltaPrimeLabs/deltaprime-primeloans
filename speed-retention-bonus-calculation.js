@@ -181,11 +181,14 @@ async function calculateSpeedBonuses() {
             let csvFileData = `Timestamp,${timestamp}\nLast milestone timestamp,${lastMilestoneHit}\nCurrent milestone,${currentMilestone}\nTotal incentives,${totalIncentives}\n\n`
             +`Prime account,Eligible TVL,Incentives\n`;
 
+            let jsonFileData = {};
+
             for (let primeAccount of collected) {
                 const paEligibleTvl = tvlPoint.totalEligibleTvl * primeAccount.arbCollected / sumCollected;
                 const incentives = totalIncentives * paEligibleTvl / tvlPoint.totalEligibleTvl;
 
                 csvFileData += `${primeAccount.id},${paEligibleTvl},${incentives}\n`;
+                jsonFileData[primeAccount.id] = incentives;
             }
 
             if (!fs.existsSync(dir)){
@@ -193,6 +196,7 @@ async function calculateSpeedBonuses() {
             }
 
             fs.writeFileSync(`${dir}/${currentMilestone}-${timestamp}.csv`, csvFileData);
+            fs.writeFileSync(`${dir}/${currentMilestone}-${timestamp}.json`, JSON.stringify(jsonFileData));
         }
 
         if (tvlPoint.totalEligibleTvl > currentMilestone) {
