@@ -5,6 +5,8 @@ const cliProgress = require('cli-progress');
 
 const FACTORY_ARTIFACT = require(`./artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json`);
 const fs = require("fs");
+const fsAsync = require('fs').promises;
+const path = require('path');
 const ethers = require("ethers");
 const key = fs.readFileSync("./.secret").toString().trim();
 let mnemonicWallet = new ethers.Wallet(key);
@@ -155,9 +157,7 @@ async function calculateSpeedBonuses() {
     const dir = 'speed-bonuses';
     let csvFileData = '';
 
-    console.time('getLtipEligibleTvlHistory');
     const tvlHistory = await getLtipEligibleTvlHistory();
-    console.timeEnd('getLtipEligibleTvlHistory');
     tvlHistory.sort((a,b) => a.id - b.id);
 
     for (let tvlPoint of tvlHistory) {
@@ -172,9 +172,7 @@ async function calculateSpeedBonuses() {
 
         //MILESTONE HIT
         if (tvlPoint.totalEligibleTvl > currentMilestone && (timeSinceLastMilestone <= _7_DAYS) && !milestonesHit[currentMilestone]) {
-            console.time('getIncentives');
             const collected = await getIncentives(tvlPoint.id - 1799, tvlPoint.id + 1800);
-            console.timeEnd('getIncentives');
             const sumCollected = collected.reduce((a,b) => a + b.arbCollected, 0);
 
             // let totalIncentives = SPEED_BONUS_INCENTIVES *  (_7_DAYS - timeSinceLastMilestone) / _7_DAYS;
@@ -219,19 +217,103 @@ async function calculateSpeedBonuses() {
 
 const cache = new Map();
 
-async function getCachedIncentives(startTime, endTime) {
+async function getCachedIncentives(startTime, endTime, filename = 'incentivesCache.json') {
     const cacheKey = `${startTime}-${endTime}`;
+    const filePath = path.resolve(__dirname, filename);
 
-    if (cache.has(cacheKey)) {
-        // console.log(`Cache hit for ${cacheKey}`);
-        return cache.get(cacheKey);
+    let cache = {};
+
+    try {
+        // Try to read the cache file
+        const data = await fsAsync.readFile(filePath, { encoding: 'utf8' });
+        cache = JSON.parse(data);
+    } catch (err) {
+        if (err.code !== 'ENOENT') {
+            // If there is another type of error, rethrow it
+            throw err;
+        }
     }
 
-    // console.log(`Cache miss for ${cacheKey}`);
-    const result = await getIncentives(startTime, endTime);
-    cache.set(cacheKey, result);
+    // Check if the cacheKey exists in the cache file
+    if (cache[cacheKey]) {
+        // Cache hit: return the cached result
+        return cache[cacheKey];
+    }
 
+    // Cache miss: fetch the data
+    const result = await getIncentives(startTime, endTime);
+
+    // Store the result in the cache
+    cache[cacheKey] = result;
+
+    // Write the updated cache back to the JSON file
+    await fsAsync.writeFile(filePath, JSON.stringify(cache, null, 2), { encoding: 'utf8' });
+
+    // Return the fetched result
     return result;
+}
+
+async function getTvlHistoryWithCache(filename = 'tvlHistory.json') {
+    const filePath = path.resolve(__dirname, filename);
+
+    try {
+        // Try to read the file
+        let data = await fsAsync.readFile(filePath, 'utf8');
+        // Parse the JSON data
+        data =  JSON.parse(data);
+
+        return data.sort((a,b) => a.id - b.id);
+    } catch (err) {
+        if (err.code === 'ENOENT') {
+            // File doesn't exist, so call the method to get the data
+            let tvlHistory = await getLtipEligibleTvlHistory();
+            tvlHistory = tvlHistory.sort((a,b) => a.id - b.id);
+
+            // Save the data to a local JSON file
+            await fsAsync.writeFile(filePath, JSON.stringify(tvlHistory, null, 2), 'utf8');
+
+            // Return the fetched data
+            return tvlHistory;
+        } else {
+            // If there is another type of error, rethrow it
+            throw err;
+        }
+    }
+}
+
+async function getCachedIncentivesForLoan(loan, filename = 'incentivesCacheForLoan.json') {
+    const filePath = path.resolve(__dirname, filename);
+
+    let cache = {};
+
+    try {
+        // Try to read the file
+        const data = await fsAsync.readFile(filePath, { encoding: 'utf8' });
+        cache = JSON.parse(data);
+    } catch (err) {
+        if (err.code !== 'ENOENT') {
+            // If there is another type of error, rethrow it
+            throw err;
+        }
+    }
+
+    // Check if the loan entry exists in the cache
+    if (cache[loan]) {
+        return cache[loan];
+    }
+
+    // If the entry doesn't exist, fetch the data
+    let incentives = await getIncentivesForAccount(loan);
+    incentives = incentives.sort((a,b) => a.timestamp - b.timestamp)
+
+    // Save the fetched data to the cache object
+    cache[loan] = incentives;
+
+    // Save the updated cache to the JSON file
+    await fsAsync.writeFile(filePath, JSON.stringify(cache, null, 2), { encoding: 'utf8' });
+
+    // Return the fetched data
+    return incentives;
 }
 
 async function calculateRetentionBonuses() {
@@ -242,20 +324,7 @@ async function calculateRetentionBonuses() {
     let lastMilestoneHit = START_OF_LTIP;
     const dir = 'retention-bonuses';
 
-    const tvlHistory = await getLtipEligibleTvlHistory();
-    tvlHistory.sort((a,b) => a.id - b.id);
-
-    for(let i = 0; i < tvlHistory.length; i++){
-        // if diff is higher than 3601, log the timestamps
-        if(tvlHistory[i + 1] && Math.abs(tvlHistory[i].id - tvlHistory[i + 1].id) > 7200){
-            console.log(`Timestamps: ${tvlHistory[i].id} - ${tvlHistory[i + 1].id} -> diff: ${Math.abs(tvlHistory[i].id - tvlHistory[i + 1].id)} seconds`);
-        }
-    }
-
-    console.log(tvlHistory[0].id)
-    console.log(tvlHistory[tvlHistory.length - 1].id)
-
-    throw new Error('Check timestamps');
+    const tvlHistory = await getTvlHistoryWithCache();
 
     let loans = await factory.getAllLoans();
 
@@ -272,35 +341,41 @@ async function calculateRetentionBonuses() {
 
     progressBar.start(loans.length, 0); // Start the progress bar
 
+    let i = 0;
     for (let loan of loans) {
         const startTime = Date.now();
 
+        let history = await getCachedIncentivesForLoan(loan);
 
-        let history = await getIncentivesForAccount(loan);
-        history.sort((a,b) => a.timestamp - b.timestamp)
+
         // filter out results that are outside of the LTIP period
         history = history.filter(dataPoint => dataPoint.timestamp >= START_OF_LTIP && dataPoint.timestamp <= END_OF_LTIP);
 
         // log number of data points for loan
         // console.log(`Loan ${loan} has ${history.length} data points`);
 
-        let i = 0;
         let prevUsedHistoricalTvl = tvlHistory[0].totalEligibleTvl;
+        let historyPointsCount = 0;
         for (let dataPoint of history) {
-            const collected = await getCachedIncentives(dataPoint.timestamp - 1799, dataPoint.timestamp + 1800);
+            historyPointsCount++;
+            console.log(`Processing loan ${loan} data point ${historyPointsCount} of ${history.length}`);
+
+            const TIMESTAMP_WINDOW_MULTIPLIER = 1;
+            const collected = await getCachedIncentives(dataPoint.timestamp - (TIMESTAMP_WINDOW_MULTIPLIER*1800) - 1, dataPoint.timestamp + TIMESTAMP_WINDOW_MULTIPLIER * 1800);
 
             const sumCollected = collected.reduce((a,b) => a + b.arbCollected, 0);
 
-            let point = tvlHistory.find((el, i) => tvlHistory[i + 1] && tvlHistory[i + 1].id > dataPoint.timestamp && tvlHistory[i].id < dataPoint.timestamp)
-            if(!point && dataPoint.timestamp > tvlHistory[0].id){
-                console.log(`No TVL data found for timestamp ${dataPoint.timestamp}. Using previous TVL data.`);
+            const TVL_HISTORY_WINDOW_WIDTH = 3
+            let point = tvlHistory.find((el, i) => tvlHistory[i + TVL_HISTORY_WINDOW_WIDTH] && tvlHistory[i - TVL_HISTORY_WINDOW_WIDTH + 1] && tvlHistory[i + TVL_HISTORY_WINDOW_WIDTH].id > dataPoint.timestamp && tvlHistory[i - TVL_HISTORY_WINDOW_WIDTH + 1].id < dataPoint.timestamp)
+            if(!point){
+                console.log(`No TVL data found for timestamp ${dataPoint.timestamp}. Using previous TVL data. ${prevUsedHistoricalTvl}`);
                 point = {
                     totalEligibleTvl: prevUsedHistoricalTvl
                 }
             } else {
-                prevUsedHistoricalTvl = point ? point.totalEligibleTvl : tvlHistory[0].totalEligibleTvl;
+                prevUsedHistoricalTvl = point.totalEligibleTvl;
             }
-            const totalEligibleTvl = point ? point.totalEligibleTvl : tvlHistory[0].totalEligibleTvl;
+            const totalEligibleTvl = point.totalEligibleTvl;
             const paEligibleTvl = totalEligibleTvl * dataPoint.arbCollected / sumCollected;
 
             // if (((paEligibleTvl < minMaxTvl && (dataPoint.timestamp - minMaxTvlTime) < timeWindow))
@@ -324,9 +399,9 @@ async function calculateRetentionBonuses() {
                     tvl: paEligibleTvl
                 });
             }
-
-            i++;
         }
+
+        i++;
 
         const endTime = Date.now();
         const elapsed = endTime - startTime;
