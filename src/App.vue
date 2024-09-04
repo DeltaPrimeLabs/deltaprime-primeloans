@@ -464,7 +464,7 @@ export default {
                   const termsForCurrentPage = signedTerms.find(terms => terms.type === 'PRIME_ACCOUNT');
                   if (termsForCurrentPage === undefined || termsForCurrentPage.termsVersion !== TermsService.CURRENT_TERMS_VERSION) {
                     console.log('PA PAGE - account created - terms not signed');
-                    if (!this.signingTermsInProgress) {
+                    if (!this.signingTermsInProgress && smartLoanContract) {
                       this.handleTermsSign(walletAddress, false, smartLoanContract.address);
                     }
                   } else {

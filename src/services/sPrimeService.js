@@ -156,15 +156,17 @@ export default class sPrimeService {
                     res => {
                       let centerId = res.centerId;
                       let numberOfBins = res.liquidityMinted.length;
-                      let binsArray = fillBinsArray(centerId, numberOfBins);
-                      binsArray = binsArray.map(
-                        binId => secondAssetPrice * getBinPrice(binId, config.SPRIME_CONFIG[dex][secondAsset].binStep, 18, config.SPRIME_CONFIG[dex][secondAsset].secondAssetDecimals)
-                      )
+                      if (numberOfBins > 0) {
+                        let binsArray = fillBinsArray(centerId, numberOfBins);
+                        binsArray = binsArray.map(
+                          binId => secondAssetPrice * getBinPrice(binId, config.SPRIME_CONFIG[dex][secondAsset].binStep, 18, config.SPRIME_CONFIG[dex][secondAsset].secondAssetDecimals)
+                        )
 
-                      this.sPrimePositionInfo$.next(
-                        {
-                          binsArray: binsArray
-                        });
+                        this.sPrimePositionInfo$.next(
+                          {
+                            binsArray: binsArray
+                          });
+                      }
                     }
                   )
                 }
@@ -173,7 +175,7 @@ export default class sPrimeService {
 
             let revenueReceived;
             const revenueReceivedJson = config.chainSlug === 'arbitrum' ? ARBITRUM_REVENUE_DISTRIBUTION_EPOCH_0 : AVALANCHE_REVENUE_DISTRIBUTION_EPOCH_0;
-            revenueReceived = revenueReceivedJson[walletAddress].amount * secondAssetPrice;
+            revenueReceived = revenueReceivedJson[walletAddress] ? revenueReceivedJson[walletAddress].amount * secondAssetPrice : 0;
             this.revenueReceived$.next(revenueReceived);
           }
         )
