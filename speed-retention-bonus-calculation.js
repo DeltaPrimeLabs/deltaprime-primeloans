@@ -217,37 +217,44 @@ async function calculateSpeedBonuses() {
 
 const cache = new Map();
 
+let cacheForIncentives = {};
+let cacheForIncentivesInitialized = false;
+
 async function getCachedIncentives(startTime, endTime, filename = 'incentivesCache.json') {
     const cacheKey = `${startTime}-${endTime}`;
     const filePath = path.resolve(__dirname, filename);
 
-    let cache = {};
-
-    try {
-        // Try to read the cache file
-        const data = await fsAsync.readFile(filePath, { encoding: 'utf8' });
-        cache = JSON.parse(data);
-    } catch (err) {
-        if (err.code !== 'ENOENT') {
-            // If there is another type of error, rethrow it
-            throw err;
+    if(!cacheForIncentivesInitialized){
+        try {
+            // Try to read the cache file
+            const data = await fsAsync.readFile(filePath, { encoding: 'utf8' });
+            cacheForIncentives = JSON.parse(data);
+        } catch (err) {
+            if (err.code !== 'ENOENT') {
+                // If there is another type of error, rethrow it
+                throw err;
+            }
         }
+        cacheForIncentivesInitialized = true;
     }
 
     // Check if the cacheKey exists in the cache file
-    if (cache[cacheKey]) {
+    if (cacheForIncentives[cacheKey]) {
         // Cache hit: return the cached result
-        return cache[cacheKey];
+        console.log(`Cache hit for ${cacheKey}`);
+        return cacheForIncentives[cacheKey];
     }
+
+
 
     // Cache miss: fetch the data
     const result = await getIncentives(startTime, endTime);
 
     // Store the result in the cache
-    cache[cacheKey] = result;
+    cacheForIncentives[cacheKey] = result;
 
     // Write the updated cache back to the JSON file
-    await fsAsync.writeFile(filePath, JSON.stringify(cache, null, 2), { encoding: 'utf8' });
+    await fsAsync.writeFile(filePath, JSON.stringify(cacheForIncentives, null, 2), { encoding: 'utf8' });
 
     // Return the fetched result
     return result;
@@ -299,6 +306,7 @@ async function getCachedIncentivesForLoan(loan, filename = 'incentivesCacheForLo
 
     // Check if the loan entry exists in the cache
     if (cache[loan]) {
+        console.log(`Cache hit for loan ${loan}`);
         return cache[loan];
     }
 
@@ -361,11 +369,13 @@ async function calculateRetentionBonuses() {
             console.log(`Processing loan ${loan} data point ${historyPointsCount} of ${history.length}`);
 
             const TIMESTAMP_WINDOW_MULTIPLIER = 1;
+
             const collected = await getCachedIncentives(dataPoint.timestamp - (TIMESTAMP_WINDOW_MULTIPLIER*1800) - 1, dataPoint.timestamp + TIMESTAMP_WINDOW_MULTIPLIER * 1800);
 
             const sumCollected = collected.reduce((a,b) => a + b.arbCollected, 0);
 
             const TVL_HISTORY_WINDOW_WIDTH = 3
+
             let point = tvlHistory.find((el, i) => tvlHistory[i + TVL_HISTORY_WINDOW_WIDTH] && tvlHistory[i - TVL_HISTORY_WINDOW_WIDTH + 1] && tvlHistory[i + TVL_HISTORY_WINDOW_WIDTH].id > dataPoint.timestamp && tvlHistory[i - TVL_HISTORY_WINDOW_WIDTH + 1].id < dataPoint.timestamp)
             if(!point){
                 console.log(`No TVL data found for timestamp ${dataPoint.timestamp}. Using previous TVL data. ${prevUsedHistoricalTvl}`);
@@ -426,5 +436,93 @@ function arrayToCSVRow(data) {
     return csvRows.join('\n');
 }
 
+// Function to find the highest minimum TVL over a sliding time window
+async function calculateHighestMinTvl(filename, windowSizeInSeconds = 8 * 7 * 24 * 60 * 60) {
+    const filePath = path.resolve(__dirname, filename);
+
+    // Read the JSON file
+    const data = await fsAsync.readFile(filePath, { encoding: 'utf8' });
+    const accounts = JSON.parse(data);
+
+    const result = {};
+
+    // Iterate over each account in the JSON file
+    for (const account in accounts) {
+        const tvlData = accounts[account];
+
+        let highestMinTvl = -Infinity;
+
+        // Sort data by timestamp just in case it's not sorted
+        tvlData.sort((a, b) => a.timestamp - b.timestamp);
+
+        // Iterate over each possible window start time
+        for (let i = 0; i < tvlData.length; i++) {
+            const windowStart = tvlData[i].timestamp;
+            const windowEnd = windowStart + windowSizeInSeconds;
+
+            // Get all tvl entries within this time window
+            const windowTvl = tvlData
+                .filter(entry => entry.timestamp >= windowStart && entry.timestamp <= windowEnd)
+                .map(entry => entry.tvl);
+
+            if (windowTvl.length > 0) {
+                const minTvlInWindow = Math.min(...windowTvl);
+                if (minTvlInWindow > highestMinTvl) {
+                    highestMinTvl = minTvlInWindow;
+                }
+            }
+        }
+
+        // Save the highest min TVL found for this account
+        result[account] = highestMinTvl;
+    }
+
+    // Write the results to a new JSON file
+    const resultFilePath = path.resolve(__dirname, 'highestMinTvlResult4Weeks.json');
+    await fsAsync.writeFile(resultFilePath, JSON.stringify(result, null, 2), { encoding: 'utf8' });
+
+    console.log('Results written to', resultFilePath);
+}
+
+async function distributeTokensBasedOnTvl(filename, totalTokensToDistribute) {
+    const filePath = path.resolve(__dirname, filename);
+
+    // Read the JSON file with the highest min TVL data
+    const data = await fsAsync.readFile(filePath, { encoding: 'utf8' });
+    const tvlData = JSON.parse(data);
+
+    // Calculate the total TVL of all addresses
+    const totalTvl = Object.values(tvlData).reduce((sum, tvl) => sum + tvl, 0);
+
+    const tokenDistribution = {};
+
+    // Calculate the token distribution for each address
+    for (const [address, tvl] of Object.entries(tvlData)) {
+        const share = tvl / totalTvl;
+        const tokens = share * totalTokensToDistribute;
+        tokenDistribution[address] = tokens;
+    }
+
+    // Write the token distribution to a new JSON file
+    const resultFilePath = path.resolve(__dirname, 'tokenDistribution4Weeks.json');
+    await fsAsync.writeFile(resultFilePath, JSON.stringify(tokenDistribution, null, 2), { encoding: 'utf8' });
+
+    console.log('Token distribution written to', resultFilePath);
+}
+
+// Example usage
+const filename = 'accountsEligibleTvlsOverTime.json'; // JSON file containing the TVL data
+const filename8Weeks = 'highestMinTvlResult8Weeks.json'; // JSON file containing the highest min TVLs
+const filename4Weeks = 'highestMinTvlResult4Weeks.json'; // JSON file containing the highest min TVLs
+const windowSizeInSeconds8Weeks = 8 * 7 * 24 * 60 * 60; // 8 weeks in seconds
+const windowSizeInSeconds4Weeks = 4 * 7 * 24 * 60 * 60; // 8 weeks in seconds
+const totalTokensToDistribute = 93780; // Total number of tokens to distribute
+const tokensFor8WeeksWindow = 0.75 * totalTokensToDistribute; // 75% of the total tokens
+const tokensFor4WeeksWindow = 0.25 * totalTokensToDistribute; // 25% of the total tokens
+
 // calculateSpeedBonuses()
-calculateRetentionBonuses()
+// calculateRetentionBonuses()
+// calculateHighestMinTvl(filename, windowSizeInSeconds4Weeks)
+//     .catch(err => console.error(err));
+distributeTokensBasedOnTvl(filename, filename4Weeks)
+    .catch(err => console.error(err));
