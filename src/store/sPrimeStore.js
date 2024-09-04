@@ -32,7 +32,7 @@ export default {
       const provider = rootState.network.provider;
 
       // let dataFeeds = ['PRIME', sPrimeMintRequest.secondAsset]
-      let dataFeeds = [...Object.keys(config.POOLS_CONFIG)]
+      let dataFeeds = [...Object.keys(config.POOLS_CONFIG), 'PRIME']
       const sprimeContract = await wrapContract(new ethers.Contract(sPrimeMintRequest.sPrimeAddress, sPrimeMintRequest.dex === 'TRADERJOEV2' ? SPRIME_TJV2.abi : SPRIME_UNISWAP.abi, provider.getSigner()), dataFeeds);
 
       const secondAssetDecimals = config.SPRIME_CONFIG[sPrimeMintRequest.dex][sPrimeMintRequest.secondAsset].secondAssetDecimals;
@@ -60,7 +60,9 @@ export default {
         }
       }
 
-      const transaction = await sprimeContract.deposit(sPrimeMintRequest.activeId, sPrimeMintRequest.idSlippage, amountPrime, amountSecond, sPrimeMintRequest.isRebalance, sPrimeMintRequest.slippage * 100)
+      const transaction = window.chain === 'avalanche' ?
+        await sprimeContract.deposit(sPrimeMintRequest.activeId, sPrimeMintRequest.idSlippage, amountPrime, amountSecond, sPrimeMintRequest.isRebalance, sPrimeMintRequest.slippage * 100) :
+        await sprimeContract.deposit(sPrimeMintRequest.activeId, sPrimeMintRequest.idSlippage, amountPrime, amountSecond, 0, 0, sPrimeMintRequest.isRebalance, sPrimeMintRequest.slippage * 100)
 
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
@@ -84,10 +86,13 @@ export default {
       rootState.serviceRegistry.modalService.closeModal();
 
       // let dataFeeds = ['PRIME', sPrimeMintRequest.secondAsset]
-      let dataFeeds = [...Object.keys(config.POOLS_CONFIG), sPrimeRebalanceRequest.secondAsset]
+      let dataFeeds = [...Object.keys(config.POOLS_CONFIG), sPrimeRebalanceRequest.secondAsset, 'PRIME']
       const sprimeContract = await wrapContract(new ethers.Contract(sPrimeRebalanceRequest.sPrimeAddress, sPrimeRebalanceRequest.dex === 'TRADERJOEV2' ? SPRIME_TJV2.abi : SPRIME_UNISWAP.abi, provider.getSigner()), dataFeeds);
 
-      const transaction = await sprimeContract.deposit(sPrimeRebalanceRequest.activeId, sPrimeRebalanceRequest.idSlippage, 0, 0, sPrimeRebalanceRequest.isRebalance, sPrimeRebalanceRequest.slippage * 100)
+      const transaction = window.chain === 'avalanche' ?
+        await sprimeContract.deposit(sPrimeRebalanceRequest.activeId, sPrimeRebalanceRequest.idSlippage, 0, 0, sPrimeRebalanceRequest.isRebalance, sPrimeRebalanceRequest.slippage * 100) :
+        await sprimeContract.deposit(sPrimeRebalanceRequest.activeId, sPrimeRebalanceRequest.idSlippage, 0, 0, 0, 0, sPrimeRebalanceRequest.isRebalance, sPrimeRebalanceRequest.slippage * 100)
+
       await awaitConfirmation(transaction, provider, 'rebalance');
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();
@@ -106,10 +111,10 @@ export default {
 
       let share = toWei(sPrimeRedeemRequest.share);
 
-      let dataFeeds = [...Object.keys(config.POOLS_CONFIG), sPrimeRedeemRequest.secondAsset]
+      let dataFeeds = [...Object.keys(config.POOLS_CONFIG), sPrimeRedeemRequest.secondAsset, 'PRIME']
       const sprimeContract = await wrapContract(new ethers.Contract(sPrimeRedeemRequest.sPrimeAddress, SPRIME.abi, provider.getSigner()), dataFeeds);
 
-      const transaction = await sprimeContract.withdraw(share);
+      const transaction = await sprimeContract.withdraw(share, 0, 0);
       await awaitConfirmation(transaction, provider, 'redeem');
 
       rootState.serviceRegistry.progressBarService.emitProgressBarInProgressState();

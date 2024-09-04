@@ -57,7 +57,8 @@ export default {
                 poolAddress: "0xB31273fD2dfC05e6Fd91A3B8a2a681aeb0FbCF48",
                 positionManagerAddress: "0xC36442b4a4522E871399CD717aBDD847Ab11FE88",
                 secondAssetDecimals: 18,
-                dexWebsite: "https://app.uniswap.org/swap?chain=arbitrum&outputCurrency=0x3De81CE90f5A27C5E6A5aDb04b54ABA488a6d14E"
+                dexWebsite: "https://app.uniswap.org/swap?chain=arbitrum&outputCurrency=0x3De81CE90f5A27C5E6A5aDb04b54ABA488a6d14E",
+                revenueAwsEndpoint: "https://im34modd75.execute-api.eu-west-3.amazonaws.com/processedLiquidationsArbitrum"
             }
         }
     },
@@ -585,7 +586,7 @@ export default {
     dataProviderId: "redstone-arbitrum-prod",
     dataProviderHistoricalPrices: "redstone",
     redstoneFeedUrl: "https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-arbitrum-prod",
-    subgraph: `https://gateway-arbitrum.network.thegraph.com/api/${subgraphConfig.apiKey}/deployments/id/Qmd1qPVbw2HLtr85BC1gZTKFovQu8vb4rfo7cVrekyxb8A`,
+    subgraph: `https://gateway-arbitrum.network.thegraph.com/api/${subgraphConfig.apiKey}/subgraphs/id/FYfDHXCWtiMM98bhgY1kTzUPdW9PxiCJTq5s9aB4kz3z`,
     readRpcUrl: "https://arbitrum-mainnet.core.chainstack.com/9a30fb13b2159a76c8e143c52d5579bf",
     multicallAddress: "0x0674ee727f74752ea9dc630bd5c5d8a374187e7b",
     EMAIL_REGEX: /(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])/,

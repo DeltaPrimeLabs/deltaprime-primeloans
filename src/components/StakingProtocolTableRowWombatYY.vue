@@ -43,8 +43,9 @@
             <template
                 v-if="collectedGGP !== null && farm.boostGGP">
               <span>
+                <img src="src/assets/icons/warning.svg" v-tooltip="{content: `Last week's rewards are currently being recalculated based on on-chain data. The rewards shown here are an approximation and could change.`, classes: 'info-tooltip long'}">
                 <img v-if="ggpConfig" class="asset__icon" :src="getIcon('GGP', ggpConfig.logoExt)">
-                <span>{{ formatTokenBalanceWithLessThan(collectedGGP, 4, true) }}</span>
+                <span>{{ formatTokenBalanceWithLessThan(collectedGGP / 30, 4, true) }}</span>
               </span>
             </template>
             <div v-else class="no-value-dash"></div>

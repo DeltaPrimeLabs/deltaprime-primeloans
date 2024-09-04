@@ -23,17 +23,18 @@ export default class sPrimeService {
   sPrimePositionInfo$ = new BehaviorSubject(null);
   poolPrice$ = new BehaviorSubject(null);
   revenueReceived$ = new BehaviorSubject(null);
+  totalRevenueReceived$ = new BehaviorSubject(null);
 
   emitRefreshSPrimeDataWithDefault(provider, ownerAddress) {
     //needs to be updated when more than one sPRIME per chain
     let defaultDex = config.SPRIME_CONFIG.default;
     let defaultSecondAsset = config.SPRIME_CONFIG[config.SPRIME_CONFIG.default].default;
     let defaultConfig = config.SPRIME_CONFIG[defaultDex][defaultSecondAsset];
-    this.emitRefreshSPrimeData(provider, defaultConfig.sPrimeAddress, defaultConfig.poolAddress, defaultDex, defaultSecondAsset, ownerAddress);
+    this.emitRefreshSPrimeData(provider, defaultConfig.sPrimeAddress, defaultConfig.poolAddress, defaultDex, defaultSecondAsset, ownerAddress, defaultConfig.revenueAwsEndpoint);
   }
 
-  emitRefreshSPrimeData(provider, sPrimeAddress, poolAddress, dex, secondAsset, ownerAddress) {
-    this.updateSPrimeData(provider, sPrimeAddress, poolAddress, dex, secondAsset, ownerAddress);
+  emitRefreshSPrimeData(provider, sPrimeAddress, poolAddress, dex, secondAsset, ownerAddress, revenueAwsEndpoint) {
+    this.updateSPrimeData(provider, sPrimeAddress, poolAddress, dex, secondAsset, ownerAddress, revenueAwsEndpoint);
   }
 
   observeSPrimeValue() {
@@ -64,7 +65,11 @@ export default class sPrimeService {
     return this.revenueReceived$.asObservable();
   }
 
-  async updateSPrimeData(provider, sPrimeAddress, poolAddress, dex, secondAsset, ownerAddress) {
+  observeTotalRevenueReceived() {
+    return this.totalRevenueReceived$.asObservable();
+  }
+
+  async updateSPrimeData(provider, sPrimeAddress, poolAddress, dex, secondAsset, ownerAddress, revenueAwsEndpoint) {
     const walletAddress = provider.provider.selectedAddress;
     let dataFeeds = [...Object.keys(config.POOLS_CONFIG), secondAsset];
 
@@ -139,8 +144,6 @@ export default class sPrimeService {
                     }
                   );
 
-                  console.log('poolPrice: ', poolPrice * secondAssetPrice / 1e8)
-
                   this.poolPrice$.next(poolPrice * secondAssetPrice / 1e8)
                 }
               );
@@ -175,6 +178,17 @@ export default class sPrimeService {
           }
         )
       }
-    )
+    );
+
+    fetch(revenueAwsEndpoint).then(
+        res => {
+            res.json().then(
+                ([totalRevenue, numOfAccounts]) => {
+                    this.totalRevenueReceived$.next(totalRevenue);
+                }
+            )
+        }
+    );
+
   }
 };

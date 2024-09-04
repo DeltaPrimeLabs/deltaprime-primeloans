@@ -21,8 +21,8 @@
         </InfoIcon>
       </div>
       <div class="stat-value">
-        <bar-gauge-beta v-tooltip="{content: `Community mission completion: $${(totalEligibleTVL / 1000000).toFixed(1)}M / $${milestone / 1000000}M`, classes: 'info-tooltip'}"
-                        :min="0" :max="milestone" :value="totalEligibleTVL" :width="108" :green-on-completion="true"></bar-gauge-beta>
+        <bar-gauge-beta v-tooltip="{content: `4 levels completed. Speed & Retention bonuses incoming!`, classes: 'info-tooltip'}"
+                        :min="0" :max="1" :value="1" :width="108" :green-on-completion="true"></bar-gauge-beta>
       </div>
     </div>
     <div class="stat__entry">
@@ -80,7 +80,7 @@
         </InfoIcon>
       </div>
       <div class="stat-value">
-        {{ collectedBonus | smartRound(8, true) }}
+        {{ 0 | smartRound(8, true) }}
         <img class="incentives-icon" src="src/assets/logo/arb.png">
       </div>
     </div>
@@ -93,7 +93,7 @@
 
 import BarGaugeBeta from './BarGaugeBeta.vue';
 import InfoIcon from './InfoIcon.vue';
-import LTIP_EPOCH_10_TOTAL from "../data/arbitrum/ltip/LTIP_EPOCH_10_TOTAL.json";
+import LTIP_EPOCH_11_TOTAL from "../data/arbitrum/ltip/LTIP_EPOCH_11_TOTAL.json";
 import {fromWei} from "../utils/calculate";
 import {mapState} from "vuex";
 import {wrapContract} from "../utils/blockchain";
@@ -167,7 +167,7 @@ export default {
         }
 
         let alreadyCollected = 0;
-        alreadyCollected += getRecord(LTIP_EPOCH_10_TOTAL, this.smartLoanContract.address);
+        alreadyCollected += getRecord(LTIP_EPOCH_11_TOTAL, this.smartLoanContract.address);
 
         if (arbCollected) this.collectedBonus = Math.max(arbCollected - alreadyCollected, 0);
       });
