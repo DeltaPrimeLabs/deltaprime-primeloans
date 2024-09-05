@@ -117,7 +117,7 @@ export default {
   etherscan: {
     apiKey: {
       avalanche: "8ZZX5UV18YJKIK4FNQCF3M699VU5D6AGC4",
-      arbitrumOne: "XGXPCAQEJHHTZWC6YBR8JMX8HWZW61RGAQ",
+      arbitrumOne: "XR227KGAGUXB92WI65EHYYGNFD8EXSR1H1",
       avalancheFujiTestnet: "8ZZX5UV18YJKIK4FNQCF3M699VU5D6AGC4"
     }
   },

@@ -8,12 +8,14 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deploy } = deployments;
     const { deployer, admin } = await getNamedAccounts();
 
+    const ARBITRUM_OWNER_MULTISIG = "0xDfA6706FC583b635CD6daF0E3915901A2fBaBAaD";
     const AVALANCHE_OWNER_MULTISIG = "0x44AfCcF712E8A097a6727B48b57c75d7A85a9B0c";
-    const AVALANCHE_COL_MULTISIG = "0x3813f577Aedc5F26F36B8638EDbB949d169F7fDc";
-    const INITIAL_DELAY = 60 * 15; // 15 minutes
+    const ARBITRUM_ADMIN_MULTISIG = "0xa9Ca8462aB2949ADa86297904e09Ab4Eb12cdCf0";
+    const AVALANCHE_ADMIN_MULTISIG = "0x6855A3cA53cB01646A9a3e6d1BC30696499C0b4a";
+    const INITIAL_DELAY = 60 * 60 * 24; // 24 hours
 
     const constructorArgs = [
-        AVALANCHE_COL_MULTISIG,
+        AVALANCHE_ADMIN_MULTISIG,
         INITIAL_DELAY,
     ];
 
