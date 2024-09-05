@@ -329,6 +329,10 @@ const lpAndFarmApyAggregator = async (event) => {
 
         let yieldApy = yieldYakAvaApys[farm.stakingContractAddress] ? yieldYakAvaApys[farm.stakingContractAddress].apy / 100 : 0;
 
+        if (farm.multiplier) {
+          yieldApy = yieldApy * farm.multiplier;
+        }
+
         if (farm.add == 'sAvax') {
           yieldApy += sAvaxApr ? sAvaxApr / 100 : 0;
         } else if (farm.add == 'ggAvax') {
@@ -652,6 +656,7 @@ const gmxApyAggregator = async (event) => {
   // fetch GM tokens' APYs on Arbitrum and Avalanche
   for (const [network, pools] of Object.entries(gmxApyConfig)) {
     if (network == "avalanche") {
+      // region redirect to avalanche
       const networkBtn = await page.$$(".network-dropdown");
 
       await networkBtn[0].click();
@@ -667,13 +672,31 @@ const gmxApyAggregator = async (event) => {
       await dropdownBtns[1].click();
 
       await new Promise((resolve, reject) => setTimeout(resolve, 7000));
+      // endregion
     }
 
-    const marketRows = await page.$$(".token-table > tbody > tr");
-    const marketInnerTexts = await Promise.all(Array.from(marketRows).map(async market => {
+    const getThisPageMarketRows = async () => {
+      return await page.$$("tbody > tr");
+    }
+
+    const getNextPageButtons = async () => {
+      return await page.$$(`div.pagination-buttons > .button::-p-text(>):not([disabled])`)
+    }
+
+    const pageMarketRows = await getThisPageMarketRows();
+    const marketRows = Array.from(pageMarketRows)
+    let nextPageButtons = await getNextPageButtons()
+    while (nextPageButtons && nextPageButtons[0]) {
+      nextPageButtons[0].click()
+      await new Promise((resolve, reject) => setTimeout(resolve, 2000));
+      const newPageRows = await getThisPageMarketRows();
+      marketRows.push(...newPageRows)
+      nextPageButtons = await getNextPageButtons()
+    }
+
+    const marketInnerTexts = await Promise.all(marketRows.map(async market => {
       return (await (await market.getProperty("textContent")).jsonValue()).replace(/\s+/g, "");
     }));
-    await new Promise((resolve, reject) => setTimeout(resolve, 5000));
 
     for (const [poolId, marketId] of Object.entries(pools)) {
       try {
