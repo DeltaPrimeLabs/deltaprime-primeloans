@@ -20,7 +20,8 @@ export const getSwapData = async (paraSwapSDK, userAddress, srcTokenAddress, des
     userAddress: userAddress,
     side: SwapSide.SELL,
     srcDecimals: srcDecimals,
-    destDecimals: destDecimals
+    destDecimals: destDecimals,
+    excludeDEXS: ['ParaSwapPool', 'ParaSwapLimitOrders'],
   });
   console.log(priceRoute);
   const txParams = await paraSwapSDK.swap.buildTx({
