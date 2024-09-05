@@ -82,10 +82,6 @@
           <img src="src/assets/icons/warning.svg"
                v-tooltip="{content: 'APR value is updated twice a day. Please check GMX website to find the current pool\'s APR.', classes: 'info-tooltip long'}">
         </div>
-        <div class="apr-warning" v-if="!lpToken.aprWarning">
-          <img src="src/assets/icons/warning.svg"
-               v-tooltip="{content: 'This pool\'s APY is outdated. This will be resolved soon.', classes: 'info-tooltip long'}">
-        </div>
         {{ apr / 100 | percent }}
       </div>
 

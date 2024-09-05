@@ -172,7 +172,7 @@ export default {
     this.watchFarmRefreshEvent();
   },
   computed: {
-    ...mapState('fundsStore', ['smartLoanContract', 'noSmartLoan', "wombatLpBalances", 'assetBalances', 'wombatYYFarmsBalances', 'assets']),
+    ...mapState('fundsStore', ['smartLoanContract', 'noSmartLoan', "wombatLpBalances", 'assetBalances', 'wombatYYFarmsBalances', 'assets', 'apys']),
     ...mapState('poolStore', ['pools']),
     ...mapState('serviceRegistry', ['assetBalancesExternalUpdateService', 'stakedExternalUpdateService', 'dataRefreshEventService', 'farmService', 'ltipService', 'accountService', 'ggpIncentivesService']),
     asset() {
@@ -205,7 +205,7 @@ export default {
     },
 
     async setupMaxStakingApy() {
-      let maxApy = this.farm.apy / 100;
+      let maxApy = this.apys[this.farm.lpAssetToken][this.farm.apyKey] / 100;
 
       let assetApr = this.assets[this.farm.assetToken].apy && this.assets[this.farm.assetToken].symbol !== 'GLP' ? this.assets[this.farm.assetToken].apy / 100 : 0;
       this.maxLeveragedApy = calculateMaxApy(this.pools, maxApy + assetApr);

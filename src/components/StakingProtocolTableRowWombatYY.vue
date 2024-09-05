@@ -58,11 +58,11 @@
         <div class="apr-warning" v-if="farm.aprWarning">
           <img src="src/assets/icons/warning.svg" v-tooltip="{content: `APR value is updated twice a day. Please check Yield Yak website to find the current pool's APR.`, classes: 'info-tooltip long'}">
         </div>
-        {{ farm.apy / 100 | percent }}
+        {{ (apys[farm.lpAssetToken][farm.apyKey] + (farm.apyToAdd ? assets[farm.apyToAdd].apy : 0)) / 100 | percent }}
       </div>
 
       <div class="table__cell max-apy">
-        <span>{{ (maxApy + boostApy) | percent }}<img v-if="boostApy"
+        <span>{{ maxApy | percent }}<img v-if="boostApy"
                                                       v-tooltip="{content: `This pool is incentivized!<br>⁃ up to ${maxApy ? (maxApy * 100).toFixed(2) : 0}% Pool APR<br>⁃ up to ${boostApy ? (boostApy * 100).toFixed(2) : 0}% ${chain === 'arbitrum' ? 'ARB' : 'AVAX'} incentives`, classes: 'info-tooltip'}"
                                                       src="src/assets/icons/stars.png" class="stars-icon"></span>
       </div>
@@ -179,7 +179,7 @@ export default {
     },
     pools: {
       handler(pools) {
-        this.maxApy = calculateMaxApy(this.pools, this.farm.apy / 100);
+        this.maxApy = calculateMaxApy(this.pools, (this.apys[this.farm.lpAssetToken][this.farm.apyKey] + (this.farm.apyToAdd ? this.assets[this.farm.apyToAdd].apy : 0)) / 100);
       }
     }
   },
@@ -188,6 +188,7 @@ export default {
     ...mapState('poolStore', ['pools']),
     ...mapState('stakeStore', ['farms']),
     ...mapState('fundsStore', [
+      'apys',
       'smartLoanContract',
       'fullLoanStatus',
       'debtsPerAsset',
@@ -490,16 +491,9 @@ export default {
       });
     },
 
-    watchLtipMaxBoostUpdate() {
-      this.ltipService.observeLtipMaxBoostApy().subscribe((boostApy) => {
-        this.boostApy = boostApy;
-      });
-    },
-
     setApy() {
       if (this.pools) {
-        let assetApr = this.assets[this.farm.assetToken].apy && this.assets[this.farm.assetToken].symbol !== 'GLP' ? this.assets[this.farm.assetToken].apy / 100 : 0;
-        this.maxApy = calculateMaxApy(this.pools, this.farm.apy / 100 + assetApr);
+        this.maxApy = calculateMaxApy(this.pools, (this.apys[this.farm.lpAssetToken][this.farm.apyKey] + (this.farm.apyToAdd ? this.assets[this.farm.apyToAdd].apy : 0)) / 100);
       }
     },
 
