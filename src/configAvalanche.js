@@ -237,7 +237,7 @@ export default {
           apyKey: 'WOM_ggAVAX_ggAVAX',
           boostGGP: false,
           addTokenApy: true,
-          aprWarning: 'This pool’s APY is overvalued. This will be resolved soon.'
+          aprWarning: false
         },
         {
           name: 'AVAX',
@@ -640,6 +640,7 @@ export default {
             lpTokenLogo: 'wombat_lp.png',
             YRTTokenLogo: 'yak.svg',
             apyKey: 'YY_WOM_sAVAX_AVAX_LP_sAVAX',
+            apyToAdd: 'sAVAX',
             yrtKey: 'sAVAX_AVAX_YY_sAVAX',
             protocol: 'YIELD_YAK',
             balanceMethod: 'sAvaxBalanceAvaxSavaxYY',
@@ -654,7 +655,7 @@ export default {
             debtCoverage: 0.83333333333,
             strategyContract: '0x9B5d890d563EE4c9255bB500a790Ca6B1FB9dB6b',
             apy: 7.46,
-            aprWarning: true
+            aprWarning: false
         },
         {
             name: 'AVAX LP',
@@ -680,7 +681,7 @@ export default {
             debtCoverage: 0.83333333333,
             strategyContract: '0xa84D83787eA216F616C6Bd02C6edC6D6d63f042f',
             apy: 14.5,
-            aprWarning: true
+            aprWarning: false
         },
         {
             name: 'ggAVAX LP',
@@ -692,6 +693,7 @@ export default {
             lpTokenLogo: 'wombat_lp.png',
             YRTTokenLogo: 'yak.svg',
             apyKey: 'YY_WOM_ggAVAX_AVAX_LP_ggAVAX',
+            apyToAdd: 'ggAVAX',
             yrtKey: 'ggAVAX_AVAX_YY_ggAVAX',
             protocol: 'YIELD_YAK',
             balanceMethod: 'ggAvaxBalanceAvaxGgavaxYY',
@@ -707,7 +709,7 @@ export default {
             strategyContract: '0x13404B1C715aF60869fc658d6D99c117e3543592',
             apy: 8.34,
             boostGGP: true,
-            aprWarning: true
+            aprWarning: false
         },
         {
             name: 'AVAX LP',
@@ -733,7 +735,7 @@ export default {
             debtCoverage: 0.83333333333,
             strategyContract: '0x7f0eB376eabF4b2B4290D09EFb2f4da99B3ea311',
             apy: 0.4,
-            aprWarning: true
+            aprWarning: false
         },
     ],
     liquidityShapes: {
