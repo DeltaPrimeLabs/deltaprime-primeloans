@@ -1,4 +1,4 @@
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.27;
 
 interface IRecoveryFacet {
     function emergencyWithdraw(bytes32 asset) external returns (uint256 _amount);

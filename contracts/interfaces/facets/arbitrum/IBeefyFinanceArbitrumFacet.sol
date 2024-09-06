@@ -1,4 +1,4 @@
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.27;
 
 interface IBeefyFinanceArbitrumFacet {
     function stakeSushiDpxEthLpBeefy(uint256 amount) external;

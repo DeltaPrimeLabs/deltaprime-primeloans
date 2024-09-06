@@ -1,4 +1,4 @@
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.27;
 
 interface ISmartLoanLiquidationFacet {
   function _getLTV (  ) external returns ( uint256 ltv );

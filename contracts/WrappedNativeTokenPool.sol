@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 // Last deployed from commit: 5bae95ca244e96444fe80078195944f6637e72d8;
-pragma solidity 0.8.17;
+pragma solidity 0.8.27;
 
 import "./Pool.sol";
 import "./interfaces/IWrappedNativeToken.sol";
@@ -19,7 +19,7 @@ contract WrappedNativeTokenPool is Pool {
     /**
      * Wraps and deposits amount attached to the transaction
      **/
-    function depositNativeToken() public payable virtual {
+    function depositNativeToken() public payable gated virtual {
         if(msg.value == 0) revert ZeroDepositAmount();
 
         _accumulateDepositInterest(msg.sender);
@@ -47,7 +47,7 @@ contract WrappedNativeTokenPool is Pool {
      * Unwraps and withdraws selected amount from the user deposits
      * @dev _amount the amount to be withdrawn
      **/
-    function withdrawNativeToken(uint256 _amount) external nonReentrant {
+    function withdrawNativeToken(uint256 _amount) external nonReentrant gated {
         if(_amount > IERC20(tokenAddress).balanceOf(address(this))) revert InsufficientPoolFunds();
 
         _accumulateDepositInterest(msg.sender);
