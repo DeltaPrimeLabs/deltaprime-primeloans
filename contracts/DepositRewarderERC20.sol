@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 // Last deployed from commit: 2ede0bbde1c468465ae647d5f989635d6090bcba;
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.27;
 
 import "./DepositRewarderAbstract.sol";
 

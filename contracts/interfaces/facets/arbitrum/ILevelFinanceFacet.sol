@@ -1,4 +1,4 @@
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.27;
 
 interface ILevelFinanceFacet {
     function levelStakeEthSnr(uint256 amount, uint256 minLpAmount) external;

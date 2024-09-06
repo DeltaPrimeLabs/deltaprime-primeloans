@@ -1,4 +1,4 @@
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.27;
 
 import "../../joe-v2/ILBRouter.sol";
 import "../../uniswap-v3/IUniswapV3Pool.sol";
