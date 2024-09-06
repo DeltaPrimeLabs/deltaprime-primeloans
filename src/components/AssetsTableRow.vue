@@ -263,7 +263,7 @@ export default {
       'wombatLpAssets',
       'wombatLpBalances',
       'wombatYYFarmsBalances',
-      'noSmartLoan'
+      'noSmartLoan',
     ]),
     ...mapState('stakeStore', ['farms']),
     ...mapState('poolStore', ['pools']),
@@ -527,6 +527,16 @@ export default {
       };
     },
 
+    directGLPMintQueryMethod() {
+      return async (sourceAsset, targetAsset, amountInWei) => {
+        const amountIn = parseFloat(formatUnits(amountInWei, this.assets[sourceAsset].decimals));
+        const estimated = amountIn * this.assets[sourceAsset].price / this.assets[targetAsset].price;
+
+        const targetDecimals = this.assets[targetAsset].decimals;
+        return Promise.resolve(parseUnits(estimated.toFixed(targetDecimals), targetDecimals));
+      }
+    },
+
     actionClick(key) {
       if (!this.isActionDisabledRecord[key] && !this.disableAllButtons || (this.noSmartLoan && this.asset.debtCoverage > 0 && key === 'ADD_FROM_WALLET')) {
         switch (key) {
@@ -667,22 +677,44 @@ export default {
       modalInstance.queryMethods = {
         YakSwap: this.yakSwapQueryMethod(),
         ParaSwapV2: this.paraSwapV2QueryMethod(),
+        GLP_DIRECT: this.directGLPMintQueryMethod(),
       };
 
       modalInstance.$on('SWAP', swapEvent => {
-        const swapRequest = {
-          ...swapEvent,
-          sourceAmount: swapEvent.sourceAmount.toString()
-        };
+        let swapMethod = () => {}
+        let swapRequest = {}
+        if (swapEvent.swapDex === 'GLP_DIRECT') {
+          if (swapEvent.sourceAsset === 'GLP') {
+            swapRequest = {
+              sourceAsset: swapEvent.sourceAsset,
+              targetAsset: swapEvent.targetAsset,
+              targetAmount: swapEvent.targetAmount.toString(),
+              glpAmount: swapEvent.sourceAmount.toString()
+            };
+            swapMethod = this.unstakeAndRedeemGlp
+          } else {
+            swapRequest = {
+              sourceAsset: swapEvent.sourceAsset,
+              sourceAmount: swapEvent.sourceAmount.toString(),
+              minGlp: swapEvent.targetAmount.toString(),
+              minUsdValue: (swapEvent.targetAmount * this.assets['GLP'].price).toString()
+            };
+            swapMethod = this.mintAndStakeGlp
+          }
+        } else {
+          swapRequest = {
+            ...swapEvent,
+            sourceAmount: swapEvent.sourceAmount.toString()
+          };
+          swapMethod = swapDexSwapMethodMap[swapRequest.swapDex]
+        }
 
-        console.log(swapRequest);
-
-        this.handleTransaction(swapDexSwapMethodMap[swapRequest.swapDex], {swapRequest: swapRequest}, () => {
-          this.$forceUpdate();
-        }, (error) => {
-          this.handleTransactionError(error);
-        }).then(() => {
-        });
+          this.handleTransaction(swapMethod, {swapRequest: swapRequest}, () => {
+            this.$forceUpdate();
+          }, (error) => {
+            this.handleTransactionError(error);
+          }).then(() => {
+          });
       });
 
       modalInstance.initiate();
