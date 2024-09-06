@@ -69,14 +69,16 @@
       <div class="stats">
         <div class="stat">
           <div class="stat__title">Total value
-            <InfoIcon class="stat__info-icon" :size="16" :tooltip="{ content: 'Total $ value of your sPRIME.'}"></InfoIcon>
+            <InfoIcon class="stat__info-icon" :size="16"
+                      :tooltip="{ content: 'Total $ value of your sPRIME.'}"></InfoIcon>
           </div>
           <div class="stat__value">{{ value | usd }}</div>
           <div class="stat__extra-info">Locked: {{ lockedInUd | usd }}</div>
         </div>
         <div class="stat">
           <div class="stat__title">Revenue received
-            <InfoIcon class="stat__info-icon" :size="16" :tooltip="{ content: 'DeltaPrime fees distributed to your sPRIME. You are eligible for fees only when your sPRIME is active.'}"></InfoIcon>
+            <InfoIcon class="stat__info-icon" :size="16"
+                      :tooltip="{ content: 'DeltaPrime fees distributed to your sPRIME. You are eligible for fees only when your sPRIME is active.'}"></InfoIcon>
           </div>
           <div class="stat__value">
             <div class="stat__value">{{ revenueReceived | usd }}</div>
@@ -84,7 +86,8 @@
         </div>
         <div class="stat">
           <div class="stat__title">YTD APR
-            <InfoIcon class="stat__info-icon" :size="16" :tooltip="{ content: 'Based on YTD performance of DeltaPrime fees.'}"></InfoIcon>
+            <InfoIcon class="stat__info-icon" :size="16"
+                      :tooltip="{ content: 'Based on YTD performance of DeltaPrime fees.'}"></InfoIcon>
           </div>
           <div class="stat__value"> {{ ytdApr | percent }}</div>
         </div>
@@ -118,7 +121,7 @@
           <div class="rate__value governance-rate" :class="{'negative': governanceRate && governanceRate < 0}">
             {{ governanceRate ? governanceRate.toFixed(2) : 0 }}
           </div>
-          <div class="rate__extra-info">Max governance power: {{balanceLimit}}</div>
+          <div class="rate__extra-info">Max governance power: {{ balanceLimit }}</div>
         </div>
         <div class="rate">
           <div class="rate__title">Next accrual rate</div>
@@ -141,12 +144,12 @@ import erc20ABI from '../../test/abis/ERC20.json';
 import {getTraderJoeV2IdSlippageFromPriceSlippage, getUniswapV3SlippageFromPriceSlippage} from '../utils/calculate';
 import RedeemsPrimeModal from './RedeemsPrimeModal.vue';
 import RebalancesPrimeModal from './RebalancesPrimeModal.vue';
-import DistributionChart from "./DistributionChart.vue";
-import DeltaIcon from "./DeltaIcon.vue";
-import InfoIcon from "./InfoIcon.vue";
-import PriceRangeChart from "./PriceRangeChart.vue";
+import DistributionChart from './DistributionChart.vue';
+import DeltaIcon from './DeltaIcon.vue';
+import InfoIcon from './InfoIcon.vue';
+import PriceRangeChart from './PriceRangeChart.vue';
 import {ActionSection} from '../services/globalActionsDisableService';
-import {poolQuery} from "../../lambda/utils/queries";
+import {poolQuery} from '../../lambda/utils/queries';
 
 const ethers = require('ethers');
 
@@ -251,21 +254,22 @@ export default {
       this.sPrimeService.observeSPrimeUnderlyingPool(),
       this.sPrimeService.observeSPrimePositionInfo()
     ])
-        .subscribe(([poolPrice, positionInfo]) => {
+      .subscribe(([poolPrice, positionInfo]) => {
+        if (positionInfo) {
           this.poolPrice = poolPrice;
           if (this.dex === 'TRADERJOEV2') {
             let positive = true;
             this.chartData = positionInfo.binsArray.map(
-                (binPrice, i) => {
-                  let showTick = (i === 0) || (i === (positionInfo.binsArray.length - 1));
-                  if (this.poolPrice <= binPrice && this.poolPrice > positionInfo.binsArray[i - 1]) {
-                    const toPrevious = this.poolPrice - positionInfo.binsArray[i - 1];
-                    const toCurrent = this.poolPrice - binPrice;
+              (binPrice, i) => {
+                let showTick = (i === 0) || (i === (positionInfo.binsArray.length - 1));
+                if (this.poolPrice <= binPrice && this.poolPrice > positionInfo.binsArray[i - 1]) {
+                  const toPrevious = this.poolPrice - positionInfo.binsArray[i - 1];
+                  const toCurrent = this.poolPrice - binPrice;
 
-                    this.activeBinIndex = toPrevious >= toCurrent ? i : i - 1
-                  }
-                  return {x: binPrice, y: 3, showTick: showTick, positive: positive}
+                  this.activeBinIndex = toPrevious >= toCurrent ? i : i - 1
                 }
+                return {x: binPrice, y: 3, showTick: showTick, positive: positive}
+              }
             )
             const stepLength = positionInfo.binsArray[1] - positionInfo.binsArray[0]
             if (this.poolPrice < positionInfo.binsArray[0]) {
@@ -317,7 +321,8 @@ export default {
 
             this.setDistributionChart(poolPrice, rangeStart, rangeEnd);
           }
-        });
+        }
+      });
 
     this.accountService.observeAccountLoaded().subscribe(() => {
       this.fetchVPrimeData();
@@ -392,19 +397,19 @@ export default {
       let activeId, currentPrice;
       if (this.dex === 'TRADERJOEV2') {
         [, activeId] = await this
-            .traderJoeService
-            .getLBPairReservesAndActiveBin(this.sPrimeConfig.poolAddress, this.provider)
+          .traderJoeService
+          .getLBPairReservesAndActiveBin(this.sPrimeConfig.poolAddress, this.provider)
       } else {
         [currentPrice, activeId] = await this
-            .uniswapV3Service
-            .getPriceAndActiveId(this.sPrimeConfig.poolAddress, this.provider)
+          .uniswapV3Service
+          .getPriceAndActiveId(this.sPrimeConfig.poolAddress, this.provider)
       }
 
       const [primeBalance, secondAssetBalance] = await Promise.all(
-          [
-            this.fetchUserTokenBalance('PRIME'),
-            this.fetchUserTokenBalance(this.secondAsset)
-          ]
+        [
+          this.fetchUserTokenBalance('PRIME'),
+          this.fetchUserTokenBalance(this.secondAsset)
+        ]
       );
 
       const nativeTokenBalance = parseFloat(ethers.utils.formatEther(await this.provider.getBalance(this.account)));
@@ -418,8 +423,8 @@ export default {
       modalInstance.$on('MINT', sPrimeMintEvent => {
 
         const idSlippage = this.dex === 'TRADERJOEV2' ?
-            getTraderJoeV2IdSlippageFromPriceSlippage(sPrimeMintEvent.slippage / 100, config.SPRIME_CONFIG.TRADERJOEV2[this.secondAsset].binStep)
-            : getUniswapV3SlippageFromPriceSlippage(currentPrice, sPrimeMintEvent.slippage / 100);
+          getTraderJoeV2IdSlippageFromPriceSlippage(sPrimeMintEvent.slippage / 100, config.SPRIME_CONFIG.TRADERJOEV2[this.secondAsset].binStep)
+          : getUniswapV3SlippageFromPriceSlippage(currentPrice, sPrimeMintEvent.slippage / 100);
 
         const sPrimeMintRequest = {
           sPrimeAddress: this.sPrimeConfig.sPrimeAddress,
@@ -447,19 +452,19 @@ export default {
       let activeId, currentPrice;
       if (this.dex === 'TRADERJOEV2') {
         [, activeId] = await this
-            .traderJoeService
-            .getLBPairReservesAndActiveBin(this.sPrimeConfig.poolAddress, this.provider)
+          .traderJoeService
+          .getLBPairReservesAndActiveBin(this.sPrimeConfig.poolAddress, this.provider)
       } else {
         [currentPrice, activeId] = await this
-            .uniswapV3Service
-            .getPriceAndActiveId(this.sPrimeConfig.poolAddress, this.provider)
+          .uniswapV3Service
+          .getPriceAndActiveId(this.sPrimeConfig.poolAddress, this.provider)
       }
       modalInstance.secondAssetSymbol = this.secondAsset;
 
       modalInstance.$on('REBALANCE', event => {
         const idSlippage = this.dex === 'TRADERJOEV2' ?
-            getTraderJoeV2IdSlippageFromPriceSlippage(event.slippage / 100, config.SPRIME_CONFIG.TRADERJOEV2[this.secondAsset].binStep)
-            : getUniswapV3SlippageFromPriceSlippage(currentPrice, event.slippage / 100);
+          getTraderJoeV2IdSlippageFromPriceSlippage(event.slippage / 100, config.SPRIME_CONFIG.TRADERJOEV2[this.secondAsset].binStep)
+          : getUniswapV3SlippageFromPriceSlippage(currentPrice, event.slippage / 100);
 
         let sPrimeRebalanceRequest = {
           sPrimeAddress: this.sPrimeConfig.sPrimeAddress,
@@ -481,8 +486,8 @@ export default {
     async openRedeemSPrimeModal() {
       const modalInstance = this.openModal(RedeemsPrimeModal);
       let [primeBalance, secondAssetBalance] = await Promise.all(
-          [this.fetchUserTokenBalance('PRIME'),
-            this.fetchUserTokenBalance(this.secondAsset)]
+        [this.fetchUserTokenBalance('PRIME'),
+          this.fetchUserTokenBalance(this.secondAsset)]
       );
 
       const sPrimeTokenContract = new ethers.Contract(this.sPrimeConfig.sPrimeAddress, erc20ABI, this.provider.getSigner());
@@ -520,10 +525,10 @@ export default {
       const contract = new ethers.Contract(TOKEN_ADDRESSES[tokenSymbol], erc20ABI, this.provider.getSigner());
 
       return this.getWalletTokenBalance(
-          this.account,
-          tokenSymbol,
-          contract,
-          tokenSymbol === 'PRIME' ? config.PRIME.decimals : config.ASSETS_CONFIG[tokenSymbol].decimals
+        this.account,
+        tokenSymbol,
+        contract,
+        tokenSymbol === 'PRIME' ? config.PRIME.decimals : config.ASSETS_CONFIG[tokenSymbol].decimals
       );
     },
 
@@ -544,9 +549,9 @@ export default {
 
     watchActionDisabling() {
       this.globalActionsDisableService.getSectionActions$(ActionSection.SPRIME)
-          .subscribe(isActionDisabledRecord => {
-            this.isActionDisabledRecord = isActionDisabledRecord;
-          })
+        .subscribe(isActionDisabledRecord => {
+          this.isActionDisabledRecord = isActionDisabledRecord;
+        })
     },
 
     setDistributionChart(poolPrice, minPrice, maxPrice) {

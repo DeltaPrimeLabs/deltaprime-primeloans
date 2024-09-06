@@ -25,10 +25,9 @@
     "size": "yarn run hardhat size-contracts"
   },
   "dependencies": {
-    "redstone-sdk": "1.0.7",
-    "@chainlink/contracts": "0.8.0",
     "@apollo/client": "^3.7.2",
     "@babel/plugin-proposal-optional-chaining": "^7.16.7",
+    "@chainlink/contracts": "0.8.0",
     "@growthbunker/vuetimeline": "^0.1.17",
     "@lifi/sdk": "^2.1.1",
     "@nomiclabs/hardhat-ethers": "^2.2.3",
@@ -48,6 +47,7 @@
     "@uniswap/v2-periphery": "^1.1.0-beta.0",
     "@uniswap/v3-core": "^1.0.1",
     "@uniswap/v3-periphery": "^1.4.3",
+    "@walletconnect/ethereum-provider": "^2.14.0",
     "apollo-boost": "^0.4.9",
     "aws-sdk": "^2.1483.0",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
@@ -79,6 +79,7 @@
     "redstone-api": "^0.4.6",
     "redstone-oracles-smartweave-contracts": "^1.0.6",
     "redstone-protocol": "^1.0.5",
+    "redstone-sdk": "1.0.7",
     "replace-in-file": "^6.3.5",
     "rxjs": "^7.6.0",
     "solidity-docgen": "^0.3.13",
@@ -101,7 +102,8 @@
     "vuelidate": "^0.7.6",
     "vuex": "^3.6.2",
     "web3-detect-network": "0.0.18",
-    "web3-eth-abi": "^1.7.0"
+    "web3-eth-abi": "^1.7.0",
+    "whatwg-fetch": "^3.6.20"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-waffle": "^2.0.6",
@@ -139,7 +141,7 @@
     "html-webpack-plugin": "^5.5.0",
     "http-proxy-middleware": "^0.17.3",
     "inject-loader": "^3.0.0",
-    "node-sass": "^6.0.1",
+    "node-sass": "npm:sass",
     "opn": "^6.0.0",
     "optimize-css-assets-webpack-plugin": "^2.0.0",
     "ora": "^5.4.1",
@@ -166,7 +168,7 @@
     "webpack-merge": "^5.8.0"
   },
   "engines": {
-    "node": ">= 4.0.0 <= 16.20.2",
+    "node": ">= 4.0.0 <= 18.20.4",
     "npm": ">= 3.0.0"
   },
   "browserslist": [

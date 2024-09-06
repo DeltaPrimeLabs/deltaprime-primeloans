@@ -353,7 +353,9 @@ export default {
     getLiquidatedEvents() {
       fetchLiquidatedEvents(this.smartLoanContract.address).then(
           events => {
-            this.liquidationTimestamps = events.map(event => event.timestamp);
+            if (events) {
+              this.liquidationTimestamps = events.map(event => event.timestamp);
+            }
           }
       );
     },
