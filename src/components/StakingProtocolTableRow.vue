@@ -187,6 +187,10 @@ export default {
       'levelLpBalances',
       'penpieLpBalances',
       'penpieLpAssets',
+      'balancerLpAssets',
+      'balancerLpBalances',
+      'gmxV2Assets',
+      'gmxV2Balances',
       'wombatLpAssets',
       'wombatLpBalances',
       'wombatYYFarmsBalances',
@@ -254,6 +258,10 @@ export default {
       modalInstance.wombatLpBalances = this.wombatLpBalances;
       modalInstance.levelLpAssets = this.levelLpAssets;
       modalInstance.levelLpBalances = this.levelLpBalances;
+      modalInstance.balancerLpBalances = this.balancerLpBalances;
+      modalInstance.balancerLpAssets = this.balancerLpAssets;
+      modalInstance.gmxV2Assets = this.gmxV2Assets;
+      modalInstance.gmxV2Balances = this.gmxV2Balances;
       modalInstance.traderJoeV2LpAssets = this.traderJoeV2LpAssets;
       modalInstance.farms = this.farms;
       modalInstance.debtsPerAsset = this.debtsPerAsset;
