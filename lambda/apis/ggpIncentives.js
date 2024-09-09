@@ -180,7 +180,7 @@ const getGgpYYWombatBoostApyApi = (event, context, callback) => {
   const params = {
     TableName: process.env.STATISTICS_TABLE,
     Key: {
-      id: "GGP_ggAVAX"
+      id: "GGP_YY_ggAVAX"
     }
   };
 
