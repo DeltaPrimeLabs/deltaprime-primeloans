@@ -19,7 +19,7 @@ contract WrappedNativeTokenPool is Pool {
     /**
      * Wraps and deposits amount attached to the transaction
      **/
-    function depositNativeToken() public payable gated virtual {
+    function depositNativeToken() external payable gated virtual {
         if(msg.value == 0) revert ZeroDepositAmount();
 
         _accumulateDepositInterest(msg.sender);

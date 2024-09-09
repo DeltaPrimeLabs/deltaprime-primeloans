@@ -92,7 +92,7 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
     }
 
 
-    function lockDeposit(uint256 amount, uint256 lockTime) public gated {
+    function lockDeposit(uint256 amount, uint256 lockTime) external gated {
         if (getNotLockedBalance(msg.sender) < amount) {
             revert InsufficientBalanceToLock();
         }
@@ -124,7 +124,7 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
         }
     }
 
-    function setTokenManager(ITokenManager _tokenManager) public onlyOwner gated {
+    function setTokenManager(ITokenManager _tokenManager) external onlyOwner gated {
         tokenManager = _tokenManager;
     }
 
@@ -392,18 +392,25 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
      * Deposits the amount
      * It updates user deposited balance, total deposited and rates
      **/
-    function deposit(uint256 _amount) public gated virtual {
-        depositOnBehalf(_amount, msg.sender);
+    function deposit(uint256 _amount) external gated nonReentrant virtual {
+        _depositOnBehalf(_amount, msg.sender);
+    }
+
+    function depositOnBehalf(
+        uint256 _amount,
+        address _of
+    ) external gated nonReentrant virtual {
+        _depositOnBehalf(_amount, _of);
     }
 
     /**
      * Deposits the amount on behalf of `_of` user.
      * It updates `_of` user deposited balance, total deposited and rates
      **/
-    function depositOnBehalf(
+    function _depositOnBehalf(
         uint256 _amount,
         address _of
-    ) public virtual nonReentrant gated {
+    ) internal {
         if (_amount == 0) revert ZeroDepositAmount();
         if (_of == address(0)) {
             revert AddressZero();
@@ -489,7 +496,7 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
      * @dev _amount the amount to be borrowed
      * @dev It is only meant to be used by a SmartLoanDiamondProxy
      **/
-    function borrow(uint256 _amount) public virtual canBorrow nonReentrant gated {
+    function borrow(uint256 _amount) external virtual canBorrow nonReentrant gated {
         if (_amount > IERC20(tokenAddress).balanceOf(address(this)))
             revert InsufficientPoolFunds();
 
@@ -660,7 +667,7 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
     function recoverSurplus(
         uint256 amount,
         address account
-    ) public onlyOwner nonReentrant gated {
+    ) external onlyOwner nonReentrant gated {
         uint256 balance = IERC20(tokenAddress).balanceOf(address(this));
         uint256 surplus = balance + totalBorrowed() - totalSupply();
 
