@@ -343,6 +343,14 @@ functions:
       - httpApi:
           method: get
           path: /ggp-incentives-yy-for
+  getGgpIncentivesYYWombatForLastWeekApi:
+    handler: apis/ggpIncentives.getGgpIncentivesYYWombatForLastWeekApi
+    memorySize: 512
+    description: Fetch GGP YY Wombat incentives for last week Avalanche
+    events:
+      - httpApi:
+          method: get
+          path: /ggp-incentives-yy-for-last-week
   getGgpYYWombatBoostApyApi:
     handler: apis/ggpIncentives.getGgpYYWombatBoostApyApi
     memorySize: 512
