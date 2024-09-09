@@ -172,7 +172,6 @@ const ggpIncentives = async (network = 'avalanche', rpc = 'first') => {
       })
 
       console.log(`Total eligible TVL: ${totalEligibleTvl}`);
-      throw new Error('test')
 
       // save boost APY to DB
       const boostApy = totalEligibleTvl > 0 ? (incentivesPerInterval / incentivesMultiplier) / totalEligibleTvl * 24 * 365 : 0;
