@@ -53,6 +53,9 @@ const getIncentivesMultiplier = async (now) => {
 
   const res = await fetchAllDataFromDB(params, true);
 
+  let ggpPrice = await getPrice('ggAVAX', 'avalanche');
+    console.log('ggpPrice', ggpPrice)
+
   if (res.length == 0){
     console.log('multiplier', 1)
     return 1;
@@ -101,6 +104,44 @@ const getEligibleTvl = async (batchLoanAddresses, network, provider, dataPackage
   }
 
   return [loanQualifications, totalEligibleTvl]
+}
+
+let redstonePrices = {};
+async function getPrice(asset, chain = "arbitrum") {
+  if (!Object.keys(redstonePrices).includes(asset)) {
+    redstonePrices[asset] = (await getRedstonePrices([asset], chain))[0];
+  }
+  return redstonePrices[asset]
+}
+
+const getRedstonePrices = async function (tokenSymbols, chain = "avalanche") {
+  const rs_cache_url = "https://oracle-gateway-1.a.redstone.finance";
+  const dataServiceId = process.env.dataServiceId ?? `redstone-${chain}-prod`;
+  const url = `${rs_cache_url}/data-packages/latest/${dataServiceId}`
+
+  const response = await fetch(url);
+  const redstonePrices = await response.json();
+
+  let result = [];
+  for (const symbol of tokenSymbols) {
+    result.push(getPricesWithLatestTimestamp(redstonePrices, symbol));
+  }
+  return result;
+}
+
+function getPricesWithLatestTimestamp(prices, symbol) {
+  if (symbol in prices) {
+    let symbolPriceObject = prices[symbol];
+    let currentNewestTimestampIndex = 0;
+    for (let i = 0; i < symbolPriceObject.length; i++) {
+      if (symbolPriceObject[i].timestampMilliseconds > symbolPriceObject[currentNewestTimestampIndex].timestampMilliseconds) {
+        currentNewestTimestampIndex = i;
+      }
+    }
+    return symbolPriceObject[currentNewestTimestampIndex].dataPoints[0].value;
+  } else {
+    throw new Error(`Symbol ${symbol} not found in the prices object`);
+  }
 }
 
 const ggpIncentives = async (network = 'avalanche', rpc = 'first') => {
