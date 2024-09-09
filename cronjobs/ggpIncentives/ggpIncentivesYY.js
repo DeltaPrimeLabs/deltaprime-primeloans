@@ -53,7 +53,7 @@ const getIncentivesMultiplier = async (now) => {
 
   const res = await fetchAllDataFromDB(params, true);
 
-  let ggpPrice = await getPrice('ggAVAX', 'avalanche');
+  let ggpPrice = await getPrice('GGP', 'avalanche');
     console.log('ggpPrice', ggpPrice)
 
   if (res.length == 0){
