@@ -176,7 +176,7 @@ const ggpIncentives = async (network = 'avalanche', rpc = 'first') => {
       let GGP_PRICE = 4.43 // hardcoded as RS doesn't support GGP as of now
 
       // save boost APY to DB
-      const boostApy = totalEligibleTvl > 0 ? (incentivesPerInterval / incentivesMultiplier) * GGP_PRICE / totalEligibleTvl * 24 * 365 : 0;
+      const boostApy = totalEligibleTvl > 0 ? (incentivesPerInterval / incentivesMultiplier) * GGP_PRICE * 100 / totalEligibleTvl * 24 * 365 : 0;
       console.log(boostApy)
 
       const params = {
