@@ -93,8 +93,12 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
 
 
     function lockDeposit(uint256 amount, uint256 lockTime) public gated {
-        require(getNotLockedBalance(msg.sender) >= amount, "Insufficient balance to lock");
-        require(lockTime <= MAX_LOCK_TIME, "Cannot lock for more than 3 years");
+        if (getNotLockedBalance(msg.sender) < amount) {
+            revert InsufficientBalanceToLock();
+        }
+        if (lockTime > MAX_LOCK_TIME) {
+            revert LockTimeExceedsMax();
+        }
         locks[msg.sender].push(LockDetails(lockTime, amount, block.timestamp + lockTime));
 
         emit DepositLocked(msg.sender, amount, lockTime, block.timestamp + lockTime);
@@ -140,15 +144,17 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
         IPoolRewarder poolRewarder_,
         uint256 totalSupplyCap_
     ) public initializer {
-        require(
+        if (
+            !(
             AddressUpgradeable.isContract(address(ratesCalculator_)) &&
-                AddressUpgradeable.isContract(address(borrowersRegistry_)) &&
-                AddressUpgradeable.isContract(address(depositIndex_)) &&
-                AddressUpgradeable.isContract(address(borrowIndex_)) &&
-                (AddressUpgradeable.isContract(address(poolRewarder_)) ||
-                    address(poolRewarder_) == address(0)),
-            "Wrong init arguments"
-        );
+            AddressUpgradeable.isContract(address(borrowersRegistry_)) &&
+            AddressUpgradeable.isContract(address(depositIndex_)) &&
+            AddressUpgradeable.isContract(address(borrowIndex_)) &&
+            (AddressUpgradeable.isContract(address(poolRewarder_)) || address(poolRewarder_) == address(0))
+        )
+        ) {
+            revert WrongInitArguments();
+        }
         borrowersRegistry = borrowersRegistry_;
         ratesCalculator = ratesCalculator_;
         depositIndex = depositIndex_;
@@ -399,8 +405,12 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
         address _of
     ) public virtual nonReentrant gated {
         if (_amount == 0) revert ZeroDepositAmount();
-        require(_of != address(0), "Address zero");
-        require(_of != address(this), "Cannot deposit on behalf of pool");
+        if (_of == address(0)) {
+            revert AddressZero();
+        }
+        if (_of == address(this)) {
+            revert CannotDepositOnBehalfOfPool();
+        }
 
         _amount = Math.min(_amount, IERC20(tokenAddress).balanceOf(msg.sender));
 
@@ -443,7 +453,9 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
      * @dev _amount the amount to be withdrawn
      **/
     function withdraw(uint256 _amount) external nonReentrant gated {
-        require(isWithdrawalAmountAvailable(msg.sender, _amount) , "Balance is locked");
+        if (!isWithdrawalAmountAvailable(msg.sender, _amount)) {
+            revert BalanceLocked();
+        }
 
         _accumulateDepositInterest(msg.sender);
         _amount = Math.min(_amount, _deposited[msg.sender]);
@@ -891,11 +903,26 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
     // ERC20: Spender cannot be a zero address
     error SpenderZeroAddress();
 
+    // ERC20: Insufficient balance to lock
+    error InsufficientBalanceToLock();
+
+    // ERC20: Lock time exceeds max
+    error LockTimeExceedsMax();
+
     // ERC20: cannot transfer to the zero address
     error TransferToZeroAddress();
 
+    // ERC20: cannot transfer to the zero address
+    error AddressZero();
+
+    // ERC20: cannot deposit on behalf of the pool
+    error CannotDepositOnBehalfOfPool();
+
     // ERC20: cannot transfer to the pool address
     error TransferToPoolAddress();
+
+    // ERC20: balance is locked
+    error BalanceLocked();
 
     // ERC20: transfer amount (`amount`) exceeds balance (`balance`)
     /// @param amount transfer amount
@@ -912,6 +939,9 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
 
     // The deposit amount must be > 0
     error ZeroDepositAmount();
+
+    // Wrong init arguments
+    error WrongInitArguments();
 
     // ERC20: cannot mint to the zero address
     error MintToAddressZero();
