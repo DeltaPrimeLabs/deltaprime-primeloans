@@ -48,7 +48,7 @@ const getWrappedContracts = (addresses, network, provider, dataPackages) => {
 
 const getIncentivesMultiplier = async (now) => {
   const params = {
-    TableName: "ggp-incentives-ava-prod",
+    TableName: "ggp-incentives-yy-ava-prod",
   };
 
   const res = await fetchAllDataFromDB(params, true);
