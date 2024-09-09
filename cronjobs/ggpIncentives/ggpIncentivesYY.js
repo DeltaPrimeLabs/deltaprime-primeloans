@@ -216,32 +216,32 @@ const ggpIncentives = async (network = 'avalanche', rpc = 'first') => {
       console.log("GGP incentives successfully updated.")
 
       // ping healthcheck end point
-      // await fetch(pingUrl.ggp.success);
+      await fetch(pingUrl.ggp.success);
     } else {
-      // await fetch(pingUrl.ggp.fail, {
-      //   method: "POST",
-      //   headers: {
-      //     "Content-Type": "application/json",
-      //   },
-      //   body: JSON.stringify({
-      //     message: "reading from contracts failed. will recover incentives in next turn after an hour."
-      //   })
-      // });
+      await fetch(pingUrl.ggp.fail, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: "reading from contracts failed. will recover incentives in next turn after an hour."
+        })
+      });
     }
   } catch (error) {
     console.log('------------------function terminated-------------------------------')
     console.log('Error', error);
 
-    // await fetch(pingUrl.ggp.fail, {
-    //   method: "POST",
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //   },
-    //   body: JSON.stringify({
-    //     error,
-    //     message: "function terminated. will recover incentives in next turn after an hour."
-    //   })
-    // });
+    await fetch(pingUrl.ggp.fail, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        error,
+        message: "function terminated. will recover incentives in next turn after an hour."
+      })
+    });
   }
 }
 
