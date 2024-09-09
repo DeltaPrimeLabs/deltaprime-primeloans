@@ -48,16 +48,21 @@ const getWrappedContracts = (addresses, network, provider, dataPackages) => {
 
 const getIncentivesMultiplier = async (now) => {
   const params = {
-    TableName: "ggp-incentives-yy-ava-prod",
+    TableName: "ggp-incentives-ava-prod",
   };
 
   const res = await fetchAllDataFromDB(params, true);
 
-  if (res.length == 0) return 1;
+  if (res.length == 0){
+    console.log('multiplier', 1)
+    return 1;
+  }
 
   res.sort((a, b) => b.timestamp - a.timestamp);
 
-  return Math.round((now - res[0].timestamp) / 3600);
+  const multiplier = Math.round((now - res[0].timestamp) / 3600);
+  console.log('multiplier', multiplier)
+  return multiplier;
 };
 
 const getEligibleTvl = async (batchLoanAddresses, network, provider, dataPackages) => {
