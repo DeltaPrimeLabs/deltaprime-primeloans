@@ -329,6 +329,10 @@ const lpAndFarmApyAggregator = async (event) => {
 
         let yieldApy = yieldYakAvaApys[farm.stakingContractAddress] ? yieldYakAvaApys[farm.stakingContractAddress].apy / 100 : 0;
 
+        if (farm.multiplier) {
+          yieldApy = yieldApy * farm.multiplier;
+        }
+
         if (farm.add == 'sAvax') {
           yieldApy += sAvaxApr ? sAvaxApr / 100 : 0;
         } else if (farm.add == 'ggAvax') {
@@ -459,23 +463,30 @@ const traderJoeApyAggregator = async (event) => {
 
     const tableHeads = await page.$$(".chakra-table__container .chakra-table > thead > tr > th");
     await tableHeads[2].click();
-
-    await new Promise((resolve, reject) => setTimeout(resolve, 2000));
-
-    const marketRows = await page.$$(".chakra-table__container .chakra-table > tbody > tr");
-    const marketInnerTexts = await Promise.all(Array.from(marketRows).map(async market => {
-      return (await (await market.getProperty("textContent")).jsonValue()).replace(/\s+/g, "");
-    }));
-
     for (const [pool, poolData] of Object.entries(pools)) {
       try {
-        const matchId = marketInnerTexts.findIndex(innerText => innerText.startsWith(poolData.index));
-        const market = marketRows[matchId];
-        const marketColumns = await market.$$("td");
-        const marketApy = parseFloat((await (await marketColumns[6].getProperty("textContent")).jsonValue()).split('%')[0].replace(',', '').trim());
+        await page.click('.chakra-tabs__tab-panels .chakra-input__group input', {clickCount: 3})
+        await page.type('.chakra-tabs__tab-panels .chakra-input__group input', ['AVAX', 'ETH'].includes(poolData.assetX) ? poolData.assetY : poolData.assetX)
+        await new Promise((resolve, reject) => setTimeout(resolve, 2000));
+        await page.waitForSelector('.chakra-table__container .chakra-table > thead > tr')
+        const marketsRows = Array.from(await page.$$(".chakra-table__container .chakra-table > tbody > tr"))
 
+        let selectedRow = undefined
+        let index = 0
+        while (selectedRow === undefined && index < marketsRows.length) {
+          const text = (await (await marketsRows[index].getProperty("textContent")).jsonValue()).replace(/\s+/g, "");
+          if (text?.startsWith(poolData.index)) {
+            selectedRow = marketsRows[index]
+          }
+          index++
+        }
+
+        const marketColumns = await selectedRow.$$("td");
+        const marketApy = parseFloat((await (await marketColumns[6].getProperty("textContent")).jsonValue()).split('%')[0].replace(',', '').trim());
         console.log(pool, marketApy);
 
+        selectedRow = undefined
+        index = 0
         const params = {
           TableName: process.env.APY_TABLE,
           Key: {
@@ -489,41 +500,10 @@ const traderJoeApyAggregator = async (event) => {
           }
         };
         await dynamoDb.update(params).promise();
-
-        await new Promise((resolve, reject) => setTimeout(resolve, 15000));
       } catch (error) {
         console.log(error);
       }
     }
-    // try {
-    //   const tabs = await page.$$(".chakra-tabs__tab");
-    //   console.log(pool, tabs.length);
-    //   tabs.length == 16 ? await tabs[6].click() : await tabs[5].click();
-
-    //   await new Promise((resolve, reject) => setTimeout(resolve, 5000));
-
-    //   const stats = await page.$$(".chakra-stat__number");
-    //   const apy = (await (await stats[3].getProperty('textContent')).jsonValue()).replace('%', '');
-    //   console.log(pool, apy);
-
-    //   const params = {
-    //     TableName: process.env.APY_TABLE,
-    //     Key: {
-    //       id: pool
-    //     },
-    //     AttributeUpdates: {
-    //       lp_apy: {
-    //         Value: apy == 'NaN' ? 0 : apy / 100,
-    //         Action: "PUT"
-    //       }
-    //     }
-    //   };
-    //   await dynamoDb.update(params).promise();
-
-    //   await new Promise((resolve, reject) => setTimeout(resolve, 15000));
-    // } catch (error) {
-    //   console.log(error);
-    // }
   }
 
   // await browser.close();
@@ -652,6 +632,7 @@ const gmxApyAggregator = async (event) => {
   // fetch GM tokens' APYs on Arbitrum and Avalanche
   for (const [network, pools] of Object.entries(gmxApyConfig)) {
     if (network == "avalanche") {
+      // region redirect to avalanche
       const networkBtn = await page.$$(".network-dropdown");
 
       await networkBtn[0].click();
@@ -667,13 +648,31 @@ const gmxApyAggregator = async (event) => {
       await dropdownBtns[1].click();
 
       await new Promise((resolve, reject) => setTimeout(resolve, 7000));
+      // endregion
     }
 
-    const marketRows = await page.$$(".token-table > tbody > tr");
-    const marketInnerTexts = await Promise.all(Array.from(marketRows).map(async market => {
+    const getThisPageMarketRows = async () => {
+      return await page.$$("tbody > tr");
+    }
+
+    const getNextPageButtons = async () => {
+      return await page.$$(`div.pagination-buttons > .button::-p-text(>):not([disabled])`)
+    }
+
+    const pageMarketRows = await getThisPageMarketRows();
+    const marketRows = Array.from(pageMarketRows)
+    let nextPageButtons = await getNextPageButtons()
+    while (nextPageButtons && nextPageButtons[0]) {
+      nextPageButtons[0].click()
+      await new Promise((resolve, reject) => setTimeout(resolve, 2000));
+      const newPageRows = await getThisPageMarketRows();
+      marketRows.push(...newPageRows)
+      nextPageButtons = await getNextPageButtons()
+    }
+
+    const marketInnerTexts = await Promise.all(marketRows.map(async market => {
       return (await (await market.getProperty("textContent")).jsonValue()).replace(/\s+/g, "");
     }));
-    await new Promise((resolve, reject) => setTimeout(resolve, 5000));
 
     for (const [poolId, marketId] of Object.entries(pools)) {
       try {
