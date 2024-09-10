@@ -53,7 +53,7 @@
 
         <div class="header__cell cell__max-apy max-apr">
           <div class="header__cell__label">Max APY:</div>
-          <div class="header__cell__value"><span>{{ (maxLeveragedApy + boostApy) | percent }}<img v-if="boostApy" v-tooltip="{content: `This pool is incentivized!<br>⁃ up to ${maxLeveragedApy ? (maxLeveragedApy * 100).toFixed(2) : 0}% Pool APR<br>⁃ up to ${boostApy ? (boostApy * 100).toFixed(2) : 0}% ${chain === 'arbitrum' ? 'ARB' : 'AVAX'} incentives`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span>
+          <div class="header__cell__value"><span>{{ (maxLeveragedApy) | percent }}<img v-if="boostApy" v-tooltip="{content: `This pool is incentivized!<br>⁃ up to ${maxLeveragedApy ? (maxLeveragedApy * 100).toFixed(2) : 0}% Pool APR<br>⁃ up to ${boostApy ? (boostApy * 100).toFixed(2) : 0}% ${chain === 'arbitrum' ? 'ARB' : 'AVAX'} incentives`, classes: 'info-tooltip'}" src="src/assets/icons/stars.png" class="stars-icon"></span>
           </div>
         </div>
 
@@ -205,10 +205,7 @@ export default {
     },
 
     async setupMaxStakingApy() {
-      let maxApy = this.apys[this.farm.lpAssetToken][this.farm.apyKey] / 100;
-
-      let assetApr = this.assets[this.farm.assetToken].apy && this.assets[this.farm.assetToken].symbol !== 'GLP' ? this.assets[this.farm.assetToken].apy / 100 : 0;
-      this.maxLeveragedApy = calculateMaxApy(this.pools, maxApy + assetApr);
+      this.maxLeveragedApy = calculateMaxApy(this.pools, this.apys[this.farm.lpAssetToken][this.farm.apyKey]);
     },
 
     protocolLogo(protocol) {

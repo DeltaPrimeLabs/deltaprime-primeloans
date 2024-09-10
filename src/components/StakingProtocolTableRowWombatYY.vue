@@ -58,7 +58,7 @@
         <div class="apr-warning" v-if="farm.aprWarning">
           <img src="src/assets/icons/warning.svg" v-tooltip="{content: `APR value is updated twice a day. Please check Yield Yak website to find the current pool's APR.`, classes: 'info-tooltip long'}">
         </div>
-        {{ (apys[farm.lpAssetToken][farm.apyKey] + (farm.apyToAdd ? assets[farm.apyToAdd].apy : 0)) / 100 | percent }}
+        {{ (apys[farm.lpAssetToken][farm.apyKey] ? apys[farm.lpAssetToken][farm.apyKey] : 0) | percent }}
       </div>
 
       <div class="table__cell max-apy">
@@ -179,7 +179,7 @@ export default {
     },
     pools: {
       handler(pools) {
-        this.maxApy = calculateMaxApy(this.pools, (this.apys[this.farm.lpAssetToken][this.farm.apyKey] + (this.farm.apyToAdd ? this.assets[this.farm.apyToAdd].apy : 0)) / 100);
+        this.maxApy = calculateMaxApy(this.pools, this.apys[this.farm.lpAssetToken][this.farm.apyKey]);
       }
     }
   },
@@ -493,7 +493,7 @@ export default {
 
     setApy() {
       if (this.pools) {
-        this.maxApy = calculateMaxApy(this.pools, (this.apys[this.farm.lpAssetToken][this.farm.apyKey] + (this.farm.apyToAdd ? this.assets[this.farm.apyToAdd].apy : 0)) / 100);
+        this.maxApy = calculateMaxApy(this.pools, this.apys[this.farm.lpAssetToken][this.farm.apyKey]);
       }
     },
 
