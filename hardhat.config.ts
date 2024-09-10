@@ -22,8 +22,9 @@ export default {
         version: "0.7.6",
       },
       {
-        version: "0.8.17",
+        version: "0.8.27",
         settings: {
+          evmVersion: "cancun",
           optimizer: {
             enabled: true,
             runs: 10

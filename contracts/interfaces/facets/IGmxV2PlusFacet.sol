@@ -1,4 +1,4 @@
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.27;
 
 interface IGmxV2PlusFacet {
     function depositBtcGmxV2Plus(

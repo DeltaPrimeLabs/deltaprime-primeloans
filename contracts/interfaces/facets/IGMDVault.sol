@@ -1,4 +1,4 @@
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.27;
 
 interface IGMDVault {
     function enter(uint256 _amountin, uint256 _pid) external;

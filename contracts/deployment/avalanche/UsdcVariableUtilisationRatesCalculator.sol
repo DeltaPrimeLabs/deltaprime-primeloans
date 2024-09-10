@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 // Last deployed from commit: f106f303852385ff33e1a83f9b0684556dd56134;
-pragma solidity 0.8.17;
+pragma solidity 0.8.27;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../../interfaces/IRatesCalculator.sol";

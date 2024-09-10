@@ -1,4 +1,4 @@
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.27;
 
 interface IYieldYakWombatFacet {
     function depositSavaxToAvaxSavaxYY(uint256 amount, uint256 minLpOut) external;
