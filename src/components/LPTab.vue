@@ -253,8 +253,10 @@ export default {
       this.selectedLpTokens = this.assetFilterGroups[0].options;
       this.selectedDexes = this.assetFilterGroups[1].options;
       setTimeout(() => {
-        this.$refs.assetFilter.assetFilterGroups = this.assetFilterGroups;
-        this.$refs.assetFilter.setupFilterValue();
+        if (this.$refs.assetFilter) {
+          this.$refs.assetFilter.assetFilterGroups = this.assetFilterGroups;
+          this.$refs.assetFilter.setupFilterValue();
+        }
       });
     },
     setupTraderJoeLpTableHeaderConfig() {

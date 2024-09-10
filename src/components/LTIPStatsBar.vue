@@ -167,7 +167,9 @@ export default {
         }
 
         let alreadyCollected = 0;
-        alreadyCollected += getRecord(LTIP_EPOCH_11_TOTAL, this.smartLoanContract.address);
+        if (this.smartLoanContract) {
+          alreadyCollected += getRecord(LTIP_EPOCH_11_TOTAL, this.smartLoanContract.address);
+        }
 
         if (arbCollected) this.collectedBonus = Math.max(arbCollected - alreadyCollected, 0);
       });
