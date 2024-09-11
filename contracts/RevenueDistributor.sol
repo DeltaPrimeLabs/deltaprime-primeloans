@@ -93,13 +93,13 @@ contract RevenueDistributor is Ownable{
     }
 
     function batchClaim(uint256 epochId, address[] calldata users) external onlyOwner epochActive(epochId) {
-        uint256[] memory amounts = new uint256[](users.length);
+        uint256[] memory allocations = new uint256[](users.length);
 
         for (uint256 i = 0; i < users.length; i++) {
-            amounts[i] = _claim(epochId, users[i]);
+            allocations[i] = _claim(epochId, users[i]);
         }
 
-        emit BatchTokensClaimed(epochId, users, amounts);
+        emit BatchTokensClaimed(epochId, users, allocations);
     }
 
     function _claim(uint256 epochId, address user) internal returns (uint256) {
