@@ -4,9 +4,9 @@ pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-contract RevenueDistributor is Ownable{
+contract RevenueDistributor is OwnableUpgradeable{
     using SafeERC20 for IERC20;
 
     struct Epoch {
@@ -18,11 +18,16 @@ contract RevenueDistributor is Ownable{
     }
 
     mapping(uint256 => Epoch) public epochs;
+    address public pauseAdmin;
+    bool public paused;
 
     event EpochUpdated(uint256 epochId, address rewardToken, uint256 totalAllocation);
     event EpochInitiated(uint256 epochId);
     event TokensClaimed(uint256[] epochIds, address user, uint256[] amounts);
     event BatchTokensClaimed(uint256 epochId, address[] users, uint256[] amounts);
+    event PauseAdminChanged(address newPauseAdmin);
+    event Paused();
+    event Unpaused();
 
 
     modifier epochActive(uint256 epochId) {
@@ -30,7 +35,9 @@ contract RevenueDistributor is Ownable{
         _;
     }
 
-    constructor() {
+    function initialize(address _pauseAdmin) external initializer {
+        __Ownable_init();
+        pauseAdmin = _pauseAdmin;
     }
 
     function setEpochReward(
@@ -72,7 +79,7 @@ contract RevenueDistributor is Ownable{
         emit EpochInitiated(epochId);
     }
 
-    function claim(uint256 epochId) external epochActive(epochId) {
+    function claim(uint256 epochId) external epochActive(epochId) whenNotPaused {
         uint256 allocation = _claim(epochId, msg.sender);
         uint256[] memory epochIds = new uint256[](1);
         uint256[] memory allocations = new uint256[](1);
@@ -82,7 +89,7 @@ contract RevenueDistributor is Ownable{
         emit TokensClaimed(epochIds, msg.sender, allocations);
     }
 
-    function claimMultiple(uint256[] calldata epochIds) external {
+    function claimMultiple(uint256[] calldata epochIds) external whenNotPaused {
         uint256[] memory allocations = new uint256[](epochIds.length);
         for (uint256 i = 0; i < epochIds.length; i++) {
             if (epochs[epochIds[i]].active) {
@@ -113,5 +120,27 @@ contract RevenueDistributor is Ownable{
         IERC20(epoch.rewardToken).safeTransfer(user, allocation);
 
         return allocation;
+    }
+
+    function setPauseAdmin(address _pauseAdmin) external onlyOwner {
+        pauseAdmin = _pauseAdmin;
+        emit PauseAdminChanged(_pauseAdmin);
+    }
+
+    function pause() external {
+        require(msg.sender == pauseAdmin, "Not authorized");
+        paused = true;
+        emit Paused();
+    }
+
+    function unpause() external {
+        require(msg.sender == pauseAdmin, "Not authorized");
+        paused = false;
+        emit Unpaused();
+    }
+
+    modifier whenNotPaused() {
+        require(!paused, "Paused");
+        _;
     }
 }
