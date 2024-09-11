@@ -8,7 +8,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract RevenueDistributor is Ownable{
     using SafeERC20 for IERC20;
-    uint256 public currentEpoch;
 
     struct Epoch {
         bool active;
