@@ -41,13 +41,14 @@ contract RevenueDistributor is Ownable{
     ) external onlyOwner {
         require(users.length == allocations.length, "Mismatched inputs");
         require(!epochs[epochId].active, "Epoch already active");
+        require(rewardToken != address(0), "Invalid reward token");
 
         Epoch storage epoch = epochs[epochId];
         epoch.rewardToken = rewardToken;
         uint256 totalAllocation;
 
         for (uint256 i = 0; i < users.length; i++) {
-            epoch.allocations[users[i]] = allocations[i];
+            epoch.allocations[users[i]] += allocations[i];
             totalAllocation += allocations[i];
         }
 
