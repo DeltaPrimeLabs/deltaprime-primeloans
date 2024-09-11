@@ -40,6 +40,10 @@ contract RevenueDistributor is OwnableUpgradeable{
         pauseAdmin = _pauseAdmin;
     }
 
+    constructor() {
+        _disableInitializers();
+    }
+
     function setEpochReward(
         uint256 epochId,
         address rewardToken,
