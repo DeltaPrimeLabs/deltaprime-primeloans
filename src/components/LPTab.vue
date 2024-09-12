@@ -311,7 +311,7 @@ export default {
                       <a href='https://docs.deltaprime.io/prime-brokerage-account/portfolio/pools#tvl' target='_blank'>More information</a>.`
           },
           {
-            label: 'APR (7D)',
+            label: 'APR (24H)',
             sortable: false,
             class: 'apr',
             id: 'APR',
