@@ -55,6 +55,17 @@ const ggpIncentivesChecker = async () => {
     }
   } catch(error) {
     console.error('Error', error);
+
+    await fetch(pingUrl.ggp.fail, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        error,
+        message: "function terminated. will recover incentives in next turn after an hour."
+      })
+    });
   };
 };
 
