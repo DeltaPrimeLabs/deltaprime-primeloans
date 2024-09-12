@@ -5,7 +5,7 @@ const {
 const pingUrl = require('../.secrets/ping.json');
 
 const threshold = 0.000001;
-// 7.44047619 GGP per hour = 1250 GGP per week
+// 0.744047619 GGP per hour = 125 GGP per week
 const expectedIncentives = 0.744047619; // change the value accordingly based on incentives of interval
 
 const ggpIncentivesChecker = async () => {
@@ -55,6 +55,15 @@ const ggpIncentivesChecker = async () => {
     }
   } catch(error) {
     console.error('Error', error);
+    await fetch(pingUrl.ggpChecker.fail, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        errorMessage: error
+      })
+    });
   };
 };
 
