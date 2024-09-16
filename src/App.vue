@@ -22,8 +22,11 @@
     <Banner v-if="showConnectBanner">
       You are not connected to Metamask. <a class="banner-link" @click="initNetwork"><b>Click here</b></a> to connect.
     </Banner>
-    <Banner v-if="showPrimeAccountBanner">
-      An exploit is ongoing on the Savings Side. It is isolated to the Savings and Prime Accounts are safe. By not repaying loans, you are helping us in the resolution of this
+    <Banner v-if="showArbitrumPrimeAccountBanner">
+      An exploit is ongoing on the Savings Side. It is isolated to the Savings and Prime Accounts are safe. By not repaying loans, you are helping us in the resolution of this.
+    </Banner>
+    <Banner v-if="showArbitrumDepositorBanner" background="red">
+      DeltaPrime Blue is currently under attack. Do not deposit any assets.
     </Banner>
     <Banner v-if="showInterestRateBanner" background="green-accent" :closable="true">
       Interest rate model will be updated at 12:00 CET. <a class="banner-link"
@@ -52,15 +55,15 @@
       </a>
     </Banner>
 
-    <Banner v-if="showArbitrumDepositorBanner" background="green-accent" :closable="true">
-      Liquidity mining event is updated! Shortly after a pool hits $1M the next pool opens up.
-      <a class="banner-link" href="https://medium.com/@Delta_Prime/relaunching-deltaprime-on-arbitrum-ac43bdd91ed5"
-         target="_blank">
-        <b>
-          Read more.
-        </b>
-      </a>
-    </Banner>
+<!--    <Banner v-if="showArbitrumDepositorBanner" background="green-accent" :closable="true">-->
+<!--      Liquidity mining event is updated! Shortly after a pool hits $1M the next pool opens up.-->
+<!--      <a class="banner-link" href="https://medium.com/@Delta_Prime/relaunching-deltaprime-on-arbitrum-ac43bdd91ed5"-->
+<!--         target="_blank">-->
+<!--        <b>-->
+<!--          Read more.-->
+<!--        </b>-->
+<!--      </a>-->
+<!--    </Banner>-->
     <!--    <Banner v-if="showArbitrumPrimeAccountBanner" background="green-accent" :closable="true">
           Last chance to mint GM for the current milestone
         </Banner>-->
@@ -216,7 +219,7 @@ export default {
 
     if (config.chainId === 42161) {
       if (window.location.href.includes('pools')) {
-        // this.showArbitrumDepositorBanner = true;
+        this.showArbitrumDepositorBanner = true;
       }
       if (window.location.href.includes('prime-account')) {
         this.remainingTime = getCountdownString(1695218400000);
@@ -375,25 +378,25 @@ export default {
     watchPrimeAccountLoaded() {
       this.accountService.observeSmartLoanContract$().subscribe(() => {
         // this.showPrimeAccountBanner = false;
-        this.showArbitrumPrimeAccountBanner = false;
+        // this.showArbitrumPrimeAccountBanner = false;
 
-        if ([
-          '0x2FfD0D2bEa8E922A722De83c451Ad93e097851F5',
-          '0x0b7DcF8E70cF0f9c73D2777d871F4eBD6150Bd3b',
-          '0x48285109D4b959608C8E9691cAb1aFc244a80D5F',
-          '0xCC5159C01C1bdAb6c607F800E71B84898597c9FE',
-          '0xfeD94826098d636c517F7F1021B37EB465b9FCE4',
-          '0x58c80413603841455b3C5abF08d6AA854F376086',
-          '0xc00bE32F7669A3417AD26DD41352418Fc49eB0F7',
-          '0x36a1bCcf37AF1E315888c2cA967B163c50B1D943',
-          '0xb9967f0e4ea928550E3d05B0e57a627AB0302108',
-          '0x7F23dc430AF70aBE865387d5b1FDC91c27daEcCB',
-          '0x35C93a488906798341ce4267Ecb398dC2aD230a6',
-          '0x0844F379be6E5b7Fd4A6D8f7A1b5146A68E23e9f',
-          '0xeAA7425910Af14657ED96a278274e6e85D947f2D'
-        ].map(el => el.toLowerCase()).includes(this.smartLoanContract && this.smartLoanContract.address.toLowerCase())) {
-          this.showAffectedPrimeAccountBanner = true;
-        }
+        // if ([
+        //   '0x2FfD0D2bEa8E922A722De83c451Ad93e097851F5',
+        //   '0x0b7DcF8E70cF0f9c73D2777d871F4eBD6150Bd3b',
+        //   '0x48285109D4b959608C8E9691cAb1aFc244a80D5F',
+        //   '0xCC5159C01C1bdAb6c607F800E71B84898597c9FE',
+        //   '0xfeD94826098d636c517F7F1021B37EB465b9FCE4',
+        //   '0x58c80413603841455b3C5abF08d6AA854F376086',
+        //   '0xc00bE32F7669A3417AD26DD41352418Fc49eB0F7',
+        //   '0x36a1bCcf37AF1E315888c2cA967B163c50B1D943',
+        //   '0xb9967f0e4ea928550E3d05B0e57a627AB0302108',
+        //   '0x7F23dc430AF70aBE865387d5b1FDC91c27daEcCB',
+        //   '0x35C93a488906798341ce4267Ecb398dC2aD230a6',
+        //   '0x0844F379be6E5b7Fd4A6D8f7A1b5146A68E23e9f',
+        //   '0xeAA7425910Af14657ED96a278274e6e85D947f2D'
+        // ].map(el => el.toLowerCase()).includes(this.smartLoanContract && this.smartLoanContract.address.toLowerCase())) {
+        //   this.showAffectedPrimeAccountBanner = true;
+        // }
       })
     },
 

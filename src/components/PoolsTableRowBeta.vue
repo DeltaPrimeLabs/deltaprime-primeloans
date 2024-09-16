@@ -193,17 +193,17 @@ export default {
             {
               key: 'DEPOSIT',
               name: 'Deposit',
-              disabled: this.isActionDisabledRecord['DEPOSIT'],
+              disabled: this.isActionDisabledRecord['DEPOSIT'] || this.isArbitrum,
             },
             ...(this.pool.asset.symbol === 'AVAX' ? [{
               key: 'BRIDGE',
               name: 'Bridge',
-              disabled: this.isActionDisabledRecord['BRIDGE'],
+              disabled: this.isActionDisabledRecord['BRIDGE'] || this.isArbitrum,
             }] : []),
             {
               key: 'BRIDGE_DEPOSIT',
               name: 'Bridge and deposit',
-              disabled: this.isActionDisabledRecord['BRIDGE_DEPOSIT'] || true,
+              disabled: this.isActionDisabledRecord['BRIDGE_DEPOSIT'] || this.isArbitrum,
               disabledInfo: 'Available soon'
             },
           ]
