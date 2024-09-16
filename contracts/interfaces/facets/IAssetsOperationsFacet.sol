@@ -1,4 +1,4 @@
-pragma solidity ^0.8.27;
+pragma solidity ^0.8.17;
 
 interface IAssetsOperationsFacet {
     function borrow(bytes32 _asset, uint256 _amount) external;
