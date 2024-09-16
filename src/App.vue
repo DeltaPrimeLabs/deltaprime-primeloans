@@ -22,7 +22,8 @@
     <Banner v-if="showConnectBanner">
       You are not connected to Metamask. <a class="banner-link" @click="initNetwork"><b>Click here</b></a> to connect.
     </Banner>
-    <Banner v-if="showPrimeAccountBanner" background="green-accent" :closable="true">
+    <Banner v-if="showPrimeAccountBanner">
+      Do not repay any loans until further announcement
     </Banner>
     <Banner v-if="showInterestRateBanner" background="green-accent" :closable="true">
       Interest rate model will be updated at 12:00 CET. <a class="banner-link"
@@ -210,7 +211,7 @@ export default {
     }
 
     if (window.location.href.includes('prime-account')) {
-      // this.showPrimeAccountBanner = true;
+      this.showPrimeAccountBanner = true;
     }
 
     if (config.chainId === 42161) {
@@ -373,7 +374,7 @@ export default {
 
     watchPrimeAccountLoaded() {
       this.accountService.observeSmartLoanContract$().subscribe(() => {
-        this.showPrimeAccountBanner = false;
+        // this.showPrimeAccountBanner = false;
         this.showArbitrumPrimeAccountBanner = false;
 
         if ([
