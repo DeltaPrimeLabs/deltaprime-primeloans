@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 84497b01716b53fb360c04d763183339d5599174;
+// Last deployed from commit: 56e984a39d653fa7262cdbc01a402146643cf309;
 pragma solidity 0.8.17;
 
 import "../../WrappedNativeTokenPool.sol";
