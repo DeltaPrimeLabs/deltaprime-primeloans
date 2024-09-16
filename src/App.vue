@@ -23,7 +23,7 @@
       You are not connected to Metamask. <a class="banner-link" @click="initNetwork"><b>Click here</b></a> to connect.
     </Banner>
     <Banner v-if="showPrimeAccountBanner">
-      Do not repay any loans until further announcement
+      An exploit is ongoing on the Savings Side. It is isolated to the Savings and Prime Accounts are safe. By not repaying loans, you are helping us in the resolution of this
     </Banner>
     <Banner v-if="showInterestRateBanner" background="green-accent" :closable="true">
       Interest rate model will be updated at 12:00 CET. <a class="banner-link"
