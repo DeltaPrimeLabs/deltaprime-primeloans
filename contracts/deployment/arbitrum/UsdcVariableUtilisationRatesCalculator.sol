@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-// Last deployed from commit: 6dc3ab0c31ac66137f41175063423dd3c8e796f0;
+// Last deployed from commit: ccccde1ac7ec9c66757948fdb439df273bb629e9;
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -85,23 +85,7 @@ contract UsdcVariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
      * @dev _totalDeposits total value of deposits
      **/
     function calculateBorrowingRate(uint256 totalLoans, uint256 totalDeposits) external pure override returns (uint256) {
-        if (totalDeposits == 0) return OFFSET_1;
-
-        uint256 poolUtilisation = getPoolUtilisation(totalLoans, totalDeposits);
-
-        if (poolUtilisation >= 1e18) {
-            return MAX_RATE;
-        } else if (poolUtilisation <= BREAKPOINT_1) {
-            return (poolUtilisation * SLOPE_1) / 1e18 + OFFSET_1;
-        } else if (poolUtilisation <= BREAKPOINT_2) {
-            return (poolUtilisation * SLOPE_2) / 1e18 - OFFSET_2;
-        } else if (poolUtilisation <= BREAKPOINT_3) {
-            return (poolUtilisation * SLOPE_3) / 1e18 - OFFSET_3;
-        } else {
-            // full formula derived from piecewise linear function calculation except for SLOPE_2/3/4 subtraction (separated for
-            // unsigned integer safety check)
-            return (poolUtilisation * SLOPE_4) / 1e18 - OFFSET_4;
-        }
+        return 0;
     }
 
     /* ========== SETTERS ========== */

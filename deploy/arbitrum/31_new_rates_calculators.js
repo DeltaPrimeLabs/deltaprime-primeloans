@@ -9,28 +9,28 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deployer } = await getNamedAccounts();
 
     embedCommitHash(
-        "UsdcVariableUtilisationRatesCalculator",
+        "ArbVariableUtilisationRatesCalculator",
         "./contracts/deployment/arbitrum"
     );
 
-    let result = await deploy("UsdcVariableUtilisationRatesCalculator", {
-        contract: 'contracts/deployment/arbitrum/UsdcVariableUtilisationRatesCalculator.sol:UsdcVariableUtilisationRatesCalculator',
+    let result = await deploy("ArbVariableUtilisationRatesCalculator", {
+        contract: 'contracts/deployment/arbitrum/ArbVariableUtilisationRatesCalculator.sol:ArbVariableUtilisationRatesCalculator',
         from: deployer,
         gasLimit: 80000000,
         args: [],
     });
 
     console.log(
-        `Deployed UsdcVariableUtilisationRatesCalculator at address: ${result.address}`
+        `Deployed ArbVariableUtilisationRatesCalculator at address: ${result.address}`
     );
 
     await verifyContract(hre,
         {
-            address: result.address,
-            contract: `contracts/deployment/arbitrum/UsdcVariableUtilisationRatesCalculator.sol:UsdcVariableUtilisationRatesCalculator`,
+            address: "0xD4a3606A8b3e7b5F9e95C51500452a4c532Cfc45",
+            contract: `contracts/deployment/arbitrum/ArbVariableUtilisationRatesCalculator.sol:ArbVariableUtilisationRatesCalculator`,
             constructorArguments: []
         });
-    console.log(`Verified UsdcVariableUtilisationRatesCalculator`)
+    console.log(`Verified ArbVariableUtilisationRatesCalculator`)
 };
 
 module.exports.tags = ["arbitrum-rates-calculator"];
