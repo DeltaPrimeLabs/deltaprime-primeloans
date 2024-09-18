@@ -180,7 +180,13 @@ async function getPoolCurrentTVL(poolName, poolAddress){
 
 async function main() {
     let data = [];
-    let blockBeforeExploit = 253995272;
+    let lastBlockNumberBeforeExploitPerPool = {
+        "BtcPoolTUP": 253995298 - 1,
+        "DaiPoolTUP": 253995304 - 1,
+        "UsdcPoolTUP": 253995296 - 1,
+        "WethPoolTUP": 253995300 - 1,
+        "ArbPoolTUP": 253995302 - 1,
+    }
     let lastWithdrawBlockNumberPerPool = {
         "BtcPoolTUP": 254021502 + 1,
         "DaiPoolTUP": 253995304 + 1,
@@ -194,10 +200,10 @@ async function main() {
 
     for (const poolName in poolMapping) {
         const poolAddress = poolMapping[poolName];
-        // let historicalTVL = await getPoolHistoricalTVL(poolName, poolAddress, blockBeforeExploit);
-        // let tvlAfterExploit = await getPoolHistoricalTVL(poolName, poolAddress, lastWithdrawBlockNumberPerPool[poolName]);
-        // let tokenDollarValue = poolNameToTokenDollarValue(poolName);
-        // let historicalTVLUSD = historicalTVL * tokenDollarValue;
+        let historicalTVL = await getPoolHistoricalTVL(poolName, poolAddress, lastBlockNumberBeforeExploitPerPool[poolName]);
+        let tvlAfterExploit = await getPoolHistoricalTVL(poolName, poolAddress, lastWithdrawBlockNumberPerPool[poolName]);
+        let tokenDollarValue = poolNameToTokenDollarValue(poolName);
+        let historicalTVLUSD = historicalTVL * tokenDollarValue;
         // let tvlUsdAfterExploit = tvlAfterExploit * tokenDollarValue;
         // let usdDiff = tvlUsdAfterExploit - historicalTVLUSD;
         // let usdDiffPercentage = (usdDiff / historicalTVLUSD) * 100;
@@ -206,21 +212,21 @@ async function main() {
         // totalUsdDiff += usdDiff;
         //
         // //log with labels
-        // console.log(`Pool Name: ${poolName}`);
-        // console.log(`Pool Address: ${poolAddress}`);
-        // console.log(`Historical TVL: ${historicalTVL}`);
+        console.log(`Pool Name: ${poolName}`);
+        console.log(`Pool Address: ${poolAddress}`);
+        console.log(`Historical TVL: ${historicalTVL}`);
         // console.log(`TVL after explit: ${tvlAfterExploit}`);
         // console.log(`Token Dollar Value: $${tokenDollarValue}`);
-        // console.log(`Historical TVL USD: $${historicalTVLUSD}`);
+        console.log(`Historical TVL USD: $${historicalTVLUSD}`);
         // console.log(`TVL USD after exploit: $${tvlUsdAfterExploit}`);
         // console.log(`USD Diff: $${usdDiff}`);
         // console.log(`USD Diff Percentage: %${usdDiffPercentage}`);
         // console.log(`\n`);
 
-        let totalTokensWithdrawn = getTotalTokensWithdrawnAfterExploit(poolName);
-        let tokenDollarValue = poolNameToTokenDollarValue(poolName);
-        let totalTokensWithdrawnUSD = totalTokensWithdrawn * tokenDollarValue;
-        console.log(`Pool Name: ${poolName} -> withdrawn: ${totalTokensWithdrawn} -> USD: $${totalTokensWithdrawnUSD}`);
+        // let totalTokensWithdrawn = getTotalTokensWithdrawnAfterExploit(poolName);
+        // let tokenDollarValue = poolNameToTokenDollarValue(poolName);
+        // let totalTokensWithdrawnUSD = totalTokensWithdrawn * tokenDollarValue;
+        // console.log(`Pool Name: ${poolName} -> withdrawn: ${totalTokensWithdrawn} -> USD: $${totalTokensWithdrawnUSD}`);
     }
 
     // console.log(`Total Historical TVL: $${totalHisotricalUsdTvl}`);
