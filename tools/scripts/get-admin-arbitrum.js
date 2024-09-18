@@ -45,6 +45,7 @@ const poolMapping = {
     "WETH Rates calculator NEW": "0x02A4B9e27911513CFe62E5763f6A37f577c5AE5f",
     "ARB Rates calculator": "0x5d776f18289C1CaDbb11D77723c3D0605912b34f",
     "ARB Rates calculator NEW": "0xD4a3606A8b3e7b5F9e95C51500452a4c532Cfc45",
+    "DepositSwapArbitrumTUP": "0x889Cfe41a376CFeF8F28E48A848728D5377552b9",
 };
 
 const knownAddresses = {
