@@ -223,7 +223,7 @@ export default {
       }
       if (window.location.href.includes('prime-account')) {
         this.remainingTime = getCountdownString(1695218400000);
-        this.showArbitrumPrimeAccountBanner = true;
+        // this.showArbitrumPrimeAccountBanner = true;
       }
     }
 

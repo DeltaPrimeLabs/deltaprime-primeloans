@@ -193,7 +193,7 @@ export default {
             {
               key: 'DEPOSIT',
               name: 'Deposit',
-              disabled: this.isActionDisabledRecord['DEPOSIT'] || this.isArbitrum,
+              disabled: this.isActionDisabledRecord['DEPOSIT'],
             },
             ...(this.pool.asset.symbol === 'AVAX' ? [{
               key: 'BRIDGE',
