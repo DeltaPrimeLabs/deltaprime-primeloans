@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: BUSL-1.1
 // Last deployed from commit: c2bfee98a59745a565435d8d8abe7a9391c35493;
-pragma solidity 0.8.27;
+pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts/access/IAccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./abstract/PendingOwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
@@ -10,7 +11,6 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 import "@redstone-finance/evm-connector/contracts/core/ProxyConnector.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
-import "./lib/hexagate/GatorClient.sol";
 import "./interfaces/IIndex.sol";
 import "./interfaces/ITokenManager.sol";
 import "./interfaces/IVPrimeController.sol";
@@ -18,6 +18,7 @@ import "./interfaces/IRatesCalculator.sol";
 import "./interfaces/IBorrowersRegistry.sol";
 import "./interfaces/IPoolRewarder.sol";
 import "./VestingDistributor.sol";
+import "./PoolRoles.sol";
 
 /**
  * @title Pool
@@ -25,7 +26,7 @@ import "./VestingDistributor.sol";
  * Depositors are rewarded with the interest rates collected from borrowers.
  * The interest rates calculation is delegated to an external calculator contract.
  */
-contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyConnector, GatorClient {
+contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, ProxyConnector, PoolRoles {
     using TransferHelper for address payable;
     using Math for uint256;
 
@@ -59,16 +60,85 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
 
     ITokenManager public tokenManager;
 
+    IAccessControl public poolRolesManager;
+
+    struct PauseStatus {
+        bool deposits;
+        bool withdrawals;
+        bool borrwowings;
+        bool repayments;
+        bool transfers;
+        bool approvals;
+        bool global;
+    }
+
+    PauseStatus public pauseStatus;
+
 
     /* ========== METHODS ========== */
 
-    /**
-     * Sets new Gator address.
-     * Only the owner of the Contract can execute this function.
-     * @dev gator new gator address
-     **/
-    function setGator(address gator) external onlyOwner {
-        _setGator(gator);
+    function pauseDeposits() public onlyRole(PAUSE_ROLE) {
+        pauseStatus.deposits = true;
+        emit DepositsPause(msg.sender);
+    }
+
+    function unpauseDeposits() public onlyRole(UNPAUSE_ROLE) {
+        pauseStatus.deposits = false;
+        emit DepositsUnpause(msg.sender);
+    }
+
+    function pauseWithdrawals() public onlyRole(PAUSE_ROLE) {
+        pauseStatus.withdrawals = true;
+        emit WithdrawalsPause(msg.sender);
+    }
+
+    function unpauseWithdrawals() public onlyRole(UNPAUSE_ROLE) {
+        pauseStatus.withdrawals = false;
+        emit WithdrawalsUnpause(msg.sender);
+    }
+
+    function pauseBorrowings() public onlyRole(PAUSE_ROLE) {
+        pauseStatus.borrwowings = true;
+        emit BorrowingsPause(msg.sender);
+    }
+
+    function unpauseBorrowings() public onlyRole(UNPAUSE_ROLE) {
+        pauseStatus.borrwowings = false;
+        emit BorrowingsUnpause(msg.sender);
+    }
+
+    function pauseTransfers() public onlyRole(PAUSE_ROLE) {
+        pauseStatus.transfers = true;
+        emit TransfersPause(msg.sender);
+    }
+
+    function unpauseTransfers() public onlyRole(UNPAUSE_ROLE) {
+        pauseStatus.transfers = false;
+        emit TransfersUnpause(msg.sender);
+    }
+
+    function pauseApprovals() public onlyRole(PAUSE_ROLE) {
+        pauseStatus.approvals = true;
+        emit ApprovalsPause(msg.sender);
+    }
+
+    function unpauseApprovals() public onlyRole(UNPAUSE_ROLE) {
+        pauseStatus.approvals = false;
+        emit ApprovalsUnpause(msg.sender);
+    }
+
+    function pause() public onlyRole(PAUSE_ROLE) {
+        pauseStatus.global = true;
+        emit GlobalPause(msg.sender);
+    }
+
+    function unpause() public onlyRole(UNPAUSE_ROLE) {
+        pauseStatus.global = false;
+        emit GlobalUnpause(msg.sender);
+    }
+
+    function hasRole(bytes32 role, address account) internal view returns (bool) {
+        return poolRolesManager.hasRole(role, account);
     }
 
     function getLockedBalance(address account) public view returns (uint256) {
@@ -92,7 +162,7 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
     }
 
 
-    function lockDeposit(uint256 amount, uint256 lockTime) public gated {
+    function lockDeposit(uint256 amount, uint256 lockTime) public noGlobalPause noDepositsPause {
         require(getNotLockedBalance(msg.sender) >= amount, "Insufficient balance to lock");
         require(lockTime <= MAX_LOCK_TIME, "Cannot lock for more than 3 years");
         locks[msg.sender].push(LockDetails(lockTime, amount, block.timestamp + lockTime));
@@ -120,7 +190,7 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
         }
     }
 
-    function setTokenManager(ITokenManager _tokenManager) public onlyOwner gated {
+    function setTokenManager(ITokenManager _tokenManager) public onlyRole(OPERATOR_ROLE) {
         tokenManager = _tokenManager;
     }
 
@@ -138,11 +208,13 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
         IIndex borrowIndex_,
         address payable tokenAddress_,
         IPoolRewarder poolRewarder_,
-        uint256 totalSupplyCap_
+        uint256 totalSupplyCap_,
+        IAccessControl poolRolesManager_
     ) public initializer {
         require(
             AddressUpgradeable.isContract(address(ratesCalculator_)) &&
                 AddressUpgradeable.isContract(address(borrowersRegistry_)) &&
+                AddressUpgradeable.isContract(address(poolRolesManager_)) &&
                 AddressUpgradeable.isContract(address(depositIndex_)) &&
                 AddressUpgradeable.isContract(address(borrowIndex_)) &&
                 (AddressUpgradeable.isContract(address(poolRewarder_)) ||
@@ -156,6 +228,7 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
         poolRewarder = poolRewarder_;
         tokenAddress = tokenAddress_;
         totalSupplyCap = totalSupplyCap_;
+        poolRolesManager = poolRolesManager_;
         _decimals = IERC20Metadata(tokenAddress_).decimals();
         __Ownable_init();
         __ReentrancyGuard_init();
@@ -169,7 +242,7 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
      * Only the owner of the Contract can execute this function.
      * @dev _newTotalSupplyCap new deposit cap
      **/
-    function setTotalSupplyCap(uint256 _newTotalSupplyCap) external onlyOwner gated {
+    function setTotalSupplyCap(uint256 _newTotalSupplyCap) external onlyRole(OPERATOR_ROLE) {
         totalSupplyCap = _newTotalSupplyCap;
     }
 
@@ -179,7 +252,7 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
      * Only the owner of the Contract can execute this function.
      * @dev _poolRewarder the address of PoolRewarder
      **/
-    function setPoolRewarder(IPoolRewarder _poolRewarder) external onlyOwner gated{
+    function setPoolRewarder(IPoolRewarder _poolRewarder) external onlyRole(OPERATOR_ROLE) {
         if (
             !AddressUpgradeable.isContract(address(_poolRewarder)) &&
             address(_poolRewarder) != address(0)
@@ -197,7 +270,7 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
      **/
     function setRatesCalculator(
         IRatesCalculator ratesCalculator_
-    ) external onlyOwner gated {
+    ) external onlyRole(OPERATOR_ROLE) {
         // setting address(0) ratesCalculator_ freezes the pool
         if (
             !AddressUpgradeable.isContract(address(ratesCalculator_)) &&
@@ -219,7 +292,7 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
      **/
     function setBorrowersRegistry(
         IBorrowersRegistry borrowersRegistry_
-    ) external onlyOwner gated {
+    ) external onlyRole(OPERATOR_ROLE) {
         if (!AddressUpgradeable.isContract(address(borrowersRegistry_)))
             revert NotAContract(address(borrowersRegistry_));
 
@@ -232,7 +305,8 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
      * Only the owner of the Contract can execute this function.
      * @dev _distributor the address of vestingDistributor
      **/
-    function setVestingDistributor(address _distributor) external onlyOwner gated {
+    // TODO: This one is probably not used - check if we can remove usage of vestingDistributor
+    function setVestingDistributor(address _distributor) external onlyOwner  {
         if (
             !AddressUpgradeable.isContract(_distributor) && _distributor != address(0)
         ) revert NotAContract(_distributor);
@@ -245,7 +319,7 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
     function transfer(
         address recipient,
         uint256 amount
-    ) external override nonReentrant gated returns (bool) {
+    ) external override nonReentrant noTransfersPause noGlobalPause returns (bool) {
         if (recipient == address(0)) revert TransferToZeroAddress();
 
         if (recipient == address(this)) revert TransferToPoolAddress();
@@ -298,7 +372,7 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
     function increaseAllowance(
         address spender,
         uint256 addedValue
-    ) external returns (bool) {
+    ) external noGlobalPause noApprovalsPause returns (bool) {
         if (spender == address(0)) revert SpenderZeroAddress();
         uint256 newAllowance = _allowed[msg.sender][spender] + addedValue;
         _allowed[msg.sender][spender] = newAllowance;
@@ -310,7 +384,7 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
     function decreaseAllowance(
         address spender,
         uint256 subtractedValue
-    ) external gated returns (bool) {
+    ) external noGlobalPause noApprovalsPause returns (bool) {
         if (spender == address(0)) revert SpenderZeroAddress();
         uint256 currentAllowance = _allowed[msg.sender][spender];
         if (currentAllowance < subtractedValue)
@@ -326,7 +400,7 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
     function approve(
         address spender,
         uint256 amount
-    ) external gated override returns (bool) {
+    ) external noGlobalPause noApprovalsPause override returns (bool) {
         if (spender == address(0)) revert SpenderZeroAddress();
         _allowed[msg.sender][spender] = amount;
 
@@ -339,7 +413,7 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
         address sender,
         address recipient,
         uint256 amount
-    ) external override gated nonReentrant returns (bool) {
+    ) external override nonReentrant noGlobalPause noTransfersPause returns (bool) {
         if (_allowed[sender][msg.sender] < amount)
             revert InsufficientAllowance(amount, _allowed[sender][msg.sender]);
 
@@ -386,7 +460,7 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
      * Deposits the amount
      * It updates user deposited balance, total deposited and rates
      **/
-    function deposit(uint256 _amount) public gated virtual {
+    function deposit(uint256 _amount) public noGlobalPause noDepositsPause virtual {
         depositOnBehalf(_amount, msg.sender);
     }
 
@@ -397,7 +471,7 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
     function depositOnBehalf(
         uint256 _amount,
         address _of
-    ) public virtual nonReentrant gated {
+    ) public virtual nonReentrant noGlobalPause noDepositsPause {
         if (_amount == 0) revert ZeroDepositAmount();
         require(_of != address(0), "Address zero");
         require(_of != address(this), "Cannot deposit on behalf of pool");
@@ -442,7 +516,7 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
      * Withdraws selected amount from the user deposits
      * @dev _amount the amount to be withdrawn
      **/
-    function withdraw(uint256 _amount) external nonReentrant gated {
+    function withdraw(uint256 _amount) external nonReentrant noGlobalPause noWithdrawalsPause {
         require(isWithdrawalAmountAvailable(msg.sender, _amount) , "Balance is locked");
 
         _accumulateDepositInterest(msg.sender);
@@ -477,7 +551,7 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
      * @dev _amount the amount to be borrowed
      * @dev It is only meant to be used by a SmartLoanDiamondProxy
      **/
-    function borrow(uint256 _amount) public virtual canBorrow nonReentrant gated {
+    function borrow(uint256 _amount) public virtual canBorrow nonReentrant noGlobalPause noBorrowingsPause {
         if (_amount > IERC20(tokenAddress).balanceOf(address(this)))
             revert InsufficientPoolFunds();
 
@@ -498,7 +572,7 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
      * It updates user borrowed balance, total borrowed amount and rates
      * @dev It is only meant to be used by a SmartLoanDiamondProxy
      **/
-    function repay(uint256 amount) external nonReentrant gated {
+    function repay(uint256 amount) external nonReentrant noGlobalPause noRepaymentsPause  {
         _accumulateBorrowingInterest(msg.sender);
 
         if (amount > borrowed[msg.sender]) revert RepayingMoreThanWasBorrowed();
@@ -648,7 +722,7 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
     function recoverSurplus(
         uint256 amount,
         address account
-    ) public onlyOwner nonReentrant gated {
+    ) public nonReentrant onlyRole(OPERATOR_ROLE) {
         uint256 balance = IERC20(tokenAddress).balanceOf(address(this));
         uint256 surplus = balance + totalBorrowed() - totalSupply();
 
@@ -765,7 +839,75 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
         ) revert MaxPoolUtilisationBreached();
     }
 
+    modifier onlyRole(bytes32 role) {
+        require(hasRole(role, msg.sender), "CheckPoolRoles: sender requires permission");
+        _;
+    }
+
+    modifier noGlobalPause() {
+        require(!pauseStatus.global, "Global pause is active");
+        _;
+    }
+
+    modifier noDepositsPause() {
+        require(!pauseStatus.deposits, "Deposits are paused");
+        _;
+    }
+
+    modifier noWithdrawalsPause() {
+        require(!pauseStatus.withdrawals, "Withdrawals are paused");
+        _;
+    }
+
+    modifier noBorrowingsPause() {
+        require(!pauseStatus.borrwowings, "Borrowings are paused");
+        _;
+    }
+
+    modifier noRepaymentsPause() {
+        require(!pauseStatus.repayments, "Repayments are paused");
+        _;
+    }
+
+    modifier noTransfersPause() {
+        require(!pauseStatus.transfers, "Transfers are paused");
+        _;
+    }
+
+    modifier noApprovalsPause() {
+        require(!pauseStatus.approvals, "Approvals are paused");
+        _;
+    }
+
     /* ========== EVENTS ========== */
+
+    event GlobalPause(address indexed account);
+
+    event DepositsPause(address indexed account);
+
+    event WithdrawalsPause(address indexed account);
+
+    event BorrowingsPause(address indexed account);
+
+    event RepaymentsPause(address indexed account);
+
+    event TransfersPause(address indexed account);
+
+    event ApprovalsPause(address indexed account);
+
+    event GlobalUnpause(address indexed account);
+
+    event DepositsUnpause(address indexed account);
+
+    event WithdrawalsUnpause(address indexed account);
+
+    event BorrowingsUnpause(address indexed account);
+
+    event RepaymentsUnpause(address indexed account);
+
+    event TransfersUnpause(address indexed account);
+
+    event ApprovalsUnpause(address indexed account);
 
     /**
      * @dev emitted after the user deposits funds
