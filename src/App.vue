@@ -23,7 +23,7 @@
       You are not connected to Metamask. <a class="banner-link" @click="initNetwork"><b>Click here</b></a> to connect.
     </Banner>
     <Banner v-if="showArbitrumPrimeAccountBanner">
-      An exploit is ongoing on the Savings Side. It is isolated to the Savings and Prime Accounts are safe. By not repaying loans, you are helping us in the resolution of this.
+      Prime Accounts are paused because of the recent exploit on the Savings side. Prime Accounts are safe.
     </Banner>
     <Banner v-if="showArbitrumDepositorBanner" background="red">
       DeltaPrime Blue is currently under attack. Do not deposit any assets.
@@ -223,7 +223,7 @@ export default {
       }
       if (window.location.href.includes('prime-account')) {
         this.remainingTime = getCountdownString(1695218400000);
-        // this.showArbitrumPrimeAccountBanner = true;
+        this.showArbitrumPrimeAccountBanner = true;
       }
     }
 
