@@ -1,7 +1,7 @@
 const fs = require('fs');
 
 // Load the transfers from the JSON file
-const transfers = JSON.parse(fs.readFileSync('transfers-to-0x8995d790169023Ee4fF67621948EBDFe7383f59e.json', 'utf8'));
+const transfers = JSON.parse(fs.readFileSync('transfers-to-0x8Ac151296Ae72a8AeE01ECB33cd8Ad9842F2704f.json', 'utf8'));
 
 // Price data object
 const prices = {
@@ -41,11 +41,11 @@ const prices = {
         { timestamp: 1727109936, priceInDollars: 1.0 },
     ],
     // EUROC
-    '0xC891EB4cbdEFf6e073e859e987815Ed1505c2ACD': [
+    '0xc891eb4cbdeff6e073e859e987815ed1505c2acd': [
         { timestamp: 1727109936, priceInDollars: 1.11 },
     ],
     // sAVAX
-    '0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE': [
+    '0x2b2c81e08f1af8835a78bb2a90ae924ace0ea4be': [
         { timestamp: 1704931200, priceInDollars: 43.12 }, // 11.01.2024
         { timestamp: 1705536000, priceInDollars: 40.45 }, // 18.01.2024
         { timestamp: 1706140800, priceInDollars: 35.12 }, // 25.01.2024
@@ -75,7 +75,7 @@ const prices = {
         { timestamp: 1727109936, priceInDollars: 31.91 }, // today
     ],
     // ggAVAX
-    '0xA25EaF2906FA1a3a13EdAc9B9657108Af7B703e3': [
+    '0xa25eaf2906fa1a3a13edac9b9657108af7b703e3': [
         { timestamp: 1709769600, priceInDollars: 44.46 }, // 07.03.2024
         { timestamp: 1710374400, priceInDollars: 57.88 }, // 14.03.2024
         { timestamp: 1710979200, priceInDollars: 59.05 }, // 21.03.2024
@@ -97,7 +97,7 @@ const prices = {
         { timestamp: 1727109936, priceInDollars: 29.39 }, // today
     ],
     // yyAVAX
-    '0xF7D9281e8e363584973F946201b82ba72C965D27': [
+    '0xf7d9281e8e363584973f946201b82ba72c965d27': [
         { timestamp: 1704931200, priceInDollars: 38.81 }, // 11.01.2024
         { timestamp: 1705536000, priceInDollars: 40.00 }, // 18.01.2024
         { timestamp: 1706140800, priceInDollars: 34.61 }, // 25.01.2024
@@ -159,7 +159,7 @@ const prices = {
         { timestamp: 1727109936, priceInDollars: 2669 }, // today
     ],
     // BTC
-    '0x152b9d0FdC40C096757F570A51E494bd4b943E50': [
+    '0x152b9d0fdc40c096757f570a51e494bd4b943e50': [
         { timestamp: 1704931200, priceInDollars: 46656.07 }, // 11.01.2024
         { timestamp: 1705536000, priceInDollars: 42742.31 }, // 18.01.2024
         { timestamp: 1706140800, priceInDollars: 40075.55 }, // 25.01.2024
@@ -198,7 +198,7 @@ const prices = {
         { timestamp: 1727109936, priceInDollars: 0.01488 },
     ],
     // PNG
-    '0x60781C2586D68229fde47564546784ab3fACA982': [
+    '0x60781c2586d68229fde47564546784ab3faca982': [
         { timestamp: 1727109936, priceInDollars: 0.2677 },
     ],
     // JOE
@@ -206,7 +206,7 @@ const prices = {
         { timestamp: 1727109936, priceInDollars: 0.3774 },
     ],
     // CAI
-    '0x48f88A3fE843ccb0b5003e70B4192c1d7448bEf0': [
+    '0x48f88a3fe843ccb0b5003e70b4192c1d7448bef0': [
         { timestamp: 1727109936, priceInDollars: 146.97 },
     ],
 };

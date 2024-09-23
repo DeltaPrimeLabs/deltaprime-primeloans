@@ -4,8 +4,8 @@ const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch
 
 // Configuration variables
 const API_URL = 'https://api.routescan.io/v2/network/mainnet/evm/43114/etherscan/api';
-const ADDRESS = '0x8995d790169023Ee4fF67621948EBDFe7383f59e'; // Your multisig safe address
-const START_BLOCK = '41703652';
+const ADDRESS = '0x8Ac151296Ae72a8AeE01ECB33cd8Ad9842F2704f'; // Your multisig safe address
+const START_BLOCK = '40135054';
 const PAGE_SIZE = 100;
 
 // Array of token contract addresses to fetch transfers for
