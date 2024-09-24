@@ -11,19 +11,36 @@
         </div>
       </div>
 
-      <div class="rewards">
-        <span class="rewards__label">Rewards to claim:</span>
-        <span class="rewards__value">
+      <div class="rewards__wrapper">
+        <div class="rewards">
+          <span class="rewards__label">Previous rewards to claim:</span>
+          <span class="rewards__value">
           <div class="rewards__reward-token" v-for="reward in totalRewards">
-            <img class="asset__icon" :src="getIcon(reward.symbol, tokensConfig[reward.symbol].logoExt ? tokensConfig[reward.symbol].logoExt : 'svg')">
+            <img class="asset__icon"
+                 :src="getIcon(reward.symbol, tokensConfig[reward.symbol].logoExt ? tokensConfig[reward.symbol].logoExt : 'svg')">
             {{ formatTokenBalanceWithLessThan(reward.amount, 8, true) }} {{ reward.symbol }}
           </div>
-        </span>
-      </div>
+          </span>
+          <div class="button-wrapper">
+            <Button :label="'Claim'" v-on:click="submit('old')"
+                    :waiting="transactionOngoing"></Button>
+          </div>
+        </div>
 
-      <div class="button-wrapper">
-        <Button :label="'Claim'" v-on:click="submit()"
-                :waiting="transactionOngoing"></Button>
+        <div class="rewards">
+          <span class="rewards__label">Current rewards to claim:</span>
+          <span class="rewards__value">
+          <div class="rewards__reward-token" v-for="reward in totalRewards">
+            <img class="asset__icon"
+                 :src="getIcon(reward.symbol, tokensConfig[reward.symbol].logoExt ? tokensConfig[reward.symbol].logoExt : 'svg')">
+            {{ formatTokenBalanceWithLessThan(reward.amountOld, 8, true) }} {{ reward.symbol }}
+          </div>
+        </span>
+          <div class="button-wrapper">
+            <Button :label="'Claim'" v-on:click="submit('new')"
+                    :waiting="transactionOngoing"></Button>
+          </div>
+        </div>
       </div>
     </Modal>
   </div>
@@ -55,9 +72,13 @@ export default {
   },
 
   methods: {
-    submit() {
+    submit(type) {
       this.transactionOngoing = true;
-      this.$emit('CLAIM', true);
+      if (type === 'old') {
+        this.$emit('CLAIM_OLD', true);
+      } else {
+        this.$emit('CLAIM', true);
+      }
     },
   }
 };
@@ -83,15 +104,21 @@ export default {
 
   .rewards {
     margin-top: 40px;
+    padding: 0 20px;
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     color: var(--modal__top-info-color);
 
+    &:not(:first-child) {
+      border-left: 2px solid var(--asset-table-row__double-value-color);
+    }
+
     .rewards__label {
       font-weight: 400;
       margin-right: 5px;
+      margin-bottom: 15px;
     }
 
     .rewards__value {
@@ -112,6 +139,12 @@ export default {
         }
       }
     }
+  }
+
+  .rewards__wrapper {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
   }
 }
 

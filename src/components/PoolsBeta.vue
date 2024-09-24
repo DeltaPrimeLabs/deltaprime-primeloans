@@ -141,16 +141,18 @@ export default {
 
     watchAvalancheBoostData() {
       this.avalancheBoostService.observeAvalancheBoostRates().subscribe(rates => {
-        const incentivizedPools = Object.keys(rates);
-        incentivizedPools.forEach(
+        if (rates) {
+          const incentivizedPools = Object.keys(rates);
+          incentivizedPools.forEach(
             poolAsset => {
               const poolIndex = this.poolsList.findIndex(pool => pool.asset.symbol === poolAsset);
-              this.poolsList[poolIndex].hasAvalancheBoost =true;
+              this.poolsList[poolIndex].hasAvalancheBoost = true;
               this.poolsList[poolIndex].avalancheBoostRewardToken = config.AVALANCHE_BOOST_CONFIG[poolAsset].rewardToken;
               let secondsInYear = 3600 * 24 * 365;
               this.poolsList[poolIndex].miningApy = rates[poolAsset] * secondsInYear / (this.poolsList[poolIndex].tvl * this.poolsList[poolIndex].assetPrice);
             }
-        );
+          );
+        }
       });
 
       this.avalancheBoostService.observeAvalancheBoostUnclaimed().subscribe(unclaimed => {
@@ -159,6 +161,19 @@ export default {
             poolAsset => {
               const poolIndex = this.poolsList.findIndex(pool => pool.asset.symbol === poolAsset);
               this.poolsList[poolIndex].unclaimed = unclaimed[poolAsset];
+              console.log(this.poolsList);
+            }
+        );
+      });
+
+      this.avalancheBoostService.observeAvalancheBoostUnclaimedOld().subscribe(unclaimedOld => {
+        console.log(unclaimedOld);
+        const incentivizedPools = Object.keys(unclaimedOld);
+        incentivizedPools.forEach(
+            poolAsset => {
+              const poolIndex = this.poolsList.findIndex(pool => pool.asset.symbol === poolAsset);
+              this.poolsList[poolIndex].unclaimedOld = unclaimedOld[poolAsset];
+              console.log(this.poolsList);
             }
         );
       });

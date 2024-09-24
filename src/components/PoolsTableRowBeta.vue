@@ -29,7 +29,8 @@
 
       <div class="table__cell avalanche-boost" v-if="isAvalanche">
         <div class="avalanche-boost-unclaimed" v-if="pool.hasAvalancheBoost">
-          <LoadedValue :check="() => pool.unclaimed !== null" :value="(pool.hasAvalancheBoost ? pool.unclaimed : 0) | smartRound(5, false)"></LoadedValue>
+          <LoadedValue :check="() => pool.unclaimed !== null && pool.unclaimedOld !== null"
+                       :value="(pool.hasAvalancheBoost ? Number(pool.unclaimed) + Number(pool.unclaimedOld) : 0) | smartRound(5, false)"></LoadedValue>
           <img class="asset__icon" v-if="pool.avalancheBoostRewardToken" :src="getAssetIcon(pool.avalancheBoostRewardToken)">
         </div>
       </div>
@@ -472,6 +473,7 @@ export default {
       totalRewards.push({
         symbol: this.pool.avalancheBoostRewardToken,
         amount: this.pool.unclaimed,
+        amountOld: this.pool.unclaimedOld,
       })
 
       modalInstance.tokensConfig = config.ASSETS_CONFIG;
@@ -479,8 +481,23 @@ export default {
       modalInstance.header = 'Claim Boost rewards'
 
       modalInstance.$on('CLAIM', () => {
+        console.log('claim');
         const claimBoostRequest = {
           depositRewarderAddress: config.AVALANCHE_BOOST_CONFIG[this.pool.asset.symbol].depositRewarderAddress
+        };
+
+        this.handleTransaction(this.claimAvalancheBoost({claimBoostRequest: claimBoostRequest}), () => {
+          this.$forceUpdate();
+        }, (error) => {
+          this.handleTransactionError(error);
+        }).then(() => {
+        });
+      });
+
+      modalInstance.$on('CLAIM_OLD', () => {
+        console.log('claim old');
+        const claimBoostRequest = {
+          depositRewarderAddress: config.AVALANCHE_BOOST_CONFIG[this.pool.asset.symbol].depositRewarderOldAddress
         };
 
         this.handleTransaction(this.claimAvalancheBoost({claimBoostRequest: claimBoostRequest}), () => {

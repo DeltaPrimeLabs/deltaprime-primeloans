@@ -70,22 +70,26 @@ export default {
     },
     AVALANCHE_BOOST_CONFIG: {
         AVAX: {
-            depositRewarderAddress: "0x6d149Fcc150A3B097D7647408345898fe9db1ded",
+            depositRewarderAddress: "0x6373122eD8Eda8ECA439415709318DCB6ddC1af3",
+            depositRewarderOldAddress: "0x6d149Fcc150A3B097D7647408345898fe9db1ded",
             rewardToken: "sAVAX",
             duration: 1209600
         },
         USDC: {
-            depositRewarderAddress: "0xB913aC229910d705297DEB1c168af3dA1416B227",
+            depositRewarderAddress: "0x596f6EFD98daF650CF98A1E62A53AB2a44e7E875",
+            depositRewarderOldAddress: "0xB913aC229910d705297DEB1c168af3dA1416B227",
             rewardToken: "ggAVAX",
             duration: 1209600
         },
         USDT: {
-            depositRewarderAddress: "0x3750F8d6Df82699ada6bBd1463C4E91fCf37005D",
+            depositRewarderAddress: "0xBC6Ef309f2eC71698eA310D62FF2E0543472D965",
+            depositRewarderOldAddress: "0x3750F8d6Df82699ada6bBd1463C4E91fCf37005D",
             rewardToken: "sAVAX",
             duration: 1209600
         },
         BTC: {
-            depositRewarderAddress: "0x50b0b59f14bA882BD511Fe08d1cdc975807a94A4",
+            depositRewarderAddress: "0x3FE9BE379eD15962AFAbE01c002B8c433C6Af4ec",
+            depositRewarderOldAddress: "0x50b0b59f14bA882BD511Fe08d1cdc975807a94A4",
             rewardToken: "ggAVAX",
             duration: 1209600
         }
