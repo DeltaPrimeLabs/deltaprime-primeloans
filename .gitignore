@@ -16,6 +16,7 @@ tools/liquidation/.private*
 .vercel
 .openzeppelin
 typechain
+typechain-types
 tenderly.yaml
 
 .env
