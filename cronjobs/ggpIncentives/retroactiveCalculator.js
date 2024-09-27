@@ -18,8 +18,8 @@ const redstone = require("redstone-api");
 
 // const Web3 = require('web3');
 // const fs = require("fs");
-const blockTimestampStart = 1721497803;
-const blockTimestampEnd = 1721652602;
+const blockTimestampStart = 1725912226;
+const blockTimestampEnd = 1725998626;
 
 const factoryAddress = constants.avalanche.factory;
 
@@ -72,12 +72,16 @@ const ggpIncentivesCalculatorAvaRetroactive = async (event) => {
   });
 
   prices['WOMBAT_ggAVAX_AVAX_LP_ggAVAX'] = resp;
+  // incentives of all loans
+  const loanIncentives = {};
 
   while (timestampInSeconds <= blockTimestampEnd) {
     console.log(`Processed timestamp: ${timestampInSeconds}`)
-    let packages = await getArweavePackages(timestampInSeconds);
+    let packages = await getArweavePackages(timestampInSeconds, "avalanche");
+    console.log("Got packages")
 
     let blockNumber = (await getBlockForTimestamp(timestampInSeconds * 1000)).block;
+    console.log("block number: ", blockNumber);
     const factoryContract = new ethers.Contract(factoryAddress, FACTORY.abi, avalancheHistoricalProvider);
     let loanAddresses = await factoryContract.getAllLoans({ blockTag: blockNumber });
     const totalLoans = loanAddresses.length;
@@ -85,10 +89,11 @@ const ggpIncentivesCalculatorAvaRetroactive = async (event) => {
 
     const incentivesPerWeek = 125;
     const incentivesPerInterval = incentivesPerWeek / (60 * 60 * 24 * 7) * (60 * 60 * 4);
-    const batchSize = 200;
+    const batchSize = 50;
 
     const loanQualifications = {};
     let totalEligibleTvl = 0;
+
 
     for (let i = 0; i < Math.ceil(totalLoans / batchSize); i++) {
       try {
@@ -110,7 +115,7 @@ const ggpIncentivesCalculatorAvaRetroactive = async (event) => {
         const loanStats = await Promise.all(
           wrappedContracts.map(contract => Promise.all([
             runMethod(contract, 'getFullLoanStatus', blockNumber),
-            runMethod(contract, 'ggAvaxBalanceAvaxGgavax', blockNumber)
+            runMethod(contract, 'ggAvaxBalanceAvaxGgavaxYY', blockNumber)
           ])));
 
 
@@ -124,7 +129,7 @@ const ggpIncentivesCalculatorAvaRetroactive = async (event) => {
               const ggAvaxBalance = formatUnits(loan[1]);
               const ggAvaxPrice = findClosest(prices['WOMBAT_ggAVAX_AVAX_LP_ggAVAX'], timestampInSeconds * 1000);
               const loanggAvaxValue = ggAvaxBalance * ggAvaxPrice.value;
-              console.log(loanId, ggAvaxBalance, ggAvaxPrice.value, loanggAvaxValue)
+              // console.log(loanId, ggAvaxBalance, ggAvaxPrice.value, loanggAvaxValue)
       
               const eligibleTvl = loanggAvaxValue - collateral > 0 ? loanggAvaxValue - collateral : 0;
       
@@ -143,35 +148,35 @@ const ggpIncentivesCalculatorAvaRetroactive = async (event) => {
 
     console.log(`${Object.entries(loanQualifications).length} loans analyzed.`);
 
-    // incentives of all loans
-    const loanIncentives = {};
 
     Object.entries(loanQualifications).map(([loanId, loanData]) => {
-      loanIncentives[loanId] = 0;
-
       if (loanData.eligibleTvl > 0) {
         const intervalIncentivesForLoan = incentivesPerInterval * loanData.eligibleTvl / totalEligibleTvl;
 
-        loanIncentives[loanId] = intervalIncentivesForLoan;
+        if(!loanIncentives[loanId]) {
+            loanIncentives[loanId] = intervalIncentivesForLoan;
+        } else {
+            loanIncentives[loanId] += intervalIncentivesForLoan
+        }
       }
     })
 
     // save/update incentives values to DB
-    await Promise.all(
-      Object.entries(loanIncentives).map(async ([loanId, value]) => {
-        const data = {
-          id: loanId,
-          timestamp: timestampInSeconds,
-          avaxCollected: value
-        };
-
-        const params = {
-          TableName: 'ggp-incentives-ava-prod',
-          Item: data
-        };
-        await dynamoDb.put(params).promise();
-      })
-    );
+    // await Promise.all(
+    //   Object.entries(loanIncentives).map(async ([loanId, value]) => {
+    //     const data = {
+    //       id: loanId,
+    //       timestamp: timestampInSeconds,
+    //       avaxCollected: value
+    //     };
+    //
+    //     const params = {
+    //       TableName: 'ggp-incentives-ava-prod',
+    //       Item: data
+    //     };
+    //     await dynamoDb.put(params).promise();
+    //   })
+    // );
 
     console.log(`GGP incentives updated for timestamp ${timestampInSeconds}.`)
 
@@ -179,6 +184,10 @@ const ggpIncentivesCalculatorAvaRetroactive = async (event) => {
 
     timestampInSeconds += 60 * 60 * 4;
   }
+  console.log("GGP incentives calculation completed.");
+  console.log(loanIncentives);
+  let loanIncentivesSum = Object.values(loanIncentives).reduce((a, b) => a + b, 0);
+    console.log(`Total incentives: ${loanIncentivesSum}`);
 }
 
 ggpIncentivesCalculatorAvaRetroactive();
