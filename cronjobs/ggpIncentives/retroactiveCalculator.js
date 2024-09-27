@@ -12,6 +12,7 @@ const constants = require('../config/constants.json');
 const FACTORY = require('../abis/SmartLoansFactory.json');
 const EthDater = require("ethereum-block-by-date");
 const redstone = require("redstone-api");
+const fs = require('fs');
 
 // const config = require("../../src/config");
 // const key = fs.readFileSync("./.secret").toString().trim();
@@ -73,9 +74,10 @@ const ggpIncentivesCalculatorAvaRetroactive = async (event) => {
 
   prices['WOMBAT_ggAVAX_AVAX_LP_ggAVAX'] = resp;
   // incentives of all loans
-  const loanIncentives = {};
 
   while (timestampInSeconds <= blockTimestampEnd) {
+    let loanIncentives = {};
+
     console.log(`Processed timestamp: ${timestampInSeconds}`)
     let packages = await getArweavePackages(timestampInSeconds, "avalanche");
     console.log("Got packages")
@@ -88,7 +90,7 @@ const ggpIncentivesCalculatorAvaRetroactive = async (event) => {
     console.log(`${totalLoans} loans found.`);
 
     const incentivesPerWeek = 125;
-    const incentivesPerInterval = incentivesPerWeek / (60 * 60 * 24 * 7) * (60 * 60 * 4);
+    const incentivesPerInterval = incentivesPerWeek / (60 * 60 * 24 * 7) * (60 * 60 * 24);
     const batchSize = 50;
 
     const loanQualifications = {};
@@ -182,12 +184,15 @@ const ggpIncentivesCalculatorAvaRetroactive = async (event) => {
 
     console.log(`Updated timestamp: ${timestampInSeconds}, block number: ${blockNumber}.`);
 
-    timestampInSeconds += 60 * 60 * 4;
+    timestampInSeconds += 60 * 60 * 24;
+    fs.writeFileSync(`./ggpIncentives_${timestampInSeconds}.json`, JSON.stringify(loanIncentives));
   }
   console.log("GGP incentives calculation completed.");
   console.log(loanIncentives);
   let loanIncentivesSum = Object.values(loanIncentives).reduce((a, b) => a + b, 0);
     console.log(`Total incentives: ${loanIncentivesSum}`);
+  // write to a local JSON with timestamp in filename
+
 }
 
 ggpIncentivesCalculatorAvaRetroactive();
