@@ -20,7 +20,7 @@ const fs = require('fs');
 // const Web3 = require('web3');
 // const fs = require("fs");
 const blockTimestampStart = 1725912226;
-const blockTimestampEnd = 1725998626;
+const blockTimestampEnd = 1727455688;
 
 const factoryAddress = constants.avalanche.factory;
 
@@ -188,9 +188,9 @@ const ggpIncentivesCalculatorAvaRetroactive = async (event) => {
     fs.writeFileSync(`./ggpIncentives_${timestampInSeconds}.json`, JSON.stringify(loanIncentives));
   }
   console.log("GGP incentives calculation completed.");
-  console.log(loanIncentives);
-  let loanIncentivesSum = Object.values(loanIncentives).reduce((a, b) => a + b, 0);
-    console.log(`Total incentives: ${loanIncentivesSum}`);
+  // console.log(loanIncentives);
+  // let loanIncentivesSum = Object.values(loanIncentives).reduce((a, b) => a + b, 0);
+  //   console.log(`Total incentives: ${loanIncentivesSum}`);
   // write to a local JSON with timestamp in filename
 
 }
