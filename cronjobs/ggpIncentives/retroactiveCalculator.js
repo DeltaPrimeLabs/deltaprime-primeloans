@@ -19,7 +19,7 @@ const fs = require('fs');
 
 // const Web3 = require('web3');
 // const fs = require("fs");
-const blockTimestampStart = 1726819426;
+const blockTimestampStart = 1726733026;
 const blockTimestampEnd = 1727455688;
 
 const factoryAddress = constants.avalanche.factory;
