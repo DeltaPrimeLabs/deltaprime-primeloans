@@ -1,7 +1,7 @@
 const tokenManagerAddress = "0x0a0D954d4b0F0b47a5990C0abd179A90fF74E255";
 const smartLoansFactoryAddress = "0xFf5e3dDaefF411a1dC6CcE00014e4Bca39265c20";
 const diamondAddress = '0x62Cf82FB0484aF382714cD09296260edc1DC0c6c';
-const jsonRPC = "https://nd-762-566-527.p2pify.com/4514bd12de6723b94346752e90e95cf4";
+const jsonRPC = "<RPC_URL>";
 
 const ethers = require("ethers");
 
@@ -45,6 +45,17 @@ const poolMapping = {
     "WETH Rates calculator NEW": "0x02A4B9e27911513CFe62E5763f6A37f577c5AE5f",
     "ARB Rates calculator": "0x5d776f18289C1CaDbb11D77723c3D0605912b34f",
     "ARB Rates calculator NEW": "0xD4a3606A8b3e7b5F9e95C51500452a4c532Cfc45",
+    "AddressProviderTUP [NOT USED]": "0x6Aa0Fe94731aDD419897f5783712eBc13E8F3982",
+    "UsdtBorrowIndexTUP [NOT USED]": "0x42D8B0131EB247098a33bbA9f6446EE13Dd89202",
+    "UniBorrowIndexTUP [NOT USED]": "0x6aA046437E0d055Fc0206Ef305A63D9B91c7ceDE",
+    "ArbPoolTUP [NOT USED]": "0x91dA06b2B4C72563083091448282dE1014a33eF9",
+    "ArbPoolTUP [NOT USED]": "0xA273EFD3BD9182C5b909Fcd65242860d8D948E2b",
+    "UsdtDepositIndexTUP [NOT USED]": "0x36dF235a552Ae3FB47a0d9a74Ea3368a42cF7A23",
+    "LinkDepositIndexTUP [NOT USED]": "0x10859B97E0C0B736C783a9A0F7a08E1E7a4B5CD1",
+    "SmartLoansFactoryTUP [NOT USED]": "0x04F88DcB30C7E51B908758472F242abf8feC5C0f",
+    "ArbBorrowIndexTUP [NOT USED]": "0x2692e83f2cF5647d111fc642fffEc6970BAbc4d9",
+    "UniDepositIndexTUP [NOT USED]": "0xD86104a937D2C3E4175c80017339D94cA0B01e92",
+    " [NOT USED]": "0x98C5Ce0c31E005809003a597b1d9AAeF401F0B41",
     // "DepositSwapArbitrumTUP": "0x889Cfe41a376CFeF8F28E48A848728D5377552b9",
 };
 
@@ -64,8 +75,26 @@ const knownAddresses = {
     "0x8FE3842e0B7472a57f2A2D56cF6bCe08517A1De0": "UsdcPoolTUP",
     "0x0BeBEB5679115f143772CfD97359BBcc393d46b3": "WethPoolTUP",
     "0x5fAe0ebE49a920FA8350c0396683244824eECE74": "UsdtPoolTUP",
-    "0x2B8C610F3fC6F883817637d15514293565C3d08A": "ArbPoolTUP"
+    "0x2B8C610F3fC6F883817637d15514293565C3d08A": "ArbPoolTUP",
+    "0x40E4Ff9e018462Ce71Fa34aBdFA27B8C5e2B1AfB": "ADMIN COMPROMISED",
+    "0xbAc44698844f13cF0AF423b19040659b688ef036": "OWNER COMPROMISED",
+    "0xA273EFD3BD9182C5b909Fcd65242860d8D948E2b": "Arb Pool TUP",
 };
+
+const compromisedAddresses = {
+    "0x40E4Ff9e018462Ce71Fa34aBdFA27B8C5e2B1AfB": "ADMIN COMPROMISED",
+    "0xbAc44698844f13cF0AF423b19040659b688ef036": "OWNER COMPROMISED",
+}
+
+const extraOldPoolTUPs = {
+    "PoolTUP1": "0x431290dF15777d46174b83C9E01F87d7b70D3073",
+    // "PoolTUP2": "0x44F6aEAAC8C784fEe06cdc6eF9CeCE63423c50d4",
+    // "PoolTUP3": "0x6F8e87538aAcC12E4a50f13b45F19c248561450E",
+    // "PoolTUP4": "0x88f6F474185782095D19f3a8b08ed3cf1fa5a67d",
+    // "PoolTUP5": "0xe7E35BEd5256E9d5C697b5486c3F5E07ba04F563",
+    "PoolTUP6": "0xA273EFD3BD9182C5b909Fcd65242860d8D948E2b",
+}
+
 
 function getReadableName(address) {
     return knownAddresses[address] || "Unknown";
@@ -95,12 +124,33 @@ async function main() {
     let { admin: smartLoansFactoryAdmin, owner: smartLoansFactoryOwner } = await getInfo(smartLoansFactoryAddress);
     data.push({ Contract: "SmartLoansFactory", Admin: `${smartLoansFactoryAdmin} (${getReadableName(smartLoansFactoryAdmin)})`, Owner: `${smartLoansFactoryOwner} (${getReadableName(smartLoansFactoryOwner)})` });
 
-    for (let pool in poolMapping) {
-        let poolAddress = poolMapping[pool];
+    for (let pool in extraOldPoolTUPs) {
+        let poolAddress = extraOldPoolTUPs[pool];
         let { admin: poolAdmin, owner: poolOwner } = await getInfo(poolAddress);
         data.push({ Contract: pool, Admin: `${poolAdmin} (${getReadableName(poolAdmin)})`, Owner: `${poolOwner} (${getReadableName(poolOwner)})` });
     }
 
     console.table(data);
 }
-main();
+
+async function checkCurrentContractAdmins() {
+    let data = [];
+    let contractsWithCompromisedAddressAsOwnerOrAdmin = [];
+
+    let currentContractChangesData = require('./owners-admin-changes-arbitrum.json');
+    for(const row of currentContractChangesData) {
+        let [chain, contractAddress, contractName, currentController, newController, roleName] = row;
+        let { admin: poolAdmin, owner: poolOwner } = await getInfo(contractAddress);
+        data.push({ Contract: contractAddress, Admin: `${poolAdmin} (${getReadableName(poolAdmin)})`, Owner: `${poolOwner} (${getReadableName(poolOwner)})` });
+
+        if(compromisedAddresses[poolAdmin] || compromisedAddresses[poolOwner]) {
+            contractsWithCompromisedAddressAsOwnerOrAdmin.push({ Contract: contractAddress, Admin: `${poolAdmin} (${getReadableName(poolAdmin)})`, Owner: `${poolOwner} (${getReadableName(poolOwner)})` });
+        }
+    }
+    console.table(data);
+    console.log("Contracts with compromised address as owner or admin:");
+    console.table(contractsWithCompromisedAddressAsOwnerOrAdmin);
+}
+
+// main();
+checkCurrentContractAdmins();
