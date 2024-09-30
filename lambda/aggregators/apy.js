@@ -158,7 +158,7 @@ const vectorApyAggregator = async (event) => {
       const assetPool = Array.from(pools).find(pool => pool.innerText.replace(/\s+/g, "").toLowerCase().startsWith(keyword));
       const assetColumns = assetPool.querySelectorAll("p.MuiTypography-root.MuiTypography-body1");
       const assetApy = parseFloat(assetColumns[2].innerText.split('%')[0].trim());
-    
+
       return assetApy;
     }
 
@@ -584,7 +584,7 @@ const beefyApyAggregator = async (event) => {
           timeout: 60000
         });
 
-        const apy = await page.evaluate(() => {      
+        const apy = await page.evaluate(() => {
           const boxes = document.querySelectorAll("div.MuiBox-root");
           let apy;
           Array.from(boxes).map(box => {
