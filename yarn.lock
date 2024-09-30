@@ -2055,22 +2055,23 @@
   dependencies:
     "@types/bignumber.js" "^5.0.0"
 
-"@notifi-network/notifi-frontend-client@^0.63.0":
-  version "0.63.0"
-  resolved "https://registry.yarnpkg.com/@notifi-network/notifi-frontend-client/-/notifi-frontend-client-0.63.0.tgz#36907bdee8d58c1da35d52c4fc6a3792dac28440"
-  integrity sha512-7gfnsp86Mqb9fKJPFLir/P4YIBTgLEmsClLLATfDV+ubX5YDU+vNVO4syERlzm7a5ITibkesocdwVfwnHT8fsw==
+"@notifi-network/notifi-frontend-client@^1.0.0":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@notifi-network/notifi-frontend-client/-/notifi-frontend-client-1.0.1.tgz#fa409dd7f9d53c3465f9c76be783d3d7489c1fdd"
+  integrity sha512-AtvvxYc6rHapXbujhnPOo3scsBcQFvtXm+rbbpKHcn4Gu5yZRGHZ9HVOf1UTxNgq3XVFOsFufJ82u1Ybf9WyxQ==
   dependencies:
-    "@notifi-network/notifi-graphql" "^0.63.0"
-    graphql-request "5.1.0"
+    "@notifi-network/notifi-graphql" "^1.0.0"
+    graphql-request "^6.0.0"
     localforage "^1.10.0"
 
-"@notifi-network/notifi-graphql@^0.63.0":
-  version "0.63.0"
-  resolved "https://registry.yarnpkg.com/@notifi-network/notifi-graphql/-/notifi-graphql-0.63.0.tgz#bb6db1f44ee9ce7824204b5beeb10b448d3bd603"
-  integrity sha512-Yn3MksL+GGEEHl1B+4G9MSOAfUWfXZF4nsSNzVQw6OmBzpXF4W44nQWHpWhZo2Qvr8XZYHryqhAcTF6HezoQgA==
+"@notifi-network/notifi-graphql@^1.0.0":
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@notifi-network/notifi-graphql/-/notifi-graphql-1.0.0.tgz#b944bb075a2e5c43e3d6bedef2b3f4b2a7a70136"
+  integrity sha512-38T3wWdi/DM1IeZMhM5wPOys0eZ55Id0rBQTZRdM84vRhPQ55vSYg4f67V2jOZ/wE6fYV0n9NRMUMWxFIgM5vQ==
   dependencies:
     graphql "^16.6.0"
-    graphql-request "5.1.0"
+    graphql-request "^6.0.0"
+    graphql-ws "^5.16.0"
     uuid "^8.3.2"
 
 "@oclif/command@^1.5.13", "@oclif/command@^1.5.19":
@@ -8272,11 +8273,6 @@ extglob@^2.0.4:
     snapdragon "^0.8.1"
     to-regex "^3.0.1"
 
-extract-files@^9.0.0:
-  version "9.0.0"
-  resolved "https://registry.yarnpkg.com/extract-files/-/extract-files-9.0.0.tgz#8a7744f2437f81f5ed3250ed9f1550de902fe54a"
-  integrity sha512-CvdFfHkC95B4bBBk36hcEmvdR2awOdhhVUYH6S/zrVj3477zven/fJMYg7121h4T1xHZC+tetUpubpAhxwI7hQ==
-
 extract-text-webpack-plugin@^2.0.0:
   version "2.1.2"
   resolved "https://registry.yarnpkg.com/extract-text-webpack-plugin/-/extract-text-webpack-plugin-2.1.2.tgz#756ef4efa8155c3681833fbc34da53b941746d6c"
@@ -8633,15 +8629,6 @@ form-data@^2.2.0:
   dependencies:
     asynckit "^0.4.0"
     combined-stream "^1.0.6"
-    mime-types "^2.1.12"
-
-form-data@^3.0.0:
-  version "3.0.1"
-  resolved "https://registry.yarnpkg.com/form-data/-/form-data-3.0.1.tgz#ebd53791b78356a99af9a300d4282c4d5eb9755f"
-  integrity sha512-RHkBKtLWUVwd7SqRIvCZMEvAMoGUp0XU+seQiZejj0COz3RI3hWP4sCv3gZWWLjJTd7rGwcsF5eKZGii0r/hbg==
-  dependencies:
-    asynckit "^0.4.0"
-    combined-stream "^1.0.8"
     mime-types "^2.1.12"
 
 form-data@^4.0.0:
@@ -9190,16 +9177,6 @@ graceful-fs@^4.1.11, graceful-fs@^4.1.2, graceful-fs@^4.1.6, graceful-fs@^4.1.9,
   resolved "https://registry.yarnpkg.com/graceful-fs/-/graceful-fs-4.2.9.tgz#041b05df45755e587a24942279b9d113146e1c96"
   integrity sha512-NtNxqUcXgpW2iMrfqSfR73Glt39K+BLwWsPs94yR63v45T0Wbej7eRmL5cWfwEgqXnmjQp3zaJTshdRW/qC2ZQ==
 
-graphql-request@5.1.0:
-  version "5.1.0"
-  resolved "https://registry.yarnpkg.com/graphql-request/-/graphql-request-5.1.0.tgz#dbc8feee27d21b993cd5da2d3af67821827b240a"
-  integrity sha512-0OeRVYigVwIiXhNmqnPDt+JhMzsjinxHE7TVy3Lm6jUzav0guVcL0lfSbi6jVTRAxcbwgyr6yrZioSHxf9gHzw==
-  dependencies:
-    "@graphql-typed-document-node/core" "^3.1.1"
-    cross-fetch "^3.1.5"
-    extract-files "^9.0.0"
-    form-data "^3.0.0"
-
 graphql-request@^6.0.0:
   version "6.1.0"
   resolved "https://registry.yarnpkg.com/graphql-request/-/graphql-request-6.1.0.tgz#f4eb2107967af3c7a5907eb3131c671eac89be4f"
@@ -9214,6 +9191,11 @@ graphql-tag@^2.12.6, graphql-tag@^2.4.2:
   integrity sha512-FdSNcu2QQcWnM2VNvSCCDCVS5PpPqpzgFT8+GXzqJuoDd0CBncxCY278u4mhRO7tMgo2JjgJA5aZ+nWSQ/Z+xg==
   dependencies:
     tslib "^2.1.0"
+
+graphql-ws@^5.16.0:
+  version "5.16.0"
+  resolved "https://registry.yarnpkg.com/graphql-ws/-/graphql-ws-5.16.0.tgz#849efe02f384b4332109329be01d74c345842729"
+  integrity sha512-Ju2RCU2dQMgSKtArPbEtsK5gNLnsQyTNIo/T7cZNp96niC1x0KdJNZV0TIoilceBPQwfb5itrGl8pkFeOUMl4A==
 
 graphql@^16.3.0:
   version "16.3.0"
