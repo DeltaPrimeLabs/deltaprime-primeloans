@@ -115,6 +115,7 @@ import BarGaugeBeta from './BarGaugeBeta.vue';
 import InfoIcon from './InfoIcon.vue';
 import {ActionSection} from "../services/globalActionsDisableService";
 import ClaimRewardsModal from "./ClaimRewardsModal.vue";
+import DoubleClaimRewardsModal from './DoubleClaimRewardsModal.vue';
 
 let TOKEN_ADDRESSES;
 
@@ -468,7 +469,7 @@ export default {
     },
 
     async openClaimAvalancheBoost() {
-      const modalInstance = this.openModal(ClaimRewardsModal);
+      const modalInstance = this.openModal(DoubleClaimRewardsModal);
       let totalRewards = [];
       totalRewards.push({
         symbol: this.pool.avalancheBoostRewardToken,
