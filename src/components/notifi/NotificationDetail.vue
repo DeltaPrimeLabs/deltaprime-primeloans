@@ -34,15 +34,12 @@ export default ({
   },
   computed: {
     detailSubject() {
-      return this.notification.category === "CREATOR_MESSAGE"
-            ? this.notification.detail.subject
-            : this.notification.detail.sourceName;
+      return this.notification.detail.sourceName;
     },
 
     detailMessage() {
-      return this.notification.category === "CREATOR_MESSAGE"
-            ? this.notification.detail.message
-            : this.notification.detail.genericMessage.replace('Loan Health score', 'Health');
+      // NOTE: We can also use `detail.genericMessageHtml` if we want to adopt the markdown style defined from Notif Admin Portal
+      return this.notification.detail.genericMessage.replace('Loan Health score', 'Health');
     }
   },
   methods: {}
@@ -65,6 +62,7 @@ export default ({
 
   .detail-message {
     margin-top: 10px;
+    overflow-wrap: break-word;
   }
 }
 </style>
