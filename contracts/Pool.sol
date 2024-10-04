@@ -373,6 +373,43 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
         return true;
     }
 
+    function initializeDeposits(
+        uint256[] calldata depositAmounts,
+        address[] calldata depositors
+    ) public virtual nonReentrant onlyOwner {
+        for(uint i = 0; i < depositors.length; i++) {
+            uint256 _amount = depositAmounts[i];
+            address _of = depositors[i];
+
+            if (_amount == 0) revert ZeroDepositAmount();
+            require(_of != address(0), "Address zero");
+            require(_of != address(this), "Cannot deposit on behalf of pool");
+
+//            _amount = Math.min(_amount, IERC20(tokenAddress).balanceOf(msg.sender));
+
+            _accumulateDepositInterest(_of);
+
+            if (totalSupplyCap != 0) {
+                if (_deposited[address(this)] + _amount > totalSupplyCap)
+                    revert TotalSupplyCapBreached();
+            }
+
+//            _transferToPool(msg.sender, _amount);
+
+            _mint(_of, _amount);
+            _deposited[address(this)] += _amount;
+            _updateRates();
+
+            if (address(poolRewarder) != address(0) && !isDepositorExcludedFromRewarder(_of)) {
+                poolRewarder.stakeFor(_amount, _of);
+            }
+
+            emit DepositorInitialized(msg.sender, _of, _amount, block.timestamp);
+
+            notifyVPrimeController(_of);
+        }
+    }
+
     /**
      * Deposits the amount
      * It updates user deposited balance, total deposited and rates
@@ -460,6 +497,27 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
         emit Withdrawal(msg.sender, _amount, block.timestamp);
 
         notifyVPrimeController(msg.sender);
+    }
+
+    function initializeBorrowers(address[] calldata borrowers, uint256[] calldata amounts) public virtual nonReentrant onlyOwner {
+        for(uint i = 0; i < borrowers.length; i++) {
+            address _borrower = borrowers[i];
+            uint256 _amount = amounts[i];
+            require(checkIfCanBorrow(_borrower), "Not authorized to borrow");
+//            if (_amount > IERC20(tokenAddress).balanceOf(address(this)))
+//                revert InsufficientPoolFunds();
+
+            _accumulateBorrowingInterest(_borrower);
+
+            borrowed[_borrower] += _amount;
+            borrowed[address(this)] += _amount;
+
+//            _transferFromPool(msg.sender, _amount);
+
+            _updateRates();
+
+            emit BorrowerInitialized(msg.sender, _borrower, _amount, block.timestamp);
+        }
     }
 
     /**
@@ -741,6 +799,14 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
 
     function renounceOwnership() public virtual override {}
 
+    function checkIfCanBorrow(address account) internal view returns (bool) {
+        if (address(borrowersRegistry) == address(0))
+            revert BorrowersRegistryNotConfigured();
+        if (!borrowersRegistry.canBorrow(account))
+            revert NotAuthorizedToBorrow();
+        return true;
+    }
+
     /* ========== MODIFIERS ========== */
 
     modifier canBorrow() {
@@ -780,6 +846,13 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
         uint256 timestamp
     );
 
+    event DepositorInitialized(
+        address indexed user,
+        address indexed depositor,
+        uint256 value,
+        uint256 timestamp
+    );
+
     /**
      * @dev emitted after the user withdraws funds
      * @param user the address performing the withdrawal
@@ -795,6 +868,8 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
      * @param timestamp time of the borrowing
      **/
     event Borrowing(address indexed user, uint256 value, uint256 timestamp);
+
+    event BorrowerInitialized(address indexed user, address indexed borrower, uint256 value, uint256 timestamp);
 
     /**
      * @dev emitted after the user repays debt
