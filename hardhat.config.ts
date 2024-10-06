@@ -53,13 +53,13 @@ export default {
     },
     arbitrum_devnet: {
       timeout: 1800000,
-      url: 'https://rpc.vnet.tenderly.co/devnet/arbi-0-gas/f5ecbccf-4ea7-4e7f-9faf-34c49ccc1121',
+      url: '',
       chainId: 42161,
       // accounts: [getKey('arbitrum', 'deployer'), getKey('arbitrum', 'admin')]
     },
     arbitrum: {
       timeout: 1800000,
-      url: 'https://nd-762-566-527.p2pify.com/4514bd12de6723b94346752e90e95cf4',
+      url: '',
       gasPrice: 100000000,
       chainId: 42161,
       accounts: [getKey('arbitrum', 'deployer'), getKey('arbitrum', 'admin')]
