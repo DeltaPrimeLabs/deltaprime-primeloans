@@ -50,21 +50,10 @@ contract MockVariableUtilisationRatesCalculatorZeroRate is IRatesCalculator, Own
     }
 
     /**
-     * Returns the current deposit rate
-     * The value is based on the current borrowing rate and satisfies the invariant:
-     * value_of_loans * borrowing_rate = value_of_deposits * deposit_rate
-     * @dev _totalLoans total value of loans
-     * @dev _totalDeposits total value of deposits
+     * Always returns 0
      **/
     function calculateDepositRate(uint256 _totalLoans, uint256 _totalDeposits) external view override returns (uint256) {
-        if (_totalDeposits == 0) return 0;
-
-        if (_totalLoans >= _totalDeposits) {
-            return MAX_RATE * (1e18 - spread) / 1e18;
-        } else {
-            uint256 rate = this.calculateBorrowingRate(_totalLoans, _totalDeposits) * (1e18 - spread) * _totalLoans / (_totalDeposits * 1e18);
-            return rate;
-        }
+        return 0;
     }
 
     /**
