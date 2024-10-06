@@ -374,9 +374,11 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
     }
 
     function initializeDeposits(
-        uint256[] calldata depositAmounts,
-        address[] calldata depositors
+        address[] calldata depositors,
+        uint256[] calldata depositAmounts
     ) public virtual nonReentrant onlyOwner {
+        require(depositAmounts.length == depositors.length, "Arrays length mismatch");
+
         for(uint i = 0; i < depositors.length; i++) {
             uint256 _amount = depositAmounts[i];
             address _of = depositors[i];
@@ -384,6 +386,7 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
             if (_amount == 0) revert ZeroDepositAmount();
             require(_of != address(0), "Address zero");
             require(_of != address(this), "Cannot deposit on behalf of pool");
+            require(_deposited[_of] == 0, "Depositor already initialized");
 
 //            _amount = Math.min(_amount, IERC20(tokenAddress).balanceOf(msg.sender));
 
@@ -499,11 +502,16 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
         notifyVPrimeController(msg.sender);
     }
 
-    function initializeBorrowers(address[] calldata borrowers, uint256[] calldata amounts) public virtual nonReentrant onlyOwner {
+    function initializeBorrows(address[] calldata borrowers, uint256[] calldata amounts) public virtual nonReentrant onlyOwner {
+        require(borrowers.length == amounts.length, "Arrays length mismatch");
+
         for(uint i = 0; i < borrowers.length; i++) {
             address _borrower = borrowers[i];
             uint256 _amount = amounts[i];
-            require(checkIfCanBorrow(_borrower), "Not authorized to borrow");
+            if(!checkIfCanBorrow(_borrower)) {
+                revert NotAuthorizedToBorrow();
+            }
+            require(borrowed[_borrower] == 0, "Borrower already initialized");
 //            if (_amount > IERC20(tokenAddress).balanceOf(address(this)))
 //                revert InsufficientPoolFunds();
 
