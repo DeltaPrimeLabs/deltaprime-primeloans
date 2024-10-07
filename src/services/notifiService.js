@@ -64,35 +64,40 @@ export default class notifiService {
 
     // alerts states for setting screen
     this.alertSettings = alertsConfig;
-
+    this.emitAlertSettingsUpdated();
     if (notifi.alerts) {
       for (const alert of notifi.alerts) {
-        // get alerts statuses for initialization on settings screen
-        let fusionEvent;
-        const alertMetadata = this.resolveAlertName(alert.name);
+        try {
+          // get alerts statuses for initialization on settings screen
+          let fusionEvent;
+          const alertMetadata = this.resolveAlertName(alert.name);
 
-        fusionEvent = Object.entries(config.fusionEventIds).find(([name, eventId]) => eventId == alertMetadata.fusionEventTypeId); 
+          fusionEvent = Object.entries(config.fusionEventIds).find(([name, eventId]) => eventId == alertMetadata.fusionEventTypeId); 
 
-        if (this.alertSettings[fusionEvent[0]]) {
-          this.alertSettings[fusionEvent[0]]['created'] = true;
+          if (this.alertSettings[fusionEvent[0]]) {
+            this.alertSettings[fusionEvent[0]]['created'] = true;
 
-          if (fusionEvent[0] === 'borrowRate' || fusionEvent[0] === 'lendingRate') {
-            // we can have multiple borrow rate alerts with differnt thresholds
-            if (!this.alertSettings[fusionEvent[0]]['filterOptions']) this.alertSettings[fusionEvent[0]]['filterOptions'] = [];
-            this.alertSettings[fusionEvent[0]]['filterOptions'].push({
-              ...JSON.parse(alert.filterOptions),
-              poolAddress: alertMetadata.subscriptionValue,
-              id: alert.id
-            });
-          } else {
-            this.alertSettings[fusionEvent[0]]['id'] = alert.id;
-            this.alertSettings[fusionEvent[0]]['filterOptions'] = JSON.parse(alert.filterOptions);
+            if (fusionEvent[0] === 'borrowRate' || fusionEvent[0] === 'lendingRate') {
+              // we can have multiple borrow rate alerts with differnt thresholds
+              if (!this.alertSettings[fusionEvent[0]]['filterOptions']) this.alertSettings[fusionEvent[0]]['filterOptions'] = [];
+              this.alertSettings[fusionEvent[0]]['filterOptions'].push({
+                ...JSON.parse(alert.filterOptions),
+                poolAddress: alertMetadata.subscriptionValue,
+                id: alert.id
+              });
+            } else {
+              this.alertSettings[fusionEvent[0]]['id'] = alert.id;
+              this.alertSettings[fusionEvent[0]]['filterOptions'] = JSON.parse(alert.filterOptions);
+            }
           }
+        } catch (e) {
+          console.warn(`This alert does not support current chain ${alert.name}`);
         }
+        
       }
     }
 
-    this.emitAlertSettingsUpdated();
+    
   }
 
   resolveAlertName(alertName) {
