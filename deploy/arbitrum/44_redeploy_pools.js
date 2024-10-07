@@ -8,11 +8,13 @@ const PoolArtifact = require("../../artifacts/contracts/Pool.sol/Pool.json");
 const MULTISIG_OWNER = "0xDfA6706FC583b635CD6daF0E3915901A2fBaBAaD";
 const MULTISIG_ADMIN = "0xa9Ca8462aB2949ADa86297904e09Ab4Eb12cdCf0";
 const SMART_LOANS_FACTORY = "0xFf5e3dDaefF411a1dC6CcE00014e4Bca39265c20";
+let deploymentHisotryConfig = []
+let acceptOwnershipNeeded = []
 
 module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deploy } = deployments;
     const { deployer } = await getNamedAccounts();
-    const deloymentConfig = [
+    const deploymentConfig = [
         {
             ratesCalculatorName: "WethVariableUtilisationRatesCalculatorZeroRate",
             poolTupName: "WethPoolTUP",
@@ -28,11 +30,34 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
             depositIndexName: "ArbDepositIndex",
             borrowIndexName: "ArbBorrowIndex",
             tokenAddress: "0x912CE59144191C1204E64559FE8253a0e49E6548"
+        },
+        {
+            ratesCalculatorName: "BtcVariableUtilisationRatesCalculatorZeroRate",
+            poolTupName: "BtcPoolTUP",
+            poolContractName: "BtcPool",
+            depositIndexName: "BtcDepositIndex",
+            borrowIndexName: "BtcBorrowIndex",
+            tokenAddress: "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f"
+        },
+        {
+            ratesCalculatorName: "DaiVariableUtilisationRatesCalculatorZeroRate",
+            poolTupName: "DaiPoolTUP",
+            poolContractName: "DaiPool",
+            depositIndexName: "DaiDepositIndex",
+            borrowIndexName: "DaiBorrowIndex",
+            tokenAddress: "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1"
+        },
+        {
+            ratesCalculatorName: "UsdcVariableUtilisationRatesCalculatorZeroRate",
+            poolTupName: "UsdcPoolTUP",
+            poolContractName: "UsdcPool",
+            depositIndexName: "UsdcDepositIndex",
+            borrowIndexName: "UsdcBorrowIndex",
+            tokenAddress: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"
         }
-        // TODO: Add remaining 3 pools
     ]
 
-    for(const poolConfig of deloymentConfig){
+    for(const poolConfig of deploymentConfig){
         await performFullPoolDeploymentAndInitialization(
             deploy,
             deployer,
@@ -45,9 +70,20 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         );
     }
 
+    console.log("Deployment history config:");
+    for(const poolDeploymentConfig of deploymentHisotryConfig){
+        console.log(poolDeploymentConfig);
+    }
+    console.log("Accept ownership needed:");
+    for(const acceptOwnership of acceptOwnershipNeeded){
+        console.log(acceptOwnership);
+    }
+
 };
 
 async function performFullPoolDeploymentAndInitialization(deploy, deployer, ratesCalculatorName, poolTupName, poolContractName, depositIndexName, borrowIndexName, tokenAddress){
+    let poolDeploymentConfig = {}
+
     let ratesCalculator = await deployContractWithOwnershipTransfer(
         deploy,
         deployer,
@@ -56,6 +92,7 @@ async function performFullPoolDeploymentAndInitialization(deploy, deployer, rate
         [],
         MULTISIG_OWNER
     );
+    poolDeploymentConfig.ratesCalculator = ratesCalculator.address;
 
     let poolImplementation = await deployContractWithOwnershipTransfer(
         deploy,
@@ -66,10 +103,19 @@ async function performFullPoolDeploymentAndInitialization(deploy, deployer, rate
         undefined
     );
 
+    poolDeploymentConfig.poolImplementation = poolImplementation.address;
+
     let poolTUP = await deployPoolTUPWithImplementationAndMultisigAdmin(deploy, deployer, poolTupName, poolImplementation.address);
 
-    let depositIndexTUPAddress = await deployLinearIndex(depositIndexName, poolTUP.address, deploy, deployer, MULTISIG_ADMIN);
-    let borrowIndexTUPAddress = await deployLinearIndex(borrowIndexName, poolTUP.address, deploy, deployer, MULTISIG_ADMIN);
+    poolDeploymentConfig.poolTUP = poolTUP.address;
+
+    let [depositIndexTUPAddress, depositIndexImpl] = await deployLinearIndex(depositIndexName, poolTUP.address, deploy, deployer, MULTISIG_ADMIN);
+    poolDeploymentConfig.depositIndexTUPAddress = depositIndexTUPAddress;
+    poolDeploymentConfig.depositIndexImpl = depositIndexImpl;
+
+    let [borrowIndexTUPAddress, borrowIndexImpl] = await deployLinearIndex(borrowIndexName, poolTUP.address, deploy, deployer, MULTISIG_ADMIN);
+    poolDeploymentConfig.borrowIndexTUPAddress = borrowIndexTUPAddress;
+    poolDeploymentConfig.borrowIndexImpl = borrowIndexImpl;
 
     await initializePoolTUPAndProposeOwnershipTransferToMultisig(
         deploy,
@@ -86,6 +132,13 @@ async function performFullPoolDeploymentAndInitialization(deploy, deployer, rate
         ethers.constants.AddressZero,
         0
     );
+
+    poolDeploymentConfig.borrowersRegistry = SMART_LOANS_FACTORY;
+    poolDeploymentConfig.tokenAddress = tokenAddress;
+    poolDeploymentConfig.poolRewarder = ethers.constants.AddressZero;
+    poolDeploymentConfig.totalSupplyCap = 0;
+
+    deploymentHisotryConfig.push(poolDeploymentConfig);
 
 }
 
@@ -107,18 +160,18 @@ async function deployLinearIndex(name, poolTupAddress, deploy, deployer, admin) 
         });
     console.log(`Verified ${name}`)
 
-    let result = await deploy(`${name}TUP`, {
+    let resultTUP = await deploy(`${name}TUP`, {
         contract: `contracts/proxies/tup/arbitrum/${name}TUP.sol:${name}TUP`,
         from: deployer,
         gasLimit: 50000000,
         args: [resultIndex.address, admin, []],
     });
 
-    console.log(`${name}TUP deployed at address: ${result.address}`);
+    console.log(`${name}TUP deployed at address: ${resultTUP.address}`);
 
     await verifyContract(hre,
         {
-            address: result.address,
+            address: resultTUP.address,
             contract: `contracts/proxies/tup/arbitrum/${name}TUP.sol:${name}TUP`,
             constructorArguments: [resultIndex.address, admin, []]
         });
@@ -126,7 +179,7 @@ async function deployLinearIndex(name, poolTupAddress, deploy, deployer, admin) 
 
     const index = await ethers.getContractFactory(`./contracts/deployment/arbitrum/${name}.sol:${name}`);
 
-    let initializeTx = await index.attach(result.address).initialize(
+    let initializeTx = await index.attach(resultTUP.address).initialize(
         poolTupAddress,
         { gasLimit: 50000000 }
     );
@@ -140,7 +193,7 @@ async function deployLinearIndex(name, poolTupAddress, deploy, deployer, admin) 
         console.log('SUCCESS');
     }
 
-    return result.address;
+    return [resultTUP.address, resultIndex.address];
 }
 
 async function deployPoolTUPWithImplementationAndMultisigAdmin(deploy, deployer, TUPName, poolImplementationAddress){
@@ -152,6 +205,7 @@ async function deployPoolTUPWithImplementationAndMultisigAdmin(deploy, deployer,
 
     console.log(`Deploying ${TUPName}`);
     let resultTUPContract = await deploy(TUPName, {
+        contract: `contracts/proxies/tup/arbitrum/${TUPName}.sol:${TUPName}`,
         from: deployer,
         gasLimit: 8000000,
         args: [poolImplementationAddress, MULTISIG_ADMIN, []],
@@ -228,6 +282,7 @@ async function initializePoolTUPAndProposeOwnershipTransferToMultisig(
         throw new Error(`Failed to propose ownership transfer of ${TUPName} to ${MULTISIG_OWNER}`);
     } else {
         console.log(`Ownership of ${TUPName} transfer to ${MULTISIG_OWNER} was PROPOSED. Now ${MULTISIG_OWNER} needs to ACCEPT IT by calling .acceptOwnership() on ${TUPAsPool.address}`);
+        acceptOwnershipNeeded.push(`MULTISIG ${MULTISIG_OWNER} needs to accept ownership of ${TUPName} at ${TUPAsPool.address}!`);
     }
 
 }
@@ -241,6 +296,7 @@ async function deployContractWithOwnershipTransfer(deploy, deployer, contractNam
 
     console.log(`Deploying ${contractName}`);
     let result = await deploy(contractName, {
+        contract: `${contractPath}/${contractName}.sol:${contractName}`,
         from: deployer,
         gasLimit: 8000000,
         args: args,

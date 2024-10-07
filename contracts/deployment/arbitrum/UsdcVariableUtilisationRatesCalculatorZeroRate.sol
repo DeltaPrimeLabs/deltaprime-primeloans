@@ -2,13 +2,13 @@
 // Last deployed from commit: 7ebffa3a6a7de6896f193b941186372a7bd3f209;
 pragma solidity 0.8.17;
 
-import "./WethVariableUtilisationRatesCalculator.sol";
+import "./UsdcVariableUtilisationRatesCalculator.sol";
 
 /**
- * @title WethVariableUtilisationRatesCalculatorZeroRate
+ * @title UsdcVariableUtilisationRatesCalculatorZeroRate
  * @dev Contract which returns a constant value of 0 for the deposit and borrowing rates.
  **/
-contract WethVariableUtilisationRatesCalculatorZeroRate is WethVariableUtilisationRatesCalculator {
+contract UsdcVariableUtilisationRatesCalculatorZeroRate is UsdcVariableUtilisationRatesCalculator {
     /**
      * Always return 0 as deposit rate
      **/
