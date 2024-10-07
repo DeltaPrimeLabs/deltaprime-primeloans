@@ -4,7 +4,7 @@ pragma solidity 0.8.17;
 
 import "./WethVariableUtilisationRatesCalculatorZeroRate.sol";
 /**
- * @title BtcVariableUtilisationRatesCalculator
+ * @title BtcVariableUtilisationRatesCalculatorZeroRate
  * @dev Contract which returns a constant value of 0 for the deposit and borrowing rates.
  **/
 contract BtcVariableUtilisationRatesCalculatorZeroRate is WethVariableUtilisationRatesCalculatorZeroRate {
