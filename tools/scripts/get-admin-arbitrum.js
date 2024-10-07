@@ -1,7 +1,7 @@
 const tokenManagerAddress = "0x0a0D954d4b0F0b47a5990C0abd179A90fF74E255";
 const smartLoansFactoryAddress = "0xFf5e3dDaefF411a1dC6CcE00014e4Bca39265c20";
 const diamondAddress = '0x62Cf82FB0484aF382714cD09296260edc1DC0c6c';
-const jsonRPC = "<RPC_URL>";
+const jsonRPC = "https://arb1.arbitrum.io/rpc";
 
 const ethers = require("ethers");
 
@@ -79,6 +79,12 @@ const knownAddresses = {
     "0x40E4Ff9e018462Ce71Fa34aBdFA27B8C5e2B1AfB": "ADMIN COMPROMISED",
     "0xbAc44698844f13cF0AF423b19040659b688ef036": "OWNER COMPROMISED",
     "0xA273EFD3BD9182C5b909Fcd65242860d8D948E2b": "Arb Pool TUP",
+    "0x2E2fE9Bc7904649b65B6373bAF40F9e2E0b883c5": "WETH pool TUP NEW",
+    "0x14c82CFc2c651700a66aBDd7dC375c9CeEFDDD72": "ARB pool TUP NEW",
+    "0x275Caecf5542bF4a3CF64aa78a3f57dc9939675C": "BTC pool TUP NEW",
+    "0x7Dcf909B1E4b280bEe72C6A69b3a7Ed8adfb63f0": "DAI pool TUP NEW",
+    "0x5f3DB5899a7937c9ABF0A5Fc91718E6F813e4195": "USDC pool TUP NEW",
+
 };
 
 const compromisedAddresses = {
@@ -93,6 +99,33 @@ const extraOldPoolTUPs = {
     // "PoolTUP4": "0x88f6F474185782095D19f3a8b08ed3cf1fa5a67d",
     // "PoolTUP5": "0xe7E35BEd5256E9d5C697b5486c3F5E07ba04F563",
     "PoolTUP6": "0xA273EFD3BD9182C5b909Fcd65242860d8D948E2b",
+}
+
+const newlyDeployedPools = {
+    "WETH rates calculator": "0xCF547393005c7379FfF91d2de883EEfb0D5979d7",
+    "WETH pool TUP": "0x2E2fE9Bc7904649b65B6373bAF40F9e2E0b883c5",
+    "WETH deposit index TUP": "0x2b67D14eFBCe4E3c38713f9e87B503d8F0158324",
+    "WETH borrow index TUP": "0x7eb84Ea770ff7532bd18FBb30B690DAf0B7A9C93",
+
+    "ARB rates calculator": "0xF35884ab6f38414827c1D543B57BeFb690af4F9c",
+    "ARB pool TUP": "0x14c82CFc2c651700a66aBDd7dC375c9CeEFDDD72",
+    "ARB deposit index TUP": "0xeA3293d70675d8f8bf3FA9e05D0A7111F6092e08",
+    "ARB borrow index TUP": "0xC3D4Ca62FfE4dCa0A86c8571Fc6e1Da1c041846B",
+
+    "BTC rates calculator": "0xfD9babc65434C32d4da596958fC46D89F8bB9a1e",
+    "BTC pool TUP": "0x275Caecf5542bF4a3CF64aa78a3f57dc9939675C",
+    "BTC deposit index TUP": "0x5a65C978Ea93726EccB647a5aa3F5783A5EAf0b4",
+    "BTC borrow index TUP": "0x0796A95E7F36301Caa30bE1a99Edb4C731AEB0E1",
+
+    "DAI rates calculator": "0x255700194F34162405EEd34549B678d0E4D557f9",
+    "DAI pool TUP": "0x7Dcf909B1E4b280bEe72C6A69b3a7Ed8adfb63f0",
+    "DAI deposit index TUP": "0xE933cF769b277E64cc10bba02CAa34F233109353",
+    "DAI borrow index TUP": "0x38C83DE2e8309A372a6629f941C70a14732AC967",
+
+    "USDC rates calculator": "0x97886abb2BDBEA0e49a86eA1BCD2c4A7120B35D5",
+    "USDC pool TUP": "0x5f3DB5899a7937c9ABF0A5Fc91718E6F813e4195",
+    "USDC deposit index TUP": "0x87812e877c6909fe2784015F7c5C1059bA9A769C",
+    "USDC borrow index TUP": "0xB86e7d51621d6dDb33ec37e972DE2A3F8f4F669F",
 }
 
 
@@ -124,8 +157,8 @@ async function main() {
     let { admin: smartLoansFactoryAdmin, owner: smartLoansFactoryOwner } = await getInfo(smartLoansFactoryAddress);
     data.push({ Contract: "SmartLoansFactory", Admin: `${smartLoansFactoryAdmin} (${getReadableName(smartLoansFactoryAdmin)})`, Owner: `${smartLoansFactoryOwner} (${getReadableName(smartLoansFactoryOwner)})` });
 
-    for (let pool in extraOldPoolTUPs) {
-        let poolAddress = extraOldPoolTUPs[pool];
+    for (let pool in newlyDeployedPools) {
+        let poolAddress = newlyDeployedPools[pool];
         let { admin: poolAdmin, owner: poolOwner } = await getInfo(poolAddress);
         data.push({ Contract: pool, Admin: `${poolAdmin} (${getReadableName(poolAdmin)})`, Owner: `${poolOwner} (${getReadableName(poolOwner)})` });
     }
@@ -152,5 +185,5 @@ async function checkCurrentContractAdmins() {
     console.table(contractsWithCompromisedAddressAsOwnerOrAdmin);
 }
 
-// main();
-checkCurrentContractAdmins();
+main();
+// checkCurrentContractAdmins();
