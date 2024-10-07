@@ -152,6 +152,8 @@ async function deployLinearIndex(name, poolTupAddress, deploy, deployer, admin) 
 
     console.log(`Deployed linear index at address: ${resultIndex.address}`);
 
+    //sleep 1 second
+    await new Promise(r => setTimeout(r, 1000));
     await verifyContract(hre,
         {
             address: resultIndex.address,
@@ -169,6 +171,8 @@ async function deployLinearIndex(name, poolTupAddress, deploy, deployer, admin) 
 
     console.log(`${name}TUP deployed at address: ${resultTUP.address}`);
 
+    //sleep 1 second
+    await new Promise(r => setTimeout(r, 1000));
     await verifyContract(hre,
         {
             address: resultTUP.address,
@@ -207,18 +211,19 @@ async function deployPoolTUPWithImplementationAndMultisigAdmin(deploy, deployer,
     let resultTUPContract = await deploy(TUPName, {
         contract: `contracts/proxies/tup/arbitrum/${TUPName}.sol:${TUPName}`,
         from: deployer,
-        gasLimit: 8000000,
         args: [poolImplementationAddress, MULTISIG_ADMIN, []],
     });
     console.log(
         `Deployed ${TUPName} at address: ${resultTUPContract.address} with TUP admin: ${MULTISIG_ADMIN}`
     );
 
+    //sleep 1 second
+    await new Promise(r => setTimeout(r, 1000));
     await verifyContract(hre,
         {
             address: resultTUPContract.address,
             contract: `contracts/proxies/tup/arbitrum/${TUPName}.sol:${TUPName}`,
-            constructorArguments: []
+            constructorArguments: [poolImplementationAddress, MULTISIG_ADMIN, []]
         });
     console.log(`Verified ${TUPName}`)
 
@@ -298,18 +303,19 @@ async function deployContractWithOwnershipTransfer(deploy, deployer, contractNam
     let result = await deploy(contractName, {
         contract: `${contractPath}/${contractName}.sol:${contractName}`,
         from: deployer,
-        gasLimit: 8000000,
         args: args,
     });
     console.log(
         `Deployed ${contractName} at address: ${result.address}`
     );
 
+    //sleep 1 second
+    await new Promise(r => setTimeout(r, 1000));
     await verifyContract(hre,
         {
             address: result.address,
             contract: `contracts/deployment/arbitrum/${contractName}.sol:${contractName}`,
-            constructorArguments: []
+            constructorArguments: args
         });
     console.log(`Verified ${contractName}`)
 
