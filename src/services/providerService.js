@@ -8,7 +8,7 @@ export default class ProviderService {
     return this.providerCreated$.asObservable();
   }
 
-  emitProviderCreated() {
-    this.providerCreated$.next(null);
+  emitProviderCreated(provider) {
+    this.providerCreated$.next(provider);
   }
 };

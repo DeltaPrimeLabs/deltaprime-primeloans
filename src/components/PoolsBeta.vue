@@ -2,10 +2,14 @@
   <div class="pools-beta-component">
     <div class="container">
       <div class="main-content">
-        <SPrimePanel v-if="afterLaunchTime" class="sprime-panel" :is-prime-account="false" :user-address="account" :total-deposits-or-borrows="totalDeposit"></SPrimePanel>
+        <SPrimePanel v-if="afterLaunchTime" class="sprime-panel" :is-prime-account="false" :user-address="account"
+                     :total-deposits-or-borrows="totalDeposit"></SPrimePanel>
         <Block :bordered="true">
           <div class="title">Savings</div>
-          <NameValueBadgeBeta :name="'Your deposits'">{{ totalDeposit | usd }}</NameValueBadgeBeta>
+          <NameValueBadgeBeta :name="'Your deposits'">
+            {{ totalDeposit | usd }}
+            <span class="rtkn-balance" v-if="Number(rTKNBalance) > 0">Your rTKN balance: {{rTKNBalance | smartRound(2, true)}}</span>
+          </NameValueBadgeBeta>
           <div class="pools">
             <div class="pools-table">
               <TableHeader :config="poolsTableHeaderConfig"></TableHeader>
@@ -68,6 +72,7 @@ export default {
       poolsList: null,
       poolsTableHeaderConfig: null,
       depositAssetsWalletBalances$: new BehaviorSubject({}),
+      rTKNBalance: 0,
     };
   },
   computed: {
@@ -93,6 +98,9 @@ export default {
           this.poolStoreSetup();
           this.sPrimeStoreSetup();
           this.setupPoolsTableHeaderConfig();
+          if (window.arbitrumChain) {
+            this.getRTKNBalance(provider, account)
+          }
         });
     },
 
@@ -158,23 +166,20 @@ export default {
       this.avalancheBoostService.observeAvalancheBoostUnclaimed().subscribe(unclaimed => {
         const incentivizedPools = Object.keys(unclaimed);
         incentivizedPools.forEach(
-            poolAsset => {
-              const poolIndex = this.poolsList.findIndex(pool => pool.asset.symbol === poolAsset);
-              this.poolsList[poolIndex].unclaimed = unclaimed[poolAsset];
-              console.log(this.poolsList);
-            }
+          poolAsset => {
+            const poolIndex = this.poolsList.findIndex(pool => pool.asset.symbol === poolAsset);
+            this.poolsList[poolIndex].unclaimed = unclaimed[poolAsset];
+          }
         );
       });
 
       this.avalancheBoostService.observeAvalancheBoostUnclaimedOld().subscribe(unclaimedOld => {
-        console.log(unclaimedOld);
         const incentivizedPools = Object.keys(unclaimedOld);
         incentivizedPools.forEach(
-            poolAsset => {
-              const poolIndex = this.poolsList.findIndex(pool => pool.asset.symbol === poolAsset);
-              this.poolsList[poolIndex].unclaimedOld = unclaimedOld[poolAsset];
-              console.log(this.poolsList);
-            }
+          poolAsset => {
+            const poolIndex = this.poolsList.findIndex(pool => pool.asset.symbol === poolAsset);
+            this.poolsList[poolIndex].unclaimedOld = unclaimedOld[poolAsset];
+          }
         );
       });
     },
@@ -370,6 +375,11 @@ export default {
           };
     },
 
+    async getRTKNBalance(provider, account) {
+      const rTKNTokenContract = new ethers.Contract(config.RTKN_ADDRESS, erc20ABI, provider.getSigner());
+      this.rTKNBalance = await this.getWalletTokenBalance(account, 'rTKN', rTKNTokenContract, 18);
+    },
+
   },
 };
 </script>
@@ -416,6 +426,15 @@ export default {
       }
     }
   }
+}
+
+.rtkn-balance {
+  border-style: solid;
+  border-width: 0 0 0 2px;
+  border-image-source: var(--stats-bar-beta__divider-background);
+  border-image-slice: 1;
+  margin-left: 8px;
+  padding-left: 10px;
 }
 
 

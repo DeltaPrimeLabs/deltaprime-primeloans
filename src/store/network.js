@@ -41,7 +41,7 @@ export default {
       window.provider = provider;
 
       await commit('setProvider', provider);
-      rootState.serviceRegistry.providerService.emitProviderCreated();
+      rootState.serviceRegistry.providerService.emitProviderCreated(provider);
 
       const historicalProvider = new ethers.providers.JsonRpcProvider(config.historicalRpcUrl);
       await commit('setHistoricalProvider', historicalProvider);
