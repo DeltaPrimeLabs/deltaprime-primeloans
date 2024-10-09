@@ -114,23 +114,23 @@ export default {
     WRAPPED_TOKEN_ADDRESS: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
     POOLS_CONFIG: {
         USDC: {
-            address: USDC_POOL_TUP.address,
+            address: '0x5f3DB5899a7937c9ABF0A5Fc91718E6F813e4195',
             tokenAddress: addresses.USDC
         },
         ETH: {
-            address: WETH_POOL_TUP.address,
+            address: '0xa1F7fF2b2Fd98a04CfC459600a8397Fa46609Fd5',
             tokenAddress: addresses.ETH
         },
         ARB: {
-            address: ARB_POOL_TUP.address,
+            address: '0x14c82CFc2c651700a66aBDd7dC375c9CeEFDDD72',
             tokenAddress: addresses.ARB
         },
         BTC: {
-            address: BTC_POOL_TUP.address,
+            address: '0x275Caecf5542bF4a3CF64aa78a3f57dc9939675C',
             tokenAddress: addresses.BTC
         },
         DAI: {
-            address: DAI_POOL_TUP.address,
+            address: '0x7Dcf909B1E4b280bEe72C6A69b3a7Ed8adfb63f0',
             tokenAddress: addresses.DAI,
         },
         USDT: {
