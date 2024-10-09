@@ -118,7 +118,7 @@ export default {
             tokenAddress: addresses.USDC
         },
         ETH: {
-            address: '0xa1F7fF2b2Fd98a04CfC459600a8397Fa46609Fd5',
+            address: '0x2E2fE9Bc7904649b65B6373bAF40F9e2E0b883c5',
             tokenAddress: addresses.ETH
         },
         ARB: {
