@@ -65,7 +65,7 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
     struct PauseStatus {
         bool deposits;
         bool withdrawals;
-        bool borrwowings;
+        bool borrowings;
         bool repayments;
         bool transfers;
         bool approvals;
@@ -98,12 +98,12 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
     }
 
     function pauseBorrowings() public onlyRole(PAUSE_ROLE) {
-        pauseStatus.borrwowings = true;
+        pauseStatus.borrowings = true;
         emit BorrowingsPause(msg.sender);
     }
 
     function unpauseBorrowings() public onlyRole(UNPAUSE_ROLE) {
-        pauseStatus.borrwowings = false;
+        pauseStatus.borrowings = false;
         emit BorrowingsUnpause(msg.sender);
     }
 
@@ -800,7 +800,7 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
     }
 
     modifier noBorrowingsPause() {
-        require(!pauseStatus.borrwowings, "Borrowings are paused");
+        require(!pauseStatus.borrowings, "Borrowings are paused");
         _;
     }
 
