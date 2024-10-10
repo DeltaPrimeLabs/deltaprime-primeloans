@@ -460,7 +460,7 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
      * Deposits the amount
      * It updates user deposited balance, total deposited and rates
      **/
-    function deposit(uint256 _amount) public noGlobalPause noDepositsPause virtual {
+    function deposit(uint256 _amount) public virtual {
         depositOnBehalf(_amount, msg.sender);
     }
 
