@@ -300,38 +300,18 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
         emit BorrowersRegistryChanged(address(borrowersRegistry_), block.timestamp);
     }
 
-    /**
-     * Sets the new Vesting Distributor.
-     * Only the owner of the Contract can execute this function.
-     * @dev _distributor the address of vestingDistributor
-     **/
-    // TODO: This one is probably not used - check if we can remove usage of vestingDistributor
-    function setVestingDistributor(address _distributor) external onlyOwner  {
-        if (
-            !AddressUpgradeable.isContract(_distributor) && _distributor != address(0)
-        ) revert NotAContract(_distributor);
-        vestingDistributor = VestingDistributor(_distributor);
-
-        emit VestingDistributorChanged(_distributor, block.timestamp);
-    }
-
     /* ========== MUTATIVE FUNCTIONS ========== */
     function transfer(
         address recipient,
         uint256 amount
     ) external override nonReentrant noTransfersPause noGlobalPause returns (bool) {
+        require(isWithdrawalAmountAvailable(msg.sender, amount) , "Balance is locked");
         if (recipient == address(0)) revert TransferToZeroAddress();
 
         if (recipient == address(this)) revert TransferToPoolAddress();
 
         address account = msg.sender;
         _accumulateDepositInterest(account);
-
-        (uint256 lockedAmount, uint256 transferrableAmount) = _getAmounts(account);
-        if (amount > transferrableAmount)
-            revert TransferAmountExceedsBalance(amount, transferrableAmount);
-
-        _updateWithdrawn(account, amount, lockedAmount);
 
         // (this is verified in "require" above)
         unchecked {
@@ -416,18 +396,13 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
     ) external override nonReentrant noGlobalPause noTransfersPause returns (bool) {
         if (_allowed[sender][msg.sender] < amount)
             revert InsufficientAllowance(amount, _allowed[sender][msg.sender]);
+        require(isWithdrawalAmountAvailable(msg.sender, amount) , "Balance is locked");
 
         if (recipient == address(0)) revert TransferToZeroAddress();
 
         if (recipient == address(this)) revert TransferToPoolAddress();
 
         _accumulateDepositInterest(sender);
-
-        (uint256 lockedAmount, uint256 transferrableAmount) = _getAmounts(sender);
-        if (amount > transferrableAmount)
-            revert TransferAmountExceedsBalance(amount, transferrableAmount);
-
-        _updateWithdrawn(sender, amount, lockedAmount);
 
         _deposited[sender] -= amount;
         _allowed[sender][msg.sender] -= amount;
@@ -744,11 +719,6 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
 
     function _burn(address account, uint256 amount) internal {
         if (amount > _deposited[account]) revert BurnAmountExceedsBalance();
-        (uint256 lockedAmount, uint256 transferrableAmount) = _getAmounts(account);
-        if (amount > transferrableAmount)
-            revert BurnAmountExceedsAvailableForUser();
-
-        _updateWithdrawn(account, amount, lockedAmount);
 
         // verified in "require" above
         unchecked {
@@ -756,36 +726,6 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
         }
 
         emit Transfer(account, address(0), amount);
-    }
-
-    function _getAmounts(
-        address account
-    ) internal view returns (uint256 lockedAmount, uint256 transferrableAmount) {
-        if (address(vestingDistributor) != address(0)) {
-            lockedAmount = vestingDistributor.locked(account);
-            if (lockedAmount > 0) {
-                transferrableAmount =
-                    _deposited[account] -
-                    (lockedAmount - vestingDistributor.availableToWithdraw(account));
-            } else {
-                transferrableAmount = _deposited[account];
-            }
-        } else {
-            transferrableAmount = _deposited[account];
-        }
-    }
-
-    function _updateWithdrawn(
-        address account,
-        uint256 amount,
-        uint256 lockedAmount
-    ) internal {
-        uint256 availableUnvested = _deposited[account] - lockedAmount;
-        if (
-            amount > availableUnvested && address(vestingDistributor) != address(0)
-        ) {
-            vestingDistributor.updateWithdrawn(account, amount - availableUnvested);
-        }
     }
 
     function _updateRates() internal {
@@ -997,17 +937,6 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
      * @param unlockTime the time when the deposit will be unlocked
      **/
     event DepositLocked(address indexed user, uint256 amount, uint256 lockTime, uint256 unlockTime);
-    
-    /**
-     * @dev emitted after changing vesting distributor
-     * @param distributor an address of the newly set distributor
-     * @param timestamp of the distributor change
-     **/
-    event VestingDistributorChanged(
-        address indexed distributor,
-        uint256 timestamp
-    );
-
 
     /* ========== ERRORS ========== */
 
@@ -1060,9 +989,6 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
 
     // ERC20: burn amount exceeds current pool indexed balance
     error BurnAmountExceedsBalance();
-
-    // ERC20: burn amount exceeds current amount available (including vesting)
-    error BurnAmountExceedsAvailableForUser();
 
     // Trying to repay more than was borrowed
     error RepayingMoreThanWasBorrowed();
