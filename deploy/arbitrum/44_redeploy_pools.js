@@ -16,7 +16,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deployer } = await getNamedAccounts();
     const deploymentConfig = [
         {
-            ratesCalculatorName: "WethVariableUtilisationRatesCalculatorZeroRate",
+            ratesCalculatorName: "WethVariableUtilisationRatesCalculator",
             poolTupName: "WethPoolTUP",
             poolContractName: "WethPool",
             depositIndexName: "WethDepositIndex",
@@ -24,7 +24,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
             tokenAddress: "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
         },
         {
-            ratesCalculatorName: "ArbVariableUtilisationRatesCalculatorZeroRate",
+            ratesCalculatorName: "ArbVariableUtilisationRatesCalculator",
             poolTupName: "ArbPoolTUP",
             poolContractName: "ArbPool",
             depositIndexName: "ArbDepositIndex",
@@ -32,7 +32,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
             tokenAddress: "0x912CE59144191C1204E64559FE8253a0e49E6548"
         },
         {
-            ratesCalculatorName: "BtcVariableUtilisationRatesCalculatorZeroRate",
+            ratesCalculatorName: "BtcVariableUtilisationRatesCalculator",
             poolTupName: "BtcPoolTUP",
             poolContractName: "BtcPool",
             depositIndexName: "BtcDepositIndex",
@@ -40,7 +40,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
             tokenAddress: "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f"
         },
         {
-            ratesCalculatorName: "DaiVariableUtilisationRatesCalculatorZeroRate",
+            ratesCalculatorName: "DaiVariableUtilisationRatesCalculator",
             poolTupName: "DaiPoolTUP",
             poolContractName: "DaiPool",
             depositIndexName: "DaiDepositIndex",
@@ -48,7 +48,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
             tokenAddress: "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1"
         },
         {
-            ratesCalculatorName: "UsdcVariableUtilisationRatesCalculatorZeroRate",
+            ratesCalculatorName: "UsdcVariableUtilisationRatesCalculator",
             poolTupName: "UsdcPoolTUP",
             poolContractName: "UsdcPool",
             depositIndexName: "UsdcDepositIndex",
@@ -84,16 +84,16 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 async function performFullPoolDeploymentAndInitialization(deploy, deployer, ratesCalculatorName, poolTupName, poolContractName, depositIndexName, borrowIndexName, tokenAddress){
     let poolDeploymentConfig = {}
 
-    let ratesCalculator = await deployContractWithOwnershipTransfer(
-        deploy,
-        deployer,
-        ratesCalculatorName,
-        "./contracts/deployment/arbitrum",
-        [],
-        MULTISIG_OWNER
-    );
-    poolDeploymentConfig.ratesCalculator = ratesCalculator.address;
-
+    // let ratesCalculator = await deployContractWithOwnershipTransfer(
+    //     deploy,
+    //     deployer,
+    //     ratesCalculatorName,
+    //     "./contracts/deployment/arbitrum",
+    //     [],
+    //     MULTISIG_OWNER
+    // );
+    // poolDeploymentConfig.ratesCalculator = ratesCalculator.address;
+    // //
     let poolImplementation = await deployContractWithOwnershipTransfer(
         deploy,
         deployer,
@@ -102,42 +102,42 @@ async function performFullPoolDeploymentAndInitialization(deploy, deployer, rate
         [],
         undefined
     );
-
+    //
     poolDeploymentConfig.poolImplementation = poolImplementation.address;
-
-    let poolTUP = await deployPoolTUPWithImplementationAndMultisigAdmin(deploy, deployer, poolTupName, poolImplementation.address);
-
-    poolDeploymentConfig.poolTUP = poolTUP.address;
-
-    let [depositIndexTUPAddress, depositIndexImpl] = await deployLinearIndex(depositIndexName, poolTUP.address, deploy, deployer, MULTISIG_ADMIN);
-    poolDeploymentConfig.depositIndexTUPAddress = depositIndexTUPAddress;
-    poolDeploymentConfig.depositIndexImpl = depositIndexImpl;
-
-    let [borrowIndexTUPAddress, borrowIndexImpl] = await deployLinearIndex(borrowIndexName, poolTUP.address, deploy, deployer, MULTISIG_ADMIN);
-    poolDeploymentConfig.borrowIndexTUPAddress = borrowIndexTUPAddress;
-    poolDeploymentConfig.borrowIndexImpl = borrowIndexImpl;
-
-    await initializePoolTUPAndProposeOwnershipTransferToMultisig(
-        deploy,
-        deployer,
-        poolTUP,
-        poolTupName,
-        poolImplementation.address,
-        poolContractName,
-        ratesCalculator.address,
-        SMART_LOANS_FACTORY,
-        depositIndexTUPAddress,
-        borrowIndexTUPAddress,
-        tokenAddress,
-        ethers.constants.AddressZero,
-        0
-    );
-
-    poolDeploymentConfig.borrowersRegistry = SMART_LOANS_FACTORY;
+    //
+    // let poolTUP = await deployPoolTUPWithImplementationAndMultisigAdmin(deploy, deployer, poolTupName, poolImplementation.address);
+    //
+    // poolDeploymentConfig.poolTUP = poolTUP.address;
+    //
+    // let [depositIndexTUPAddress, depositIndexImpl] = await deployLinearIndex(depositIndexName, poolTUP.address, deploy, deployer, MULTISIG_ADMIN);
+    // poolDeploymentConfig.depositIndexTUPAddress = depositIndexTUPAddress;
+    // poolDeploymentConfig.depositIndexImpl = depositIndexImpl;
+    //
+    // let [borrowIndexTUPAddress, borrowIndexImpl] = await deployLinearIndex(borrowIndexName, poolTUP.address, deploy, deployer, MULTISIG_ADMIN);
+    // poolDeploymentConfig.borrowIndexTUPAddress = borrowIndexTUPAddress;
+    // poolDeploymentConfig.borrowIndexImpl = borrowIndexImpl;
+    //
+    // await initializePoolTUPAndProposeOwnershipTransferToMultisig(
+    //     deploy,
+    //     deployer,
+    //     poolTUP,
+    //     poolTupName,
+    //     poolImplementation.address,
+    //     poolContractName,
+    //     ratesCalculator.address,
+    //     SMART_LOANS_FACTORY,
+    //     depositIndexTUPAddress,
+    //     borrowIndexTUPAddress,
+    //     tokenAddress,
+    //     ethers.constants.AddressZero,
+    //     0
+    // );
+    //
+    // poolDeploymentConfig.borrowersRegistry = SMART_LOANS_FACTORY;
     poolDeploymentConfig.tokenAddress = tokenAddress;
-    poolDeploymentConfig.poolRewarder = ethers.constants.AddressZero;
-    poolDeploymentConfig.totalSupplyCap = 0;
-
+    // poolDeploymentConfig.poolRewarder = ethers.constants.AddressZero;
+    // poolDeploymentConfig.totalSupplyCap = 0;
+    //
     deploymentHisotryConfig.push(poolDeploymentConfig);
 
 }

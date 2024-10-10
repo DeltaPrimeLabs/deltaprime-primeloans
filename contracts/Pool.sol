@@ -122,6 +122,10 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
         return address(0);
     }
 
+    constructor() {
+        _disableInitializers();
+    }
+
     function initialize(
         IRatesCalculator ratesCalculator_,
         IBorrowersRegistry borrowersRegistry_,
