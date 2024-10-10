@@ -20,7 +20,7 @@ contract PoolRoleManager is AccessControlDefaultAdminRules {
 
     bytes32 public constant UNPAUSE_ROLE = keccak256("UNPAUSE_ROLE");
 
-    bytes32 public constant OPERATOR_ROLE = keccak256("SET_TOTAL_SUPPLY_CAP_ROLE");
+    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
 
     /**
      * @dev Constructor that sets up the default admin rules
