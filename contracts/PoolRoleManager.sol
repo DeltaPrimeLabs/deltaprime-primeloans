@@ -30,6 +30,12 @@ contract PoolRoleManager is AccessControlDefaultAdminRules {
     constructor(uint48 adminTransferDelay, address initialAdmin, address pauseAdmin, address unpauseAdmin, address subcontractsOperator)
     AccessControlDefaultAdminRules(adminTransferDelay, initialAdmin)
     {
+        require(initialAdmin != address(0), "PoolRoleManager: initialAdmin is the zero address");
+        require(pauseAdmin != address(0), "PoolRoleManager: pauseAdmin is the zero address");
+        require(unpauseAdmin != address(0), "PoolRoleManager: unpauseAdmin is the zero address");
+        require(subcontractsOperator != address(0), "PoolRoleManager: subcontractsOperator is the zero address");
+        require(initialAdmin != subcontractsOperator, "PoolRoleManager: initialAdmin and subcontractsOperator cannot be the same");
+
         // PAUSE ROLE
         _grantRole(PAUSE_ROLE, initialAdmin);
         _grantRole(PAUSE_ROLE, pauseAdmin);
