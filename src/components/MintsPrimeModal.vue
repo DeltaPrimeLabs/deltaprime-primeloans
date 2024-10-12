@@ -34,7 +34,7 @@
         <div class="top-info__label">Available:</div>
         <div class="top-info__value"> {{secondAssetAvailableBalance | smartRound }}</div>
         <span v-if="secondAsset" class="top-info__currency">
-          {{secondAssetSymbol}}
+          {{isSecondAssetNative ? secondAssetSymbol : `W${secondAssetSymbol}`}}
         </span>
       </div>
       <CurrencyInput v-if="secondAsset"
@@ -192,7 +192,6 @@ export default {
     },
 
     async secondInputChange(change) {
-      console.log('secondInputChange', change);
       this.secondAmount = change;
       this.secondInputError = await this.$refs.secondInput.forceValidationCheck();
       await this.calculateSPrimeBalance();
@@ -221,7 +220,7 @@ export default {
           validate: (value) => {
             let balance = this.isSecondAssetNative ? this.nativeTokenBalance : this.secondAssetBalance;
             if (value > balance) {
-              return `Exceeds ${this.secondAsset.symbol} balance`;
+              return `Exceeds ${this.isSecondAssetNative ? '' : 'W'}${this.secondAsset.symbol} balance`;
             }
           }
         }

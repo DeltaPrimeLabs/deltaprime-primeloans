@@ -210,6 +210,7 @@ export default {
     this.dex = config.SPRIME_CONFIG.default;
     this.secondAsset = config.SPRIME_CONFIG[this.dex].default;
     this.sPrimeConfig = config.SPRIME_CONFIG[this.dex][this.secondAsset];
+    console.log(this.secondAsset);
 
     const sprimeStart = new Date();
     sprimeStart.setDate(1);
@@ -246,9 +247,9 @@ export default {
       this.sPrimeService.observeSPrimeTotalValue(),
       this.sPrimeService.observeTotalRevenueReceived()
     ])
-        .subscribe(([totalValue, totalRevenue]) => {
-          this.ytdApr = totalRevenue / totalValue / diffDays * 365;
-        });
+      .subscribe(([totalValue, totalRevenue]) => {
+        this.ytdApr = totalRevenue / totalValue / diffDays * 365;
+      });
 
     combineLatest([
       this.sPrimeService.observeSPrimeUnderlyingPool(),
@@ -394,60 +395,63 @@ export default {
       TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
     },
     async openMintSPrimeModal() {
-      const modalInstance = this.openModal(MintsPrimeModal);
-      let activeId, currentPrice;
-      if (this.dex === 'TRADERJOEV2') {
-        [, activeId] = await this
-          .traderJoeService
-          .getLBPairReservesAndActiveBin(this.sPrimeConfig.poolAddress, this.provider)
-      } else {
-        [currentPrice, activeId] = await this
-          .uniswapV3Service
-          .getPriceAndActiveId(this.sPrimeConfig.poolAddress, this.provider)
-      }
+      this.priceService.observePrices().subscribe(async (prices) => {
 
-      const [primeBalance, secondAssetBalance] = await Promise.all(
-        [
-          this.fetchUserTokenBalance('PRIME'),
-          this.fetchUserTokenBalance(this.secondAsset)
-        ]
-      );
+        const modalInstance = this.openModal(MintsPrimeModal);
+        let activeId, currentPrice;
+        if (this.dex === 'TRADERJOEV2') {
+          [, activeId] = await this
+            .traderJoeService
+            .getLBPairReservesAndActiveBin(this.sPrimeConfig.poolAddress, this.provider)
+        } else {
+          [currentPrice, activeId] = await this
+            .uniswapV3Service
+            .getPriceAndActiveId(this.sPrimeConfig.poolAddress, this.provider)
+        }
 
-      const nativeTokenBalance = parseFloat(ethers.utils.formatEther(await this.provider.getBalance(this.account)));
-      modalInstance.primeBalance = primeBalance;
-      modalInstance.firstAssetPrice = this.poolPrice;
-      modalInstance.secondAssetPrice = this.assets[this.secondAsset].price;
-      modalInstance.secondAssetBalance = secondAssetBalance;
-      modalInstance.secondAssetSymbol = this.secondAsset;
-      modalInstance.nativeTokenBalance = nativeTokenBalance;
-      modalInstance.isSecondAssetNative = this.secondAsset === config.nativeToken;
-      modalInstance.sPrimeActive = this.sPrimeActive;
-      modalInstance.$on('MINT', sPrimeMintEvent => {
+        const [primeBalance, secondAssetBalance] = await Promise.all(
+          [
+            this.fetchUserTokenBalance('PRIME'),
+            this.fetchUserTokenBalance(this.secondAsset)
+          ]
+        );
 
-        const idSlippage = this.dex === 'TRADERJOEV2' ?
-          getTraderJoeV2IdSlippageFromPriceSlippage(sPrimeMintEvent.slippage / 100, config.SPRIME_CONFIG.TRADERJOEV2[this.secondAsset].binStep)
-          : getUniswapV3SlippageFromPriceSlippage(currentPrice, sPrimeMintEvent.slippage / 100);
+        const nativeTokenBalance = parseFloat(ethers.utils.formatEther(await this.provider.getBalance(this.account)));
+        modalInstance.primeBalance = primeBalance;
+        modalInstance.firstAssetPrice = this.poolPrice;
+        modalInstance.secondAssetPrice = prices[this.secondAsset];
+        modalInstance.secondAssetBalance = secondAssetBalance;
+        modalInstance.secondAssetSymbol = this.secondAsset;
+        modalInstance.nativeTokenBalance = nativeTokenBalance;
+        modalInstance.isSecondAssetNative = this.secondAsset === config.nativeToken;
+        modalInstance.sPrimeActive = this.sPrimeActive;
+        modalInstance.$on('MINT', sPrimeMintEvent => {
 
-        const sPrimeMintRequest = {
-          sPrimeAddress: this.sPrimeConfig.sPrimeAddress,
-          secondAsset: this.secondAsset,
-          isRebalance: true,
-          amountPrime: sPrimeMintEvent.primeAmount,
-          amountSecond: sPrimeMintEvent.secondAmount,
-          isSecondAssetNative: sPrimeMintEvent.isSecondAssetNative,
-          idSlippage: idSlippage,
-          slippage: sPrimeMintEvent.slippage,
-          dex: this.dex,
-          activeId: activeId
-        };
+          const idSlippage = this.dex === 'TRADERJOEV2' ?
+            getTraderJoeV2IdSlippageFromPriceSlippage(sPrimeMintEvent.slippage / 100, config.SPRIME_CONFIG.TRADERJOEV2[this.secondAsset].binStep)
+            : getUniswapV3SlippageFromPriceSlippage(currentPrice, sPrimeMintEvent.slippage / 100);
 
-        this.handleTransaction(this.sPrimeMint, {sPrimeMintRequest: sPrimeMintRequest}, () => {
-          this.$forceUpdate();
-        }, (error) => {
-          this.handleTransactionError(error);
-        }).then(() => {
+          const sPrimeMintRequest = {
+            sPrimeAddress: this.sPrimeConfig.sPrimeAddress,
+            secondAsset: this.secondAsset,
+            isRebalance: true,
+            amountPrime: sPrimeMintEvent.primeAmount,
+            amountSecond: sPrimeMintEvent.secondAmount,
+            isSecondAssetNative: sPrimeMintEvent.isSecondAssetNative,
+            idSlippage: idSlippage,
+            slippage: sPrimeMintEvent.slippage,
+            dex: this.dex,
+            activeId: activeId
+          };
+
+          this.handleTransaction(this.sPrimeMint, {sPrimeMintRequest: sPrimeMintRequest}, () => {
+            this.$forceUpdate();
+          }, (error) => {
+            this.handleTransactionError(error);
+          }).then(() => {
+          });
         });
-      });
+      })
     },
     async openRebalanceSPrimeModal() {
       const modalInstance = this.openModal(RebalancesPrimeModal);
