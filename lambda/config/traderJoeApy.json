@@ -5,35 +5,35 @@
       "assetY": "0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e",
       "binStep": 20,
       "version": "v21",
-      "index": "AVAX-USDC0.2%"
+      "queryAddress": "0xd446eb1660f766d533beceef890df7a69d26f7d1"
     },
     "TJLB_ETH-AVAX": {
       "assetX": "0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab",
       "assetY": "AVAX",
       "binStep": 10,
       "version": "v21",
-      "index": "WETH.e-AVAX0.1%"
+      "queryAddress": "0x1901011a39b11271578a1283d620373abed66faa"
     },
     "TJLB_BTCB-AVAX": {
       "assetX": "0x152b9d0fdc40c096757f570a51e494bd4b943e50",
       "assetY": "AVAX",
       "binStep": 10,
       "version": "v21",
-      "index": "BTC.b-AVAX0.1%"
+      "queryAddress": "0xD9fa522F5BC6cfa40211944F2C8DA785773Ad99D"
     },
     "TJLB_JOE-AVAX_2_2": {
       "assetX": "0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd",
       "assetY": "AVAX",
       "binStep": 25,
       "version": "v22",
-      "index": "JOE-AVAX0.25%"
+      "queryAddress": "0xea7309636e7025fda0ee2282733ea248c3898495"
     },
     "TJLB_USDT-USDC_2_2": {
       "assetX": "0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7",
       "assetY": "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
       "binStep": 1,
       "version": "v22",
-      "index": "USDt-USDC0.01%"
+      "queryAddress": "0x2823299af89285ff1a1abf58db37ce57006fef5d"
     }
   },
   "arbitrum": {
@@ -42,120 +42,120 @@
       "assetY": "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
       "binStep": 15,
       "version": "v21",
-      "index": "ETH-USDT0.01%"
+      "queryAddress": "0xd387c40a72703B38A5181573724bcaF2Ce6038a5"
     },
     "TJLB_GMX_ETH": {
       "assetX": "0xfc5a1a6eb076a2c7ad06ed22c90d7e710e35ad0a",
       "assetY": "ETH",
       "binStep": 20,
       "version": "v21",
-      "index": "GMX-ETH0.2%"
+      "queryAddress": "0x60563686ca7b668e4a2d7D31448e5F10456ecaF8"
     },
     "TJLB_DAI_USDCe": {
       "assetX": "0xda10009cbd5d07dd0cecc66161fc93d7c9000da1",
       "assetY": "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8",
       "binStep": 1,
       "version": "v21",
-      "index": "DAI-USDC.e0.005%"
+      "queryAddress": "0x500173F418137090dad96421811147b63b448A0f"
     },
     "TJLB_ETH_USDCe": {
       "assetX": "ETH",
       "assetY": "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8",
       "binStep": 15,
       "version": "v21",
-      "index": "ETH-USDC.e0.1%"
+      "queryAddress": "0x94d53BE52706a155d27440C4a2434BEa772a6f7C"
     },
     "TJLB_ARB_ETH": {
       "assetX": "0x912ce59144191c1204e64559fe8253a0e49e6548",
       "assetY": "ETH",
       "binStep": 10,
       "version": "v21",
-      "index": "ARB-ETH0.1%"
+      "queryAddress": "0x0Be4aC7dA6cd4bAD60d96FbC6d091e1098aFA358"
     },
     "TJLB_BTC_ETH": {
       "assetX": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
       "assetY": "ETH",
       "binStep": 10,
       "version": "v21",
-      "index": "WBTC-ETH0.1%"
+      "queryAddress": "0xcfA09B20c85933B197e8901226ad0D6dACa7f114"
     },
     "TJLB_JOE_ETH": {
       "assetX": "0x371c7ec6d8039ff7933a2aa28eb827ffe1f52f07",
       "assetY": "ETH",
       "binStep": 20,
       "version": "v21",
-      "index": "JOE-ETH0.2%"
+      "queryAddress": "0x4b9bfed1dd4e6780454b2b02213788f31ffba74a"
     },
     "TJLB_GRAIL_ETH": {
       "assetX": "0x3d9907f9a368ad0a51be60f7da3b97cf940982d8",
       "assetY": "ETH",
       "binStep": 25,
       "version": "v21",
-      "index": "GRAIL-ETH0.25%"
+      "queryAddress": "0x461761f2848ec6b9fb3d3fb031e112c7d5b89563"
     },
     "TJLB_WOO_ETH": {
       "assetX": "0xcafcd85d8ca7ad1e1c6f82f651fa15e33aefd07b",
       "assetY": "ETH",
       "binStep": 25,
       "version": "v21",
-      "index": "WOO-ETH0.25%"
+      "queryAddress": "0xb87495219c432fc85161e4283dff131692a528bd"
     },
     "TJLB_USDT_USDCe": {
       "assetX": "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
       "assetY": "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8",
       "binStep": 1,
       "version": "v21",
-      "index": "USDT-USDC.e0.005%"
+      "queryAddress": "0x0242dd3b2e792cdbd399cc6195951bc202aee97b"
     },
     "TJLB_ETH_USDC": {
       "assetX": "ETH",
       "assetY": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
       "binStep": 15,
       "version": "v21",
-      "index": "ETH-USDC0.1%"
+      "queryAddress": "0x69f1216cb2905bf0852f74624d5fa7b5fc4da710"
     },
     "TJLB_MAGIC_ETH": {
       "assetX": "0x539bdE0d7Dbd336b79148AA742883198BBF60342",
       "assetY": "ETH",
       "binStep": 25,
       "version": "v21",
-      "index": "MAGIC-ETH0.25%"
+      "queryAddress": "0xe847c55a3148580e864ec31e7273bc4ec25089c1"
     },
     "TJLB_ARB_ETH_2_2": {
       "assetX": "0x912ce59144191c1204e64559fe8253a0e49e6548",
       "assetY": "ETH",
       "binStep": 10,
       "version": "v22",
-      "index": "ARB-ETH0.04%"
+      "queryAddress": "0xC09F4ad33a164e29DF3c94719ffD5F7B5B057781"
     },
     "TJLB_ETH_USDC_2_2": {
       "assetX": "ETH",
       "assetY": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
       "binStep": 10,
       "version": "v22",
-      "index": "ETH-USDC0.01%"
+      "queryAddress": "0xb7236B927e03542AC3bE0A054F2bEa8868AF9508"
     },
     "TJLB_ETH_USDT_2_2": {
       "assetX": "ETH",
       "assetY": "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
       "binStep": 10,
       "version": "v22",
-      "index": "ETH-USDT0.01%"
+      "queryAddress": "0x055f2cF6da90F14598D35C1184ED535C908dE737"
     },
     "TJLB_wstETH_ETH_2_2": {
       "assetX": "0x5979d7b546e38e414f7e9822514be443a4800529",
       "assetY": "ETH",
-      "index": "wstETH-ETH0.005%"
+      "queryAddress": "0x71bc33F539f83b99674D71AcFeb2ce0373376512"
     },
     "TJLB_ezETH_ETH_2_2": {
       "assetX": "0x2416092f143378750bb29b79ed961ab195cceea5",
       "assetY": "ETH",
-      "index": "ezETH-ETH0.005%"
+      "queryAddress": "0x8C0635aD0AfD7aa9444AF07Da6C104DD79b58D82"
     },
     "TJLB_weETH_ETH_2_2": {
       "assetX": "0x35751007a407ca6feffe80b3cb397736d2cf4dbe",
       "assetY": "ETH",
-      "index": "weETH-ETH0.005%"
+      "queryAddress": "0x2088eB5E23F24458e241430eF155d4EC05BBc9e8"
     }
   }
 }

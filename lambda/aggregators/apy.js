@@ -466,27 +466,17 @@ const traderJoeApyAggregator = async (event) => {
     for (const [pool, poolData] of Object.entries(pools)) {
       try {
         await page.click('.chakra-tabs__tab-panels .chakra-input__group input', {clickCount: 3})
-        await page.type('.chakra-tabs__tab-panels .chakra-input__group input', ['AVAX', 'ETH'].includes(poolData.assetX) ? poolData.assetY : poolData.assetX)
+        await page.type('.chakra-tabs__tab-panels .chakra-input__group input', poolData.queryAddress)
         await new Promise((resolve, reject) => setTimeout(resolve, 2000));
         await page.waitForSelector('.chakra-table__container .chakra-table > thead > tr')
         const marketsRows = Array.from(await page.$$(".chakra-table__container .chakra-table > tbody > tr"))
 
-        let selectedRow = undefined
-        let index = 0
-        while (selectedRow === undefined && index < marketsRows.length) {
-          const text = (await (await marketsRows[index].getProperty("textContent")).jsonValue()).replace(/\s+/g, "");
-          if (text?.startsWith(poolData.index)) {
-            selectedRow = marketsRows[index]
-          }
-          index++
-        }
+        const selectedRow = marketsRows[0]
 
         const marketColumns = await selectedRow.$$("td");
-        const marketApy = parseFloat((await (await marketColumns[6].getProperty("textContent")).jsonValue()).split('%')[0].replace(',', '').trim());
+        const marketApyValue = parseFloat((await (await marketColumns[6].getProperty("textContent")).jsonValue()).split('%')[0].replace(',', '').trim())
+        const marketApy = isNaN(marketApyValue) ? -1 : marketApyValue
         console.log(pool, marketApy);
-
-        selectedRow = undefined
-        index = 0
         const params = {
           TableName: process.env.APY_TABLE,
           Key: {
