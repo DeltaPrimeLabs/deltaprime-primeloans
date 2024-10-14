@@ -228,9 +228,9 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
         }
 
         emit Transfer(account, recipient, amount);
-//        Don't interact with VPrimeController here, as it's not necessary for decommissioned pools.
-//        notifyVPrimeController(msg.sender);
-//        notifyVPrimeController(recipient);
+
+        notifyVPrimeController(msg.sender);
+        notifyVPrimeController(recipient);
 
         return true;
     }
