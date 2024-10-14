@@ -138,7 +138,7 @@ abstract contract TraderJoeV2Facet is ITraderJoeV2Facet, ReentrancyGuardKeccak, 
         emit FundedLiquidityTraderJoeV2(msg.sender, address(pair), ids, amounts, block.timestamp);
     }
 
-    function withdrawLiquidityTraderJoeV2(ILBPair pair, uint256[] memory ids, uint256[] memory amounts) external nonReentrant onlyOwner canRepayDebtFully noBorrowInTheSameBlock remainsSolvent {
+    function withdrawLiquidityTraderJoeV2(ILBPair pair, uint256[] memory ids, uint256[] memory amounts) external noOwnershipTransferInLast24hrs nonReentrant onlyOwner canRepayDebtFully noBorrowInTheSameBlock remainsSolvent {
         if (!isPairWhitelisted(address(pair))) revert TraderJoeV2PoolNotWhitelisted();
 
         pair.batchTransferFrom(address(this), msg.sender, ids, amounts);
