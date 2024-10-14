@@ -201,16 +201,17 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
 
 
     /* ========== MUTATIVE FUNCTIONS ========== */
+    // @dev This specific function is altered to allow users to transfer their old pools tokens out of their account regardless of locked state.
     function transfer(address recipient, uint256 amount) external override nonReentrant returns (bool) {
-        require(isWithdrawalAmountAvailable(msg.sender, amount) , "Balance is locked");
+//        require(isWithdrawalAmountAvailable(msg.sender, amount) , "Balance is locked");
         if(recipient == address(0)) revert TransferToZeroAddress();
 
         if(recipient == address(this)) revert TransferToPoolAddress();
 
         address account = msg.sender;
         _accumulateDepositInterest(account);
+        amount = Math.min(amount, _deposited[account]); // Allow transferring whole balance, including the freshly minted interest.
 
-        // (this is verified in "require" above)
         unchecked {
             _deposited[account] -= amount;
         }
@@ -227,9 +228,9 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
         }
 
         emit Transfer(account, recipient, amount);
-
-        notifyVPrimeController(msg.sender);
-        notifyVPrimeController(recipient);
+//        Don't interact with VPrimeController here, as it's not necessary for decommissioned pools.
+//        notifyVPrimeController(msg.sender);
+//        notifyVPrimeController(recipient);
 
         return true;
     }
