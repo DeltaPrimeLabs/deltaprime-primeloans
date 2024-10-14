@@ -367,25 +367,22 @@ export default {
     },
 
     async getUserBinsAndBalances() {
-      let result = await fetch(`https://corsproxy.io/?https://barn.traderjoexyz.com/v1/user/bin-ids/${this.account.toLowerCase()}/${config.chainSlug}/${this.lpToken.address.toLowerCase()}`);
+      let result = await fetch(`https://geo-service-r9helgya1-deltaprimelabs.vercel.app/api/tjv2-bins?account=${this.account.toLowerCase()}&chainSlug=${config.chainSlug}&address=${this.lpToken.address.toLowerCase()}`);
 
-      result = await result.text();
-      if (/^[0-9\[\]\,]*$/.test(result)) {
-        this.userBins = JSON.parse(result);
-        let readProvider = new ethers.providers.JsonRpcProvider(config.readRpcUrl);
-        const lbToken = new ethers.Contract(this.lpToken.address, LB_TOKEN.abi, readProvider);
+      this.userBins = (await result.json()).result;
+      let readProvider = new ethers.providers.JsonRpcProvider(config.readRpcUrl);
+      const lbToken = new ethers.Contract(this.lpToken.address, LB_TOKEN.abi, readProvider);
 
-        this.userBalances = [];
-        await Promise.all(
-            this.userBins.map(async (id, i) => {
-              return lbToken.balanceOf(this.account, id).then(
-                  res => {
-                    this.userBalances[i] = res;
-                  }
-              )
-            })
-        );
-      }
+      this.userBalances = [];
+      await Promise.all(
+        this.userBins.map(async (id, i) => {
+          return lbToken.balanceOf(this.account, id).then(
+              res => {
+                this.userBalances[i] = res;
+              }
+          )
+        })
+      );
     },
 
     calculateUserValue() {
