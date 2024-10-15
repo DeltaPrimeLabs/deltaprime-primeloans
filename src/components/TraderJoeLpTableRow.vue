@@ -367,7 +367,7 @@ export default {
     },
 
     async getUserBinsAndBalances() {
-      let result = await fetch(`https://geo-service-r9helgya1-deltaprimelabs.vercel.app/api/tjv2-bins?account=${this.account.toLowerCase()}&chainSlug=${config.chainSlug}&address=${this.lpToken.address.toLowerCase()}`);
+      let result = await fetch(`${config.geolocationServiceUrl}/api/tjv2-bins?account=${this.account.toLowerCase()}&chainSlug=${config.chainSlug}&address=${this.lpToken.address.toLowerCase()}`);
 
       this.userBins = (await result.json()).result;
       let readProvider = new ethers.providers.JsonRpcProvider(config.readRpcUrl);
