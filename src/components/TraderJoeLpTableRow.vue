@@ -367,7 +367,7 @@ export default {
     },
 
     async getUserBinsAndBalances() {
-      let result = await fetch(`${config.geolocationServiceUrl}/api/tjv2-bins?account=${this.account.toLowerCase()}&chainSlug=${config.chainSlug}&address=${this.lpToken.address.toLowerCase()}`);
+      let result = await fetch(`${config.geolocationServiceUrl}/api/tjv2-bins?account=${this.account}&chainSlug=${config.chainSlug}&address=${this.lpToken.address}`);
 
       this.userBins = (await result.json()).result;
       let readProvider = new ethers.providers.JsonRpcProvider(config.readRpcUrl);
