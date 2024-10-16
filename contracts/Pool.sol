@@ -238,17 +238,11 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
         uint256 amount
     ) external override nonReentrant  returns (bool) {
         if (recipient == address(0)) revert TransferToZeroAddress();
-
         if (recipient == address(this)) revert TransferToPoolAddress();
+        require(isWithdrawalAmountAvailable(msg.sender, amount) , "Balance is locked");
 
         address account = msg.sender;
         _accumulateDepositInterest(account);
-
-        (uint256 lockedAmount, uint256 transferrableAmount) = _getAmounts(account);
-        if (amount > transferrableAmount)
-            revert TransferAmountExceedsBalance(amount, transferrableAmount);
-
-        _updateWithdrawn(account, amount, lockedAmount);
 
         // (this is verified in "require" above)
         unchecked {
@@ -335,16 +329,11 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
             revert InsufficientAllowance(amount, _allowed[sender][msg.sender]);
 
         if (recipient == address(0)) revert TransferToZeroAddress();
-
         if (recipient == address(this)) revert TransferToPoolAddress();
 
+        require(isWithdrawalAmountAvailable(msg.sender, amount) , "Balance is locked");
+
         _accumulateDepositInterest(sender);
-
-        (uint256 lockedAmount, uint256 transferrableAmount) = _getAmounts(sender);
-        if (amount > transferrableAmount)
-            revert TransferAmountExceedsBalance(amount, transferrableAmount);
-
-        _updateWithdrawn(sender, amount, lockedAmount);
 
         _deposited[sender] -= amount;
         _allowed[sender][msg.sender] -= amount;
@@ -661,11 +650,6 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
 
     function _burn(address account, uint256 amount) internal {
         if (amount > _deposited[account]) revert BurnAmountExceedsBalance();
-        (uint256 lockedAmount, uint256 transferrableAmount) = _getAmounts(account);
-        if (amount > transferrableAmount)
-            revert BurnAmountExceedsAvailableForUser();
-
-        _updateWithdrawn(account, amount, lockedAmount);
 
         // verified in "require" above
         unchecked {
@@ -673,36 +657,6 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
         }
 
         emit Transfer(account, address(0), amount);
-    }
-
-    function _getAmounts(
-        address account
-    ) internal view returns (uint256 lockedAmount, uint256 transferrableAmount) {
-        if (address(vestingDistributor) != address(0)) {
-            lockedAmount = vestingDistributor.locked(account);
-            if (lockedAmount > 0) {
-                transferrableAmount =
-                    _deposited[account] -
-                    (lockedAmount - vestingDistributor.availableToWithdraw(account));
-            } else {
-                transferrableAmount = _deposited[account];
-            }
-        } else {
-            transferrableAmount = _deposited[account];
-        }
-    }
-
-    function _updateWithdrawn(
-        address account,
-        uint256 amount,
-        uint256 lockedAmount
-    ) internal {
-        uint256 availableUnvested = _deposited[account] - lockedAmount;
-        if (
-            amount > availableUnvested && address(vestingDistributor) != address(0)
-        ) {
-            vestingDistributor.updateWithdrawn(account, amount - availableUnvested);
-        }
     }
 
     function _updateRates() internal {
