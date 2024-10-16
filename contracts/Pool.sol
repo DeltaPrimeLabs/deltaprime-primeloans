@@ -968,11 +968,6 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
     // ERC20: cannot transfer to the pool address
     error TransferToPoolAddress();
 
-    // ERC20: transfer amount (`amount`) exceeds balance (`balance`)
-    /// @param amount transfer amount
-    /// @param balance available balance
-    error TransferAmountExceedsBalance(uint256 amount, uint256 balance);
-
     // ERC20: requested transfer amount (`requested`) exceeds current allowance (`allowance`)
     /// @param requested requested transfer amount
     /// @param allowance current allowance
