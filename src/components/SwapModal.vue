@@ -570,7 +570,12 @@ export default {
       if (this.sourceAssets) {
         sourceAssets = this.sourceAssets;
       } else {
-        if (this.swapDexsConfig[this.swapDex].coreAsset && this.sourceAsset === this.swapDexsConfig[this.swapDex].coreAsset) {
+        if (this.swapDexsConfig[this.swapDex].coreAsset
+            && (
+                this.sourceAsset === this.swapDexsConfig[this.swapDex].coreAsset
+                || this.targetAsset !== this.swapDexsConfig[this.swapDex].coreAsset
+            )
+        ) {
           sourceAssets = [this.swapDexsConfig[this.swapDex].coreAsset]
         } else {
           sourceAssets = this.swapDexsConfig[this.swapDex].availableAssets;

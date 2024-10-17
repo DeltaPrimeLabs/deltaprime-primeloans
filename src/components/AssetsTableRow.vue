@@ -645,7 +645,7 @@ export default {
       const modalInstance = this.openModal(SwapModal);
       this.currentlyOpenModalInstance = modalInstance;
       modalInstance.dexOptions = Object.entries(config.SWAP_DEXS_CONFIG)
-        .filter(([dexName, dexConfig]) => dexConfig.availableAssets.includes(this.asset.symbol))
+        .filter(([dexName, dexConfig]) => dexConfig.availableAssets.includes(this.asset.symbol) && (!dexConfig.coreAsset || this.asset.symbol === dexConfig.coreAsset))
         .map(([dexName, dexConfig]) => dexConfig.displayName);
       modalInstance.swapDex = Object.entries(config.SWAP_DEXS_CONFIG).filter(([k, v]) => v.availableAssets.includes(this.asset.symbol))[0][0];
       modalInstance.swapDebtMode = false;
