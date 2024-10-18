@@ -331,7 +331,7 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
         if (recipient == address(0)) revert TransferToZeroAddress();
         if (recipient == address(this)) revert TransferToPoolAddress();
 
-        require(isWithdrawalAmountAvailable(msg.sender, amount) , "Balance is locked");
+        require(isWithdrawalAmountAvailable(sender, amount) , "Balance is locked");
 
         _accumulateDepositInterest(sender);
 
