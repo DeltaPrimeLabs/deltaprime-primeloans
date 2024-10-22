@@ -305,7 +305,7 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
         address recipient,
         uint256 amount
     ) external override nonReentrant noTransfersPause noGlobalPause returns (bool) {
-        require(isWithdrawalAmountAvailable(sender, amount) , "Balance is locked");
+        require(isWithdrawalAmountAvailable(msg.sender, amount) , "Balance is locked");
         if (recipient == address(0)) revert TransferToZeroAddress();
 
         if (recipient == address(this)) revert TransferToPoolAddress();
@@ -396,7 +396,7 @@ contract Pool is PendingOwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20, 
     ) external override nonReentrant noGlobalPause noTransfersPause returns (bool) {
         if (_allowed[sender][msg.sender] < amount)
             revert InsufficientAllowance(amount, _allowed[sender][msg.sender]);
-        require(isWithdrawalAmountAvailable(msg.sender, amount) , "Balance is locked");
+        require(isWithdrawalAmountAvailable(sender, amount) , "Balance is locked");
 
         if (recipient == address(0)) revert TransferToZeroAddress();
 
