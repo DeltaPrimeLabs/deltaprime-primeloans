@@ -12,7 +12,6 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
     let caiFacet = await deploy("CaiFacet", {
         from: deployer,
-        gasLimit: 15000000,
         args: [],
     });
 
