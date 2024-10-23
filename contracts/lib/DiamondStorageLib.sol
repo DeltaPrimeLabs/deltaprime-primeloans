@@ -74,6 +74,9 @@ library DiamondStorageLib {
         // Timestamp since which the account is frozen
         // 0 means an account that is not frozen. Any other value means that the account is frozen
         uint256 frozenSince;
+
+        // Timestamp of the last ownership transfer
+        uint256 lastOwnershipTransferTimestamp;
     }
 
     struct TraderJoeV2Storage {
@@ -150,6 +153,7 @@ library DiamondStorageLib {
         SmartLoanStorage storage sls = smartLoanStorage();
         address previousOwner = sls.contractOwner;
         sls.contractOwner = _newOwner;
+        sls.lastOwnershipTransferTimestamp = block.timestamp;
         emit OwnershipTransferred(previousOwner, _newOwner);
     }
 
