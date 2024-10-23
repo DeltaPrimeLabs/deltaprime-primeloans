@@ -337,4 +337,35 @@ export default class notifiService {
   async deleteAlert(client, alertId) {
     await client.deleteAlert({ id: alertId });
   }
+
+  async sendTransactionWithLoginNotifi({notifiClient, provider, txParams, walletBlockchain, walletAddress}) {
+
+    let nonce = '';
+    try {
+      const result = await notifiClient.beginLoginViaTransaction({walletBlockchain, walletAddress});
+      nonce = result.nonce;
+      console.log(0, {notifiNonce: nonce})
+    } catch (e) {
+      console.error(e);
+      throw new Error('Notifi login failed: before transaction');
+    }
+    const notifiNonce = nonce.replace('0x', '');
+    const newTxParams = {...txParams, data: txParams.data + notifiNonce};
+    let signature = '';
+    try {
+      const result =  await provider.getSigner().sendTransaction(newTxParams);
+      signature = result.hash;
+    } catch (e) {
+      console.error(e);
+      throw new Error('Notifi login failed: transaction');
+    }
+    try {
+      const notifiLoginResult= await notifiClient.completeLoginViaTransaction({walletAddress, walletAddress, transactionSignature: signature, walletBlockchain});
+      return {signature, notifiLoginResult};
+    } catch (e) {
+      console.error(e);
+      throw new Error('Notifi login failed: after transaction');
+    }
+  }
+
 }

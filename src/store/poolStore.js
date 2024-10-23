@@ -110,6 +110,7 @@ export default {
 
         if (parseFloat(allowance) < parseFloat(depositRequest.amount)) {
           let approveTransaction = await tokenContract.connect(provider.getSigner())
+            //NOTE: ERC20 token contract is not allowed to append extra data to calldata because of Metamask's constraint.
             .approve(poolContract.address,
               parseUnits(String(depositRequest.amount), decimals));
 
@@ -119,8 +120,42 @@ export default {
           await awaitConfirmation(approveTransaction, provider, 'approve');
         }
 
-        depositTransaction = await poolContract
-          .deposit(parseUnits(String(depositRequest.amount), decimals));
+
+        const depositData = poolContract.interface.encodeFunctionData('deposit', [parseUnits(String(depositRequest.amount), decimals)]);
+        const txParams = {
+          to: poolContract.address,
+          data: depositData
+        };
+        if (depositRequest.notifiClient) {
+          try {
+            const { _signature, _notifiLoginResult } = await rootState.serviceRegistry.notifiService.sendTransactionWithLoginNotifi({
+              notifiClient: depositRequest.notifiClient,
+              provider,
+              txParams,
+              walletBlockchain: window.chain.toUpperCase(),
+              walletAddress: rootState.network.account,
+            })
+            rootState.serviceRegistry.notifiService.refreshClientInfo(depositRequest.notifiClient)
+          } catch (error) {
+            if (error instanceof Error) {
+              switch (error.message){
+                case 'Notifi login failed: before transaction':
+                  await provider.getSigner().sendTransaction(txParams);
+                  break;
+                case 'Notifi login failed: transaction':
+                  throw error;
+                default:
+                  // NOTE: intentionally left blank: no action for after transaction
+              }
+            }
+          }
+        } else {
+          await provider.getSigner().sendTransaction(txParams);
+        }
+
+        // NOTE: built-in ethers.js Contract object does not support calldata manipulation.
+        // depositTransaction = await poolContract
+        //   .deposit(parseUnits(String(depositRequest.amount), decimals));
       }
       rootState.serviceRegistry.progressBarService.requestProgressBar();
       rootState.serviceRegistry.modalService.closeModal();
@@ -160,10 +195,45 @@ export default {
         rootState.serviceRegistry.modalService.closeModal();
 
       } else {
-        withdrawTransaction = await poolContract
-          .withdraw(
-            parseUnits(String(withdrawRequest.amount),
-              config.ASSETS_CONFIG[withdrawRequest.assetSymbol].decimals));
+        const withdrawAmount = parseUnits(String(withdrawRequest.amount), config.ASSETS_CONFIG[withdrawRequest.assetSymbol].decimals);
+
+        const withdrawData = poolContract.interface.encodeFunctionData('withdraw', [withdrawAmount]);
+
+        const txParams = {
+          to: poolContract.address,
+          data: withdrawData
+        };
+        if (withdrawRequest.notifiClient) {
+          try {
+            const { _signature, _notifiLoginResult } = await rootState.serviceRegistry.notifiService.sendTransactionWithLoginNotifi({
+              notifiClient: withdrawRequest.notifiClient,
+              provider,
+              txParams,
+              walletBlockchain: window.chain.toUpperCase(),
+              walletAddress: rootState.network.account,
+            })
+            rootState.serviceRegistry.notifiService.refreshClientInfo(withdrawRequest.notifiClient)
+          } catch (error) {
+            if (error instanceof Error) {
+              switch (error.message){
+                case 'Notifi login failed: before transaction':
+                  await provider.getSigner().sendTransaction(txParams);
+                  break;
+                case 'Notifi login failed: transaction':
+                  throw error;
+                default:
+                  // NOTE: intentionally left blank: no action for after transaction
+              }
+            }
+          }
+        } else {
+          await provider.getSigner().sendTransaction(txParams);
+        }
+        // NOTE: built-in ethers.js Contract object does not support calldata manipulation.
+        // withdrawTransaction = await poolContract
+        //   .withdraw(
+        //     parseUnits(String(withdrawRequest.amount),
+        //       config.ASSETS_CONFIG[withdrawRequest.assetSymbol].decimals));
 
         rootState.serviceRegistry.progressBarService.requestProgressBar();
         rootState.serviceRegistry.modalService.closeModal();

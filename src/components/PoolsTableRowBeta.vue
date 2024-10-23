@@ -133,6 +133,7 @@ export default {
     this.setupPoolsAssetsData();
     this.watchLifi();
     this.watchActionDisabling();
+    this.watchNotifi();
     setTimeout(() => {
       console.log(this.isActionDisabledRecord);
     }, 4000)
@@ -151,6 +152,7 @@ export default {
       isArbitrum: null,
       isAvalanche: null,
       isActionDisabledRecord: {},
+      notifi: null,
     };
   },
 
@@ -172,13 +174,18 @@ export default {
       'lifiService',
       'progressBarService',
       'providerService',
-      'globalActionsDisableService'
+      'globalActionsDisableService',
+      'notifiService'
     ]),
   },
 
   methods: {
     ...mapActions('poolStore', ['deposit', 'withdraw', 'swapDeposit', 'claimAvalancheBoost']),
-
+    watchNotifi() {
+      this.notifiService.observeNotifi().subscribe(notifi => {
+        this.notifi = notifi;
+      });
+    },
     async setupFiles() {
       TOKEN_ADDRESSES = await import(`/common/addresses/${window.chain}/token_addresses.json`);
     },
@@ -332,7 +339,8 @@ export default {
         const depositRequest = {
           assetSymbol: this.pool.asset.symbol,
           amount: depositEvent.value,
-          depositNativeToken: depositEvent.depositNativeToken
+          depositNativeToken: depositEvent.depositNativeToken,
+          notifiClient: this.notifi.client
         };
 
         this.handleTransaction(this.deposit, {depositRequest: depositRequest}, () => {
@@ -395,6 +403,7 @@ export default {
           assetSymbol: this.pool.asset.symbol,
           amount: withdrawEvent.value,
           withdrawNativeToken: withdrawEvent.withdrawNativeToken,
+          notifiClient: this.notifi.client
         };
         this.handleTransaction(this.withdraw, {withdrawRequest: withdrawRequest}, () => {
           this.pool.deposit = Number(this.pool.deposit) - withdrawRequest.amount;
