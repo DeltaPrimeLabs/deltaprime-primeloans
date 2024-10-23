@@ -4083,34 +4083,47 @@ export default {
       console.log('convertGlpToGm');
       const provider = rootState.network.provider;
       const gmMarket = config.GMX_V2_ASSETS_CONFIG[convertRequest.targetMarketSymbol]
+      const amountToRedeem = convertRequest.amountToRedeem
 
       const tokenForApprove = (config.chainId === 43114) ? '0xaE64d55a6f09E4263421737397D1fdFA71896a69' : TOKEN_ADDRESSES['GLP'];
       const glpToken = new ethers.Contract(tokenForApprove, erc20ABI, provider.getSigner());
       const usdcToken = new ethers.Contract(TOKEN_ADDRESSES['USDC'], erc20ABI, provider.getSigner());
 
+      const smartLoanGlpBalanceBefore = await glpToken.balanceOf(state.smartLoanContract.address);
       const usdcBalanceBefore = await usdcToken.balanceOf(state.smartLoanContract.address);
       const usdcBalanceBeforeParsed = formatUnits(await usdcToken.balanceOf(state.smartLoanContract.address), config.ASSETS_CONFIG.USDC.decimals);
 
       const walletAmount = await glpToken.balanceOf(rootState.network.account);
-
+      let amountToAddFromWallet = 0
       const loanAssets = mergeArrays([(
         await state.readSmartLoanContract.getAllOwnedAssets()).map(el => fromBytes32(el)),
         (await state.readSmartLoanContract.getStakedPositions()).map(position => fromBytes32(position.symbol)),
         Object.keys(config.POOLS_CONFIG),
         ['GLP', convertRequest.targetMarketSymbol, 'USDC']
       ]);
+      if (fromWei(amountToRedeem) > fromWei(smartLoanGlpBalanceBefore)) {
+        amountToAddFromWallet = fromWei(amountToRedeem) - fromWei(smartLoanGlpBalanceBefore)
+        if (fromWei(walletAmount) > amountToAddFromWallet) {
+          const allowance = formatUnits(await glpToken.allowance(rootState.network.account, state.smartLoanContract.address), config.ASSETS_CONFIG['GLP'].decimals);
 
-      if (fromWei(walletAmount) > 0) {
-        console.log('glp on wallet');
-        const allowance = formatUnits(await glpToken.allowance(rootState.network.account, state.smartLoanContract.address), config.ASSETS_CONFIG['GLP'].decimals);
-        console.log(allowance);
-
-        if (parseFloat(allowance) < fromWei(walletAmount)) {
+          if (parseFloat(allowance) < amountToAddFromWallet) {
+            try {
+              const approveTransaction = await glpToken.connect(provider.getSigner()).approve(state.smartLoanContract.address, toWei(amountToAddFromWallet.toString()));
+              await awaitConfirmation(approveTransaction, provider, 'approve');
+            } catch (error) {
+              rootState.serviceRegistry.progressBarService.emitProgressBarErrorState('Approve transaction failed, please retry the ZAP', 6000);
+              rootState.serviceRegistry.modalService.closeModal();
+              setTimeout(async () => {
+                await dispatch('updateFunds');
+              }, config.refreshDelay);
+              throw error;
+            }
+          }
           try {
-            const approveTransaction = await glpToken.connect(provider.getSigner()).approve(state.smartLoanContract.address, walletAmount);
-            await awaitConfirmation(approveTransaction, provider, 'approve');
+            const fundTransaction = await (await wrapContract(state.smartLoanContract, loanAssets)).fundGLP(toWei(amountToAddFromWallet.toString()));
+            await awaitConfirmation(fundTransaction, provider, 'approve');
           } catch (error) {
-            rootState.serviceRegistry.progressBarService.emitProgressBarErrorState('Approve transaction failed, please retry the ZAP', 6000);
+            rootState.serviceRegistry.progressBarService.emitProgressBarErrorState('Deposit to Prime Account failed, please retry the ZAP', 6000);
             rootState.serviceRegistry.modalService.closeModal();
             setTimeout(async () => {
               await dispatch('updateFunds');
@@ -4118,21 +4131,8 @@ export default {
             throw error;
           }
         }
-
-        try {
-          const fundTransaction = await (await wrapContract(state.smartLoanContract, loanAssets)).fundGLP(walletAmount);
-          await awaitConfirmation(fundTransaction, provider, 'approve');
-        } catch (error) {
-          rootState.serviceRegistry.progressBarService.emitProgressBarErrorState('Deposit to Prime Account failed, please retry the ZAP', 6000);
-          rootState.serviceRegistry.modalService.closeModal();
-          setTimeout(async () => {
-            await dispatch('updateFunds');
-          }, config.refreshDelay);
-          throw error;
-        }
       }
-
-      const glpAfterDeposit = Number(state.assetBalances['GLP']) + walletAmount;
+      const glpAfterDeposit = Number(state.assetBalances['GLP']) + amountToAddFromWallet;
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate('GLP', glpAfterDeposit, false, true);
 
@@ -4145,12 +4145,11 @@ export default {
 
       const unstakeSlippage = 0.01; // 1%
 
-      const minUnstakedUsdc = parseUnits((fromWei(smartLoanGlpAmount) * glpPrice / usdcPrice * (1 - unstakeSlippage)).toFixed(6), 6)//slippage max. = 1%
-
+      const minUnstakedUsdc = parseUnits((fromWei(amountToRedeem) * glpPrice / usdcPrice * (1 - unstakeSlippage)).toFixed(6), 6)//slippage max. = 1%
       try {
         const txUnstakeGlp = await (await wrapContract(state.smartLoanContract, loanAssets)).unstakeAndRedeemGlp(
           TOKEN_ADDRESSES['USDC'],
-          smartLoanGlpAmount,
+          amountToRedeem,
           minUnstakedUsdc
         );
         await awaitConfirmation(txUnstakeGlp, provider, 'unstake Glp');
@@ -4198,12 +4197,13 @@ export default {
         throw error;
       }
 
-      commit('setSingleAssetBalance', {asset: 'GLP', balance: 0});
+      const glpBalanceAfterTransactions = Math.max(0, glpAfterDeposit - fromWei(amountToRedeem))
+      commit('setSingleAssetBalance', {asset: 'GLP', balance: glpBalanceAfterTransactions});
 
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate(convertRequest.targetMarketSymbol, parseFloat(gmBalanceBefore) + fromWei(minReceivedGm), true, false);
       rootState.serviceRegistry.assetBalancesExternalUpdateService
-        .emitExternalAssetBalanceUpdate('GLP', 0, false, true);
+        .emitExternalAssetBalanceUpdate('GLP', glpBalanceAfterTransactions, false, true);
       rootState.serviceRegistry.assetBalancesExternalUpdateService
         .emitExternalAssetBalanceUpdate('USDC', usdcBalanceBeforeParsed, false, true);
 

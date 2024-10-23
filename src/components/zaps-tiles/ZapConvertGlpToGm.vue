@@ -17,11 +17,9 @@
 import {mapActions, mapState} from 'vuex';
 import config from '../../config';
 import erc20ABI from '../../../test/abis/ERC20.json';
-import {combineLatest} from 'rxjs';
 import ZapTile from "./ZapTile.vue";
-import CreateAccountModal from "../CreateAccountModal.vue";
 import ConvertGlpToGmModal from "../ConvertGlpToGmModal.vue";
-import {fromWei} from "../../utils/calculate";
+import {toWei} from "../../utils/calculate";
 import {calculateGmxV2ExecutionFee} from "../../utils/blockchain";
 
 const ethers = require('ethers');
@@ -77,7 +75,7 @@ export default {
 
       modalInstance.walletGlpBalance = await this.getWalletTokenBalance(this.account, 'GLP', tokenContract, this.assets['GLP'].decimals);
       modalInstance.smartLoanGlpBalance = this.assetBalances['GLP'];
-      modalInstance.gmOptions = Object.values(config.GMX_V2_ASSETS_CONFIG);
+      modalInstance.gmOptions = Object.values(config.GMX_V2_ASSETS_CONFIG).filter(({ isGMXPlus }) => !isGMXPlus);
 
       this.$forceUpdate();
 
@@ -93,10 +91,9 @@ export default {
       modalInstance.$on('ZAP_CONVERT_GLP_TO_GM_EVENT', async convertEvent => {
         const convertRequest = {
           targetMarketSymbol: convertEvent.targetMarketSymbol,
-          executionFee: executionFee
+          executionFee: executionFee,
+          amountToRedeem: toWei(convertEvent.amount.toString()),
         };
-        console.log('convert to gm request');
-        console.log(convertRequest);
         this.handleTransaction(this.convertGlpToGm, {convertRequest: convertRequest}, () => {
           this.$forceUpdate();
         }, (error) => {
