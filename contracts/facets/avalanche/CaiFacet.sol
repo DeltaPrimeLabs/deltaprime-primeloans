@@ -74,6 +74,13 @@ contract CaiFacet is
         );
     }
 
+    function approveIndexRouterIfInsolvent() external onlyOwnerOrInsolvent nonReentrant {
+        uint256 caiBalance = IERC20(CAI).balanceOf(address(this));
+
+        CAI.safeApprove(INDEX_ROUTER, 0);
+        CAI.safeApprove(INDEX_ROUTER, caiBalance);
+    }
+
     function burnCai(
         bytes4 selector,
         bytes memory data,
