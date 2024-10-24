@@ -45,13 +45,15 @@
             }}
             <span v-if="!lpToken.isGMXPlus">
             <img class="asset__icon" :src="getAssetIcon(lpToken.shortToken)">{{
-              formatTokenBalance(shortTokenAmount ? shortTokenAmount : 0, 6, true)
+                formatTokenBalance(shortTokenAmount ? shortTokenAmount : 0, 6, true)
               }}
             </span>
           </div>
           <div class="double-value__usd">
             <span>
-              {{ ((gmxV2Balances && gmxV2Balances[lpToken.symbol]) ? gmxV2Balances[lpToken.symbol] : 0) * lpToken.price | usd }}
+              {{
+                ((gmxV2Balances && gmxV2Balances[lpToken.symbol]) ? gmxV2Balances[lpToken.symbol] : 0) * lpToken.price | usd
+              }}
             </span>
           </div>
         </template>
@@ -216,21 +218,24 @@ export default {
   },
 
   async mounted() {
-    this.chain = window.chain;
-    this.setupAddActionsConfiguration();
-    this.setupRemoveActionsConfiguration();
-    this.watchAssetBalancesDataRefreshEvent();
-    this.watchHardRefreshScheduledEvent();
-    this.watchHealth();
-    this.watchProgressBarState();
-    this.watchAssetApysRefresh();
-    this.watchExternalAssetBalanceUpdate();
-    this.watchAsset();
-    this.watchAssetPricesUpdate();
-    this.watchLtipMaxBoostUpdate();
-    this.fetchHistoricalPrices();
-    this.watchActionDisabling();
-    this.watchSPrime();
+    this.providerService.observeProvider(provider => {
+      this.chain = window.chain;
+      this.setupAddActionsConfiguration();
+      this.setupRemoveActionsConfiguration();
+      this.watchAssetBalancesDataRefreshEvent();
+      this.watchHardRefreshScheduledEvent();
+      this.watchHealth();
+      this.watchProgressBarState();
+      this.watchAssetApysRefresh();
+      this.watchExternalAssetBalanceUpdate();
+      this.watchAsset();
+      this.watchAssetPricesUpdate();
+      this.watchLtipMaxBoostUpdate();
+      this.fetchHistoricalPrices();
+      this.watchActionDisabling();
+      this.watchSPrime();
+      this.setupPoolBalance(provider);
+    })
   },
 
   data() {
@@ -307,6 +312,7 @@ export default {
       'ltipService',
       'globalActionsDisableService',
       'sPrimeService',
+      'providerService'
     ]),
     ...mapState('stakeStore', ['farms']),
 
@@ -329,13 +335,6 @@ export default {
           this.setupMoreActionsConfiguration();
         }
       },
-    },
-    provider: {
-      async handler(provider) {
-        if (provider) {
-          this.setupPoolBalance();
-        }
-      }
     },
     gmxV2Balances: {
       async handler(gmxV2Balances) {
@@ -463,7 +462,7 @@ export default {
         config.gmxV2DataStoreAddress, marketProps, prices, toWei((this.gmxV2Balances[this.lpToken.symbol]).toString()), this.nullAddress
       );
 
-      this.longTokenAmount = this.lpToken.isGMXPlus ?  2 * formatUnits(longTokenOut, longToken.decimals) : formatUnits(longTokenOut, longToken.decimals);
+      this.longTokenAmount = this.lpToken.isGMXPlus ? 2 * formatUnits(longTokenOut, longToken.decimals) : formatUnits(longTokenOut, longToken.decimals);
       this.shortTokenAmount = formatUnits(shortTokenOut, shortToken.decimals);
     },
 
@@ -906,7 +905,7 @@ export default {
             minLongAmount: swapEvent.targetAmounts[0],
             minShortAmount: swapEvent.targetAmounts[1],
             executionFee: executionFee,
-            method: this.lpToken.removeMethod ? this.lpToken.removeMethod :`withdraw${capitalize(this.lpToken.longToken)}${capitalize(this.lpToken.shortToken)}GmxV2`
+            method: this.lpToken.removeMethod ? this.lpToken.removeMethod : `withdraw${capitalize(this.lpToken.longToken)}${capitalize(this.lpToken.shortToken)}GmxV2`
           };
 
           this.handleTransaction(this.removeLiquidityGmxV2, {removeLiquidityRequest: removeLiquidityRequest}, () => {
@@ -983,8 +982,8 @@ export default {
       }
     },
 
-    async setupPoolBalance() {
-      const lpTokenContract = new ethers.Contract(this.lpToken.address, erc20ABI, this.provider.getSigner());
+    async setupPoolBalance(provider) {
+      const lpTokenContract = new ethers.Contract(this.lpToken.address, erc20ABI, provider.getSigner());
       this.poolBalance = fromWei(await lpTokenContract.totalSupply());
     },
 

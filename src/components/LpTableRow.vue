@@ -143,6 +143,7 @@ export default {
     this.setupAvailableFarms();
     this.setupAddActionsConfiguration();
     this.setupRemoveActionsConfiguration();
+    this.watchProvider()
     this.watchAssetBalancesDataRefreshEvent();
     this.watchHardRefreshScheduledEvent();
     this.watchHealth();
@@ -171,6 +172,7 @@ export default {
       totalStaked: null,
       availableFarms: [],
       isActionDisabledRecord: {},
+      provider: {}
     };
   },
 
@@ -202,7 +204,7 @@ export default {
     ]),
     ...mapState('stakeStore', ['farms']),
     ...mapState('poolStore', ['pools']),
-    ...mapState('network', ['provider', 'account']),
+    ...mapState('network', ['account']),
     ...mapState('serviceRegistry', [
       'assetBalancesExternalUpdateService',
       'dataRefreshEventService',
@@ -212,6 +214,7 @@ export default {
       'stakedExternalUpdateService',
       'farmService',
       'globalActionsDisableService',
+      'providerService',
     ]),
 
     hasSmartLoanContract() {
@@ -231,13 +234,6 @@ export default {
           this.setupRemoveActionsConfiguration();
         }
       },
-    },
-    provider: {
-      async handler(provider) {
-        if (provider) {
-          await this.setupPoolBalance();
-        }
-      }
     },
     assets: {
       handler(assets) {
@@ -481,7 +477,7 @@ export default {
     },
 
     async setupPoolBalance() {
-      const lpTokenContract = new ethers.Contract(this.lpToken.address, erc20ABI, provider);
+      const lpTokenContract = new ethers.Contract(this.lpToken.address, erc20ABI, this.provider);
       this.poolBalance = fromWei(await lpTokenContract.totalSupply());
     },
 
@@ -504,6 +500,15 @@ export default {
     async getWalletLpTokenBalance() {
       const tokenContract = new ethers.Contract(this.lpToken.address, erc20ABI, this.provider.getSigner());
       return await this.getWalletTokenBalance(this.account, this.lpToken.symbol, tokenContract, this.lpToken.decimals);
+    },
+
+    watchProvider() {
+      this.providerService.observeProvider().subscribe(async provider => {
+        this.provider = provider;
+        if (provider) {
+          await this.setupPoolBalance();
+        }
+      });
     },
 
     watchAssetBalancesDataRefreshEvent() {

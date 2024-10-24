@@ -5,14 +5,15 @@
     </div>
     <div class="container">
       <StatsBarBeta
-          :collateral="noSmartLoanInternal ? 0 : collateral"
-          :debt="noSmartLoanInternal ? 0 : debt"
-          :health="noSmartLoanInternal ? 1 : health"
-          :noSmartLoan="noSmartLoanInternal"
-          :healthLoading="healthLoading">
+        :collateral="noSmartLoanInternal ? 0 : collateral"
+        :debt="noSmartLoanInternal ? 0 : debt"
+        :health="noSmartLoanInternal ? 1 : health"
+        :noSmartLoan="noSmartLoanInternal"
+        :healthLoading="healthLoading">
       </StatsBarBeta>
 
-      <SPrimePanel v-if="afterLaunchTime" :is-prime-account="true" :user-address="account" :total-deposits-or-borrows="noSmartLoanInternal ? 0 : debt"></SPrimePanel>
+      <SPrimePanel v-if="afterLaunchTime" :is-prime-account="true" :user-address="account"
+                   :total-deposits-or-borrows="noSmartLoanInternal ? 0 : debt"></SPrimePanel>
       <LTIPStatsBar v-if="isArbitrum"></LTIPStatsBar>
 
       <InfoBubble v-if="noSmartLoanInternal === false" cacheKey="ACCOUNT-READY">
@@ -100,8 +101,8 @@ import {fetchLiquidatedEvents} from '../utils/graph';
 import InfoBubble from './InfoBubble.vue';
 import TransactionHistory from './TransactionHistory';
 import Stats from './stats/Stats.vue';
-import LPTab from "./LPTab.vue";
-import Zaps from "./Zaps.vue";
+import LPTab from './LPTab.vue';
+import Zaps from './Zaps.vue';
 import LTIPStatsBar from './LTIPStatsBar.vue';
 import SPrimePanel from './SPrimePanel.vue';
 
@@ -252,15 +253,17 @@ export default {
   },
 
   async mounted() {
-    this.isArbitrum = window.chain === 'arbitrum';
-    this.setupSelectedTab();
-    this.watchHealthRefresh();
-    this.watchAprRefresh();
-    this.watchCollateral();
-    this.watchDebt();
-    this.setupVideoVisibility();
-    this.initAccountApr();
-    this.initStoresWhenProviderAndAccountCreated();
+    this.providerService.observeProvider().subscribe(() => {
+      this.isArbitrum = window.chain === 'arbitrum';
+      this.setupSelectedTab();
+      this.watchHealthRefresh();
+      this.watchAprRefresh();
+      this.watchCollateral();
+      this.watchDebt();
+      this.setupVideoVisibility();
+      this.initAccountApr();
+      this.initStoresWhenProviderAndAccountCreated();
+    })
   },
   methods: {
     ...mapActions('fundsStore', ['fundsStoreSetup', 'getAccountApr']),
@@ -269,16 +272,17 @@ export default {
     ...mapActions('sPrimeStore', ['sPrimeStoreSetup']),
 
     initStoresWhenProviderAndAccountCreated() {
-      combineLatest([this.providerService.observeProviderCreated(), this.accountService.observeAccountLoaded()])
-          .subscribe(async ([provider, account]) => {
-            this.sPrimeStoreSetup();
-            await this.poolStoreSetup();
-            await this.fundsStoreSetup();
-            await this.stakeStoreSetup();
-          });
+      combineLatest([this.providerService.observeProvider(), this.accountService.observeAccountLoaded()])
+        .subscribe(async ([provider, account]) => {
+          this.sPrimeStoreSetup();
+          await this.poolStoreSetup();
+          await this.fundsStoreSetup();
+          await this.stakeStoreSetup();
+        });
     },
 
     initAccountApr() {
+      console.log('initAccountApr');
       combineLatest([
         this.poolService.observePools(),
         this.farmService.observeRefreshFarm(),
@@ -290,9 +294,10 @@ export default {
         this.ltipService.observeLtipMaxBoostApy(),
         this.ggpIncentivesService.observeBoostGGPApy$(),
       ])
-          .subscribe(async ([,,,,,,eligibleTvl, maxBoostApy]) => {
-            await this.getAccountApr({eligibleTvl, maxBoostApy});
-          });
+        .subscribe(async ([, , , , , , eligibleTvl, maxBoostApy]) => {
+          console.log('INIT account apr');
+          await this.getAccountApr({eligibleTvl, maxBoostApy});
+        });
     },
 
     async assetBalancesChange(balances) {
@@ -352,11 +357,11 @@ export default {
 
     getLiquidatedEvents() {
       fetchLiquidatedEvents(this.smartLoanContract.address).then(
-          events => {
-            if (events) {
-              this.liquidationTimestamps = events.map(event => event.timestamp);
-            }
+        events => {
+          if (events) {
+            this.liquidationTimestamps = events.map(event => event.timestamp);
           }
+        }
       );
     },
 
@@ -371,27 +376,27 @@ export default {
         this.healthLoading = true;
 
         const healthCalculatedDirectly = await this.healthService.calculateHealth(
-            this.noSmartLoanInternal,
-            this.debtsPerAsset,
-            this.assets,
-            this.assetBalances,
-            this.lpAssets,
-            this.lpBalances,
-            this.concentratedLpAssets,
-            this.concentratedLpBalances,
-            this.balancerLpAssets,
-            this.balancerLpBalances,
-            this.levelLpAssets,
-            this.levelLpBalances,
-            this.gmxV2Assets,
-            this.gmxV2Balances,
-            this.penpieLpAssets,
-            this.penpieLpBalances,
-            this.wombatLpAssets,
-            this.wombatLpBalances,
-            this.wombatYYFarmsBalances,
-            this.traderJoeV2LpAssets,
-            this.farms,
+          this.noSmartLoanInternal,
+          this.debtsPerAsset,
+          this.assets,
+          this.assetBalances,
+          this.lpAssets,
+          this.lpBalances,
+          this.concentratedLpAssets,
+          this.concentratedLpBalances,
+          this.balancerLpAssets,
+          this.balancerLpBalances,
+          this.levelLpAssets,
+          this.levelLpBalances,
+          this.gmxV2Assets,
+          this.gmxV2Balances,
+          this.penpieLpAssets,
+          this.penpieLpBalances,
+          this.wombatLpAssets,
+          this.wombatLpBalances,
+          this.wombatYYFarmsBalances,
+          this.traderJoeV2LpAssets,
+          this.farms,
         );
         this.health = healthCalculatedDirectly;
         this.healthLoading = false;

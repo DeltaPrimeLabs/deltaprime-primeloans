@@ -24,17 +24,18 @@
         <span><b>{{ maxBoostApr | percent }}</b><img src="src/assets/icons/stars.png" class="stars-icon"></span>
       </div>
       <div class="table__cell table__cell--double-value arb-collected">
-        <span>{{ collectedBonus ? collectedBonus.toFixed(3) : 0  }}</span>
+        <span>{{ collectedBonus ? collectedBonus.toFixed(3) : 0 }}</span>
         <InfoIcon
-            v-if="['0x4c9c76507d661f6fbdb2e641c7fe061f1743f8fd', '0x38716cba180d5bd3a4e51c6303a861a1e8fbef52', '0x9232800211347ec4ebeff3143f5dd34c438f214c', '0x14c047a8ca6238e9ea14a9a740a6010423a0783c', '0x14ec143849f5a56908c15e2e8963058fba54fcc0', '0x4ded392b98460b03f72C6E5800Cc742D62bcae5f', '0x845dE1f6A032Ac8E866B91596056a7fae7327068', '0x35aC398F2FfF9c92dCaD8F005837701B43357B55', '0x135B3256d60B3178d1b40459114b9A2724db10A3', '0x8333F64C0417CBA6aEdDFcf9e8B534c1bCBD5881', '0xC60DbfAb7f78A040E4B8567DBdB5af28332ABa94', '0xe0ad10dd0538D309b7F88B53495B7897c4D9b42d', '0x77074C947AcF2b24c6e9a830d0D4C05353BA6AD7', '0x01854f9E2c3DFfb477109E58c6bB71577273d323', '0xE15B857F9c9A57940295a0F3629ccC5C5ABEf0ED', '0x6b2b7f4365477F4c3a63aaE4a1817FEC1639477A', '0x5850A0398083d2CDe77b6109b00A15e249470e70', '0x6C09786F8aA6b6f07AA710514Ebbc9Bb8afBfdb3', '0xd7eD053b7A59fD4872d2E88c87CE8aB96aE72a77', '0x94Bad3B7414d5A43f9Db62e0e86d072159d3E6F9', '0x577dC0814B84D991F587b5250e60F9970b5e3F95', '0xc1916c4ff57830e97D9c3b93daFd83393F47e868', '0xAEc0193a32d05Af89dDE6B06a4A719062f7C6961', '0x043A4E5a917C228C28986c6D60E702AcC8A6E966', '0xF8D5605fe3e0Bdf38CC18e89a927Fa801Ba085f8', '0xE225a652133c218Aca2668C4423fBa2d138bbDcF', '0x952e073387Aaf62d927Fb2138Eb020a6bC2654F6', '0x434dFD5325df9e482D7864b8630a5e3433849dFC', '0x7EFC9C745eEd73A01E482076A81893b5Db933566', '0xD33F4Da927F1e888240466b82f6104e8e39068F2', '0x09ddbc9621032E648a1FA7436CA16cFD4aEA6bCe', '0xf15ceF9442678303b22334a8F6A4FEbCf9d268EE', '0xE785fF97dd4a295f6b859cCdd1893606984F55a8', '0xb3ee150b51A97E2417391Fb9B5b30674FD001990', '0x9a6769979438CcC148F5A4B1657cAe5D50D99924', '0x55474f2077bB900f09d87A3D82ad1Ca2F3086295', '0xE2ce857A3c6a4A59CF743216a45FDB6504BDF57b', '0x09beaAD631Bdb8688d5837f15bE3F6786E6171a5', '0x75B2f984429ab7D5B7937B9D0efcbED438e5e747', '0xb03593b28f92ae9f1232e3dc99daBD8cEC9dE559', '0x6822c50703a3b579412EE626cf8ed1d428dD368f', '0x0014F763814fEbb3226b4811e3a06e64C1d2642E', '0xaC21aF2C51909ad51c5b730cdf6f049C736D47b8', '0x5FF4b01D193684E1958d11f1435354a2596aD6a2', '0xd9668d7c6Dba56E806B28BfCCd96Ff178D2D4D02', '0x58Adc837837dc780A7641154417949aA2b0BC84e', '0xe81C6D8027Fc945808734BD6111bd7a4344FDC60', '0xBf6853a3b0016b121BEb7E6Dbe8Db728Fe79334f', '0x939d8Dba3143960f973e3198796BBe38C9AE9Ee5', '0x1cCB539b572bb8B478FD56A269cD32c8843148B0'].includes(smartLoanContract.address)"
-            class="info__icon"
-            :tooltip="{content: 'Your account received excessive ARB rewards during the last distribution. Your ARB amount can be temporarily negative.', classes: 'info-tooltip'}"
+          v-if="['0x4c9c76507d661f6fbdb2e641c7fe061f1743f8fd', '0x38716cba180d5bd3a4e51c6303a861a1e8fbef52', '0x9232800211347ec4ebeff3143f5dd34c438f214c', '0x14c047a8ca6238e9ea14a9a740a6010423a0783c', '0x14ec143849f5a56908c15e2e8963058fba54fcc0', '0x4ded392b98460b03f72C6E5800Cc742D62bcae5f', '0x845dE1f6A032Ac8E866B91596056a7fae7327068', '0x35aC398F2FfF9c92dCaD8F005837701B43357B55', '0x135B3256d60B3178d1b40459114b9A2724db10A3', '0x8333F64C0417CBA6aEdDFcf9e8B534c1bCBD5881', '0xC60DbfAb7f78A040E4B8567DBdB5af28332ABa94', '0xe0ad10dd0538D309b7F88B53495B7897c4D9b42d', '0x77074C947AcF2b24c6e9a830d0D4C05353BA6AD7', '0x01854f9E2c3DFfb477109E58c6bB71577273d323', '0xE15B857F9c9A57940295a0F3629ccC5C5ABEf0ED', '0x6b2b7f4365477F4c3a63aaE4a1817FEC1639477A', '0x5850A0398083d2CDe77b6109b00A15e249470e70', '0x6C09786F8aA6b6f07AA710514Ebbc9Bb8afBfdb3', '0xd7eD053b7A59fD4872d2E88c87CE8aB96aE72a77', '0x94Bad3B7414d5A43f9Db62e0e86d072159d3E6F9', '0x577dC0814B84D991F587b5250e60F9970b5e3F95', '0xc1916c4ff57830e97D9c3b93daFd83393F47e868', '0xAEc0193a32d05Af89dDE6B06a4A719062f7C6961', '0x043A4E5a917C228C28986c6D60E702AcC8A6E966', '0xF8D5605fe3e0Bdf38CC18e89a927Fa801Ba085f8', '0xE225a652133c218Aca2668C4423fBa2d138bbDcF', '0x952e073387Aaf62d927Fb2138Eb020a6bC2654F6', '0x434dFD5325df9e482D7864b8630a5e3433849dFC', '0x7EFC9C745eEd73A01E482076A81893b5Db933566', '0xD33F4Da927F1e888240466b82f6104e8e39068F2', '0x09ddbc9621032E648a1FA7436CA16cFD4aEA6bCe', '0xf15ceF9442678303b22334a8F6A4FEbCf9d268EE', '0xE785fF97dd4a295f6b859cCdd1893606984F55a8', '0xb3ee150b51A97E2417391Fb9B5b30674FD001990', '0x9a6769979438CcC148F5A4B1657cAe5D50D99924', '0x55474f2077bB900f09d87A3D82ad1Ca2F3086295', '0xE2ce857A3c6a4A59CF743216a45FDB6504BDF57b', '0x09beaAD631Bdb8688d5837f15bE3F6786E6171a5', '0x75B2f984429ab7D5B7937B9D0efcbED438e5e747', '0xb03593b28f92ae9f1232e3dc99daBD8cEC9dE559', '0x6822c50703a3b579412EE626cf8ed1d428dD368f', '0x0014F763814fEbb3226b4811e3a06e64C1d2642E', '0xaC21aF2C51909ad51c5b730cdf6f049C736D47b8', '0x5FF4b01D193684E1958d11f1435354a2596aD6a2', '0xd9668d7c6Dba56E806B28BfCCd96Ff178D2D4D02', '0x58Adc837837dc780A7641154417949aA2b0BC84e', '0xe81C6D8027Fc945808734BD6111bd7a4344FDC60', '0xBf6853a3b0016b121BEb7E6Dbe8Db728Fe79334f', '0x939d8Dba3143960f973e3198796BBe38C9AE9Ee5', '0x1cCB539b572bb8B478FD56A269cD32c8843148B0'].includes(smartLoanContract.address)"
+          class="info__icon"
+          :tooltip="{content: 'Your account received excessive ARB rewards during the last distribution. Your ARB amount can be temporarily negative.', classes: 'info-tooltip'}"
         ></InfoIcon>
       </div>
       <div v-if="showPoints" class="table__cell table__cell--double-value points-received">
         <div class="points-received-value" v-if="receivedPoints != null">
-          <span>{{ receivedPoints ? receivedPoints.toFixed(0) : 0 }}&nbsp;<b class="multiplier">{{ `(x${(multiplier * 3).toFixed(0)})` }}</b></span>
-          <img src="src/assets/icons/icon_circle_star.svg" class="point-star-icon" />
+          <span>{{ receivedPoints ? receivedPoints.toFixed(0) : 0 }}&nbsp;<b
+            class="multiplier">{{ `(x${(multiplier * 3).toFixed(0)})` }}</b></span>
+          <img src="src/assets/icons/icon_circle_star.svg" class="point-star-icon"/>
         </div>
         <div v-else>
           <vue-loaders-ball-beat color="#A6A3FF" scale="0.5"></vue-loaders-ball-beat>
@@ -54,20 +55,21 @@ import ColoredValueBeta from './ColoredValueBeta';
 import SmallChartBeta from './SmallChartBeta';
 import config from '../config';
 import {mapActions, mapGetters, mapState} from 'vuex';
-import redstone from "redstone-api";
-const EthDater = require("ethereum-block-by-date");
+import redstone from 'redstone-api';
+
+const EthDater = require('ethereum-block-by-date');
 
 const ethers = require('ethers');
 import GM_DISTRIBUTED_ARBITRUM from '../data/arbitrum/gm_grant/GM_EPOCH_9.json';
 import GM_DISTRIBUTED_AVALANCHE from '../data/avalanche/gm_grant/GM_EPOCH_11.json';
-import {wrapContract} from "../utils/blockchain";
-import DeltaIcon from "./DeltaIcon.vue";
-import BarGaugeBeta from "./BarGaugeBeta.vue";
-import { fetchGmTransactions } from '../utils/graph';
-import { fromWei, formatUnits, fromBytes32 } from '../utils/calculate';
-import { getData } from '../utils/blockchain';
-import InfoIcon from "./InfoIcon.vue";
-import Loader from "./Loader.vue";
+import {wrapContract} from '../utils/blockchain';
+import DeltaIcon from './DeltaIcon.vue';
+import BarGaugeBeta from './BarGaugeBeta.vue';
+import {fetchGmTransactions} from '../utils/graph';
+import {fromWei, formatUnits, fromBytes32} from '../utils/calculate';
+import {getData} from '../utils/blockchain';
+import InfoIcon from './InfoIcon.vue';
+import Loader from './Loader.vue';
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -120,18 +122,17 @@ export default {
 
   computed: {
     ...mapState('fundsStore', [
-        'apys',
-        'smartLoanContract',
-        'historicalSmartLoanContract',
-        'assets',
-        'gmxV2Balances',
-        'gmxV2Assets',
+      'apys',
+      'smartLoanContract',
+      'historicalSmartLoanContract',
+      'assets',
+      'gmxV2Balances',
+      'gmxV2Assets',
     ]),
     ...mapState('stakeStore', ['farms']),
     ...mapState('poolStore', ['pools']),
     ...mapState('network', ['provider', 'historicalProvider', 'account']),
-    ...mapState('serviceRegistry', [
-    ]),
+    ...mapState('serviceRegistry', ['providerService']),
     ...mapGetters('fundsStore', [
       'getCollateral'
     ]),
@@ -152,7 +153,7 @@ export default {
         weeklyAmount = 225;
       }
 
-      return apy ? weeklyAmount / 7 * 365 / apy  : 0;
+      return apy ? weeklyAmount / 7 * 365 / apy : 0;
     },
     maxBoostApr() {
       if (!this.gmBoostApy) return 0;
@@ -194,9 +195,11 @@ export default {
     },
     historicalSmartLoanContract: {
       async handler(historicalSmartLoanContract) {
-        if (historicalSmartLoanContract) {
-          this.calculatePoints();
-        }
+        this.providerService.observeHistoricalProvider().subscribe(historicalProvider => {
+          if (historicalSmartLoanContract) {
+            this.calculatePoints(historicalProvider);
+          }
+        })
       }
     }
   },
@@ -218,9 +221,9 @@ export default {
       this.milestone = config.gmxV2IncentivesMilestone;
     },
 
-    async getBlockForTimestamp(timestamp) {
+    async getBlockForTimestamp(historicalProvider, timestamp) {
       const dater = new EthDater(
-        this.historicalProvider // ethers provider, required.
+        historicalProvider // ethers provider, required.
       );
 
       return await dater.getDate(
@@ -228,7 +231,7 @@ export default {
         true // Block after, optional. Search for the nearest block before or after the given date. By default true.
       );
     },
-    async calculatePoints() {
+    async calculatePoints(historicalProvider) {
       if (window.chain === 'avalanche') {
         return;
       }
@@ -315,11 +318,11 @@ export default {
                 try {
                   const timestamp1 = period[idx + 1];
 
-                  const blockNumber = (await this.getBlockForTimestamp(timestamp0 * 1000)).block;
+                  const blockNumber = (await this.getBlockForTimestamp(historicalProvider, timestamp0 * 1000)).block;
                   const wrappedContract = await wrapContract(this.smartLoanContract);
 
                   const loanStatus = await getData(wrappedContract.address, timestamp0);
-                  const assetsBalances = await this.historicalSmartLoanContract.getAllAssetsBalances({ blockTag: blockNumber });
+                  const assetsBalances = await this.historicalSmartLoanContract.getAllAssetsBalances({blockTag: blockNumber});
 
                   let loanTotalGm = 0;
                   Object.entries(config.GMX_V2_ASSETS_CONFIG).map(([symbol, token]) => {

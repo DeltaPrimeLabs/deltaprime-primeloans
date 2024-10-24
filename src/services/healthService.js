@@ -23,16 +23,23 @@ export default class HealthService {
     debtsPerAsset,
     assets, assetBalances,
     lpAssets, lpBalances,
-    concentratedLpAssets, concentratedLpBalances,
-    balancerLpAssets, balancerLpBalances,
-    levelAssets, levelBalances,
-    gmxV2Assets, gmxV2Balances,
-    penpieLpAssets, penpieLpBalances,
-    wombatLpAssets, wombatLpBalances, wombatYYFarmsBalances,
+    concentratedLpAssets,
+    concentratedLpBalances,
+    balancerLpAssets,
+    balancerLpBalances,
+    levelAssets,
+    levelBalances,
+    gmxV2Assets,
+    gmxV2Balances,
+    penpieLpAssets,
+    penpieLpBalances,
+    wombatLpAssets,
+    wombatLpBalances,
+    wombatYYFarmsBalances,
     traderJoeV2LpAssets,
     stakeStoreFarms
   ) {
-    console.log('askjdnasjkladn', penpieLpAssets);
+    console.log('----------__---___---__--___---__--____-CALCULATING HEALTH-__---___--___---__--___-____-___----');
     if (noSmartLoan) {
       return 1;
     }
@@ -42,7 +49,7 @@ export default class HealthService {
       })
     })
     if (someFarmsNotLoaded) {
-      return;
+      console.log('someFarmsNotLoaded');
     }
 
     const redstonePriceDataRequest = await fetch(config.redstoneFeedUrl);

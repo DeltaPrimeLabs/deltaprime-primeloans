@@ -566,11 +566,11 @@ export default {
                   .pipe(map(balanceWei => formatUnits(balanceWei, assetDecimals))) : farm.balance(smartLoanContractAddress),
                 of((apys && apys[farm.token]) ? apys[farm.token][farm.protocolIdentifier] : 0),
                 farm.stakingContractAddress.toLowerCase() === '0xb8f531c0d3c53B1760bcb7F57d87762Fd25c4977'.toLowerCase() ? yieldYakBalance(farm.stakingContractAddress, smartLoanContractAddress, assetDecimals) :
-                farm.protocol === 'YIELD_YAK' ? yieldYakMaxUnstaked(farm.stakingContractAddress, smartLoanContractAddress, assetDecimals, 'from stakeStore') :
+                farm.protocol === 'YIELD_YAK' ? yieldYakMaxUnstaked(rootState.network.provider, farm.stakingContractAddress, smartLoanContractAddress, assetDecimals, 'from stakeStore') :
                 farm.protocol === 'BEEFY_FINANCE' ? beefyMaxUnstaked(farm.stakingContractAddress, smartLoanContractAddress, assetDecimals) :
                 farm.protocol === 'PENPIE' ? penpieMaxUnstaked(farm.stakingContractAddress, smartLoanContractAddress, assetDecimals) :
-                  farm.autoCompounding ? vectorFinanceMaxUnstaked(farm.token, farm.stakingContractAddress, smartLoanContractAddress) :
-                    vectorFinanceRewards(farm.stakingContractAddress, smartLoanContractAddress)
+                  farm.autoCompounding ? vectorFinanceMaxUnstaked(rootState.network.provider, farm.token, farm.stakingContractAddress, smartLoanContractAddress) :
+                    vectorFinanceRewards(rootState.network.provider, farm.stakingContractAddress, smartLoanContractAddress)
               ]);
             }));
           })

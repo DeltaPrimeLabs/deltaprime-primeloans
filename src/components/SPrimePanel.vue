@@ -202,146 +202,148 @@ export default {
       activeBinIndex: null,
       poolPrice: null,
       balanceLimit: null,
-      revenueReceived: null
+      revenueReceived: null,
+      provider: null
     };
   },
   mounted() {
-    this.setupFiles();
-    this.dex = config.SPRIME_CONFIG.default;
-    this.secondAsset = config.SPRIME_CONFIG[this.dex].default;
-    this.sPrimeConfig = config.SPRIME_CONFIG[this.dex][this.secondAsset];
-    console.log(this.secondAsset);
+    this.providerService.observeProvider().subscribe(provider => {
+      this.provider = provider;
+      this.setupFiles();
+      this.dex = config.SPRIME_CONFIG.default;
+      this.secondAsset = config.SPRIME_CONFIG[this.dex].default;
+      this.sPrimeConfig = config.SPRIME_CONFIG[this.dex][this.secondAsset];
+      console.log(this.secondAsset);
 
-    const sprimeStart = new Date();
-    sprimeStart.setDate(1);
-    sprimeStart.setMonth(6);
-    sprimeStart.setFullYear(2024);
-    const today = new Date();
-    const diffTime = today - sprimeStart;
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      const sprimeStart = new Date();
+      sprimeStart.setDate(1);
+      sprimeStart.setMonth(6);
+      sprimeStart.setFullYear(2024);
+      const today = new Date();
+      const diffTime = today - sprimeStart;
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
-    combineLatest([
-      this.accountService.observeAccountLoaded(),
-      this.providerService.observeProviderCreated()
-    ]).subscribe(([account, provider]) => {
-      this.fetchSPrimeData();
-    });
-
-    combineLatest([
-      this.sPrimeService.observeSPrimeValue(),
-      this.sPrimeService.observeSPrimeBalance(),
-      this.sPrimeService.observeSPrimeLockedBalance(),
-      this.sPrimeService.observeRevenueReceived(),
-    ]).subscribe(([value, balance, locked, revenueReceived]) => {
-      this.value = value;
-      this.locked = locked;
-      this.lockedInUd = value * locked / balance;
-      this.revenueReceived = revenueReceived;
-    });
-
-    this.sPrimeService.observeSPrimeValue().subscribe(value => {
-      this.value = value
-    });
-
-    combineLatest([
-      this.sPrimeService.observeSPrimeTotalValue(),
-      this.sPrimeService.observeTotalRevenueReceived()
-    ])
-      .subscribe(([totalValue, totalRevenue]) => {
-        this.ytdApr = totalRevenue / totalValue / diffDays * 365;
+      this.accountService.observeAccountLoaded().subscribe(([account, provider]) => {
+        this.fetchSPrimeData();
       });
 
-    combineLatest([
-      this.sPrimeService.observeSPrimeUnderlyingPool(),
-      this.sPrimeService.observeSPrimePositionInfo()
-    ])
-      .subscribe(([poolPrice, positionInfo]) => {
-        if (positionInfo) {
-          this.poolPrice = poolPrice;
-          if (this.dex === 'TRADERJOEV2') {
-            let positive = true;
-            this.chartData = positionInfo.binsArray.map(
-              (binPrice, i) => {
-                let showTick = (i === 0) || (i === (positionInfo.binsArray.length - 1));
-                if (this.poolPrice <= binPrice && this.poolPrice > positionInfo.binsArray[i - 1]) {
-                  const toPrevious = this.poolPrice - positionInfo.binsArray[i - 1];
-                  const toCurrent = this.poolPrice - binPrice;
+      combineLatest([
+        this.sPrimeService.observeSPrimeValue(),
+        this.sPrimeService.observeSPrimeBalance(),
+        this.sPrimeService.observeSPrimeLockedBalance(),
+        this.sPrimeService.observeRevenueReceived(),
+      ]).subscribe(([value, balance, locked, revenueReceived]) => {
+        this.value = value;
+        this.locked = locked;
+        this.lockedInUd = value * locked / balance;
+        this.revenueReceived = revenueReceived;
+      });
 
-                  this.activeBinIndex = toPrevious >= toCurrent ? i : i - 1
+      this.sPrimeService.observeSPrimeValue().subscribe(value => {
+        this.value = value
+      });
+
+      combineLatest([
+        this.sPrimeService.observeSPrimeTotalValue(),
+        this.sPrimeService.observeTotalRevenueReceived()
+      ])
+        .subscribe(([totalValue, totalRevenue]) => {
+          this.ytdApr = totalRevenue / totalValue / diffDays * 365;
+        });
+
+      combineLatest([
+        this.sPrimeService.observeSPrimeUnderlyingPool(),
+        this.sPrimeService.observeSPrimePositionInfo()
+      ])
+        .subscribe(([poolPrice, positionInfo]) => {
+          if (positionInfo) {
+            this.poolPrice = poolPrice;
+            if (this.dex === 'TRADERJOEV2') {
+              let positive = true;
+              this.chartData = positionInfo.binsArray.map(
+                (binPrice, i) => {
+                  let showTick = (i === 0) || (i === (positionInfo.binsArray.length - 1));
+                  if (this.poolPrice <= binPrice && this.poolPrice > positionInfo.binsArray[i - 1]) {
+                    const toPrevious = this.poolPrice - positionInfo.binsArray[i - 1];
+                    const toCurrent = this.poolPrice - binPrice;
+
+                    this.activeBinIndex = toPrevious >= toCurrent ? i : i - 1
+                  }
+                  return {x: binPrice, y: 3, showTick: showTick, positive: positive}
                 }
-                return {x: binPrice, y: 3, showTick: showTick, positive: positive}
+              )
+              const stepLength = positionInfo.binsArray[1] - positionInfo.binsArray[0]
+              if (this.poolPrice < positionInfo.binsArray[0]) {
+                const emptyStepsCount = Math.abs((this.poolPrice - positionInfo.binsArray[0]) / stepLength)
+                const emptySteps = []
+                for (let i = 0; i < Math.floor(emptyStepsCount); i++) {
+                  const lastStep = i === 0 ? positionInfo.binsArray[0] : emptySteps[0].x
+                  emptySteps.unshift({x: lastStep - stepLength, y: 0, showTick: false, positive: false})
+                }
+                this.chartData = [{
+                  x: this.poolPrice,
+                  y: 0,
+                  showTick: false,
+                  positive: false
+                }, ...emptySteps, ...this.chartData]
+                this.activeBinIndex = 0;
+              } else if (this.poolPrice > positionInfo.binsArray[positionInfo.binsArray.length - 1]) {
+                const emptyStepsCount = Math.abs((this.poolPrice - positionInfo.binsArray[positionInfo.binsArray.length - 1]) / stepLength)
+                const emptySteps = []
+                for (let i = 0; i < Math.floor(emptyStepsCount); i++) {
+                  const lastStep = i === 0 ? positionInfo.binsArray[positionInfo.binsArray.length - 1] : emptySteps[emptySteps.length - 1].x
+                  emptySteps.push({x: lastStep + stepLength, y: 0, showTick: false, positive: false})
+                }
+                this.chartData = [...this.chartData, ...emptySteps, {
+                  x: this.poolPrice,
+                  y: 0,
+                  showTick: false,
+                  positive: false
+                }]
+                this.activeBinIndex = this.chartData.length - 1
               }
-            )
-            const stepLength = positionInfo.binsArray[1] - positionInfo.binsArray[0]
-            if (this.poolPrice < positionInfo.binsArray[0]) {
-              const emptyStepsCount = Math.abs((this.poolPrice - positionInfo.binsArray[0]) / stepLength)
-              const emptySteps = []
-              for (let i = 0; i < Math.floor(emptyStepsCount); i++) {
-                const lastStep = i === 0 ? positionInfo.binsArray[0] : emptySteps[0].x
-                emptySteps.unshift({x: lastStep - stepLength, y: 0, showTick: false, positive: false})
-              }
-              this.chartData = [{
-                x: this.poolPrice,
-                y: 0,
-                showTick: false,
-                positive: false
-              }, ...emptySteps, ...this.chartData]
-              this.activeBinIndex = 0;
-            } else if (this.poolPrice > positionInfo.binsArray[positionInfo.binsArray.length - 1]) {
-              const emptyStepsCount = Math.abs((this.poolPrice - positionInfo.binsArray[positionInfo.binsArray.length - 1]) / stepLength)
-              const emptySteps = []
-              for (let i = 0; i < Math.floor(emptyStepsCount); i++) {
-                const lastStep = i === 0 ? positionInfo.binsArray[positionInfo.binsArray.length - 1] : emptySteps[emptySteps.length - 1].x
-                emptySteps.push({x: lastStep + stepLength, y: 0, showTick: false, positive: false})
-              }
-              this.chartData = [...this.chartData, ...emptySteps, {
-                x: this.poolPrice,
-                y: 0,
-                showTick: false,
-                positive: false
-              }]
-              this.activeBinIndex = this.chartData.length - 1
+              this.setDistributionChart(this.poolPrice, positionInfo.binsArray[0], positionInfo.binsArray[positionInfo.binsArray.length - 1]);
             }
-            this.setDistributionChart(this.poolPrice, positionInfo.binsArray[0], positionInfo.binsArray[positionInfo.binsArray.length - 1]);
-          }
-          if (this.dex === 'UNISWAP') {
-            let rangeStart = positionInfo.priceMin;
-            let rangeEnd = positionInfo.priceMax;
-            let minValue = Math.min(this.poolPrice, rangeStart);
-            let maxValue = Math.max(this.poolPrice, rangeEnd);
-            let axisStart = minValue - 0.05 * minValue;
-            let axisEnd = maxValue + 0.05 * maxValue;
+            if (this.dex === 'UNISWAP') {
+              let rangeStart = positionInfo.priceMin;
+              let rangeEnd = positionInfo.priceMax;
+              let minValue = Math.min(this.poolPrice, rangeStart);
+              let maxValue = Math.max(this.poolPrice, rangeEnd);
+              let axisStart = minValue - 0.05 * minValue;
+              let axisEnd = maxValue + 0.05 * maxValue;
 
-            this.chartData = {
-              activeValue: this.poolPrice,
-              rangeStart: rangeStart,
-              rangeEnd: rangeEnd,
-              axisStart: axisStart,
-              axisEnd: axisEnd
+              this.chartData = {
+                activeValue: this.poolPrice,
+                rangeStart: rangeStart,
+                rangeEnd: rangeEnd,
+                axisStart: axisStart,
+                axisEnd: axisEnd
+              }
+
+              this.setDistributionChart(poolPrice, rangeStart, rangeEnd);
             }
-
-            this.setDistributionChart(poolPrice, rangeStart, rangeEnd);
           }
-        }
+        });
+
+      this.accountService.observeAccountLoaded().subscribe(() => {
+        this.fetchVPrimeData();
       });
 
-    this.accountService.observeAccountLoaded().subscribe(() => {
-      this.fetchVPrimeData();
+      this.vPrimeService.observeVPrimePoints().subscribe(points => {
+        this.governancePoints = points ? points.toExponential(1) : 0;
+      });
+
+      this.vPrimeService.observeVPrimeRate().subscribe(rate => {
+        this.governanceRate = rate;
+      });
+
+      this.vPrimeService.observeVPrimeBalanceLimit().subscribe(balanceLimit => {
+        this.balanceLimit = balanceLimit;
+      });
+
+      this.watchActionDisabling();
     });
 
-    this.vPrimeService.observeVPrimePoints().subscribe(points => {
-      this.governancePoints = points ? points.toExponential(1) : 0;
-    });
-
-    this.vPrimeService.observeVPrimeRate().subscribe(rate => {
-      this.governanceRate = rate;
-    });
-
-    this.vPrimeService.observeVPrimeBalanceLimit().subscribe(balanceLimit => {
-      this.balanceLimit = balanceLimit;
-    });
-
-    this.watchActionDisabling();
   },
   watch: {},
   computed: {
@@ -357,7 +359,7 @@ export default {
       'globalActionsDisableService',
       'priceService'
     ]),
-    ...mapState('network', ['provider', 'account']),
+    ...mapState('network', ['account']),
     ...mapState('fundsStore', ['assets']),
     getDistributionIcon() {
       return `src/assets/icons/sprime-distribution/${DISTRIBUTION_ICON_DICTIONARY[this.distributionType]}${this.themeService.themeChange$.value === 'LIGHT' ? '' : '--dark'}.svg`;

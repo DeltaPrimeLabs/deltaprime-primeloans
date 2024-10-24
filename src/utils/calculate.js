@@ -196,7 +196,7 @@ export async function vectorFinanceBalance(stakingContractAddress, address, deci
 
 }
 
-export async function vectorFinanceRewards(stakingContractAddress, loanAddress) {
+export async function vectorFinanceRewards(provider, stakingContractAddress, loanAddress) {
   const stakingContract = new ethers.Contract(stakingContractAddress, IVectorFinanceStakingArtifact.abi, provider.getSigner());
   const rewarderAddress = await stakingContract.rewarder();
 
@@ -233,7 +233,7 @@ export async function vectorFinanceRewards(stakingContractAddress, loanAddress) 
   return totalEarned;
 }
 
-export async function yieldYakMaxUnstaked(stakingContractAddress, loanAddress, decimals = 18, comment = '') {
+export async function yieldYakMaxUnstaked(provider, stakingContractAddress, loanAddress, decimals = 18, comment = '') {
   const readProvider = new ethers.providers.JsonRpcProvider(config.readRpcUrl);
   const multicallContract = new ethers.Contract(config.multicallAddress, MULTICALL.abi, readProvider);
   const stakingContract = new ethers.Contract(stakingContractAddress, IYieldYak.abi, provider.getSigner());
@@ -341,7 +341,7 @@ export async function penpieMaxUnstaked(stakingContractAddress, loanAddress, dec
 
 }
 
-export async function vectorFinanceMaxUnstaked(assetSymbol, stakingContractAddress, loanAddress) {
+export async function vectorFinanceMaxUnstaked(provider, assetSymbol, stakingContractAddress, loanAddress) {
   window.requestCounter++;
   const assetDecimals = config.ASSETS_CONFIG[assetSymbol].decimals;
   const stakingContract = new ethers.Contract(stakingContractAddress, IVectorFinanceCompounder.abi, provider.getSigner());

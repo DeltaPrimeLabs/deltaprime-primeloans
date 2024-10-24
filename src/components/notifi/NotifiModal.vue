@@ -111,7 +111,7 @@ export default {
   },
   methods: {
     setupNotifi() {
-      combineLatest([this.providerService.observeProviderCreated(), this.accountService.observeAccountLoaded()])
+      combineLatest([this.providerService.observeProvider(), this.accountService.observeAccountLoaded()])
         .subscribe(([provider, account]) => {
           const alertsConfig = this.$route.name === 'Pools'
                               ? notifiConfig.ALERTS_CONFIG.pools

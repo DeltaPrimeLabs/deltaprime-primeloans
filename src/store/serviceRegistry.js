@@ -31,6 +31,8 @@ import vPrimeService from "../services/vPrimeService";
 import GlobalActionsDisableService from "../services/globalActionsDisableService";
 import AvalancheBoostService from '../services/avalancheBoostService';
 
+const accountService = new AccountService();
+
 export default {
   namespaced: true,
   state: {
@@ -44,8 +46,8 @@ export default {
     aprService: new AprService(),
     farmService: new FarmService(),
     lpService: new LpService(),
-    providerService: new ProviderService(),
-    accountService: new AccountService(),
+    accountService: accountService,
+    providerService: new ProviderService(accountService),
     poolService: new PoolService(),
     priceService: new PriceService(),
     collateralService: new CollateralService(),

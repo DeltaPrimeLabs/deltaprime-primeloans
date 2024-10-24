@@ -143,7 +143,7 @@ export default {
   },
 
   async mounted() {
-    this.providerService.observeProviderCreated().subscribe(() => {
+    this.providerService.observeProvider().subscribe(() => {
       this.setupAddActionsConfiguration();
       this.setupRemoveActionsConfiguration();
       this.setupMoreActionsConfiguration();

@@ -203,7 +203,7 @@ export default {
   },
 
   async mounted() {
-    this.providerService.observeProviderCreated().subscribe(() => {
+    this.providerService.observeProvider().subscribe(() => {
       this.chain = window.chain;
       this.setupAddActionsConfiguration();
       this.setupRemoveActionsConfiguration();

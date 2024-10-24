@@ -179,6 +179,7 @@ export default {
       contract: null,
       collectedGGP: null,
       boostApy: null,
+      provider: null,
     }
   },
   computed: {
@@ -210,7 +211,7 @@ export default {
     ]),
     ...mapState('stakeStore', ['farms']),
     ...mapState('poolStore', ['pools']),
-    ...mapState('network', ['provider', 'account']),
+    ...mapState('network', ['account']),
     ...mapState('serviceRegistry', [
       'assetBalancesExternalUpdateService',
       'dataRefreshEventService',
@@ -226,7 +227,8 @@ export default {
   },
 
   async mounted() {
-    this.providerService.observeProviderCreated().subscribe(() => {
+    this.providerService.observeProvider().subscribe((provider) => {
+      this.provider = provider;
       this.setupAddActionsConfiguration();
       this.setupRemoveActionsConfiguration();
       this.setupMoreActionsConfiguration();
@@ -719,7 +721,8 @@ export default {
     },
 
     async createContractObject() {
-      this.contract = await new ethers.Contract(this.lpToken.poolAddress, ABI_WOMBAT_DYNAMIC_POOL_V2, provider.getSigner());
+      console.log(this.provider);
+      this.contract = await new ethers.Contract(this.lpToken.poolAddress, ABI_WOMBAT_DYNAMIC_POOL_V2, this.provider.getSigner());
     },
 
     watchGgpIncentives() {

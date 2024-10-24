@@ -241,16 +241,37 @@ export default {
     async fundsStoreSetup({state, rootState, dispatch, commit}) {
       console.log('fundsStoreSetup')
       if (!rootState.network.provider) return;
+
+      console.log('await dispatch(loadDeployments);');
       await dispatch('loadDeployments');
+
+      console.log('await dispatch(setupContracts);');
       await dispatch('setupContracts');
+
+      console.log('await dispatch(setupSmartLoanContract);');
       await dispatch('setupSmartLoanContract');
+
+      console.log('await dispatch(setupSupportedAssets);');
       await dispatch('setupSupportedAssets');
+
+      console.log('await dispatch(setupApys);');
       await dispatch('setupApys');
+
+      console.log('await dispatch(setupAssets);');
       await dispatch('setupAssets');
+
+      console.log('await dispatch(setupLpAssets);');
       await dispatch('setupLpAssets');
+
+      console.log('await dispatch(setupConcentratedLpAssets);');
       await dispatch('setupConcentratedLpAssets');
+
+      console.log('await dispatch(setupTraderJoeV2LpAssets);');
       await dispatch('setupTraderJoeV2LpAssets');
+
+      console.log('await dispatch(setupWombatLpAssets);');
       await dispatch('setupWombatLpAssets');
+
       if (config.BALANCER_LP_ASSETS_CONFIG) await dispatch('setupBalancerLpAssets');
       if (config.LEVEL_LP_ASSETS_CONFIG) await dispatch('setupLevelLpAssets');
       if (config.GMX_V2_ASSETS_CONFIG) await dispatch('setupGmxV2Assets');
@@ -263,7 +284,7 @@ export default {
       await dispatch('stakeStore/updateStakedPrices', null, {root: true});
       state.assetBalances = [];
 
-      const diamond = new ethers.Contract(DIAMOND_BEACON.address, DIAMOND_BEACON.abi, provider.getSigner());
+      const diamond = new ethers.Contract(DIAMOND_BEACON.address, DIAMOND_BEACON.abi, rootState.network.provider.getSigner());
       readProvider = new ethers.providers.JsonRpcProvider(config.readRpcUrl);
       multicallContract = new ethers.Contract(config.multicallAddress, MULTICALL.abi, readProvider);
 
@@ -349,8 +370,8 @@ export default {
     },
 
 
-    async setupSupportedAssets({commit}) {
-      const tokenManager = new ethers.Contract(TOKEN_MANAGER_TUP.address, TOKEN_MANAGER.abi, provider.getSigner());
+    async setupSupportedAssets({commit, rootState}) {
+      const tokenManager = new ethers.Contract(TOKEN_MANAGER_TUP.address, TOKEN_MANAGER.abi, rootState.network.provider.getSigner());
       const whiteListedTokenAddresses = await tokenManager.getSupportedTokensAddresses();
       console.log('state.supportedAssets', whiteListedTokenAddresses);
       const supported = whiteListedTokenAddresses
@@ -435,7 +456,7 @@ export default {
     },
 
     async setupAssetExposures({state, rootState, commit}) {
-      const tokenManager = new ethers.Contract(TOKEN_MANAGER_TUP.address, TOKEN_MANAGER.abi, provider.getSigner());
+      const tokenManager = new ethers.Contract(TOKEN_MANAGER_TUP.address, TOKEN_MANAGER.abi, rootState.network.provider.getSigner());
       let allAssets = state.assets;
       let allLevelLpAssets = state.levelLpAssets;
       let allBalancerLpAssets = state.balancerLpAssets;
@@ -747,7 +768,10 @@ export default {
 
 
     async setupContracts({rootState, commit}) {
+      const provider = rootState.network.provider;
+      console.log(provider);
       const smartLoanFactoryContract = new ethers.Contract(SMART_LOAN_FACTORY_TUP.address, SMART_LOAN_FACTORY.abi, provider.getSigner());
+      console.log(smartLoanFactoryContract);
       const wrappedTokenContract = new ethers.Contract(config.WRAPPED_TOKEN_ADDRESS, wrappedAbi, provider.getSigner());
       let readProvider;
       readProvider = new ethers.providers.JsonRpcProvider(config.readRpcUrl);
@@ -778,17 +802,20 @@ export default {
 
     async setupSmartLoanContract({state, rootState, commit}) {
       const provider = rootState.network.provider;
+      console.log(rootState.network.account);
 
+      console.log(state.smartLoanFactoryContract);
       let smartLoanAddress;
       smartLoanAddress = await state.smartLoanFactoryContract.getLoanForOwner(rootState.network.account);
+      console.log(smartLoanAddress);
 
-      if (router && router.currentRoute) {
-        if (router.currentRoute.query.user) {
-          smartLoanAddress = await state.smartLoanFactoryContract.getLoanForOwner(router.currentRoute.query.user);
-        } else if (router.currentRoute.query.account) {
-          smartLoanAddress = router.currentRoute.query.account;
-        }
-      }
+      // if (router && router.currentRoute) {
+      //   if (router.currentRoute.query.user) {
+      //     smartLoanAddress = await state.smartLoanFactoryContract.getLoanForOwner(router.currentRoute.query.user);
+      //   } else if (router.currentRoute.query.account) {
+      //     smartLoanAddress = router.currentRoute.query.account;
+      //   }
+      // }
 
 
       const smartLoanContract = new ethers.Contract(smartLoanAddress, SMART_LOAN.abi, provider.getSigner());
@@ -1024,7 +1051,7 @@ export default {
           wombatFarmsBalances[farm.apyKey] = formatUnits(balanceArray[index].toString(), farm.decimals)
         })
         for (const farm of wombatFarms) {
-          const contract = await new ethers.Contract(farm.strategyContract, ABI_YY_WOMBAT_STRATEGY, provider.getSigner());
+          const contract = await new ethers.Contract(farm.strategyContract, ABI_YY_WOMBAT_STRATEGY, rootState.network.provider.getSigner());
           const YRTBalance = await contract.balanceOf(state.readSmartLoanContract.address);
           wombatFarmsBalances[farm.yrtKey] = formatUnits(YRTBalance.toString(), farm.decimals)
         }
@@ -1076,7 +1103,7 @@ export default {
 
         //TODO: optimize
         for (let [k, lpToken] of Object.entries(balancerLpAssets)) {
-          let gauge = new ethers.Contract(lpToken.gaugeAddress, IBALANCER_V2_GAUGE.abi, provider.getSigner())
+          let gauge = new ethers.Contract(lpToken.gaugeAddress, IBALANCER_V2_GAUGE.abi, rootState.network.provider.getSigner())
 
           try {
             let result = await state.multicallContract.callStatic.aggregate(
@@ -1105,7 +1132,7 @@ export default {
       for (let asset of Object.values(state.assets)) {
         if (asset.droppingSupport || asset.unsupported) {
           console.log('droppingSupport', asset.symbol, balances[asset.symbol]);
-          let tokenContract = new ethers.Contract(asset.address, erc20ABI, provider.getSigner());
+          let tokenContract = new ethers.Contract(asset.address, erc20ABI, rootState.network.provider.getSigner());
           balances[asset.symbol] = formatUnits(await tokenContract.balanceOf(state.smartLoanContract.address), asset.decimals);
           if (balances[asset.symbol] === undefined || Number(balances[asset.symbol]) === 0) {
             console.warn('deleting', asset.symbol);
@@ -1170,8 +1197,8 @@ export default {
       });
     },
 
-    async fetchTraderJoeV2LpUnderlyingBalances({state}, {lbPairAddress, binIds, lpToken}) {
-      const poolContract = new ethers.Contract(lbPairAddress, LB_PAIR.abi, provider.getSigner());
+    async fetchTraderJoeV2LpUnderlyingBalances({state, rootState}, {lbPairAddress, binIds, lpToken}) {
+      const poolContract = new ethers.Contract(lbPairAddress, LB_PAIR.abi, rootState.network.provider.getSigner());
 
       let cumulativeTokenXAmount = BigNumber.from(0);
       let cumulativeTokenYAmount = BigNumber.from(0);
@@ -1356,19 +1383,19 @@ export default {
 
       commit('setLpAssets', lpAssets);
 
-      let concentratedLpAssets = state.concentratedLpAssets;
-
-      //TODO: replace with for logic
-      try {
-        concentratedLpAssets['SHLB_AVAX-USDC_B'].apy = apys['AVAX_USDC'].apy * 100;
-        concentratedLpAssets['SHLB_USDT.e-USDt_C'].apy = apys['USDT.e_USDt'].apy * 100;
-        concentratedLpAssets['SHLB_BTC.b-AVAX_B'].apy = 0;
-        concentratedLpAssets['SHLB_EUROC-USDC_V2_1_B'].apy = apys['EUROC_USDC'].apy * 100;
-      } catch (e) {
-        console.log(e);
-      }
-
-      commit('setConcentratedLpAssets', concentratedLpAssets);
+      // let concentratedLpAssets = state.concentratedLpAssets;
+      //
+      // //TODO: replace with for logic
+      // try {
+      //   concentratedLpAssets['SHLB_AVAX-USDC_B'].apy = apys['AVAX_USDC'].apy * 100;
+      //   concentratedLpAssets['SHLB_USDT.e-USDt_C'].apy = apys['USDT.e_USDt'].apy * 100;
+      //   concentratedLpAssets['SHLB_BTC.b-AVAX_B'].apy = 0;
+      //   concentratedLpAssets['SHLB_EUROC-USDC_V2_1_B'].apy = apys['EUROC_USDC'].apy * 100;
+      // } catch (e) {
+      //   console.log(e);
+      // }
+      //
+      // commit('setConcentratedLpAssets', concentratedLpAssets);
 
       let traderJoeV2LpAssets = state.traderJoeV2LpAssets;
 
@@ -1512,6 +1539,7 @@ export default {
     },
 
     async getAccountApr({state, getters, rootState, commit}, {eligibleTvl, maxBoostApy}) {
+      console.log('get Account apr');
       let apr = 0;
       let yearlyDebtInterest = 0;
 
@@ -1717,6 +1745,8 @@ export default {
             - yearlyDebtInterest
           ) / collateral;
         }
+
+        console.log(apr);
 
         commit('setAccountApr', apr);
 

@@ -1,3 +1,5 @@
+import EthereumProvider from '@walletconnect/ethereum-provider';
+
 const ethers = require('ethers');
 let ethereum = window.ethereum;
 import Vue from "vue";
@@ -13,6 +15,7 @@ export default {
   },
   mutations: {
     setProvider(state, provider) {
+      console.log(provider);
       state.provider = provider;
     },
     setHistoricalProvider(state, historicalProvider) {
@@ -29,30 +32,41 @@ export default {
     }
   },
   actions: {
-    async initNetwork({ dispatch }) {
-      //TODO: Promise.all?
-      await dispatch('initProvider');
-      await dispatch('initAccount');
-      await dispatch('updateBalance');
-    },
-    async initProvider({ commit, rootState }) {
-      await ethereum.request({ method: 'eth_requestAccounts' });
-      const provider = new ethers.providers.Web3Provider(window.ethereum, 'any');
-      window.provider = provider;
+    async initNetwork({ commit, dispatch, rootState }) {
 
-      await commit('setProvider', provider);
-      rootState.serviceRegistry.providerService.emitProviderCreated(provider);
+      rootState.serviceRegistry.providerService.observeProvider().subscribe(async provider => {
+        console.log(provider);
 
-      const historicalProvider = new ethers.providers.JsonRpcProvider(config.historicalRpcUrl);
-      await commit('setHistoricalProvider', historicalProvider);
+        commit('setProvider', provider);
+        setTimeout(async () => {
+          await dispatch('fundsStore/fundsStoreSetup', {}, {root: true});
+        }, 2000)
+
+      })
+
+      rootState.serviceRegistry.accountService.observeAccount().subscribe(async account => {
+        console.log(account);
+        commit('setAccount', account);
+      })
+
+      rootState.serviceRegistry.providerService.initNetwork();
+
+      rootState.serviceRegistry.providerService.emitProviderCreated();
+
     },
+
     async initAccount({ commit, state, rootState }) {
       if (state.account) {
         return state.account;
       }
 
       let provider = state.provider;
-      let accounts = await provider.listAccounts();
+      let accounts;
+      if (provider.STORAGE_KEY && provider.STORAGE_KEY === 'wc@2:ethereum_provider:') {
+        accounts = provider.accounts;
+      } else {
+        accounts = await provider.listAccounts();
+      }
 
       if (accounts.length > 0) {
         const mainAccount = accounts[0];

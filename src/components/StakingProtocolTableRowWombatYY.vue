@@ -16,9 +16,9 @@
                    src="src/assets/icons/warning.svg"
                    v-tooltip="{content: `We will drop support to this asset on ${ farm.debtCoverage > 0.1 ? '26.04.2024 12:00 CET' : 'Monday 22.04.2024 16:00 CET'}. Please withdraw or swap to another token.`, classes: 'info-tooltip long'}">
               <InfoIcon
-                  class="info__icon"
-                  v-if="farm.info"
-                  :tooltip="{content: farm.info, classes: 'info-tooltip long', placement: 'right'}"
+                class="info__icon"
+                v-if="farm.info"
+                :tooltip="{content: farm.info, classes: 'info-tooltip long', placement: 'right'}"
               ></InfoIcon>
             </div>
             <div class="by-farm">Yield Yak -> Wombat</div>
@@ -41,9 +41,10 @@
         <template>
           <div class="table__cell ggp-collected">
             <template
-                v-if="collectedGGP !== null && farm.boostGGP">
+              v-if="collectedGGP !== null && farm.boostGGP">
               <span>
-                <img src="src/assets/icons/warning.svg" v-tooltip="{content: `Last week's rewards are currently being recalculated based on on-chain data. The rewards shown here are an approximation and could change.`, classes: 'info-tooltip long'}">
+                <img src="src/assets/icons/warning.svg"
+                     v-tooltip="{content: `Last week's rewards are currently being recalculated based on on-chain data. The rewards shown here are an approximation and could change.`, classes: 'info-tooltip long'}">
                 <img v-if="ggpConfig" class="asset__icon" :src="getIcon('GGP', ggpConfig.logoExt)">
                 <span>{{ formatTokenBalanceWithLessThan(collectedGGP / 30, 4, true) }}</span>
               </span>
@@ -56,32 +57,33 @@
 
       <div class="table__cell apy">
         <div class="apr-warning" v-if="farm.aprWarning">
-          <img src="src/assets/icons/warning.svg" v-tooltip="{content: `APR value is updated twice a day. Please check Yield Yak website to find the current pool's APR.`, classes: 'info-tooltip long'}">
+          <img src="src/assets/icons/warning.svg"
+               v-tooltip="{content: `APR value is updated twice a day. Please check Yield Yak website to find the current pool's APR.`, classes: 'info-tooltip long'}">
         </div>
         {{ (apys[farm.lpAssetToken][farm.apyKey] + (farm.apyToAdd ? assets[farm.apyToAdd].apy : 0)) / 100 | percent }}
       </div>
 
       <div class="table__cell max-apy">
         <span>{{ maxApy | percent }}<img v-if="boostApy"
-                                                      v-tooltip="{content: `This pool is incentivized!<br>⁃ up to ${maxApy ? (maxApy * 100).toFixed(2) : 0}% Pool APR<br>⁃ up to ${boostApy ? (boostApy * 100).toFixed(2) : 0}% ${chain === 'arbitrum' ? 'ARB' : 'AVAX'} incentives`, classes: 'info-tooltip'}"
-                                                      src="src/assets/icons/stars.png" class="stars-icon"></span>
+                                         v-tooltip="{content: `This pool is incentivized!<br>⁃ up to ${maxApy ? (maxApy * 100).toFixed(2) : 0}% Pool APR<br>⁃ up to ${boostApy ? (boostApy * 100).toFixed(2) : 0}% ${chain === 'arbitrum' ? 'ARB' : 'AVAX'} incentives`, classes: 'info-tooltip'}"
+                                         src="src/assets/icons/stars.png" class="stars-icon"></span>
       </div>
 
       <div class="table__cell">
         <div class="actions">
           <IconButtonMenuBeta
-              class="actions__icon-button"
-              :config="addActionsConfig"
-              v-if="addActionsConfig"
-              v-on:iconButtonClick="actionClick"
-              :disabled="disableAllButtons || platypusAffected || platypusAffectedDisableDeposit || noSmartLoan || !hasEarlyAccess">
+            class="actions__icon-button"
+            :config="addActionsConfig"
+            v-if="addActionsConfig"
+            v-on:iconButtonClick="actionClick"
+            :disabled="disableAllButtons || platypusAffected || platypusAffectedDisableDeposit || noSmartLoan || !hasEarlyAccess">
           </IconButtonMenuBeta>
           <IconButtonMenuBeta
-              class="actions__icon-button last"
-              :config="removeActionsConfig"
-              v-if="removeActionsConfig"
-              v-on:iconButtonClick="actionClick"
-              :disabled="disableAllButtons || platypusAffected || noSmartLoan || !hasEarlyAccess">
+            class="actions__icon-button last"
+            :config="removeActionsConfig"
+            v-if="removeActionsConfig"
+            v-on:iconButtonClick="actionClick"
+            :disabled="disableAllButtons || platypusAffected || noSmartLoan || !hasEarlyAccess">
           </IconButtonMenuBeta>
         </div>
       </div>
@@ -99,16 +101,16 @@ import {calculateMaxApy, fromWei, toWei} from '../utils/calculate';
 import IconButtonMenuBeta from './IconButtonMenuBeta';
 import FlatButton from './FlatButton';
 import MigrateModal from './MigrateModal';
-import InfoIcon from "./InfoIcon.vue";
-import AddFromWalletModal from "./AddFromWalletModal.vue";
-import erc20ABI from "../../test/abis/ERC20.json";
-import WithdrawModal from "./WithdrawModal.vue";
-import {ActionSection} from "../services/globalActionsDisableService";
-import SwapModal from "./SwapModal.vue";
-import TOKEN_ADDRESSES from "../../common/addresses/arbitrum/token_addresses.json";
-import {BigNumber} from "ethers";
-import ABI_YY_WOMBAT_STRATEGY from "../abis/YYWombatStrategy.json";
-import ConfirmModal from "./ConfirmModal.vue";
+import InfoIcon from './InfoIcon.vue';
+import AddFromWalletModal from './AddFromWalletModal.vue';
+import erc20ABI from '../../test/abis/ERC20.json';
+import WithdrawModal from './WithdrawModal.vue';
+import {ActionSection} from '../services/globalActionsDisableService';
+import SwapModal from './SwapModal.vue';
+import TOKEN_ADDRESSES from '../../common/addresses/arbitrum/token_addresses.json';
+import {BigNumber} from 'ethers';
+import ABI_YY_WOMBAT_STRATEGY from '../abis/YYWombatStrategy.json';
+import ConfirmModal from './ConfirmModal.vue';
 
 const ethers = require('ethers');
 
@@ -127,23 +129,25 @@ export default {
   },
   async mounted() {
     this.chain = window.chain;
-    this.createContractObject();
-    this.setupAddActionsConfiguration();
-    this.setupRemoveActionsConfiguration();
-    this.watchHardRefreshScheduledEvent();
-    this.watchAssetBalancesDataRefreshEvent();
-    this.watchHealth();
-    this.watchProgressBarState();
-    this.watchFarmRefreshEvent();
-    this.watchExternalStakedPerFarm();
-    this.watchActionDisabling();
-    this.watchSPrime();
-    if (window.chain === 'arbitrum') {
-      this.watchLtipMaxBoostUpdate();
-    }
-    if (window.chain === 'avalanche') {
-      this.watchGgpIncentives();
-    }
+    this.providerService.observeProvider().subscribe(provider => {
+      this.createContractObject(provider);
+      this.setupAddActionsConfiguration();
+      this.setupRemoveActionsConfiguration();
+      this.watchHardRefreshScheduledEvent();
+      this.watchAssetBalancesDataRefreshEvent();
+      this.watchHealth();
+      this.watchProgressBarState();
+      this.watchFarmRefreshEvent();
+      this.watchExternalStakedPerFarm();
+      this.watchActionDisabling();
+      this.watchSPrime();
+      if (window.chain === 'arbitrum') {
+        this.watchLtipMaxBoostUpdate();
+      }
+      if (window.chain === 'avalanche') {
+        this.watchGgpIncentives();
+      }
+    });
   },
   data() {
     return {
@@ -184,7 +188,7 @@ export default {
     }
   },
   computed: {
-    ...mapState('network', ['account', 'provider']),
+    ...mapState('network', ['account']),
     ...mapState('poolStore', ['pools']),
     ...mapState('stakeStore', ['farms']),
     ...mapState('fundsStore', [
@@ -237,7 +241,7 @@ export default {
   methods: {
     ...mapActions('stakeStore', ['migrateWombatToYY', 'depositToWombatYY', 'withdrawFromWombatYY']),
 
-    async createContractObject() {
+    async createContractObject(provider) {
       this.contract = await new ethers.Contract(this.farm.strategyContract, ABI_YY_WOMBAT_STRATEGY, provider.getSigner());
     },
 
@@ -595,7 +599,7 @@ export default {
       const modalInstance = this.openModal(ConfirmModal);
       modalInstance.title = 'Migrate to Yield Yak';
       modalInstance.content = this.wombatLpBalances[this.farm.lpAssetToken] > 0 ? `This action will farm all your Wombat ${this.farm.assetToken} LP tokens in Yield Yak`
-          : `Currently you have no ${this.farm.name} tokens in your Prime Account. <br> To create a new position, use the <b>Deposit ${this.farm.assetToken} to Wombat LP Farm</b> action.`;
+        : `Currently you have no ${this.farm.name} tokens in your Prime Account. <br> To create a new position, use the <b>Deposit ${this.farm.assetToken} to Wombat LP Farm</b> action.`;
       modalInstance.disabled = this.wombatLpBalances[this.farm.lpAssetToken] <= 0
 
       const migrateRequest = {
@@ -612,11 +616,11 @@ export default {
 
     watchActionDisabling() {
       this.globalActionsDisableService.getSectionActions$(ActionSection.STAKING_PROTOCOL_WOMBAT)
-          .subscribe(isActionDisabledRecord => {
-            this.isActionDisabledRecord = isActionDisabledRecord;
-            this.setupAddActionsConfiguration();
-            this.setupRemoveActionsConfiguration();
-          })
+        .subscribe(isActionDisabledRecord => {
+          this.isActionDisabledRecord = isActionDisabledRecord;
+          this.setupAddActionsConfiguration();
+          this.setupRemoveActionsConfiguration();
+        })
     },
   }
 };

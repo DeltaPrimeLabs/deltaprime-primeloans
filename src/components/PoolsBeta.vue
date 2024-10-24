@@ -88,7 +88,7 @@ export default {
     },
 
     initStoresWhenProviderAndAccountCreated() {
-      combineLatest([this.providerService.observeProviderCreated(), this.accountService.observeAccountLoaded()])
+      combineLatest([this.providerService.observeProvider(), this.accountService.observeAccountLoaded()])
         .subscribe(async ([provider, account]) => {
           this.poolStoreSetup();
           this.sPrimeStoreSetup();
